@@ -1,0 +1,27 @@
+{
+  "owner": "phranck",
+  "repo": "status.musiccloud.io",
+  "dataBranch": "main",
+  "name": "MusicCloud",
+  "logoUrl": "https://musiccloud.io/og/musiccloud.jpg",
+  "navbar": [
+    {
+      "title": "Status",
+      "href": "/"
+    },
+    {
+      "title": "History",
+      "href": "/history"
+    },
+    {
+      "title": "GitHub",
+      "href": "https://github.com/phranck/status.musiccloud.io"
+    }
+  ],
+  "theme": {
+    "accent": "#6366f1",
+    "accentDeg": "#d29922",
+    "accentDown": "#f85149"
+  },
+  "icons": {}
+}

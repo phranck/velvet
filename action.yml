@@ -1,0 +1,36 @@
+name: "Velvet status page"
+description: "Build a polished, dark Velvet front-end for an Upptime status page from .upptimerc.yml."
+author: "phranck"
+branding:
+  icon: "activity"
+  color: "purple"
+inputs:
+  config:
+    description: "Path to the Upptime .upptimerc.yml in the consumer repo."
+    required: false
+    default: ".upptimerc.yml"
+  output:
+    description: "Directory (in the consumer workspace) to write the built site into."
+    required: false
+    default: "velvet-dist"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Build Velvet site
+      shell: bash
+      env:
+        VELVET_CONFIG: ${{ inputs.config }}
+        VELVET_OUTPUT: ${{ inputs.output }}
+        VELVET_SITE: ${{ github.action_path }}/site
+      run: |
+        set -euo pipefail
+        node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
+        npm --prefix "$VELVET_SITE" ci
+        npm --prefix "$VELVET_SITE" run build
+        rm -rf "$VELVET_OUTPUT"
+        mkdir -p "$VELVET_OUTPUT"
+        cp -R "$VELVET_SITE/dist/." "$VELVET_OUTPUT/"
+        echo "velvet: built into $VELVET_OUTPUT"

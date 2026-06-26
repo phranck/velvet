@@ -1,0 +1,51 @@
+:root {
+  --accent: #6366f1;
+  --accent-bright: color-mix(in srgb, var(--accent), #ffffff 16%);
+  --accent-deg: #d29922;
+  --accent-down: #f85149;
+
+  --bg: #0a0b0f;
+  --surface: rgba(14, 16, 21, 0.82);
+  --surface-solid: #0e1015;
+  --surface-2: #0b0d12;
+  --border: #1c2029;
+  --border-soft: #14171f;
+
+  --text: #e8eaed;
+  --text-muted: #8b919b;
+  --text-faint: #565b65;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(120% 80% at 50% -10%, #1a1d2b 0%, #0c0d12 42%, #0a0b0f 100%) no-repeat
+    fixed;
+  color: var(--text);
+  font-size: 18px;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

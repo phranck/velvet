@@ -1,0 +1,48 @@
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { load } from "js-yaml";
+
+/**
+ * Generate Velvet's runtime `config.json` from a consumer's Upptime `.upptimerc.yml`.
+ *
+ * Velvet-specific options live under `status-website.velvet` so the file stays a
+ * valid Upptime config. Everything else (owner, repo, name, logo, navbar) is read
+ * from the standard Upptime fields.
+ *
+ * Usage: node generate-config.mjs <.upptimerc.yml> <out/config.json>
+ */
+const [, , inputPath = ".upptimerc.yml", outputPath = "public/config.json"] = process.argv;
+
+const rc = load(readFileSync(inputPath, "utf8")) ?? {};
+if (!rc.owner || !rc.repo) {
+  throw new Error("`.upptimerc.yml` must set `owner` and `repo`");
+}
+
+const sw = rc["status-website"] ?? {};
+const velvet = sw.velvet ?? {};
+
+const subst = (s) =>
+  typeof s === "string" ? s.replaceAll("$OWNER", rc.owner).replaceAll("$REPO", rc.repo) : s;
+
+const config = {
+  owner: rc.owner,
+  repo: rc.repo,
+  dataBranch: velvet.dataBranch ?? "main",
+  name: sw.name ?? rc.repo,
+  logoUrl: sw.logoUrl,
+  navbar: Array.isArray(sw.navbar)
+    ? sw.navbar.map((n) => ({ title: n.title, href: subst(n.href) }))
+    : [{ title: "Status", href: "/" }],
+  theme: {
+    accent: velvet.accent ?? "#6366f1",
+    accentDeg: velvet.accentDeg ?? "#d29922",
+    accentDown: velvet.accentDown ?? "#f85149",
+    ...(velvet.fontSans ? { fontSans: velvet.fontSans } : {}),
+    ...(velvet.fontMono ? { fontMono: velvet.fontMono } : {}),
+  },
+  icons: velvet.icons ?? {},
+};
+
+mkdirSync(dirname(outputPath), { recursive: true });
+writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`);
+console.log(`velvet: wrote ${outputPath} for ${config.owner}/${config.repo}`);

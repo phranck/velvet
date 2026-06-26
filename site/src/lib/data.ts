@@ -1,0 +1,126 @@
+import type { DayStatus, Incident, RangeKey, ServiceStatus, ServiceSummary } from "./types";
+
+/** Minutes in a day — used to grade per-day downtime severity for the bar. */
+const MINUTES_PER_DAY = 1440;
+/** Below this share of a day down, a day reads as degraded rather than down. */
+const DOWN_DAY_THRESHOLD = 0.3;
+
+/** Number of days each range renders in the uptime bar. */
+export const RANGE_DAYS: Record<RangeKey, number> = {
+  day: 1,
+  week: 7,
+  month: 30,
+  year: 90,
+};
+
+/**
+ * Fetch the live service summary from a consumer's Upptime monitoring repo.
+ * Cached ~by the CDN for a couple of minutes, matching Upptime's update cadence.
+ *
+ * @param owner - GitHub owner of the monitoring repo
+ * @param repo - monitoring repo name
+ * @param branch - branch the data lives on
+ * @returns the per-service summary array (throws on a non-OK response).
+ */
+export async function fetchSummary(
+  owner: string,
+  repo: string,
+  branch: string,
+): Promise<ServiceSummary[]> {
+  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/history/summary.json`;
+  const res = await fetch(url, { cache: "no-cache" });
+  if (!res.ok) throw new Error(`summary.json ${res.status}`);
+  return (await res.json()) as ServiceSummary[];
+}
+
+/**
+ * Fetch open incidents and maintenance windows from GitHub Issues.
+ * Unauthenticated and best-effort: on a rate-limit (HTTP 403) it resolves to an
+ * empty list rather than throwing, so the page still renders the live status.
+ *
+ * @param owner - GitHub owner of the monitoring repo
+ * @param repo - monitoring repo name
+ * @returns open incidents, maintenance first, newest first within each group.
+ */
+export async function fetchIncidents(owner: string, repo: string): Promise<Incident[]> {
+  const url = `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=100`;
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+  } catch {
+    return [];
+  }
+  if (!res.ok) return [];
+  const issues = (await res.json()) as Array<{
+    number: number;
+    title: string;
+    html_url: string;
+    created_at: string;
+    pull_request?: unknown;
+    labels: Array<{ name: string }>;
+  }>;
+  return issues
+    .filter((i) => !i.pull_request)
+    .map((i) => ({
+      number: i.number,
+      title: i.title,
+      url: i.html_url,
+      createdAt: i.created_at,
+      isMaintenance: i.labels.some((l) => l.name === "maintenance"),
+    }));
+}
+
+/**
+ * Derive the most severe day status from minutes-down, for one bar segment.
+ *
+ * @param minutesDown - minutes the service was down on a given day
+ * @returns `up` for no downtime, `down` past {@link DOWN_DAY_THRESHOLD} of the day, else `degraded`
+ */
+function gradeDay(minutesDown: number): ServiceStatus {
+  if (minutesDown <= 0) return "up";
+  if (minutesDown / MINUTES_PER_DAY >= DOWN_DAY_THRESHOLD) return "down";
+  return "degraded";
+}
+
+/**
+ * Build the trailing per-day status series for the uptime bar.
+ *
+ * @param service - the service summary holding `dailyMinutesDown`
+ * @param days - how many trailing days to include (oldest first)
+ * @param today - ISO date string for "today" (injected so the build stays deterministic and testable)
+ * @returns one {@link DayStatus} per day, oldest → newest
+ */
+export function dailyBars(service: ServiceSummary, days: number, today: string): DayStatus[] {
+  const end = new Date(`${today}T00:00:00Z`);
+  const out: DayStatus[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(end);
+    d.setUTCDate(end.getUTCDate() - i);
+    const date = d.toISOString().slice(0, 10);
+    const minutesDown = service.dailyMinutesDown[date] ?? 0;
+    out.push({ date, status: gradeDay(minutesDown), minutesDown });
+  }
+  return out;
+}
+
+/**
+ * Worst-case roll-up across all services for the hero banner.
+ *
+ * @returns `down` if any service is down, `degraded` if any is degraded, else `up`
+ */
+export function overallStatus(services: ServiceSummary[]): ServiceStatus {
+  if (services.some((s) => s.status === "down")) return "down";
+  if (services.some((s) => s.status === "degraded")) return "degraded";
+  return "up";
+}
+
+/** Pick the uptime percentage string for the selected range. */
+export function uptimeForRange(service: ServiceSummary, range: RangeKey): string {
+  const byRange: Record<RangeKey, string> = {
+    day: service.uptimeDay,
+    week: service.uptimeWeek,
+    month: service.uptimeMonth,
+    year: service.uptimeYear,
+  };
+  return byRange[range];
+}
