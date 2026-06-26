@@ -1,6 +1,23 @@
+<div align="center">
+
 # Velvet
 
-A polished, dark, open-source front-end for [Upptime](https://upptime.js.org) status pages — indigo-monochrome, 90-day uptime bars, Phosphor duotone icons, live data from your Upptime repo. No server required.
+**A polished, dark, open-source front-end for [Upptime](https://upptime.js.org) status pages.**
+
+[![Release](https://img.shields.io/github/v/tag/phranck/velvet?sort=semver&label=release&color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/releases)
+[![License](https://img.shields.io/github/license/phranck/velvet?color=6366f1&labelColor=0e1015)](https://mit-license.org)
+[![Stars](https://img.shields.io/github/stars/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/commits)
+[![Issues](https://img.shields.io/github/issues/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/issues)
+[![Svelte](https://img.shields.io/badge/Svelte-5-6366f1?logo=svelte&logoColor=white&labelColor=0e1015)](https://svelte.dev)
+[![Vite](https://img.shields.io/badge/Vite-6-6366f1?logo=vite&logoColor=white&labelColor=0e1015)](https://vite.dev)
+[![Built for Upptime](https://img.shields.io/badge/built%20for-Upptime-6366f1?labelColor=0e1015)](https://upptime.js.org)
+
+<img src="docs/screenshot.png" alt="Velvet status page" width="760">
+
+</div>
+
+Indigo-monochrome, 90-day uptime bars, Phosphor duotone icons, live data straight from your Upptime repo — no server required.
 
 ## How it works
 
@@ -73,6 +90,8 @@ npm install
 npm run dev   # http://localhost:5173, reads site/public/config.json
 npm run build # → site/dist
 ```
+
+`site/public/config.json` is a sample config used for local development; the Action regenerates it from each consumer's `.upptimerc.yml`.
 
 ## License
 
