@@ -18,7 +18,7 @@ runs:
   steps:
     - uses: actions/setup-node@v4
       with:
-        node-version: "20"
+        node-version: "22"
     - name: Build Velvet site
       shell: bash
       env:
@@ -27,8 +27,8 @@ runs:
         VELVET_SITE: ${{ github.action_path }}/site
       run: |
         set -euo pipefail
-        node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
         npm --prefix "$VELVET_SITE" ci
+        node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
         npm --prefix "$VELVET_SITE" run build
         rm -rf "$VELVET_OUTPUT"
         mkdir -p "$VELVET_OUTPUT"
