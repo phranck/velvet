@@ -1,9 +1,5 @@
 <div align="center">
 
-# Velvet
-
-**A polished, dark, open-source front-end for [Upptime](https://upptime.js.org) status pages.**
-
 [![Release](https://img.shields.io/github/v/tag/phranck/velvet?sort=semver&label=release&color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/releases)
 [![License](https://img.shields.io/github/license/phranck/velvet?color=6366f1&labelColor=0e1015)](https://mit-license.org)
 [![Stars](https://img.shields.io/github/stars/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/stargazers)
@@ -13,7 +9,11 @@
 [![Vite](https://img.shields.io/badge/Vite-6-6366f1?logo=vite&logoColor=white&labelColor=0e1015)](https://vite.dev)
 [![Built for Upptime](https://img.shields.io/badge/built%20for-Upptime-6366f1?labelColor=0e1015)](https://upptime.js.org)
 
-<img src="docs/screenshot.png" alt="Velvet status page" width="760">
+# Velvet
+
+**A polished, dark, open-source front-end for [Upptime](https://upptime.js.org) status pages.**
+
+<img src="docs/screenshot.png" alt="Velvet status page" width="820">
 
 </div>
 
