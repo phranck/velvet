@@ -1,5 +1,6 @@
 node_modules/
 dist/
 velvet-dist/
+site/public/CNAME
 *.tsbuildinfo
 .DS_Store

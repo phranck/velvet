@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { load } from "js-yaml";
 
 /**
@@ -45,4 +45,11 @@ const config = {
 
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`);
+
+// Preserve a custom domain across deploys: emit a CNAME next to config.json so
+// the build output carries it (otherwise a clean gh-pages deploy drops it).
+if (sw.cname) {
+  writeFileSync(join(dirname(outputPath), "CNAME"), `${sw.cname}\n`);
+  console.log(`velvet: wrote CNAME for ${sw.cname}`);
+}
 console.log(`velvet: wrote ${outputPath} for ${config.owner}/${config.repo}`);
