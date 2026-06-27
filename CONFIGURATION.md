@@ -197,20 +197,38 @@ Built-in defaults (used when you don't override a slug):
 
 ## Separate IPv4 / IPv6 monitoring
 
-Velvet can show a service's IPv4 and IPv6 reachability **side by side in one card**. Add a second check for the same service whose slug is `<base>-ipv6`, with `ipv6: true`. Because GitHub Actions runners are IPv4-only, the IPv6 check must run through [Globalping](https://globalping.io) (`type: globalping`), whose probes are dual-stack.
+A plain check runs from the GitHub runner, which is IPv4-only. To check IPv6, route it through [Globalping](https://globalping.io) (`type: globalping`), whose probes are dual-stack. Choose per service:
+
+**IPv4 only** — a normal check:
 
 ```yaml
-sites:
-  - name: Frontend          # the IPv4 check (runs from the runner)
-    url: https://example.com
-  - name: Frontend IPv6     # name slugifies to "frontend-ipv6"
-    url: https://example.com
-    type: globalping
-    check: http
-    ipv6: true
+- name: Frontend
+  url: https://example.com
 ```
 
-Velvet folds the `<base>-ipv6` entry into the `<base>` service: the card header shows two pills (`IPv4` / `IPv6`) with status dots, and the expanded detail lists both protocols. A `<base>-ipv6` check with no matching base renders as a standalone service.
+**IPv6 only** — one Globalping check; end the name in `IPv6` (slug `<x>-ipv6`) so Velvet shows an `IPv6` pill:
+
+```yaml
+- name: Mail IPv6
+  url: https://mail.example.com
+  type: globalping
+  check: http
+  ipv6: true
+```
+
+**Both, in one card** — the normal check plus a sibling whose slug ends in `-ipv6`:
+
+```yaml
+- name: API
+  url: https://api.example.com
+- name: API IPv6        # slug "api-ipv6" → folded into the "api" card
+  url: https://api.example.com
+  type: globalping
+  check: http
+  ipv6: true
+```
+
+Velvet folds an `<base>-ipv6` entry into its `<base>` service: the card header shows `IPv4` / `IPv6` pills with status dots and the expanded detail lists both protocols. A standalone `<x>-ipv6` (no base) renders as an IPv6-only card; a plain check renders with no protocol pills.
 
 **Requirements:** add a `GLOBALPING_TOKEN` repo secret — register free at globalping.io, create a token under "Tokens" — to lift the rate limit from 250 to 500 checks/hour (cloud runners share IPs, so the unauthenticated limit is easy to hit). Globalping supports HTTP and PING checks only, no POST.
 

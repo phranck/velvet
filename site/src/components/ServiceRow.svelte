@@ -48,6 +48,8 @@
     return "Down";
   }
   const dotColor = $derived(statusColor(service.status));
+  /** An IPv6-only service: a standalone `<x>-ipv6` check with no IPv4 base to fold into. */
+  const isIpv6Only = $derived(!service.ipv6 && service.slug.endsWith("-ipv6"));
 </script>
 
 <div class="row">
@@ -58,6 +60,10 @@
       <span class="protos" aria-label="protocol reachability">
         <span class="proto" style:--c={statusColor(service.status)}>IPv4</span>
         <span class="proto" style:--c={statusColor(service.ipv6.status)}>IPv6</span>
+      </span>
+    {:else if isIpv6Only}
+      <span class="protos" aria-label="protocol reachability">
+        <span class="proto" style:--c={statusColor(service.status)}>IPv6</span>
       </span>
     {/if}
     <span class="uptime mono">{uptime}</span>
@@ -71,6 +77,8 @@
       <div class="proto-detail">
         {#if service.ipv6}
           <span class="proto-tag" style:--c={statusColor(service.status)}>IPv4</span>
+        {:else if isIpv6Only}
+          <span class="proto-tag" style:--c={statusColor(service.status)}>IPv6</span>
         {/if}
         <span class="metric mono"><b>{statusText(service.status)}</b></span>
         <span class="metric mono"><b>{service.time}</b> ms{service.ipv6 ? "" : " avg"}</span>
