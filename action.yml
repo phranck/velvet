@@ -32,6 +32,7 @@ runs:
         node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
         node "$VELVET_SITE/scripts/generate-feed.mjs" "$VELVET_SITE/public/config.json" "$VELVET_SITE/public/incidents.atom"
         npm --prefix "$VELVET_SITE" run build
+        node "$VELVET_SITE/scripts/generate-og.mjs" "$VELVET_SITE/public/config.json" "$(dirname "$VELVET_CONFIG")/history/summary.json" "$VELVET_SITE/dist/og.png"
         node "$VELVET_SITE/scripts/generate-seo.mjs" "$VELVET_SITE/public/config.json" "$VELVET_SITE/dist"
         rm -rf "$VELVET_OUTPUT"
         mkdir -p "$VELVET_OUTPUT"

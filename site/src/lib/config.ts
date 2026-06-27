@@ -63,7 +63,8 @@ export interface VelvetConfig {
   /**
    * Optional SEO overrides. Each field overrides a value that is otherwise
    * auto-derived: `title` → `<name> — Status`, `description` → a line built from
-   * `name`, `image` (og:image) → `logoUrl`. Consumed by the build-time SEO step.
+   * `name`, `image` (og:image) → the auto-generated 1200×630 status card.
+   * Consumed by the build-time SEO step.
    */
   seo?: { title?: string; description?: string; image?: string };
 }

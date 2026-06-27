@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -18,19 +18,23 @@ const config = JSON.parse(readFileSync(configPath, "utf8"));
 const name = config.name ?? config.repo ?? "Status";
 const url = config.url ?? "/";
 
-// `config.seo` holds optional overrides; each falls back to a value auto-derived
-// from the brand name (image falls back to the logo).
+// `config.seo` holds optional overrides; title/description fall back to values
+// auto-derived from the brand name.
 const seo = config.seo ?? {};
 const title = seo.title ?? `${name} — Status`;
 const description = seo.description ?? `Live status and uptime history for ${name}.`;
-const imageSrc = seo.image ?? config.logoUrl ?? null;
 
-/** Absolute og:image URL (relative paths resolved against the site URL). */
-const ogImage = imageSrc
-  ? /^https?:\/\//.test(imageSrc)
-    ? imageSrc
-    : new URL(String(imageSrc).replace(/^\//, ""), url).href
-  : null;
+// Social card: a `seo.image` override (resolved to absolute) wins; otherwise the
+// auto-generated card from generate-og (dist/og.png), when present.
+const cardImage = existsSync(join(distDir, "og.png")) ? `${url}og.png` : null;
+const ogImage = seo.image
+  ? /^https?:\/\//.test(seo.image)
+    ? seo.image
+    : new URL(String(seo.image).replace(/^\//, ""), url).href
+  : cardImage;
+// The generated card has known type + dimensions; advertising them helps iMessage,
+// Slack, etc. render a large preview reliably (and SVG logos are never used).
+const isCard = ogImage !== null && ogImage === cardImage;
 
 /** Escape a value for use inside an HTML/XML double-quoted attribute. */
 const esc = (s) =>
@@ -58,7 +62,18 @@ const tags = [
   `<meta property="og:title" content="${esc(title)}" />`,
   `<meta property="og:description" content="${esc(description)}" />`,
   `<meta property="og:url" content="${esc(url)}" />`,
-  ...(ogImage ? [`<meta property="og:image" content="${esc(ogImage)}" />`] : []),
+  ...(ogImage
+    ? [
+        `<meta property="og:image" content="${esc(ogImage)}" />`,
+        ...(isCard
+          ? [
+              `<meta property="og:image:type" content="image/png" />`,
+              `<meta property="og:image:width" content="1200" />`,
+              `<meta property="og:image:height" content="630" />`,
+            ]
+          : []),
+      ]
+    : []),
   `<meta name="twitter:card" content="${ogImage ? "summary_large_image" : "summary"}" />`,
   `<meta name="twitter:title" content="${esc(title)}" />`,
   `<meta name="twitter:description" content="${esc(description)}" />`,

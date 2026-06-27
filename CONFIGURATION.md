@@ -152,7 +152,7 @@ status-website:
     # seo:
     #   title: "Acme System Status"               # default: "<name> — Status"
     #   description: "Real-time uptime for Acme."  # default: a line built from name
-    #   image: "https://acme.example/og.png"       # default: logoUrl
+    #   image: "https://acme.example/og.png"       # default: the auto-generated status card
     icons:
       frontend: ph-globe
       backend: ph-gear-six
@@ -288,8 +288,11 @@ each deploy Velvet derives the public URL (your `cname`, else the GitHub Pages
 URL) and writes, into the built site:
 
 - a per-deployment `<title>`, meta `description`, `robots: index, follow`,
-  `canonical`, and **Open Graph + Twitter Card** tags (using `status-website.name`
-  and `logoUrl` for the social image),
+  `canonical`, and **Open Graph + Twitter Card** tags,
+- an **auto-generated 1200×630 social card** (`og.png`) that mirrors the page — the
+  brand/logo, the overall status, and the first service with its uptime bar — used
+  as the `og:image` / `twitter:image` (with `og:image:width/height/type` set so
+  iMessage, Slack, etc. render a large preview),
 - a `robots.txt` that allows all crawlers and points at the sitemap,
 - a `sitemap.xml`.
 
@@ -306,7 +309,7 @@ status-website:
     seo:
       title: "Acme System Status"               # default: "<name> — Status"
       description: "Real-time uptime for Acme."  # default: a line built from name
-      image: "https://acme.example/og.png"       # default: logoUrl (use a 1200×630 image for best social cards)
+      image: "https://acme.example/og.png"       # default: the auto-generated 1200×630 status card
 ```
 
 ---
