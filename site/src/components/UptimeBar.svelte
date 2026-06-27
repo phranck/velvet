@@ -58,7 +58,7 @@
     position: relative;
     flex: 1 1 0;
     min-width: 2px;
-    border-radius: 2px;
+    border-radius: 999px;
     background:
       linear-gradient(
         180deg,

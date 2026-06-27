@@ -249,7 +249,7 @@
   .range-bar {
     display: flex;
     align-items: center;
-    margin: 6px 18px 2px;
+    margin: 6px 32px 2px;
   }
   .gname {
     flex: 1;
@@ -282,7 +282,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 18px 22px;
+    padding: 18px 32px;
     font-size: 14px;
     color: var(--text-faint);
   }
