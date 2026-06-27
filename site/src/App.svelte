@@ -20,7 +20,19 @@
   let incidents = $state<Incident[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
-  let range = $state<RangeKey>("year");
+  const RANGE_STORAGE_KEY = "velvet:range";
+  function initialRange(): RangeKey {
+    try {
+      const stored = localStorage.getItem(RANGE_STORAGE_KEY);
+      if (stored === "day" || stored === "week" || stored === "month" || stored === "year") {
+        return stored;
+      }
+    } catch {
+      // localStorage may be unavailable (private mode); use the default below.
+    }
+    return "year";
+  }
+  let range = $state<RangeKey>(initialRange());
 
   const today = new Date().toISOString().slice(0, 10);
   const updated = new Date().toLocaleString();
@@ -39,6 +51,15 @@
   };
 
   const overall = $derived(overallStatus(services));
+
+  // Persist the selected range so it survives reloads.
+  $effect(() => {
+    try {
+      localStorage.setItem(RANGE_STORAGE_KEY, range);
+    } catch {
+      // ignore persistence failures (private mode / disabled storage)
+    }
+  });
 
   onMount(async () => {
     try {
@@ -109,8 +130,9 @@
   {/if}
 
   <footer class="foot">
-    Powered by <a href="https://github.com/phranck/velvet">Velvet</a> +
-    <a href="https://upptime.js.org">Upptime</a>
+    Powered by
+    <a href="https://github.com/phranck/velvet" target="_blank" rel="noopener noreferrer">Velvet</a> +
+    <a href="https://upptime.js.org" target="_blank" rel="noopener noreferrer">Upptime</a>
   </footer>
 </main>
 
