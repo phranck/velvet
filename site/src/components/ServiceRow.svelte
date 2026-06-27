@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { slide } from "svelte/transition";
   import type { DayStatus, RangeKey, ServiceStatus, ServiceSummary } from "../lib/types";
   import UptimeBar from "./UptimeBar.svelte";
 
@@ -74,30 +73,32 @@
 
   <UptimeBar {days} {rangeLabel} {range} />
 
-  {#if open}
-    <div class="detail" transition:slide={{ duration: 180 }}>
-      <div class="proto-detail">
-        {#if service.ipv6}
-          <span class="proto-tag" style:--c={statusColor(service.status)}>IPv4</span>
-        {:else if isIpv6Only}
-          <span class="proto-tag" style:--c={statusColor(service.status)}>IPv6</span>
-        {/if}
-        <span class="metric mono"><b>{statusText(service.status)}</b></span>
-        <span class="metric mono"><b>{service.time}</b> ms{service.ipv6 ? "" : " avg"}</span>
-        <a class="metric link" href={service.url} target="_blank" rel="noreferrer">{service.url}</a>
-      </div>
-      {#if service.ipv6}
+  <div class="detail-wrap" class:open>
+    <div class="detail-clip">
+      <div class="detail" inert={!open}>
         <div class="proto-detail">
-          <span class="proto-tag" style:--c={statusColor(service.ipv6.status)}>IPv6</span>
-          <span class="metric mono"><b>{statusText(service.ipv6.status)}</b></span>
-          <span class="metric mono"><b>{service.ipv6.time}</b> ms</span>
-          <a class="metric link" href={service.ipv6.url} target="_blank" rel="noreferrer"
-            >{service.ipv6.url}</a
-          >
+          {#if service.ipv6}
+            <span class="proto-tag" style:--c={statusColor(service.status)}>IPv4</span>
+          {:else if isIpv6Only}
+            <span class="proto-tag" style:--c={statusColor(service.status)}>IPv6</span>
+          {/if}
+          <span class="metric mono"><b>{statusText(service.status)}</b></span>
+          <span class="metric mono"><b>{service.time}</b> ms{service.ipv6 ? "" : " avg"}</span>
+          <a class="metric link" href={service.url} target="_blank" rel="noreferrer">{service.url}</a>
         </div>
-      {/if}
+        {#if service.ipv6}
+          <div class="proto-detail">
+            <span class="proto-tag" style:--c={statusColor(service.ipv6.status)}>IPv6</span>
+            <span class="metric mono"><b>{statusText(service.ipv6.status)}</b></span>
+            <span class="metric mono"><b>{service.ipv6.time}</b> ms</span>
+            <a class="metric link" href={service.ipv6.url} target="_blank" rel="noreferrer"
+              >{service.ipv6.url}</a
+            >
+          </div>
+        {/if}
+      </div>
     </div>
-  {/if}
+  </div>
 </div>
 
 <style>
@@ -174,6 +175,19 @@
     height: 6px;
     border-radius: 50%;
     background: var(--c);
+  }
+  /* Expand/collapse via grid-template-rows: browser-native and smooth, no JS height tween. */
+  .detail-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .detail-wrap.open {
+    grid-template-rows: 1fr;
+  }
+  .detail-clip {
+    overflow: hidden;
+    min-height: 0;
   }
   .detail {
     display: flex;
