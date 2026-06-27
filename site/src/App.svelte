@@ -134,6 +134,7 @@
         days={barsForRange(svc, range, today, monitoringStart)}
         uptime={uptimeForRange(svc, range, today, monitoringStart)}
         rangeLabel={RANGE_LABEL[range]}
+        {range}
       />
     {/snippet}
 

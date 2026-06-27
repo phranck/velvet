@@ -1,6 +1,6 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import type { DayStatus, ServiceStatus, ServiceSummary } from "../lib/types";
+  import type { DayStatus, RangeKey, ServiceStatus, ServiceSummary } from "../lib/types";
   import UptimeBar from "./UptimeBar.svelte";
 
   let {
@@ -8,12 +8,14 @@
     days,
     uptime,
     rangeLabel,
+    range,
     icon,
   }: {
     service: ServiceSummary;
     days: DayStatus[];
     uptime: string;
     rangeLabel: string;
+    range: RangeKey;
     icon: string;
   } = $props();
 
@@ -70,7 +72,7 @@
     <i class="ph-duotone ph-caret-down chev" class:open aria-hidden="true"></i>
   </button>
 
-  <UptimeBar {days} {rangeLabel} />
+  <UptimeBar {days} {rangeLabel} {range} />
 
   {#if open}
     <div class="detail" transition:slide={{ duration: 180 }}>

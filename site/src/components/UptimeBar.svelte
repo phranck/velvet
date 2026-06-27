@@ -1,7 +1,12 @@
 <script lang="ts">
-  import type { DayStatus } from "../lib/types";
+  import { fade } from "svelte/transition";
+  import type { DayStatus, RangeKey } from "../lib/types";
 
-  let { days, rangeLabel }: { days: DayStatus[]; rangeLabel: string } = $props();
+  let {
+    days,
+    rangeLabel,
+    range,
+  }: { days: DayStatus[]; rangeLabel: string; range: RangeKey } = $props();
 
   function color(status: DayStatus["status"]): string {
     if (status === "up") return "var(--accent)";
@@ -37,10 +42,20 @@
   }
 </script>
 
-<div class="bar">
-  {#each days as d (d.date)}
-    <span class="seg" class:ghost={!d.hasData} style:--c={color(d.status)} data-tip={tip(d)}></span>
-  {/each}
+<div class="bar-wrap">
+  {#key range}
+    <div
+      class="bar"
+      class:rounded={range === "quarter"}
+      in:fade={{ duration: 220 }}
+      out:fade={{ duration: 220 }}
+    >
+      {#each days as d (d.date)}
+        <span class="seg" class:ghost={!d.hasData} style:--c={color(d.status)} data-tip={tip(d)}
+        ></span>
+      {/each}
+    </div>
+  {/key}
 </div>
 <div class="labels mono">
   <span>{rangeLabel}</span>
@@ -48,17 +63,26 @@
 </div>
 
 <style>
-  .bar {
-    display: flex;
-    gap: 2px;
+  .bar-wrap {
+    position: relative;
     height: 32px;
     margin-top: 11px;
+  }
+  /* Bars are absolutely stacked so the old + new set cross-fade in place on a range switch. */
+  .bar {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    gap: 2px;
+  }
+  .bar.rounded .seg {
+    border-radius: 999px;
   }
   .seg {
     position: relative;
     flex: 1 1 0;
     min-width: 2px;
-    border-radius: 999px;
+    border-radius: 2px;
     background:
       linear-gradient(
         180deg,
