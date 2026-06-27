@@ -17,7 +17,7 @@
 
 </div>
 
-Indigo-monochrome, selectable uptime history (24h–1yr), Phosphor duotone icons, live data straight from your Upptime repo — no server required.
+Indigo-monochrome, selectable uptime history (24h–1yr), optional per-service IPv4/IPv6 cards, Phosphor duotone icons, live data straight from your Upptime repo — no server required.
 
 ## How it works
 
