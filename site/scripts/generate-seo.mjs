@@ -17,14 +17,19 @@ const config = JSON.parse(readFileSync(configPath, "utf8"));
 
 const name = config.name ?? config.repo ?? "Status";
 const url = config.url ?? "/";
-const title = `${name} — Status`;
-const description = `Live status and uptime history for ${name}.`;
 
-/** Absolute og:image URL from the consumer's logo (relative paths resolved against the site URL). */
-const ogImage = config.logoUrl
-  ? /^https?:\/\//.test(config.logoUrl)
-    ? config.logoUrl
-    : new URL(String(config.logoUrl).replace(/^\//, ""), url).href
+// `config.seo` holds optional overrides; each falls back to a value auto-derived
+// from the brand name (image falls back to the logo).
+const seo = config.seo ?? {};
+const title = seo.title ?? `${name} — Status`;
+const description = seo.description ?? `Live status and uptime history for ${name}.`;
+const imageSrc = seo.image ?? config.logoUrl ?? null;
+
+/** Absolute og:image URL (relative paths resolved against the site URL). */
+const ogImage = imageSrc
+  ? /^https?:\/\//.test(imageSrc)
+    ? imageSrc
+    : new URL(String(imageSrc).replace(/^\//, ""), url).href
   : null;
 
 /** Escape a value for use inside an HTML/XML double-quoted attribute. */

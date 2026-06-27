@@ -46,6 +46,14 @@ const siteUrl = (() => {
     : `https://${owner}.github.io/${rc.repo}/`;
 })();
 
+// SEO overrides (all optional). Only the fields the consumer set are emitted; the
+// rest fall back to auto-derived values in generate-seo.mjs.
+const seo = {};
+for (const key of ["title", "description", "image"]) {
+  const value = velvet.seo?.[key];
+  if (typeof value === "string" && value.trim()) seo[key] = value.trim();
+}
+
 const config = {
   owner: rc.owner,
   repo: rc.repo,
@@ -77,6 +85,7 @@ const config = {
   ...(typeof velvet.googleAnalytics === "string" && velvet.googleAnalytics.trim()
     ? { googleAnalytics: velvet.googleAnalytics.trim() }
     : {}),
+  ...(Object.keys(seo).length ? { seo } : {}),
 };
 
 mkdirSync(dirname(outputPath), { recursive: true });

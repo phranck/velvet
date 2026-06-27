@@ -148,6 +148,11 @@ status-website:
     #   websiteId: "xxxxxxxx-xxxx-xxxx-xxxx"
     #   src: "https://analytics.example.com/script.js"
     # googleAnalytics: "G-XXXXXXXXXX"
+    # SEO overrides (optional) — every field is auto-derived by default:
+    # seo:
+    #   title: "Acme System Status"               # default: "<name> — Status"
+    #   description: "Real-time uptime for Acme."  # default: a line built from name
+    #   image: "https://acme.example/og.png"       # default: logoUrl
     icons:
       frontend: ph-globe
       backend: ph-gear-six
@@ -168,6 +173,7 @@ status-website:
 | `dataBranch` | `main` | Branch the monitoring data (`history/summary.json`) lives on. |
 | `umami` | _(off)_ | [Umami](https://umami.is) analytics. An object with `websiteId` (the site's `data-website-id`) and `src` (full tracking-script URL, e.g. `https://analytics.example.com/script.js`). **Both** are required; the tracker loads only when both are set. |
 | `googleAnalytics` | _(off)_ | Google Analytics 4 measurement ID (e.g. `G-XXXXXXXXXX`). The tracker loads when set. |
+| `seo` | _(auto)_ | Overrides for the auto-generated SEO (see [SEO & crawlers](#seo--crawlers)). An object with optional `title`, `description`, and `image` (og:image). Each defaults to an auto-derived value, so set only the ones you want to change. |
 | `icons` | _(built-ins)_ | Per-slug Phosphor icon overrides. See [Icons](#icons). |
 
 > **Font note.** `fontSans`/`fontMono` only change the CSS font-family. Velvet
@@ -290,6 +296,18 @@ URL) and writes, into the built site:
 Because Velvet is a client-rendered app, these static tags are what non-JS
 crawlers and social-card scrapers read; JS-capable crawlers (e.g. Googlebot)
 additionally render the live status content.
+
+**Overrides.** Everything above is auto-derived; you only override what you want
+to change via the [`velvet.seo`](#status-websitevelvet--velvet-appearance) block:
+
+```yaml
+status-website:
+  velvet:
+    seo:
+      title: "Acme System Status"               # default: "<name> — Status"
+      description: "Real-time uptime for Acme."  # default: a line built from name
+      image: "https://acme.example/og.png"       # default: logoUrl (use a 1200×630 image for best social cards)
+```
 
 ---
 
