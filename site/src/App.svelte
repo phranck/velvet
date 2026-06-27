@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import {
     barsForRange,
     fetchIncidents,
@@ -87,20 +87,82 @@
       // ignore persistence failures (private mode / disabled storage)
     }
   }
+  // Expand/collapse motion. FLIP keeps it on the GPU: animating the panel's height
+  // (or grid-template-rows) relayouts the whole page every frame and drops frames;
+  // instead the height snaps instantly and we tween the resulting position shift with
+  // transform/opacity, which the compositor handles without touching layout.
+  const FLIP_MS = 260;
+  const FLIP_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+  const prefersReducedMotion = (): boolean =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /**
+   * Apply an open-state change and animate the resulting layout shift on the GPU.
+   *
+   * FLIP (First, Last, Invert, Play): snapshot each list item's top, let the DOM
+   * settle (the card height snaps instantly), then tween every moved item from its
+   * old position to its new one via `transform: translateY`, and fade in any panel
+   * that just opened so the transient overlap during the slide is masked. Honours
+   * `prefers-reduced-motion` by applying the change without animating.
+   *
+   * @param apply - mutates `openMap` (and persists); runs between the two snapshots.
+   */
+  async function flipToggle(apply: () => void): Promise<void> {
+    const selector = config?.layout === "cards" ? ".card" : ".row";
+    const items = Array.from(document.querySelectorAll<HTMLElement>(selector));
+    if (prefersReducedMotion() || items.length === 0) {
+      apply();
+      return;
+    }
+    // Settle any in-flight FLIP so getBoundingClientRect reads true (untransformed) tops.
+    for (const el of items) {
+      for (const anim of el.getAnimations()) anim.finish();
+    }
+    const firstTop = items.map((el) => el.getBoundingClientRect().top);
+    const wasOpen = items.map(
+      (el) => el.querySelector(".detail-wrap")?.classList.contains("open") === true,
+    );
+
+    apply();
+    await tick();
+
+    for (let i = 0; i < items.length; i++) {
+      const el = items[i];
+      const dy = firstTop[i] - el.getBoundingClientRect().top;
+      if (dy !== 0) {
+        el.animate(
+          [{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }],
+          { duration: FLIP_MS, easing: FLIP_EASE },
+        );
+      }
+      const nowOpen = el.querySelector(".detail-wrap")?.classList.contains("open") === true;
+      if (nowOpen && !wasOpen[i]) {
+        el.querySelector<HTMLElement>(".detail")?.animate(
+          [{ opacity: 0 }, { opacity: 1 }],
+          { duration: FLIP_MS - 60, easing: FLIP_EASE, fill: "backwards" },
+        );
+      }
+    }
+  }
+
   /** Toggle a single card and persist its new state. */
   function toggleOne(slug: string): void {
-    const next = !openMap[slug];
-    openMap = { ...openMap, [slug]: next };
-    persistOpen(slug, next);
+    flipToggle(() => {
+      const next = !openMap[slug];
+      openMap = { ...openMap, [slug]: next };
+      persistOpen(slug, next);
+    });
   }
   /** Expand (or collapse) every service card at once. */
   function setAllOpen(isOpen: boolean): void {
-    const next: Record<string, boolean> = { ...openMap };
-    for (const svc of services) {
-      next[svc.slug] = isOpen;
-      persistOpen(svc.slug, isOpen);
-    }
-    openMap = next;
+    flipToggle(() => {
+      const next: Record<string, boolean> = { ...openMap };
+      for (const svc of services) {
+        next[svc.slug] = isOpen;
+        persistOpen(svc.slug, isOpen);
+      }
+      openMap = next;
+    });
   }
   /** True only when every card is expanded — drives the toggle-all icon + action. */
   const allOpen = $derived(services.length > 0 && services.every((s) => openMap[s.slug] === true));

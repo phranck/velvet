@@ -162,11 +162,12 @@
     border-radius: 50%;
     background: var(--c);
   }
-  /* Expand/collapse via grid-template-rows: browser-native and smooth, no JS height tween. */
+  /* The open/closed height snaps instantly here (no transition); App.svelte's FLIP
+     animates the resulting position shift on the GPU via transform, so nothing
+     relayouts mid-animation. Animating grid-template-rows itself drops frames. */
   .detail-wrap {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 0.26s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .detail-wrap.open {
     grid-template-rows: 1fr;
