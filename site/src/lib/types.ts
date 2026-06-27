@@ -30,6 +30,8 @@ export interface DayStatus {
   date: string;
   status: ServiceStatus;
   minutesDown: number;
+  /** False for days before monitoring began — rendered as a faint "ghost" bar. */
+  hasData: boolean;
 }
 
 /** An open incident or maintenance window, sourced from GitHub Issues. */

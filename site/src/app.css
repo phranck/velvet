@@ -31,13 +31,63 @@ body {
 
 body {
   min-height: 100vh;
-  background: radial-gradient(120% 80% at 50% -10%, #1a1d2b 0%, #0c0d12 42%, #0a0b0f 100%) no-repeat
-    fixed;
+  background-color: #0a0b0f;
+  background-image:
+    radial-gradient(
+      52% 44% at 12% 0%,
+      color-mix(in srgb, var(--accent) 13%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      46% 40% at 88% 4%,
+      color-mix(in srgb, var(--accent-bright) 10%, transparent),
+      transparent 64%
+    ),
+    radial-gradient(
+      80% 60% at 50% 110%,
+      color-mix(in srgb, var(--accent) 8%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(125% 85% at 50% -12%, #1c2033 0%, #0e1018 46%, #0a0b0f 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--text);
   font-size: 18px;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* A slow, very subtle drifting glow so the backdrop breathes instead of sitting flat. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    40% 34% at 28% 18%,
+    color-mix(in srgb, var(--accent-bright) 8%, transparent),
+    transparent 70%
+  );
+  animation: velvet-drift 24s ease-in-out infinite alternate;
+}
+
+@keyframes velvet-drift {
+  from {
+    transform: translate3d(-4%, -2%, 0);
+    opacity: 0.55;
+  }
+  to {
+    transform: translate3d(6%, 3%, 0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
 }
 
 a {

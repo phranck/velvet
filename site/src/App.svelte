@@ -4,6 +4,7 @@
     RANGE_DAYS,
     dailyBars,
     fetchIncidents,
+    fetchMonitoringStart,
     fetchSummary,
     overallStatus,
     uptimeForRange,
@@ -18,6 +19,7 @@
   let config = $state<VelvetConfig | null>(null);
   let services = $state<ServiceSummary[]>([]);
   let incidents = $state<Incident[]>([]);
+  let monitoringStart = $state<string | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
   const RANGE_STORAGE_KEY = "velvet:range";
@@ -66,12 +68,14 @@
       const cfg = await loadConfig();
       applyTheme(cfg);
       config = cfg;
-      const [s, i] = await Promise.all([
+      const [s, i, start] = await Promise.all([
         fetchSummary(cfg.owner, cfg.repo, cfg.dataBranch),
         fetchIncidents(cfg.owner, cfg.repo),
+        fetchMonitoringStart(cfg.owner, cfg.repo),
       ]);
       services = s;
       incidents = i;
+      monitoringStart = start;
     } catch (e) {
       error = (e as Error).message;
     } finally {
@@ -120,7 +124,7 @@
         <ServiceRow
           service={svc}
           icon={iconFor(svc.slug, config.icons)}
-          days={dailyBars(svc, RANGE_DAYS[range], today)}
+          days={dailyBars(svc, RANGE_DAYS[range], today, monitoringStart)}
           uptime={uptimeForRange(svc, range)}
           rangeLabel={RANGE_LABEL[range]}
         />
@@ -158,17 +162,10 @@
     font-weight: 600;
     font-size: 17px;
   }
-  .mark {
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, var(--accent-bright), var(--accent));
-    box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 40%, transparent);
-  }
   .logo {
-    height: 26px;
+    height: 32px;
     width: auto;
-    max-width: 220px;
+    max-width: 240px;
     display: block;
   }
   .spacer {

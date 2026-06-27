@@ -71,6 +71,42 @@ export async function fetchIncidents(owner: string, repo: string): Promise<Incid
 }
 
 /**
+ * Fetch the repo's creation date as the monitoring-start boundary, cached forever
+ * in localStorage (it never changes). Days before this render as ghost bars.
+ *
+ * @param owner - GitHub owner of the monitoring repo
+ * @param repo - monitoring repo name
+ * @returns ISO date (YYYY-MM-DD) the repo was created, or null on failure.
+ */
+export async function fetchMonitoringStart(owner: string, repo: string): Promise<string | null> {
+  const key = `velvet:created:${owner}/${repo}`;
+  try {
+    const cached = localStorage.getItem(key);
+    if (cached) return cached;
+  } catch {
+    // localStorage unavailable; fall through to a network lookup.
+  }
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: { Accept: "application/vnd.github+json" },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { created_at?: string };
+    const created = data.created_at?.slice(0, 10) ?? null;
+    if (created) {
+      try {
+        localStorage.setItem(key, created);
+      } catch {
+        // ignore persistence failures
+      }
+    }
+    return created;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Derive the most severe day status from minutes-down, for one bar segment.
  *
  * @param minutesDown - minutes the service was down on a given day
@@ -88,17 +124,24 @@ function gradeDay(minutesDown: number): ServiceStatus {
  * @param service - the service summary holding `dailyMinutesDown`
  * @param days - how many trailing days to include (oldest first)
  * @param today - ISO date string for "today" (injected so the build stays deterministic and testable)
+ * @param monitoringStart - ISO date monitoring began; earlier days are flagged `hasData: false` (ghost bars)
  * @returns one {@link DayStatus} per day, oldest → newest
  */
-export function dailyBars(service: ServiceSummary, days: number, today: string): DayStatus[] {
+export function dailyBars(
+  service: ServiceSummary,
+  days: number,
+  today: string,
+  monitoringStart?: string | null,
+): DayStatus[] {
   const end = new Date(`${today}T00:00:00Z`);
   const out: DayStatus[] = [];
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(end);
     d.setUTCDate(end.getUTCDate() - i);
     const date = d.toISOString().slice(0, 10);
+    const hasData = !monitoringStart || date >= monitoringStart;
     const minutesDown = service.dailyMinutesDown[date] ?? 0;
-    out.push({ date, status: gradeDay(minutesDown), minutesDown });
+    out.push({ date, status: gradeDay(minutesDown), minutesDown, hasData });
   }
   return out;
 }

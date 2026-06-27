@@ -35,7 +35,7 @@
     <i class="ph-duotone {icon} svc-ico" style:color={dotColor} aria-hidden="true"></i>
     <span class="name">{service.name}</span>
     <span class="uptime mono">{uptime}</span>
-    <i class="ph-bold {open ? 'ph-caret-up' : 'ph-caret-down'} chev" aria-hidden="true"></i>
+    <i class="ph-duotone {open ? 'ph-caret-up' : 'ph-caret-down'} chev" aria-hidden="true"></i>
   </button>
 
   <UptimeBar {days} {rangeLabel} />
@@ -85,9 +85,13 @@
     color: var(--text-muted);
   }
   .chev {
-    font-size: 15px;
-    color: var(--text-faint);
+    font-size: 17px;
+    color: var(--text-muted);
     margin-left: 12px;
+    transition: color 0.12s ease;
+  }
+  .top:hover .chev {
+    color: var(--accent-bright);
   }
   .detail {
     display: flex;
