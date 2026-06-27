@@ -9,6 +9,8 @@
     rangeLabel,
     range,
     icon,
+    open,
+    onToggle,
   }: {
     service: ServiceSummary;
     days: DayStatus[];
@@ -16,25 +18,9 @@
     rangeLabel: string;
     range: RangeKey;
     icon: string;
+    open: boolean;
+    onToggle: () => void;
   } = $props();
-
-  // Persist each card's expanded/collapsed state per service slug so it survives reloads.
-  const openStorageKey = (): string => `velvet:open:${service.slug}`;
-  function initialOpen(): boolean {
-    try {
-      return localStorage.getItem(openStorageKey()) === "1";
-    } catch {
-      return false;
-    }
-  }
-  let open = $state(initialOpen());
-  $effect(() => {
-    try {
-      localStorage.setItem(openStorageKey(), open ? "1" : "0");
-    } catch {
-      // ignore persistence failures (private mode / disabled storage)
-    }
-  });
 
   /** Status colour: bright accent when up, amber when degraded, red when down. */
   function statusColor(status: ServiceStatus): string {
@@ -54,7 +40,7 @@
 </script>
 
 <div class="row">
-  <button class="top" onclick={() => (open = !open)} aria-expanded={open}>
+  <button class="top" onclick={onToggle} aria-expanded={open}>
     <i class="ph-duotone {icon} svc-ico" style:color={dotColor} aria-hidden="true"></i>
     <span class="name">{service.name}</span>
     {#if service.ipv6}

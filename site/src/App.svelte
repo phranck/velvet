@@ -72,6 +72,36 @@
     }
   });
 
+  // Per-service expand/collapse state, lifted here so the "expand/collapse all"
+  // control can drive every card at once. Each card still toggles on its own;
+  // the state is persisted per service slug across reloads.
+  let openMap = $state<Record<string, boolean>>({});
+  const openKey = (slug: string): string => `velvet:open:${slug}`;
+  function persistOpen(slug: string, isOpen: boolean): void {
+    try {
+      localStorage.setItem(openKey(slug), isOpen ? "1" : "0");
+    } catch {
+      // ignore persistence failures (private mode / disabled storage)
+    }
+  }
+  /** Toggle a single card and persist its new state. */
+  function toggleOne(slug: string): void {
+    const next = !openMap[slug];
+    openMap = { ...openMap, [slug]: next };
+    persistOpen(slug, next);
+  }
+  /** Expand (or collapse) every service card at once. */
+  function setAllOpen(isOpen: boolean): void {
+    const next: Record<string, boolean> = { ...openMap };
+    for (const svc of services) {
+      next[svc.slug] = isOpen;
+      persistOpen(svc.slug, isOpen);
+    }
+    openMap = next;
+  }
+  /** True only when every card is expanded — drives the toggle-all icon + action. */
+  const allOpen = $derived(services.length > 0 && services.every((s) => openMap[s.slug] === true));
+
   onMount(async () => {
     try {
       const cfg = await loadConfig();
@@ -86,6 +116,16 @@
       services = groupByProtocol(s);
       incidents = i;
       monitoringStart = start;
+      // Seed each card's open state from its persisted per-slug value.
+      const seeded: Record<string, boolean> = {};
+      for (const svc of services) {
+        try {
+          seeded[svc.slug] = localStorage.getItem(openKey(svc.slug)) === "1";
+        } catch {
+          seeded[svc.slug] = false;
+        }
+      }
+      openMap = seeded;
     } catch (e) {
       error = (e as Error).message;
     } finally {
@@ -127,6 +167,20 @@
       </div>
     {/snippet}
 
+    {#snippet toggleAllBtn()}
+      <button
+        class="toggle-all"
+        onclick={() => setAllOpen(!allOpen)}
+        title={allOpen ? "Collapse all" : "Expand all"}
+        aria-label={allOpen ? "Collapse all" : "Expand all"}
+      >
+        <i
+          class="ph-duotone {allOpen ? 'ph-arrows-in-line-vertical' : 'ph-arrows-out-line-vertical'}"
+          aria-hidden="true"
+        ></i>
+      </button>
+    {/snippet}
+
     {#snippet serviceRow(svc: ServiceSummary, cfg: VelvetConfig)}
       <ServiceRow
         service={svc}
@@ -135,6 +189,8 @@
         uptime={uptimeForRange(svc, range, today, monitoringStart)}
         rangeLabel={RANGE_LABEL[range]}
         {range}
+        open={openMap[svc.slug] === true}
+        onToggle={() => toggleOne(svc.slug)}
       />
     {/snippet}
 
@@ -142,6 +198,7 @@
       <div class="range-bar">
         <span class="gname">{config.name.toUpperCase()}</span>
         {@render rangeButtons()}
+        {@render toggleAllBtn()}
       </div>
       {#each services as svc (svc.slug)}
         <section class="card">
@@ -153,6 +210,7 @@
         <div class="group-head">
           <span class="gname">{config.name.toUpperCase()}</span>
           {@render rangeButtons()}
+          {@render toggleAllBtn()}
         </div>
         {#each services as svc (svc.slug)}
           {@render serviceRow(svc, config)}
@@ -274,6 +332,28 @@
     cursor: pointer;
   }
   .ranges button.on {
+    color: var(--accent-bright);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  /* Expand/collapse-all control, sitting just right of the range selector. */
+  .toggle-all {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    padding: 3px 6px;
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    color: var(--text-faint);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      color 0.12s ease,
+      background 0.12s ease;
+  }
+  .toggle-all:hover {
     color: var(--accent-bright);
     background: color-mix(in srgb, var(--accent) 16%, transparent);
   }
