@@ -2,7 +2,6 @@
 
 [![Release](https://img.shields.io/github/v/tag/phranck/velvet?sort=semver&label=release&color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/releases)
 [![License](https://img.shields.io/github/license/phranck/velvet?color=6366f1&labelColor=0e1015)](https://layered.mit-license.org)
-[![Stars](https://img.shields.io/github/stars/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/commits)
 [![Issues](https://img.shields.io/github/issues/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/issues)
 [![Svelte](https://img.shields.io/badge/Svelte-5-6366f1?logo=svelte&logoColor=white&labelColor=0e1015)](https://svelte.dev)
