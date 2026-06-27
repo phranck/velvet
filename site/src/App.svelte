@@ -42,7 +42,8 @@
   let range = $state<RangeKey>(initialRange());
 
   const today = new Date().toISOString().slice(0, 10);
-  const updated = new Date().toLocaleString();
+  // Format in the visitor's own locale (browser language) rather than a fixed one.
+  const updated = new Date().toLocaleString(navigator.language);
 
   const RANGES: { key: RangeKey; label: string }[] = [
     { key: "day", label: "24h" },
@@ -179,7 +180,7 @@
   .page {
     max-width: 760px;
     margin: 0 auto;
-    padding: 0 0 40px;
+    padding: 0;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
