@@ -35,9 +35,21 @@ const normalizeRange = (value) => {
   return RANGE_LABEL_TO_KEY[v] ?? "month";
 };
 
+// Canonical public URL of the status page: the custom domain when set, otherwise
+// the GitHub Pages URL (an org/user page when the repo is `<owner>.github.io`,
+// else a project page). Powers the SEO canonical/og:url tags and the sitemap.
+const siteUrl = (() => {
+  if (sw.cname) return `https://${sw.cname}/`;
+  const owner = String(rc.owner).toLowerCase();
+  return String(rc.repo).toLowerCase() === `${owner}.github.io`
+    ? `https://${owner}.github.io/`
+    : `https://${owner}.github.io/${rc.repo}/`;
+})();
+
 const config = {
   owner: rc.owner,
   repo: rc.repo,
+  url: siteUrl,
   dataBranch: velvet.dataBranch ?? "main",
   name: sw.name ?? rc.repo,
   logoUrl: sw.logoUrl,

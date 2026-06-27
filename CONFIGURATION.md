@@ -275,6 +275,24 @@ issue titles. No configuration required.
 
 ---
 
+## SEO & crawlers
+
+The page is fully indexable out of the box — **no configuration required**. On
+each deploy Velvet derives the public URL (your `cname`, else the GitHub Pages
+URL) and writes, into the built site:
+
+- a per-deployment `<title>`, meta `description`, `robots: index, follow`,
+  `canonical`, and **Open Graph + Twitter Card** tags (using `status-website.name`
+  and `logoUrl` for the social image),
+- a `robots.txt` that allows all crawlers and points at the sitemap,
+- a `sitemap.xml`.
+
+Because Velvet is a client-rendered app, these static tags are what non-JS
+crawlers and social-card scrapers read; JS-capable crawlers (e.g. Googlebot)
+additionally render the live status content.
+
+---
+
 ## Full Upptime reference
 
 For monitoring options Velvet doesn't touch — schedules, notification channels

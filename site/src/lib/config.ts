@@ -21,6 +21,8 @@ export interface VelvetConfig {
   owner: string;
   /** Repository name of the Upptime monitoring repo. */
   repo: string;
+  /** Canonical public URL of the status page (custom domain or GitHub Pages URL); drives SEO tags. */
+  url?: string;
   /** Branch the monitoring data (`history/summary.json`) lives on. */
   dataBranch: string;
   /** Brand name shown in the navbar. */
