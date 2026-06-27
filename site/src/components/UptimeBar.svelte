@@ -83,6 +83,7 @@
     bottom: calc(100% + 9px);
     transform: translateX(-50%);
     white-space: pre;
+    width: max-content;
     text-align: center;
     line-height: 1.5;
     padding: 7px 12px;
