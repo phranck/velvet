@@ -1,7 +1,7 @@
 <div align="center">
 
 [![Release](https://img.shields.io/github/v/tag/phranck/velvet?sort=semver&label=release&color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/releases)
-[![License](https://img.shields.io/github/license/phranck/velvet?color=6366f1&labelColor=0e1015)](https://mit-license.org)
+[![License](https://img.shields.io/github/license/phranck/velvet?color=6366f1&labelColor=0e1015)](https://layered.mit-license.org)
 [![Stars](https://img.shields.io/github/stars/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/commits)
 [![Issues](https://img.shields.io/github/issues/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/issues)
@@ -99,4 +99,4 @@ npm run build # → site/dist
 
 ## License
 
-This repository has been published under the [MIT](https://mit-license.org) license.
+This repository has been published under the [MIT](https://layered.mit-license.org) license.
