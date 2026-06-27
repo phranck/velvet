@@ -10,6 +10,7 @@
     uptimeForRange,
   } from "./lib/data";
   import { applyTheme, loadConfig, type VelvetConfig } from "./lib/config";
+  import { injectAnalytics } from "./lib/analytics";
   import { iconFor } from "./lib/icons";
   import type { Incident, RangeKey, ServiceSummary } from "./lib/types";
   import StatusHero from "./components/StatusHero.svelte";
@@ -171,6 +172,7 @@
     try {
       const cfg = await loadConfig();
       applyTheme(cfg);
+      injectAnalytics(cfg);
       // Honour the configured default range, but only for first-time visitors —
       // an explicit earlier choice (in localStorage) always wins.
       if (storedRange() === null) {

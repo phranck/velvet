@@ -49,6 +49,15 @@ export interface VelvetConfig {
   };
   /** Per-service-slug Phosphor icon class overrides (merged over the defaults). */
   icons: Record<string, string>;
+  /**
+   * Umami web analytics. Both fields are required to load the tracker; the whole
+   * block is omitted from `config.json` when not configured.
+   * @property websiteId - the Umami site's `data-website-id`
+   * @property src - full URL of the Umami tracking script (e.g. `https://analytics.example.com/script.js`)
+   */
+  umami?: { websiteId: string; src: string };
+  /** Google Analytics 4 measurement ID (e.g. `G-XXXXXXXXXX`); absent when not configured. */
+  googleAnalytics?: string;
 }
 
 const DEFAULTS: Omit<VelvetConfig, "owner" | "repo"> = {

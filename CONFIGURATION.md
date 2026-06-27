@@ -143,6 +143,11 @@ status-website:
     # fontSans: "Inter"
     # fontMono: "JetBrains Mono"
     # dataBranch: main
+    # Analytics (optional) — a tracker is injected only when configured:
+    # umami:
+    #   websiteId: "xxxxxxxx-xxxx-xxxx-xxxx"
+    #   src: "https://analytics.example.com/script.js"
+    # googleAnalytics: "G-XXXXXXXXXX"
     icons:
       frontend: ph-globe
       backend: ph-gear-six
@@ -161,6 +166,8 @@ status-website:
 | `fontSans` | `Inter` | Overrides the UI font (CSS `--font-sans`). See the note below. |
 | `fontMono` | `JetBrains Mono` | Overrides the monospace font (CSS `--font-mono`). |
 | `dataBranch` | `main` | Branch the monitoring data (`history/summary.json`) lives on. |
+| `umami` | _(off)_ | [Umami](https://umami.is) analytics. An object with `websiteId` (the site's `data-website-id`) and `src` (full tracking-script URL, e.g. `https://analytics.example.com/script.js`). **Both** are required; the tracker loads only when both are set. |
+| `googleAnalytics` | _(off)_ | Google Analytics 4 measurement ID (e.g. `G-XXXXXXXXXX`). The tracker loads when set. |
 | `icons` | _(built-ins)_ | Per-slug Phosphor icon overrides. See [Icons](#icons). |
 
 > **Font note.** `fontSans`/`fontMono` only change the CSS font-family. Velvet
@@ -168,6 +175,11 @@ status-website:
 > ensure it's available to the browser (e.g. a system font, or add an
 > `@import`/`<link>` — note that custom `<head>` HTML is not configurable via
 > `.upptimerc.yml` with Velvet).
+
+> **Analytics note.** `umami` and `googleAnalytics` are independent — enable
+> either, both, or neither. Velvet injects the configured tracker(s) into the
+> page at runtime once the config loads. You remain responsible for any
+> consent/privacy obligations (GDPR, etc.) for the analytics you turn on.
 
 ---
 

@@ -57,6 +57,14 @@ const config = {
     ...(velvet.fontMono ? { fontMono: velvet.fontMono } : {}),
   },
   icons: velvet.icons ?? {},
+  // Analytics: emit each block only when fully configured, so the app injects the
+  // tracker only when the consumer asked for it. Umami needs both id + script URL.
+  ...(velvet.umami && velvet.umami.websiteId && velvet.umami.src
+    ? { umami: { websiteId: String(velvet.umami.websiteId), src: String(velvet.umami.src) } }
+    : {}),
+  ...(typeof velvet.googleAnalytics === "string" && velvet.googleAnalytics.trim()
+    ? { googleAnalytics: velvet.googleAnalytics.trim() }
+    : {}),
 };
 
 mkdirSync(dirname(outputPath), { recursive: true });
