@@ -35,6 +35,8 @@ const config = {
     : [{ title: "Status", href: "/" }],
   layout: velvet.layout === "cards" ? "cards" : "grouped",
   logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 44,
+  showPoweredBy: velvet.showPoweredBy !== false,
+  showSubscribe: velvet.showSubscribe !== false,
   theme: {
     accent: velvet.accent ?? "#6366f1",
     accentDeg: velvet.accentDeg ?? "#d29922",

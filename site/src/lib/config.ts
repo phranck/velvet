@@ -27,6 +27,10 @@ export interface VelvetConfig {
   logoUrl?: string;
   /** Logo height in pixels (width scales proportionally). */
   logoHeight: number;
+  /** Show the "Powered by Velvet + Upptime" credit in the footer. */
+  showPoweredBy: boolean;
+  /** Show the Subscribe (RSS) link in the footer. */
+  showSubscribe: boolean;
   /** Navbar links. */
   navbar: Array<{ title: string; href: string }>;
   /** Card layout: one grouped card (default) or one card per service. */
@@ -49,6 +53,8 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo"> = {
   navbar: [{ title: "Status", href: "/" }],
   layout: "grouped",
   logoHeight: 44,
+  showPoweredBy: true,
+  showSubscribe: true,
   theme: {
     accent: "#6366f1",
     accentDeg: "#d29922",

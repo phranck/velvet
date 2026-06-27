@@ -160,23 +160,31 @@
     {/if}
   {/if}
 
-  <footer class="foot">
-    <span class="powered">
-      Powered by
-      <a href="https://github.com/phranck/velvet" target="_blank" rel="noopener noreferrer">Velvet</a>
-      + <a href="https://upptime.js.org" target="_blank" rel="noopener noreferrer">Upptime</a>
-    </span>
-    <a
-      class="sub-link"
-      href="/incidents.atom"
-      target="_blank"
-      rel="noopener noreferrer"
-      title="Subscribe to the incident feed (Atom/RSS)"
-    >
-      <i class="ph-duotone ph-rss" aria-hidden="true"></i>
-      <span>Subscribe</span>
-    </a>
-  </footer>
+  {#if config && (config.showPoweredBy || config.showSubscribe)}
+    <footer class="foot" class:single={!(config.showPoweredBy && config.showSubscribe)}>
+      {#if config.showPoweredBy}
+        <span class="powered">
+          Powered by
+          <a href="https://github.com/phranck/velvet" target="_blank" rel="noopener noreferrer"
+            >Velvet</a
+          >
+          + <a href="https://upptime.js.org" target="_blank" rel="noopener noreferrer">Upptime</a>
+        </span>
+      {/if}
+      {#if config.showSubscribe}
+        <a
+          class="sub-link"
+          href="/incidents.atom"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Subscribe to the incident feed (Atom/RSS)"
+        >
+          <i class="ph-duotone ph-rss" aria-hidden="true"></i>
+          <span>Subscribe</span>
+        </a>
+      {/if}
+    </footer>
+  {/if}
 </main>
 
 <style>
@@ -277,6 +285,9 @@
     padding: 18px 22px;
     font-size: 14px;
     color: var(--text-faint);
+  }
+  .foot.single {
+    justify-content: center;
   }
   .powered a {
     color: color-mix(in srgb, var(--accent), #fff 35%);

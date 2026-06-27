@@ -134,6 +134,8 @@ status-website:
   velvet:
     layout: cards
     # logoHeight: 44
+    # showPoweredBy: true   # footer "Powered by" credit
+    # showSubscribe: true   # footer Subscribe (RSS) link
     accent: "#6366f1"
     accentDeg: "#d29922"
     accentDown: "#f85149"
@@ -149,6 +151,8 @@ status-website:
 | --- | --- | --- |
 | `layout` | `grouped` | `grouped` puts all services in one card; `cards` gives each service its own card. Any value other than `cards` is treated as `grouped`. |
 | `logoHeight` | `44` | Logo height in pixels (width scales proportionally) — raise it for a taller logo. |
+| `showPoweredBy` | `true` | Show the "Powered by Velvet + Upptime" credit in the footer. |
+| `showSubscribe` | `true` | Show the Subscribe (RSS) link in the footer. When only one of the two footer items is shown, it is centered; when neither is, the footer is omitted. |
 | `accent` | `#6366f1` | Primary / **operational** colour (any hex). Drives the indigo theme and the "up" bars. |
 | `accentDeg` | `#d29922` | **Degraded** colour (amber). |
 | `accentDown` | `#f85149` | **Down** colour (red). |
