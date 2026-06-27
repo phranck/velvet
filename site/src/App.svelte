@@ -109,7 +109,8 @@
   {/if}
 
   <footer class="foot">
-    Powered by <a href="https://github.com/phranck/velvet">Velvet</a> + Upptime
+    Powered by <a href="https://github.com/phranck/velvet">Velvet</a> +
+    <a href="https://upptime.js.org">Upptime</a>
   </footer>
 </main>
 
