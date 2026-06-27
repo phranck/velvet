@@ -17,7 +17,7 @@
 
 </div>
 
-Indigo-monochrome, 90-day uptime bars, Phosphor duotone icons, live data straight from your Upptime repo — no server required.
+Indigo-monochrome, selectable uptime history (24h–1yr), Phosphor duotone icons, live data straight from your Upptime repo — no server required.
 
 ## How it works
 
@@ -31,30 +31,40 @@ Add a workflow that builds Velvet from your `.upptimerc.yml` and publishes it to
 name: Velvet
 on:
   push:
-    paths: [".upptimerc.yml", "assets/**"]
-  schedule:
-    - cron: "0 1 * * *"
+    paths: [".upptimerc.yml", "assets/**", ".github/workflows/velvet.yml"]
+  issues:
+    types: [opened, closed, reopened, edited, labeled, unlabeled]
   repository_dispatch:
     types: [static_site]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: velvet-pages
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: phranck/velvet@v1
         with:
           config: .upptimerc.yml
           output: velvet-dist
-      - uses: peaceiris/actions-gh-pages@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GH_PAT || github.token }}
-          publish_dir: velvet-dist
+          path: velvet-dist
+      - id: deploy
+        uses: actions/deploy-pages@v4
 ```
 
-To stop Upptime's stock site build from fighting Velvet, list its workflow in `.templaterc.json` so template updates don't recreate it.
+Then set **Settings → Pages → Source → "GitHub Actions"** so this deploy bypasses the `gh-pages` branch — Upptime's stock site builders (`site.yml` / `setup.yml`) can no longer overwrite Velvet (disable them if they appear). The `issues` trigger rebuilds the `/incidents.atom` feed when incidents change.
 
 ## Use it for a new project (Template)
 
@@ -62,25 +72,19 @@ No Upptime repo yet? Start from [velvet-template](https://github.com/phranck/vel
 
 ## Configure
 
-Velvet reads standard Upptime fields (`owner`, `repo`, `status-website.name`, `logoUrl`, `navbar`) plus a `velvet` block under `status-website`:
+Velvet reads standard Upptime fields (`owner`, `repo`, `status-website.name`, `logoUrl`, `navbar`) plus a `velvet` block under `status-website` for the look:
 
 ```yaml
 status-website:
-  name: MusicCloud
-  logoUrl: https://example.com/logo.svg
-  navbar:
-    - { title: Status, href: / }
-    - { title: History, href: https://github.com/$OWNER/$REPO/issues }
+  name: Example
   velvet:
-    accent: "#6366f1" # brand colour (indigo by default)
-    accentDeg: "#d29922" # degraded
-    accentDown: "#f85149" # down
-    icons: # per-service Phosphor (duotone) icon classes
+    layout: cards        # or "grouped"
+    accent: "#6366f1"    # indigo by default
+    icons:
       frontend: ph-globe
-      api: ph-brackets-curly
 ```
 
-`$OWNER` / `$REPO` in navbar hrefs are substituted automatically.
+**Every option — all `sites` check fields, the `status-website` identity, the full `velvet` appearance block (layout, colours, fonts, icons), and which stock Upptime fields Velvet ignores — is documented in the [configuration reference](CONFIGURATION.md).**
 
 ## Develop
 
