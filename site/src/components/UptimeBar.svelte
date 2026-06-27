@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { fade } from "svelte/transition";
   import type { DayStatus, RangeKey } from "../lib/types";
 
   let {
@@ -42,20 +41,10 @@
   }
 </script>
 
-<div class="bar-wrap">
-  {#key range}
-    <div
-      class="bar"
-      class:rounded={range === "quarter"}
-      in:fade={{ duration: 220 }}
-      out:fade={{ duration: 220 }}
-    >
-      {#each days as d (d.date)}
-        <span class="seg" class:ghost={!d.hasData} style:--c={color(d.status)} data-tip={tip(d)}
-        ></span>
-      {/each}
-    </div>
-  {/key}
+<div class="bar" class:rounded={range === "quarter"}>
+  {#each days as d (d.date)}
+    <span class="seg" class:ghost={!d.hasData} style:--c={color(d.status)} data-tip={tip(d)}></span>
+  {/each}
 </div>
 <div class="labels mono">
   <span>{rangeLabel}</span>
@@ -63,17 +52,11 @@
 </div>
 
 <style>
-  .bar-wrap {
-    position: relative;
-    height: 32px;
-    margin-top: 11px;
-  }
-  /* Bars are absolutely stacked so the old + new set cross-fade in place on a range switch. */
   .bar {
-    position: absolute;
-    inset: 0;
     display: flex;
     gap: 2px;
+    height: 32px;
+    margin-top: 11px;
   }
   .bar.rounded .seg {
     border-radius: 999px;
