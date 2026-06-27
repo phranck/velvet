@@ -17,7 +17,23 @@
     icon: string;
   } = $props();
 
-  let open = $state(false);
+  // Persist each card's expanded/collapsed state per service slug so it survives reloads.
+  const openStorageKey = (): string => `velvet:open:${service.slug}`;
+  function initialOpen(): boolean {
+    try {
+      return localStorage.getItem(openStorageKey()) === "1";
+    } catch {
+      return false;
+    }
+  }
+  let open = $state(initialOpen());
+  $effect(() => {
+    try {
+      localStorage.setItem(openStorageKey(), open ? "1" : "0");
+    } catch {
+      // ignore persistence failures (private mode / disabled storage)
+    }
+  });
 
   const dotColor = $derived(
     service.status === "up"

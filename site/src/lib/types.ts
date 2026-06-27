@@ -52,4 +52,4 @@ export interface Incident {
 }
 
 /** Selectable history window for the uptime bar and headline figure (capped at 1 year). */
-export type RangeKey = "day" | "week" | "month" | "year";
+export type RangeKey = "day" | "week" | "month" | "quarter" | "year";

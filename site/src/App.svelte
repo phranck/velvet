@@ -25,7 +25,13 @@
   function initialRange(): RangeKey {
     try {
       const stored = localStorage.getItem(RANGE_STORAGE_KEY);
-      if (stored === "day" || stored === "week" || stored === "month" || stored === "year") {
+      if (
+        stored === "day" ||
+        stored === "week" ||
+        stored === "month" ||
+        stored === "quarter" ||
+        stored === "year"
+      ) {
         return stored;
       }
     } catch {
@@ -42,12 +48,14 @@
     { key: "day", label: "24h" },
     { key: "week", label: "7d" },
     { key: "month", label: "30d" },
+    { key: "quarter", label: "90d" },
     { key: "year", label: "1yr" },
   ];
   const RANGE_LABEL: Record<RangeKey, string> = {
     day: "24h ago",
     week: "7 days ago",
     month: "30 days ago",
+    quarter: "90 days ago",
     year: "1 year ago",
   };
 
@@ -132,7 +140,7 @@
         service={svc}
         icon={iconFor(svc.slug, cfg.icons)}
         days={barsForRange(svc, range, today, monitoringStart)}
-        uptime={uptimeForRange(svc, range)}
+        uptime={uptimeForRange(svc, range, today, monitoringStart)}
         rangeLabel={RANGE_LABEL[range]}
       />
     {/snippet}

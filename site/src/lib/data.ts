@@ -18,6 +18,7 @@ const RANGE_SPECS: Record<RangeKey, RangeSpec> = {
   day: { days: 1, bucketDays: 1 },
   week: { days: 7, bucketDays: 1 },
   month: { days: 30, bucketDays: 1 },
+  quarter: { days: 90, bucketDays: 1 },
   year: { days: 365, bucketDays: 7 },
 };
 
@@ -209,13 +210,66 @@ export function overallStatus(services: ServiceSummary[]): ServiceStatus {
   return "up";
 }
 
-/** Pick the uptime percentage string for the selected range. */
-export function uptimeForRange(service: ServiceSummary, range: RangeKey): string {
-  const byRange: Record<RangeKey, string> = {
-    day: service.uptimeDay,
-    week: service.uptimeWeek,
-    month: service.uptimeMonth,
-    year: service.uptimeYear,
-  };
-  return byRange[range];
+/**
+ * Compute an uptime percentage over the trailing `days` from `dailyMinutesDown`,
+ * counting only days since monitoring began. Used for ranges Upptime's
+ * summary.json has no precomputed field for (the 90-day range).
+ *
+ * @param service - the service summary holding `dailyMinutesDown`
+ * @param days - trailing days to cover
+ * @param today - ISO date for "today"
+ * @param monitoringStart - ISO date monitoring began; earlier days are excluded
+ * @returns a formatted percentage string, falling back to the 30-day field before any day is monitored
+ */
+function computeUptime(
+  service: ServiceSummary,
+  days: number,
+  today: string,
+  monitoringStart?: string | null,
+): string {
+  const end = new Date(`${today}T00:00:00Z`);
+  let monitoredDays = 0;
+  let downMinutes = 0;
+  for (let i = 0; i < days; i++) {
+    const d = new Date(end);
+    d.setUTCDate(end.getUTCDate() - i);
+    const date = d.toISOString().slice(0, 10);
+    if (monitoringStart && date < monitoringStart) continue;
+    monitoredDays++;
+    downMinutes += service.dailyMinutesDown[date] ?? 0;
+  }
+  if (monitoredDays === 0) return service.uptimeMonth;
+  const pct = Math.max(0, 100 - (downMinutes / (monitoredDays * MINUTES_PER_DAY)) * 100);
+  return `${pct.toFixed(2)}%`;
+}
+
+/**
+ * Pick the uptime percentage string for the selected range. Most ranges read
+ * Upptime's precomputed summary.json fields; the 90-day range has no such field,
+ * so it is computed from `dailyMinutesDown` over the monitored days.
+ *
+ * @param service - the service summary
+ * @param range - the selected window
+ * @param today - ISO date for "today" (only used for the computed 90-day range)
+ * @param monitoringStart - ISO date monitoring began; days before are excluded
+ * @returns a formatted percentage string (e.g. "99.97%")
+ */
+export function uptimeForRange(
+  service: ServiceSummary,
+  range: RangeKey,
+  today: string,
+  monitoringStart?: string | null,
+): string {
+  switch (range) {
+    case "day":
+      return service.uptimeDay;
+    case "week":
+      return service.uptimeWeek;
+    case "month":
+      return service.uptimeMonth;
+    case "year":
+      return service.uptimeYear;
+    case "quarter":
+      return computeUptime(service, RANGE_SPECS.quarter.days, today, monitoringStart);
+  }
 }
