@@ -1,0 +1,53 @@
+# Regenerate docs/screenshot.png from the demo status page whenever the UI changes.
+# Runs the REAL Velvet pipeline (generate-config -> build -> render) against the
+# demo config in site/demo/, so a broken config or build fails here too — a smoke
+# test as well as a fresh picture. Only commits when the image actually changed.
+name: Demo screenshot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/src/**"
+      - "site/demo/**"
+      - "site/index.html"
+      - "site/scripts/screenshot.mjs"
+      - "site/scripts/generate-config.mjs"
+      - ".github/workflows/screenshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Install pngquant
+        working-directory: .
+        run: sudo apt-get update && sudo apt-get install -y pngquant
+      - run: npm run build
+      - run: npm run screenshot
+      - name: Commit the screenshot if it changed
+        working-directory: .
+        run: |
+          if [ -n "$(git status --porcelain docs/screenshot.png)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/screenshot.png
+            git commit -m "Docs: regenerate demo screenshot [skip ci]"
+            git push
+          else
+            echo "screenshot unchanged — nothing to commit"
+          fi

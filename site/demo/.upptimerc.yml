@@ -1,0 +1,63 @@
+# Demo configuration for the README screenshot — a fictional "Velvet Underground
+# Inc." status page. This is an ordinary template-style .upptimerc.yml: Velvet's
+# screenshot workflow runs it through the SAME pipeline the template's velvet.yml
+# uses (generate-config -> vite build), renders it with the demo monitoring data
+# in this folder, and screenshots the result. So a broken config, generate-config
+# regression, or build failure fails the workflow — not just the picture.
+owner: velvet-underground
+repo: status
+
+sites:
+  - name: Website
+    url: https://velvet-underground.example
+  - name: Website IPv6
+    slug: website-ipv6
+    url: https://velvet-underground.example
+    type: globalping
+    check: http
+    ipv6: true
+  - name: API
+    url: https://api.velvet-underground.example/health
+  - name: API IPv6
+    slug: api-ipv6
+    url: https://api.velvet-underground.example/health
+    type: globalping
+    check: http
+    ipv6: true
+  - name: Database
+    url: https://api.velvet-underground.example/health/db
+  - name: CDN
+    url: https://cdn.velvet-underground.example
+  - name: CDN IPv6
+    slug: cdn-ipv6
+    url: https://cdn.velvet-underground.example
+    type: globalping
+    check: http
+    ipv6: true
+  - name: Auth
+    url: https://auth.velvet-underground.example/health
+  - name: Auth IPv6
+    slug: auth-ipv6
+    url: https://auth.velvet-underground.example/health
+    type: globalping
+    check: http
+    ipv6: true
+  - name: Mail
+    url: https://api.velvet-underground.example/health/mail
+
+status-website:
+  name: Velvet Underground Inc.
+  navbar: []
+  velvet:
+    layout: cards
+    defaultRange: 90d
+    accent: "#6366f1"
+    accentDeg: "#d29922"
+    accentDown: "#f85149"
+    icons:
+      website: ph-globe
+      api: ph-brackets-curly
+      database: ph-database
+      cdn: ph-cloud-arrow-up
+      auth: ph-lock-key
+      mail: ph-envelope-simple
