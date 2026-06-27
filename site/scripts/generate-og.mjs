@@ -166,7 +166,7 @@ const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http
       ? `${icon(firstIcon, inL, cardY + 28, 40, colourFor(first.status))}
   <text x="${inL + 58}" y="${cardY + 60}" font-family="${FONT}" font-size="36" font-weight="600" fill="#e3e6ea">${esc(first.name)}</text>
   <text x="${inR}" y="${cardY + 60}" text-anchor="end" font-family="${FONT}" font-size="36" font-weight="700" fill="${colourFor(first.status)}">${uptime}</text>
-  ${ipv6 ? pill(inR - 348, cardY + 30, "IPv4", colourFor(first.status)) + pill(inR - 254, cardY + 30, "IPv6", colourFor(ipv6.status)) : ""}
+  ${ipv6 ? pill(inR - 430, cardY + 30, "IPv4", colourFor(first.status)) + pill(inR - 336, cardY + 30, "IPv6", colourFor(ipv6.status)) : ""}
   ${uptimeBars(first, inL, cardY + 100, cardW - 2 * pad, 46)}
   <text x="${inL}" y="${cardY + 188}" font-family="${FONT}" font-size="19" fill="#6b7280">90 days ago</text>
   <text x="${inR}" y="${cardY + 188}" text-anchor="end" font-family="${FONT}" font-size="19" fill="#6b7280">Today</text>`
