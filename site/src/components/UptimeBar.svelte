@@ -16,13 +16,24 @@
     return `down · ${d.minutesDown} min`;
   }
 
+  function fmtShort(d: Date): string {
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+
   function tip(d: DayStatus): string {
-    const date = new Date(`${d.date}T00:00:00Z`).toLocaleDateString(undefined, {
+    const end = new Date(`${d.date}T00:00:00Z`);
+    // Aggregated bar (1y / all): show the bucket's date span instead of one day.
+    if (d.spanDays > 1) {
+      const start = new Date(end);
+      start.setUTCDate(end.getUTCDate() - (d.spanDays - 1));
+      return `${fmtShort(start)} – ${fmtShort(end)} · ${label(d)}`;
+    }
+    const full = end.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
-    return `${date} · ${label(d)}`;
+    return `${full} · ${label(d)}`;
   }
 </script>
 

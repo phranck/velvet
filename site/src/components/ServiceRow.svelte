@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { slide } from "svelte/transition";
   import type { DayStatus, ServiceSummary } from "../lib/types";
   import UptimeBar from "./UptimeBar.svelte";
 
@@ -35,13 +36,13 @@
     <i class="ph-duotone {icon} svc-ico" style:color={dotColor} aria-hidden="true"></i>
     <span class="name">{service.name}</span>
     <span class="uptime mono">{uptime}</span>
-    <i class="ph-duotone {open ? 'ph-caret-up' : 'ph-caret-down'} chev" aria-hidden="true"></i>
+    <i class="ph-duotone ph-caret-down chev" class:open aria-hidden="true"></i>
   </button>
 
   <UptimeBar {days} {rangeLabel} />
 
   {#if open}
-    <div class="detail">
+    <div class="detail" transition:slide={{ duration: 180 }}>
       <span class="metric mono"><b>{statusLabel}</b></span>
       <span class="metric mono"><b>{service.time}</b> ms avg</span>
       <a class="metric link" href={service.url} target="_blank" rel="noreferrer">{service.url}</a>
@@ -88,7 +89,12 @@
     font-size: 17px;
     color: var(--text-muted);
     margin-left: 12px;
-    transition: color 0.12s ease;
+    transition:
+      color 0.12s ease,
+      transform 0.18s ease;
+  }
+  .chev.open {
+    transform: rotate(180deg);
   }
   .top:hover .chev {
     color: var(--accent-bright);

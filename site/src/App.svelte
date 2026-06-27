@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
-    RANGE_DAYS,
-    dailyBars,
+    barsForRange,
     fetchIncidents,
     fetchMonitoringStart,
     fetchSummary,
@@ -26,7 +25,13 @@
   function initialRange(): RangeKey {
     try {
       const stored = localStorage.getItem(RANGE_STORAGE_KEY);
-      if (stored === "day" || stored === "week" || stored === "month" || stored === "year") {
+      if (
+        stored === "day" ||
+        stored === "week" ||
+        stored === "month" ||
+        stored === "year" ||
+        stored === "all"
+      ) {
         return stored;
       }
     } catch {
@@ -43,13 +48,15 @@
     { key: "day", label: "24h" },
     { key: "week", label: "7d" },
     { key: "month", label: "30d" },
-    { key: "year", label: "90d" },
+    { key: "year", label: "1y" },
+    { key: "all", label: "all" },
   ];
   const RANGE_LABEL: Record<RangeKey, string> = {
     day: "24h ago",
     week: "7 days ago",
     month: "30 days ago",
-    year: "90 days ago",
+    year: "1 year ago",
+    all: "all time",
   };
 
   const overall = $derived(overallStatus(services));
@@ -134,7 +141,7 @@
         <ServiceRow
           service={svc}
           icon={iconFor(svc.slug, config.icons)}
-          days={dailyBars(svc, RANGE_DAYS[range], today, monitoringStart)}
+          days={barsForRange(svc, range, today, monitoringStart)}
           uptime={uptimeForRange(svc, range)}
           rangeLabel={RANGE_LABEL[range]}
         />
@@ -197,18 +204,18 @@
     font-size: 14px;
     padding: 5px 11px;
     border-radius: 8px;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    color: var(--accent-bright);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
     transition:
       color 0.12s ease,
       border-color 0.12s ease,
       background 0.12s ease;
   }
   .subscribe:hover {
-    color: var(--accent-bright);
-    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: color-mix(in srgb, var(--accent-bright), #fff 30%);
+    border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
   }
   .subscribe i {
     font-size: 16px;
