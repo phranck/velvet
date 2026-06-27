@@ -51,7 +51,7 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: phranck/velvet@v1.0.0
+      - uses: phranck/velvet@v1
         with:
           config: .upptimerc.yml
           output: velvet-dist
