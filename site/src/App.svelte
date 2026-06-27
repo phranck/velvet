@@ -115,7 +115,7 @@
         rel="noopener noreferrer"
         title="Subscribe to the incident feed (Atom/RSS)"
       >
-        <i class="ph-duotone ph-bell-simple" aria-hidden="true"></i>
+        <i class="ph-duotone ph-rss" aria-hidden="true"></i>
         <span>Subscribe</span>
       </a>
     </nav>
