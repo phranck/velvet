@@ -1,12 +1,6 @@
 <div align="center">
 
-[![Release](https://img.shields.io/github/v/tag/phranck/velvet?sort=semver&label=release&color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/releases)
-[![License](https://img.shields.io/github/license/phranck/velvet?color=6366f1&labelColor=0e1015)](https://layered.mit-license.org)
-[![Last commit](https://img.shields.io/github/last-commit/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/commits)
-[![Issues](https://img.shields.io/github/issues/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/issues)
-[![Svelte](https://img.shields.io/badge/Svelte-5-6366f1?logo=svelte&logoColor=white&labelColor=0e1015)](https://svelte.dev)
-[![Vite](https://img.shields.io/badge/Vite-6-6366f1?logo=vite&logoColor=white&labelColor=0e1015)](https://vite.dev)
-[![Built for Upptime](https://img.shields.io/badge/built%20for-Upptime-6366f1?labelColor=0e1015)](https://upptime.js.org)
+[![Release](https://img.shields.io/github/v/tag/phranck/velvet?sort=semver&label=release&color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/releases) [![License](https://img.shields.io/github/license/phranck/velvet?color=6366f1&labelColor=0e1015)](https://layered.mit-license.org) [![Last commit](https://img.shields.io/github/last-commit/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/commits) [![Issues](https://img.shields.io/github/issues/phranck/velvet?color=6366f1&labelColor=0e1015)](https://github.com/phranck/velvet/issues) [![Svelte](https://img.shields.io/badge/Svelte-5-6366f1?logo=svelte&logoColor=white&labelColor=0e1015)](https://svelte.dev) [![Vite](https://img.shields.io/badge/Vite-6-6366f1?logo=vite&logoColor=white&labelColor=0e1015)](https://vite.dev) [![Built for Upptime](https://img.shields.io/badge/built%20for-Upptime-6366f1?labelColor=0e1015)](https://upptime.js.org)
 
 # Velvet
 
@@ -15,6 +9,8 @@
 <img src="docs/screenshot.png" alt="Velvet status page" width="820">
 
 </div>
+
+<br>
 
 Indigo-monochrome, selectable uptime history (24h–1yr), optional per-service IPv4/IPv6 cards, [Phosphor](https://phosphoricons.com) duotone icons, live data straight from your Upptime repo — no server required.
 
