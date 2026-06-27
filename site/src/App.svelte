@@ -205,9 +205,9 @@
     color: var(--text);
   }
   .logo {
-    height: 44px;
+    height: var(--logo-height);
     width: auto;
-    max-width: 280px;
+    max-width: 100%;
     display: block;
   }
   .navlink {

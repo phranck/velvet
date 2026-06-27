@@ -34,6 +34,7 @@ const config = {
     ? sw.navbar.map((n) => ({ title: n.title, href: subst(n.href) }))
     : [{ title: "Status", href: "/" }],
   layout: velvet.layout === "cards" ? "cards" : "grouped",
+  logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 44,
   theme: {
     accent: velvet.accent ?? "#6366f1",
     accentDeg: velvet.accentDeg ?? "#d29922",

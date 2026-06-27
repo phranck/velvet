@@ -133,6 +133,7 @@ All Velvet-specific options live here, so the file stays a valid Upptime config.
 status-website:
   velvet:
     layout: cards
+    # logoHeight: 44
     accent: "#6366f1"
     accentDeg: "#d29922"
     accentDown: "#f85149"
@@ -147,6 +148,7 @@ status-website:
 | Field | Default | Description |
 | --- | --- | --- |
 | `layout` | `grouped` | `grouped` puts all services in one card; `cards` gives each service its own card. Any value other than `cards` is treated as `grouped`. |
+| `logoHeight` | `44` | Logo height in pixels (width scales proportionally) — raise it for a taller logo. |
 | `accent` | `#6366f1` | Primary / **operational** colour (any hex). Drives the indigo theme and the "up" bars. |
 | `accentDeg` | `#d29922` | **Degraded** colour (amber). |
 | `accentDown` | `#f85149` | **Down** colour (red). |

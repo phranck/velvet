@@ -23,8 +23,10 @@ export interface VelvetConfig {
   dataBranch: string;
   /** Brand name shown in the navbar. */
   name: string;
-  /** Optional square logo URL shown in the navbar. */
+  /** Optional logo URL shown in the navbar. */
   logoUrl?: string;
+  /** Logo height in pixels (width scales proportionally). */
+  logoHeight: number;
   /** Navbar links. */
   navbar: Array<{ title: string; href: string }>;
   /** Card layout: one grouped card (default) or one card per service. */
@@ -46,6 +48,7 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo"> = {
   name: "Status",
   navbar: [{ title: "Status", href: "/" }],
   layout: "grouped",
+  logoHeight: 44,
   theme: {
     accent: "#6366f1",
     accentDeg: "#d29922",
@@ -87,4 +90,5 @@ export function applyTheme(config: VelvetConfig): void {
   root.style.setProperty("--accent-down", config.theme.accentDown);
   if (config.theme.fontSans) root.style.setProperty("--font-sans", config.theme.fontSans);
   if (config.theme.fontMono) root.style.setProperty("--font-mono", config.theme.fontMono);
+  root.style.setProperty("--logo-height", `${config.logoHeight}px`);
 }
