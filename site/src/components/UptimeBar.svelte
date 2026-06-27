@@ -26,14 +26,14 @@
     if (d.spanDays > 1) {
       const start = new Date(end);
       start.setUTCDate(end.getUTCDate() - (d.spanDays - 1));
-      return `${fmtShort(start)} – ${fmtShort(end)} · ${label(d)}`;
+      return `${fmtShort(start)} – ${fmtShort(end)}\n${label(d)}`;
     }
     const full = end.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
-    return `${full} · ${label(d)}`;
+    return `${full}\n${label(d)}`;
   }
 </script>
 
@@ -82,11 +82,13 @@
     left: 50%;
     bottom: calc(100% + 9px);
     transform: translateX(-50%);
-    white-space: nowrap;
-    padding: 6px 10px;
+    white-space: pre-line;
+    text-align: center;
+    line-height: 1.5;
+    padding: 7px 12px;
     border-radius: 8px;
-    background: var(--surface-solid);
-    border: 1px solid var(--border);
+    background: var(--popover-bg);
+    border: 1px solid var(--popover-border);
     color: var(--text);
     font-family: var(--font-mono);
     font-size: 12px;
@@ -103,7 +105,7 @@
     bottom: calc(100% + 3px);
     transform: translateX(-50%);
     border: 6px solid transparent;
-    border-top-color: var(--surface-solid);
+    border-top-color: var(--popover-bg);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.12s ease;
