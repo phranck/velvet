@@ -98,6 +98,16 @@
       {#each config.navbar as link (link.href)}
         <a class:on={link.href === "/"} href={link.href}>{link.title}</a>
       {/each}
+      <a
+        class="subscribe"
+        href="/incidents.atom"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Subscribe to the incident feed (Atom/RSS)"
+      >
+        <i class="ph-duotone ph-bell-simple" aria-hidden="true"></i>
+        <span>Subscribe</span>
+      </a>
     </nav>
   {/if}
 
@@ -179,6 +189,29 @@
     color: var(--text);
     border-bottom: 2px solid var(--accent);
     padding-bottom: 2px;
+  }
+  .subscribe {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    padding: 5px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    transition:
+      color 0.12s ease,
+      border-color 0.12s ease,
+      background 0.12s ease;
+  }
+  .subscribe:hover {
+    color: var(--accent-bright);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  .subscribe i {
+    font-size: 16px;
   }
   .state {
     text-align: center;

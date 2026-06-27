@@ -25,10 +25,12 @@ runs:
         VELVET_CONFIG: ${{ inputs.config }}
         VELVET_OUTPUT: ${{ inputs.output }}
         VELVET_SITE: ${{ github.action_path }}/site
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
         npm --prefix "$VELVET_SITE" ci
         node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
+        node "$VELVET_SITE/scripts/generate-feed.mjs" "$VELVET_SITE/public/config.json" "$VELVET_SITE/public/incidents.atom"
         npm --prefix "$VELVET_SITE" run build
         rm -rf "$VELVET_OUTPUT"
         mkdir -p "$VELVET_OUTPUT"
