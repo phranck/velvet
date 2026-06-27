@@ -195,6 +195,25 @@ Built-in defaults (used when you don't override a slug):
 
 ---
 
+## Separate IPv4 / IPv6 monitoring
+
+Velvet can show a service's IPv4 and IPv6 reachability **side by side in one card**. Add a second check for the same service whose slug is `<base>-ipv6`, with `ipv6: true`. Because GitHub Actions runners are IPv4-only, the IPv6 check must run through [Globalping](https://globalping.io) (`type: globalping`), whose probes are dual-stack.
+
+```yaml
+sites:
+  - name: Frontend          # the IPv4 check (runs from the runner)
+    url: https://example.com
+  - name: Frontend IPv6     # name slugifies to "frontend-ipv6"
+    url: https://example.com
+    type: globalping
+    check: http
+    ipv6: true
+```
+
+Velvet folds the `<base>-ipv6` entry into the `<base>` service: the card header shows two pills (`IPv4` / `IPv6`) with status dots, and the expanded detail lists both protocols. A `<base>-ipv6` check with no matching base renders as a standalone service.
+
+**Requirements:** add a `GLOBALPING_TOKEN` repo secret — register free at globalping.io, create a token under "Tokens" — to lift the rate limit from 250 to 500 checks/hour (cloud runners share IPs, so the unauthenticated limit is easy to hit). Globalping supports HTTP and PING checks only, no POST.
+
 ## Deployment notes
 
 These are repo settings, not `.upptimerc.yml` fields, but you need them for the

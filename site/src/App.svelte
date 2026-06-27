@@ -5,6 +5,7 @@
     fetchIncidents,
     fetchMonitoringStart,
     fetchSummary,
+    groupByProtocol,
     overallStatus,
     uptimeForRange,
   } from "./lib/data";
@@ -82,7 +83,7 @@
         fetchIncidents(cfg.owner, cfg.repo),
         fetchMonitoringStart(cfg.owner, cfg.repo),
       ]);
-      services = s;
+      services = groupByProtocol(s);
       incidents = i;
       monitoringStart = start;
     } catch (e) {

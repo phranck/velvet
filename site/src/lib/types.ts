@@ -23,6 +23,12 @@ export interface ServiceSummary {
   timeYear: number;
   /** Map of ISO date (YYYY-MM-DD) → minutes the service was down that day. */
   dailyMinutesDown: Record<string, number>;
+  /**
+   * IPv6 counterpart of this service, folded in from a sibling check whose slug
+   * is `<this.slug>-ipv6` (typically a Globalping check with `ipv6: true`). When
+   * present, the card shows both protocols; this entry itself is then the IPv4 side.
+   */
+  ipv6?: ServiceSummary;
 }
 
 /**

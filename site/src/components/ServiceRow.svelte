@@ -1,6 +1,6 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import type { DayStatus, ServiceSummary } from "../lib/types";
+  import type { DayStatus, ServiceStatus, ServiceSummary } from "../lib/types";
   import UptimeBar from "./UptimeBar.svelte";
 
   let {
@@ -35,22 +35,31 @@
     }
   });
 
-  const dotColor = $derived(
-    service.status === "up"
-      ? "var(--accent-bright)"
-      : service.status === "degraded"
-        ? "var(--accent-deg)"
-        : "var(--accent-down)",
-  );
-  const statusLabel = $derived(
-    service.status === "up" ? "Operational" : service.status === "degraded" ? "Degraded" : "Down",
-  );
+  /** Status colour: bright accent when up, amber when degraded, red when down. */
+  function statusColor(status: ServiceStatus): string {
+    if (status === "up") return "var(--accent-bright)";
+    if (status === "degraded") return "var(--accent-deg)";
+    return "var(--accent-down)";
+  }
+  /** Human-readable status label. */
+  function statusText(status: ServiceStatus): string {
+    if (status === "up") return "Operational";
+    if (status === "degraded") return "Degraded";
+    return "Down";
+  }
+  const dotColor = $derived(statusColor(service.status));
 </script>
 
 <div class="row">
   <button class="top" onclick={() => (open = !open)} aria-expanded={open}>
     <i class="ph-duotone {icon} svc-ico" style:color={dotColor} aria-hidden="true"></i>
     <span class="name">{service.name}</span>
+    {#if service.ipv6}
+      <span class="protos" aria-label="protocol reachability">
+        <span class="proto" style:--c={statusColor(service.status)}>IPv4</span>
+        <span class="proto" style:--c={statusColor(service.ipv6.status)}>IPv6</span>
+      </span>
+    {/if}
     <span class="uptime mono">{uptime}</span>
     <i class="ph-duotone ph-caret-down chev" class:open aria-hidden="true"></i>
   </button>
@@ -59,9 +68,24 @@
 
   {#if open}
     <div class="detail" transition:slide={{ duration: 180 }}>
-      <span class="metric mono"><b>{statusLabel}</b></span>
-      <span class="metric mono"><b>{service.time}</b> ms avg</span>
-      <a class="metric link" href={service.url} target="_blank" rel="noreferrer">{service.url}</a>
+      <div class="proto-detail">
+        {#if service.ipv6}
+          <span class="proto-tag" style:--c={statusColor(service.status)}>IPv4</span>
+        {/if}
+        <span class="metric mono"><b>{statusText(service.status)}</b></span>
+        <span class="metric mono"><b>{service.time}</b> ms{service.ipv6 ? "" : " avg"}</span>
+        <a class="metric link" href={service.url} target="_blank" rel="noreferrer">{service.url}</a>
+      </div>
+      {#if service.ipv6}
+        <div class="proto-detail">
+          <span class="proto-tag" style:--c={statusColor(service.ipv6.status)}>IPv6</span>
+          <span class="metric mono"><b>{statusText(service.ipv6.status)}</b></span>
+          <span class="metric mono"><b>{service.ipv6.time}</b> ms</span>
+          <a class="metric link" href={service.ipv6.url} target="_blank" rel="noreferrer"
+            >{service.ipv6.url}</a
+          >
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
@@ -115,16 +139,64 @@
   .top:hover .chev {
     color: var(--accent-bright);
   }
+  .protos {
+    display: inline-flex;
+    gap: 5px;
+    margin-right: 10px;
+    flex: none;
+  }
+  .proto {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text-muted);
+    padding: 2px 8px 2px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+  .proto::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c);
+  }
   .detail {
     display: flex;
-    align-items: center;
-    gap: 16px;
+    flex-direction: column;
+    gap: 10px;
     margin-top: 13px;
     padding: 12px 14px;
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 10px;
+  }
+  .proto-detail {
+    display: flex;
+    align-items: center;
+    gap: 14px;
     flex-wrap: wrap;
+  }
+  .proto-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 42px;
+  }
+  .proto-tag::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c);
   }
   .metric {
     font-size: 14px;

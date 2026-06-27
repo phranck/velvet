@@ -36,10 +36,47 @@ export async function fetchSummary(
   repo: string,
   branch: string,
 ): Promise<ServiceSummary[]> {
+  // Local-dev override: a `public/summary.json` (served at /summary.json) lets
+  // you preview against fixture data without hitting the live repo. Dev-only.
+  if (import.meta.env.DEV) {
+    try {
+      const local = await fetch("/summary.json", { cache: "no-cache" });
+      if (local.ok) return (await local.json()) as ServiceSummary[];
+    } catch {
+      // no local fixture present; fall through to the live repo
+    }
+  }
   const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/history/summary.json`;
   const res = await fetch(url, { cache: "no-cache" });
   if (!res.ok) throw new Error(`summary.json ${res.status}`);
   return (await res.json()) as ServiceSummary[];
+}
+
+/** Slug suffix that marks a site as the IPv6 counterpart of its base service. */
+const IPV6_SLUG_SUFFIX = "-ipv6";
+
+/**
+ * Fold IPv6 counterpart checks into their base service so each service renders
+ * as one card showing both protocols. A check whose slug is `<base>-ipv6`
+ * (typically a Globalping check with `ipv6: true`) is attached to the `<base>`
+ * service as its {@link ServiceSummary.ipv6}; a `<base>-ipv6` with no matching
+ * base is left as a standalone service.
+ *
+ * @param services - the raw summary array from {@link fetchSummary}
+ * @returns the services with IPv6 counterparts folded in, original order preserved
+ */
+export function groupByProtocol(services: ServiceSummary[]): ServiceSummary[] {
+  const bySlug = new Map(services.map((s) => [s.slug, s]));
+  const folded = new Set<string>();
+  for (const svc of services) {
+    if (!svc.slug.endsWith(IPV6_SLUG_SUFFIX)) continue;
+    const base = bySlug.get(svc.slug.slice(0, -IPV6_SLUG_SUFFIX.length));
+    if (base) {
+      base.ipv6 = svc;
+      folded.add(svc.slug);
+    }
+  }
+  return services.filter((s) => !folded.has(s.slug));
 }
 
 /**
