@@ -85,11 +85,10 @@
     <nav class="nav">
       <div class="brand">
         {#if config.logoUrl}
-          <img class="logo" src={config.logoUrl} alt="" />
+          <img class="logo" src={config.logoUrl} alt={config.name} />
         {:else}
-          <span class="mark"></span>
+          {config.name}
         {/if}
-        {config.name}
       </div>
       <span class="spacer"></span>
       {#each config.navbar as link (link.href)}
@@ -130,7 +129,7 @@
   {/if}
 
   <footer class="foot">
-    Powered by
+    Powered by<br />
     <a href="https://github.com/phranck/velvet" target="_blank" rel="noopener noreferrer">Velvet</a> +
     <a href="https://upptime.js.org" target="_blank" rel="noopener noreferrer">Upptime</a>
   </footer>
@@ -141,6 +140,9 @@
     max-width: 760px;
     margin: 0 auto;
     padding: 0 0 40px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
   .nav {
     display: flex;
@@ -164,10 +166,10 @@
     box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 40%, transparent);
   }
   .logo {
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    object-fit: cover;
+    height: 26px;
+    width: auto;
+    max-width: 220px;
+    display: block;
   }
   .spacer {
     flex: 1;
@@ -225,9 +227,11 @@
     background: color-mix(in srgb, var(--accent) 16%, transparent);
   }
   .foot {
+    margin-top: auto;
     text-align: center;
     padding: 22px;
     font-size: 14px;
+    line-height: 1.7;
     color: var(--text-faint);
   }
   .foot a {
