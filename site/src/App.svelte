@@ -75,6 +75,7 @@
     try {
       const cfg = await loadConfig();
       applyTheme(cfg);
+      document.title = `${cfg.name} — Status`;
       config = cfg;
       const [s, i, start] = await Promise.all([
         fetchSummary(cfg.owner, cfg.repo, cfg.dataBranch),
