@@ -7,11 +7,11 @@ const DOWN_DAY_THRESHOLD = 0.3;
 
 /**
  * Per-range rendering spec: how many trailing days the bar covers and how many
- * days each segment aggregates. `days: null` means "all" — every day since
- * monitoring began, resolved at render time from the monitoring-start date.
+ * days each segment aggregates (>1 buckets days into weekly bars). History is
+ * capped at one year.
  */
 interface RangeSpec {
-  days: number | null;
+  days: number;
   bucketDays: number;
 }
 const RANGE_SPECS: Record<RangeKey, RangeSpec> = {
@@ -19,12 +19,7 @@ const RANGE_SPECS: Record<RangeKey, RangeSpec> = {
   week: { days: 7, bucketDays: 1 },
   month: { days: 30, bucketDays: 1 },
   year: { days: 365, bucketDays: 7 },
-  all: { days: null, bucketDays: 1 },
 };
-/** Span (days) assumed for "all" before the monitoring-start date is known. */
-const ALL_RANGE_FALLBACK_DAYS = 90;
-/** Upper bound on bar count; long ranges aggregate days into buckets to stay at or below it. */
-const MAX_BARS = 60;
 
 /**
  * Fetch the live service summary from a consumer's Upptime monitoring repo.
@@ -131,13 +126,6 @@ function gradeDay(minutesDown: number): ServiceStatus {
   return "degraded";
 }
 
-/** Whole days between two ISO dates (YYYY-MM-DD), `to` minus `from`. */
-function daysBetween(fromIso: string, toIso: string): number {
-  const from = Date.parse(`${fromIso}T00:00:00Z`);
-  const to = Date.parse(`${toIso}T00:00:00Z`);
-  return Math.round((to - from) / 86_400_000);
-}
-
 /** Most severe status across a bucket of days. */
 function worstStatus(statuses: ServiceStatus[]): ServiceStatus {
   if (statuses.includes("down")) return "down";
@@ -147,7 +135,7 @@ function worstStatus(statuses: ServiceStatus[]): ServiceStatus {
 
 /**
  * Build the uptime-bar series for a range. Short ranges (24h/7d/30d) render one
- * bar per day; long ranges (1y, all) aggregate several days into each bar so the
+ * bar per day; the 1-year range aggregates seven days into each weekly bar so the
  * strip stays legible. Days before monitoring began are flagged `hasData: false`
  * and render as faint "ghost" bars.
  *
@@ -164,13 +152,8 @@ export function barsForRange(
   monitoringStart?: string | null,
 ): DayStatus[] {
   const spec = RANGE_SPECS[range];
-  let totalDays = spec.days ?? ALL_RANGE_FALLBACK_DAYS;
-  let bucketDays = spec.bucketDays;
-  if (spec.days === null) {
-    // "all": cover every day since monitoring began, bucketed to stay <= MAX_BARS.
-    totalDays = monitoringStart ? Math.max(1, daysBetween(monitoringStart, today) + 1) : ALL_RANGE_FALLBACK_DAYS;
-    bucketDays = Math.max(1, Math.ceil(totalDays / MAX_BARS));
-  }
+  const totalDays = spec.days;
+  const bucketDays = spec.bucketDays;
 
   // Per-day series, oldest → newest.
   const end = new Date(`${today}T00:00:00Z`);
@@ -233,7 +216,6 @@ export function uptimeForRange(service: ServiceSummary, range: RangeKey): string
     week: service.uptimeWeek,
     month: service.uptimeMonth,
     year: service.uptimeYear,
-    all: service.uptime,
   };
   return byRange[range];
 }

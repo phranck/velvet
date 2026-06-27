@@ -33,6 +33,7 @@ const config = {
   navbar: Array.isArray(sw.navbar)
     ? sw.navbar.map((n) => ({ title: n.title, href: subst(n.href) }))
     : [{ title: "Status", href: "/" }],
+  layout: velvet.layout === "cards" ? "cards" : "grouped",
   theme: {
     accent: velvet.accent ?? "#6366f1",
     accentDeg: velvet.accentDeg ?? "#d29922",

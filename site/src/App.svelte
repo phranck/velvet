@@ -25,19 +25,13 @@
   function initialRange(): RangeKey {
     try {
       const stored = localStorage.getItem(RANGE_STORAGE_KEY);
-      if (
-        stored === "day" ||
-        stored === "week" ||
-        stored === "month" ||
-        stored === "year" ||
-        stored === "all"
-      ) {
+      if (stored === "day" || stored === "week" || stored === "month" || stored === "year") {
         return stored;
       }
     } catch {
       // localStorage may be unavailable (private mode); use the default below.
     }
-    return "year";
+    return "month";
   }
   let range = $state<RangeKey>(initialRange());
 
@@ -48,15 +42,13 @@
     { key: "day", label: "24h" },
     { key: "week", label: "7d" },
     { key: "month", label: "30d" },
-    { key: "year", label: "1y" },
-    { key: "all", label: "all" },
+    { key: "year", label: "1yr" },
   ];
   const RANGE_LABEL: Record<RangeKey, string> = {
     day: "24h ago",
     week: "7 days ago",
     month: "30 days ago",
     year: "1 year ago",
-    all: "all time",
   };
 
   const overall = $derived(overallStatus(services));
@@ -94,16 +86,16 @@
 <main class="page">
   {#if config}
     <nav class="nav">
-      <div class="brand">
+      <a class="brand" href="/" aria-label={config.name}>
         {#if config.logoUrl}
           <img class="logo" src={config.logoUrl} alt={config.name} />
         {:else}
           {config.name}
         {/if}
-      </div>
+      </a>
       <span class="spacer"></span>
       {#each config.navbar as link (link.href)}
-        <a class:on={link.href === "/"} href={link.href}>{link.title}</a>
+        <a class="navlink" class:on={link.href === "/"} href={link.href}>{link.title}</a>
       {/each}
       <a
         class="subscribe"
@@ -127,26 +119,45 @@
 
     <Incidents {incidents} />
 
-    <section class="card">
-      <div class="group-head">
-        <span class="gname">{config.name.toUpperCase()}</span>
-        <div class="ranges">
-          {#each RANGES as r (r.key)}
-            <button class:on={range === r.key} onclick={() => (range = r.key)}>{r.label}</button>
-          {/each}
-        </div>
+    {#snippet rangeButtons()}
+      <div class="ranges">
+        {#each RANGES as r (r.key)}
+          <button class:on={range === r.key} onclick={() => (range = r.key)}>{r.label}</button>
+        {/each}
       </div>
+    {/snippet}
 
+    {#snippet serviceRow(svc: ServiceSummary, cfg: VelvetConfig)}
+      <ServiceRow
+        service={svc}
+        icon={iconFor(svc.slug, cfg.icons)}
+        days={barsForRange(svc, range, today, monitoringStart)}
+        uptime={uptimeForRange(svc, range)}
+        rangeLabel={RANGE_LABEL[range]}
+      />
+    {/snippet}
+
+    {#if config.layout === "cards"}
+      <div class="range-bar">
+        <span class="gname">{config.name.toUpperCase()}</span>
+        {@render rangeButtons()}
+      </div>
       {#each services as svc (svc.slug)}
-        <ServiceRow
-          service={svc}
-          icon={iconFor(svc.slug, config.icons)}
-          days={barsForRange(svc, range, today, monitoringStart)}
-          uptime={uptimeForRange(svc, range)}
-          rangeLabel={RANGE_LABEL[range]}
-        />
+        <section class="card">
+          {@render serviceRow(svc, config)}
+        </section>
       {/each}
-    </section>
+    {:else}
+      <section class="card">
+        <div class="group-head">
+          <span class="gname">{config.name.toUpperCase()}</span>
+          {@render rangeButtons()}
+        </div>
+        {#each services as svc (svc.slug)}
+          {@render serviceRow(svc, config)}
+        {/each}
+      </section>
+    {/if}
   {/if}
 
   <footer class="foot">
@@ -178,6 +189,7 @@
     gap: 9px;
     font-weight: 600;
     font-size: 17px;
+    color: var(--text);
   }
   .logo {
     height: 32px;
@@ -188,11 +200,11 @@
   .spacer {
     flex: 1;
   }
-  .nav a {
+  .navlink {
     font-size: 15px;
     color: var(--text-muted);
   }
-  .nav a.on {
+  .navlink.on {
     color: var(--text);
     border-bottom: 2px solid var(--accent);
     padding-bottom: 2px;
@@ -237,6 +249,12 @@
     align-items: center;
     padding: 14px 18px;
     border-bottom: 1px solid var(--border-soft);
+  }
+  /* Range selector header shown above the per-service cards in "cards" layout. */
+  .range-bar {
+    display: flex;
+    align-items: center;
+    margin: 6px 18px 2px;
   }
   .gname {
     flex: 1;

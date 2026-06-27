@@ -6,6 +6,14 @@
  * themes itself + points its data fetches at the consumer's monitoring repo.
  * Nothing about a specific project is baked into the build.
  */
+
+/**
+ * Card layout for the service list.
+ * - `grouped`: all services share one card (the default).
+ * - `cards`: every service gets its own card.
+ */
+export type VelvetLayout = "grouped" | "cards";
+
 export interface VelvetConfig {
   /** GitHub owner of the Upptime monitoring repo to read data + issues from. */
   owner: string;
@@ -19,6 +27,8 @@ export interface VelvetConfig {
   logoUrl?: string;
   /** Navbar links. */
   navbar: Array<{ title: string; href: string }>;
+  /** Card layout: one grouped card (default) or one card per service. */
+  layout: VelvetLayout;
   /** Theme colours + optional font families. */
   theme: {
     accent: string;
@@ -35,6 +45,7 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo"> = {
   dataBranch: "main",
   name: "Status",
   navbar: [{ title: "Status", href: "/" }],
+  layout: "grouped",
   theme: {
     accent: "#6366f1",
     accentDeg: "#d29922",

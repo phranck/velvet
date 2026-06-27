@@ -27,8 +27,8 @@ export interface ServiceSummary {
 
 /**
  * Status of one uptime-bar segment. For short ranges a segment is a single day;
- * for long ranges (1y, all) several days are aggregated into one bar so the
- * strip stays legible — see {@link DayStatus.spanDays}.
+ * for the 1-year range several days are aggregated into one bar so the strip
+ * stays legible — see {@link DayStatus.spanDays}.
  */
 export interface DayStatus {
   /** ISO date (YYYY-MM-DD); for an aggregated bar, the most recent day in the bucket. */
@@ -51,5 +51,5 @@ export interface Incident {
   isMaintenance: boolean;
 }
 
-/** Selectable history window for the uptime bar and headline figure. */
-export type RangeKey = "day" | "week" | "month" | "year" | "all";
+/** Selectable history window for the uptime bar and headline figure (capped at 1 year). */
+export type RangeKey = "day" | "week" | "month" | "year";
