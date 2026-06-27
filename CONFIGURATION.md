@@ -134,6 +134,7 @@ status-website:
   velvet:
     layout: cards
     # logoHeight: 44
+    # defaultRange: 30d      # range pre-selected on first visit (24h/7d/30d/90d/1yr)
     # showPoweredBy: true   # footer "Powered by" credit
     # showSubscribe: true   # footer Subscribe (RSS) link
     accent: "#6366f1"
@@ -151,6 +152,7 @@ status-website:
 | --- | --- | --- |
 | `layout` | `grouped` | `grouped` puts all services in one card; `cards` gives each service its own card. Any value other than `cards` is treated as `grouped`. |
 | `logoHeight` | `44` | Logo height in pixels (width scales proportionally) — raise it for a taller logo. |
+| `defaultRange` | `30d` | History window pre-selected on a visitor's first visit. Accepts a label (`24h`, `7d`, `30d`, `90d`, `1yr`) or the internal key (`day`, `week`, `month`, `quarter`, `year`). Once a visitor picks a range it is remembered and wins over this default. |
 | `showPoweredBy` | `true` | Show the "Powered by Velvet + Upptime" credit in the footer. |
 | `showSubscribe` | `true` | Show the Subscribe (RSS) link in the footer. When only one of the two footer items is shown, it is centered; when neither is, the footer is omitted. |
 | `accent` | `#6366f1` | Primary / **operational** colour (any hex). Drives the indigo theme and the "up" bars. |

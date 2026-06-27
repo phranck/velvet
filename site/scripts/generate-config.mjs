@@ -24,6 +24,17 @@ const velvet = sw.velvet ?? {};
 const subst = (s) =>
   typeof s === "string" ? s.replaceAll("$OWNER", rc.owner).replaceAll("$REPO", rc.repo) : s;
 
+// Accept either the internal range key (`quarter`) or the user-facing label
+// (`90d`) for `velvet.defaultRange`; fall back to the 30d view on anything else.
+const RANGE_KEYS = ["day", "week", "month", "quarter", "year"];
+const RANGE_LABEL_TO_KEY = { "24h": "day", "7d": "week", "30d": "month", "90d": "quarter", "1yr": "year" };
+const normalizeRange = (value) => {
+  if (typeof value !== "string") return "month";
+  const v = value.trim().toLowerCase();
+  if (RANGE_KEYS.includes(v)) return v;
+  return RANGE_LABEL_TO_KEY[v] ?? "month";
+};
+
 const config = {
   owner: rc.owner,
   repo: rc.repo,
@@ -34,6 +45,7 @@ const config = {
     ? sw.navbar.map((n) => ({ title: n.title, href: subst(n.href) }))
     : [{ title: "Status", href: "/" }],
   layout: velvet.layout === "cards" ? "cards" : "grouped",
+  defaultRange: normalizeRange(velvet.defaultRange),
   logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 44,
   showPoweredBy: velvet.showPoweredBy !== false,
   showSubscribe: velvet.showSubscribe !== false,

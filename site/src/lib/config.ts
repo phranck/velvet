@@ -7,6 +7,8 @@
  * Nothing about a specific project is baked into the build.
  */
 
+import type { RangeKey } from "./types";
+
 /**
  * Card layout for the service list.
  * - `grouped`: all services share one card (the default).
@@ -35,6 +37,8 @@ export interface VelvetConfig {
   navbar: Array<{ title: string; href: string }>;
   /** Card layout: one grouped card (default) or one card per service. */
   layout: VelvetLayout;
+  /** Range pre-selected on first visit, before the visitor picks one themselves. */
+  defaultRange: RangeKey;
   /** Theme colours + optional font families. */
   theme: {
     accent: string;
@@ -52,6 +56,7 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo"> = {
   name: "Status",
   navbar: [{ title: "Status", href: "/" }],
   layout: "grouped",
+  defaultRange: "month",
   logoHeight: 44,
   showPoweredBy: true,
   showSubscribe: true,

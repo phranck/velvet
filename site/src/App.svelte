@@ -23,7 +23,8 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   const RANGE_STORAGE_KEY = "velvet:range";
-  function initialRange(): RangeKey {
+  /** The visitor's previously chosen range, or null if they haven't picked one yet. */
+  function storedRange(): RangeKey | null {
     try {
       const stored = localStorage.getItem(RANGE_STORAGE_KEY);
       if (
@@ -36,11 +37,22 @@
         return stored;
       }
     } catch {
-      // localStorage may be unavailable (private mode); use the default below.
+      // localStorage may be unavailable (private mode); fall through to null.
     }
-    return "month";
+    return null;
   }
-  let range = $state<RangeKey>(initialRange());
+  // Until the config loads, sit on the 30d view; onMount swaps in the configured
+  // default range if the visitor hasn't picked one of their own.
+  let range = $state<RangeKey>(storedRange() ?? "month");
+  /** Switch the visible range and remember the explicit choice across reloads. */
+  function selectRange(key: RangeKey): void {
+    range = key;
+    try {
+      localStorage.setItem(RANGE_STORAGE_KEY, key);
+    } catch {
+      // ignore persistence failures (private mode / disabled storage)
+    }
+  }
 
   const today = new Date().toISOString().slice(0, 10);
   // Format in the visitor's own locale (browser language) rather than a fixed one.
@@ -62,15 +74,6 @@
   };
 
   const overall = $derived(overallStatus(services));
-
-  // Persist the selected range so it survives reloads.
-  $effect(() => {
-    try {
-      localStorage.setItem(RANGE_STORAGE_KEY, range);
-    } catch {
-      // ignore persistence failures (private mode / disabled storage)
-    }
-  });
 
   // Per-service expand/collapse state, lifted here so the "expand/collapse all"
   // control can drive every card at once. Each card still toggles on its own;
@@ -106,6 +109,11 @@
     try {
       const cfg = await loadConfig();
       applyTheme(cfg);
+      // Honour the configured default range, but only for first-time visitors —
+      // an explicit earlier choice (in localStorage) always wins.
+      if (storedRange() === null) {
+        range = cfg.defaultRange;
+      }
       document.title = `${cfg.name} — Status`;
       config = cfg;
       const [s, i, start] = await Promise.all([
@@ -162,7 +170,7 @@
     {#snippet rangeButtons()}
       <div class="ranges">
         {#each RANGES as r (r.key)}
-          <button class:on={range === r.key} onclick={() => (range = r.key)}>{r.label}</button>
+          <button class:on={range === r.key} onclick={() => selectRange(r.key)}>{r.label}</button>
         {/each}
       </div>
     {/snippet}
