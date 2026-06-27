@@ -66,7 +66,7 @@ const config = {
     : [{ title: "Status", href: "/" }],
   layout: velvet.layout === "cards" ? "cards" : "grouped",
   defaultRange: normalizeRange(velvet.defaultRange),
-  logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 44,
+  logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 72,
   showPoweredBy: velvet.showPoweredBy !== false,
   showSubscribe: velvet.showSubscribe !== false,
   theme: {

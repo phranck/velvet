@@ -22,6 +22,25 @@ const RANGE_SPECS: Record<RangeKey, RangeSpec> = {
   year: { days: 365, bucketDays: 7 },
 };
 
+/** Human-readable "start of window" label per range, shown under the uptime bar (page + OG card). */
+export const RANGE_LABEL: Record<RangeKey, string> = {
+  day: "24h ago",
+  week: "7 days ago",
+  month: "30 days ago",
+  quarter: "90 days ago",
+  year: "1 year ago",
+};
+
+/**
+ * Overall-status hero copy: the Phosphor icon class and headline per status, shared
+ * by StatusHero.svelte and the OG card so both always tell the same story.
+ */
+export const STATUS_HERO: Record<ServiceStatus, { text: string; icon: string }> = {
+  up: { text: "All systems operational", icon: "ph-check-circle" },
+  degraded: { text: "Some systems degraded", icon: "ph-warning" },
+  down: { text: "Major service outage", icon: "ph-x-circle" },
+};
+
 /**
  * Fetch the live service summary from a consumer's Upptime monitoring repo.
  * Cached ~by the CDN for a couple of minutes, matching Upptime's update cadence.
@@ -122,26 +141,45 @@ export async function fetchIncidents(owner: string, repo: string): Promise<Incid
  *
  * @param owner - GitHub owner of the monitoring repo
  * @param repo - monitoring repo name
+ * @param token - optional GitHub token; sent as a Bearer auth header to lift the
+ *   unauthenticated rate limit (used by the OG build, which has `GITHUB_TOKEN`).
  * @returns ISO date (YYYY-MM-DD) the repo was created, or null on failure.
  */
-export async function fetchMonitoringStart(owner: string, repo: string): Promise<string | null> {
+/**
+ * Web Storage, only present in the browser. The OG-card build runs this module under
+ * Node, where `localStorage` is absent — guarding here keeps {@link fetchMonitoringStart}
+ * usable in both contexts (and silences Node's experimental-localStorage warning).
+ */
+const browserStorage: Storage | null =
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined"
+    ? window.localStorage
+    : null;
+
+export async function fetchMonitoringStart(
+  owner: string,
+  repo: string,
+  token?: string,
+): Promise<string | null> {
   const key = `velvet:created:${owner}/${repo}`;
   try {
-    const cached = localStorage.getItem(key);
+    const cached = browserStorage?.getItem(key);
     if (cached) return cached;
   } catch {
-    // localStorage unavailable; fall through to a network lookup.
+    // storage unavailable (private mode); fall through to a network lookup.
   }
   try {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-      headers: { Accept: "application/vnd.github+json" },
+      headers: {
+        Accept: "application/vnd.github+json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { created_at?: string };
     const created = data.created_at?.slice(0, 10) ?? null;
     if (created) {
       try {
-        localStorage.setItem(key, created);
+        browserStorage?.setItem(key, created);
       } catch {
         // ignore persistence failures
       }

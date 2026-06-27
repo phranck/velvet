@@ -108,18 +108,18 @@
     font: inherit;
   }
   .svc-ico {
-    font-size: 22px;
+    font-size: var(--svc-icon-size);
     line-height: 1;
     flex: none;
   }
   .name {
-    font-size: 16.5px;
+    font-size: var(--svc-name-size);
     font-weight: 500;
     flex: 1;
     text-align: left;
   }
   .uptime {
-    font-size: 14px;
+    font-size: var(--uptime-size);
     color: var(--text-muted);
   }
   .chev {
@@ -147,18 +147,19 @@
     align-items: center;
     gap: 5px;
     font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-size: var(--proto-size);
     font-weight: 600;
     letter-spacing: 0.3px;
     color: var(--text-muted);
     padding: 2px 8px 2px 7px;
-    border: 1px solid var(--border);
+    background: var(--proto-bg);
+    border: 1px solid var(--proto-border);
     border-radius: 999px;
   }
   .proto::before {
     content: "";
-    width: 6px;
-    height: 6px;
+    width: var(--proto-dot);
+    height: var(--proto-dot);
     border-radius: 50%;
     background: var(--c);
   }

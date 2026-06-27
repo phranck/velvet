@@ -1,15 +1,16 @@
 <script lang="ts">
+  import { STATUS_HERO } from "../lib/data";
   import type { ServiceStatus } from "../lib/types";
 
   let { status, updated }: { status: ServiceStatus; updated: string } = $props();
 
-  const config = {
-    up: { icon: "ph-check-circle", text: "All systems operational", color: "var(--accent-bright)" },
-    degraded: { icon: "ph-warning", text: "Some systems degraded", color: "var(--accent-deg)" },
-    down: { icon: "ph-x-circle", text: "Major service outage", color: "var(--accent-down)" },
-  } as const;
-
-  const c = $derived(config[status]);
+  /** Headline tint per status; the icon + text come from the shared STATUS_HERO map. */
+  const HERO_COLOR: Record<ServiceStatus, string> = {
+    up: "var(--accent-bright)",
+    degraded: "var(--accent-deg)",
+    down: "var(--accent-down)",
+  };
+  const c = $derived({ ...STATUS_HERO[status], color: HERO_COLOR[status] });
 </script>
 
 <div class="hero">
@@ -26,14 +27,14 @@
     padding: 40px 20px 30px;
   }
   .ico {
-    font-size: 54px;
+    font-size: var(--hero-icon-size);
     line-height: 1;
     display: inline-block;
     margin-bottom: 14px;
     filter: drop-shadow(0 0 14px color-mix(in srgb, currentColor 35%, transparent));
   }
   h1 {
-    font-size: 38px;
+    font-size: var(--headline-size);
     font-weight: 700;
     letter-spacing: -0.8px;
     line-height: 1.1;

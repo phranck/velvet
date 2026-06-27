@@ -7,6 +7,7 @@
     fetchSummary,
     groupByProtocol,
     overallStatus,
+    RANGE_LABEL,
     uptimeForRange,
   } from "./lib/data";
   import { applyTheme, loadConfig, type VelvetConfig } from "./lib/config";
@@ -66,14 +67,6 @@
     { key: "quarter", label: "90d" },
     { key: "year", label: "1yr" },
   ];
-  const RANGE_LABEL: Record<RangeKey, string> = {
-    day: "24h ago",
-    week: "7 days ago",
-    month: "30 days ago",
-    quarter: "90 days ago",
-    year: "1 year ago",
-  };
-
   const overall = $derived(overallStatus(services));
 
   // Per-service expand/collapse state, lifted here so the "expand/collapse all"

@@ -7,6 +7,7 @@
  * Nothing about a specific project is baked into the build.
  */
 
+import { tokenCssVars } from "./tokens";
 import type { RangeKey } from "./types";
 
 /**
@@ -75,7 +76,7 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo"> = {
   navbar: [{ title: "Status", href: "/" }],
   layout: "grouped",
   defaultRange: "month",
-  logoHeight: 44,
+  logoHeight: 72,
   showPoweredBy: true,
   showSubscribe: true,
   theme: {
@@ -120,4 +121,10 @@ export function applyTheme(config: VelvetConfig): void {
   if (config.theme.fontSans) root.style.setProperty("--font-sans", config.theme.fontSans);
   if (config.theme.fontMono) root.style.setProperty("--font-mono", config.theme.fontMono);
   root.style.setProperty("--logo-height", `${config.logoHeight}px`);
+  // Shared layout tokens (bar geometry, type scale, pill styling) — the very values
+  // the OG card reads from `lib/tokens`, applied here as CSS custom properties so the
+  // page and the social card render from one definition.
+  for (const [name, value] of Object.entries(tokenCssVars())) {
+    root.style.setProperty(name, value);
+  }
 }
