@@ -104,20 +104,9 @@
           {config.name}
         {/if}
       </a>
-      <span class="spacer"></span>
       {#each config.navbar as link (link.href)}
         <a class="navlink" class:on={link.href === "/"} href={link.href}>{link.title}</a>
       {/each}
-      <a
-        class="subscribe"
-        href="/incidents.atom"
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Subscribe to the incident feed (Atom/RSS)"
-      >
-        <i class="ph-duotone ph-rss" aria-hidden="true"></i>
-        <span>Subscribe</span>
-      </a>
     </nav>
   {/if}
 
@@ -172,9 +161,21 @@
   {/if}
 
   <footer class="foot">
-    Powered by<br />
-    <a href="https://github.com/phranck/velvet" target="_blank" rel="noopener noreferrer">Velvet</a> +
-    <a href="https://upptime.js.org" target="_blank" rel="noopener noreferrer">Upptime</a>
+    <span class="powered">
+      Powered by
+      <a href="https://github.com/phranck/velvet" target="_blank" rel="noopener noreferrer">Velvet</a>
+      + <a href="https://upptime.js.org" target="_blank" rel="noopener noreferrer">Upptime</a>
+    </span>
+    <a
+      class="sub-link"
+      href="/incidents.atom"
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Subscribe to the incident feed (Atom/RSS)"
+    >
+      <i class="ph-duotone ph-rss" aria-hidden="true"></i>
+      <span>Subscribe</span>
+    </a>
   </footer>
 </main>
 
@@ -190,6 +191,7 @@
   .nav {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 16px;
     padding: 18px 22px;
     border-bottom: 1px solid var(--border-soft);
@@ -203,13 +205,10 @@
     color: var(--text);
   }
   .logo {
-    height: 32px;
+    height: 44px;
     width: auto;
-    max-width: 240px;
+    max-width: 280px;
     display: block;
-  }
-  .spacer {
-    flex: 1;
   }
   .navlink {
     font-size: 15px;
@@ -219,29 +218,6 @@
     color: var(--text);
     border-bottom: 2px solid var(--accent);
     padding-bottom: 2px;
-  }
-  .subscribe {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    padding: 5px 11px;
-    border-radius: 8px;
-    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-    color: var(--accent-bright);
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
-    transition:
-      color 0.12s ease,
-      border-color 0.12s ease,
-      background 0.12s ease;
-  }
-  .subscribe:hover {
-    color: color-mix(in srgb, var(--accent-bright), #fff 30%);
-    border-color: color-mix(in srgb, var(--accent) 70%, transparent);
-    background: color-mix(in srgb, var(--accent) 28%, transparent);
-  }
-  .subscribe i {
-    font-size: 16px;
   }
   .state {
     text-align: center;
@@ -294,14 +270,31 @@
   }
   .foot {
     margin-top: auto;
-    text-align: center;
-    padding: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px;
     font-size: 14px;
-    line-height: 1.7;
     color: var(--text-faint);
   }
-  .foot a {
+  .powered a {
     color: color-mix(in srgb, var(--accent), #fff 35%);
     font-weight: 600;
+  }
+  .sub-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.12s ease;
+  }
+  .sub-link:hover {
+    color: var(--accent-bright);
+  }
+  .sub-link i {
+    font-size: 16px;
   }
 </style>
