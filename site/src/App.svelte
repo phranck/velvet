@@ -179,7 +179,7 @@
         fetchMonitoringStart(cfg.owner, cfg.repo),
       ]);
       services = groupByProtocol(s);
-      incidents = i;
+      incidents = i ?? [];
       monitoringStart = start;
       // Seed each card's open state from its persisted per-slug value.
       const seeded: Record<string, boolean> = {};
@@ -196,6 +196,38 @@
     } finally {
       loading = false;
     }
+  });
+
+  /** How often the open-incidents banner re-polls GitHub while the tab is visible. */
+  const INCIDENT_REFRESH_MS = 60_000;
+
+  /**
+   * Re-fetch open incidents/maintenance and update the banner in place. Keeps the
+   * current list when the (unauthenticated, rate-limited) request fails, so a
+   * transient GitHub API hiccup never blanks an active banner.
+   */
+  async function refreshIncidents(): Promise<void> {
+    if (!config) return;
+    const next = await fetchIncidents(config.owner, config.repo);
+    if (next) incidents = next;
+  }
+
+  // Live banner refresh: while the tab is visible, re-poll open incidents so a new
+  // maintenance/deploy banner (or a cleared one) appears within a minute without a
+  // manual reload. Polling pauses while the tab is hidden to respect GitHub's
+  // unauthenticated API rate limit (60 req/h/IP); returning to the tab refetches at
+  // once. Starts once config (owner/repo) is loaded; torn down on unmount.
+  $effect(() => {
+    if (!config) return;
+    const refreshIfVisible = (): void => {
+      if (!document.hidden) void refreshIncidents();
+    };
+    const timer = setInterval(refreshIfVisible, INCIDENT_REFRESH_MS);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
   });
 </script>
 

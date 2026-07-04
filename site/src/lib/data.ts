@@ -100,22 +100,26 @@ export function groupByProtocol(services: ServiceSummary[]): ServiceSummary[] {
 
 /**
  * Fetch open incidents and maintenance windows from GitHub Issues.
- * Unauthenticated and best-effort: on a rate-limit (HTTP 403) it resolves to an
- * empty list rather than throwing, so the page still renders the live status.
+ * Unauthenticated and best-effort. Returns `null` when the request cannot be
+ * completed (network error or a rate-limit / non-2xx response) so callers can
+ * tell "no open incidents" (`[]`) apart from "couldn't check": the live refresh
+ * keeps the last known banner on `null` instead of blanking it, while the first
+ * load treats `null` as empty so the page still renders.
  *
  * @param owner - GitHub owner of the monitoring repo
  * @param repo - monitoring repo name
- * @returns open incidents, maintenance first, newest first within each group.
+ * @returns open incidents (maintenance first, newest first within each group), or
+ *   `null` if the request could not be completed.
  */
-export async function fetchIncidents(owner: string, repo: string): Promise<Incident[]> {
+export async function fetchIncidents(owner: string, repo: string): Promise<Incident[] | null> {
   const url = `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=100`;
   let res: Response;
   try {
     res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   } catch {
-    return [];
+    return null;
   }
-  if (!res.ok) return [];
+  if (!res.ok) return null;
   const issues = (await res.json()) as Array<{
     number: number;
     title: string;
