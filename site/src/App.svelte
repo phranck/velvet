@@ -18,6 +18,7 @@
   import type {
     IncidentsDocument,
     RangeKey,
+    ResponseTimesDocument,
     Service,
     StatusDocument,
   } from "./lib/types";
@@ -27,6 +28,7 @@
 
   let config = $state<VelvetConfig | null>(null);
   let statusDocument = $state<StatusDocument | null>(null);
+  let responseTimesDocument = $state<ResponseTimesDocument | null>(null);
   let incidentsDocument = $state<IncidentsDocument | null>(null);
   let dataClient = $state<VelvetDataClient | null>(null);
   let loading = $state(true);
@@ -190,6 +192,7 @@
       const snapshot = await client.loadSnapshot();
       dataClient = client;
       statusDocument = snapshot.status;
+      responseTimesDocument = snapshot.responseTimes;
       incidentsDocument = snapshot.incidents;
       // Seed each card's open state from its persisted per-service value.
       const seeded: Record<string, boolean> = {};
@@ -305,6 +308,10 @@
         )}
         rangeLabel={RANGE_LABEL[range]}
         {range}
+        generatedAt={responseTimesDocument!.generatedAt}
+        responseSeries={responseTimesDocument?.series.filter(
+          ({ serviceId }) => serviceId === svc.id,
+        ) ?? []}
         open={openMap[svc.id] === true}
         onToggle={() => toggleOne(svc.id)}
       />

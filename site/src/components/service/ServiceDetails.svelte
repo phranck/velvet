@@ -1,12 +1,31 @@
 <script lang="ts">
-  import type { ServiceCheck } from "../../lib/types";
+  import type {
+    RangeKey,
+    ResponseTimesDocument,
+    ServiceCheck,
+  } from "../../lib/types";
   import ProtocolStatus from "./ProtocolStatus.svelte";
+  import ResponseTimeChart from "./ResponseTimeChart.svelte";
 
   let {
+    serviceId,
+    serviceName,
     checks,
+    responseSeries,
+    range,
+    generatedAt,
     open,
     id,
-  }: { checks: ServiceCheck[]; open: boolean; id: string } = $props();
+  }: {
+    serviceId: string;
+    serviceName: string;
+    checks: ServiceCheck[];
+    responseSeries: ResponseTimesDocument["series"];
+    range: RangeKey;
+    generatedAt: string;
+    open: boolean;
+    id: string;
+  } = $props();
 </script>
 
 <div class="detail-wrap" class:open>
@@ -17,6 +36,13 @@
           <ProtocolStatus {check} />
         {/each}
       </div>
+      <ResponseTimeChart
+        {serviceId}
+        {serviceName}
+        series={responseSeries}
+        {range}
+        {generatedAt}
+      />
     </div>
   </div>
 </div>

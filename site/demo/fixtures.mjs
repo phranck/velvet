@@ -1,8 +1,11 @@
 /** Contract-valid Velvet data for the deterministic README screenshot. */
 
-export const FIXED_NOW = "2026-06-01T12:00:00.000Z";
+export const FIXED_NOW = "2026-06-01T12:05:00.000Z";
+const STATUS_GENERATED_AT = "2026-06-01T12:00:00.000Z";
 
 const DAY_MS = 86_400_000;
+const RESPONSE_INTERVAL_MS = 6 * 60 * 60 * 1_000;
+const RESPONSE_SAMPLE_COUNT = 90 * 4 + 1;
 
 function daysAgo(count) {
   return new Date(new Date(FIXED_NOW).getTime() - count * DAY_MS)
@@ -26,7 +29,39 @@ function dailyAvailability(outages = []) {
 }
 
 function check(id, protocol, responseTimeMs, status = "operational") {
-  return { id, protocol, status, checkedAt: FIXED_NOW, responseTimeMs };
+  return {
+    id,
+    protocol,
+    status,
+    checkedAt: STATUS_GENERATED_AT,
+    responseTimeMs,
+  };
+}
+
+function responseSamples(responseTimeMs, seed) {
+  return Array.from({ length: RESPONSE_SAMPLE_COUNT }, (_, index) => {
+    const timestamp = new Date(
+      new Date(FIXED_NOW).getTime() -
+        (RESPONSE_SAMPLE_COUNT - index - 1) * RESPONSE_INTERVAL_MS,
+    ).toISOString();
+    const unavailable =
+      index > 0 &&
+      index < RESPONSE_SAMPLE_COUNT - 1 &&
+      (index + seed * 17) % 137 === 0;
+    const wave =
+      Math.sin((index + seed * 5) / 13) * responseTimeMs * 0.12 +
+      Math.cos((index + seed * 3) / 31) * responseTimeMs * 0.06;
+    const spike = (index + seed) % 89 === 0 ? responseTimeMs * 0.35 : 0;
+    return {
+      timestamp,
+      responseTimeMs:
+        unavailable
+          ? null
+          : index === RESPONSE_SAMPLE_COUNT - 1
+            ? responseTimeMs
+            : Math.max(1, Math.round(responseTimeMs + wave + spike)),
+    };
+  });
 }
 
 function service({
@@ -55,7 +90,7 @@ function service({
 
 export const demoStatus = {
   schemaVersion: 1,
-  generatedAt: FIXED_NOW,
+  generatedAt: STATUS_GENERATED_AT,
   monitoringStartedAt: "2025-01-01T00:00:00.000Z",
   services: [
     service({
@@ -107,17 +142,15 @@ export const demoResponseTimes = {
   schemaVersion: 1,
   generatedAt: FIXED_NOW,
   monitoringStartedAt: demoStatus.monitoringStartedAt,
-  series: demoStatus.services.flatMap((serviceEntry) =>
-    serviceEntry.checks.map((checkEntry) => ({
+  series: demoStatus.services.flatMap((serviceEntry, serviceIndex) =>
+    serviceEntry.checks.map((checkEntry, checkIndex) => ({
       serviceId: serviceEntry.id,
       checkId: checkEntry.id,
       protocol: checkEntry.protocol,
-      samples: [
-        {
-          timestamp: checkEntry.checkedAt,
-          responseTimeMs: checkEntry.responseTimeMs,
-        },
-      ],
+      samples: responseSamples(
+        checkEntry.responseTimeMs,
+        serviceIndex * 2 + checkIndex + 1,
+      ),
     })),
   ),
 };

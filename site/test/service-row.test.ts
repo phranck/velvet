@@ -1,28 +1,24 @@
 import assert from "node:assert/strict";
-import { resolve } from "node:path";
 import { after, before, test } from "node:test";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { render } from "svelte/server";
-import { createServer, type ViteDevServer } from "vite";
 
-import type { DayStatus, Service } from "../src/lib/types.js";
+import type {
+  DayStatus,
+  ResponseTimesDocument,
+  Service,
+} from "../src/lib/types.js";
+import {
+  createSvelteRenderer,
+  type SvelteRenderer,
+} from "./render-svelte.js";
 
-const siteRoot = resolve(import.meta.dirname, "..");
-let server: ViteDevServer;
+let renderer: SvelteRenderer;
 
 before(async () => {
-  server = await createServer({
-    root: siteRoot,
-    configFile: false,
-    logLevel: "silent",
-    appType: "custom",
-    plugins: [svelte({ compilerOptions: { dev: false } })],
-    server: { middlewareMode: true },
-  });
+  renderer = await createSvelteRenderer();
 });
 
 after(async () => {
-  await server.close();
+  await renderer.close();
 });
 
 const days: DayStatus[] = [
@@ -35,22 +31,23 @@ const days: DayStatus[] = [
   },
 ];
 
-async function renderServiceRow(service: Service, open = true): Promise<string> {
-  const { default: ServiceRow } = await server.ssrLoadModule(
-    "/src/components/ServiceRow.svelte",
-  );
-  return render(ServiceRow, {
-    props: {
-      service,
-      days,
-      uptime: "99.95%",
-      rangeLabel: "24h ago",
-      range: "day",
-      icon: "ph-globe",
-      open,
-      onToggle: () => undefined,
-    },
-  }).body;
+async function renderServiceRow(
+  service: Service,
+  open = true,
+  responseSeries: ResponseTimesDocument["series"] = [],
+): Promise<string> {
+  return renderer.render("/src/components/ServiceRow.svelte", {
+    service,
+    days,
+    uptime: "99.95%",
+    rangeLabel: "24h ago",
+    range: "day",
+    generatedAt: "2026-07-27T12:00:00.000Z",
+    responseSeries,
+    icon: "ph-globe",
+    open,
+    onToggle: () => undefined,
+  });
 }
 
 test("renders dual-stack protocol status and latency side by side", async () => {
@@ -136,4 +133,35 @@ test("connects the native toggle button to the expanded protocol details", async
   assert.match(html, /aria-controls="service-api-details"/);
   assert.match(html, /id="service-api-details"/);
   assert.match(html, /Down/);
+});
+
+test("reuses the response chart inside service details", async () => {
+  const service: Service = {
+    id: "website",
+    name: "Website",
+    status: "operational",
+    checks: [
+      {
+        id: "website-ipv4",
+        protocol: "ipv4",
+        status: "operational",
+        checkedAt: "2026-07-27T12:00:00.000Z",
+        responseTimeMs: 90,
+      },
+    ],
+    dailyAvailability: [],
+  };
+  const html = await renderServiceRow(service, true, [
+    {
+      serviceId: "website",
+      checkId: "website-ipv4",
+      protocol: "ipv4",
+      samples: [
+        { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: 90 },
+      ],
+    },
+  ]);
+
+  assert.match(html, /<figcaption[^>]*>Response time<\/figcaption>/);
+  assert.match(html, /Response time history for Website/);
 });

@@ -14,7 +14,9 @@ export function statusText(status: ServiceStatus): string {
   return "Down";
 }
 
-export function protocolLabel(check: ServiceCheck): string {
+export function protocolLabel(
+  check: Pick<ServiceCheck, "protocol">,
+): string {
   return check.protocol === "ipv4" ? "IPv4" : "IPv6";
 }
 

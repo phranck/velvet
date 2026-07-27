@@ -1,0 +1,89 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import type { ResponseTimesDocument } from "../src/lib/types.js";
+
+type ResponseSeries = ResponseTimesDocument["series"];
+type ResponseSamples = ResponseSeries[number]["samples"];
+type RangeKey = "day" | "week" | "month" | "quarter" | "year";
+
+interface ResponseChartModule {
+  filterResponseSeries(
+    series: ResponseSeries,
+    range: RangeKey,
+    generatedAt: string,
+  ): ResponseSeries;
+  downsampleResponseSamples(
+    samples: ResponseSamples,
+    maxPoints: number,
+  ): ResponseSamples;
+}
+
+async function loadResponseChartModule(): Promise<Partial<ResponseChartModule>> {
+  return import("../src/lib/response-chart.js").catch(() => ({}));
+}
+
+const generatedAt = "2026-07-27T12:00:00.000Z";
+const timestamps = [
+  "2025-07-27T12:00:00.000Z",
+  "2026-04-28T12:00:00.000Z",
+  "2026-06-27T12:00:00.000Z",
+  "2026-07-20T12:00:00.000Z",
+  "2026-07-26T12:00:00.000Z",
+  generatedAt,
+  "2026-07-27T12:01:00.000Z",
+];
+const series: ResponseSeries = [
+  {
+    serviceId: "website",
+    checkId: "website-ipv4",
+    protocol: "ipv4",
+    samples: timestamps.map((timestamp, index) => ({
+      timestamp,
+      responseTimeMs: 100 + index,
+    })),
+  },
+];
+
+test("filters response samples at every selected range boundary", async () => {
+  const chart = await loadResponseChartModule();
+  assert.equal(typeof chart.filterResponseSeries, "function");
+  if (!chart.filterResponseSeries) return;
+
+  const expectedStarts: Record<RangeKey, string> = {
+    day: "2026-07-26T12:00:00.000Z",
+    week: "2026-07-20T12:00:00.000Z",
+    month: "2026-06-27T12:00:00.000Z",
+    quarter: "2026-04-28T12:00:00.000Z",
+    year: "2025-07-27T12:00:00.000Z",
+  };
+
+  for (const range of Object.keys(expectedStarts) as RangeKey[]) {
+    const filtered = chart.filterResponseSeries(series, range, generatedAt);
+    assert.equal(filtered[0]?.samples[0]?.timestamp, expectedStarts[range]);
+    assert.equal(filtered[0]?.samples.at(-1)?.timestamp, generatedAt);
+  }
+});
+
+test("downsamples deterministically without losing extrema or unavailable gaps", async () => {
+  const chart = await loadResponseChartModule();
+  assert.equal(typeof chart.downsampleResponseSamples, "function");
+  if (!chart.downsampleResponseSamples) return;
+
+  const values = [120, 110, 90, 50, 100, null, null, 140, 500, 130, 125, 115];
+  const samples: ResponseSamples = values.map((responseTimeMs, index) => ({
+    timestamp: `2026-07-27T${String(index).padStart(2, "0")}:00:00.000Z`,
+    responseTimeMs,
+  }));
+
+  const first = chart.downsampleResponseSamples(samples, 7);
+  const second = chart.downsampleResponseSamples(samples, 7);
+
+  assert.deepEqual(second, first);
+  assert.equal(first.length, 7);
+  assert.equal(first[0]?.responseTimeMs, 120);
+  assert.equal(first.at(-1)?.responseTimeMs, 115);
+  assert.ok(first.some(({ responseTimeMs }) => responseTimeMs === 50));
+  assert.ok(first.some(({ responseTimeMs }) => responseTimeMs === 500));
+  assert.equal(first.filter(({ responseTimeMs }) => responseTimeMs === null).length, 1);
+});

@@ -166,8 +166,30 @@ async function main() {
       Math.abs(desktopProtocols[1].y - desktopProtocols[0].y) < 1,
       "protocol statuses should share one desktop row",
     );
-    assert.equal(await page.locator(".detail a").count(), 0);
+    assert.equal(await page.locator('.detail a[href^="http"]').count(), 0);
     assert.doesNotMatch(await page.locator(".detail").first().innerText(), /https?:\/\//);
+
+    const firstChart = page.locator(".response-chart").first();
+    assert.ok(await firstChart.locator('.series-line[data-protocol="ipv4"]').count());
+    assert.ok(await firstChart.locator('.series-line[data-protocol="ipv6"]').count());
+    assert.equal(
+      await firstChart.locator('[data-protocol="ipv4"][data-line-style="solid"]').count() > 0,
+      true,
+    );
+    assert.equal(
+      await firstChart.locator('[data-protocol="ipv6"][data-line-style="dashed"]').count() > 0,
+      true,
+    );
+    assert.deepEqual(await firstChart.locator(".legend-item strong").allInnerTexts(), [
+      "88 ms",
+      "91 ms",
+    ]);
+    const chartLink = firstChart.locator(".plot-link");
+    await chartLink.focus();
+    assert.equal(await chartLink.evaluate((link) => link === document.activeElement), true);
+    await chartLink.evaluate((link) => link.blur());
+    const desktopChartWidth = await firstChart.locator("svg").evaluate((chart) => chart.getBoundingClientRect().width);
+    assert.ok(desktopChartWidth > 500);
 
     const shot = await page.screenshot({ type: "png" });
 
@@ -208,6 +230,8 @@ async function main() {
       Math.abs(narrowProtocols[1].x - narrowProtocols[0].x) < 1,
       "stacked protocol statuses should stay aligned",
     );
+    const narrowChartWidth = await firstChart.locator("svg").evaluate((chart) => chart.getBoundingClientRect().width);
+    assert.ok(narrowChartWidth <= narrowLayout.viewportWidth);
 
     // 2. Frame the page in a macOS-style window (traffic lights + Finder-like toolbar)
     //    sitting on a gradient with rounded OUTER corners and a soft shadow.
