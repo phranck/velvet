@@ -39,6 +39,12 @@ interface UpptimeHistory {
   startTime: string;
 }
 
+export interface VelvetDocumentTimestamps {
+  status: string;
+  responseTimes: string;
+  incidents: string;
+}
+
 const statusRank = {
   operational: 0,
   unknown: 1,
@@ -341,8 +347,16 @@ function maintenanceMetadata(body: string): {
 
 export function convertUpptimeSnapshot(
   snapshot: UpptimeSnapshot,
-  options: { generatedAt: string },
+  options: { generatedAt: string | VelvetDocumentTimestamps },
 ): VelvetDocuments {
+  const generatedAt =
+    typeof options.generatedAt === "string"
+      ? {
+          status: options.generatedAt,
+          responseTimes: options.generatedAt,
+          incidents: options.generatedAt,
+        }
+      : options.generatedAt;
   const sites = parseSites(snapshot.configYaml);
   const summaries = parseSummaries(snapshot.summaryJson);
   const allSlugs = new Set(sites.map(({ slug }) => slug));
@@ -413,13 +427,13 @@ export function convertUpptimeSnapshot(
           responseTimeMs: summary.time,
         };
       });
-      const dailyAvailability = datesBetween(serviceStartsAt, options.generatedAt)
+      const dailyAvailability = datesBetween(serviceStartsAt, generatedAt.status)
         .map((date) => ({
           date,
           monitoredSeconds: monitoredSecondsForDate(
             date,
             Date.parse(serviceStartsAt),
-            Date.parse(options.generatedAt),
+            Date.parse(generatedAt.status),
           ),
           unavailableSeconds:
             Math.max(
@@ -462,13 +476,13 @@ export function convertUpptimeSnapshot(
 
   const status: StatusDocument = {
     schemaVersion: CONTRACT_SCHEMA_VERSION,
-    generatedAt: options.generatedAt,
+    generatedAt: generatedAt.status,
     monitoringStartedAt,
     services,
   };
   const responseTimes: ResponseTimesDocument = {
     schemaVersion: CONTRACT_SCHEMA_VERSION,
-    generatedAt: options.generatedAt,
+    generatedAt: generatedAt.responseTimes,
     monitoringStartedAt,
     series,
   };
@@ -488,13 +502,13 @@ export function convertUpptimeSnapshot(
     .flatMap((issue): IncidentsDocument["events"] => {
       if (issue.labels.includes("maintenance")) {
         const metadata = maintenanceMetadata(issue.body);
-        const generatedAt = Date.parse(options.generatedAt);
+        const generatedAtTimestamp = Date.parse(generatedAt.incidents);
         const startsAt = Date.parse(metadata.startsAt);
         const endsAt = Date.parse(metadata.endsAt);
         const state =
-          generatedAt < startsAt
+          generatedAtTimestamp < startsAt
             ? "scheduled"
-            : generatedAt < endsAt
+            : generatedAtTimestamp < endsAt
               ? "active"
               : "completed";
         return [
@@ -541,7 +555,7 @@ export function convertUpptimeSnapshot(
     );
   const incidents: IncidentsDocument = {
     schemaVersion: CONTRACT_SCHEMA_VERSION,
-    generatedAt: options.generatedAt,
+    generatedAt: generatedAt.incidents,
     events,
   };
 
