@@ -1,9 +1,10 @@
-import { convertUpptimeSnapshot } from "./conversion.js";
-import type { VelvetDocumentTimestamps } from "./conversion.js";
+import {
+  convertUpptimeSnapshot,
+  deriveVelvetDocumentTimestamps,
+} from "./conversion.js";
 import { UpptimeAdapterError } from "./errors.js";
 import { loadUpptimeSnapshot } from "./github.js";
 import { materializeVelvetDocuments } from "./materialization.js";
-import type { UpptimeSnapshot } from "./types.js";
 
 export interface SyncVelvetDataOptions {
   repository: string;
@@ -45,41 +46,7 @@ export async function syncVelvetData(
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
   });
   const documents = convertUpptimeSnapshot(snapshot, {
-    generatedAt: options.generatedAt ?? latestSnapshotTimestamps(snapshot),
+    generatedAt: options.generatedAt ?? deriveVelvetDocumentTimestamps(snapshot),
   });
   await materializeVelvetDocuments(options.outputDirectory, documents);
-}
-
-function latestSnapshotTimestamps(
-  snapshot: UpptimeSnapshot,
-): VelvetDocumentTimestamps {
-  const monitoringTimestamps = Object.values(snapshot.commits).flatMap(
-    (commits) => commits.map(({ committedAt }) => committedAt),
-  );
-  const incidentTimestamps = snapshot.issues.flatMap(
-    ({ createdAt, closedAt }) =>
-      closedAt === null ? [createdAt] : [createdAt, closedAt],
-  );
-  const monitoringTimestamp = latestTimestamp(monitoringTimestamps);
-  if (monitoringTimestamp === undefined) {
-    throw new UpptimeAdapterError(
-      "PARTIAL_UPSTREAM_DATA",
-      "Upptime source has no usable snapshot timestamp",
-    );
-  }
-  const incidentsTimestamp = latestTimestamp([
-    ...monitoringTimestamps,
-    ...incidentTimestamps,
-  ]);
-  const monitoringGeneratedAt = new Date(monitoringTimestamp).toISOString();
-  return {
-    status: monitoringGeneratedAt,
-    responseTimes: monitoringGeneratedAt,
-    incidents: new Date(incidentsTimestamp ?? monitoringTimestamp).toISOString(),
-  };
-}
-
-function latestTimestamp(values: string[]): number | undefined {
-  const timestamp = Math.max(...values.map((value) => Date.parse(value)));
-  return Number.isFinite(timestamp) ? timestamp : undefined;
 }

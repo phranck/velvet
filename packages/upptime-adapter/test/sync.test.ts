@@ -75,12 +75,79 @@ test("syncs a validated Velvet snapshot from one GitHub repository ref", async (
         join(temporaryDirectory, "velvet-data", "v1", "status.json"),
         "utf8",
       ),
-    ) as { services: unknown[] };
+    ) as { generatedAt: string; services: unknown[] };
+    assert.equal(status.generatedAt, "2026-07-06T13:00:00.000Z");
     assert.equal(status.services.length, 1);
     assert.equal(
       requestedRefs.filter((ref) => ref !== null).every((ref) => ref === "source-sha"),
       true,
     );
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("preserves a history timestamp that is more precise than its commit", async () => {
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "velvet-sync-"));
+  const mockFetch: typeof fetch = async (input) => {
+    const url = new URL(input instanceof Request ? input.url : input.toString());
+
+    if (url.pathname.endsWith("/.upptimerc.yml")) {
+      return contentResponse(
+        "sites:\n  - name: Storage\n    url: https://example.invalid/health\n",
+      );
+    }
+    if (url.pathname.endsWith("/history/summary.json")) {
+      return contentResponse(
+        JSON.stringify([
+          {
+            name: "Storage",
+            slug: "storage",
+            status: "up",
+            time: 46,
+            dailyMinutesDown: {},
+          },
+        ]),
+      );
+    }
+    if (url.pathname.endsWith("/history/storage.yml")) {
+      return contentResponse(
+        "status: up\nresponseTime: 46\nlastUpdated: 2026-07-25T23:22:46.747Z\nstartTime: 2026-07-05T10:00:00.000Z\n",
+      );
+    }
+    if (url.pathname.endsWith("/commits")) {
+      return Response.json([
+        {
+          sha: "history-1",
+          commit: {
+            message: "Storage is up (200 in 46 ms) [upptime]",
+            committer: { date: "2026-07-25T23:22:46Z" },
+          },
+        },
+      ]);
+    }
+    if (url.pathname.endsWith("/issues")) {
+      return Response.json([]);
+    }
+    return new Response("not found", { status: 404 });
+  };
+
+  try {
+    await syncVelvetData({
+      repository: "example/status",
+      ref: "source-sha",
+      outputDirectory: join(temporaryDirectory, "velvet-data", "v1"),
+      apiBaseUrl: "https://api.github.test",
+      fetch: mockFetch,
+    });
+
+    const status = JSON.parse(
+      await readFile(
+        join(temporaryDirectory, "velvet-data", "v1", "status.json"),
+        "utf8",
+      ),
+    ) as { generatedAt: string };
+    assert.equal(status.generatedAt, "2026-07-25T23:22:46.747Z");
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
