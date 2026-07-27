@@ -58,7 +58,7 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-Then set **Settings → Pages → Source → "GitHub Actions"** so this deploy bypasses the `gh-pages` branch — Upptime's stock site builders (`site.yml` / `setup.yml`) can no longer overwrite Velvet (disable them if they appear). A new normalized data commit rebuilds the page and `/incidents.atom` feed.
+Then set **Settings → Pages → Source → "GitHub Actions"** so this deploy bypasses the `gh-pages` branch — Upptime's stock site builders (`site.yml` / `setup.yml`) can no longer overwrite Velvet (disable them if they appear). A new normalized data commit rebuilds the page.
 
 ## Use it for a new project (Template)
 
@@ -84,6 +84,20 @@ status-website:
 
 **Every option — all `sites` check fields, the `status-website` identity, the full `velvet` appearance block (layout, colours, fonts, icons), and which stock Upptime fields Velvet ignores — is documented in the [configuration reference](CONFIGURATION.md).**
 
+### Local theme configurator
+
+The complete configurator is served locally and never uploads an opened configuration:
+
+```bash
+./config start    # open http://127.0.0.1:2342
+./config stop
+./config version
+./config help
+```
+
+Its distributable HTML, CSS, JavaScript, and font assets live entirely under
+[`configurator/`](configurator/). The server binds only to `127.0.0.1`.
+
 ## Develop
 
 ```bash
@@ -94,7 +108,7 @@ npm run build                         # contracts and site/dist
 
 `site/public/config.json` is a sample config used for local development; the Action regenerates it from each consumer's `.upptimerc.yml`.
 
-The versioned, presentation-independent Velvet data contracts live in [`packages/contracts`](packages/contracts). That package owns the JSON Schemas, matching TypeScript types, runtime validation, and contract fixtures. The site, Atom feed, social card, and SEO generator all consume those contracts directly.
+The versioned, presentation-independent Velvet data contracts live in [`packages/contracts`](packages/contracts). That package owns the JSON Schemas, matching TypeScript types, runtime validation, and contract fixtures. The site, social card, and SEO generator all consume those contracts directly.
 
 ## License
 

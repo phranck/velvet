@@ -1,3 +1,5 @@
+@import "@fontsource/plaster/400.css";
+
 :root {
   --accent: #6366f1;
   --accent-bright: color-mix(in srgb, var(--accent), #ffffff 16%);

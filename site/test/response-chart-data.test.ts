@@ -18,6 +18,15 @@ interface ResponseChartModule {
     maxPoints: number,
   ): ResponseSamples;
   monotonePath(points: Array<{ x: number; y: number }>): string;
+  availableResponseTimestamps(series: ResponseSeries): string[];
+  nearestResponseTimestamp(
+    timestamps: string[],
+    targetTime: number,
+  ): string | null;
+  responseValuesAtTimestamp(
+    series: ResponseSeries,
+    timestamp: string,
+  ): Array<{ protocol: "ipv4" | "ipv6"; responseTimeMs: number }>;
 }
 
 async function loadResponseChartModule(): Promise<Partial<ResponseChartModule>> {
@@ -104,4 +113,68 @@ test("creates a monotone cubic path without overshooting local extrema", async (
   );
   assert.equal(chart.monotonePath([{ x: 4, y: 8 }]), "M4.00 8.00");
   assert.equal(chart.monotonePath([]), "");
+});
+
+test("selects the nearest available timestamp and omits unavailable values", async () => {
+  const chart = await loadResponseChartModule();
+  assert.equal(typeof chart.availableResponseTimestamps, "function");
+  assert.equal(typeof chart.nearestResponseTimestamp, "function");
+  assert.equal(typeof chart.responseValuesAtTimestamp, "function");
+  if (
+    !chart.availableResponseTimestamps ||
+    !chart.nearestResponseTimestamp ||
+    !chart.responseValuesAtTimestamp
+  ) {
+    return;
+  }
+
+  const hoverSeries: ResponseSeries = [
+    {
+      serviceId: "website",
+      checkId: "website-ipv4",
+      protocol: "ipv4",
+      samples: [
+        { timestamp: "2026-07-27T10:00:00.000Z", responseTimeMs: 100 },
+        { timestamp: "2026-07-27T11:00:00.000Z", responseTimeMs: null },
+        { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: null },
+      ],
+    },
+    {
+      serviceId: "website",
+      checkId: "website-ipv6",
+      protocol: "ipv6",
+      samples: [
+        { timestamp: "2026-07-27T10:00:00.000Z", responseTimeMs: 80 },
+        { timestamp: "2026-07-27T11:00:00.000Z", responseTimeMs: 90 },
+        { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: null },
+      ],
+    },
+  ];
+
+  const timestamps = chart.availableResponseTimestamps(hoverSeries);
+  assert.deepEqual(timestamps, [
+    "2026-07-27T10:00:00.000Z",
+    "2026-07-27T11:00:00.000Z",
+  ]);
+  assert.equal(
+    chart.nearestResponseTimestamp(
+      timestamps,
+      Date.parse("2026-07-27T10:40:00.000Z"),
+    ),
+    "2026-07-27T11:00:00.000Z",
+  );
+  assert.deepEqual(
+    chart.responseValuesAtTimestamp(
+      hoverSeries,
+      "2026-07-27T11:00:00.000Z",
+    ),
+    [{ protocol: "ipv6", responseTimeMs: 90 }],
+  );
+  assert.deepEqual(
+    chart.responseValuesAtTimestamp(
+      hoverSeries,
+      "2026-07-27T12:00:00.000Z",
+    ),
+    [],
+  );
 });

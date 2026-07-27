@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { render as renderOnServer } from "svelte/server";
 import { createServer, type ViteDevServer } from "vite";
 
 export interface SvelteRenderer {
@@ -17,6 +16,9 @@ export async function createSvelteRenderer(): Promise<SvelteRenderer> {
     plugins: [svelte({ compilerOptions: { dev: false } })],
     server: { middlewareMode: true },
   });
+  const { render: renderOnServer } = (await server.ssrLoadModule(
+    "svelte/server",
+  )) as typeof import("svelte/server");
 
   return {
     close: () => server.close(),

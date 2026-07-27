@@ -5,6 +5,7 @@
     ResponseTimesDocument,
     Service,
   } from "../lib/types";
+  import type { VelvetTheme } from "../lib/config";
   import ServiceDetails from "./service/ServiceDetails.svelte";
   import ServiceSummary from "./service/ServiceSummary.svelte";
   import UptimeBar from "./UptimeBar.svelte";
@@ -20,6 +21,7 @@
     icon,
     open,
     onToggle,
+    chart,
   }: {
     service: Service;
     days: DayStatus[];
@@ -31,6 +33,7 @@
     icon: string;
     open: boolean;
     onToggle: () => void;
+    chart: VelvetTheme["chart"];
   } = $props();
 
   const detailsId = $derived(`service-${service.id}-details`);
@@ -57,12 +60,13 @@
     {generatedAt}
     {open}
     id={detailsId}
+    {chart}
   />
 </div>
 
 <style>
   .row {
-    padding: 15px 18px;
+    padding: var(--card-padding);
     border-bottom: 1px solid var(--border-soft);
   }
   .row:last-child {

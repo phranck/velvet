@@ -36,7 +36,6 @@ runs:
         npm --prefix "$VELVET_ROOT" ci
         npm --prefix "$VELVET_ROOT" run build --workspace @velvet/contracts
         node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json" "$VELVET_DATA"
-        node "$VELVET_SITE/scripts/generate-feed.mjs" "$VELVET_SITE/public/config.json" "$VELVET_DATA/incidents.json" "$VELVET_SITE/public/incidents.atom"
         npm --prefix "$VELVET_ROOT" run build --workspace @velvet/site
         "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist/og.png"
         "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-seo.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist"

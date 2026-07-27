@@ -99,7 +99,7 @@ Set `slug:` on the site to pin it explicitly. The slug is the key you use under
 | `name` | Brand name shown next to the logo. Also the browser tab title (`<name> — Status`). Defaults to `repo`. | `Example` |
 | `logoUrl` | URL of a logo image shown top-left. If set, the **logo is shown instead of the name text**, and it links to `/`. | `https://example.com/logo.svg` |
 | `cname` | Custom domain. Velvet writes a `CNAME` file into the build so the domain survives each deploy. | `status.example.com` |
-| `navbar` | Links shown top-right. Each is `{ title, href }`. `$OWNER`/`$REPO` are substituted. Use `navbar: []` for none — the logo still links to `/`. Defaults to a single `Status → /` link. | see below |
+| `navbar` | Additional links shown beside the brand. Each is `{ title, href }`. `$OWNER`/`$REPO` are substituted. A root `/` entry is suppressed because the brand already links there. Use `navbar: []` for none. | see below |
 
 ```yaml
 status-website:
@@ -135,8 +135,7 @@ status-website:
     layout: cards
     # logoHeight: 44
     # defaultRange: 30d      # range pre-selected on first visit (24h/7d/30d/90d/1yr)
-    # showPoweredBy: true   # footer "Powered by" credit
-    # showSubscribe: true   # footer Subscribe (RSS) link
+    # showPoweredBy: true   # centered sticky "Powered by" footer credit
     theme:
       grid:
         operational: "#6366f1"
@@ -189,8 +188,7 @@ status-website:
 | `layout` | `grouped` | `grouped` puts all services in one card; `cards` gives each service its own card. Any value other than `cards` is treated as `grouped`. |
 | `logoHeight` | `72` | Logo height in pixels (width scales proportionally) — raise it for a taller logo. |
 | `defaultRange` | `30d` | History window pre-selected on a visitor's first visit. Accepts a label (`24h`, `7d`, `30d`, `90d`, `1yr`) or the internal key (`day`, `week`, `month`, `quarter`, `year`). Once a visitor picks a range it is remembered and wins over this default. |
-| `showPoweredBy` | `true` | Show the "Powered by Velvet" credit in the footer. |
-| `showSubscribe` | `true` | Show the Subscribe (RSS) link in the footer. When only one of the two footer items is shown, it is centered; when neither is, the footer is omitted. |
+| `showPoweredBy` | `true` | Show the centered "Powered by Velvet" credit in the bottom-sticky footer. |
 | `theme` | _(built-in)_ | Semantic colour configuration shared by the live page and generated social card. See [Theme](#theme). |
 | `fontSans` | `Inter` | Overrides the UI font (CSS `--font-sans`). See the note below. |
 | `fontMono` | `JetBrains Mono` | Overrides the monospace font (CSS `--font-mono`). |
@@ -329,15 +327,6 @@ page to go live:
    Source. Velvet deploys with the official Pages action; this bypasses the
    `gh-pages` branch so Upptime's stock page can't overwrite it.
 3. If Upptime's **Static Site CI** / **Setup CI** push a stock page, disable them.
-
----
-
-## Subscribe / incident feed
-
-Velvet builds a static Atom feed at **`/incidents.atom`** from the validated
-`velvet-data/v1/incidents.json` document and links it from a **Subscribe**
-button. The compatibility adapter is responsible for converting source incidents
-into that presentation-independent event model.
 
 ---
 

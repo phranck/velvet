@@ -1,0 +1,25 @@
+html,
+body,
+#configurator {
+  min-height: 100%;
+}
+
+body {
+  overflow: hidden;
+  background: #101116;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+:where(button, input, textarea, select, summary, a, [tabindex]):focus {
+  outline: none;
+}
+
+@media (max-width: 1100px) {
+  body {
+    overflow: auto;
+  }
+}
