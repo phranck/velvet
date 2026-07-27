@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "build": "npm run build --workspace @velvet/contracts && npm run build --workspace @velvet/site",
-    "test": "npm run test --workspace @velvet/contracts",
+    "test": "npm run test:lockfile && npm run test --workspace @velvet/contracts",
+    "test:lockfile": "node --test tests/lockfile.test.mjs",
     "typecheck": "npm run typecheck --workspace @velvet/contracts"
   },
   "engines": {
