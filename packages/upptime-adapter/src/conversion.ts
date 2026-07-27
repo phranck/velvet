@@ -198,6 +198,45 @@ function parseHistory(historyYaml: string): UpptimeHistory {
   };
 }
 
+export function deriveVelvetDocumentTimestamps(
+  snapshot: UpptimeSnapshot,
+): VelvetDocumentTimestamps {
+  const monitoringTimestamps = [
+    ...Object.values(snapshot.commits).flatMap((commits) =>
+      commits.map(({ committedAt }) => committedAt),
+    ),
+    ...Object.values(snapshot.histories).map(
+      (history) => parseHistory(history).lastUpdated,
+    ),
+  ];
+  const incidentTimestamps = snapshot.issues.flatMap(
+    ({ createdAt, closedAt }) =>
+      closedAt === null ? [createdAt] : [createdAt, closedAt],
+  );
+  const monitoringTimestamp = latestTimestamp(monitoringTimestamps);
+  if (monitoringTimestamp === undefined) {
+    throw new UpptimeAdapterError(
+      "PARTIAL_UPSTREAM_DATA",
+      "Upptime source has no usable snapshot timestamp",
+    );
+  }
+  const incidentsTimestamp = latestTimestamp([
+    ...monitoringTimestamps,
+    ...incidentTimestamps,
+  ]);
+  const monitoringGeneratedAt = new Date(monitoringTimestamp).toISOString();
+  return {
+    status: monitoringGeneratedAt,
+    responseTimes: monitoringGeneratedAt,
+    incidents: new Date(incidentsTimestamp ?? monitoringTimestamp).toISOString(),
+  };
+}
+
+function latestTimestamp(values: string[]): number | undefined {
+  const timestamp = Math.max(...values.map((value) => Date.parse(value)));
+  return Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
 function mapStatus(status: string): keyof typeof statusRank {
   switch (status) {
     case "up":
