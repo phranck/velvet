@@ -11,6 +11,26 @@
       "affectedServiceIds": ["database"],
       "startsAt": "2026-07-28T01:00:00.000Z",
       "endsAt": "2026-07-28T01:30:00.000Z"
+    },
+    {
+      "id": "maintenance-active-2026-07-27",
+      "kind": "maintenance",
+      "state": "active",
+      "title": "Storage maintenance",
+      "summary": "The maintenance window is in progress.",
+      "affectedServiceIds": ["storage"],
+      "startsAt": "2026-07-27T11:30:00.000Z",
+      "endsAt": "2026-07-27T12:30:00.000Z"
+    },
+    {
+      "id": "maintenance-completed-2026-07-27",
+      "kind": "maintenance",
+      "state": "completed",
+      "title": "Backend maintenance",
+      "summary": "The maintenance window is complete.",
+      "affectedServiceIds": ["backend"],
+      "startsAt": "2026-07-27T10:00:00.000Z",
+      "endsAt": "2026-07-27T11:00:00.000Z"
     }
   ]
 }

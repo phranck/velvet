@@ -10,7 +10,9 @@ Every document is independently cacheable and carries `schemaVersion` and `gener
 - `velvet-data/v1/response-times.json` contains timestamped series per service and check. A `null` `responseTimeMs` is an unavailable sample, not a zero-millisecond response.
 - `velvet-data/v1/incidents.json` contains Velvet incident and maintenance events instead of raw GitHub issue objects.
 
-Daily availability contains only monitored dates. `monitoredSeconds` makes partial days explicit, and an empty array represents no history. Producers must not add synthetic pre-monitoring days.
+Daily availability contains only monitored dates. `monitoredSeconds` makes partial days explicit, cannot exceed the actual monitoring window for that UTC day, and an empty array represents no history. Producers must not add synthetic pre-monitoring days.
+
+Maintenance state is relative to `generatedAt`: `scheduled` starts later, `active` contains the generation timestamp, and `completed` has already ended.
 
 ## Source of truth
 

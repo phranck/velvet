@@ -191,6 +191,34 @@ test("rejects unavailable time that exceeds monitored time", () => {
   );
 });
 
+test("rejects monitored time beyond the partial first day", () => {
+  const document = createStatusDocument();
+  document.monitoringStartedAt = "2026-07-26T12:00:00.000Z";
+  document.generatedAt = "2026-07-27T12:00:00.000Z";
+  document.services[0]!.dailyAvailability[0]!.date = "2026-07-26";
+  document.services[0]!.dailyAvailability[0]!.monitoredSeconds = 43_201;
+
+  assertError(
+    validateStatusDocument(document),
+    "INVALID_DURATION_RANGE",
+    "/services/0/dailyAvailability/0/monitoredSeconds",
+  );
+});
+
+test("rejects monitored time beyond the partial current day", () => {
+  const document = createStatusDocument();
+  document.monitoringStartedAt = "2026-07-26T12:00:00.000Z";
+  document.generatedAt = "2026-07-27T12:00:00.000Z";
+  document.services[0]!.dailyAvailability[0]!.date = "2026-07-27";
+  document.services[0]!.dailyAvailability[0]!.monitoredSeconds = 43_201;
+
+  assertError(
+    validateStatusDocument(document),
+    "INVALID_DURATION_RANGE",
+    "/services/0/dailyAvailability/0/monitoredSeconds",
+  );
+});
+
 test("rejects duplicate response-time series", () => {
   const document = createResponseTimesDocument();
   document.series.push(structuredClone(document.series[0]!));
@@ -248,6 +276,54 @@ test("rejects a maintenance window that ends before it starts", () => {
   assertError(
     validateIncidentsDocument(document),
     "TIMESTAMP_OUT_OF_RANGE",
+    "/events/0/endsAt",
+  );
+});
+
+test("rejects a scheduled maintenance window that already started", () => {
+  const document = createIncidentsDocument();
+  const event = document.events[0]!;
+  event.id = "maintenance-2026-07-27";
+  event.kind = "maintenance";
+  event.state = "scheduled";
+  event.startsAt = "2026-07-27T11:00:00.000Z";
+  event.endsAt = "2026-07-27T13:00:00.000Z";
+
+  assertError(
+    validateIncidentsDocument(document),
+    "INVALID_EVENT_STATE",
+    "/events/0/startsAt",
+  );
+});
+
+test("rejects an active maintenance window outside the generation time", () => {
+  const document = createIncidentsDocument();
+  const event = document.events[0]!;
+  event.id = "maintenance-2026-07-27";
+  event.kind = "maintenance";
+  event.state = "active";
+  event.startsAt = "2026-07-27T09:00:00.000Z";
+  event.endsAt = "2026-07-27T10:00:00.000Z";
+
+  assertError(
+    validateIncidentsDocument(document),
+    "INVALID_EVENT_STATE",
+    "/events/0/endsAt",
+  );
+});
+
+test("rejects a completed maintenance window in the future", () => {
+  const document = createIncidentsDocument();
+  const event = document.events[0]!;
+  event.id = "maintenance-2026-07-28";
+  event.kind = "maintenance";
+  event.state = "completed";
+  event.startsAt = "2026-07-28T09:00:00.000Z";
+  event.endsAt = "2026-07-28T10:00:00.000Z";
+
+  assertError(
+    validateIncidentsDocument(document),
+    "INVALID_EVENT_STATE",
     "/events/0/endsAt",
   );
 });

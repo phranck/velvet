@@ -168,6 +168,25 @@ function inspectRelations(
         );
       }
 
+      const dayStartsAt = Date.parse(`${day.date}T00:00:00.000Z`);
+      const dayEndsAt = dayStartsAt + 86_400_000;
+      const monitoredStartsAt = Math.max(dayStartsAt, monitoringStartedAt);
+      const monitoredEndsAt = Math.min(dayEndsAt, generatedAt);
+      const maximumMonitoredSeconds = Math.max(
+        0,
+        Math.floor((monitoredEndsAt - monitoredStartsAt) / 1_000),
+      );
+
+      if (day.monitoredSeconds > maximumMonitoredSeconds) {
+        errors.push(
+          contractError(
+            "INVALID_DURATION_RANGE",
+            `/services/${serviceIndex}/dailyAvailability/${dayIndex}/monitoredSeconds`,
+            "Monitored time cannot exceed the monitoring window for this day.",
+          ),
+        );
+      }
+
       if (day.unavailableSeconds > day.monitoredSeconds) {
         errors.push(
           contractError(

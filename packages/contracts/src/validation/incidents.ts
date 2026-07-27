@@ -86,6 +86,30 @@ function inspectRelations(
       }
     }
 
+    if (event.kind === "maintenance") {
+      const maintenanceEndsAt = Date.parse(event.endsAt);
+      const invalidStatePath =
+        event.state === "scheduled" && startsAt <= generatedAt
+          ? "startsAt"
+          : event.state === "active" && startsAt > generatedAt
+            ? "startsAt"
+            : event.state === "active" && maintenanceEndsAt <= generatedAt
+              ? "endsAt"
+              : event.state === "completed" && maintenanceEndsAt > generatedAt
+                ? "endsAt"
+                : null;
+
+      if (invalidStatePath !== null) {
+        errors.push(
+          contractError(
+            "INVALID_EVENT_STATE",
+            `/events/${eventIndex}/${invalidStatePath}`,
+            "Maintenance state is inconsistent with document generation time.",
+          ),
+        );
+      }
+    }
+
     if (endsAt !== null && endsAt < startsAt) {
       errors.push(
         contractError(

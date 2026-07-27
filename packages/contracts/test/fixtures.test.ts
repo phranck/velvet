@@ -77,6 +77,16 @@ const invalidFixtures: Array<[string, Validator, ContractValidationErrorCode]> =
     "TIMESTAMP_OUT_OF_RANGE",
   ],
   [
+    "invalid/status/oversized-partial-first-day.json",
+    validateStatusDocument,
+    "INVALID_DURATION_RANGE",
+  ],
+  [
+    "invalid/status/oversized-partial-current-day.json",
+    validateStatusDocument,
+    "INVALID_DURATION_RANGE",
+  ],
+  [
     "invalid/response-times/duplicate-series.json",
     validateResponseTimesDocument,
     "DUPLICATE_RESPONSE_SERIES",
@@ -85,6 +95,21 @@ const invalidFixtures: Array<[string, Validator, ContractValidationErrorCode]> =
     "invalid/incidents/invalid-window.json",
     validateIncidentsDocument,
     "TIMESTAMP_OUT_OF_RANGE",
+  ],
+  [
+    "invalid/incidents/scheduled-already-started.json",
+    validateIncidentsDocument,
+    "INVALID_EVENT_STATE",
+  ],
+  [
+    "invalid/incidents/active-window-ended.json",
+    validateIncidentsDocument,
+    "INVALID_EVENT_STATE",
+  ],
+  [
+    "invalid/incidents/completed-window-in-future.json",
+    validateIncidentsDocument,
+    "INVALID_EVENT_STATE",
   ],
 ];
 
