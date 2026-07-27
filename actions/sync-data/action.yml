@@ -1,0 +1,31 @@
+name: "Sync Velvet data"
+description: "Convert Upptime state into validated Velvet data and commit one complete snapshot."
+author: "phranck"
+branding:
+  icon: "refresh-cw"
+  color: "purple"
+inputs:
+  output:
+    description: "Repository-relative directory ending in v1 for the Velvet documents."
+    required: false
+    default: "velvet-data/v1"
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v7
+      with:
+        node-version: "22"
+    - name: Install Velvet dependencies
+      shell: bash
+      env:
+        VELVET_ROOT: ${{ github.action_path }}/../..
+      run: npm --prefix "$VELVET_ROOT" ci --ignore-scripts
+    - name: Publish Velvet data snapshot
+      shell: bash
+      env:
+        VELVET_ROOT: ${{ github.action_path }}/../..
+        VELVET_WORKSPACE: ${{ github.workspace }}
+        VELVET_OUTPUT: ${{ inputs.output }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/sync.sh"
