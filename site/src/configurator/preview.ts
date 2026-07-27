@@ -97,8 +97,8 @@ export const PREVIEW_RESPONSE_TIMES: ResponseTimesDocument = {
   monitoringStartedAt: PREVIEW_STATUS.monitoringStartedAt,
   series: [
     {
-      serviceId: "website",
-      checkId: "website-ipv4",
+      serviceId: "backend",
+      checkId: "backend-ipv4",
       protocol: "ipv4",
       samples: [
         { timestamp: "2026-06-28T00:00:00.000Z", responseTimeMs: 112 },
@@ -123,8 +123,8 @@ export const PREVIEW_RESPONSE_TIMES: ResponseTimesDocument = {
       ],
     },
     {
-      serviceId: "website",
-      checkId: "website-ipv6",
+      serviceId: "backend",
+      checkId: "backend-ipv6",
       protocol: "ipv6",
       samples: [
         { timestamp: "2026-06-28T00:00:00.000Z", responseTimeMs: 146 },
@@ -149,8 +149,8 @@ export const PREVIEW_RESPONSE_TIMES: ResponseTimesDocument = {
       ],
     },
     {
-      serviceId: "backend",
-      checkId: "backend-ipv4",
+      serviceId: "website",
+      checkId: "website-ipv4",
       protocol: "ipv4",
       samples: [
         { timestamp: "2026-06-28T00:00:00.000Z", responseTimeMs: 74 },
@@ -166,8 +166,8 @@ export const PREVIEW_RESPONSE_TIMES: ResponseTimesDocument = {
       ],
     },
     {
-      serviceId: "backend",
-      checkId: "backend-ipv6",
+      serviceId: "website",
+      checkId: "website-ipv6",
       protocol: "ipv6",
       samples: [
         { timestamp: "2026-06-28T00:00:00.000Z", responseTimeMs: 108 },
