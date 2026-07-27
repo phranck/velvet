@@ -11,7 +11,9 @@ test("provides a reusable theme validation and Pages publishing workflow", async
   const workflow = await readFile(WORKFLOW_URL, "utf8");
 
   assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /tooling-ref:/);
   assert.match(workflow, /repository:\s*phranck\/velvet/);
+  assert.match(workflow, /ref:\s*\$\{\{ inputs\.tooling-ref \}\}/);
   assert.match(workflow, /scripts\/build-theme-registry\.mjs/);
   assert.match(workflow, /actions\/upload-pages-artifact@v5/);
   assert.match(workflow, /actions\/deploy-pages@v5/);

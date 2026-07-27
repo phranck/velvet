@@ -3,6 +3,11 @@ name: Theme registry
 on:
   workflow_call:
     inputs:
+      tooling-ref:
+        description: Velvet ref containing the registry tooling
+        required: false
+        default: main
+        type: string
       publish:
         description: Publish the validated registry to GitHub Pages
         required: false
@@ -24,7 +29,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: phranck/velvet
-          ref: main
+          ref: ${{ inputs.tooling-ref }}
           path: velvet-tooling
       - uses: actions/setup-node@v7
         with:
