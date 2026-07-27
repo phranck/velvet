@@ -8,10 +8,10 @@
   }: { days: DayStatus[]; rangeLabel: string; range: RangeKey } = $props();
 
   function color(status: DayStatus["status"]): string {
-    if (status === "operational") return "var(--accent)";
-    if (status === "unknown") return "var(--text-faint)";
-    if (status === "degraded") return "var(--accent-deg)";
-    return "var(--accent-down)";
+    if (status === "operational") return "var(--grid-operational)";
+    if (status === "unknown") return "var(--grid-no-data)";
+    if (status === "degraded") return "var(--grid-degraded)";
+    return "var(--grid-outage)";
   }
 
   function label(d: DayStatus): string {
@@ -72,8 +72,8 @@
     transition: transform 0.1s ease;
   }
   .seg.ghost {
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    background: var(--grid-no-data);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-tertiary) 14%, transparent);
   }
   .seg:hover {
     transform: scaleY(1.12);

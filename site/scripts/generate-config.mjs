@@ -2,6 +2,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { load } from "js-yaml";
 
+import { resolveTheme } from "../src/lib/theme.js";
+
 /**
  * Generate Velvet's runtime `config.json` from a consumer's Upptime `.upptimerc.yml`.
  *
@@ -26,6 +28,7 @@ if (!rc.owner || !rc.repo) {
 
 const sw = rc["status-website"] ?? {};
 const velvet = sw.velvet ?? {};
+const themeInput = velvet.theme && typeof velvet.theme === "object" ? velvet.theme : {};
 const dataBranch = velvet.dataBranch ?? "main";
 const normalizedDataPath = repositoryDataPath.replaceAll("\\", "/").replace(/^\.\//, "");
 const dataPathSegments = normalizedDataPath.split("/").filter(Boolean);
@@ -101,9 +104,12 @@ const config = {
   showPoweredBy: velvet.showPoweredBy !== false,
   showSubscribe: velvet.showSubscribe !== false,
   theme: {
-    accent: velvet.accent ?? "#6366f1",
-    accentDeg: velvet.accentDeg ?? "#d29922",
-    accentDown: velvet.accentDown ?? "#f85149",
+    ...resolveTheme({
+      ...themeInput,
+      accent: themeInput.accent ?? velvet.accent,
+      accentDeg: velvet.accentDeg,
+      accentDown: velvet.accentDown,
+    }),
     ...(velvet.fontSans ? { fontSans: velvet.fontSans } : {}),
     ...(velvet.fontMono ? { fontMono: velvet.fontMono } : {}),
   },

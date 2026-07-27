@@ -17,6 +17,7 @@ interface ResponseChartModule {
     samples: ResponseSamples,
     maxPoints: number,
   ): ResponseSamples;
+  monotonePath(points: Array<{ x: number; y: number }>): string;
 }
 
 async function loadResponseChartModule(): Promise<Partial<ResponseChartModule>> {
@@ -86,4 +87,21 @@ test("downsamples deterministically without losing extrema or unavailable gaps",
   assert.ok(first.some(({ responseTimeMs }) => responseTimeMs === 50));
   assert.ok(first.some(({ responseTimeMs }) => responseTimeMs === 500));
   assert.equal(first.filter(({ responseTimeMs }) => responseTimeMs === null).length, 1);
+});
+
+test("creates a monotone cubic path without overshooting local extrema", async () => {
+  const chart = await loadResponseChartModule();
+  assert.equal(typeof chart.monotonePath, "function");
+  if (!chart.monotonePath) return;
+
+  assert.equal(
+    chart.monotonePath([
+      { x: 0, y: 10 },
+      { x: 10, y: 0 },
+      { x: 20, y: 10 },
+    ]),
+    "M0.00 10.00 C3.33 6.67 6.67 0.00 10.00 0.00 C13.33 0.00 16.67 6.67 20.00 10.00",
+  );
+  assert.equal(chart.monotonePath([{ x: 4, y: 8 }]), "M4.00 8.00");
+  assert.equal(chart.monotonePath([]), "");
 });

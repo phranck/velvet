@@ -1,10 +1,18 @@
 import type { ServiceCheck, ServiceStatus } from "./types";
 
 export function statusColor(status: ServiceStatus): string {
-  if (status === "operational") return "var(--accent-bright)";
-  if (status === "unknown") return "var(--text-muted)";
-  if (status === "degraded") return "var(--accent-deg)";
-  return "var(--accent-down)";
+  if (status === "operational") return "var(--grid-operational)";
+  if (status === "unknown") return "var(--grid-no-data)";
+  if (status === "degraded") return "var(--grid-degraded)";
+  return "var(--grid-outage)";
+}
+
+export function protocolColor(
+  check: Pick<ServiceCheck, "protocol">,
+): string {
+  return check.protocol === "ipv4"
+    ? "var(--protocol-ipv4)"
+    : "var(--protocol-ipv6)";
 }
 
 export function statusText(status: ServiceStatus): string {

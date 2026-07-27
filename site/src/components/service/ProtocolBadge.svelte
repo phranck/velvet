@@ -1,11 +1,20 @@
 <script lang="ts">
-  import { protocolLabel, statusColor, statusText } from "../../lib/protocol";
+  import {
+    protocolColor,
+    protocolLabel,
+    statusColor,
+    statusText,
+  } from "../../lib/protocol";
   import type { ServiceCheck } from "../../lib/types";
 
   let { check }: { check: ServiceCheck } = $props();
 </script>
 
-<span class="protocol-badge" style:--c={statusColor(check.status)}>
+<span
+  class="protocol-badge"
+  style:--protocol-color={protocolColor(check)}
+  style:--status-color={statusColor(check.status)}
+>
   {protocolLabel(check)}
   <span class="visually-hidden"> {statusText(check.status)}</span>
 </span>
@@ -19,7 +28,7 @@
     border: 1px solid var(--proto-border);
     border-radius: 999px;
     background: var(--proto-bg);
-    color: var(--text-muted);
+    color: var(--protocol-color);
     font-family: var(--font-mono);
     font-size: var(--proto-size);
     font-weight: 600;
@@ -30,7 +39,7 @@
     width: var(--proto-dot);
     height: var(--proto-dot);
     border-radius: 50%;
-    background: var(--c);
+    background: var(--status-color);
   }
   .visually-hidden {
     position: absolute;

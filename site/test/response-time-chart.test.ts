@@ -65,6 +65,7 @@ test("renders accessible dual-stack series and breaks paths at unavailable sampl
   assert.match(html, /data-protocol="ipv4"[^>]+data-line-style="solid"/);
   assert.match(html, /data-protocol="ipv6"[^>]+data-line-style="dashed"/);
   assert.equal(html.match(/<path[^>]+data-protocol="ipv4"/g)?.length, 1);
+  assert.match(html, /<path[^>]+data-protocol="ipv4"[^>]+d="[^"]*C/);
   assert.equal(html.match(/<circle[^>]+data-protocol="ipv4"/g)?.length, 1);
   assert.equal(html.match(/<path[^>]+data-protocol="ipv6"/g)?.length, 1);
   assert.match(

@@ -52,18 +52,18 @@
     border-radius: 12px;
     padding: 13px 15px;
     margin-bottom: 9px;
-    border: 1px solid;
+    border: var(--card-border-width) solid;
   }
   .inc {
-    background: #1a0e11;
-    border-color: #43202a;
+    background: color-mix(in srgb, var(--grid-outage) 12%, var(--card-background));
+    border-color: color-mix(in srgb, var(--grid-outage) 38%, var(--card-border));
   }
   .maint {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: color-mix(in srgb, var(--accent) 12%, #0c0d12);
-    border-color: color-mix(in srgb, var(--accent) 35%, #15172a);
+    background: color-mix(in srgb, var(--accent) 12%, var(--card-background));
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--card-border));
   }
   .maint i {
     color: var(--accent-bright);

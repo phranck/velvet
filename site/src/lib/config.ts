@@ -8,6 +8,7 @@
  */
 
 import { tokenCssVars } from "./tokens";
+import { resolveTheme, themeCssVariables } from "./theme.js";
 import type { RangeKey } from "./types";
 
 /**
@@ -16,6 +17,11 @@ import type { RangeKey } from "./types";
  * - `cards`: every service gets its own card.
  */
 export type VelvetLayout = "grouped" | "cards";
+
+export type VelvetTheme = ReturnType<typeof resolveTheme> & {
+  fontSans?: string;
+  fontMono?: string;
+};
 
 export interface VelvetConfig {
   /** GitHub owner of the repository that stores Velvet data. */
@@ -44,14 +50,8 @@ export interface VelvetConfig {
   layout: VelvetLayout;
   /** Range pre-selected on first visit, before the visitor picks one themselves. */
   defaultRange: RangeKey;
-  /** Theme colours + optional font families. */
-  theme: {
-    accent: string;
-    accentDeg: string;
-    accentDown: string;
-    fontSans?: string;
-    fontMono?: string;
-  };
+  /** Semantic theme colours + optional font families. */
+  theme: VelvetTheme;
   /** Per-service-ID Phosphor icon class overrides (merged over the defaults). */
   icons: Record<string, string>;
   /**
@@ -81,11 +81,7 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo" | "dataBaseUrl"> = {
   logoHeight: 72,
   showPoweredBy: true,
   showSubscribe: true,
-  theme: {
-    accent: "#6366f1",
-    accentDeg: "#d29922",
-    accentDown: "#f85149",
-  },
+  theme: resolveTheme(),
   icons: {},
 };
 
@@ -106,6 +102,12 @@ export async function loadConfig(
   const dataBaseUrl =
     raw.dataBaseUrl?.replace(/\/+$/, "") ??
     `https://raw.githubusercontent.com/${encodeURIComponent(raw.owner)}/${encodeURIComponent(raw.repo)}/${encodeURIComponent(dataBranch)}/velvet-data/v1`;
+  const rawTheme = raw.theme as
+    | (Partial<VelvetTheme> & {
+        accentDeg?: string;
+        accentDown?: string;
+      })
+    | undefined;
   return {
     ...DEFAULTS,
     ...raw,
@@ -113,7 +115,11 @@ export async function loadConfig(
     repo: raw.repo,
     dataBranch,
     dataBaseUrl,
-    theme: { ...DEFAULTS.theme, ...raw.theme },
+    theme: {
+      ...resolveTheme(rawTheme),
+      ...(rawTheme?.fontSans ? { fontSans: rawTheme.fontSans } : {}),
+      ...(rawTheme?.fontMono ? { fontMono: rawTheme.fontMono } : {}),
+    },
     icons: { ...DEFAULTS.icons, ...raw.icons },
     navbar: raw.navbar ?? DEFAULTS.navbar,
   };
@@ -125,9 +131,11 @@ export async function loadConfig(
  */
 export function applyTheme(config: VelvetConfig): void {
   const root = document.documentElement;
-  root.style.setProperty("--accent", config.theme.accent);
-  root.style.setProperty("--accent-deg", config.theme.accentDeg);
-  root.style.setProperty("--accent-down", config.theme.accentDown);
+  for (const [name, value] of Object.entries(
+    themeCssVariables(config.theme, `${config.owner}/${config.repo}`),
+  )) {
+    root.style.setProperty(name, value);
+  }
   if (config.theme.fontSans) root.style.setProperty("--font-sans", config.theme.fontSans);
   if (config.theme.fontMono) root.style.setProperty("--font-mono", config.theme.fontMono);
   root.style.setProperty("--logo-height", `${config.logoHeight}px`);

@@ -1,5 +1,6 @@
 <script lang="ts">
   import {
+    protocolColor,
     protocolLabel,
     responseTimeText,
     statusColor,
@@ -10,7 +11,12 @@
   let { check }: { check: ServiceCheck } = $props();
 </script>
 
-<div class="protocol-status" role="listitem" style:--c={statusColor(check.status)}>
+<div
+  class="protocol-status"
+  role="listitem"
+  style:--protocol-color={protocolColor(check)}
+  style:--status-color={statusColor(check.status)}
+>
   <span class="protocol mono">{protocolLabel(check)}</span>
   <strong class="state mono">{statusText(check.status)}</strong>
   <span class="latency mono">{responseTimeText(check)}</span>
@@ -29,7 +35,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--text);
+    color: var(--protocol-color);
     font-size: 12px;
     font-weight: 600;
   }
@@ -38,7 +44,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--c);
+    background: var(--status-color);
   }
   .state {
     min-width: 0;
