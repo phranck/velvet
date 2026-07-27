@@ -94,4 +94,7 @@ The versioned, presentation-independent Velvet data contracts live in [`packages
 
 ## License
 
-This repository has been published under the [MIT](https://layered.mit-license.org) license.
+Velvet source code is published under the [MIT license](LICENSE). Monitoring
+data, imported datasets, and third-party materials keep their own rights and
+licenses. See the [licensing and provenance policy](LICENSING.md) and
+[third-party notices](THIRD_PARTY_NOTICES.md) for the exact boundaries.

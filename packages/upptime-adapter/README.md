@@ -62,3 +62,19 @@ described by the Upptime documentation for
 [response history](https://upptime.js.org/docs/), and
 [scheduled maintenance](https://upptime.js.org/docs/scheduled-maintenance/).
 It does not copy or execute Upptime implementation code.
+
+## Migrating licensed data
+
+The adapter converts records but does not transfer or remove source license
+files. Before publishing normalized documents, inspect the consumer repository's
+own README, `history/LICENSE`, and adjacent notices. Keep those notices with the
+source history and add an applicable notice next to `velvet-data/v1` when the
+source terms require it.
+
+The upstream Upptime template currently labels its `history` dataset as
+[ODbL-1.0](https://github.com/upptime/upptime/blob/89365e67b44f101e9f1875aeb27bb0e2893e4ad5/history/LICENSE).
+A consumer repository may use different or additional terms, so its own notices
+are authoritative. Do not delete an existing data-license notice when removing
+old Upptime files. Velvet's MIT license covers the adapter implementation, not
+the imported data or any database rights in it. The complete policy is in
+[LICENSING.md](../../LICENSING.md).

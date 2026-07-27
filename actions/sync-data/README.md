@@ -35,3 +35,13 @@ directory must still end in the v1 contract segment:
 
 Absolute paths, parent traversal, `.git/`, `.github/`, `.upptimerc.yml`, and
 `history/` are rejected.
+
+## Data-license migration
+
+This action writes normalized documents only. It does not copy, replace, or
+delete a source data-license notice. Before enabling it, review the consumer
+repository's README, `history/LICENSE`, and any dataset-specific attribution.
+Preserve applicable notices and publish them next to `velvet-data/v1` when the
+source terms require it. In particular, do not remove an existing Upptime ODbL
+notice merely because the old history files are later retired. See the
+[licensing and provenance policy](../../LICENSING.md) for the migration rules.

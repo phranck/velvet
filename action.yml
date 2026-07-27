@@ -40,6 +40,8 @@ runs:
         npm --prefix "$VELVET_ROOT" run build --workspace @velvet/site
         "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist/og.png"
         "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-seo.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist"
+        cp "$VELVET_ROOT/LICENSE" "$VELVET_SITE/dist/LICENSE"
+        cp "$VELVET_ROOT/THIRD_PARTY_NOTICES.md" "$VELVET_SITE/dist/THIRD_PARTY_NOTICES.md"
         rm -rf "$VELVET_OUTPUT"
         mkdir -p "$VELVET_OUTPUT"
         cp -R "$VELVET_SITE/dist/." "$VELVET_OUTPUT/"
