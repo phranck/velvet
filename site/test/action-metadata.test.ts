@@ -18,3 +18,16 @@ test("status-page action builds exclusively from Velvet v1 data", async () => {
   assert.doesNotMatch(source, /history\/summary\.json|api\.github\.com/);
   assert.match(source, /uses: actions\/setup-node@v7/);
 });
+
+test("status-page action publishes Velvet and third-party license notices", async () => {
+  const source = await readFile(resolve(repositoryRoot, "action.yml"), "utf8");
+
+  assert.match(
+    source,
+    /cp "\$VELVET_ROOT\/LICENSE" "\$VELVET_SITE\/dist\/LICENSE"/,
+  );
+  assert.match(
+    source,
+    /cp "\$VELVET_ROOT\/THIRD_PARTY_NOTICES\.md" "\$VELVET_SITE\/dist\/THIRD_PARTY_NOTICES\.md"/,
+  );
+});
