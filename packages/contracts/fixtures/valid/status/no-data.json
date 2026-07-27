@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T12:00:00.000Z",
+  "monitoringStartedAt": "2026-07-27T12:00:00.000Z",
+  "services": [
+    {
+      "id": "database",
+      "name": "Database",
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "primary",
+          "protocol": "ipv4",
+          "status": "unknown",
+          "checkedAt": null,
+          "responseTimeMs": null
+        }
+      ],
+      "dailyAvailability": []
+    }
+  ]
+}

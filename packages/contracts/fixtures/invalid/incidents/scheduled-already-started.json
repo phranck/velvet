@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T12:00:00.000Z",
+  "events": [
+    {
+      "id": "maintenance-2026-07-27",
+      "kind": "maintenance",
+      "state": "scheduled",
+      "title": "Database maintenance",
+      "summary": "This window should already be active.",
+      "affectedServiceIds": ["database"],
+      "startsAt": "2026-07-27T11:00:00.000Z",
+      "endsAt": "2026-07-27T13:00:00.000Z"
+    }
+  ]
+}

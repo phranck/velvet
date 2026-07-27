@@ -82,13 +82,14 @@ status-website:
 ## Develop
 
 ```bash
-cd site
 npm install
-npm run dev   # http://localhost:5173, reads site/public/config.json
-npm run build # → site/dist
+npm run dev --workspace @velvet/site # http://localhost:5173
+npm run build                         # contracts and site/dist
 ```
 
 `site/public/config.json` is a sample config used for local development; the Action regenerates it from each consumer's `.upptimerc.yml`.
+
+The versioned, presentation-independent Velvet data contracts live in [`packages/contracts`](packages/contracts). That package owns the JSON Schemas, matching TypeScript types, runtime validation, and contract fixtures.
 
 ## License
 

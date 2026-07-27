@@ -24,15 +24,16 @@ runs:
       env:
         VELVET_CONFIG: ${{ inputs.config }}
         VELVET_OUTPUT: ${{ inputs.output }}
+        VELVET_ROOT: ${{ github.action_path }}
         VELVET_SITE: ${{ github.action_path }}/site
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
-        npm --prefix "$VELVET_SITE" ci
+        npm --prefix "$VELVET_ROOT" ci
         node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
         node "$VELVET_SITE/scripts/generate-feed.mjs" "$VELVET_SITE/public/config.json" "$VELVET_SITE/public/incidents.atom"
-        npm --prefix "$VELVET_SITE" run build
-        "$VELVET_SITE/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$(dirname "$VELVET_CONFIG")/history/summary.json" "$VELVET_SITE/dist/og.png"
+        npm --prefix "$VELVET_ROOT" run build
+        "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$(dirname "$VELVET_CONFIG")/history/summary.json" "$VELVET_SITE/dist/og.png"
         node "$VELVET_SITE/scripts/generate-seo.mjs" "$VELVET_SITE/public/config.json" "$VELVET_SITE/dist"
         rm -rf "$VELVET_OUTPUT"
         mkdir -p "$VELVET_OUTPUT"

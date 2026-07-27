@@ -1,0 +1,165 @@
+{
+  "$id": "urn:velvet:schema:velvet-data:v1:incidents",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "events"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "generatedAt": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "kind",
+              "state",
+              "title",
+              "summary",
+              "affectedServiceIds",
+              "startsAt",
+              "endsAt"
+            ],
+            "properties": {
+              "id": {
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "incident",
+                "type": "string"
+              },
+              "state": {
+                "anyOf": [
+                  {
+                    "const": "open",
+                    "type": "string"
+                  },
+                  {
+                    "const": "resolved",
+                    "type": "string"
+                  }
+                ]
+              },
+              "title": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "affectedServiceIds": {
+                "uniqueItems": true,
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+                  "type": "string"
+                }
+              },
+              "startsAt": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "endsAt": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "kind",
+              "state",
+              "title",
+              "summary",
+              "affectedServiceIds",
+              "startsAt",
+              "endsAt"
+            ],
+            "properties": {
+              "id": {
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "maintenance",
+                "type": "string"
+              },
+              "state": {
+                "anyOf": [
+                  {
+                    "const": "scheduled",
+                    "type": "string"
+                  },
+                  {
+                    "const": "active",
+                    "type": "string"
+                  },
+                  {
+                    "const": "completed",
+                    "type": "string"
+                  }
+                ]
+              },
+              "title": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "affectedServiceIds": {
+                "uniqueItems": true,
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+                  "type": "string"
+                }
+              },
+              "startsAt": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "endsAt": {
+                "minLength": 1,
+                "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
