@@ -1,0 +1,62 @@
+name: Theme registry
+
+on:
+  workflow_call:
+    inputs:
+      publish:
+        description: Publish the validated registry to GitHub Pages
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out theme content
+        uses: actions/checkout@v7
+        with:
+          path: theme-content
+      - name: Check out Velvet registry tooling
+        uses: actions/checkout@v7
+        with:
+          repository: phranck/velvet
+          ref: main
+          path: velvet-tooling
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Validate themes and build registry
+        run: >-
+          node velvet-tooling/scripts/build-theme-registry.mjs
+          --themes theme-content/themes
+          --output theme-content/dist/index.json
+      - name: Configure Pages
+        if: inputs.publish
+        uses: actions/configure-pages@v6
+      - name: Upload Pages artifact
+        if: inputs.publish
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: theme-content/dist
+
+  deploy:
+    if: inputs.publish
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: velvet-themes-pages
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -9,9 +9,10 @@
   ],
   "scripts": {
     "build": "npm run build --workspace @velvet/contracts && npm run build --workspace @velvet/upptime-adapter && npm run build --workspace @velvet/site",
-    "test": "npm run test:lockfile && npm run test:workspace-gates && npm run test:configurator-cli && npm run test --workspace @velvet/contracts && npm run test --workspace @velvet/upptime-adapter && npm run test --workspace @velvet/sync-data-action && npm run test --workspace @velvet/site",
+    "test": "npm run test:lockfile && npm run test:workspace-gates && npm run test:theme-registry && npm run test:configurator-cli && npm run test --workspace @velvet/contracts && npm run test --workspace @velvet/upptime-adapter && npm run test --workspace @velvet/sync-data-action && npm run test --workspace @velvet/site",
     "test:lockfile": "node --test tests/lockfile.test.mjs",
     "test:workspace-gates": "node --test tests/workspace-gates.test.mjs",
+    "test:theme-registry": "node --test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
     "test:configurator-cli": "node --test tests/config-cli.test.mjs tests/configurator-distribution.test.mjs",
     "pretypecheck": "npm run build --workspace @velvet/contracts",
     "typecheck": "npm run typecheck --workspace @velvet/contracts && npm run typecheck --workspace @velvet/upptime-adapter && npm run typecheck --workspace @velvet/sync-data-action && npm run typecheck --workspace @velvet/site"
