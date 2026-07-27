@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { statusColor } from "../../lib/protocol";
   import type { Service } from "../../lib/types";
   import ProtocolBadge from "./ProtocolBadge.svelte";
 
@@ -18,8 +17,6 @@
     detailsId: string;
     onToggle: () => void;
   } = $props();
-
-  const dotColor = $derived(statusColor(service.status));
 </script>
 
 <button
@@ -28,7 +25,7 @@
   aria-expanded={open}
   aria-controls={detailsId}
 >
-  <i class="ph-duotone {icon} service-icon" style:color={dotColor} aria-hidden="true"></i>
+  <i class="ph-duotone {icon} service-icon" aria-hidden="true"></i>
   <span class="name">{service.name}</span>
   {#if service.checks.length > 1 || service.checks[0]?.protocol === "ipv6"}
     <span class="protocols" aria-label="Protocol reachability">
@@ -38,7 +35,7 @@
     </span>
   {/if}
   <span class="uptime mono">{uptime}</span>
-  <i class="ph-duotone ph-caret-down chevron" class:open aria-hidden="true"></i>
+  <i class="ph-duotone ph-caret-circle-down chevron" class:open aria-hidden="true"></i>
 </button>
 
 <style>
@@ -61,6 +58,7 @@
   }
   .service-icon {
     flex: none;
+    color: var(--service-icon);
     font-size: var(--svc-icon-size);
     line-height: 1;
   }
@@ -83,20 +81,19 @@
     font-size: var(--uptime-size);
   }
   .chevron {
+    width: 22px;
+    height: 22px;
+    display: inline-block;
+    flex: none;
     margin-left: 12px;
-    color: var(--text-muted);
-    font-size: 17px;
-    transition:
-      color 0.12s ease,
-      transform 0.18s ease;
+    color: var(--service-icon);
+    font-size: 22px;
+    line-height: 1;
+    transition: transform 160ms ease-in-out;
   }
   .chevron.open {
     transform: rotate(180deg);
   }
-  .summary:hover .chevron {
-    color: var(--accent-bright);
-  }
-
   @media (max-width: 560px) {
     .summary {
       gap: 8px;

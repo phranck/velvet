@@ -18,14 +18,16 @@
   style:--status-color={statusColor(check.status)}
 >
   <span class="protocol mono">{protocolLabel(check)}</span>
-  <strong class="state mono">{statusText(check.status)}</strong>
-  <span class="latency mono">{responseTimeText(check)}</span>
+  <span class="protocol-reading">
+    <strong class="state mono">{statusText(check.status)}</strong>
+    <span class="latency mono">{responseTimeText(check)}</span>
+  </span>
 </div>
 
 <style>
   .protocol-status {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 12px;
     min-width: 0;
@@ -52,6 +54,12 @@
     font-size: 14px;
     font-weight: 600;
   }
+  .protocol-reading {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
   .latency {
     color: var(--text-muted);
     font-size: 14px;
@@ -60,11 +68,11 @@
 
   @media (max-width: 440px) {
     .protocol-status {
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 4px 12px;
+      gap: 4px 10px;
     }
-    .latency {
-      grid-column: 2;
+    .protocol-reading {
+      flex-wrap: wrap;
+      gap: 4px 8px;
     }
   }
 </style>

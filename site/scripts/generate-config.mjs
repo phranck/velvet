@@ -102,7 +102,6 @@ const config = {
   defaultRange: normalizeRange(velvet.defaultRange),
   logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 72,
   showPoweredBy: velvet.showPoweredBy !== false,
-  showSubscribe: velvet.showSubscribe !== false,
   theme: {
     ...resolveTheme({
       ...themeInput,

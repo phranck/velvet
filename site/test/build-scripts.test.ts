@@ -10,6 +10,7 @@ const execFileAsync = promisify(execFile);
 const repositoryRoot = resolve(import.meta.dirname, "../..");
 const siteRoot = resolve(repositoryRoot, "site");
 const tsx = resolve(repositoryRoot, "node_modules/.bin/tsx");
+const vite = resolve(repositoryRoot, "node_modules/.bin/vite");
 
 async function fixture(path: string): Promise<string> {
   return readFile(
@@ -18,13 +19,27 @@ async function fixture(path: string): Promise<string> {
   );
 }
 
+test("builds the standalone configurator at the repository root", async () => {
+  await execFileAsync(vite, ["build", "--config", "vite.configurator.ts"], {
+    cwd: siteRoot,
+  });
+
+  const html = await readFile(
+    resolve(repositoryRoot, "configurator/index.html"),
+    "utf8",
+  );
+  assert.match(html, /<title>Velvet Configurator<\/title>/);
+  assert.match(html, /Velvet Configurator/);
+  assert.doesNotMatch(html, /<script[^>]+src=/);
+});
+
 test("generated runtime config points to Velvet repository data", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-"));
   const input = resolve(directory, ".upptimerc.yml");
   const output = resolve(directory, "config.json");
   await writeFile(
     input,
-    "owner: example\nrepo: status\nstatus-website:\n  velvet:\n    dataBranch: production\n",
+    "owner: example\nrepo: status\nstatus-website:\n  velvet:\n    dataBranch: production\n    showSubscribe: false\n",
   );
 
   await execFileAsync("node", [
@@ -39,6 +54,7 @@ test("generated runtime config points to Velvet repository data", async () => {
     config.dataBaseUrl,
     "https://raw.githubusercontent.com/example/status/production/snapshots/velvet-data/v1",
   );
+  assert.equal("showSubscribe" in config, false);
 });
 
 test("generated runtime config preserves an explicit public data URL", async () => {
@@ -75,11 +91,23 @@ test("generated runtime config resolves the semantic Velvet theme", async () => 
       "    accentDeg: '#aabbcc'",
       "    fontSans: Example Sans",
       "    theme:",
-      "      accent: '#123456'",
+      "      name: Cloudy Autumn",
+      "      palette:",
+      "        canvas: '#090909'",
+      "        foreground: '#f5f5f5'",
+      "        accent: '#123456'",
+      "        alternate: '#fedcba'",
+      "        warning: '#d29922'",
+      "        danger: '#f85149'",
       "      grid:",
       "        operational: '#abcdef'",
       "      protocol:",
-      "        ipv6: '#fedcba'",
+      "        ipv4: accent",
+      "        ipv6: alternate",
+      "      chart:",
+      "        ipv4LineStyle: dotted",
+      "        ipv6LineStyle: solid",
+      "        fill: true",
       "      background:",
       "        blobs:",
       "          count: 4",
@@ -88,6 +116,11 @@ test("generated runtime config resolves the semantic Velvet theme", async () => 
       "            - '#222222'",
       "      card:",
       "        borderEnabled: false",
+      "        radius: 20",
+      "        padding: 18",
+      "      headline:",
+      "        start: foreground",
+      "        end: alternate",
       "",
     ].join("\n"),
   );
@@ -99,14 +132,26 @@ test("generated runtime config resolves the semantic Velvet theme", async () => 
   ]);
 
   const config = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(config.theme.name, "Cloudy Autumn");
   assert.equal(config.theme.accent, "#123456");
   assert.equal(config.theme.grid.operational, "#abcdef");
   assert.equal(config.theme.grid.degraded, "#aabbcc");
-  assert.equal(config.theme.protocol.ipv4, "#385471");
+  assert.equal(config.theme.protocol.ipv4, "#123456");
   assert.equal(config.theme.protocol.ipv6, "#fedcba");
+  assert.deepEqual(config.theme.chart, {
+    ipv4LineStyle: "dotted",
+    ipv6LineStyle: "solid",
+    fill: true,
+  });
   assert.equal(config.theme.background.blobs.count, 4);
   assert.deepEqual(config.theme.background.blobs.colors, ["#111111", "#222222"]);
   assert.equal(config.theme.card.borderEnabled, false);
+  assert.equal(config.theme.card.radius, 20);
+  assert.equal(config.theme.card.padding, 18);
+  assert.deepEqual(config.theme.headline, {
+    start: "#f5f5f5",
+    end: "#fedcba",
+  });
   assert.equal(config.theme.fontSans, "Example Sans");
 });
 
@@ -163,12 +208,10 @@ test("social card uses the semantic Velvet theme", async () => {
   );
 });
 
-test("feed, social card, and SEO consume validated Velvet documents", async () => {
+test("social card and SEO consume validated Velvet documents", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-build-"));
   const configPath = resolve(directory, "config.json");
   const statusPath = resolve(directory, "status.json");
-  const incidentsPath = resolve(directory, "incidents.json");
-  const feedPath = resolve(directory, "incidents.atom");
   const ogPath = resolve(directory, "og.png");
   const distPath = resolve(directory, "dist");
 
@@ -183,7 +226,6 @@ test("feed, social card, and SEO consume validated Velvet documents", async () =
     }),
   );
   await writeFile(statusPath, await fixture("status/dual-stack.json"));
-  await writeFile(incidentsPath, await fixture("incidents/maintenance.json"));
   await writeFile(
     resolve(directory, "index.html"),
     '<!doctype html><html><head><title>Status</title><meta name="description" content="Status"></head><body></body></html>',
@@ -194,12 +236,6 @@ test("feed, social card, and SEO consume validated Velvet documents", async () =
     await readFile(resolve(directory, "index.html")),
   );
 
-  await execFileAsync("node", [
-    resolve(siteRoot, "scripts/generate-feed.mjs"),
-    configPath,
-    incidentsPath,
-    feedPath,
-  ]);
   const { stdout: ogOutput } = await execFileAsync(tsx, [
     resolve(siteRoot, "scripts/generate-og.ts"),
     configPath,
@@ -213,11 +249,20 @@ test("feed, social card, and SEO consume validated Velvet documents", async () =
     distPath,
   ]);
 
-  const feed = await readFile(feedPath, "utf8");
   const html = await readFile(resolve(distPath, "index.html"), "utf8");
-  assert.match(feed, /Maintenance · Scheduled: Database maintenance/);
-  assert.match(feed, /<updated>2026-07-27T12:00:00.000Z<\/updated>/);
   assert.match(ogOutput, /status: operational/);
   assert.match(html, /All systems operational\. Live status and uptime history for Example\./);
   assert.ok((await readFile(ogPath)).length > 0);
+});
+
+test("removes Atom feed generation from the status-page build", async () => {
+  const action = await readFile(resolve(repositoryRoot, "action.yml"), "utf8");
+  const html = await readFile(resolve(siteRoot, "index.html"), "utf8");
+
+  assert.doesNotMatch(action, /generate-feed|incidents\.atom/);
+  assert.doesNotMatch(html, /application\/atom\+xml|incidents\.atom/);
+  await assert.rejects(
+    readFile(resolve(siteRoot, "scripts/generate-feed.mjs"), "utf8"),
+    (error: NodeJS.ErrnoException) => error.code === "ENOENT",
+  );
 });

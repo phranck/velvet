@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "svelte-check --tsconfig ./tsconfig.json && vite build",
+    "preconfigurator:build": "npm run build --workspace @velvet/contracts",
+    "configurator:build": "svelte-check --tsconfig ./tsconfig.json && vite build --config vite.configurator.ts",
     "preview": "vite preview",
     "screenshot": "node scripts/screenshot.mjs",
     "pretest": "npm run build --workspace @velvet/contracts",
@@ -13,10 +15,12 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@fontsource/plaster": "^5.3.0",
     "@velvet/contracts": "1.0.0"
   },
   "devDependencies": {
     "@phosphor-icons/core": "^2.1.1",
+    "@phosphor-icons/web": "^2.1.2",
     "@resvg/resvg-js": "^2.6.2",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tsconfig/svelte": "^5.0.4",

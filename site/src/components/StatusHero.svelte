@@ -42,8 +42,8 @@
     margin: 0 0 8px;
     background: linear-gradient(
       180deg,
-      var(--text-primary) 0%,
-      var(--text-secondary) 100%
+      var(--headline-start) 0%,
+      var(--headline-end) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;

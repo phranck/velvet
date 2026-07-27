@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { after, before, test } from "node:test";
 
 import type {
@@ -10,6 +12,7 @@ import {
   createSvelteRenderer,
   type SvelteRenderer,
 } from "./render-svelte.js";
+import { resolveTheme } from "../src/lib/theme.js";
 
 let renderer: SvelteRenderer;
 
@@ -47,6 +50,7 @@ async function renderServiceRow(
     icon: "ph-globe",
     open,
     onToggle: () => undefined,
+    chart: resolveTheme().chart,
   });
 }
 
@@ -82,6 +86,9 @@ test("renders dual-stack protocol status and latency side by side", async () => 
   assert.match(html, /IPv6/);
   assert.match(html, /Operational/);
   assert.match(html, /88 ms/);
+  assert.equal(html.match(/class="protocol-reading(?:\s|")/g)?.length, 2);
+  assert.equal(html.match(/class="protocol-separator(?:\s|")/g)?.length, 1);
+  assert.match(html, /class="protocol-separator(?:\s|")[^>]*aria-hidden="true"[^>]*>\|<\/span>/);
   assert.match(html, /--protocol-color:\s*var\(--protocol-ipv4\)/);
   assert.match(html, /--protocol-color:\s*var\(--protocol-ipv6\)/);
   assert.match(html, /--status-color:\s*var\(--grid-degraded\)/);
@@ -111,6 +118,20 @@ test("renders one unavailable protocol without an empty counterpart", async () =
   assert.match(html, /Unavailable/);
   assert.match(html, /No response data/);
   assert.doesNotMatch(html, /IPv4/);
+  assert.doesNotMatch(html, /class="protocol-separator(?:\s|")/);
+});
+
+test("centers protocol readings as one horizontal group", async () => {
+  const source = await readFile(
+    resolve(import.meta.dirname, "../src/components/service/ServiceDetails.svelte"),
+    "utf8",
+  );
+
+  assert.match(
+    source,
+    /\.protocol-grid\s*\{[^}]*display:\s*flex[^}]*align-items:\s*center[^}]*justify-content:\s*center/s,
+  );
+  assert.doesNotMatch(source, /grid-template-columns:/);
 });
 
 test("connects the native toggle button to the expanded protocol details", async () => {
@@ -168,4 +189,45 @@ test("reuses the response chart inside service details", async () => {
 
   assert.match(html, /<figcaption[^>]*>Response time<\/figcaption>/);
   assert.match(html, /Response time history for Website/);
+});
+
+test("smoothly animates service disclosure with a reduced-motion fallback", async () => {
+  const source = await readFile(
+    resolve(import.meta.dirname, "../src/components/service/ServiceDetails.svelte"),
+    "utf8",
+  );
+
+  assert.match(source, /transition:\s*grid-template-rows/);
+  assert.match(source, /\.detail-wrap\.open[\s\S]*opacity:\s*1/);
+  assert.match(source, /prefers-reduced-motion:\s*reduce/);
+});
+
+test("uses one shared theme color for every service icon", async () => {
+  const source = await readFile(
+    resolve(import.meta.dirname, "../src/components/service/ServiceSummary.svelte"),
+    "utf8",
+  );
+
+  assert.match(source, /\.service-icon\s*\{[\s\S]*color:\s*var\(--service-icon\)/);
+  assert.doesNotMatch(source, /style:color=\{dotColor\}|statusColor/);
+});
+
+test("uses the centered section disclosure icon for service cards", async () => {
+  const source = await readFile(
+    resolve(import.meta.dirname, "../src/components/service/ServiceSummary.svelte"),
+    "utf8",
+  );
+
+  assert.match(source, /ph-caret-circle-down chevron/);
+  assert.doesNotMatch(source, /ph-caret-down chevron/);
+  assert.match(
+    source,
+    /\.chevron\s*\{[^}]*width:\s*22px[^}]*height:\s*22px[^}]*display:\s*inline-block[^}]*font-size:\s*22px/s,
+  );
+  assert.match(
+    source,
+    /\.chevron\s*\{[^}]*transform 160ms ease-in-out/s,
+  );
+  assert.match(source, /\.chevron\s*\{[^}]*color:\s*var\(--service-icon\)/s);
+  assert.doesNotMatch(source, /\.summary:hover \.chevron/);
 });

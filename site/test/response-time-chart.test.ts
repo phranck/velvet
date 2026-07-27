@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 
 import type { ResponseTimesDocument } from "../src/lib/types.js";
+import { resolveTheme } from "../src/lib/theme.js";
 import {
   createSvelteRenderer,
   type SvelteRenderer,
@@ -19,7 +20,10 @@ after(async () => {
   await renderer.close();
 });
 
-async function renderChart(series: ResponseSeries): Promise<string> {
+async function renderChart(
+  series: ResponseSeries,
+  chart = resolveTheme().chart,
+): Promise<string> {
   return renderer
     .render("/src/components/service/ResponseTimeChart.svelte", {
       serviceId: "website",
@@ -27,6 +31,7 @@ async function renderChart(series: ResponseSeries): Promise<string> {
       series,
       range: "day",
       generatedAt: "2026-07-27T12:00:00.000Z",
+      chart,
     })
     .catch(() => "");
 }
@@ -76,6 +81,48 @@ test("renders accessible dual-stack series and breaks paths at unavailable sampl
     html,
     /IPv6: current 110 ms, minimum 80 ms, maximum 110 ms, no unavailable samples\./,
   );
+});
+
+test("renders independently configured line styles and fading fills", async () => {
+  const html = await renderChart(
+    [
+      {
+        serviceId: "website",
+        checkId: "website-ipv4",
+        protocol: "ipv4",
+        samples: [
+          { timestamp: "2026-07-27T10:00:00.000Z", responseTimeMs: 100 },
+          { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: 120 },
+        ],
+      },
+      {
+        serviceId: "website",
+        checkId: "website-ipv6",
+        protocol: "ipv6",
+        samples: [
+          { timestamp: "2026-07-27T10:00:00.000Z", responseTimeMs: 80 },
+          { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: 90 },
+        ],
+      },
+    ],
+    {
+      ipv4LineStyle: "dotted",
+      ipv6LineStyle: "solid",
+      fill: true,
+      background: "#112233",
+      backgroundOpacity: 0.4,
+    },
+  );
+
+  assert.match(html, /data-protocol="ipv4"[^>]+data-line-style="dotted"/);
+  assert.match(html, /data-protocol="ipv6"[^>]+data-line-style="solid"/);
+  assert.equal(html.match(/class="series-area(?:\s|")/g)?.length, 2);
+  assert.match(
+    html,
+    /<rect[^>]+class="plot-background[^"]*"[^>]+width="640"[^>]+height="148"/,
+  );
+  assert.match(html, /data-response-hover/);
+  assert.match(html, /tabindex="0"/);
 });
 
 test("renders a single response sample as an intentional point", async () => {

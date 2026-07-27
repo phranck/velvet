@@ -2,11 +2,15 @@
   import type { RangeKey, ResponseTimesDocument } from "../../lib/types";
   import { RANGE_LABEL } from "../../lib/data";
   import {
+    availableResponseTimestamps,
     downsampleResponseSamples,
     filterResponseSeries,
     monotonePath,
+    nearestResponseTimestamp,
+    responseValuesAtTimestamp,
     responseRangeWindow,
   } from "../../lib/response-chart";
+  import type { VelvetTheme } from "../../lib/config";
   import { protocolLabel } from "../../lib/protocol";
 
   type ResponseSeries = ResponseTimesDocument["series"];
@@ -19,12 +23,14 @@
     series,
     range,
     generatedAt,
+    chart,
   }: {
     serviceId: string;
     serviceName: string;
     series: ResponseSeries;
     range: RangeKey;
     generatedAt: string;
+    chart: VelvetTheme["chart"];
   } = $props();
 
   const WIDTH = 640;
@@ -34,6 +40,8 @@
   const PLOT_TOP = 12;
   const PLOT_BOTTOM = 116;
   const MAX_POINTS = 96;
+  const TOOLTIP_WIDTH = 136;
+  const PROTOCOLS = ["ipv4", "ipv6"] as const;
 
   const titleId = $derived(`response-chart-${serviceId}-title`);
   const descriptionId = $derived(`response-chart-${serviceId}-description`);
@@ -69,6 +77,23 @@
       .filter(({ samples }) => samples.length > 0)
       .map(seriesSummary)
       .join(" ")} Unavailable samples create gaps in the chart.`,
+  );
+  const hoverTimestamps = $derived(
+    availableResponseTimestamps(filteredSeries),
+  );
+  let activeTimestamp = $state<string | null>(null);
+  const activeValues = $derived(
+    activeTimestamp
+      ? responseValuesAtTimestamp(filteredSeries, activeTimestamp)
+      : [],
+  );
+  const activeX = $derived(
+    activeTimestamp ? xForTimestamp(activeTimestamp) : PLOT_LEFT,
+  );
+  const tooltipX = $derived(
+    activeX + TOOLTIP_WIDTH + 8 > PLOT_RIGHT
+      ? activeX - TOOLTIP_WIDTH - 8
+      : activeX + 8,
   );
 
   function formatMilliseconds(value: number | null | undefined): string {
@@ -119,24 +144,90 @@
   }
 
   function coordinates(sample: AvailableSample): { x: number; y: number } {
-    const { start, end } = responseRangeWindow(range, generatedAt);
-    const x =
-      PLOT_LEFT +
-      ((Date.parse(sample.timestamp) - start) / (end - start)) *
-        (PLOT_RIGHT - PLOT_LEFT);
-    const y =
-      PLOT_BOTTOM -
-      (sample.responseTimeMs / maximumResponse) *
-        (PLOT_BOTTOM - PLOT_TOP);
-    return { x, y };
+    return {
+      x: xForTimestamp(sample.timestamp),
+      y: yForResponse(sample.responseTimeMs),
+    };
   }
 
   function pathFor(samples: AvailableSample[]): string {
     return monotonePath(samples.map(coordinates));
   }
 
-  function lineStyle(protocol: "ipv4" | "ipv6"): "solid" | "dashed" {
-    return protocol === "ipv4" ? "solid" : "dashed";
+  function areaPath(samples: AvailableSample[]): string {
+    const first = coordinates(samples[0]!);
+    const last = coordinates(samples.at(-1)!);
+    return `${pathFor(samples)} L${last.x.toFixed(2)} ${PLOT_BOTTOM} L${first.x.toFixed(2)} ${PLOT_BOTTOM} Z`;
+  }
+
+  function lineStyle(
+    protocol: "ipv4" | "ipv6",
+  ): VelvetTheme["chart"]["ipv4LineStyle"] {
+    return protocol === "ipv4"
+      ? chart.ipv4LineStyle
+      : chart.ipv6LineStyle;
+  }
+
+  function gradientId(protocol: "ipv4" | "ipv6"): string {
+    return `response-chart-${serviceId}-${protocol}-fill`;
+  }
+
+  function xForTimestamp(timestamp: string): number {
+    const { start, end } = responseRangeWindow(range, generatedAt);
+    return (
+      PLOT_LEFT +
+      ((Date.parse(timestamp) - start) / (end - start)) *
+        (PLOT_RIGHT - PLOT_LEFT)
+    );
+  }
+
+  function yForResponse(responseTimeMs: number): number {
+    return (
+      PLOT_BOTTOM -
+      (responseTimeMs / maximumResponse) * (PLOT_BOTTOM - PLOT_TOP)
+    );
+  }
+
+  function selectNearestPointer(
+    event: PointerEvent & { currentTarget: HTMLAnchorElement },
+  ): void {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(
+      1,
+      Math.max(0, (event.clientX - rect.left) / rect.width),
+    );
+    const { start, end } = responseRangeWindow(range, generatedAt);
+    activeTimestamp = nearestResponseTimestamp(
+      hoverTimestamps,
+      start + ratio * (end - start),
+    );
+  }
+
+  function activateLatest(): void {
+    activeTimestamp = hoverTimestamps.at(-1) ?? null;
+  }
+
+  function navigateTimestamp(event: KeyboardEvent): void {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const currentIndex = activeTimestamp
+      ? hoverTimestamps.indexOf(activeTimestamp)
+      : hoverTimestamps.length - 1;
+    const offset = event.key === "ArrowLeft" ? -1 : 1;
+    const nextIndex = Math.min(
+      hoverTimestamps.length - 1,
+      Math.max(0, currentIndex + offset),
+    );
+    activeTimestamp = hoverTimestamps[nextIndex] ?? null;
+  }
+
+  function tooltipTimestamp(timestamp: string): string {
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(timestamp));
   }
 </script>
 
@@ -160,9 +251,16 @@
   {#if hasSamples}
     <a
       class="plot-link"
+      data-response-hover
       href={`#${summaryId}`}
       aria-label={`Response time chart for ${serviceName}`}
       aria-describedby={summaryId}
+      tabindex="0"
+      onpointermove={selectNearestPointer}
+      onpointerleave={() => (activeTimestamp = null)}
+      onfocus={activateLatest}
+      onblur={() => (activeTimestamp = null)}
+      onkeydown={navigateTimestamp}
     >
       <svg
         class="plot"
@@ -172,6 +270,29 @@
       >
         <title>Response time history for {serviceName}</title>
         <desc id={descriptionId}>{description}</desc>
+        <rect
+          class="plot-background"
+          width={WIDTH}
+          height={HEIGHT}
+          rx="6"
+        ></rect>
+        {#if chart.fill}
+          <defs>
+            {#each PROTOCOLS as protocol}
+              <linearGradient
+                id={gradientId(protocol)}
+                data-protocol={protocol}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0" stop-opacity="0.28"></stop>
+                <stop offset="1" stop-opacity="0"></stop>
+              </linearGradient>
+            {/each}
+          </defs>
+        {/if}
         <g class="grid" aria-hidden="true">
           <line x1={PLOT_LEFT} y1={PLOT_TOP} x2={PLOT_RIGHT} y2={PLOT_TOP}></line>
           <line
@@ -196,6 +317,14 @@
                 r="3"
               ></circle>
             {:else}
+              {#if chart.fill}
+                <path
+                  class="series-area"
+                  data-protocol={entry.protocol}
+                  d={areaPath(segment)}
+                  fill={`url(#${gradientId(entry.protocol)})`}
+                ></path>
+              {/if}
               <path
                 class="series-line"
                 data-protocol={entry.protocol}
@@ -205,6 +334,47 @@
             {/if}
           {/each}
         {/each}
+        {#if activeTimestamp && activeValues.length > 0}
+          <g class="hover-indicator" aria-hidden="true">
+            <line
+              class="hover-crosshair"
+              x1={activeX}
+              y1={PLOT_TOP}
+              x2={activeX}
+              y2={PLOT_BOTTOM}
+            ></line>
+            {#each activeValues as value (value.protocol)}
+              <circle
+                class="hover-point"
+                data-protocol={value.protocol}
+                cx={activeX}
+                cy={yForResponse(value.responseTimeMs)}
+                r="4"
+              ></circle>
+            {/each}
+            <g class="hover-tooltip" transform={`translate(${tooltipX} ${PLOT_TOP + 4})`}>
+              <rect
+                width={TOOLTIP_WIDTH}
+                height={22 + activeValues.length * 18}
+                rx="6"
+              ></rect>
+              <text class="hover-time" x="8" y="14">
+                {tooltipTimestamp(activeTimestamp)}
+              </text>
+              {#each activeValues as value, index (value.protocol)}
+                <circle
+                  data-protocol={value.protocol}
+                  cx="11"
+                  cy={28 + index * 18}
+                  r="3"
+                ></circle>
+                <text x="19" y={32 + index * 18}>
+                  {protocolLabel(value)} {formatMilliseconds(value.responseTimeMs)}
+                </text>
+              {/each}
+            </g>
+          </g>
+        {/if}
         <g class="axis-labels mono" aria-hidden="true">
           <text x={PLOT_LEFT} y="140">{RANGE_LABEL[range]}</text>
           <text x={PLOT_RIGHT} y="140" text-anchor="end">Now</text>
@@ -275,6 +445,11 @@
     stroke-dasharray: 7 5;
     border-top-style: dashed;
   }
+  [data-line-style="dotted"] {
+    stroke-dasharray: 1 6;
+    stroke-linecap: round;
+    border-top-style: dotted;
+  }
   .plot {
     display: block;
     width: 100%;
@@ -291,10 +466,21 @@
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
   }
+  .plot-background {
+    fill: var(--chart-background);
+    fill-opacity: var(--chart-background-opacity);
+  }
   .series-line,
-  .series-point {
+  .series-point,
+  .hover-point {
     stroke: var(--series-color);
     vector-effect: non-scaling-stroke;
+  }
+  .series-area {
+    pointer-events: none;
+  }
+  linearGradient stop {
+    stop-color: var(--series-color);
   }
   .series-line {
     fill: none;
@@ -305,6 +491,33 @@
   .series-point {
     fill: var(--surface-2);
     stroke-width: 2;
+  }
+  .hover-crosshair {
+    stroke: var(--text-tertiary);
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+    vector-effect: non-scaling-stroke;
+  }
+  .hover-point {
+    fill: var(--surface-2);
+    stroke-width: 2;
+  }
+  .hover-tooltip rect {
+    fill: var(--popover-bg);
+    stroke: var(--popover-border);
+    stroke-width: 1;
+  }
+  .hover-tooltip text {
+    fill: var(--text);
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .hover-tooltip .hover-time {
+    fill: var(--text-muted);
+    font-size: 9px;
+  }
+  .hover-tooltip circle {
+    fill: var(--series-color);
   }
   .axis-labels {
     fill: var(--text-faint);

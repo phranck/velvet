@@ -9,13 +9,13 @@ test("status-page action builds exclusively from Velvet v1 data", async () => {
   const source = await readFile(resolve(repositoryRoot, "action.yml"), "utf8");
 
   assert.match(source, /data:\n[\s\S]*?default: "velvet-data\/v1"/);
-  assert.match(source, /VELVET_DATA\/incidents\.json/);
   assert.match(source, /VELVET_DATA\/status\.json/);
   assert.match(
     source,
     /generate-config\.mjs[^\n]+VELVET_DATA/,
   );
   assert.doesNotMatch(source, /history\/summary\.json|api\.github\.com/);
+  assert.doesNotMatch(source, /generate-feed|incidents\.atom/);
   assert.match(source, /uses: actions\/setup-node@v7/);
 });
 

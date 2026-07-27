@@ -112,6 +112,56 @@ export function filterResponseSeries(
   }));
 }
 
+export function availableResponseTimestamps(series: ResponseSeries): string[] {
+  const timestamps = new Set<string>();
+  for (const entry of series) {
+    for (const sample of entry.samples) {
+      if (sample.responseTimeMs !== null) timestamps.add(sample.timestamp);
+    }
+  }
+  return [...timestamps].sort(
+    (left, right) => Date.parse(left) - Date.parse(right),
+  );
+}
+
+export function nearestResponseTimestamp(
+  timestamps: string[],
+  targetTime: number,
+): string | null {
+  let nearest: string | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const timestamp of timestamps) {
+    const distance = Math.abs(Date.parse(timestamp) - targetTime);
+    if (distance < nearestDistance) {
+      nearest = timestamp;
+      nearestDistance = distance;
+    }
+  }
+  return nearest;
+}
+
+export function responseValuesAtTimestamp(
+  series: ResponseSeries,
+  timestamp: string,
+): Array<{ protocol: "ipv4" | "ipv6"; responseTimeMs: number }> {
+  const values: Array<{
+    protocol: "ipv4" | "ipv6";
+    responseTimeMs: number;
+  }> = [];
+  for (const entry of series) {
+    const sample = entry.samples.find(
+      (candidate) => candidate.timestamp === timestamp,
+    );
+    if (sample?.responseTimeMs !== null && sample?.responseTimeMs !== undefined) {
+      values.push({
+        protocol: entry.protocol,
+        responseTimeMs: sample.responseTimeMs,
+      });
+    }
+  }
+  return values;
+}
+
 export function downsampleResponseSamples(
   samples: ResponseSamples,
   maxPoints: number,

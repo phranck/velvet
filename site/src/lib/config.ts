@@ -42,8 +42,6 @@ export interface VelvetConfig {
   logoHeight: number;
   /** Show the "Powered by Velvet" credit in the footer. */
   showPoweredBy: boolean;
-  /** Show the Subscribe (RSS) link in the footer. */
-  showSubscribe: boolean;
   /** Navbar links. */
   navbar: Array<{ title: string; href: string }>;
   /** Card layout: one grouped card (default) or one card per service. */
@@ -80,7 +78,6 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo" | "dataBaseUrl"> = {
   defaultRange: "month",
   logoHeight: 72,
   showPoweredBy: true,
-  showSubscribe: true,
   theme: resolveTheme(),
   icons: {},
 };
@@ -96,7 +93,10 @@ export async function loadConfig(
 ): Promise<VelvetConfig> {
   const res = await fetchImplementation("config.json", { cache: "no-cache" });
   if (!res.ok) throw new Error(`config.json ${res.status}`);
-  const raw = (await res.json()) as Partial<VelvetConfig>;
+  const raw = (await res.json()) as Partial<VelvetConfig> & {
+    showSubscribe?: unknown;
+  };
+  Reflect.deleteProperty(raw, "showSubscribe");
   if (!raw.owner || !raw.repo) throw new Error("config.json must set owner and repo");
   const dataBranch = raw.dataBranch ?? DEFAULTS.dataBranch;
   const dataBaseUrl =
@@ -126,11 +126,13 @@ export async function loadConfig(
 }
 
 /**
- * Apply theme colours and fonts as CSS custom properties on the document root.
- * Called once before first render so the page paints in the consumer's brand.
+ * Apply theme colours and fonts as CSS custom properties on the document root
+ * or an isolated preview surface.
  */
-export function applyTheme(config: VelvetConfig): void {
-  const root = document.documentElement;
+export function applyTheme(
+  config: VelvetConfig,
+  root: Pick<HTMLElement, "style"> = document.documentElement,
+): void {
   for (const [name, value] of Object.entries(
     themeCssVariables(config.theme, `${config.owner}/${config.repo}`),
   )) {
