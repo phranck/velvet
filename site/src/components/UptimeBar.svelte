@@ -118,6 +118,18 @@
   .seg:hover::before {
     opacity: 1;
   }
+  @media (max-width: 440px) {
+    .bar {
+      position: relative;
+      gap: 1px;
+    }
+    .seg {
+      position: static;
+    }
+    .seg::before {
+      display: none;
+    }
+  }
   .labels {
     display: flex;
     justify-content: space-between;
