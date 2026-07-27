@@ -225,10 +225,17 @@ async function main() {
         }),
     );
     assert.equal(narrowProtocols.length, 2);
-    assert.ok(narrowProtocols[1].y > narrowProtocols[0].y, "protocol statuses should stack on narrow screens");
     assert.ok(
-      Math.abs(narrowProtocols[1].x - narrowProtocols[0].x) < 1,
-      "stacked protocol statuses should stay aligned",
+      narrowProtocols[1].x > narrowProtocols[0].x,
+      "protocol statuses should remain side by side on narrow screens",
+    );
+    assert.ok(
+      Math.abs(narrowProtocols[1].y - narrowProtocols[0].y) < 1,
+      "protocol statuses should share one narrow row",
+    );
+    assert.equal(
+      await page.locator(".protocol-grid").first().locator(".protocol-separator").count(),
+      1,
     );
     const narrowChartWidth = await firstChart.locator("svg").evaluate((chart) => chart.getBoundingClientRect().width);
     assert.ok(narrowChartWidth <= narrowLayout.viewportWidth);
