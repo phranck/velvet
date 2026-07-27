@@ -94,7 +94,11 @@ async function main() {
   const site = await serveDist();
   const browser = await chromium.launch();
   try {
-    const ctx = await browser.newContext({ viewport: { width: PAGE_W, height: PAGE_H }, deviceScaleFactor: 1.5 });
+    const ctx = await browser.newContext({
+      viewport: { width: PAGE_W, height: PAGE_H },
+      deviceScaleFactor: 1.5,
+      reducedMotion: "reduce",
+    });
     const page = await ctx.newPage();
     await page.clock.setFixedTime(new Date(FIXED_NOW));
 
@@ -126,7 +130,84 @@ async function main() {
       "https://raw.githubusercontent.com/velvet-underground/status/main/velvet-data/v1/status.json",
     ]);
 
+    const firstSummary = page.locator("button.summary").first();
+    const firstDetailsId = await firstSummary.getAttribute("aria-controls");
+    assert.equal(await firstSummary.getAttribute("aria-expanded"), "false");
+    assert.ok(firstDetailsId, "service summary should reference its detail region");
+    assert.equal(await page.locator(`#${firstDetailsId}`).count(), 1);
+
+    await firstSummary.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await firstSummary.getAttribute("aria-expanded"), "true");
+    await page.keyboard.press("Space");
+    assert.equal(await firstSummary.getAttribute("aria-expanded"), "false");
+    await page.keyboard.press("Enter");
+    assert.equal(await firstSummary.getAttribute("aria-expanded"), "true");
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) => animation.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY)
+          .map((animation) => animation.finished),
+      ),
+    );
+    await firstSummary.evaluate((summary) => summary.blur());
+
+    const desktopProtocols = await page.locator(".protocol-grid").first().locator(".protocol-status").evaluateAll(
+      (elements) =>
+        elements.map((element) => {
+          const rect = element.getBoundingClientRect();
+          return { x: rect.x, y: rect.y };
+        }),
+    );
+    assert.equal(desktopProtocols.length, 2);
+    assert.ok(desktopProtocols[1].x > desktopProtocols[0].x, "protocol statuses should be side by side");
+    assert.ok(
+      Math.abs(desktopProtocols[1].y - desktopProtocols[0].y) < 1,
+      "protocol statuses should share one desktop row",
+    );
+    assert.equal(await page.locator(".detail a").count(), 0);
+    assert.doesNotMatch(await page.locator(".detail").first().innerText(), /https?:\/\//);
+
     const shot = await page.screenshot({ type: "png" });
+
+    await page
+      .locator(".name")
+      .first()
+      .evaluate((name) => (name.textContent = "WebsiteWithAnUninterruptedServiceNameThatMustWrap"));
+    await page.setViewportSize({ width: 390, height: PAGE_H });
+    const narrowLayout = await page.evaluate(() => ({
+      viewportWidth: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      overflowElements: [...document.querySelectorAll("body *")]
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            element: `${element.tagName.toLowerCase()}.${element.className}`,
+            left: rect.left,
+            right: rect.right,
+            width: rect.width,
+          };
+        })
+        .filter(({ left, right }) => left < 0 || right > window.innerWidth),
+    }));
+    assert.ok(
+      narrowLayout.documentWidth <= narrowLayout.viewportWidth,
+      `narrow layout should not create horizontal scrolling: ${JSON.stringify(narrowLayout)}`,
+    );
+    const narrowProtocols = await page.locator(".protocol-grid").first().locator(".protocol-status").evaluateAll(
+      (elements) =>
+        elements.map((element) => {
+          const rect = element.getBoundingClientRect();
+          return { x: rect.x, y: rect.y };
+        }),
+    );
+    assert.equal(narrowProtocols.length, 2);
+    assert.ok(narrowProtocols[1].y > narrowProtocols[0].y, "protocol statuses should stack on narrow screens");
+    assert.ok(
+      Math.abs(narrowProtocols[1].x - narrowProtocols[0].x) < 1,
+      "stacked protocol statuses should stay aligned",
+    );
 
     // 2. Frame the page in a macOS-style window (traffic lights + Finder-like toolbar)
     //    sitting on a gradient with rounded OUTER corners and a soft shadow.
