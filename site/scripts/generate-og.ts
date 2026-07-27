@@ -1,9 +1,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { Resvg } from "@resvg/resvg-js";
+import { validateStatusDocument } from "@velvet/contracts";
 import {
   barsForRange,
-  fetchMonitoringStart,
-  groupByProtocol,
   overallStatus,
   RANGE_LABEL,
   STATUS_HERO,
@@ -11,7 +10,7 @@ import {
 } from "../src/lib/data";
 import { iconFor } from "../src/lib/icons";
 import { OG_SCALE, bar, pill, segGloss, typeScale } from "../src/lib/tokens";
-import type { DayStatus, RangeKey, ServiceSummary } from "../src/lib/types";
+import type { DayStatus, RangeKey } from "../src/lib/types";
 
 /**
  * Generate the 1200×630 social card (og:image / twitter:image) for a status page.
@@ -27,50 +26,62 @@ import type { DayStatus, RangeKey, ServiceSummary } from "../src/lib/types";
  * Built as SVG and rasterised with resvg (no browser), light enough to run in the
  * Velvet Action on every deploy. Run via `tsx` so it can import the TypeScript modules.
  *
- * Usage: tsx generate-og.ts <config.json> <summary.json> <out.png>
+ * Usage: tsx generate-og.ts <config.json> <status.json> <out.png>
  */
-const [, , configPath = "public/config.json", summaryPath = "", outPath = "dist/og.png"] =
+const [, , configPath = "public/config.json", statusPath = "", outPath = "dist/og.png"] =
   process.argv;
 const config = JSON.parse(readFileSync(configPath, "utf8"));
 
-/** Monitored services (IPv6 siblings folded in), or [] before the first summary exists. */
-let services: ServiceSummary[] = [];
-try {
-  services = groupByProtocol(JSON.parse(readFileSync(summaryPath, "utf8")) as ServiceSummary[]);
-} catch {
-  // No summary.json yet (very first deploy) — render without the service card.
+const statusResult = validateStatusDocument(
+  JSON.parse(readFileSync(statusPath, "utf8")),
+);
+if (!statusResult.success) {
+  throw new Error("Velvet status data is invalid.");
 }
+const statusDocument = statusResult.data;
+const services = statusDocument.services;
 
 const name = config.name ?? config.repo ?? "Status";
 const theme = config.theme ?? {};
 const accent = theme.accent ?? "#6366f1";
 const accentDeg = theme.accentDeg ?? "#d29922";
 const accentDown = theme.accentDown ?? "#f85149";
-/** Colour for a status, matching the page's up / degraded / down palette. */
+/** Colour for a status, matching the page's operational/degraded/outage palette. */
 const colourFor = (status: string): string =>
-  status === "down" ? accentDown : status === "degraded" ? accentDeg : accent;
+  status === "outage"
+    ? accentDown
+    : status === "degraded"
+      ? accentDeg
+      : status === "unknown"
+        ? "#6b7280"
+        : accent;
 
 // The card renders the range a first-time visitor sees first (config.defaultRange),
 // so the bar count + labels match the live default view exactly.
 const range = (config.defaultRange ?? "quarter") as RangeKey;
-const today = new Date().toISOString().slice(0, 10);
-
 const overall = overallStatus(services);
 const hero = STATUS_HERO[overall];
 
-// First service + its folded IPv6 counterpart, straight from the grouped list.
 const first = services[0] ?? null;
-const ipv6 = first?.ipv6 ?? null;
-const firstIcon = first ? iconFor(first.slug, config.icons ?? {}) : "ph-circle";
-// Days before monitoring began render as ghost bars — fetch the repo's creation date
-// so the card's bar series + uptime match the live view exactly. (fetchMonitoringStart
-// touches localStorage, which is absent in Node; its try/catch falls through to the
-// network lookup. Best-effort: a failure yields null, i.e. no ghost bars.)
-const monitoringStart = first
-  ? await fetchMonitoringStart(config.owner, config.repo, process.env.GITHUB_TOKEN)
-  : null;
-const days: DayStatus[] = first ? barsForRange(first, range, today, monitoringStart) : [];
-const uptime = first ? uptimeForRange(first, range, today, monitoringStart) : "";
+const ipv4 = first?.checks.find(({ protocol }) => protocol === "ipv4") ?? null;
+const ipv6 = first?.checks.find(({ protocol }) => protocol === "ipv6") ?? null;
+const firstIcon = first ? iconFor(first.id, config.icons ?? {}) : "ph-circle";
+const days: DayStatus[] = first
+  ? barsForRange(
+      first,
+      range,
+      statusDocument.generatedAt,
+      statusDocument.monitoringStartedAt,
+    )
+  : [];
+const uptime = first
+  ? uptimeForRange(
+      first,
+      range,
+      statusDocument.generatedAt,
+      statusDocument.monitoringStartedAt,
+    )
+  : "";
 
 const esc = (s: string): string =>
   String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
@@ -225,7 +236,7 @@ const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http
       ? `${icon(firstIcon, inL, cardY + 28, svcIconSize, colourFor(first.status))}
   <text x="${inL + svcIconSize + 14}" y="${cardY + 52}" font-family="${FONT}" font-size="${nameSize.toFixed(1)}" font-weight="600" fill="#e3e6ea">${esc(first.name)}</text>
   <text x="${inR}" y="${cardY + 52}" text-anchor="end" font-family="${FONT}" font-size="${uptimeSize.toFixed(1)}" font-weight="700" fill="${colourFor(first.status)}">${esc(uptime)}</text>
-  ${ipv6 ? pillEl(pillV4X, cardY + 31, "IPv4", colourFor(first.status)) + pillEl(pillV6X, cardY + 31, "IPv6", colourFor(ipv6.status)) : ""}
+  ${ipv4 && ipv6 ? pillEl(pillV4X, cardY + 31, "IPv4", colourFor(ipv4.status)) + pillEl(pillV6X, cardY + 31, "IPv6", colourFor(ipv6.status)) : ""}
   ${uptimeBars(days, inL, cardY + 88, cardW - 2 * pad)}
   <text x="${inL}" y="${cardY + 168}" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="#6b7280">${esc(RANGE_LABEL[range])}</text>
   <text x="${inR}" y="${cardY + 168}" text-anchor="end" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="#6b7280">Today</text>`

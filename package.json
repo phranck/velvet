@@ -9,9 +9,9 @@
   ],
   "scripts": {
     "build": "npm run build --workspace @velvet/contracts && npm run build --workspace @velvet/upptime-adapter && npm run build --workspace @velvet/site",
-    "test": "npm run test:lockfile && npm run test --workspace @velvet/contracts && npm run test --workspace @velvet/upptime-adapter && npm run test --workspace @velvet/sync-data-action",
+    "test": "npm run test:lockfile && npm run test --workspace @velvet/contracts && npm run test --workspace @velvet/upptime-adapter && npm run test --workspace @velvet/sync-data-action && npm run test --workspace @velvet/site",
     "test:lockfile": "node --test tests/lockfile.test.mjs",
-    "typecheck": "npm run typecheck --workspace @velvet/contracts && npm run typecheck --workspace @velvet/upptime-adapter && npm run typecheck --workspace @velvet/sync-data-action"
+    "typecheck": "npm run typecheck --workspace @velvet/contracts && npm run typecheck --workspace @velvet/upptime-adapter && npm run typecheck --workspace @velvet/sync-data-action && npm run typecheck --workspace @velvet/site"
   },
   "engines": {
     "node": ">=22"

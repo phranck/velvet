@@ -1,7 +1,6 @@
 /**
- * Phosphor (duotone web font) icon class per service slug.
- * Slugs come from Upptime (derived from the site name in `.upptimerc.yml`).
- * Unknown slugs fall back to {@link DEFAULT_ICON}.
+ * Phosphor (duotone web font) icon class per Velvet service ID.
+ * Unknown IDs fall back to {@link DEFAULT_ICON}.
  */
 const SERVICE_ICONS: Record<string, string> = {
   frontend: "ph-globe",
@@ -16,11 +15,11 @@ const SERVICE_ICONS: Record<string, string> = {
 const DEFAULT_ICON = "ph-circle";
 
 /**
- * Resolve the Phosphor icon class for a service slug.
+ * Resolve the Phosphor icon class for a service ID.
  *
- * @param slug - the service slug
- * @param overrides - per-slug icon overrides from the consumer's config (win over defaults)
+ * @param serviceId - the Velvet service ID
+ * @param overrides - per-service icon overrides from the consumer's config
  */
-export function iconFor(slug: string, overrides: Record<string, string> = {}): string {
-  return overrides[slug] ?? SERVICE_ICONS[slug] ?? DEFAULT_ICON;
+export function iconFor(serviceId: string, overrides: Record<string, string> = {}): string {
+  return overrides[serviceId] ?? SERVICE_ICONS[serviceId] ?? DEFAULT_ICON;
 }

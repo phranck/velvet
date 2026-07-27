@@ -6,9 +6,10 @@
 
   /** Headline tint per status; the icon + text come from the shared STATUS_HERO map. */
   const HERO_COLOR: Record<ServiceStatus, string> = {
-    up: "var(--accent-bright)",
+    operational: "var(--accent-bright)",
+    unknown: "var(--text-muted)",
     degraded: "var(--accent-deg)",
-    down: "var(--accent-down)",
+    outage: "var(--accent-down)",
   };
   const c = $derived({ ...STATUS_HERO[status], color: HERO_COLOR[status] });
 </script>

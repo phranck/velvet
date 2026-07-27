@@ -5,7 +5,7 @@
  *   1. run `generate-config.mjs` on `demo/.upptimerc.yml` (the same step the
  *      template's velvet.yml runs) → `dist/config.json`,
  *   2. serve the built `dist/`,
- *   3. render it in headless Chromium with the demo monitoring data
+ *   3. render it in headless Chromium with contract-valid demo data
  *      (`demo/fixtures.mjs`) fed in via request mocks and the clock frozen so the
  *      result is byte-stable,
  *   4. frame the page on a gradient (rounded corners + shadow),
@@ -18,8 +18,14 @@ import { createServer } from "node:http";
 import { readFile, writeFile, stat } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import assert from "node:assert/strict";
 import { chromium } from "playwright";
-import { DEMO_OWNER, DEMO_REPO, FIXED_NOW, demoIssues, demoRepo, demoSummary } from "../demo/fixtures.mjs";
+import {
+  FIXED_NOW,
+  demoIncidents,
+  demoResponseTimes,
+  demoStatus,
+} from "../demo/fixtures.mjs";
 
 const SITE = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DIST = join(SITE, "dist");
@@ -92,16 +98,33 @@ async function main() {
     const page = await ctx.newPage();
     await page.clock.setFixedTime(new Date(FIXED_NOW));
 
-    // Feed the demo monitoring data: summary.json (GitHub raw) + issues/repo (GitHub API).
-    await page.route("**/raw.githubusercontent.com/**", (r) => r.fulfill(json(demoSummary)));
-    await page.route("**/api.github.com/**", (r) =>
-      r.fulfill(json(r.request().url().includes("/issues") ? demoIssues : demoRepo)),
-    );
+    const requestedDataUrls = [];
+    page.on("request", (request) => {
+      const url = request.url();
+      if (url.includes("raw.githubusercontent.com") || url.includes("api.github.com")) {
+        requestedDataUrls.push(url);
+      }
+    });
+    const documents = {
+      "status.json": demoStatus,
+      "response-times.json": demoResponseTimes,
+      "incidents.json": demoIncidents,
+    };
+    await page.route("**/velvet-data/v1/*.json", (route) => {
+      const fileName = new URL(route.request().url()).pathname.split("/").at(-1);
+      return route.fulfill(json(documents[fileName]));
+    });
 
     await page.goto(site.base, { waitUntil: "load" });
     await page.waitForSelector(".card");
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(500); // let the icon font + bars settle
+
+    assert.deepEqual(requestedDataUrls.sort(), [
+      "https://raw.githubusercontent.com/velvet-underground/status/main/velvet-data/v1/incidents.json",
+      "https://raw.githubusercontent.com/velvet-underground/status/main/velvet-data/v1/response-times.json",
+      "https://raw.githubusercontent.com/velvet-underground/status/main/velvet-data/v1/status.json",
+    ]);
 
     const shot = await page.screenshot({ type: "png" });
 

@@ -2,28 +2,39 @@
   import { onMount, tick } from "svelte";
   import {
     barsForRange,
-    fetchIncidents,
-    fetchMonitoringStart,
-    fetchSummary,
-    groupByProtocol,
     overallStatus,
     RANGE_LABEL,
     uptimeForRange,
+    visibleIncidentEvents,
   } from "./lib/data";
+  import {
+    createVelvetDataClient,
+    refreshIncidentsDocument,
+    type VelvetDataClient,
+  } from "./lib/data-client";
   import { applyTheme, loadConfig, type VelvetConfig } from "./lib/config";
   import { injectAnalytics } from "./lib/analytics";
   import { iconFor } from "./lib/icons";
-  import type { Incident, RangeKey, ServiceSummary } from "./lib/types";
+  import type {
+    IncidentsDocument,
+    RangeKey,
+    Service,
+    StatusDocument,
+  } from "./lib/types";
   import StatusHero from "./components/StatusHero.svelte";
   import ServiceRow from "./components/ServiceRow.svelte";
   import Incidents from "./components/Incidents.svelte";
 
   let config = $state<VelvetConfig | null>(null);
-  let services = $state<ServiceSummary[]>([]);
-  let incidents = $state<Incident[]>([]);
-  let monitoringStart = $state<string | null>(null);
+  let statusDocument = $state<StatusDocument | null>(null);
+  let incidentsDocument = $state<IncidentsDocument | null>(null);
+  let dataClient = $state<VelvetDataClient | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
+  const services = $derived(statusDocument?.services ?? []);
+  const incidents = $derived(
+    visibleIncidentEvents(incidentsDocument?.events ?? []),
+  );
   const RANGE_STORAGE_KEY = "velvet:range";
   /** The visitor's previously chosen range, or null if they haven't picked one yet. */
   function storedRange(): RangeKey | null {
@@ -56,9 +67,11 @@
     }
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  // Format in the visitor's own locale (browser language) rather than a fixed one.
-  const updated = new Date().toLocaleString(navigator.language);
+  const updated = $derived(
+    statusDocument
+      ? new Date(statusDocument.generatedAt).toLocaleString(navigator.language)
+      : "",
+  );
 
   const RANGES: { key: RangeKey; label: string }[] = [
     { key: "day", label: "24h" },
@@ -71,12 +84,12 @@
 
   // Per-service expand/collapse state, lifted here so the "expand/collapse all"
   // control can drive every card at once. Each card still toggles on its own;
-  // the state is persisted per service slug across reloads.
+  // the state is persisted per service ID across reloads.
   let openMap = $state<Record<string, boolean>>({});
-  const openKey = (slug: string): string => `velvet:open:${slug}`;
-  function persistOpen(slug: string, isOpen: boolean): void {
+  const openKey = (serviceId: string): string => `velvet:open:${serviceId}`;
+  function persistOpen(serviceId: string, isOpen: boolean): void {
     try {
-      localStorage.setItem(openKey(slug), isOpen ? "1" : "0");
+      localStorage.setItem(openKey(serviceId), isOpen ? "1" : "0");
     } catch {
       // ignore persistence failures (private mode / disabled storage)
     }
@@ -140,11 +153,11 @@
   }
 
   /** Toggle a single card and persist its new state. */
-  function toggleOne(slug: string): void {
+  function toggleOne(serviceId: string): void {
     flipToggle(() => {
-      const next = !openMap[slug];
-      openMap = { ...openMap, [slug]: next };
-      persistOpen(slug, next);
+      const next = !openMap[serviceId];
+      openMap = { ...openMap, [serviceId]: next };
+      persistOpen(serviceId, next);
     });
   }
   /** Expand (or collapse) every service card at once. */
@@ -152,14 +165,14 @@
     flipToggle(() => {
       const next: Record<string, boolean> = { ...openMap };
       for (const svc of services) {
-        next[svc.slug] = isOpen;
-        persistOpen(svc.slug, isOpen);
+        next[svc.id] = isOpen;
+        persistOpen(svc.id, isOpen);
       }
       openMap = next;
     });
   }
   /** True only when every card is expanded — drives the toggle-all icon + action. */
-  const allOpen = $derived(services.length > 0 && services.every((s) => openMap[s.slug] === true));
+  const allOpen = $derived(services.length > 0 && services.every((s) => openMap[s.id] === true));
 
   onMount(async () => {
     try {
@@ -173,21 +186,18 @@
       }
       document.title = `${cfg.name} — Status`;
       config = cfg;
-      const [s, i, start] = await Promise.all([
-        fetchSummary(cfg.owner, cfg.repo, cfg.dataBranch),
-        fetchIncidents(cfg.owner, cfg.repo),
-        fetchMonitoringStart(cfg.owner, cfg.repo),
-      ]);
-      services = groupByProtocol(s);
-      incidents = i ?? [];
-      monitoringStart = start;
-      // Seed each card's open state from its persisted per-slug value.
+      const client = createVelvetDataClient(cfg.dataBaseUrl);
+      const snapshot = await client.loadSnapshot();
+      dataClient = client;
+      statusDocument = snapshot.status;
+      incidentsDocument = snapshot.incidents;
+      // Seed each card's open state from its persisted per-service value.
       const seeded: Record<string, boolean> = {};
-      for (const svc of services) {
+      for (const svc of snapshot.status.services) {
         try {
-          seeded[svc.slug] = localStorage.getItem(openKey(svc.slug)) === "1";
+          seeded[svc.id] = localStorage.getItem(openKey(svc.id)) === "1";
         } catch {
-          seeded[svc.slug] = false;
+          seeded[svc.id] = false;
         }
       }
       openMap = seeded;
@@ -198,27 +208,26 @@
     }
   });
 
-  /** How often the open-incidents banner re-polls GitHub while the tab is visible. */
+  /** How often the incident document refreshes while the tab is visible. */
   const INCIDENT_REFRESH_MS = 60_000;
 
   /**
-   * Re-fetch open incidents/maintenance and update the banner in place. Keeps the
-   * current list when the (unauthenticated, rate-limited) request fails, so a
-   * transient GitHub API hiccup never blanks an active banner.
+   * Refresh incident and maintenance events in place. Keeps the last valid
+   * document when the current response is unavailable or invalid.
    */
   async function refreshIncidents(): Promise<void> {
-    if (!config) return;
-    const next = await fetchIncidents(config.owner, config.repo);
-    if (next) incidents = next;
+    if (!dataClient || !incidentsDocument) return;
+    const current = incidentsDocument;
+    incidentsDocument = await refreshIncidentsDocument(
+      dataClient,
+      () => incidentsDocument ?? current,
+    );
   }
 
-  // Live banner refresh: while the tab is visible, re-poll open incidents so a new
-  // maintenance/deploy banner (or a cleared one) appears within a minute without a
-  // manual reload. Polling pauses while the tab is hidden to respect GitHub's
-  // unauthenticated API rate limit (60 req/h/IP); returning to the tab refetches at
-  // once. Starts once config (owner/repo) is loaded; torn down on unmount.
+  // Live banner refresh pauses while the tab is hidden and resumes immediately when
+  // it becomes visible. The interval starts after the first valid snapshot.
   $effect(() => {
-    if (!config) return;
+    if (!dataClient || !incidentsDocument) return;
     const refreshIfVisible = (): void => {
       if (!document.hidden) void refreshIncidents();
     };
@@ -278,16 +287,26 @@
       </button>
     {/snippet}
 
-    {#snippet serviceRow(svc: ServiceSummary, cfg: VelvetConfig)}
+    {#snippet serviceRow(svc: Service, cfg: VelvetConfig)}
       <ServiceRow
         service={svc}
-        icon={iconFor(svc.slug, cfg.icons)}
-        days={barsForRange(svc, range, today, monitoringStart)}
-        uptime={uptimeForRange(svc, range, today, monitoringStart)}
+        icon={iconFor(svc.id, cfg.icons)}
+        days={barsForRange(
+          svc,
+          range,
+          statusDocument!.generatedAt,
+          statusDocument!.monitoringStartedAt,
+        )}
+        uptime={uptimeForRange(
+          svc,
+          range,
+          statusDocument!.generatedAt,
+          statusDocument!.monitoringStartedAt,
+        )}
         rangeLabel={RANGE_LABEL[range]}
         {range}
-        open={openMap[svc.slug] === true}
-        onToggle={() => toggleOne(svc.slug)}
+        open={openMap[svc.id] === true}
+        onToggle={() => toggleOne(svc.id)}
       />
     {/snippet}
 
@@ -297,7 +316,7 @@
         {@render rangeButtons()}
         {@render toggleAllBtn()}
       </div>
-      {#each services as svc (svc.slug)}
+      {#each services as svc (svc.id)}
         <section class="card">
           {@render serviceRow(svc, config)}
         </section>
@@ -309,7 +328,7 @@
           {@render rangeButtons()}
           {@render toggleAllBtn()}
         </div>
-        {#each services as svc (svc.slug)}
+        {#each services as svc (svc.id)}
           {@render serviceRow(svc, config)}
         {/each}
       </section>
@@ -324,7 +343,6 @@
           <a href="https://github.com/phranck/velvet" target="_blank" rel="noopener noreferrer"
             >Velvet</a
           >
-          + <a href="https://upptime.js.org" target="_blank" rel="noopener noreferrer">Upptime</a>
         </span>
       {/if}
       {#if config.showSubscribe}

@@ -1,5 +1,11 @@
 <script lang="ts">
-  import type { DayStatus, RangeKey, ServiceStatus, ServiceSummary } from "../lib/types";
+  import type {
+    DayStatus,
+    RangeKey,
+    Service,
+    ServiceCheck,
+    ServiceStatus,
+  } from "../lib/types";
   import UptimeBar from "./UptimeBar.svelte";
 
   let {
@@ -12,7 +18,7 @@
     open,
     onToggle,
   }: {
-    service: ServiceSummary;
+    service: Service;
     days: DayStatus[];
     uptime: string;
     rangeLabel: string;
@@ -22,35 +28,39 @@
     onToggle: () => void;
   } = $props();
 
-  /** Status colour: bright accent when up, amber when degraded, red when down. */
+  /** Status colour: bright accent when operational, amber when degraded, red on outage. */
   function statusColor(status: ServiceStatus): string {
-    if (status === "up") return "var(--accent-bright)";
+    if (status === "operational") return "var(--accent-bright)";
+    if (status === "unknown") return "var(--text-muted)";
     if (status === "degraded") return "var(--accent-deg)";
     return "var(--accent-down)";
   }
   /** Human-readable status label. */
   function statusText(status: ServiceStatus): string {
-    if (status === "up") return "Operational";
+    if (status === "operational") return "Operational";
+    if (status === "unknown") return "Unknown";
     if (status === "degraded") return "Degraded";
-    return "Down";
+    return "Outage";
+  }
+  function responseTime(check: ServiceCheck): string {
+    return check.responseTimeMs === null
+      ? "No data"
+      : `${Math.round(check.responseTimeMs)} ms`;
   }
   const dotColor = $derived(statusColor(service.status));
-  /** An IPv6-only service: a standalone `<x>-ipv6` check with no IPv4 base to fold into. */
-  const isIpv6Only = $derived(!service.ipv6 && service.slug.endsWith("-ipv6"));
 </script>
 
 <div class="row">
   <button class="top" onclick={onToggle} aria-expanded={open}>
     <i class="ph-duotone {icon} svc-ico" style:color={dotColor} aria-hidden="true"></i>
     <span class="name">{service.name}</span>
-    {#if service.ipv6}
+    {#if service.checks.length > 1 || service.checks[0]?.protocol === "ipv6"}
       <span class="protos" aria-label="protocol reachability">
-        <span class="proto" style:--c={statusColor(service.status)}>IPv4</span>
-        <span class="proto" style:--c={statusColor(service.ipv6.status)}>IPv6</span>
-      </span>
-    {:else if isIpv6Only}
-      <span class="protos" aria-label="protocol reachability">
-        <span class="proto" style:--c={statusColor(service.status)}>IPv6</span>
+        {#each service.checks as check (check.id)}
+          <span class="proto" style:--c={statusColor(check.status)}
+            >{check.protocol.toUpperCase()}</span
+          >
+        {/each}
       </span>
     {/if}
     <span class="uptime mono">{uptime}</span>
@@ -62,26 +72,15 @@
   <div class="detail-wrap" class:open>
     <div class="detail-clip">
       <div class="detail" inert={!open}>
-        <div class="proto-detail">
-          {#if service.ipv6}
-            <span class="proto-tag" style:--c={statusColor(service.status)}>IPv4</span>
-          {:else if isIpv6Only}
-            <span class="proto-tag" style:--c={statusColor(service.status)}>IPv6</span>
-          {/if}
-          <span class="metric mono"><b>{statusText(service.status)}</b></span>
-          <span class="metric mono"><b>{service.time}</b> ms{service.ipv6 ? "" : " avg"}</span>
-          <a class="metric link" href={service.url} target="_blank" rel="noreferrer">{service.url}</a>
-        </div>
-        {#if service.ipv6}
+        {#each service.checks as check (check.id)}
           <div class="proto-detail">
-            <span class="proto-tag" style:--c={statusColor(service.ipv6.status)}>IPv6</span>
-            <span class="metric mono"><b>{statusText(service.ipv6.status)}</b></span>
-            <span class="metric mono"><b>{service.ipv6.time}</b> ms</span>
-            <a class="metric link" href={service.ipv6.url} target="_blank" rel="noreferrer"
-              >{service.ipv6.url}</a
+            <span class="proto-tag" style:--c={statusColor(check.status)}
+              >{check.protocol.toUpperCase()}</span
             >
+            <span class="metric mono"><b>{statusText(check.status)}</b></span>
+            <span class="metric mono"><b>{responseTime(check)}</b></span>
           </div>
-        {/if}
+        {/each}
       </div>
     </div>
   </div>
@@ -217,8 +216,5 @@
   .metric b {
     color: var(--text);
     font-weight: 600;
-  }
-  .link {
-    color: var(--accent-bright);
   }
 </style>

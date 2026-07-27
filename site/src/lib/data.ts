@@ -1,19 +1,18 @@
-import type { DayStatus, Incident, RangeKey, ServiceStatus, ServiceSummary } from "./types";
+import type {
+  DayStatus,
+  IncidentEvent,
+  RangeKey,
+  Service,
+  ServiceStatus,
+} from "./types";
 
-/** Minutes in a day — used to grade per-day downtime severity for the bar. */
-const MINUTES_PER_DAY = 1440;
-/** Below this share of a day down, a day reads as degraded rather than down. */
-const DOWN_DAY_THRESHOLD = 0.3;
+const DOWN_SEGMENT_THRESHOLD = 0.3;
 
-/**
- * Per-range rendering spec: how many trailing days the bar covers and how many
- * days each segment aggregates (>1 buckets days into weekly bars). History is
- * capped at one year.
- */
 interface RangeSpec {
   days: number;
   bucketDays: number;
 }
+
 const RANGE_SPECS: Record<RangeKey, RangeSpec> = {
   day: { days: 1, bucketDays: 1 },
   week: { days: 7, bucketDays: 1 },
@@ -22,7 +21,6 @@ const RANGE_SPECS: Record<RangeKey, RangeSpec> = {
   year: { days: 365, bucketDays: 7 },
 };
 
-/** Human-readable "start of window" label per range, shown under the uptime bar (page + OG card). */
 export const RANGE_LABEL: Record<RangeKey, string> = {
   day: "24h ago",
   week: "7 days ago",
@@ -31,324 +29,147 @@ export const RANGE_LABEL: Record<RangeKey, string> = {
   year: "1 year ago",
 };
 
-/**
- * Overall-status hero copy: the Phosphor icon class and headline per status, shared
- * by StatusHero.svelte and the OG card so both always tell the same story.
- */
-export const STATUS_HERO: Record<ServiceStatus, { text: string; icon: string }> = {
-  up: { text: "All systems operational", icon: "ph-check-circle" },
+export const STATUS_HERO: Record<
+  ServiceStatus,
+  { text: string; icon: string }
+> = {
+  operational: { text: "All systems operational", icon: "ph-check-circle" },
+  unknown: { text: "System status unavailable", icon: "ph-question" },
   degraded: { text: "Some systems degraded", icon: "ph-warning" },
-  down: { text: "Major service outage", icon: "ph-x-circle" },
+  outage: { text: "Major service outage", icon: "ph-x-circle" },
 };
 
-/**
- * Fetch the live service summary from a consumer's Upptime monitoring repo.
- * Cached ~by the CDN for a couple of minutes, matching Upptime's update cadence.
- *
- * @param owner - GitHub owner of the monitoring repo
- * @param repo - monitoring repo name
- * @param branch - branch the data lives on
- * @returns the per-service summary array (throws on a non-OK response).
- */
-export async function fetchSummary(
-  owner: string,
-  repo: string,
-  branch: string,
-): Promise<ServiceSummary[]> {
-  // Local-dev override: a `public/summary.json` (served at /summary.json) lets
-  // you preview against fixture data without hitting the live repo. Dev-only.
-  if (import.meta.env.DEV) {
-    try {
-      const local = await fetch("/summary.json", { cache: "no-cache" });
-      if (local.ok) return (await local.json()) as ServiceSummary[];
-    } catch {
-      // no local fixture present; fall through to the live repo
-    }
+function statusForAvailability(
+  unavailableSeconds: number,
+  monitoredSeconds: number,
+): ServiceStatus {
+  if (unavailableSeconds <= 0) return "operational";
+  if (unavailableSeconds / monitoredSeconds >= DOWN_SEGMENT_THRESHOLD) {
+    return "outage";
   }
-  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/history/summary.json`;
-  const res = await fetch(url, { cache: "no-cache" });
-  if (!res.ok) throw new Error(`summary.json ${res.status}`);
-  return (await res.json()) as ServiceSummary[];
-}
-
-/** Slug suffix that marks a site as the IPv6 counterpart of its base service. */
-const IPV6_SLUG_SUFFIX = "-ipv6";
-
-/**
- * Fold IPv6 counterpart checks into their base service so each service renders
- * as one card showing both protocols. A check whose slug is `<base>-ipv6`
- * (typically a Globalping check with `ipv6: true`) is attached to the `<base>`
- * service as its {@link ServiceSummary.ipv6}; a `<base>-ipv6` with no matching
- * base is left as a standalone service.
- *
- * @param services - the raw summary array from {@link fetchSummary}
- * @returns the services with IPv6 counterparts folded in, original order preserved
- */
-export function groupByProtocol(services: ServiceSummary[]): ServiceSummary[] {
-  const bySlug = new Map(services.map((s) => [s.slug, s]));
-  const folded = new Set<string>();
-  for (const svc of services) {
-    if (!svc.slug.endsWith(IPV6_SLUG_SUFFIX)) continue;
-    const base = bySlug.get(svc.slug.slice(0, -IPV6_SLUG_SUFFIX.length));
-    if (base) {
-      base.ipv6 = svc;
-      folded.add(svc.slug);
-    }
-  }
-  return services.filter((s) => !folded.has(s.slug));
-}
-
-/**
- * Fetch open incidents and maintenance windows from GitHub Issues.
- * Unauthenticated and best-effort. Returns `null` when the request cannot be
- * completed (network error or a rate-limit / non-2xx response) so callers can
- * tell "no open incidents" (`[]`) apart from "couldn't check": the live refresh
- * keeps the last known banner on `null` instead of blanking it, while the first
- * load treats `null` as empty so the page still renders.
- *
- * @param owner - GitHub owner of the monitoring repo
- * @param repo - monitoring repo name
- * @returns open incidents (maintenance first, newest first within each group), or
- *   `null` if the request could not be completed.
- */
-export async function fetchIncidents(owner: string, repo: string): Promise<Incident[] | null> {
-  const url = `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=100`;
-  let res: Response;
-  try {
-    res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
-  } catch {
-    return null;
-  }
-  if (!res.ok) return null;
-  const issues = (await res.json()) as Array<{
-    number: number;
-    title: string;
-    html_url: string;
-    created_at: string;
-    pull_request?: unknown;
-    labels: Array<{ name: string }>;
-  }>;
-  return issues
-    .filter((i) => !i.pull_request)
-    .map((i) => ({
-      number: i.number,
-      title: i.title,
-      url: i.html_url,
-      createdAt: i.created_at,
-      isMaintenance: i.labels.some((l) => l.name === "maintenance"),
-    }));
-}
-
-/**
- * Fetch the repo's creation date as the monitoring-start boundary, cached forever
- * in localStorage (it never changes). Days before this render as ghost bars.
- *
- * @param owner - GitHub owner of the monitoring repo
- * @param repo - monitoring repo name
- * @param token - optional GitHub token; sent as a Bearer auth header to lift the
- *   unauthenticated rate limit (used by the OG build, which has `GITHUB_TOKEN`).
- * @returns ISO date (YYYY-MM-DD) the repo was created, or null on failure.
- */
-/**
- * Web Storage, only present in the browser. The OG-card build runs this module under
- * Node, where `localStorage` is absent — guarding here keeps {@link fetchMonitoringStart}
- * usable in both contexts (and silences Node's experimental-localStorage warning).
- */
-const browserStorage: Storage | null =
-  typeof window !== "undefined" && typeof window.localStorage !== "undefined"
-    ? window.localStorage
-    : null;
-
-export async function fetchMonitoringStart(
-  owner: string,
-  repo: string,
-  token?: string,
-): Promise<string | null> {
-  const key = `velvet:created:${owner}/${repo}`;
-  try {
-    const cached = browserStorage?.getItem(key);
-    if (cached) return cached;
-  } catch {
-    // storage unavailable (private mode); fall through to a network lookup.
-  }
-  try {
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { created_at?: string };
-    const created = data.created_at?.slice(0, 10) ?? null;
-    if (created) {
-      try {
-        browserStorage?.setItem(key, created);
-      } catch {
-        // ignore persistence failures
-      }
-    }
-    return created;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Derive the most severe day status from minutes-down, for one bar segment.
- *
- * @param minutesDown - minutes the service was down on a given day
- * @returns `up` for no downtime, `down` past {@link DOWN_DAY_THRESHOLD} of the day, else `degraded`
- */
-function gradeDay(minutesDown: number): ServiceStatus {
-  if (minutesDown <= 0) return "up";
-  if (minutesDown / MINUTES_PER_DAY >= DOWN_DAY_THRESHOLD) return "down";
   return "degraded";
 }
 
-/** Most severe status across a bucket of days. */
+const statusRank: Record<ServiceStatus, number> = {
+  operational: 0,
+  unknown: 1,
+  degraded: 2,
+  outage: 3,
+};
+
 function worstStatus(statuses: ServiceStatus[]): ServiceStatus {
-  if (statuses.includes("down")) return "down";
-  if (statuses.includes("degraded")) return "degraded";
-  return "up";
+  return statuses.reduce<ServiceStatus>(
+    (worst, status) =>
+      statusRank[status] > statusRank[worst] ? status : worst,
+    "operational",
+  );
 }
 
-/**
- * Build the uptime-bar series for a range. Short ranges (24h/7d/30d) render one
- * bar per day; the 1-year range aggregates seven days into each weekly bar so the
- * strip stays legible. Days before monitoring began are flagged `hasData: false`
- * and render as faint "ghost" bars.
- *
- * @param service - the service summary holding `dailyMinutesDown`
- * @param range - the selected history window
- * @param today - ISO date string for "today" (injected so the build stays deterministic and testable)
- * @param monitoringStart - ISO date monitoring began; null when unknown
- * @returns one {@link DayStatus} per bar, oldest → newest
- */
+function rangeDates(generatedAt: string, days: number): string[] {
+  const end = new Date(`${generatedAt.slice(0, 10)}T00:00:00.000Z`);
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(end);
+    date.setUTCDate(end.getUTCDate() - (days - index - 1));
+    return date.toISOString().slice(0, 10);
+  });
+}
+
 export function barsForRange(
-  service: ServiceSummary,
+  service: Service,
   range: RangeKey,
-  today: string,
-  monitoringStart?: string | null,
+  generatedAt: string,
+  monitoringStartedAt: string,
 ): DayStatus[] {
   const spec = RANGE_SPECS[range];
-  const totalDays = spec.days;
-  const bucketDays = spec.bucketDays;
+  const availability = new Map(
+    service.dailyAvailability.map((day) => [day.date, day]),
+  );
+  const monitoringStartDate = monitoringStartedAt.slice(0, 10);
+  const days = rangeDates(generatedAt, spec.days).map((date) => {
+    const day = availability.get(date);
+    const hasData = date >= monitoringStartDate && day !== undefined;
+    return {
+      date,
+      status:
+        day === undefined
+          ? ("operational" as const)
+          : statusForAvailability(
+              day.unavailableSeconds,
+              day.monitoredSeconds,
+            ),
+      minutesDown:
+        day === undefined ? 0 : Math.round(day.unavailableSeconds / 60),
+      hasData,
+    };
+  });
 
-  // Per-day series, oldest → newest.
-  const end = new Date(`${today}T00:00:00Z`);
-  const days: Array<{ date: string; minutesDown: number; hasData: boolean }> = [];
-  for (let i = totalDays - 1; i >= 0; i--) {
-    const d = new Date(end);
-    d.setUTCDate(end.getUTCDate() - i);
-    const date = d.toISOString().slice(0, 10);
-    const hasData = !monitoringStart || date >= monitoringStart;
-    days.push({ date, minutesDown: service.dailyMinutesDown[date] ?? 0, hasData });
+  if (spec.bucketDays === 1) {
+    return days.map((day) => ({ ...day, spanDays: 1 }));
   }
 
-  if (bucketDays <= 1) {
-    return days.map((x) => ({
-      date: x.date,
-      status: gradeDay(x.minutesDown),
-      minutesDown: x.minutesDown,
-      hasData: x.hasData,
-      spanDays: 1,
-    }));
-  }
-
-  // Aggregate into buckets of `bucketDays`. The oldest bucket may be partial so
-  // that the newest bar (today) always sits on a full bucket boundary.
   const bars: DayStatus[] = [];
-  const remainder = days.length % bucketDays;
+  const remainder = days.length % spec.bucketDays;
   let cursor = 0;
-  let size = remainder === 0 ? bucketDays : remainder;
+  let size = remainder === 0 ? spec.bucketDays : remainder;
   while (cursor < days.length) {
-    const chunk = days.slice(cursor, cursor + size);
-    const real = chunk.filter((x) => x.hasData);
+    const bucket = days.slice(cursor, cursor + size);
+    const monitoredDays = bucket.filter(({ hasData }) => hasData);
     bars.push({
-      date: chunk[chunk.length - 1].date,
-      status: worstStatus(real.map((x) => gradeDay(x.minutesDown))),
-      minutesDown: chunk.reduce((sum, x) => sum + x.minutesDown, 0),
-      hasData: real.length > 0,
-      spanDays: chunk.length,
+      date: bucket[bucket.length - 1]!.date,
+      status: worstStatus(monitoredDays.map(({ status }) => status)),
+      minutesDown: bucket.reduce(
+        (total, { minutesDown }) => total + minutesDown,
+        0,
+      ),
+      hasData: monitoredDays.length > 0,
+      spanDays: bucket.length,
     });
     cursor += size;
-    size = bucketDays;
+    size = spec.bucketDays;
   }
   return bars;
 }
 
-/**
- * Worst-case roll-up across all services for the hero banner.
- *
- * @returns `down` if any service is down, `degraded` if any is degraded, else `up`
- */
-export function overallStatus(services: ServiceSummary[]): ServiceStatus {
-  if (services.some((s) => s.status === "down")) return "down";
-  if (services.some((s) => s.status === "degraded")) return "degraded";
-  return "up";
+export function overallStatus(services: Service[]): ServiceStatus {
+  if (services.length === 0) return "unknown";
+  return worstStatus(services.map(({ status }) => status));
 }
 
-/**
- * Compute an uptime percentage over the trailing `days` from `dailyMinutesDown`,
- * counting only days since monitoring began. Used for ranges Upptime's
- * summary.json has no precomputed field for (the 90-day range).
- *
- * @param service - the service summary holding `dailyMinutesDown`
- * @param days - trailing days to cover
- * @param today - ISO date for "today"
- * @param monitoringStart - ISO date monitoring began; earlier days are excluded
- * @returns a formatted percentage string, falling back to the 30-day field before any day is monitored
- */
-function computeUptime(
-  service: ServiceSummary,
-  days: number,
-  today: string,
-  monitoringStart?: string | null,
-): string {
-  const end = new Date(`${today}T00:00:00Z`);
-  let monitoredDays = 0;
-  let downMinutes = 0;
-  for (let i = 0; i < days; i++) {
-    const d = new Date(end);
-    d.setUTCDate(end.getUTCDate() - i);
-    const date = d.toISOString().slice(0, 10);
-    if (monitoringStart && date < monitoringStart) continue;
-    monitoredDays++;
-    downMinutes += service.dailyMinutesDown[date] ?? 0;
-  }
-  if (monitoredDays === 0) return service.uptimeMonth;
-  const pct = Math.max(0, 100 - (downMinutes / (monitoredDays * MINUTES_PER_DAY)) * 100);
-  return `${pct.toFixed(2)}%`;
+export function visibleIncidentEvents(
+  events: IncidentEvent[],
+): IncidentEvent[] {
+  return events
+    .filter(
+      (event) =>
+        (event.kind === "incident" && event.state === "open") ||
+        (event.kind === "maintenance" && event.state !== "completed"),
+    )
+    .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
 }
 
-/**
- * Pick the uptime percentage string for the selected range. Most ranges read
- * Upptime's precomputed summary.json fields; the 90-day range has no such field,
- * so it is computed from `dailyMinutesDown` over the monitored days.
- *
- * @param service - the service summary
- * @param range - the selected window
- * @param today - ISO date for "today" (only used for the computed 90-day range)
- * @param monitoringStart - ISO date monitoring began; days before are excluded
- * @returns a formatted percentage string (e.g. "99.97%")
- */
 export function uptimeForRange(
-  service: ServiceSummary,
+  service: Service,
   range: RangeKey,
-  today: string,
-  monitoringStart?: string | null,
+  generatedAt: string,
+  monitoringStartedAt: string,
 ): string {
-  switch (range) {
-    case "day":
-      return service.uptimeDay;
-    case "week":
-      return service.uptimeWeek;
-    case "month":
-      return service.uptimeMonth;
-    case "year":
-      return service.uptimeYear;
-    case "quarter":
-      return computeUptime(service, RANGE_SPECS.quarter.days, today, monitoringStart);
-  }
+  const dates = new Set(rangeDates(generatedAt, RANGE_SPECS[range].days));
+  const monitoringStartDate = monitoringStartedAt.slice(0, 10);
+  const availability = service.dailyAvailability.filter(
+    ({ date }) => dates.has(date) && date >= monitoringStartDate,
+  );
+  const monitoredSeconds = availability.reduce(
+    (total, day) => total + day.monitoredSeconds,
+    0,
+  );
+  if (monitoredSeconds === 0) return "No data";
+  const unavailableSeconds = availability.reduce(
+    (total, day) => total + day.unavailableSeconds,
+    0,
+  );
+  const percentage = Math.max(
+    0,
+    100 - (unavailableSeconds / monitoredSeconds) * 100,
+  );
+  return `${percentage.toFixed(2)}%`;
 }

@@ -6,7 +6,14 @@
     "dev": "vite",
     "build": "svelte-check --tsconfig ./tsconfig.json && vite build",
     "preview": "vite preview",
-    "screenshot": "node scripts/screenshot.mjs"
+    "screenshot": "node scripts/screenshot.mjs",
+    "pretest": "npm run build --workspace @velvet/contracts",
+    "test": "tsx --test test/*.test.ts",
+    "pretypecheck": "npm run build --workspace @velvet/contracts",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@velvet/contracts": "1.0.0"
   },
   "devDependencies": {
     "@phosphor-icons/core": "^2.1.1",
