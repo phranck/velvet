@@ -14,6 +14,11 @@ Daily availability contains only monitored dates. `monitoredSeconds` makes parti
 
 Maintenance state is relative to `generatedAt`: `scheduled` starts later, `active` contains the generation timestamp, and `completed` has already ended.
 
+The contract describes data shape, not data ownership. Using the schemas does
+not apply Velvet's MIT license to monitoring records or replace a source
+dataset's copyright, database-right, attribution, or privacy obligations. See
+the repository [licensing and provenance policy](../../LICENSING.md).
+
 ## Source of truth
 
 [`src/schemas.ts`](src/schemas.ts) is the single editable schema source. The exported `StatusDocument`, `ResponseTimesDocument`, and `IncidentsDocument` TypeScript types are derived from those schemas.
