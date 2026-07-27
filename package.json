@@ -1,0 +1,17 @@
+{
+  "name": "velvet",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "site"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @velvet/contracts && npm run build --workspace @velvet/site",
+    "test": "npm run test --workspace @velvet/contracts",
+    "typecheck": "npm run typecheck --workspace @velvet/contracts"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

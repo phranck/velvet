@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T12:00:00.000Z",
+  "monitoringStartedAt": "2026-07-01T00:00:00.000Z",
+  "series": [
+    { "serviceId": "website", "checkId": "primary", "protocol": "ipv4", "samples": [] },
+    { "serviceId": "website", "checkId": "primary", "protocol": "ipv4", "samples": [] }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "$id": "urn:velvet:schema:velvet-data:v1:status",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "monitoringStartedAt",
+    "services"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "generatedAt": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "monitoringStartedAt": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "checks",
+          "dailyAvailability"
+        ],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "const": "operational",
+                "type": "string"
+              },
+              {
+                "const": "degraded",
+                "type": "string"
+              },
+              {
+                "const": "outage",
+                "type": "string"
+              },
+              {
+                "const": "unknown",
+                "type": "string"
+              }
+            ]
+          },
+          "checks": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "protocol",
+                "status",
+                "checkedAt",
+                "responseTimeMs"
+              ],
+              "properties": {
+                "id": {
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+                  "type": "string"
+                },
+                "protocol": {
+                  "anyOf": [
+                    {
+                      "const": "ipv4",
+                      "type": "string"
+                    },
+                    {
+                      "const": "ipv6",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "status": {
+                  "anyOf": [
+                    {
+                      "const": "operational",
+                      "type": "string"
+                    },
+                    {
+                      "const": "degraded",
+                      "type": "string"
+                    },
+                    {
+                      "const": "outage",
+                      "type": "string"
+                    },
+                    {
+                      "const": "unknown",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "checkedAt": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "responseTimeMs": {
+                  "anyOf": [
+                    {
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "dailyAvailability": {
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "date",
+                "monitoredSeconds",
+                "unavailableSeconds"
+              ],
+              "properties": {
+                "date": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "type": "string"
+                },
+                "monitoredSeconds": {
+                  "minimum": 1,
+                  "maximum": 86400,
+                  "type": "integer"
+                },
+                "unavailableSeconds": {
+                  "minimum": 0,
+                  "maximum": 86400,
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

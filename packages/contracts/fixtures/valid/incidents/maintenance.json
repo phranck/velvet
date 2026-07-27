@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T12:00:00.000Z",
+  "events": [
+    {
+      "id": "maintenance-2026-07-28",
+      "kind": "maintenance",
+      "state": "scheduled",
+      "title": "Database maintenance",
+      "summary": "A short interruption is expected.",
+      "affectedServiceIds": ["database"],
+      "startsAt": "2026-07-28T01:00:00.000Z",
+      "endsAt": "2026-07-28T01:30:00.000Z"
+    }
+  ]
+}

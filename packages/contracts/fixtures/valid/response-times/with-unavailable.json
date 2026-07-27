@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T12:00:00.000Z",
+  "monitoringStartedAt": "2026-07-01T00:00:00.000Z",
+  "series": [
+    {
+      "serviceId": "website",
+      "checkId": "edge-primary",
+      "protocol": "ipv4",
+      "samples": [
+        {
+          "timestamp": "2026-07-27T11:58:00.000Z",
+          "responseTimeMs": 108
+        },
+        {
+          "timestamp": "2026-07-27T11:59:00.000Z",
+          "responseTimeMs": null
+        }
+      ]
+    },
+    {
+      "serviceId": "website",
+      "checkId": "edge-secondary",
+      "protocol": "ipv6",
+      "samples": [
+        {
+          "timestamp": "2026-07-27T11:58:05.000Z",
+          "responseTimeMs": 121
+        }
+      ]
+    }
+  ]
+}

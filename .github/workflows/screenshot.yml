@@ -13,6 +13,9 @@ on:
       - "site/index.html"
       - "site/scripts/screenshot.mjs"
       - "site/scripts/generate-config.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - "site/package.json"
       - ".github/workflows/screenshot.yml"
   workflow_dispatch:
 
@@ -22,23 +25,20 @@ permissions:
 jobs:
   screenshot:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: site
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: site/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npm exec --workspace @velvet/site -- playwright install --with-deps chromium
       - name: Install pngquant
         working-directory: .
         run: sudo apt-get update && sudo apt-get install -y pngquant
-      - run: npm run build
-      - run: npm run screenshot
+      - run: npm run build --workspace @velvet/site
+      - run: npm run screenshot --workspace @velvet/site
       - name: Commit the screenshot if it changed
         working-directory: .
         run: |

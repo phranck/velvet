@@ -1,0 +1,93 @@
+{
+  "$id": "urn:velvet:schema:velvet-data:v1:response-times",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "monitoringStartedAt",
+    "series"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "generatedAt": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "monitoringStartedAt": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "series": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "serviceId",
+          "checkId",
+          "protocol",
+          "samples"
+        ],
+        "properties": {
+          "serviceId": {
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+            "type": "string"
+          },
+          "checkId": {
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+            "type": "string"
+          },
+          "protocol": {
+            "anyOf": [
+              {
+                "const": "ipv4",
+                "type": "string"
+              },
+              {
+                "const": "ipv6",
+                "type": "string"
+              }
+            ]
+          },
+          "samples": {
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "timestamp",
+                "responseTimeMs"
+              ],
+              "properties": {
+                "timestamp": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "responseTimeMs": {
+                  "anyOf": [
+                    {
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

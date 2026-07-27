@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T12:00:00.000Z",
+  "monitoringStartedAt": "2026-07-01T00:00:00.000Z",
+  "services": [
+    {
+      "id": "website",
+      "name": "Website",
+      "status": "operational",
+      "checks": [{ "id": "primary", "protocol": "ipv4", "status": "operational", "checkedAt": "2026-07-27T11:59:00.000Z", "responseTimeMs": 108 }],
+      "dailyAvailability": [{ "date": "2026-07-26", "monitoredSeconds": -1, "unavailableSeconds": 0 }]
+    }
+  ]
+}
