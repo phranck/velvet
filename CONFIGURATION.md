@@ -1,8 +1,8 @@
 # Velvet configuration reference
 
-Velvet builds your status page from a single file: **`.upptimerc.yml`**. It is a
-standard [Upptime](https://upptime.js.org) config — Velvet reads the same file
-and only changes how the page **looks**.
+Velvet keeps page identity and appearance in **`.upptimerc.yml`** for compatibility
+with existing [Upptime](https://upptime.js.org) repositories. Runtime status data
+comes exclusively from the validated documents under `velvet-data/v1`.
 
 This page documents **every field Velvet reads**, plus the Upptime fields you
 need to monitor your services. Upptime has many more options (notifications,
@@ -42,8 +42,8 @@ status-website:
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `owner` | **yes** | GitHub user or org that owns the monitoring repo. Velvet reads `history/summary.json` and incident issues from here. |
-| `repo` | **yes** | The monitoring repository name. |
+| `owner` | **yes** | GitHub user or org that owns the repository containing `velvet-data/v1`. |
+| `repo` | **yes** | Repository containing the versioned Velvet data documents. |
 
 Both are required — Velvet's config generator throws without them.
 
@@ -143,6 +143,7 @@ status-website:
     # fontSans: "Inter"
     # fontMono: "JetBrains Mono"
     # dataBranch: main
+    # dataBaseUrl: https://cdn.example/status/velvet-data/v1
     # Analytics (optional) — a tracker is injected only when configured:
     # umami:
     #   websiteId: "xxxxxxxx-xxxx-xxxx-xxxx"
@@ -163,14 +164,15 @@ status-website:
 | `layout` | `grouped` | `grouped` puts all services in one card; `cards` gives each service its own card. Any value other than `cards` is treated as `grouped`. |
 | `logoHeight` | `44` | Logo height in pixels (width scales proportionally) — raise it for a taller logo. |
 | `defaultRange` | `30d` | History window pre-selected on a visitor's first visit. Accepts a label (`24h`, `7d`, `30d`, `90d`, `1yr`) or the internal key (`day`, `week`, `month`, `quarter`, `year`). Once a visitor picks a range it is remembered and wins over this default. |
-| `showPoweredBy` | `true` | Show the "Powered by Velvet + Upptime" credit in the footer. |
+| `showPoweredBy` | `true` | Show the "Powered by Velvet" credit in the footer. |
 | `showSubscribe` | `true` | Show the Subscribe (RSS) link in the footer. When only one of the two footer items is shown, it is centered; when neither is, the footer is omitted. |
 | `accent` | `#6366f1` | Primary / **operational** colour (any hex). Drives the indigo theme and the "up" bars. |
 | `accentDeg` | `#d29922` | **Degraded** colour (amber). |
 | `accentDown` | `#f85149` | **Down** colour (red). |
 | `fontSans` | `Inter` | Overrides the UI font (CSS `--font-sans`). See the note below. |
 | `fontMono` | `JetBrains Mono` | Overrides the monospace font (CSS `--font-mono`). |
-| `dataBranch` | `main` | Branch the monitoring data (`history/summary.json`) lives on. |
+| `dataBranch` | `main` | Branch containing `velvet-data/v1`. |
+| `dataBaseUrl` | _(derived)_ | Optional public HTTP(S) base URL for the three Velvet v1 documents. It must serve the same snapshot supplied to the Action's `data` input; otherwise Velvet derives the raw GitHub URL from `owner`, `repo`, `dataBranch`, and that repository-relative input path. |
 | `umami` | _(off)_ | [Umami](https://umami.is) analytics. An object with `websiteId` (the site's `data-website-id`) and `src` (full tracking-script URL, e.g. `https://analytics.example.com/script.js`). **Both** are required; the tracker loads only when both are set. |
 | `googleAnalytics` | _(off)_ | Google Analytics 4 measurement ID (e.g. `G-XXXXXXXXXX`). The tracker loads when set. |
 | `seo` | _(auto)_ | Overrides for the auto-generated SEO (see [SEO & crawlers](#seo--crawlers)). An object with optional `title`, `description`, and `image` (og:image). Each defaults to an auto-derived value, so set only the ones you want to change. |
@@ -254,7 +256,7 @@ A plain check runs from the GitHub runner, which is IPv4-only. To check IPv6, ro
   ipv6: true
 ```
 
-Velvet folds an `<base>-ipv6` entry into its `<base>` service: the card header shows `IPv4` / `IPv6` pills with status dots and the expanded detail lists both protocols. A standalone `<x>-ipv6` (no base) renders as an IPv6-only card; a plain check renders with no protocol pills.
+The compatibility adapter folds an `<base>-ipv6` entry into its `<base>` Velvet service: the card header shows `IPv4` / `IPv6` pills with status dots and the expanded detail lists both protocols. A standalone `<x>-ipv6` (no base) renders as an IPv6-only card; a plain check renders with no protocol pills.
 
 **Requirements:** add a `GLOBALPING_TOKEN` repo secret — register free at globalping.io, create a token under "Tokens" — to lift the rate limit from 250 to 500 checks/hour (cloud runners share IPs, so the unauthenticated limit is easy to hit). Globalping supports HTTP and PING checks only, no POST.
 
@@ -274,10 +276,10 @@ page to go live:
 
 ## Subscribe / incident feed
 
-Velvet builds a static Atom feed at **`/incidents.atom`** from the repo's GitHub
-issues (Upptime opens one issue per incident) and links it from a **Subscribe**
-button. A bundled workflow strips the emoji Upptime hardcodes into incident
-issue titles. No configuration required.
+Velvet builds a static Atom feed at **`/incidents.atom`** from the validated
+`velvet-data/v1/incidents.json` document and links it from a **Subscribe**
+button. The compatibility adapter is responsible for converting source incidents
+into that presentation-independent event model.
 
 ---
 
@@ -308,7 +310,7 @@ status-website:
   velvet:
     seo:
       title: "Acme System Status"               # default: "<name> — Status"
-      description: "Real-time uptime for Acme."  # default: a line built from name
+      description: "Real-time uptime for Acme."  # default: current status plus a line built from name
       image: "https://acme.example/og.png"       # default: the auto-generated 1200×630 status card
 ```
 
