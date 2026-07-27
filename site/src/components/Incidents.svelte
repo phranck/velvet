@@ -1,20 +1,23 @@
 <script lang="ts">
-  import type { Incident } from "../lib/types";
+  import type { IncidentEvent } from "../lib/types";
 
-  let { incidents }: { incidents: Incident[] } = $props();
+  let { incidents }: { incidents: IncidentEvent[] } = $props();
 
-  const maintenance = $derived(incidents.filter((i) => i.isMaintenance));
-  const active = $derived(incidents.filter((i) => !i.isMaintenance));
+  const maintenance = $derived(incidents.filter((event) => event.kind === "maintenance"));
+  const active = $derived(incidents.filter((event) => event.kind === "incident"));
 </script>
 
 {#if maintenance.length}
   <section class="block">
-    {#each maintenance as m (m.number)}
-      <a class="card maint" href={m.url}>
+    {#each maintenance as m (m.id)}
+      <div class="card maint">
         <i class="ph-duotone ph-wrench" aria-hidden="true"></i>
-        <span class="title">{m.title}</span>
-        <span class="meta mono">#{m.number}</span>
-      </a>
+        <span class="event-copy">
+          <span class="title">{m.title}</span>
+          {#if m.summary}<span class="summary">{m.summary}</span>{/if}
+        </span>
+        <span class="meta mono">{m.state} · {new Date(m.startsAt).toLocaleString()}</span>
+      </div>
     {/each}
   </section>
 {/if}
@@ -22,11 +25,12 @@
 {#if active.length}
   <section class="block">
     <h2>Active incidents</h2>
-    {#each active as i (i.number)}
-      <a class="card inc" href={i.url}>
+    {#each active as i (i.id)}
+      <div class="card inc">
         <span class="title">{i.title}</span>
-        <span class="meta mono">Opened {new Date(i.createdAt).toLocaleString()} · #{i.number}</span>
-      </a>
+        {#if i.summary}<span class="summary">{i.summary}</span>{/if}
+        <span class="meta mono">Started {new Date(i.startsAt).toLocaleString()}</span>
+      </div>
     {/each}
   </section>
 {/if}
@@ -72,7 +76,16 @@
     color: var(--text);
   }
   .maint .title {
+    display: block;
+  }
+  .event-copy {
     flex: 1;
+  }
+  .summary {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 14px;
   }
   .meta {
     display: block;

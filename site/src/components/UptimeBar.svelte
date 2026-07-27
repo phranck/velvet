@@ -8,16 +8,18 @@
   }: { days: DayStatus[]; rangeLabel: string; range: RangeKey } = $props();
 
   function color(status: DayStatus["status"]): string {
-    if (status === "up") return "var(--accent)";
+    if (status === "operational") return "var(--accent)";
+    if (status === "unknown") return "var(--text-faint)";
     if (status === "degraded") return "var(--accent-deg)";
     return "var(--accent-down)";
   }
 
   function label(d: DayStatus): string {
     if (!d.hasData) return "no data";
-    if (d.status === "up") return "operational";
+    if (d.status === "operational") return "operational";
+    if (d.status === "unknown") return "status unknown";
     if (d.status === "degraded") return `degraded · ${d.minutesDown} min down`;
-    return `down · ${d.minutesDown} min`;
+    return `outage · ${d.minutesDown} min`;
   }
 
   function fmtShort(d: Date): string {

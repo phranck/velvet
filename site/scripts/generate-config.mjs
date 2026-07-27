@@ -9,9 +9,15 @@ import { load } from "js-yaml";
  * valid Upptime config. Everything else (owner, repo, name, logo, navbar) is read
  * from the standard Upptime fields.
  *
- * Usage: node generate-config.mjs <.upptimerc.yml> <out/config.json>
+ * Usage: node generate-config.mjs <.upptimerc.yml> <out/config.json> [repository-data-path]
  */
-const [, , inputPath = ".upptimerc.yml", outputPath = "public/config.json"] = process.argv;
+const [
+  ,
+  ,
+  inputPath = ".upptimerc.yml",
+  outputPath = "public/config.json",
+  repositoryDataPath = "velvet-data/v1",
+] = process.argv;
 
 const rc = load(readFileSync(inputPath, "utf8")) ?? {};
 if (!rc.owner || !rc.repo) {
@@ -20,6 +26,30 @@ if (!rc.owner || !rc.repo) {
 
 const sw = rc["status-website"] ?? {};
 const velvet = sw.velvet ?? {};
+const dataBranch = velvet.dataBranch ?? "main";
+const normalizedDataPath = repositoryDataPath.replaceAll("\\", "/").replace(/^\.\//, "");
+const dataPathSegments = normalizedDataPath.split("/").filter(Boolean);
+if (
+  normalizedDataPath.startsWith("/") ||
+  dataPathSegments.length === 0 ||
+  dataPathSegments.includes("..")
+) {
+  throw new Error("Velvet data must use a repository-relative path");
+}
+const encodedDataPath = dataPathSegments.map(encodeURIComponent).join("/");
+const defaultDataBaseUrl = `https://raw.githubusercontent.com/${encodeURIComponent(rc.owner)}/${encodeURIComponent(rc.repo)}/${encodeURIComponent(dataBranch)}/${encodedDataPath}`;
+let dataBaseUrl = defaultDataBaseUrl;
+if (typeof velvet.dataBaseUrl === "string" && velvet.dataBaseUrl.trim()) {
+  const publicDataUrl = new URL(velvet.dataBaseUrl.trim());
+  if (
+    !["http:", "https:"].includes(publicDataUrl.protocol) ||
+    publicDataUrl.search ||
+    publicDataUrl.hash
+  ) {
+    throw new Error("Velvet dataBaseUrl must be an HTTP(S) base URL without query or fragment");
+  }
+  dataBaseUrl = publicDataUrl.href.replace(/\/+$/, "");
+}
 
 const subst = (s) =>
   typeof s === "string" ? s.replaceAll("$OWNER", rc.owner).replaceAll("$REPO", rc.repo) : s;
@@ -47,7 +77,7 @@ const siteUrl = (() => {
 })();
 
 // SEO overrides (all optional). Only the fields the consumer set are emitted; the
-// rest fall back to auto-derived values in generate-seo.mjs.
+// rest fall back to auto-derived values in generate-seo.ts.
 const seo = {};
 for (const key of ["title", "description", "image"]) {
   const value = velvet.seo?.[key];
@@ -58,7 +88,8 @@ const config = {
   owner: rc.owner,
   repo: rc.repo,
   url: siteUrl,
-  dataBranch: velvet.dataBranch ?? "main",
+  dataBranch,
+  dataBaseUrl,
   name: sw.name ?? rc.repo,
   logoUrl: sw.logoUrl,
   navbar: Array.isArray(sw.navbar)

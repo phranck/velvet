@@ -2,8 +2,8 @@
  * Velvet runtime configuration.
  *
  * The deployed bundle is generic: it loads `config.json` (served next to the
- * bundle, generated from a consumer's `.upptimerc.yml` by the Velvet Action) and
- * themes itself + points its data fetches at the consumer's monitoring repo.
+ * bundle, generated for the consumer repository by the Velvet Action) and
+ * themes itself while pointing data fetches at Velvet repository storage.
  * Nothing about a specific project is baked into the build.
  */
 
@@ -18,21 +18,23 @@ import type { RangeKey } from "./types";
 export type VelvetLayout = "grouped" | "cards";
 
 export interface VelvetConfig {
-  /** GitHub owner of the Upptime monitoring repo to read data + issues from. */
+  /** GitHub owner of the repository that stores Velvet data. */
   owner: string;
-  /** Repository name of the Upptime monitoring repo. */
+  /** Repository name that stores Velvet data. */
   repo: string;
   /** Canonical public URL of the status page (custom domain or GitHub Pages URL); drives SEO tags. */
   url?: string;
-  /** Branch the monitoring data (`history/summary.json`) lives on. */
+  /** Branch the versioned Velvet data directory lives on. */
   dataBranch: string;
+  /** Base URL containing status.json, response-times.json, and incidents.json. */
+  dataBaseUrl: string;
   /** Brand name shown in the navbar. */
   name: string;
   /** Optional logo URL shown in the navbar. */
   logoUrl?: string;
   /** Logo height in pixels (width scales proportionally). */
   logoHeight: number;
-  /** Show the "Powered by Velvet + Upptime" credit in the footer. */
+  /** Show the "Powered by Velvet" credit in the footer. */
   showPoweredBy: boolean;
   /** Show the Subscribe (RSS) link in the footer. */
   showSubscribe: boolean;
@@ -50,7 +52,7 @@ export interface VelvetConfig {
     fontSans?: string;
     fontMono?: string;
   };
-  /** Per-service-slug Phosphor icon class overrides (merged over the defaults). */
+  /** Per-service-ID Phosphor icon class overrides (merged over the defaults). */
   icons: Record<string, string>;
   /**
    * Umami web analytics. Both fields are required to load the tracker; the whole
@@ -70,7 +72,7 @@ export interface VelvetConfig {
   seo?: { title?: string; description?: string; image?: string };
 }
 
-const DEFAULTS: Omit<VelvetConfig, "owner" | "repo"> = {
+const DEFAULTS: Omit<VelvetConfig, "owner" | "repo" | "dataBaseUrl"> = {
   dataBranch: "main",
   name: "Status",
   navbar: [{ title: "Status", href: "/" }],
@@ -93,16 +95,24 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo"> = {
  * @returns the merged config. Throws if `config.json` is missing `owner`/`repo`,
  *   since without them there is no data source to render.
  */
-export async function loadConfig(): Promise<VelvetConfig> {
-  const res = await fetch("config.json", { cache: "no-cache" });
+export async function loadConfig(
+  fetchImplementation: typeof fetch = globalThis.fetch,
+): Promise<VelvetConfig> {
+  const res = await fetchImplementation("config.json", { cache: "no-cache" });
   if (!res.ok) throw new Error(`config.json ${res.status}`);
   const raw = (await res.json()) as Partial<VelvetConfig>;
   if (!raw.owner || !raw.repo) throw new Error("config.json must set owner and repo");
+  const dataBranch = raw.dataBranch ?? DEFAULTS.dataBranch;
+  const dataBaseUrl =
+    raw.dataBaseUrl?.replace(/\/+$/, "") ??
+    `https://raw.githubusercontent.com/${encodeURIComponent(raw.owner)}/${encodeURIComponent(raw.repo)}/${encodeURIComponent(dataBranch)}/velvet-data/v1`;
   return {
     ...DEFAULTS,
     ...raw,
     owner: raw.owner,
     repo: raw.repo,
+    dataBranch,
+    dataBaseUrl,
     theme: { ...DEFAULTS.theme, ...raw.theme },
     icons: { ...DEFAULTS.icons, ...raw.icons },
     navbar: raw.navbar ?? DEFAULTS.navbar,

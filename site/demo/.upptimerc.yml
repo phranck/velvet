@@ -1,7 +1,7 @@
 # Demo configuration for the README screenshot — a fictional "Velvet Underground
 # Inc." status page. This is an ordinary template-style .upptimerc.yml: Velvet's
 # screenshot workflow runs it through the SAME pipeline the template's velvet.yml
-# uses (generate-config -> vite build), renders it with the demo monitoring data
+# uses (generate-config -> vite build), renders it with validated Velvet data
 # in this folder, and screenshots the result. So a broken config, generate-config
 # regression, or build failure fails the workflow — not just the picture.
 owner: velvet-underground

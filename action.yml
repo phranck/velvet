@@ -1,14 +1,18 @@
 name: "Velvet status page"
-description: "Build a polished, dark Velvet front-end for an Upptime status page from .upptimerc.yml."
+description: "Build a polished, dark Velvet status page from validated Velvet data."
 author: "phranck"
 branding:
   icon: "activity"
   color: "purple"
 inputs:
   config:
-    description: "Path to the Upptime .upptimerc.yml in the consumer repo."
+    description: "Path to the status-page configuration in the consumer repo."
     required: false
     default: ".upptimerc.yml"
+  data:
+    description: "Repository-relative directory containing the Velvet v1 documents."
+    required: false
+    default: "velvet-data/v1"
   output:
     description: "Directory (in the consumer workspace) to write the built site into."
     required: false
@@ -16,25 +20,26 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v7
       with:
         node-version: "22"
     - name: Build Velvet site
       shell: bash
       env:
         VELVET_CONFIG: ${{ inputs.config }}
+        VELVET_DATA: ${{ inputs.data }}
         VELVET_OUTPUT: ${{ inputs.output }}
         VELVET_ROOT: ${{ github.action_path }}
         VELVET_SITE: ${{ github.action_path }}/site
-        GITHUB_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
         npm --prefix "$VELVET_ROOT" ci
-        node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
-        node "$VELVET_SITE/scripts/generate-feed.mjs" "$VELVET_SITE/public/config.json" "$VELVET_SITE/public/incidents.atom"
-        npm --prefix "$VELVET_ROOT" run build
-        "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$(dirname "$VELVET_CONFIG")/history/summary.json" "$VELVET_SITE/dist/og.png"
-        node "$VELVET_SITE/scripts/generate-seo.mjs" "$VELVET_SITE/public/config.json" "$VELVET_SITE/dist"
+        npm --prefix "$VELVET_ROOT" run build --workspace @velvet/contracts
+        node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json" "$VELVET_DATA"
+        node "$VELVET_SITE/scripts/generate-feed.mjs" "$VELVET_SITE/public/config.json" "$VELVET_DATA/incidents.json" "$VELVET_SITE/public/incidents.atom"
+        npm --prefix "$VELVET_ROOT" run build --workspace @velvet/site
+        "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist/og.png"
+        "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-seo.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist"
         rm -rf "$VELVET_OUTPUT"
         mkdir -p "$VELVET_OUTPUT"
         cp -R "$VELVET_SITE/dist/." "$VELVET_OUTPUT/"
