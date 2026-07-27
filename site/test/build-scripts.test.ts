@@ -61,6 +61,108 @@ test("generated runtime config preserves an explicit public data URL", async () 
   assert.equal(config.dataBaseUrl, "https://cdn.example/velvet/v1");
 });
 
+test("generated runtime config resolves the semantic Velvet theme", async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-theme-"));
+  const input = resolve(directory, ".upptimerc.yml");
+  const output = resolve(directory, "config.json");
+  await writeFile(
+    input,
+    [
+      "owner: example",
+      "repo: status",
+      "status-website:",
+      "  velvet:",
+      "    accentDeg: '#aabbcc'",
+      "    fontSans: Example Sans",
+      "    theme:",
+      "      accent: '#123456'",
+      "      grid:",
+      "        operational: '#abcdef'",
+      "      protocol:",
+      "        ipv6: '#fedcba'",
+      "      background:",
+      "        blobs:",
+      "          count: 4",
+      "          colors:",
+      "            - '#111111'",
+      "            - '#222222'",
+      "      card:",
+      "        borderEnabled: false",
+      "",
+    ].join("\n"),
+  );
+
+  await execFileAsync("node", [
+    resolve(siteRoot, "scripts/generate-config.mjs"),
+    input,
+    output,
+  ]);
+
+  const config = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(config.theme.accent, "#123456");
+  assert.equal(config.theme.grid.operational, "#abcdef");
+  assert.equal(config.theme.grid.degraded, "#aabbcc");
+  assert.equal(config.theme.protocol.ipv4, "#385471");
+  assert.equal(config.theme.protocol.ipv6, "#fedcba");
+  assert.equal(config.theme.background.blobs.count, 4);
+  assert.deepEqual(config.theme.background.blobs.colors, ["#111111", "#222222"]);
+  assert.equal(config.theme.card.borderEnabled, false);
+  assert.equal(config.theme.fontSans, "Example Sans");
+});
+
+test("social card uses the semantic Velvet theme", async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), "velvet-og-theme-"));
+  const statusPath = resolve(directory, "status.json");
+  const defaultConfigPath = resolve(directory, "default-config.json");
+  const customConfigPath = resolve(directory, "custom-config.json");
+  const defaultOutput = resolve(directory, "default.png");
+  const customOutput = resolve(directory, "custom.png");
+  await writeFile(statusPath, await fixture("status/dual-stack.json"));
+  await writeFile(
+    defaultConfigPath,
+    JSON.stringify({ owner: "example", repo: "status", name: "Example" }),
+  );
+  await writeFile(
+    customConfigPath,
+    JSON.stringify({
+      owner: "example",
+      repo: "status",
+      name: "Example",
+      theme: {
+        grid: { operational: "#00ff00" },
+        background: { start: "#ffffff", end: "#eeeeee" },
+        card: {
+          background: "#dddddd",
+          border: "#cccccc",
+          borderEnabled: false,
+        },
+        text: {
+          primary: "#111111",
+          secondary: "#222222",
+          tertiary: "#333333",
+        },
+      },
+    }),
+  );
+
+  for (const [configPath, output] of [
+    [defaultConfigPath, defaultOutput],
+    [customConfigPath, customOutput],
+  ]) {
+    await execFileAsync(tsx, [
+      resolve(siteRoot, "scripts/generate-og.ts"),
+      configPath,
+      statusPath,
+      output,
+    ]);
+  }
+
+  assert.notDeepEqual(
+    await readFile(customOutput),
+    await readFile(defaultOutput),
+  );
+});
+
 test("feed, social card, and SEO consume validated Velvet documents", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-build-"));
   const configPath = resolve(directory, "config.json");

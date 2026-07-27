@@ -137,9 +137,34 @@ status-website:
     # defaultRange: 30d      # range pre-selected on first visit (24h/7d/30d/90d/1yr)
     # showPoweredBy: true   # footer "Powered by" credit
     # showSubscribe: true   # footer Subscribe (RSS) link
-    accent: "#6366f1"
-    accentDeg: "#d29922"
-    accentDown: "#f85149"
+    theme:
+      grid:
+        operational: "#6366f1"
+        degraded: "#d29922"
+        outage: "#f85149"
+        noData: "#1c2029"
+      protocol:
+        ipv4: "#7c7ef3"
+        ipv6: "#38bdf8"
+      background:
+        start: "#0e1018"
+        end: "#0a0b0f"
+        blobs:
+          enabled: true
+          count: 3
+          colors:
+            - "#6366f1"
+            - "#7c7ef3"
+      card:
+        background: "#0e1015"
+        border: "#1c2029"
+        separator: "#14171f"
+        borderEnabled: true
+      accent: "#6366f1"
+      text:
+        primary: "#e8eaed"
+        secondary: "#8b919b"
+        tertiary: "#565b65"
     # fontSans: "Inter"
     # fontMono: "JetBrains Mono"
     # dataBranch: main
@@ -162,13 +187,11 @@ status-website:
 | Field | Default | Description |
 | --- | --- | --- |
 | `layout` | `grouped` | `grouped` puts all services in one card; `cards` gives each service its own card. Any value other than `cards` is treated as `grouped`. |
-| `logoHeight` | `44` | Logo height in pixels (width scales proportionally) — raise it for a taller logo. |
+| `logoHeight` | `72` | Logo height in pixels (width scales proportionally) — raise it for a taller logo. |
 | `defaultRange` | `30d` | History window pre-selected on a visitor's first visit. Accepts a label (`24h`, `7d`, `30d`, `90d`, `1yr`) or the internal key (`day`, `week`, `month`, `quarter`, `year`). Once a visitor picks a range it is remembered and wins over this default. |
 | `showPoweredBy` | `true` | Show the "Powered by Velvet" credit in the footer. |
 | `showSubscribe` | `true` | Show the Subscribe (RSS) link in the footer. When only one of the two footer items is shown, it is centered; when neither is, the footer is omitted. |
-| `accent` | `#6366f1` | Primary / **operational** colour (any hex). Drives the indigo theme and the "up" bars. |
-| `accentDeg` | `#d29922` | **Degraded** colour (amber). |
-| `accentDown` | `#f85149` | **Down** colour (red). |
+| `theme` | _(built-in)_ | Semantic colour configuration shared by the live page and generated social card. See [Theme](#theme). |
 | `fontSans` | `Inter` | Overrides the UI font (CSS `--font-sans`). See the note below. |
 | `fontMono` | `JetBrains Mono` | Overrides the monospace font (CSS `--font-mono`). |
 | `dataBranch` | `main` | Branch containing `velvet-data/v1`. |
@@ -177,6 +200,41 @@ status-website:
 | `googleAnalytics` | _(off)_ | Google Analytics 4 measurement ID (e.g. `G-XXXXXXXXXX`). The tracker loads when set. |
 | `seo` | _(auto)_ | Overrides for the auto-generated SEO (see [SEO & crawlers](#seo--crawlers)). An object with optional `title`, `description`, and `image` (og:image). Each defaults to an auto-derived value, so set only the ones you want to change. |
 | `icons` | _(built-ins)_ | Per-slug Phosphor icon overrides. See [Icons](#icons). |
+
+### Theme
+
+All theme colours live under `status-website.velvet.theme`. Omitted values use
+the defaults shown in the example above.
+
+| Field | Description |
+| --- | --- |
+| `grid.operational` | Uptime segments and status indicators for healthy checks. |
+| `grid.degraded` | Uptime segments and status indicators for degraded checks. |
+| `grid.outage` | Uptime segments and status indicators for outages. |
+| `grid.noData` | Uptime segments and status indicators without data. |
+| `protocol.ipv4` | IPv4 labels, chart legend, and solid response-time curve. |
+| `protocol.ipv6` | IPv6 labels, chart legend, and dashed response-time curve. |
+| `background.start` | Top colour of the vertical page gradient. |
+| `background.end` | Bottom colour of the vertical page gradient. |
+| `background.blobs.enabled` | Enables or disables the cloudy background blobs. |
+| `background.blobs.count` | Number of blobs, clamped to `1`–`5`. Their stable positions are distributed from the repository identity. |
+| `background.blobs.colors` | Exactly two colours, alternated across the blobs. |
+| `card.background` | Card background colour. |
+| `card.border` | Card border colour. |
+| `card.separator` | Separator-line colour inside and between cards. |
+| `card.borderEnabled` | Enables or disables card outlines without removing separators. |
+| `accent` | Interactive controls, focus states, and highlighted links. |
+| `text.primary` | Main headings, service names, and primary values. |
+| `text.secondary` | Supporting labels and secondary values. |
+| `text.tertiary` | Range labels, footer text, and low-emphasis copy. |
+
+Response-time curves use monotone cubic interpolation. This smooths the graph
+without inventing values beyond local extrema; unavailable samples still split
+the curve into visible gaps.
+
+The former top-level Velvet fields `accent`, `accentDeg`, and `accentDown`
+remain supported for existing configurations. New configurations should use
+`theme.accent`, `theme.grid.degraded`, and `theme.grid.outage`.
 
 > **Font note.** `fontSans`/`fontMono` only change the CSS font-family. Velvet
 > loads **Inter** and **JetBrains Mono** itself; to use a different family,

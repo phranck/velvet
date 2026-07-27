@@ -415,9 +415,9 @@
   }
   .card {
     margin: 6px 18px;
-    border: 1px solid var(--border);
+    border: var(--card-border-width) solid var(--card-border);
     border-radius: 14px;
-    background: var(--surface);
+    background: var(--card-background);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 6px 16px rgba(0, 0, 0, 0.22);
   }
   .group-head {

@@ -12,6 +12,83 @@ const RANGE_MS: Record<RangeKey, number> = {
   year: 365 * DAY_MS,
 };
 
+export function monotonePath(points: Array<{ x: number; y: number }>): string {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M${pointText(points[0]!)}`;
+
+  const intervals = points.slice(0, -1).map((point, index) => {
+    const next = points[index + 1]!;
+    const width = next.x - point.x;
+    return {
+      width,
+      slope: width > 0 ? (next.y - point.y) / width : 0,
+    };
+  });
+
+  if (intervals.some(({ width }) => width <= 0)) {
+    return points
+      .map((point, index) => `${index === 0 ? "M" : "L"}${pointText(point)}`)
+      .join(" ");
+  }
+
+  const tangents = points.map((_, index) => {
+    if (index === 0) return intervals[0]!.slope;
+    if (index === points.length - 1) return intervals.at(-1)!.slope;
+
+    const previous = intervals[index - 1]!;
+    const next = intervals[index]!;
+    if (previous.slope * next.slope <= 0) return 0;
+
+    const previousWeight = 2 * next.width + previous.width;
+    const nextWeight = next.width + 2 * previous.width;
+    return (
+      (previousWeight + nextWeight) /
+      (previousWeight / previous.slope + nextWeight / next.slope)
+    );
+  });
+
+  for (let index = 0; index < intervals.length; index += 1) {
+    const slope = intervals[index]!.slope;
+    if (slope === 0) {
+      tangents[index] = 0;
+      tangents[index + 1] = 0;
+      continue;
+    }
+
+    const startRatio = tangents[index]! / slope;
+    const endRatio = tangents[index + 1]! / slope;
+    const magnitude = Math.hypot(startRatio, endRatio);
+    if (magnitude > 3) {
+      const scale = 3 / magnitude;
+      tangents[index] = scale * startRatio * slope;
+      tangents[index + 1] = scale * endRatio * slope;
+    }
+  }
+
+  const commands = [`M${pointText(points[0]!)}`];
+  for (let index = 0; index < intervals.length; index += 1) {
+    const start = points[index]!;
+    const end = points[index + 1]!;
+    const third = intervals[index]!.width / 3;
+    const firstControl = {
+      x: start.x + third,
+      y: start.y + tangents[index]! * third,
+    };
+    const secondControl = {
+      x: end.x - third,
+      y: end.y - tangents[index + 1]! * third,
+    };
+    commands.push(
+      `C${pointText(firstControl)} ${pointText(secondControl)} ${pointText(end)}`,
+    );
+  }
+  return commands.join(" ");
+}
+
+function pointText(point: { x: number; y: number }): string {
+  return `${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+}
+
 export function responseRangeWindow(
   range: RangeKey,
   generatedAt: string,

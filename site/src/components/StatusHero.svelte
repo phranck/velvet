@@ -6,10 +6,10 @@
 
   /** Headline tint per status; the icon + text come from the shared STATUS_HERO map. */
   const HERO_COLOR: Record<ServiceStatus, string> = {
-    operational: "var(--accent-bright)",
-    unknown: "var(--text-muted)",
-    degraded: "var(--accent-deg)",
-    outage: "var(--accent-down)",
+    operational: "var(--grid-operational)",
+    unknown: "var(--grid-no-data)",
+    degraded: "var(--grid-degraded)",
+    outage: "var(--grid-outage)",
   };
   const c = $derived({ ...STATUS_HERO[status], color: HERO_COLOR[status] });
 </script>
@@ -40,7 +40,11 @@
     letter-spacing: -0.8px;
     line-height: 1.1;
     margin: 0 0 8px;
-    background: linear-gradient(180deg, #ffffff 0%, #c3c9d4 100%);
+    background: linear-gradient(
+      180deg,
+      var(--text-primary) 0%,
+      var(--text-secondary) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

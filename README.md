@@ -73,7 +73,11 @@ status-website:
   name: Example
   velvet:
     layout: cards        # or "grouped"
-    accent: "#6366f1"    # indigo by default
+    theme:
+      accent: "#6366f1"
+      protocol:
+        ipv4: "#7c7ef3"
+        ipv6: "#38bdf8"
     icons:
       frontend: ph-globe
 ```

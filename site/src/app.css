@@ -1,22 +1,56 @@
 :root {
   --accent: #6366f1;
   --accent-bright: color-mix(in srgb, var(--accent), #ffffff 16%);
-  --accent-deg: #d29922;
-  --accent-down: #f85149;
+  --grid-operational: #6366f1;
+  --grid-degraded: #d29922;
+  --grid-outage: #f85149;
+  --grid-no-data: #1c2029;
+  --protocol-ipv4: #7c7ef3;
+  --protocol-ipv6: #38bdf8;
 
-  --bg: #0a0b0f;
-  --surface: rgba(14, 16, 21, 0.82);
-  --surface-solid: #0e1015;
-  --surface-2: #0b0d12;
-  --border: #1c2029;
-  --border-soft: #14171f;
-  --popover-bg: #1e222c;
-  --popover-border: #3a4150;
+  --background-start: #0e1018;
+  --background-end: #0a0b0f;
+  --cloudy-blobs:
+    radial-gradient(
+      52% 41% at 12% 0%,
+      color-mix(in srgb, var(--accent) 13%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      46% 36% at 88% 4%,
+      color-mix(in srgb, var(--accent-bright) 10%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      58% 45% at 50% 100%,
+      color-mix(in srgb, var(--accent) 8%, transparent),
+      transparent 70%
+    );
+
+  --card-background: #0e1015;
+  --card-border: #1c2029;
+  --card-separator: #14171f;
+  --card-border-width: 1px;
+
+  --text-primary: #e8eaed;
+  --text-secondary: #8b919b;
+  --text-tertiary: #565b65;
+
+  --accent-deg: var(--grid-degraded);
+  --accent-down: var(--grid-outage);
+  --bg: var(--background-end);
+  --surface: var(--card-background);
+  --surface-solid: var(--card-background);
+  --surface-2: color-mix(in srgb, var(--card-background), var(--background-end) 45%);
+  --border: var(--card-border);
+  --border-soft: var(--card-separator);
+  --popover-bg: color-mix(in srgb, var(--card-background), var(--text-primary) 9%);
+  --popover-border: color-mix(in srgb, var(--card-border), var(--text-primary) 16%);
   --logo-height: 72px;
 
-  --text: #e8eaed;
-  --text-muted: #8b919b;
-  --text-faint: #565b65;
+  --text: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --text-faint: var(--text-tertiary);
 
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -34,24 +68,14 @@ body {
 
 body {
   min-height: 100vh;
-  background-color: #0a0b0f;
+  background-color: var(--background-end);
   background-image:
-    radial-gradient(
-      52% 44% at 12% 0%,
-      color-mix(in srgb, var(--accent) 13%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      46% 40% at 88% 4%,
-      color-mix(in srgb, var(--accent-bright) 10%, transparent),
-      transparent 64%
-    ),
-    radial-gradient(
-      80% 60% at 50% 110%,
-      color-mix(in srgb, var(--accent) 8%, transparent),
-      transparent 72%
-    ),
-    radial-gradient(125% 85% at 50% -12%, #1c2033 0%, #0e1018 46%, #0a0b0f 100%);
+    var(--cloudy-blobs),
+    linear-gradient(
+      180deg,
+      var(--background-start) 0%,
+      var(--background-end) 100%
+    );
   background-attachment: fixed;
   background-repeat: no-repeat;
   color: var(--text);
@@ -59,38 +83,6 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-/* A slow, very subtle drifting glow so the backdrop breathes instead of sitting flat. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(
-    40% 34% at 28% 18%,
-    color-mix(in srgb, var(--accent-bright) 8%, transparent),
-    transparent 70%
-  );
-  animation: velvet-drift 24s ease-in-out infinite alternate;
-}
-
-@keyframes velvet-drift {
-  from {
-    transform: translate3d(-4%, -2%, 0);
-    opacity: 0.55;
-  }
-  to {
-    transform: translate3d(6%, 3%, 0);
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body::before {
-    animation: none;
-  }
 }
 
 a {

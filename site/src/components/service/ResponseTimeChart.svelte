@@ -4,6 +4,7 @@
   import {
     downsampleResponseSamples,
     filterResponseSeries,
+    monotonePath,
     responseRangeWindow,
   } from "../../lib/response-chart";
   import { protocolLabel } from "../../lib/protocol";
@@ -131,12 +132,7 @@
   }
 
   function pathFor(samples: AvailableSample[]): string {
-    return samples
-      .map((sample, index) => {
-        const { x, y } = coordinates(sample);
-        return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
-      })
-      .join(" ");
+    return monotonePath(samples.map(coordinates));
   }
 
   function lineStyle(protocol: "ipv4" | "ipv6"): "solid" | "dashed" {
@@ -270,10 +266,10 @@
     border-top: 2px solid var(--series-color);
   }
   [data-protocol="ipv4"] {
-    --series-color: var(--accent-bright);
+    --series-color: var(--protocol-ipv4);
   }
   [data-protocol="ipv6"] {
-    --series-color: color-mix(in srgb, var(--accent), var(--text) 48%);
+    --series-color: var(--protocol-ipv6);
   }
   [data-line-style="dashed"] {
     stroke-dasharray: 7 5;

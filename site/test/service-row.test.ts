@@ -82,6 +82,10 @@ test("renders dual-stack protocol status and latency side by side", async () => 
   assert.match(html, /IPv6/);
   assert.match(html, /Operational/);
   assert.match(html, /88 ms/);
+  assert.match(html, /--protocol-color:\s*var\(--protocol-ipv4\)/);
+  assert.match(html, /--protocol-color:\s*var\(--protocol-ipv6\)/);
+  assert.match(html, /--status-color:\s*var\(--grid-degraded\)/);
+  assert.match(html, /--status-color:\s*var\(--grid-operational\)/);
   assert.doesNotMatch(html, /href=|https?:\/\//);
 });
 

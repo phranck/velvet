@@ -9,6 +9,7 @@ import {
   uptimeForRange,
 } from "../src/lib/data";
 import { iconFor } from "../src/lib/icons";
+import { cloudyBlobLayout, resolveTheme } from "../src/lib/theme.js";
 import { OG_SCALE, bar, pill, segGloss, typeScale } from "../src/lib/tokens";
 import type { DayStatus, RangeKey } from "../src/lib/types";
 
@@ -42,19 +43,18 @@ const statusDocument = statusResult.data;
 const services = statusDocument.services;
 
 const name = config.name ?? config.repo ?? "Status";
-const theme = config.theme ?? {};
-const accent = theme.accent ?? "#6366f1";
-const accentDeg = theme.accentDeg ?? "#d29922";
-const accentDown = theme.accentDown ?? "#f85149";
+const theme = resolveTheme(config.theme);
 /** Colour for a status, matching the page's operational/degraded/outage palette. */
 const colourFor = (status: string): string =>
   status === "outage"
-    ? accentDown
+    ? theme.grid.outage
     : status === "degraded"
-      ? accentDeg
+      ? theme.grid.degraded
       : status === "unknown"
-        ? "#6b7280"
-        : accent;
+        ? theme.grid.noData
+        : theme.grid.operational;
+const protocolColour = (protocol: "ipv4" | "ipv6"): string =>
+  protocol === "ipv4" ? theme.protocol.ipv4 : theme.protocol.ipv6;
 
 // The card renders the range a first-time visitor sees first (config.defaultRange),
 // so the bar count + labels match the live default view exactly.
@@ -127,11 +127,17 @@ const PILL_TEXT_X = PILL_PAD_L + dotD + PILL_GAP_DOT;
 const PILL_W = Math.round(PILL_TEXT_X + 4 * protoSize * 0.64 + PILL_PAD_R);
 
 /** An "IPv4"/"IPv6" pill with a status dot, scaled from the live ServiceRow badge. */
-function pillEl(x: number, y: number, label: string, dotColour: string): string {
+function pillEl(
+  x: number,
+  y: number,
+  label: string,
+  labelColour: string,
+  dotColour: string,
+): string {
   return `<g transform="translate(${x.toFixed(1)},${y})">
     <rect width="${PILL_W}" height="${PILL_H}" rx="${PILL_H / 2}" fill="#ffffff" fill-opacity="${pill.bgOpacity}" stroke="#ffffff" stroke-opacity="${pill.borderOpacity}"/>
     <circle cx="${(PILL_PAD_L + dotD / 2).toFixed(1)}" cy="${PILL_H / 2}" r="${(dotD / 2).toFixed(1)}" fill="${dotColour}"/>
-    <text x="${PILL_TEXT_X.toFixed(1)}" y="${(PILL_H / 2 + protoSize * 0.34).toFixed(1)}" font-family="${FONT}" font-size="${protoSize.toFixed(1)}" font-weight="600" fill="#aab2bd">${label}</text>
+    <text x="${PILL_TEXT_X.toFixed(1)}" y="${(PILL_H / 2 + protoSize * 0.34).toFixed(1)}" font-family="${FONT}" font-size="${protoSize.toFixed(1)}" font-weight="600" fill="${labelColour}">${label}</text>
   </g>`;
 }
 
@@ -152,7 +158,7 @@ function uptimeBars(series: DayStatus[], x0: number, y0: number, totalW: number)
     const x = (x0 + i * (bw + barGap)).toFixed(2);
     const w = bw.toFixed(2);
     if (!d.hasData) {
-      out += `<rect x="${x}" y="${y0}" width="${w}" height="${barH}" rx="${rx}" fill="#ffffff" fill-opacity="0.05"/>`;
+      out += `<rect x="${x}" y="${y0}" width="${w}" height="${barH}" rx="${rx}" fill="${theme.grid.noData}"/>`;
       continue;
     }
     out += `<rect x="${x}" y="${y0}" width="${w}" height="${barH}" rx="${rx}" fill="${colourFor(d.status)}"/>`;
@@ -178,10 +184,16 @@ const UPTIME_CLEARANCE = 120;
 const PILL_GAP = 10;
 const pillV6X = inR - UPTIME_CLEARANCE - PILL_W;
 const pillV4X = pillV6X - PILL_GAP - PILL_W;
+const blobs = theme.background.blobs.enabled
+  ? cloudyBlobLayout(
+      theme.background.blobs,
+      `${String(config.owner ?? "")}/${String(config.repo ?? "")}`,
+    )
+  : [];
 
 // Brand: render the actual logo when `logoUrl` is set (fetched + embedded at its
 // configured height), else the uppercased name as text. Any fetch problem falls back.
-let brand = `<text x="${W / 2}" y="92" text-anchor="middle" font-family="${FONT}" font-size="28" font-weight="600" letter-spacing="1.5" fill="#9aa3af">${esc(name).toUpperCase()}</text>`;
+let brand = `<text x="${W / 2}" y="92" text-anchor="middle" font-family="${FONT}" font-size="28" font-weight="600" letter-spacing="1.5" fill="${theme.text.secondary}">${esc(name).toUpperCase()}</text>`;
 if (config.logoUrl) {
   try {
     const res = await fetch(config.logoUrl);
@@ -207,11 +219,19 @@ if (config.logoUrl) {
 
 const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="-12%" r="78%">
-      <stop offset="0%" stop-color="${accent}" stop-opacity="0.18"/>
-      <stop offset="60%" stop-color="${accent}" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${theme.background.start}"/>
+      <stop offset="100%" stop-color="${theme.background.end}"/>
+    </linearGradient>
+    ${blobs
+      .map(
+        (blob, index) => `<radialGradient id="blob-${index}" cx="${blob.x}%" cy="${blob.y}%" r="${Math.max(blob.width, blob.height)}%">
+      <stop offset="0%" stop-color="${blob.color}" stop-opacity="${blob.strength / 100}"/>
+      <stop offset="70%" stop-color="${blob.color}" stop-opacity="0"/>
+    </radialGradient>`,
+      )
+      .join("\n    ")}
+    <linearGradient id="card-gloss" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0.06"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02"/>
     </linearGradient>
@@ -222,34 +242,35 @@ const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http
       )
       .join("")}</linearGradient>
   </defs>
-  <rect width="${W}" height="${H}" fill="#0b0d12"/>
-  <rect width="${W}" height="${H}" fill="url(#glow)"/>
+  <rect width="${W}" height="${H}" fill="url(#background)"/>
+  ${blobs.map((_, index) => `<rect width="${W}" height="${H}" fill="url(#blob-${index})"/>`).join("\n  ")}
 
   ${brand}
 
   ${icon(hero.icon, W / 2 - heroIconSize / 2, 124, heroIconSize, colourFor(overall))}
-  <text x="${W / 2}" y="255" text-anchor="middle" font-family="${FONT}" font-size="${headlineSize.toFixed(1)}" font-weight="700" fill="#eef0f3">${esc(hero.text)}</text>
+  <text x="${W / 2}" y="255" text-anchor="middle" font-family="${FONT}" font-size="${headlineSize.toFixed(1)}" font-weight="700" fill="${theme.text.primary}">${esc(hero.text)}</text>
 
-  <rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="22" fill="url(#card)" stroke="#ffffff" stroke-opacity="0.08"/>
+  <rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="22" fill="${theme.card.background}" stroke="${theme.card.border}" stroke-width="${theme.card.borderEnabled ? 1 : 0}"/>
+  <rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="22" fill="url(#card-gloss)"/>
   ${
     first
       ? `${icon(firstIcon, inL, cardY + 28, svcIconSize, colourFor(first.status))}
-  <text x="${inL + svcIconSize + 14}" y="${cardY + 52}" font-family="${FONT}" font-size="${nameSize.toFixed(1)}" font-weight="600" fill="#e3e6ea">${esc(first.name)}</text>
+  <text x="${inL + svcIconSize + 14}" y="${cardY + 52}" font-family="${FONT}" font-size="${nameSize.toFixed(1)}" font-weight="600" fill="${theme.text.primary}">${esc(first.name)}</text>
   <text x="${inR}" y="${cardY + 52}" text-anchor="end" font-family="${FONT}" font-size="${uptimeSize.toFixed(1)}" font-weight="700" fill="${colourFor(first.status)}">${esc(uptime)}</text>
-  ${ipv4 && ipv6 ? pillEl(pillV4X, cardY + 31, "IPv4", colourFor(ipv4.status)) + pillEl(pillV6X, cardY + 31, "IPv6", colourFor(ipv6.status)) : ""}
+  ${ipv4 && ipv6 ? pillEl(pillV4X, cardY + 31, "IPv4", protocolColour("ipv4"), colourFor(ipv4.status)) + pillEl(pillV6X, cardY + 31, "IPv6", protocolColour("ipv6"), colourFor(ipv6.status)) : ""}
   ${uptimeBars(days, inL, cardY + 88, cardW - 2 * pad)}
-  <text x="${inL}" y="${cardY + 168}" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="#6b7280">${esc(RANGE_LABEL[range])}</text>
-  <text x="${inR}" y="${cardY + 168}" text-anchor="end" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="#6b7280">Today</text>`
+  <text x="${inL}" y="${cardY + 168}" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="${theme.text.tertiary}">${esc(RANGE_LABEL[range])}</text>
+  <text x="${inR}" y="${cardY + 168}" text-anchor="end" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="${theme.text.tertiary}">Today</text>`
       : ""
   }
 
-  <text x="${M}" y="580" font-family="${FONT}" font-size="22" fill="#5b636e">${esc(host)}</text>
-  <text x="${W - M}" y="580" text-anchor="end" font-family="${FONT}" font-size="22" font-weight="600" fill="#6b7280">Velvet</text>
+  <text x="${M}" y="580" font-family="${FONT}" font-size="22" fill="${theme.text.tertiary}">${esc(host)}</text>
+  <text x="${W - M}" y="580" text-anchor="end" font-family="${FONT}" font-size="22" font-weight="600" fill="${theme.text.secondary}">Velvet</text>
 </svg>`;
 
 const resvg = new Resvg(svg, {
   fitTo: { mode: "width", value: W },
-  background: "#0b0d12",
+  background: theme.background.end,
   font: { loadSystemFonts: true, defaultFontFamily: "DejaVu Sans" },
 });
 const png = resvg.render().asPng();
