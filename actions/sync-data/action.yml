@@ -20,7 +20,7 @@ runs:
       shell: bash
       env:
         VELVET_ROOT: ${{ github.action_path }}/../..
-      run: bun --cwd "$VELVET_ROOT" install --frozen-lockfile --ignore-scripts
+      run: bun install --cwd "$VELVET_ROOT" --frozen-lockfile --ignore-scripts
     - name: Publish Velvet data snapshot
       shell: bash
       env:

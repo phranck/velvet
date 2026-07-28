@@ -18,7 +18,7 @@ test("status-page action builds exclusively from Velvet v1 data", async () => {
   assert.doesNotMatch(source, /generate-feed|incidents\.atom/);
   assert.match(source, /uses: oven-sh\/setup-bun@v2/);
   assert.match(source, /bun-version: "1\.3\.14"/);
-  assert.match(source, /bun --cwd "\$VELVET_ROOT" install --frozen-lockfile/);
+  assert.match(source, /bun install --cwd "\$VELVET_ROOT" --frozen-lockfile/);
   assert.doesNotMatch(source, /actions\/setup-node|\bnpm\b|\bnpx\b|node_modules\/\.bin\/tsx/);
 });
 

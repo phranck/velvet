@@ -29,8 +29,8 @@ esac
 
 source_sha="$(git -C "$VELVET_WORKSPACE" rev-parse HEAD)"
 
-bun --cwd "$VELVET_ROOT" run --filter @velvet/contracts build
-bun --cwd "$VELVET_ROOT" run --filter @velvet/upptime-adapter build
+bun run --cwd "$VELVET_ROOT" --filter @velvet/contracts build
+bun run --cwd "$VELVET_ROOT" --filter @velvet/upptime-adapter build
 
 export VELVET_SOURCE_REF="$source_sha"
 export VELVET_OUTPUT_DIRECTORY="$VELVET_WORKSPACE/$VELVET_OUTPUT"

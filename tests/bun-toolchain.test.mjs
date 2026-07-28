@@ -75,6 +75,19 @@ test("runs local and distributed automation through the pinned Bun toolchain", a
   assert.match(configurator, /Run bun run configurator:build first\./);
 });
 
+test("passes the working directory to Bun subcommands", async () => {
+  const files = [
+    "action.yml",
+    "actions/sync-data/action.yml",
+    "actions/sync-data/scripts/sync.sh",
+  ];
+
+  for (const file of files) {
+    const source = await read(file);
+    assert.doesNotMatch(source, /\bbun --cwd\b/, file);
+  }
+});
+
 test("documents the pinned Bun support matrix without obsolete npm guidance", async () => {
   const documentation = await Promise.all(
     [
