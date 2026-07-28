@@ -406,6 +406,52 @@ test("converts scheduled maintenance metadata into a Velvet event", () => {
   ]);
 });
 
+test("completes maintenance when its issue closes before the planned end", () => {
+  const snapshot = createSingleSiteSnapshot();
+  snapshot.issues = [
+    {
+      number: 43,
+      title: "Scheduled maintenance",
+      body: "<!--\nstart: 2026-07-06T14:00:00+00:00\nend: 2026-07-06T15:00:00+00:00\nexpectedDown: website\n-->\n\nDatabase maintenance.",
+      state: "closed",
+      createdAt: "2026-07-05T12:00:00.000Z",
+      closedAt: "2026-07-06T14:30:00.000Z",
+      labels: ["maintenance"],
+    },
+  ];
+
+  const documents = convertUpptimeSnapshot(snapshot, {
+    generatedAt: "2026-07-06T14:30:00.000Z",
+  });
+
+  assert.equal(documents.incidents.events[0]?.state, "completed");
+  assert.equal(
+    documents.incidents.events[0]?.endsAt,
+    "2026-07-06T14:30:00.000Z",
+  );
+});
+
+test("omits maintenance that is canceled before its planned start", () => {
+  const snapshot = createSingleSiteSnapshot();
+  snapshot.issues = [
+    {
+      number: 43,
+      title: "Scheduled maintenance",
+      body: "<!--\nstart: 2026-07-06T14:00:00+00:00\nend: 2026-07-06T15:00:00+00:00\nexpectedDown: website\n-->\n\nDatabase maintenance.",
+      state: "closed",
+      createdAt: "2026-07-05T12:00:00.000Z",
+      closedAt: "2026-07-06T13:30:00.000Z",
+      labels: ["maintenance"],
+    },
+  ];
+
+  const documents = convertUpptimeSnapshot(snapshot, {
+    generatedAt: "2026-07-06T13:30:00.000Z",
+  });
+
+  assert.deepEqual(documents.incidents.events, []);
+});
+
 test("reports malformed maintenance metadata with the invalid-input code", () => {
   const snapshot = createSingleSiteSnapshot();
   snapshot.issues = [

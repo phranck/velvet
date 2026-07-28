@@ -102,6 +102,7 @@ async function renderStatusPage(
   const config: VelvetConfig = {
     owner: "example",
     repo: "status",
+    url: "https://example.github.io/status/",
     dataBranch: "main",
     dataBaseUrl: "https://example.invalid/velvet-data/v1",
     name: "Velvet Configurator",
@@ -130,6 +131,15 @@ async function renderStatusPage(
     onToggleService: () => undefined,
   });
 }
+
+test("links the brand to the configured public status URL", async () => {
+  const html = await renderStatusPage("grouped");
+
+  assert.match(
+    html,
+    /class="brand(?:\s|")+[^>]*href="https:\/\/example\.github\.io\/status\/"/,
+  );
+});
 
 test("renders the complete status page from production components", async () => {
   const html = await renderStatusPage("grouped");
