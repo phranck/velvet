@@ -110,9 +110,12 @@ npm run build                         # contracts and site/dist
 
 The versioned, presentation-independent Velvet data contracts live in [`packages/contracts`](packages/contracts). That package owns the JSON Schemas, matching TypeScript types, runtime validation, and contract fixtures. The site, social card, and SEO generator all consume those contracts directly.
 
+## Licensing and provenance
+
+Monitoring data, imported datasets, and third-party materials keep their own
+rights and licenses. See the [licensing and provenance policy](LICENSING.md) and
+[third-party notices](THIRD_PARTY_NOTICES.md) for the exact boundaries.
+
 ## License
 
-Velvet source code is published under the [MIT license](LICENSE). Monitoring
-data, imported datasets, and third-party materials keep their own rights and
-licenses. See the [licensing and provenance policy](LICENSING.md) and
-[third-party notices](THIRD_PARTY_NOTICES.md) for the exact boundaries.
+This repository has been published under the [MIT](https://layered.mit-license.org) license.
