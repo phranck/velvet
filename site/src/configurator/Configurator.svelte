@@ -479,19 +479,20 @@
     class:collapsed={sidebarCollapsed}
     aria-label="Velvet configuration controls"
   >
-    <button
-      class="sidebar-toggle"
-      class:expanded={!sidebarCollapsed}
-      data-sidebar-toggle
-      type="button"
-      aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-      title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-      aria-expanded={!sidebarCollapsed}
-      aria-controls="velvet-configurator-sidebar-content"
-      onclick={toggleSidebar}
-    >
-      <i class="ph-duotone ph-caret-circle-double-left" aria-hidden="true"></i>
-    </button>
+    {#if sidebarCollapsed}
+      <button
+        class="sidebar-toggle sidebar-rail-toggle"
+        data-sidebar-expand-toggle
+        type="button"
+        aria-label="Expand sidebar"
+        title="Expand sidebar"
+        aria-expanded={false}
+        aria-controls="velvet-configurator-sidebar-content"
+        onclick={toggleSidebar}
+      >
+        <i class="ph-duotone ph-caret-circle-double-left" aria-hidden="true"></i>
+      </button>
+    {/if}
 
     <div
       id="velvet-configurator-sidebar-content"
@@ -501,6 +502,19 @@
     >
       <div class="control-scroll" bind:this={controlScroll}>
       <header class="tool-header">
+      <button
+        class="sidebar-toggle sidebar-header-toggle"
+        class:expanded={!sidebarCollapsed}
+        data-sidebar-collapse-toggle
+        type="button"
+        aria-label="Collapse sidebar"
+        title="Collapse sidebar"
+        aria-expanded={true}
+        aria-controls="velvet-configurator-sidebar-content"
+        onclick={toggleSidebar}
+      >
+        <i class="ph-duotone ph-caret-circle-double-left" aria-hidden="true"></i>
+      </button>
       <div class="local-label"><span></span>Local only</div>
       <h1>
         <VelvetWordmark />
@@ -960,10 +974,6 @@
       visibility 0s linear 120ms;
   }
   .sidebar-toggle {
-    position: absolute;
-    top: 18px;
-    right: 7px;
-    z-index: 4;
     width: 32px;
     height: 32px;
     display: grid;
@@ -974,6 +984,17 @@
     color: var(--tool-accent);
     cursor: pointer;
     font: inherit;
+  }
+  .sidebar-header-toggle {
+    position: absolute;
+    top: 18px;
+    right: 7px;
+  }
+  .sidebar-rail-toggle {
+    position: absolute;
+    top: 18px;
+    right: 7px;
+    z-index: 4;
   }
   .sidebar-toggle:hover {
     color: var(--tool-text);

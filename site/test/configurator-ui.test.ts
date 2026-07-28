@@ -58,7 +58,7 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /Collapse all sections/);
   assert.match(html, /ph-caret-circle-double-down/);
   assert.equal(html.match(/ph-caret-circle-down/g)?.length, 9);
-  assert.match(html, /data-sidebar-toggle/);
+  assert.match(html, /data-sidebar-collapse-toggle/);
   assert.match(html, /ph-caret-circle-double-left/);
   assert.match(html, /aria-controls="velvet-configurator-sidebar-content"/);
   assert.match(html, /id="velvet-configurator-sidebar-content"/);
@@ -370,6 +370,31 @@ test("collapses the complete sidebar into a persistent narrow rail", async () =>
     /\.control-scroll\s*\{[^}]*overflow-anchor:\s*none/s,
   );
   assert.match(configurator, /\.sidebar-toggle\.expanded[\s\S]*rotate\(180deg\)/);
+});
+
+test("places the expanded sidebar control in its scrolling header and keeps a persistent rail control", async () => {
+  const configurator = await readFile(
+    resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
+    "utf8",
+  );
+  const scrollingHeader = configurator.match(
+    /<div class="control-scroll" bind:this=\{controlScroll\}>\s*<header class="tool-header">([\s\S]*?)<\/header>/,
+  )?.[1];
+
+  assert.ok(scrollingHeader);
+  assert.match(scrollingHeader, /data-sidebar-collapse-toggle/);
+  assert.match(
+    configurator,
+    /\{#if sidebarCollapsed\}[\s\S]*data-sidebar-expand-toggle[\s\S]*\{\/if\}/,
+  );
+  assert.ok(
+    configurator.indexOf("data-sidebar-expand-toggle") <
+      configurator.indexOf('id="velvet-configurator-sidebar-content"'),
+  );
+  assert.match(
+    configurator,
+    /function toggleSidebar\(\): void \{[\s\S]*persistSidebarCollapsed\(sidebarCollapsed\);/,
+  );
 });
 
 test("shares one accessible custom listbox across themes and color sources", async () => {
