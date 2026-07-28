@@ -16,6 +16,7 @@
     "test": "bun run test:toolchain && bun run test:ci && bun run test:lockfile && bun run test:workspace-gates && bun run test:theme-registry && bun run test:configurator-cli && bun run --filter @velvet/contracts test && bun run --filter @velvet/upptime-adapter test && bun run --filter @velvet/sync-data-action test && bun run --filter @velvet/site test",
     "test:toolchain": "bun test tests/bun-toolchain.test.mjs",
     "test:ci": "bun test tests/ci-workflow.test.mjs",
+    "pretest:lockfile": "bun run --filter @velvet/contracts build",
     "test:lockfile": "bun test tests/lockfile.test.mjs",
     "test:workspace-gates": "bun test tests/workspace-gates.test.mjs",
     "test:theme-registry": "bun test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",

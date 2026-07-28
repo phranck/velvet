@@ -8,20 +8,41 @@ async function read(relativePath) {
   return readFile(new URL(relativePath, repositoryRoot), "utf8");
 }
 
-test("runs the complete repository gate for pull requests and main", async () => {
+function jobSource(workflow, jobName) {
+  const marker = `  ${jobName}:\n`;
+  const start = workflow.indexOf(marker);
+  assert.notEqual(start, -1, `missing ${jobName} job`);
+  const followingJobs = workflow.slice(start + marker.length);
+  const nextJob = followingJobs.search(/^ {2}[a-z][a-z0-9-]*:\n/m);
+  return workflow.slice(
+    start,
+    nextJob === -1 ? workflow.length : start + marker.length + nextJob,
+  );
+}
+
+test("runs independent repository gates for pull requests and main", async () => {
   const workflow = await read(".github/workflows/ci.yml");
+  const lintJob = jobSource(workflow, "lint");
+  const typecheckJob = jobSource(workflow, "typecheck");
+  const testJob = jobSource(workflow, "test");
+  const buildJob = jobSource(workflow, "build");
 
   assert.match(workflow, /pull_request:/);
   assert.match(workflow, /push:[\s\S]*branches:\s*\[main\]/);
   assert.match(workflow, /permissions:[\s\S]*contents:\s*read/);
-  assert.match(workflow, /uses:\s*oven-sh\/setup-bun@v2/);
-  assert.match(workflow, /bun-version-file:\s*package\.json/);
-  assert.match(workflow, /bun install --frozen-lockfile/);
-  assert.match(workflow, /docker:\/\/rhysd\/actionlint:1\.7\.12/);
-  assert.match(workflow, /bun run lint/);
-  assert.match(workflow, /bun run typecheck/);
-  assert.match(workflow, /bun run test/);
-  assert.match(workflow, /bun run build/);
+  assert.doesNotMatch(workflow, /^ {2}quality:/m);
+
+  for (const job of [lintJob, typecheckJob, testJob, buildJob]) {
+    assert.match(job, /uses:\s*oven-sh\/setup-bun@v2/);
+    assert.match(job, /bun-version-file:\s*package\.json/);
+    assert.match(job, /bun install --frozen-lockfile/);
+  }
+
+  assert.match(lintJob, /docker:\/\/rhysd\/actionlint:1\.7\.12/);
+  assert.match(lintJob, /bun run lint/);
+  assert.match(typecheckJob, /bun run typecheck/);
+  assert.match(testJob, /bun run test/);
+  assert.match(buildJob, /bun run build/);
   assert.doesNotMatch(workflow, /actions\/setup-node|\bnpm\b|\bnpx\b/);
 });
 
