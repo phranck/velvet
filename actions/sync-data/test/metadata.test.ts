@@ -46,7 +46,12 @@ test("reference workflow serializes with Upptime and cannot trigger itself", asy
     group: "${{ github.repository }}-${{ github.head_ref || github.ref_name }}-upptime",
     "cancel-in-progress": false,
   });
-  assert.deepEqual(workflow.on.push.paths, [".upptimerc.yml", "history/**"]);
+  assert.deepEqual(workflow.on.push.paths, [
+    ".upptimerc.yml",
+    "history/**",
+    ".github/workflows/sync-velvet-data.yml",
+    ".github/workflows/velvet.yml",
+  ]);
   assert.deepEqual(workflow.on.issues.types, [
     "opened",
     "closed",

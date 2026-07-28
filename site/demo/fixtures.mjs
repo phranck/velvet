@@ -1,7 +1,7 @@
 /** Contract-valid Velvet data for the deterministic README screenshot. */
 
-export const FIXED_NOW = "2026-06-01T12:05:00.000Z";
-const STATUS_GENERATED_AT = "2026-06-01T12:00:00.000Z";
+export const FIXED_NOW = "2026-07-28T12:05:00.000Z";
+const STATUS_GENERATED_AT = "2026-07-28T12:00:00.000Z";
 
 const DAY_MS = 86_400_000;
 const RESPONSE_INTERVAL_MS = 6 * 60 * 60 * 1_000;
@@ -166,7 +166,7 @@ export const demoIncidents = {
       title: "Elevated login latency in eu-west",
       summary: "The authentication service is under investigation.",
       affectedServiceIds: ["auth"],
-      startsAt: "2026-06-01T09:00:00.000Z",
+      startsAt: "2026-07-28T09:00:00.000Z",
       endsAt: null,
     },
   ],

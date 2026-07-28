@@ -44,6 +44,16 @@ test("builds status-page assets relative to the deployed Pages path", async () =
   assert.doesNotMatch(html, /(?:src|href)="\/(?:assets\/|favicon\.ico)/);
 });
 
+test("pins the deterministic screenshot browser to UTC", async () => {
+  const screenshot = await readFile(
+    resolve(siteRoot, "scripts/screenshot.mjs"),
+    "utf8",
+  );
+
+  assert.match(screenshot, /clock\.setFixedTime/);
+  assert.match(screenshot, /timezoneId:\s*"UTC"/);
+});
+
 test("generated runtime config points to Velvet repository data", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-"));
   const input = resolve(directory, ".upptimerc.yml");

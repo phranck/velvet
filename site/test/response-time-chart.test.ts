@@ -117,10 +117,6 @@ test("renders independently configured line styles and fading fills", async () =
   assert.match(html, /data-protocol="ipv4"[^>]+data-line-style="dotted"/);
   assert.match(html, /data-protocol="ipv6"[^>]+data-line-style="solid"/);
   assert.equal(html.match(/class="series-area(?:\s|")/g)?.length, 2);
-  assert.match(
-    html,
-    /<rect[^>]+class="plot-background[^"]*"[^>]+width="640"[^>]+height="148"/,
-  );
   assert.match(html, /data-response-hover/);
   assert.match(html, /tabindex="0"/);
 });

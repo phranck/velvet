@@ -72,7 +72,7 @@ test("uses the compound slider for every configurator range input", async () => 
   const configurator = await source("../src/configurator/Configurator.svelte");
 
   assert.match(configurator, /import \* as Slider from "\.\/slider"/);
-  assert.equal(configurator.match(/<Slider\.Root/g)?.length, 4);
+  assert.equal(configurator.match(/<Slider\.Root/g)?.length, 5);
   assert.equal(configurator.match(/<Slider\.Control tickmarks/g)?.length, 2);
   assert.equal(configurator.match(/<Slider\.Labels/g)?.length, 2);
   assert.match(

@@ -46,6 +46,8 @@ test("normalises legacy runtime theme fields into the semantic theme", async () 
     ipv4LineStyle: "dotted",
     ipv6LineStyle: "solid",
     fill: true,
+    background: "#0a0b0f",
+    backgroundOpacity: 0,
   });
   assert.equal(config.theme.fontMono, "Example Mono");
 });

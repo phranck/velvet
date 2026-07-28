@@ -1,5 +1,5 @@
 name: "Velvet status page"
-description: "Build a polished, dark Velvet status page from validated Velvet data."
+description: "Build a Velvet status page exclusively from validated Velvet v1 data."
 author: "phranck"
 branding:
   icon: "activity"
