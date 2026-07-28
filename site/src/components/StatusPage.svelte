@@ -68,7 +68,7 @@
 <main class="status-page" data-layout={config.layout}>
   {#if showNavigation}
     <nav class="nav">
-      <a class="brand" href="/" aria-label={config.name}>
+      <a class="brand" href={config.url ?? "/"} aria-label={config.name}>
         {#if config.logoUrl}
           <img class="logo" src={config.logoUrl} alt={config.name} />
         {:else}
