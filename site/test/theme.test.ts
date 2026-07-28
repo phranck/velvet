@@ -264,7 +264,7 @@ test("creates stable CSS variables and a harmonious cloudy background", () => {
   assert.equal(first["--service-icon"], theme.service.icon);
   assert.equal(first["--protocol-ipv6"], "#38bdf8");
   assert.equal(first["--chart-background"], "#112233");
-  assert.equal(first["--chart-background-opacity"], "0.35");
+  assert.equal(first["--chart-background-opacity"], "35%");
   assert.equal(
     first["--cloudy-blobs"].match(/radial-gradient/g)?.length,
     5,

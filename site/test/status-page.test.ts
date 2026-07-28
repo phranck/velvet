@@ -95,7 +95,10 @@ const incidentsDocument: IncidentsDocument = {
   events: [],
 };
 
-async function renderStatusPage(layout: VelvetLayout): Promise<string> {
+async function renderStatusPage(
+  layout: VelvetLayout,
+  allServicesOpen = true,
+): Promise<string> {
   const config: VelvetConfig = {
     owner: "example",
     repo: "status",
@@ -120,7 +123,7 @@ async function renderStatusPage(layout: VelvetLayout): Promise<string> {
     responseTimesDocument,
     incidentsDocument,
     range: "month",
-    openMap: { website: true },
+    openMap: { website: allServicesOpen },
     updated: "Jul 27, 2026, 12:00 PM",
     onSelectRange: () => undefined,
     onToggleAll: () => undefined,
@@ -154,6 +157,36 @@ test("renders the existing cards layout through the same page component", async 
   assert.equal(html.match(/<section class="card(?:\s|")/g)?.length, 1);
 });
 
+test("uses the shared rotating chevron to toggle every service card", async () => {
+  const expanded = await renderStatusPage("grouped", true);
+  const collapsed = await renderStatusPage("grouped", false);
+  const page = await readFile(
+    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
+    "utf8",
+  );
+
+  assert.match(
+    expanded,
+    /<i class="[^"]*ph-caret-circle-double-down[^"]*\sexpanded"/,
+  );
+  assert.match(
+    collapsed,
+    /<i class="[^"]*ph-caret-circle-double-down[^"]*"/,
+  );
+  assert.doesNotMatch(
+    collapsed,
+    /<i class="[^"]*ph-caret-circle-double-down[^"]*\sexpanded"/,
+  );
+  assert.match(
+    page,
+    /\.toggle-all i\.expanded\s*\{[^}]*transform:\s*rotate\(180deg\)/s,
+  );
+  assert.match(
+    page,
+    /\.toggle-all i\s*\{[^}]*width:\s*22px[^}]*height:\s*22px[^}]*font-size:\s*22px/s,
+  );
+});
+
 test("uses theme variables for headline gradient and card geometry", async () => {
   const page = await readFile(
     resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
@@ -176,7 +209,30 @@ test("uses theme variables for headline gradient and card geometry", async () =>
   assert.match(hero, /var\(--headline-end\)/);
 });
 
-test("centers the Velvet credit in a bottom-sticky footer", async () => {
+test("applies the canvas color across the complete service card", async () => {
+  const page = await readFile(
+    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
+    "utf8",
+  );
+  const chart = await readFile(
+    resolve(
+      import.meta.dirname,
+      "../src/components/service/ResponseTimeChart.svelte",
+    ),
+    "utf8",
+  );
+
+  assert.match(
+    page,
+    /\.card\s*\{[^}]*background:\s*color-mix\(\s*in srgb,\s*var\(--chart-background\) var\(--chart-background-opacity\),\s*var\(--card-background\)\s*\)/s,
+  );
+  assert.doesNotMatch(
+    chart,
+    /\.plot-background\s*\{[^}]*--chart-background/s,
+  );
+});
+
+test("places the Velvet credit directly after the service cards", async () => {
   const page = await readFile(
     resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
     "utf8",
@@ -184,11 +240,16 @@ test("centers the Velvet credit in a bottom-sticky footer", async () => {
 
   assert.match(
     page,
-    /\.footer\s*\{[^}]*position:\s*sticky[^}]*bottom:\s*0[^}]*justify-content:\s*center/,
+    /\{#if config\.showPoweredBy\}\s*<div class="powered">/,
   );
   assert.match(page, /<span class="powered-label">powered by<\/span>/);
   assert.match(page, /<VelvetWordmark[\s\S]*href="https:\/\/github\.com\/phranck\/velvet"/);
-  assert.match(page, /\.powered\s*\{[^}]*flex-direction:\s*column/s);
+  assert.match(
+    page,
+    /\.powered\s*\{[^}]*margin:\s*18px auto 0[^}]*flex-direction:\s*column/s,
+  );
+  assert.doesNotMatch(page, /<footer/);
+  assert.doesNotMatch(page, /\.footer\s*\{/);
   assert.doesNotMatch(page, /subscribe-link/);
   assert.doesNotMatch(page, /incidents\.atom/);
 });

@@ -35,7 +35,7 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /Text Primary/);
   assert.match(html, /Text Secondary/);
   assert.match(html, /Text Tertiary/);
-  assert.match(html, /Advanced overrides/);
+  assert.match(html, /Overrides/);
   assert.match(html, /Theme Default/);
   assert.match(html, /Cloudy blobs/);
   assert.match(html, /Card border/);
@@ -82,6 +82,27 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /IPv4/);
   assert.match(html, /IPv6/);
   assert.match(html, /Response time/);
+
+  const expectedSectionTitles = [
+    "Theme",
+    "Named Colors",
+    "Background",
+    "Cards",
+    "Response Graph",
+    "Service Layout",
+    "Overrides",
+  ];
+  let previousSectionIndex = -1;
+  for (const title of expectedSectionTitles) {
+    const sectionIndex = html.indexOf(title);
+    assert.ok(
+      sectionIndex > previousSectionIndex,
+      `${title} should follow the preceding configurator section`,
+    );
+    previousSectionIndex = sectionIndex;
+  }
+  assert.doesNotMatch(html, /Named colors/);
+  assert.doesNotMatch(html, /Advanced overrides/);
 
   const source = await readFile(
     resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),

@@ -332,7 +332,7 @@ export function themeCssVariables(theme, seed) {
     "--protocol-ipv4": theme.protocol.ipv4,
     "--protocol-ipv6": theme.protocol.ipv6,
     "--chart-background": theme.chart.background,
-    "--chart-background-opacity": String(theme.chart.backgroundOpacity),
+    "--chart-background-opacity": `${theme.chart.backgroundOpacity * 100}%`,
     "--background-start": theme.background.start,
     "--background-end": theme.background.end,
     "--cloudy-blobs": theme.background.blobs.enabled

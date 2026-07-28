@@ -270,12 +270,6 @@
       >
         <title>Response time history for {serviceName}</title>
         <desc id={descriptionId}>{description}</desc>
-        <rect
-          class="plot-background"
-          width={WIDTH}
-          height={HEIGHT}
-          rx="6"
-        ></rect>
         {#if chart.fill}
           <defs>
             {#each PROTOCOLS as protocol}
@@ -465,10 +459,6 @@
     stroke: var(--border-soft);
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
-  }
-  .plot-background {
-    fill: var(--chart-background);
-    fill-opacity: var(--chart-background-opacity);
   }
   .series-line,
   .series-point,

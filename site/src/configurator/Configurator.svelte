@@ -646,7 +646,7 @@
 
       <ConfiguratorSection
         id="palette"
-        title="Named colors"
+        title="Named Colors"
         icon="ph-palette"
         open={sectionState.palette}
         onToggle={toggleSection}
@@ -661,105 +661,6 @@
               onChange={(value) => updatePalette(field.key, value)}
             />
           {/each}
-        </div>
-      </ConfiguratorSection>
-
-      <ConfiguratorSection
-        id="layout"
-        title="Service layout"
-        icon="ph-layout"
-        open={sectionState.layout}
-        onToggle={toggleSection}
-      >
-        <p class="section-help">Choose whether services share a card or stand alone.</p>
-        <div class="segmented">
-          <label>
-            <input type="radio" name="layout" value="grouped" bind:group={layout} />
-            <span>Grouped</span>
-          </label>
-          <label>
-            <input type="radio" name="layout" value="cards" bind:group={layout} />
-            <span>Separate cards</span>
-          </label>
-        </div>
-      </ConfiguratorSection>
-
-      <ConfiguratorSection
-        id="chart"
-        title="Response graph"
-        icon="ph-chart-line-up"
-        open={sectionState.chart}
-        onToggle={toggleSection}
-      >
-        <ColorSourceControl
-          name="chart-background"
-          label="Canvas color"
-          source={themeConfiguration.chart.background}
-          automaticColor={theme.chart.background}
-          palette={themeConfiguration.palette}
-          onChange={(value) => (themeConfiguration.chart.background = value)}
-        />
-        <Slider.Root
-          id="chart-background-opacity"
-          label="Canvas opacity"
-          value={themeConfiguration.chart.backgroundOpacity}
-          min={0}
-          max={1}
-          step={0.05}
-          output={`${Math.round(themeConfiguration.chart.backgroundOpacity * 100)}%`}
-          colors={SLIDER_COLORS}
-          onChange={(value) => (themeConfiguration.chart.backgroundOpacity = value)}
-        >
-          <Slider.Header />
-          <Slider.Control />
-        </Slider.Root>
-        <div class="line-style-control">
-          <span>IPv4 line</span>
-          <div class="segmented line-styles">
-            {#each LINE_STYLES as option}
-              <label>
-                <input
-                  type="radio"
-                  name="ipv4-line-style"
-                  value={option}
-                  bind:group={themeConfiguration.chart.ipv4LineStyle}
-                />
-                <span>{option}</span>
-              </label>
-            {/each}
-          </div>
-        </div>
-        <div class="line-style-control">
-          <span>IPv6 line</span>
-          <div class="segmented line-styles">
-            {#each LINE_STYLES as option}
-              <label>
-                <input
-                  type="radio"
-                  name="ipv6-line-style"
-                  value={option}
-                  bind:group={themeConfiguration.chart.ipv6LineStyle}
-                />
-                <span>{option}</span>
-              </label>
-            {/each}
-          </div>
-        </div>
-        <div class="switch-row">
-          <div>
-            <strong>Chart fill</strong>
-            <span>Fade each protocol color below its line</span>
-          </div>
-          <label class="switch">
-            <input
-              id="chart-fill"
-              name="chart-fill"
-              type="checkbox"
-              bind:checked={themeConfiguration.chart.fill}
-            />
-            <span aria-hidden="true"></span>
-            <span class="visually-hidden">Chart fill</span>
-          </label>
         </div>
       </ConfiguratorSection>
 
@@ -886,8 +787,107 @@
       </ConfiguratorSection>
 
       <ConfiguratorSection
+        id="chart"
+        title="Response Graph"
+        icon="ph-chart-line-up"
+        open={sectionState.chart}
+        onToggle={toggleSection}
+      >
+        <ColorSourceControl
+          name="chart-background"
+          label="Canvas color"
+          source={themeConfiguration.chart.background}
+          automaticColor={theme.chart.background}
+          palette={themeConfiguration.palette}
+          onChange={(value) => (themeConfiguration.chart.background = value)}
+        />
+        <Slider.Root
+          id="chart-background-opacity"
+          label="Canvas opacity"
+          value={themeConfiguration.chart.backgroundOpacity}
+          min={0}
+          max={1}
+          step={0.05}
+          output={`${Math.round(themeConfiguration.chart.backgroundOpacity * 100)}%`}
+          colors={SLIDER_COLORS}
+          onChange={(value) => (themeConfiguration.chart.backgroundOpacity = value)}
+        >
+          <Slider.Header />
+          <Slider.Control />
+        </Slider.Root>
+        <div class="line-style-control">
+          <span>IPv4 line</span>
+          <div class="segmented line-styles">
+            {#each LINE_STYLES as option}
+              <label>
+                <input
+                  type="radio"
+                  name="ipv4-line-style"
+                  value={option}
+                  bind:group={themeConfiguration.chart.ipv4LineStyle}
+                />
+                <span>{option}</span>
+              </label>
+            {/each}
+          </div>
+        </div>
+        <div class="line-style-control">
+          <span>IPv6 line</span>
+          <div class="segmented line-styles">
+            {#each LINE_STYLES as option}
+              <label>
+                <input
+                  type="radio"
+                  name="ipv6-line-style"
+                  value={option}
+                  bind:group={themeConfiguration.chart.ipv6LineStyle}
+                />
+                <span>{option}</span>
+              </label>
+            {/each}
+          </div>
+        </div>
+        <div class="switch-row">
+          <div>
+            <strong>Chart fill</strong>
+            <span>Fade each protocol color below its line</span>
+          </div>
+          <label class="switch">
+            <input
+              id="chart-fill"
+              name="chart-fill"
+              type="checkbox"
+              bind:checked={themeConfiguration.chart.fill}
+            />
+            <span aria-hidden="true"></span>
+            <span class="visually-hidden">Chart fill</span>
+          </label>
+        </div>
+      </ConfiguratorSection>
+
+      <ConfiguratorSection
+        id="layout"
+        title="Service Layout"
+        icon="ph-layout"
+        open={sectionState.layout}
+        onToggle={toggleSection}
+      >
+        <p class="section-help">Choose whether services share a card or stand alone.</p>
+        <div class="segmented">
+          <label>
+            <input type="radio" name="layout" value="grouped" bind:group={layout} />
+            <span>Grouped</span>
+          </label>
+          <label>
+            <input type="radio" name="layout" value="cards" bind:group={layout} />
+            <span>Separate cards</span>
+          </label>
+        </div>
+      </ConfiguratorSection>
+
+      <ConfiguratorSection
         id="advanced"
-        title="Advanced overrides"
+        title="Overrides"
         icon="ph-sliders-horizontal"
         open={sectionState.advanced}
         onToggle={toggleSection}

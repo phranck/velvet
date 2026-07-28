@@ -103,7 +103,8 @@
       aria-label={allOpen ? "Collapse all" : "Expand all"}
     >
       <i
-        class="ph-duotone {allOpen ? 'ph-arrows-in-line-vertical' : 'ph-arrows-out-line-vertical'}"
+        class="ph-duotone ph-caret-circle-double-down"
+        class:expanded={allOpen}
         aria-hidden="true"
       ></i>
     </button>
@@ -162,16 +163,14 @@
   {/if}
 
   {#if config.showPoweredBy}
-    <footer class="footer">
-      <span class="powered">
-        <span class="powered-label">powered by</span>
-        <VelvetWordmark
-          href="https://github.com/phranck/velvet"
-          target="_blank"
-          rel="noopener noreferrer"
-        />
-      </span>
-    </footer>
+    <div class="powered">
+      <span class="powered-label">powered by</span>
+      <VelvetWordmark
+        href="https://github.com/phranck/velvet"
+        target="_blank"
+        rel="noopener noreferrer"
+      />
+    </div>
   {/if}
 </main>
 
@@ -214,7 +213,11 @@
     margin: 6px 18px;
     border: var(--card-border-width) solid var(--card-border);
     border-radius: var(--card-radius);
-    background: var(--card-background);
+    background: color-mix(
+      in srgb,
+      var(--chart-background) var(--chart-background-opacity),
+      var(--card-background)
+    );
     box-shadow: var(--card-shadow);
   }
   .group-head {
@@ -278,25 +281,22 @@
     background: color-mix(in srgb, var(--accent) 16%, transparent);
     color: var(--accent-bright);
   }
-  .footer {
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-top: auto;
-    padding: 18px 32px;
-    border-top: 1px solid var(--border-soft);
-    background: color-mix(in srgb, var(--background-end) 90%, transparent);
-    backdrop-filter: blur(14px);
-    color: var(--text-faint);
-    font-size: 14px;
+  .toggle-all i {
+    width: 22px;
+    height: 22px;
+    display: inline-block;
+    flex: none;
+    font-size: 22px;
+    line-height: 1;
+    transition: transform 160ms ease-in-out;
+  }
+  .toggle-all i.expanded {
+    transform: rotate(180deg);
   }
   .powered {
     --velvet-wordmark-size: 24px;
 
+    margin: 18px auto 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -309,5 +309,10 @@
   }
   .powered :global(.velvet-wordmark) {
     color: color-mix(in srgb, var(--accent), #fff 35%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toggle-all i {
+      transition: none;
+    }
   }
 </style>

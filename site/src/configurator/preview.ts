@@ -6,6 +6,54 @@ import type {
   StatusDocument,
 } from "../lib/types";
 
+const PREVIEW_SAMPLE_DAYS = 82;
+const DAY_MS = 86_400_000;
+const PREVIEW_GENERATED_AT = "2026-07-27T12:00:00.000Z";
+const PREVIEW_MONITORING_STARTED_AT = "2026-05-07T00:00:00.000Z";
+
+function previewResponseSamples(
+  generatedAt: string,
+  baseline: number,
+  amplitude: number,
+  phase: number,
+) {
+  const end = Date.parse(generatedAt);
+
+  return Array.from({ length: PREVIEW_SAMPLE_DAYS }, (_, index) => {
+    const daysBeforeEnd = PREVIEW_SAMPLE_DAYS - index - 1;
+    const variation = Math.round(
+      amplitude *
+        (Math.sin(daysBeforeEnd * 0.47 + phase) - Math.sin(phase)) +
+        (amplitude / 2) *
+          (Math.cos(daysBeforeEnd * 0.19 + phase) - Math.cos(phase)),
+    );
+
+    return {
+      timestamp: new Date(end - daysBeforeEnd * DAY_MS).toISOString(),
+      responseTimeMs: baseline + variation,
+    };
+  });
+}
+
+function previewDailyAvailability(
+  generatedAt: string,
+  unavailableSecondsByDaysBeforeEnd: Readonly<Record<number, number>>,
+) {
+  const end = new Date(`${generatedAt.slice(0, 10)}T00:00:00.000Z`);
+
+  return Array.from({ length: PREVIEW_SAMPLE_DAYS }, (_, index) => {
+    const daysBeforeEnd = PREVIEW_SAMPLE_DAYS - index - 1;
+    const date = new Date(end);
+    date.setUTCDate(end.getUTCDate() - daysBeforeEnd);
+
+    return {
+      date: date.toISOString().slice(0, 10),
+      monitoredSeconds: daysBeforeEnd === 0 ? 43_200 : 86_400,
+      unavailableSeconds: unavailableSecondsByDaysBeforeEnd[daysBeforeEnd] ?? 0,
+    };
+  });
+}
+
 export const PREVIEW_CONFIG: VelvetConfig = {
   owner: "velvet-preview",
   repo: "status",
@@ -23,8 +71,8 @@ export const PREVIEW_CONFIG: VelvetConfig = {
 
 export const PREVIEW_STATUS: StatusDocument = {
   schemaVersion: 1,
-  generatedAt: "2026-07-27T12:00:00.000Z",
-  monitoringStartedAt: "2026-06-28T00:00:00.000Z",
+  generatedAt: PREVIEW_GENERATED_AT,
+  monitoringStartedAt: PREVIEW_MONITORING_STARTED_AT,
   services: [
     {
       id: "website",
@@ -46,16 +94,11 @@ export const PREVIEW_STATUS: StatusDocument = {
           responseTimeMs: 184,
         },
       ],
-      dailyAvailability: [
-        { date: "2026-07-20", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-21", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-22", monitoredSeconds: 86_400, unavailableSeconds: 720 },
-        { date: "2026-07-23", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-24", monitoredSeconds: 86_400, unavailableSeconds: 31_000 },
-        { date: "2026-07-25", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-26", monitoredSeconds: 86_400, unavailableSeconds: 480 },
-        { date: "2026-07-27", monitoredSeconds: 43_200, unavailableSeconds: 0 },
-      ],
+      dailyAvailability: previewDailyAvailability(PREVIEW_GENERATED_AT, {
+        1: 480,
+        3: 31_000,
+        5: 720,
+      }),
     },
     {
       id: "backend",
@@ -77,16 +120,9 @@ export const PREVIEW_STATUS: StatusDocument = {
           responseTimeMs: 121,
         },
       ],
-      dailyAvailability: [
-        { date: "2026-07-20", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-21", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-22", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-23", monitoredSeconds: 86_400, unavailableSeconds: 180 },
-        { date: "2026-07-24", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-25", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-26", monitoredSeconds: 86_400, unavailableSeconds: 0 },
-        { date: "2026-07-27", monitoredSeconds: 43_200, unavailableSeconds: 0 },
-      ],
+      dailyAvailability: previewDailyAvailability(PREVIEW_GENERATED_AT, {
+        4: 180,
+      }),
     },
   ],
 };
@@ -100,87 +136,25 @@ export const PREVIEW_RESPONSE_TIMES: ResponseTimesDocument = {
       serviceId: "backend",
       checkId: "backend-ipv4",
       protocol: "ipv4",
-      samples: [
-        { timestamp: "2026-06-28T00:00:00.000Z", responseTimeMs: 112 },
-        { timestamp: "2026-06-30T00:00:00.000Z", responseTimeMs: 126 },
-        { timestamp: "2026-07-02T00:00:00.000Z", responseTimeMs: 104 },
-        { timestamp: "2026-07-04T00:00:00.000Z", responseTimeMs: 116 },
-        { timestamp: "2026-07-06T00:00:00.000Z", responseTimeMs: 98 },
-        { timestamp: "2026-07-08T00:00:00.000Z", responseTimeMs: 122 },
-        { timestamp: "2026-07-10T00:00:00.000Z", responseTimeMs: 114 },
-        { timestamp: "2026-07-12T00:00:00.000Z", responseTimeMs: null },
-        { timestamp: "2026-07-14T00:00:00.000Z", responseTimeMs: 132 },
-        { timestamp: "2026-07-16T00:00:00.000Z", responseTimeMs: 118 },
-        { timestamp: "2026-07-18T00:00:00.000Z", responseTimeMs: 102 },
-        { timestamp: "2026-07-20T00:00:00.000Z", responseTimeMs: 120 },
-        { timestamp: "2026-07-22T00:00:00.000Z", responseTimeMs: 106 },
-        { timestamp: "2026-07-24T00:00:00.000Z", responseTimeMs: 124 },
-        { timestamp: "2026-07-26T12:00:00.000Z", responseTimeMs: 96 },
-        { timestamp: "2026-07-26T18:00:00.000Z", responseTimeMs: 118 },
-        { timestamp: "2026-07-27T00:00:00.000Z", responseTimeMs: 104 },
-        { timestamp: "2026-07-27T06:00:00.000Z", responseTimeMs: 126 },
-        { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: 108 },
-      ],
+      samples: previewResponseSamples(PREVIEW_STATUS.generatedAt, 108, 16, 0.8),
     },
     {
       serviceId: "backend",
       checkId: "backend-ipv6",
       protocol: "ipv6",
-      samples: [
-        { timestamp: "2026-06-28T00:00:00.000Z", responseTimeMs: 146 },
-        { timestamp: "2026-06-30T00:00:00.000Z", responseTimeMs: 162 },
-        { timestamp: "2026-07-02T00:00:00.000Z", responseTimeMs: 154 },
-        { timestamp: "2026-07-04T00:00:00.000Z", responseTimeMs: 176 },
-        { timestamp: "2026-07-06T00:00:00.000Z", responseTimeMs: 148 },
-        { timestamp: "2026-07-08T00:00:00.000Z", responseTimeMs: 166 },
-        { timestamp: "2026-07-10T00:00:00.000Z", responseTimeMs: 158 },
-        { timestamp: "2026-07-12T00:00:00.000Z", responseTimeMs: 180 },
-        { timestamp: "2026-07-14T00:00:00.000Z", responseTimeMs: 168 },
-        { timestamp: "2026-07-16T00:00:00.000Z", responseTimeMs: 186 },
-        { timestamp: "2026-07-18T00:00:00.000Z", responseTimeMs: 160 },
-        { timestamp: "2026-07-20T00:00:00.000Z", responseTimeMs: 174 },
-        { timestamp: "2026-07-22T00:00:00.000Z", responseTimeMs: 164 },
-        { timestamp: "2026-07-24T00:00:00.000Z", responseTimeMs: 190 },
-        { timestamp: "2026-07-26T12:00:00.000Z", responseTimeMs: 142 },
-        { timestamp: "2026-07-26T18:00:00.000Z", responseTimeMs: 156 },
-        { timestamp: "2026-07-27T00:00:00.000Z", responseTimeMs: 149 },
-        { timestamp: "2026-07-27T06:00:00.000Z", responseTimeMs: 176 },
-        { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: 184 },
-      ],
+      samples: previewResponseSamples(PREVIEW_STATUS.generatedAt, 184, 22, 2.2),
     },
     {
       serviceId: "website",
       checkId: "website-ipv4",
       protocol: "ipv4",
-      samples: [
-        { timestamp: "2026-06-28T00:00:00.000Z", responseTimeMs: 74 },
-        { timestamp: "2026-07-02T00:00:00.000Z", responseTimeMs: 88 },
-        { timestamp: "2026-07-06T00:00:00.000Z", responseTimeMs: 79 },
-        { timestamp: "2026-07-10T00:00:00.000Z", responseTimeMs: 92 },
-        { timestamp: "2026-07-14T00:00:00.000Z", responseTimeMs: 76 },
-        { timestamp: "2026-07-18T00:00:00.000Z", responseTimeMs: 86 },
-        { timestamp: "2026-07-22T00:00:00.000Z", responseTimeMs: 80 },
-        { timestamp: "2026-07-26T12:00:00.000Z", responseTimeMs: 90 },
-        { timestamp: "2026-07-27T00:00:00.000Z", responseTimeMs: 78 },
-        { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: 82 },
-      ],
+      samples: previewResponseSamples(PREVIEW_STATUS.generatedAt, 82, 12, 1.3),
     },
     {
       serviceId: "website",
       checkId: "website-ipv6",
       protocol: "ipv6",
-      samples: [
-        { timestamp: "2026-06-28T00:00:00.000Z", responseTimeMs: 108 },
-        { timestamp: "2026-07-02T00:00:00.000Z", responseTimeMs: 126 },
-        { timestamp: "2026-07-06T00:00:00.000Z", responseTimeMs: 114 },
-        { timestamp: "2026-07-10T00:00:00.000Z", responseTimeMs: 132 },
-        { timestamp: "2026-07-14T00:00:00.000Z", responseTimeMs: 116 },
-        { timestamp: "2026-07-18T00:00:00.000Z", responseTimeMs: 128 },
-        { timestamp: "2026-07-22T00:00:00.000Z", responseTimeMs: 112 },
-        { timestamp: "2026-07-26T12:00:00.000Z", responseTimeMs: 136 },
-        { timestamp: "2026-07-27T00:00:00.000Z", responseTimeMs: 118 },
-        { timestamp: "2026-07-27T12:00:00.000Z", responseTimeMs: 121 },
-      ],
+      samples: previewResponseSamples(PREVIEW_STATUS.generatedAt, 121, 18, 2.7),
     },
   ],
 };
