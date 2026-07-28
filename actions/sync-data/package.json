@@ -5,14 +5,15 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "test": "tsx --test test/*.test.ts",
+    "pretest": "bun run --filter @velvet/contracts build && bun run --filter @velvet/upptime-adapter build",
+    "test": "bun test test/*.test.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
+    "@types/bun": "^1.3.14",
     "@types/node": "^22.0.0",
     "js-yaml": "^4.1.0",
-    "tsx": "^4.22.4",
     "typescript": "^5.7.0"
   }
 }

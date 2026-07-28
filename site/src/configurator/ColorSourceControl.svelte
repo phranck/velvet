@@ -45,12 +45,8 @@
     })),
     { value: "custom", label: "Custom Color", swatches: [resolved] },
   ]);
-  let draft = $state("");
+  let draft = $derived(resolved);
   const valid = $derived(/^#[\da-f]{6}$/i.test(draft));
-
-  $effect(() => {
-    draft = resolved;
-  });
 
   function selectSource(value: string): void {
     onChange(value === "custom" ? resolved : value);

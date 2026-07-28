@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -172,7 +172,7 @@ function openBrowser() {
 
 async function startServer() {
   if (!existsSync(resolve(WEB_ROOT, "index.html"))) {
-    throw new Error("Configurator assets are missing. Run npm run configurator:build first.");
+    throw new Error("Configurator assets are missing. Run bun run configurator:build first.");
   }
 
   const active = readState();

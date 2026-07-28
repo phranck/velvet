@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import test from "node:test";
+import { test } from "bun:test";
 
 test("builds contracts before typechecking dependent workspaces", async () => {
   const packageDocument = JSON.parse(
@@ -9,6 +9,6 @@ test("builds contracts before typechecking dependent workspaces", async () => {
 
   assert.equal(
     packageDocument.scripts.pretypecheck,
-    "npm run build --workspace @velvet/contracts",
+    "bun run --filter @velvet/contracts build",
   );
 });

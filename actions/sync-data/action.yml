@@ -12,15 +12,22 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up Node.js
-      uses: actions/setup-node@v7
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v2
       with:
-        node-version: "22"
+        bun-version: "1.3.14"
     - name: Install Velvet dependencies
       shell: bash
       env:
         VELVET_ROOT: ${{ github.action_path }}/../..
-      run: npm --prefix "$VELVET_ROOT" ci --ignore-scripts
+      run: bun install --cwd "$VELVET_ROOT" --frozen-lockfile --ignore-scripts
+    - name: Build Velvet adapter
+      shell: bash
+      env:
+        VELVET_ROOT: ${{ github.action_path }}/../..
+      run: |
+        bun run --cwd "$VELVET_ROOT" --filter @velvet/contracts build
+        bun run --cwd "$VELVET_ROOT" --filter @velvet/upptime-adapter build
     - name: Publish Velvet data snapshot
       shell: bash
       env:

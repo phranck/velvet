@@ -4,6 +4,7 @@ import {
   PALETTE_KEYS,
   resolveTheme,
 } from "../lib/theme.js";
+import type { FetchImplementation } from "../lib/fetch.js";
 import type { ConfiguratorTheme } from "./configuration";
 
 export interface RegistryTheme {
@@ -167,7 +168,7 @@ export async function loadThemeRegistry({
   storage = globalThis.localStorage,
   url = REGISTRY_URL,
 }: {
-  fetchImplementation?: typeof fetch;
+  fetchImplementation?: FetchImplementation;
   storage?: ThemeStorage;
   url?: string;
 } = {}): Promise<ThemeRegistryLoadResult> {

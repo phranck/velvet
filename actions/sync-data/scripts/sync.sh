@@ -29,12 +29,9 @@ esac
 
 source_sha="$(git -C "$VELVET_WORKSPACE" rev-parse HEAD)"
 
-npm --prefix "$VELVET_ROOT" run build --workspace @velvet/contracts
-npm --prefix "$VELVET_ROOT" run build --workspace @velvet/upptime-adapter
-
 export VELVET_SOURCE_REF="$source_sha"
 export VELVET_OUTPUT_DIRECTORY="$VELVET_WORKSPACE/$VELVET_OUTPUT"
-node "$VELVET_ROOT/packages/upptime-adapter/dist/cli.js"
+bun "$VELVET_ROOT/packages/upptime-adapter/dist/cli.js"
 
 git -C "$VELVET_WORKSPACE" add -A -- "$VELVET_OUTPUT"
 if git -C "$VELVET_WORKSPACE" diff --cached --quiet -- "$VELVET_OUTPUT"; then

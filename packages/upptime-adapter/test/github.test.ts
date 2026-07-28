@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "bun:test";
 
 import * as adapter from "../src/index.js";
+import type { FetchImplementation } from "../src/index.js";
 
 function contentResponse(content: string): Response {
   return Response.json({
@@ -11,7 +12,7 @@ function contentResponse(content: string): Response {
 }
 
 test("loads paginated commits and issues from the GitHub API", async () => {
-  const mockFetch: typeof fetch = async (input) => {
+  const mockFetch: FetchImplementation = async (input) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
 
     if (url.pathname.endsWith("/.upptimerc.yml")) {
@@ -112,7 +113,7 @@ test("loads paginated commits and issues from the GitHub API", async () => {
 });
 
 test("reports GitHub rate limits with a stable error code", async () => {
-  const rateLimitedFetch: typeof fetch = async () =>
+  const rateLimitedFetch: FetchImplementation = async () =>
     new Response("rate limited", {
       status: 403,
       headers: {
@@ -135,7 +136,7 @@ test("reports GitHub rate limits with a stable error code", async () => {
 });
 
 test("reports GitHub transport failures with a stable error code", async () => {
-  const failedFetch: typeof fetch = async () => {
+  const failedFetch: FetchImplementation = async () => {
     throw new Error("network unavailable");
   };
 
@@ -153,7 +154,7 @@ test("reports GitHub transport failures with a stable error code", async () => {
 });
 
 test("reports malformed GitHub payloads as partial upstream data", async () => {
-  const malformedFetch: typeof fetch = async () =>
+  const malformedFetch: FetchImplementation = async () =>
     new Response("not json", {
       status: 200,
       headers: { "content-type": "application/json" },
@@ -173,7 +174,7 @@ test("reports malformed GitHub payloads as partial upstream data", async () => {
 });
 
 test("reports a missing history file with a stable error code", async () => {
-  const missingHistoryFetch: typeof fetch = async (input) => {
+  const missingHistoryFetch: FetchImplementation = async (input) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     if (url.pathname.endsWith("/.upptimerc.yml")) {
       return contentResponse("sites:\n  - name: Website\n    url: https://example.invalid\n");
@@ -208,7 +209,7 @@ test("reports a missing history file with a stable error code", async () => {
 });
 
 test("loads a fresh repository without a history directory", async () => {
-  const freshRepositoryFetch: typeof fetch = async (input) => {
+  const freshRepositoryFetch: FetchImplementation = async (input) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     if (url.pathname.endsWith("/.upptimerc.yml")) {
       return contentResponse("sites:\n  - name: Website\n    url: https://example.invalid\n");
@@ -231,7 +232,7 @@ test("loads a fresh repository without a history directory", async () => {
 });
 
 test("rejects a missing summary inside an existing history directory", async () => {
-  const partialHistoryFetch: typeof fetch = async (input) => {
+  const partialHistoryFetch: FetchImplementation = async (input) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     if (url.pathname.endsWith("/.upptimerc.yml")) {
       return contentResponse("sites:\n  - name: Website\n    url: https://example.invalid\n");

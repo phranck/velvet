@@ -21,33 +21,43 @@ served files. The family licenses above still apply to those files.
 
 ## Direct build, sync, and verification dependencies
 
-These packages are installed from `package-lock.json` on a development or
+These packages are installed from `bun.lock` on a development or
 GitHub Actions runner. They are not copied into `velvet-dist`, except where a
 separate distributed use is listed above.
 
 | Package | Locked version | License |
 | --- | --- | --- |
+| `@eslint/js` | 10.0.1 | MIT |
 | `@phosphor-icons/core` | 2.1.1 | MIT |
 | `@resvg/resvg-js` | 2.6.2 | MPL-2.0 |
 | `@sinclair/typebox` | 0.34.52 | MIT |
 | `@sveltejs/vite-plugin-svelte` | 5.1.1 | MIT |
 | `@tsconfig/svelte` | 5.0.8 | MIT |
+| `@types/bun` | 1.3.14 | MIT |
 | `@types/js-yaml` | 4.0.9 | MIT |
 | `@types/node` | 22.20.1 | MIT |
+| `eslint` | 10.8.0 | MIT |
+| `eslint-plugin-svelte` | 3.22.0 | MIT |
+| `globals` | 17.8.0 | MIT |
 | `js-yaml` | 4.3.0 | MIT |
 | `playwright` | 1.62.0 | Apache-2.0 |
 | `svelte` | 5.56.8 | MIT |
-| `svelte-check` | 4.7.3 | MIT |
-| `tsx` | 4.23.1 | MIT |
+| `svelte-check` | 4.7.4 | MIT |
 | `typescript` | 5.9.3 | Apache-2.0 |
+| `typescript-eslint` | 8.65.0 | MIT |
 | `vite` | 6.4.3 | MIT |
 
-The complete locked tree was generated from `package-lock.json` and manually
-reviewed on 2026-07-27. It contains 149 external package entries: 128 MIT, 13
-MPL-2.0, 5 Apache-2.0, 1 BSD-3-Clause, 1 ISC, and 1 Python-2.0. Every locked
-entry declares license metadata. Package license files installed under
-`node_modules` remain the authoritative texts for build-only and transitive
-dependencies.
+The complete locked tree was generated from `bun.lock` and manually
+reviewed on 2026-07-28. It contains 221 external package entries: 170 MIT, 18
+Apache-2.0, 13 MPL-2.0, 8 BSD-2-Clause, 7 ISC, 2 BSD-3-Clause, 1
+BlueOak-1.0.0, 1 OFL-1.1, and 1 Python-2.0.
+Every locked entry declares license metadata. Package license files installed
+under `node_modules` remain the authoritative texts for build-only and
+transitive dependencies.
+
+[`actionlint` 1.7.12](https://github.com/rhysd/actionlint/blob/v1.7.12/LICENSE.txt)
+is MIT-licensed and runs from its upstream container in GitHub Actions. The
+container is not part of `bun.lock` and is not copied into Velvet outputs.
 
 `js-yaml` is MIT-licensed. The installed notice is
 [upstream](https://github.com/nodeca/js-yaml/blob/4.3.0/LICENSE).

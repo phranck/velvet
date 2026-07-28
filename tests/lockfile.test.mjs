@@ -1,25 +1,25 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import test from "node:test";
+import { test } from "bun:test";
 
-import { build } from "vite";
+const { build } = await import(
+  import.meta.resolve("vite", new URL("../site/package.json", import.meta.url).href)
+);
 
 function findMissingOptionalDependencies(lockfile) {
   const packages = lockfile.packages ?? {};
-  const presentDependencies = new Set();
-
-  for (const packagePath of Object.keys(packages)) {
-    const nodeModulesIndex = packagePath.lastIndexOf("node_modules/");
-    if (nodeModulesIndex >= 0) {
-      presentDependencies.add(packagePath.slice(nodeModulesIndex + "node_modules/".length));
-    }
-  }
+  const packagePaths = Object.keys(packages);
+  const hasDependency = (dependency) =>
+    packagePaths.some(
+      (packagePath) =>
+        packagePath === dependency || packagePath.endsWith(`/${dependency}`),
+    );
 
   const missingDependencies = new Set();
   for (const packageMetadata of Object.values(packages)) {
-    for (const dependency of Object.keys(packageMetadata.optionalDependencies ?? {})) {
-      if (!presentDependencies.has(dependency)) {
+    for (const dependency of Object.keys(packageMetadata[2]?.optionalDependencies ?? {})) {
+      if (!hasDependency(dependency)) {
         missingDependencies.add(dependency);
       }
     }
@@ -31,13 +31,24 @@ function findMissingOptionalDependencies(lockfile) {
 test("detects a missing platform-specific optional dependency", () => {
   const lockfile = {
     packages: {
-      "node_modules/rollup": {
-        optionalDependencies: {
-          "@rollup/rollup-darwin-arm64": "4.62.2",
-          "@rollup/rollup-linux-x64-gnu": "4.62.2",
+      rollup: [
+        "rollup@4.62.3",
+        "",
+        {
+          optionalDependencies: {
+            "@rollup/rollup-darwin-arm64": "4.62.3",
+            "@rollup/rollup-linux-x64-gnu": "4.62.3",
+          },
         },
-      },
-      "node_modules/@rollup/rollup-darwin-arm64": {},
+      ],
+      "@rollup/rollup-darwin-arm64": [
+        "@rollup/rollup-darwin-arm64@4.62.3",
+        "",
+        {
+          os: "darwin",
+          cpu: "arm64",
+        },
+      ],
     },
   };
 
@@ -47,9 +58,29 @@ test("detects a missing platform-specific optional dependency", () => {
 });
 
 test("root lockfile contains every declared optional dependency", async () => {
-  const lockfile = JSON.parse(await readFile(new URL("../package-lock.json", import.meta.url)));
+  const lockfile = Bun.JSONC.parse(
+    await readFile(new URL("../bun.lock", import.meta.url), "utf8"),
+  );
 
   assert.deepEqual(findMissingOptionalDependencies(lockfile), []);
+});
+
+test("third-party notices record the complete external Bun lock", async () => {
+  const lockfile = Bun.JSONC.parse(
+    await readFile(new URL("../bun.lock", import.meta.url), "utf8"),
+  );
+  const externalPackageCount = Object.values(lockfile.packages).filter(
+    ([resolution]) => !resolution.includes("@workspace:"),
+  ).length;
+  const notices = await readFile(
+    new URL("../THIRD_PARTY_NOTICES.md", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    notices,
+    new RegExp(`contains ${externalPackageCount} external package entries`),
+  );
 });
 
 test("third-party notices cover every package in the production browser bundle", async () => {

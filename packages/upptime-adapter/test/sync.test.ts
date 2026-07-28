@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import test from "node:test";
+import { test } from "bun:test";
 
-import { syncVelvetData } from "../src/index.js";
+import { syncVelvetData, type FetchImplementation } from "../src/index.js";
 
 function contentResponse(content: string): Response {
   return Response.json({
@@ -16,7 +16,7 @@ function contentResponse(content: string): Response {
 test("syncs a validated Velvet snapshot from one GitHub repository ref", async () => {
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "velvet-sync-"));
   const requestedRefs: Array<string | null> = [];
-  const mockFetch: typeof fetch = async (input) => {
+  const mockFetch: FetchImplementation = async (input) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     requestedRefs.push(url.searchParams.get("ref") ?? url.searchParams.get("sha"));
 
@@ -89,7 +89,7 @@ test("syncs a validated Velvet snapshot from one GitHub repository ref", async (
 
 test("preserves a history timestamp that is more precise than its commit", async () => {
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "velvet-sync-"));
-  const mockFetch: typeof fetch = async (input) => {
+  const mockFetch: FetchImplementation = async (input) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
 
     if (url.pathname.endsWith("/.upptimerc.yml")) {

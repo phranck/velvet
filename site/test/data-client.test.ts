@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import test from "node:test";
+import { test } from "bun:test";
 
 import type { IncidentsDocument } from "@velvet/contracts";
 
@@ -10,6 +10,7 @@ import {
   refreshIncidentsDocument,
   type VelvetSnapshot,
 } from "../src/lib/data-client.js";
+import type { FetchImplementation } from "../src/lib/fetch.js";
 
 const repositoryRoot = resolve(import.meta.dirname, "../..");
 
@@ -26,7 +27,7 @@ test("loads and validates one complete Velvet snapshot", async () => {
     ["incidents.json", await fixture("incidents/incident.json")],
   ]);
   const requests: string[] = [];
-  const fetchImplementation: typeof fetch = async (input) => {
+  const fetchImplementation: FetchImplementation = async (input) => {
     const url = input instanceof Request ? input.url : input.toString();
     requests.push(url);
     const fileName = new URL(url).pathname.split("/").at(-1) ?? "";

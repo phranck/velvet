@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import test from "node:test";
+import { test } from "bun:test";
 
 const repositoryRoot = resolve(import.meta.dirname, "../..");
 
@@ -16,7 +16,10 @@ test("status-page action builds exclusively from Velvet v1 data", async () => {
   );
   assert.doesNotMatch(source, /history\/summary\.json|api\.github\.com/);
   assert.doesNotMatch(source, /generate-feed|incidents\.atom/);
-  assert.match(source, /uses: actions\/setup-node@v7/);
+  assert.match(source, /uses: oven-sh\/setup-bun@v2/);
+  assert.match(source, /bun-version: "1\.3\.14"/);
+  assert.match(source, /bun install --cwd "\$VELVET_ROOT" --frozen-lockfile/);
+  assert.doesNotMatch(source, /actions\/setup-node|\bnpm\b|\bnpx\b|node_modules\/\.bin\/tsx/);
 });
 
 test("status-page action publishes Velvet and third-party license notices", async () => {

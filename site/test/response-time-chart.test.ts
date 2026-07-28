@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { after, before, test } from "node:test";
+import { afterAll, beforeAll, test } from "bun:test";
 
 import type { ResponseTimesDocument } from "../src/lib/types.js";
 import { resolveTheme } from "../src/lib/theme.js";
@@ -12,11 +12,11 @@ type ResponseSeries = ResponseTimesDocument["series"];
 
 let renderer: SvelteRenderer;
 
-before(async () => {
+beforeAll(async () => {
   renderer = await createSvelteRenderer();
 });
 
-after(async () => {
+afterAll(async () => {
   await renderer.close();
 });
 

@@ -5,6 +5,7 @@ export {
 export type { VelvetDocumentTimestamps } from "./conversion.js";
 export { UpptimeAdapterError } from "./errors.js";
 export type { UpptimeAdapterErrorCode } from "./errors.js";
+export type { FetchImplementation } from "./fetch.js";
 export { loadUpptimeSnapshot } from "./github.js";
 export type { GitHubUpptimeSourceOptions } from "./github.js";
 export { materializeVelvetDocuments } from "./materialization.js";

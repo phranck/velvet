@@ -11,7 +11,7 @@
  *   4. frame the page on a gradient (rounded corners + shadow),
  *   5. write `docs/screenshot.png`.
  *
- * Requires a prior `vite build` (the CI workflow builds first). Run: `npm run screenshot`.
+ * Requires a prior `vite build` (the CI workflow builds first). Run: `bun run screenshot`.
  */
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:http";
@@ -86,7 +86,7 @@ const json = (data) => ({ status: 200, contentType: "application/json", body: JS
 
 async function main() {
   // 1. Real config pipeline (also the smoke test): demo .upptimerc.yml → dist/config.json.
-  execFileSync("node", ["scripts/generate-config.mjs", "demo/.upptimerc.yml", "dist/config.json"], {
+  execFileSync(process.execPath, ["scripts/generate-config.mjs", "demo/.upptimerc.yml", "dist/config.json"], {
     cwd: SITE,
     stdio: "inherit",
   });

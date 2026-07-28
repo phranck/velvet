@@ -4,13 +4,15 @@ import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
-import test from "node:test";
+import { test } from "bun:test";
 
 const execFileAsync = promisify(execFile);
 const repositoryRoot = resolve(import.meta.dirname, "../..");
 const siteRoot = resolve(repositoryRoot, "site");
-const tsx = resolve(repositoryRoot, "node_modules/.bin/tsx");
-const vite = resolve(repositoryRoot, "node_modules/.bin/vite");
+
+async function bun(arguments_: string[], cwd = siteRoot) {
+  return execFileAsync(process.execPath, arguments_, { cwd });
+}
 
 async function fixture(path: string): Promise<string> {
   return readFile(
@@ -20,9 +22,7 @@ async function fixture(path: string): Promise<string> {
 }
 
 test("builds the standalone configurator at the repository root", async () => {
-  await execFileAsync(vite, ["build", "--config", "vite.configurator.ts"], {
-    cwd: siteRoot,
-  });
+  await bun(["run", "--bun", "vite", "build", "--config", "vite.configurator.ts"]);
 
   const html = await readFile(
     resolve(repositoryRoot, "configurator/index.html"),
@@ -36,7 +36,7 @@ test("builds the standalone configurator at the repository root", async () => {
 });
 
 test("builds status-page assets relative to the deployed Pages path", async () => {
-  await execFileAsync(vite, ["build"], { cwd: siteRoot });
+  await bun(["run", "--bun", "vite", "build"]);
 
   const html = await readFile(resolve(siteRoot, "dist/index.html"), "utf8");
   assert.match(html, /src="\.\/assets\//);
@@ -63,7 +63,7 @@ test("generated runtime config points to Velvet repository data", async () => {
     "owner: example\nrepo: status\nstatus-website:\n  velvet:\n    dataBranch: production\n    showSubscribe: false\n",
   );
 
-  await execFileAsync("node", [
+  await bun([
     resolve(siteRoot, "scripts/generate-config.mjs"),
     input,
     output,
@@ -87,7 +87,7 @@ test("generated runtime config preserves an explicit public data URL", async () 
     "owner: example\nrepo: status\nstatus-website:\n  velvet:\n    dataBaseUrl: https://cdn.example/velvet/v1/\n",
   );
 
-  await execFileAsync("node", [
+  await bun([
     resolve(siteRoot, "scripts/generate-config.mjs"),
     input,
     output,
@@ -146,7 +146,7 @@ test("generated runtime config resolves the semantic Velvet theme", async () => 
     ].join("\n"),
   );
 
-  await execFileAsync("node", [
+  await bun([
     resolve(siteRoot, "scripts/generate-config.mjs"),
     input,
     output,
@@ -217,7 +217,7 @@ test("social card uses the semantic Velvet theme", async () => {
     [defaultConfigPath, defaultOutput],
     [customConfigPath, customOutput],
   ]) {
-    await execFileAsync(tsx, [
+    await bun([
       resolve(siteRoot, "scripts/generate-og.ts"),
       configPath,
       statusPath,
@@ -259,13 +259,13 @@ test("social card and SEO consume validated Velvet documents", async () => {
     await readFile(resolve(directory, "index.html")),
   );
 
-  const { stdout: ogOutput } = await execFileAsync(tsx, [
+  const { stdout: ogOutput } = await bun([
     resolve(siteRoot, "scripts/generate-og.ts"),
     configPath,
     statusPath,
     ogPath,
   ]);
-  await execFileAsync(tsx, [
+  await bun([
     resolve(siteRoot, "scripts/generate-seo.ts"),
     configPath,
     statusPath,

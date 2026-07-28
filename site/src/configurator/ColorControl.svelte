@@ -13,13 +13,9 @@
     onChange: (value: string) => void;
   } = $props();
 
-  let draft = $state("");
+  let draft = $derived(value);
   const valid = $derived(/^#[\da-f]{6}$/i.test(draft));
   const errorId = $derived(`${name}-error`);
-
-  $effect(() => {
-    draft = value;
-  });
 
   function updateDraft(next: string): void {
     draft = next;

@@ -1,6 +1,5 @@
 import type {
   IncidentsDocument,
-  ResponseTimesDocument,
   StatusDocument,
 } from "@velvet/contracts";
 

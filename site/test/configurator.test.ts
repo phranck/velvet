@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "bun:test";
 
 import {
   cloneConfiguratorTheme,
@@ -13,7 +13,7 @@ test("clones reactive registry themes as plain configuration data", () => {
   const source = parseConfiguratorYaml("").settings.theme;
   const reactiveTheme = new Proxy(source, {});
 
-  assert.throws(() => structuredClone(reactiveTheme), /could not be cloned/i);
+  assert.throws(() => structuredClone(reactiveTheme), /c(?:ould|an) not be cloned/i);
   assert.deepEqual(cloneConfiguratorTheme(reactiveTheme), source);
 });
 
@@ -26,7 +26,7 @@ status-website:
 `);
   const reactiveDocument = new Proxy(imported.document, {});
 
-  assert.throws(() => structuredClone(reactiveDocument), /could not be cloned/i);
+  assert.throws(() => structuredClone(reactiveDocument), /c(?:ould|an) not be cloned/i);
 
   const exported = parseConfiguratorYaml(
     exportConfigurationYaml(reactiveDocument, imported.settings),

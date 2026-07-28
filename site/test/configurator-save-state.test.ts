@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import test from "node:test";
+import { test } from "bun:test";
 
 test("records every successful save as the configurator baseline", async () => {
   const configurator = await readFile(
