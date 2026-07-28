@@ -17,6 +17,28 @@ test("clones reactive registry themes as plain configuration data", () => {
   assert.deepEqual(cloneConfiguratorTheme(reactiveTheme), source);
 });
 
+test("exports reactive imported documents as plain configuration data", () => {
+  const imported = parseConfiguratorYaml(`
+owner: example
+repo: status
+status-website:
+  name: Example Status
+`);
+  const reactiveDocument = new Proxy(imported.document, {});
+
+  assert.throws(() => structuredClone(reactiveDocument), /could not be cloned/i);
+
+  const exported = parseConfiguratorYaml(
+    exportConfigurationYaml(reactiveDocument, imported.settings),
+  );
+  assert.equal(exported.document.owner, "example");
+  assert.equal(exported.document.repo, "status");
+  assert.equal(
+    (exported.document["status-website"] as Record<string, unknown>).name,
+    "Example Status",
+  );
+});
+
 test("round-trips a named palette with linked colors and card geometry", () => {
   const imported = parseConfiguratorYaml(`
 status-website:

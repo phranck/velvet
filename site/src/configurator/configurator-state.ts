@@ -5,6 +5,7 @@ export interface SaveShortcutEvent {
   metaKey: boolean;
   ctrlKey: boolean;
   altKey: boolean;
+  shiftKey: boolean;
 }
 
 export function exportedSettingsFingerprint(
@@ -20,21 +21,16 @@ export function isConfiguratorDirty(
   return exportedSettingsFingerprint(settings) !== baseline;
 }
 
-export function isSaveShortcut(event: SaveShortcutEvent): boolean {
-  return (
-    event.key.toLowerCase() === "s" &&
-    (event.metaKey || event.ctrlKey) &&
-    !event.altKey
-  );
-}
+export function saveShortcutAction(
+  event: SaveShortcutEvent,
+): "save" | "save-as" | null {
+  if (
+    event.key.toLowerCase() !== "s" ||
+    (!event.metaKey && !event.ctrlKey) ||
+    event.altKey
+  ) {
+    return null;
+  }
 
-export function isDistinctThemeName(
-  candidate: string,
-  selectedName: string,
-): boolean {
-  const normalized = candidate.trim().toLocaleLowerCase();
-  return (
-    normalized.length > 0 &&
-    normalized !== selectedName.trim().toLocaleLowerCase()
-  );
+  return event.shiftKey ? "save-as" : "save";
 }

@@ -18,7 +18,6 @@
   import ConfiguratorSection from "./ConfiguratorSection.svelte";
   import * as Slider from "./slider";
   import ThemeDropdown from "./ThemeDropdown.svelte";
-  import ThemeNameDialog from "./ThemeNameDialog.svelte";
   import {
     cloneConfiguratorTheme,
     exportConfigurationYaml,
@@ -28,7 +27,15 @@
     type ConfiguratorSettings,
     type ConfiguratorTheme,
   } from "./configuration";
-  import { themeConfigurationFilename } from "./configuration-filename.js";
+  import { DEFAULT_CONFIGURATION_FILENAME } from "./configuration-filename.js";
+  import {
+    loadConfigurationFileHandle,
+    pickConfigurationFile,
+    requestWritePermission,
+    saveConfigurationFileHandle,
+    supportsFileSystemAccess,
+    writeConfigurationFile,
+  } from "./file-system-access.js";
   import {
     loadConfiguratorSession,
     persistConfiguratorSession,
@@ -36,8 +43,7 @@
   import {
     exportedSettingsFingerprint,
     isConfiguratorDirty,
-    isDistinctThemeName,
-    isSaveShortcut,
+    saveShortcutAction,
   } from "./configurator-state";
   import {
     createScrollCompensation,
@@ -142,8 +148,10 @@
     RESTORED_SESSION?.importedDocument ?? null,
   );
   let importedFilename = $state(
-    RESTORED_SESSION?.importedFilename ?? ".upptimerc.yml",
+    RESTORED_SESSION?.importedFilename ?? DEFAULT_CONFIGURATION_FILENAME,
   );
+  let configurationFileHandle = $state<FileSystemFileHandle | null>(null);
+  let configurationFileHandleNeedsPermission = false;
   let range = $state<RangeKey>("month");
   let notice = $state(
     RESTORED_SESSION
@@ -171,9 +179,6 @@
     RESTORED_SESSION?.selectedBaseline ??
       exportedSettingsFingerprint(DEFAULT_SETTINGS),
   );
-  let nameDialogOpen = $state(false);
-  let nameCandidate = $state("");
-  let nameError = $state("");
 
   const theme = $derived(resolveTheme(themeConfiguration));
   const settings = $derived<ConfiguratorSettings>({
@@ -191,6 +196,8 @@
   const allSectionsOpen = $derived(
     CONFIGURATOR_SECTION_IDS.every((id) => sectionState[id]),
   );
+  const directFileSavesAvailable =
+    typeof window !== "undefined" && supportsFileSystemAccess(window);
 
   $effect(() => {
     if (previewWorkspace) applyTheme(previewConfig, previewWorkspace);
@@ -215,11 +222,17 @@
 
   onMount(() => {
     void refreshThemeRegistry();
+    void restoreConfigurationFileHandle();
     if (controlScroll) scrollMotion = createScrollCompensation(controlScroll);
     const handleSaveShortcut = (event: KeyboardEvent) => {
-      if (!isSaveShortcut(event)) return;
+      const action = saveShortcutAction(event);
+      if (action === null) return;
       event.preventDefault();
-      requestSaveConfiguration();
+      void (
+        action === "save-as" && directFileSavesAvailable
+          ? requestSaveConfigurationAs()
+          : requestSaveConfiguration()
+      );
     };
     window.addEventListener("keydown", handleSaveShortcut);
     return () => {
@@ -358,58 +371,74 @@
     }
   }
 
-  function requestSaveConfiguration(): void {
-    if (selectedThemeId !== null && settingsDirty) {
-      nameCandidate = isDistinctThemeName(themeConfiguration.name, loadedThemeName)
-        ? themeConfiguration.name.trim()
-        : `${loadedThemeName} Copy`;
-      nameError = "";
-      nameDialogOpen = true;
-      return;
-    }
-    downloadConfiguration(settings);
+  async function restoreConfigurationFileHandle(): Promise<void> {
+    configurationFileHandle = await loadConfigurationFileHandle();
+    configurationFileHandleNeedsPermission = configurationFileHandle !== null;
   }
 
-  function downloadConfiguration(
+  async function requestSaveConfiguration(): Promise<void> {
+    await saveConfiguration(settings);
+  }
+
+  async function requestSaveConfigurationAs(): Promise<void> {
+    await saveConfiguration(settings, DEFAULT_CONFIGURATION_FILENAME, true);
+  }
+
+  async function saveConfiguration(
     value: ConfiguratorSettings,
-    filename = importedDocument ? importedFilename : ".upptimerc.yml",
-  ): void {
+    filename = importedFilename,
+    chooseNewFile = false,
+  ): Promise<boolean> {
     const source = exportConfigurationYaml(importedDocument, value);
+    if (directFileSavesAvailable) {
+      try {
+        let handle = chooseNewFile ? null : configurationFileHandle;
+        let requiresPermission = !chooseNewFile && configurationFileHandleNeedsPermission;
+        if (handle === null) {
+          handle = await pickConfigurationFile(filename);
+          requiresPermission = false;
+        }
+        if (requiresPermission && !(await requestWritePermission(handle))) {
+          notice = "File access was not granted.";
+          importError = "";
+          return false;
+        }
+        await writeConfigurationFile(handle, source);
+        const handlePersisted = await saveConfigurationFileHandle(handle);
+        configurationFileHandle = handle;
+        configurationFileHandleNeedsPermission = false;
+        importedFilename = handle.name || filename;
+        selectedBaseline = exportedSettingsFingerprint(value);
+        notice = handlePersisted
+          ? `Saved ${importedFilename}.`
+          : `Saved ${importedFilename}. Select it again after reopening this page.`;
+        importError = "";
+        return true;
+      } catch (error) {
+        if ((error as DOMException).name === "AbortError") {
+          notice = "Save cancelled.";
+          importError = "";
+          return false;
+        }
+        notice = "Could not save the configuration.";
+        importError = "The selected file could not be written.";
+        return false;
+      }
+    }
+
     const blob = new Blob([source], { type: "application/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = filename;
+    document.body.append(anchor);
     anchor.click();
+    anchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 0);
-    notice = `Saved ${filename}.`;
+    selectedBaseline = exportedSettingsFingerprint(value);
+    notice = `Downloaded ${filename}.`;
     importError = "";
-  }
-
-  function confirmNamedSave(): void {
-    if (!isDistinctThemeName(nameCandidate, loadedThemeName)) {
-      nameError = "Choose a non-empty name that differs from the registry theme.";
-      return;
-    }
-
-    const renamedTheme = cloneConfiguratorTheme(themeConfiguration);
-    renamedTheme.name = nameCandidate.trim();
-    const nextSettings = { layout, theme: renamedTheme };
-    themeConfiguration = renamedTheme;
-    selectedThemeId = null;
-    loadedThemeName = renamedTheme.name;
-    selectedBaseline = exportedSettingsFingerprint(nextSettings);
-    nameDialogOpen = false;
-    nameError = "";
-    downloadConfiguration(
-      nextSettings,
-      themeConfigurationFilename(renamedTheme.name),
-    );
-  }
-
-  function cancelNamedSave(): void {
-    nameDialogOpen = false;
-    nameError = "";
+    return true;
   }
 
   function resetAppearance(): void {
@@ -543,10 +572,21 @@
         <i class="ph-duotone ph-copy" aria-hidden="true"></i>
         Copy Config
       </button>
-      <button class="button primary" type="button" onclick={requestSaveConfiguration}>
-        <i class="ph-duotone ph-download-simple" aria-hidden="true"></i>
-        Save Config
-      </button>
+      {#if directFileSavesAvailable}
+        <button class="button primary" type="button" onclick={requestSaveConfiguration}>
+          <i class="ph-duotone ph-download-simple" aria-hidden="true"></i>
+          Save Config
+        </button>
+        <button class="button secondary save-as" type="button" onclick={requestSaveConfigurationAs}>
+          <i class="ph-duotone ph-download-simple" aria-hidden="true"></i>
+          Save Config as
+        </button>
+      {:else}
+        <button class="button primary" type="button" onclick={requestSaveConfiguration}>
+          <i class="ph-duotone ph-download-simple" aria-hidden="true"></i>
+          Download Config
+        </button>
+      {/if}
       </div>
 
       <div class="theme-status" data-dirty-status={settingsDirty ? "" : undefined}>
@@ -903,19 +943,6 @@
   </aside>
 </div>
 
-<ThemeNameDialog
-  open={nameDialogOpen}
-  {theme}
-  candidate={nameCandidate}
-  error={nameError}
-  onCandidateChange={(value) => {
-    nameCandidate = value;
-    nameError = "";
-  }}
-  onConfirm={confirmNamedSave}
-  onCancel={cancelNamedSave}
-/>
-
 <style>
   .configurator {
     --tool-bg: #101116;
@@ -1085,6 +1112,9 @@
     padding: 18px 22px 10px;
   }
   .file-actions .primary {
+    grid-column: 1 / -1;
+  }
+  .file-actions .save-as {
     grid-column: 1 / -1;
   }
   .button {

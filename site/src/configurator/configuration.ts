@@ -75,7 +75,7 @@ export function updateConfiguratorDocument(
   document: ConfiguratorDocument,
   settings: ConfiguratorSettings,
 ): ConfiguratorDocument {
-  const updated = structuredClone(document);
+  const updated = cloneConfigurationDocument(document);
   const statusWebsite = isRecord(updated["status-website"])
     ? { ...updated["status-website"] }
     : {};
@@ -125,6 +125,42 @@ export function exportConfigurationYaml(
       "status-website": { name: "Status" },
     } satisfies ConfiguratorDocument);
   return dump(updateConfiguratorDocument(base, settings), YAML_OPTIONS);
+}
+
+function cloneConfigurationDocument(
+  document: ConfiguratorDocument,
+): ConfiguratorDocument {
+  return cloneConfigurationValue(document, new WeakMap()) as ConfiguratorDocument;
+}
+
+function cloneConfigurationValue(
+  value: unknown,
+  copies: WeakMap<object, unknown>,
+): unknown {
+  if (typeof value !== "object" || value === null) return value;
+
+  const existing = copies.get(value);
+  if (existing !== undefined) return existing;
+
+  if (Array.isArray(value)) {
+    const copy: unknown[] = [];
+    copies.set(value, copy);
+    for (const item of value) {
+      copy.push(cloneConfigurationValue(item, copies));
+    }
+    return copy;
+  }
+
+  if (isRecord(value)) {
+    const copy: ConfiguratorDocument = {};
+    copies.set(value, copy);
+    for (const key of Object.keys(value)) {
+      copy[key] = cloneConfigurationValue(value[key], copies);
+    }
+    return copy;
+  }
+
+  return structuredClone(value);
 }
 
 function optionalMapping(

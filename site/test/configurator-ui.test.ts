@@ -47,7 +47,8 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /accept="\.yml,\.yaml/);
   assert.match(html, /Open Config/);
   assert.match(html, /Copy Config/);
-  assert.match(html, /Save Config/);
+  assert.match(html, /Download Config/);
+  assert.doesNotMatch(html, /Save Config as/);
   assert.match(html, /ph-folder-open/);
   assert.match(html, /ph-copy/);
   assert.match(html, /ph-download-simple/);
@@ -92,6 +93,14 @@ test("renders the local controls in a right sidebar and two real services", asyn
   );
   assert.match(source, /<StatusPage[\s\S]*?showNavigation=\{false\}/);
   assert.match(source, /\.live-swatches\s*\{[^}]*grid-template-columns:\s*repeat\(9,\s*1fr\)/s);
+  assert.match(
+    source,
+    /const directFileSavesAvailable =\s*typeof window !== "undefined" &&\s*supportsFileSystemAccess\(window\);/,
+  );
+  assert.match(
+    source,
+    /\{#if directFileSavesAvailable\}[\s\S]*?Save Config[\s\S]*?Save Config as[\s\S]*?\{:else\}[\s\S]*?Download Config[\s\S]*?\{\/if\}/,
+  );
 });
 
 test("uses a full-workspace theme background and readable sidebar typography", async () => {
@@ -323,8 +332,13 @@ test("keeps reset sticky and uses the shared save and disclosure flows", async (
     configurator,
     /\.reset-button\s*\{[^}]*border:\s*1px solid var\(--tool-line\)[^}]*border-radius:\s*999px/,
   );
-  assert.match(configurator, /isSaveShortcut\(event\)/);
-  assert.match(configurator, /ThemeNameDialog/);
+  assert.match(configurator, /saveShortcutAction\(event\)/);
+  assert.match(configurator, /requestSaveConfigurationAs/);
+  assert.doesNotMatch(configurator, /ThemeNameDialog/);
+  assert.match(
+    configurator,
+    /\.file-actions \.save-as\s*\{[^}]*grid-column:\s*1 \/ -1/s,
+  );
   assert.match(configurator, /data-dirty-status/);
   assert.doesNotMatch(configurator, /SECTION_FLIP_KEYFRAMES/);
   assert.doesNotMatch(configurator, /waitForAnimation/);
@@ -516,16 +530,11 @@ test("replaces browser focus outlines with Velvet focus states", async () => {
     resolve(import.meta.dirname, "../src/configurator/ColorSourceControl.svelte"),
     "utf8",
   );
-  const saveDialog = await readFile(
-    resolve(import.meta.dirname, "../src/configurator/ThemeNameDialog.svelte"),
-    "utf8",
-  );
-
   assert.match(
     globalStyles,
     /:where\(button, input, textarea, select, summary, a, \[tabindex\]\):focus\s*\{[^}]*outline:\s*none/s,
   );
-  for (const source of [configurator, namedColors, advancedOverrides, saveDialog]) {
+  for (const source of [configurator, namedColors, advancedOverrides]) {
     assert.match(
       source,
       /input[^\n{]*:focus-visible\s*\{[^}]*border-color:[^}]*box-shadow:/s,
@@ -533,13 +542,9 @@ test("replaces browser focus outlines with Velvet focus states", async () => {
   }
 });
 
-test("uses lighter borderless dialog and alert surfaces", async () => {
+test("uses a lighter borderless alert surface", async () => {
   const configurator = await readFile(
     resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
-    "utf8",
-  );
-  const saveDialog = await readFile(
-    resolve(import.meta.dirname, "../src/configurator/ThemeNameDialog.svelte"),
     "utf8",
   );
 
@@ -548,11 +553,6 @@ test("uses lighter borderless dialog and alert surfaces", async () => {
     /\.message\s*\{[^}]*background:\s*var\(--tool-panel-raised\)/s,
   );
   assert.doesNotMatch(configurator, /\.message\s*\{[^}]*border(?:-bottom)?:/s);
-  assert.match(saveDialog, /dialog\s*\{[^}]*border:\s*0/s);
-  assert.match(
-    saveDialog,
-    /dialog\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--modal-surface\) 90%, var\(--modal-text\)\)/s,
-  );
 });
 
 test("stacks every advanced override control in one aligned column", async () => {
