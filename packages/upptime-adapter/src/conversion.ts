@@ -201,6 +201,14 @@ function parseHistory(historyYaml: string): UpptimeHistory {
 export function deriveVelvetDocumentTimestamps(
   snapshot: UpptimeSnapshot,
 ): VelvetDocumentTimestamps {
+  if (snapshot.historyState === "absent") {
+    const generatedAt = new Date().toISOString();
+    return {
+      status: generatedAt,
+      responseTimes: generatedAt,
+      incidents: generatedAt,
+    };
+  }
   const monitoringTimestamps = [
     ...Object.values(snapshot.commits).flatMap((commits) =>
       commits.map(({ committedAt }) => committedAt),
@@ -384,6 +392,139 @@ function maintenanceMetadata(body: string): {
   };
 }
 
+function incidentsFor(
+  snapshot: UpptimeSnapshot,
+  generatedAt: string,
+  sites: UpptimeSite[],
+  allSlugs: Set<string>,
+): IncidentsDocument {
+  const serviceIdsForSlugs = (slugs: string[]) => [
+    ...new Set(
+      slugs
+        .filter((slug) => allSlugs.has(slug))
+        .map((slug) =>
+          serviceIdFor(
+            sites.find((site) => site.slug === slug)!,
+            allSlugs,
+          ),
+        ),
+    ),
+  ].sort();
+  const events: IncidentsDocument["events"] = snapshot.issues
+    .flatMap((issue): IncidentsDocument["events"] => {
+      if (issue.labels.includes("maintenance")) {
+        const metadata = maintenanceMetadata(issue.body);
+        const generatedAtTimestamp = Date.parse(generatedAt);
+        const startsAt = Date.parse(metadata.startsAt);
+        const endsAt = Date.parse(metadata.endsAt);
+        const state =
+          generatedAtTimestamp < startsAt
+            ? "scheduled"
+            : generatedAtTimestamp < endsAt
+              ? "active"
+              : "completed";
+        return [
+          {
+            id: `maintenance-${issue.number}`,
+            kind: "maintenance",
+            state,
+            title: issue.title,
+            summary: sanitizeIssueSummary(issue.body),
+            affectedServiceIds: serviceIdsForSlugs(metadata.affectedSlugs),
+            startsAt: metadata.startsAt,
+            endsAt: metadata.endsAt,
+          },
+        ];
+      }
+
+      if (!issue.labels.includes("status")) {
+        return [];
+      }
+      return [
+        {
+          id: `incident-${issue.number}`,
+          kind: "incident",
+          state: issue.state === "open" ? "open" : "resolved",
+          title: issue.title,
+          summary: sanitizeIssueSummary(issue.body),
+          affectedServiceIds: serviceIdsForSlugs(issue.labels),
+          startsAt: normalizeInputTimestamp(
+            issue.createdAt,
+            `incident ${issue.number} start`,
+          ),
+          endsAt:
+            issue.state === "open" || issue.closedAt === null
+              ? null
+              : normalizeInputTimestamp(
+                  issue.closedAt,
+                  `incident ${issue.number} end`,
+                ),
+        },
+      ];
+    })
+    .sort((left, right) =>
+      `${left.startsAt}:${left.id}`.localeCompare(`${right.startsAt}:${right.id}`),
+    );
+  return {
+    schemaVersion: CONTRACT_SCHEMA_VERSION,
+    generatedAt,
+    events,
+  };
+}
+
+function convertNoHistorySnapshot(
+  snapshot: UpptimeSnapshot,
+  generatedAt: VelvetDocumentTimestamps,
+  sites: UpptimeSite[],
+  allSlugs: Set<string>,
+): VelvetDocuments {
+  const groupedSites = new Map<string, UpptimeSite[]>();
+  for (const site of sites) {
+    const serviceId = serviceIdFor(site, allSlugs);
+    groupedSites.set(serviceId, [...(groupedSites.get(serviceId) ?? []), site]);
+  }
+
+  const services: StatusDocument["services"] = [...groupedSites.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([serviceId, serviceSites]) => {
+      const orderedSites = [...serviceSites].sort((left, right) =>
+        left.protocol.localeCompare(right.protocol),
+      );
+      const primary =
+        orderedSites.find(({ protocol }) => protocol === "ipv4") ??
+        orderedSites[0]!;
+      return {
+        id: serviceId,
+        name: primary.name.replace(/ IPv6$/, ""),
+        status: "unknown" as const,
+        checks: orderedSites.map((site) => ({
+          id: site.protocol,
+          protocol: site.protocol,
+          status: "unknown" as const,
+          checkedAt: null,
+          responseTimeMs: null,
+        })),
+        dailyAvailability: [],
+      };
+    });
+
+  return validateVelvetDocuments({
+    status: {
+      schemaVersion: CONTRACT_SCHEMA_VERSION,
+      generatedAt: generatedAt.status,
+      monitoringStartedAt: generatedAt.status,
+      services,
+    },
+    responseTimes: {
+      schemaVersion: CONTRACT_SCHEMA_VERSION,
+      generatedAt: generatedAt.responseTimes,
+      monitoringStartedAt: generatedAt.responseTimes,
+      series: [],
+    },
+    incidents: incidentsFor(snapshot, generatedAt.incidents, sites, allSlugs),
+  });
+}
+
 export function convertUpptimeSnapshot(
   snapshot: UpptimeSnapshot,
   options: { generatedAt: string | VelvetDocumentTimestamps },
@@ -397,8 +538,11 @@ export function convertUpptimeSnapshot(
         }
       : options.generatedAt;
   const sites = parseSites(snapshot.configYaml);
-  const summaries = parseSummaries(snapshot.summaryJson);
   const allSlugs = new Set(sites.map(({ slug }) => slug));
+  if (snapshot.historyState === "absent") {
+    return convertNoHistorySnapshot(snapshot, generatedAt, sites, allSlugs);
+  }
+  const summaries = parseSummaries(snapshot.summaryJson);
   const histories = new Map(
     sites.map((site) => {
       const history = snapshot.histories[site.slug];
@@ -525,78 +669,12 @@ export function convertUpptimeSnapshot(
     monitoringStartedAt,
     series,
   };
-  const serviceIdsForSlugs = (slugs: string[]) => [
-    ...new Set(
-      slugs
-        .filter((slug) => allSlugs.has(slug))
-        .map((slug) =>
-          serviceIdFor(
-            sites.find((site) => site.slug === slug)!,
-            allSlugs,
-          ),
-        ),
-    ),
-  ].sort();
-  const events: IncidentsDocument["events"] = snapshot.issues
-    .flatMap((issue): IncidentsDocument["events"] => {
-      if (issue.labels.includes("maintenance")) {
-        const metadata = maintenanceMetadata(issue.body);
-        const generatedAtTimestamp = Date.parse(generatedAt.incidents);
-        const startsAt = Date.parse(metadata.startsAt);
-        const endsAt = Date.parse(metadata.endsAt);
-        const state =
-          generatedAtTimestamp < startsAt
-            ? "scheduled"
-            : generatedAtTimestamp < endsAt
-              ? "active"
-              : "completed";
-        return [
-          {
-            id: `maintenance-${issue.number}`,
-            kind: "maintenance",
-            state,
-            title: issue.title,
-            summary: sanitizeIssueSummary(issue.body),
-            affectedServiceIds: serviceIdsForSlugs(metadata.affectedSlugs),
-            startsAt: metadata.startsAt,
-            endsAt: metadata.endsAt,
-          },
-        ];
-      }
-
-      if (!issue.labels.includes("status")) {
-        return [];
-      }
-      return [
-        {
-          id: `incident-${issue.number}`,
-          kind: "incident",
-          state: issue.state === "open" ? "open" : "resolved",
-          title: issue.title,
-          summary: sanitizeIssueSummary(issue.body),
-          affectedServiceIds: serviceIdsForSlugs(issue.labels),
-          startsAt: normalizeInputTimestamp(
-            issue.createdAt,
-            `incident ${issue.number} start`,
-          ),
-          endsAt:
-            issue.state === "open" || issue.closedAt === null
-              ? null
-              : normalizeInputTimestamp(
-                  issue.closedAt,
-                  `incident ${issue.number} end`,
-                ),
-        },
-      ];
-    })
-    .sort((left, right) =>
-      `${left.startsAt}:${left.id}`.localeCompare(`${right.startsAt}:${right.id}`),
-    );
-  const incidents: IncidentsDocument = {
-    schemaVersion: CONTRACT_SCHEMA_VERSION,
-    generatedAt: generatedAt.incidents,
-    events,
-  };
+  const incidents = incidentsFor(
+    snapshot,
+    generatedAt.incidents,
+    sites,
+    allSlugs,
+  );
 
   return validateVelvetDocuments({ status, responseTimes, incidents });
 }

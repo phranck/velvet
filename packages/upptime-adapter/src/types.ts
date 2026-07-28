@@ -26,6 +26,7 @@ export interface UpptimeSnapshot {
   histories: Record<string, string>;
   commits: Record<string, UpptimeCommit[]>;
   issues: UpptimeIssue[];
+  historyState?: "available" | "absent";
 }
 
 export interface VelvetDocuments {

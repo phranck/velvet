@@ -206,3 +206,26 @@ test("reports a missing history file with a stable error code", async () => {
       error.code === "MISSING_HISTORY",
   );
 });
+
+test("loads a fresh repository without a history directory", async () => {
+  const freshRepositoryFetch: typeof fetch = async (input) => {
+    const url = new URL(input instanceof Request ? input.url : input.toString());
+    if (url.pathname.endsWith("/.upptimerc.yml")) {
+      return contentResponse("sites:\n  - name: Website\n    url: https://example.invalid\n");
+    }
+    if (url.pathname.endsWith("/issues")) {
+      return Response.json([]);
+    }
+    return new Response("not found", { status: 404 });
+  };
+
+  const snapshot = await adapter.loadUpptimeSnapshot({
+    owner: "example",
+    repo: "status",
+    fetch: freshRepositoryFetch,
+  });
+
+  assert.equal(snapshot.historyState, "absent");
+  assert.deepEqual(snapshot.histories, {});
+  assert.deepEqual(snapshot.commits, {});
+});

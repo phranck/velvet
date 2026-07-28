@@ -79,6 +79,15 @@ class GitHubSource {
     );
   }
 
+  private contentsUrl(path: string): URL {
+    const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+    const url = this.repositoryUrl(`contents/${encodedPath}`);
+    if (this.options.ref !== undefined) {
+      url.searchParams.set("ref", this.options.ref);
+    }
+    return url;
+  }
+
   private async request(url: URL): Promise<Response> {
     let response: Response;
     try {
@@ -134,11 +143,7 @@ class GitHubSource {
   }
 
   async content(path: string): Promise<string> {
-    const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-    const url = this.repositoryUrl(`contents/${encodedPath}`);
-    if (this.options.ref !== undefined) {
-      url.searchParams.set("ref", this.options.ref);
-    }
+    const url = this.contentsUrl(path);
     let response: Response;
     try {
       response = await this.request(url);
@@ -153,7 +158,7 @@ class GitHubSource {
             ? "MISSING_HISTORY"
             : "PARTIAL_UPSTREAM_DATA",
           `Missing Upptime source file ${path}`,
-          { cause: error },
+          { cause: error, status: error.status },
         );
       }
       throw error;
@@ -173,6 +178,22 @@ class GitHubSource {
       );
     }
     return Buffer.from((value as GitHubContent).content, "base64").toString("utf8");
+  }
+
+  async exists(path: string): Promise<boolean> {
+    try {
+      await this.request(this.contentsUrl(path));
+      return true;
+    } catch (error) {
+      if (
+        error instanceof UpptimeAdapterError &&
+        error.code === "GITHUB_REQUEST_FAILED" &&
+        error.status === 404
+      ) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   private async paginated<T>(initialUrl: URL): Promise<T[]> {
@@ -275,7 +296,29 @@ export async function loadUpptimeSnapshot(
 ): Promise<UpptimeSnapshot> {
   const source = new GitHubSource(options);
   const configYaml = await source.content(".upptimerc.yml");
-  const summaryJson = await source.content("history/summary.json");
+  let summaryJson: string;
+  try {
+    summaryJson = await source.content("history/summary.json");
+  } catch (error) {
+    if (
+      !(
+        error instanceof UpptimeAdapterError &&
+        error.code === "PARTIAL_UPSTREAM_DATA" &&
+        error.status === 404 &&
+        !(await source.exists("history"))
+      )
+    ) {
+      throw error;
+    }
+    return {
+      configYaml,
+      summaryJson: "[]",
+      histories: {},
+      commits: {},
+      issues: await source.issues(),
+      historyState: "absent",
+    };
+  }
   const slugs = extractUpptimeSiteSlugs(configYaml);
   const histories: Record<string, string> = {};
   const commits: Record<string, UpptimeCommit[]> = {};
