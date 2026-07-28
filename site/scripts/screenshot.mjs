@@ -98,6 +98,7 @@ async function main() {
       viewport: { width: PAGE_W, height: PAGE_H },
       deviceScaleFactor: 1.5,
       reducedMotion: "reduce",
+      timezoneId: "UTC",
     });
     const page = await ctx.newPage();
     await page.clock.setFixedTime(new Date(FIXED_NOW));

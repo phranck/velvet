@@ -7,6 +7,8 @@ on:
     paths:
       - ".upptimerc.yml"
       - "history/**"
+      - ".github/workflows/sync-velvet-data.yml"
+      - ".github/workflows/velvet.yml"
   issues:
     types: [opened, closed, reopened, edited, labeled, unlabeled]
   workflow_dispatch: {}
