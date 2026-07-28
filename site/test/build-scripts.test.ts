@@ -30,7 +30,9 @@ test("builds the standalone configurator at the repository root", async () => {
   );
   assert.match(html, /<title>Velvet Configurator<\/title>/);
   assert.match(html, /Velvet Configurator/);
-  assert.doesNotMatch(html, /<script[^>]+src=/);
+  assert.match(html, /<script[^>]+src="\.\/assets\/[^"]+\.js"/);
+  assert.match(html, /<link[^>]+href="\.\/assets\/[^"]+\.css"/);
+  assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
 });
 
 test("builds status-page assets relative to the deployed Pages path", async () => {
@@ -151,6 +153,8 @@ test("generated runtime config resolves the semantic Velvet theme", async () => 
     ipv4LineStyle: "dotted",
     ipv6LineStyle: "solid",
     fill: true,
+    background: "#090909",
+    backgroundOpacity: 0,
   });
   assert.equal(config.theme.background.blobs.count, 4);
   assert.deepEqual(config.theme.background.blobs.colors, ["#111111", "#222222"]);
