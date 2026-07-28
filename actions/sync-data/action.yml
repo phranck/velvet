@@ -1,5 +1,5 @@
 name: "Sync Velvet data"
-description: "Convert Upptime state into validated Velvet data and commit one complete snapshot."
+description: "Normalize temporary Upptime inputs into one validated Velvet v1 snapshot."
 author: "phranck"
 branding:
   icon: "refresh-cw"
