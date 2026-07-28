@@ -32,7 +32,7 @@ async function createFixtureRepository(
 ): Promise<string> {
   const remote = join(root, "consumer.git");
   const repository = join(root, "consumer");
-  await executeFile("git", ["init", "--bare", remote]);
+  await executeFile("git", ["init", "--bare", "--initial-branch=main", remote]);
   await mkdir(repository, { recursive: true });
   await git(repository, "init", "--initial-branch=main");
   await git(repository, "config", "user.name", "Fixture Author");
