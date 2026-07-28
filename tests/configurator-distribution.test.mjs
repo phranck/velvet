@@ -16,3 +16,17 @@ test("ships the configurator as separate HTML, CSS, JavaScript, and font assets"
   assert.ok(assets.some((name) => name.endsWith(".css")));
   assert.ok(assets.some((name) => name.endsWith(".woff2")));
 });
+
+test("ships the sidebar collapse control inside the scrolling header", async () => {
+  const assets = await readdir(resolve(configuratorRoot, "assets"));
+  const javascript = await Promise.all(
+    assets
+      .filter((name) => name.endsWith(".js"))
+      .map((name) => readFile(resolve(configuratorRoot, "assets", name), "utf8")),
+  );
+  const output = javascript.join("\n");
+
+  assert.match(output, /data-sidebar-collapse-toggle/);
+  assert.match(output, /sidebar-header-toggle/);
+  assert.doesNotMatch(output, /data-sidebar-toggle/);
+});
