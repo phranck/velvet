@@ -209,7 +209,7 @@
     </span>
     {#if visibleSwatches.length > 0}
       <span class="listbox-swatches" aria-hidden="true">
-        {#each visibleSwatches as color}
+        {#each visibleSwatches as color, index (`${index}-${color}`)}
           <ColorSwatch {color} size={compact ? 22 : 14} />
         {/each}
       </span>
@@ -247,7 +247,7 @@
           </span>
           {#if option.swatches?.length}
             <span class="listbox-swatches" aria-hidden="true">
-              {#each option.swatches as color}
+              {#each option.swatches as color, index (`${index}-${color}`)}
                 <ColorSwatch {color} size={compact ? 22 : 14} />
               {/each}
             </span>

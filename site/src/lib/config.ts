@@ -8,6 +8,7 @@
  */
 
 import { tokenCssVars } from "./tokens";
+import type { FetchImplementation } from "./fetch.js";
 import { resolveTheme, themeCssVariables } from "./theme.js";
 import type { RangeKey } from "./types";
 
@@ -89,7 +90,7 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo" | "dataBaseUrl"> = {
  *   since without them there is no data source to render.
  */
 export async function loadConfig(
-  fetchImplementation: typeof fetch = globalThis.fetch,
+  fetchImplementation: FetchImplementation = globalThis.fetch,
 ): Promise<VelvetConfig> {
   const res = await fetchImplementation("config.json", { cache: "no-cache" });
   if (!res.ok) throw new Error(`config.json ${res.status}`);

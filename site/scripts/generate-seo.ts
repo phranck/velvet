@@ -7,7 +7,7 @@ import { overallStatus, STATUS_HERO } from "../src/lib/data";
  * Inject per-deployment SEO into a built Velvet site using the same validated
  * status document and status interpretation as the browser and social card.
  *
- * Usage: tsx generate-seo.ts <config.json> <status.json> <dist-dir>
+ * Usage: bun generate-seo.ts <config.json> <status.json> <dist-dir>
  */
 const [
   ,

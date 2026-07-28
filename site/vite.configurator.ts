@@ -12,7 +12,7 @@ const phosphorWoff2Only: Plugin = {
     if (!id.includes("@phosphor-icons/web/src/duotone/style.css")) return;
 
     return source.replace(
-      /src:\s*[\s\S]*?;\n  font-weight:/,
+      /src:\s*[\s\S]*?;\n {2}font-weight:/,
       'src: url("./Phosphor-Duotone.woff2") format("woff2");\n  font-weight:',
     );
   },

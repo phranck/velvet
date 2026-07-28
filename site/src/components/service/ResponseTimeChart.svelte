@@ -272,7 +272,7 @@
         <desc id={descriptionId}>{description}</desc>
         {#if chart.fill}
           <defs>
-            {#each PROTOCOLS as protocol}
+            {#each PROTOCOLS as protocol (protocol)}
               <linearGradient
                 id={gradientId(protocol)}
                 data-protocol={protocol}
@@ -299,7 +299,7 @@
         </g>
         {#each preparedSeries as entry (entry.checkId)}
           {@const segments = availableSegments(entry.samples)}
-          {#each segments as segment}
+          {#each segments as segment (segment[0]?.timestamp)}
             {#if segment.length === 1}
               {@const point = coordinates(segment[0])}
               <circle

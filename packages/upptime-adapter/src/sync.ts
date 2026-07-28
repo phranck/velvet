@@ -3,6 +3,7 @@ import {
   deriveVelvetDocumentTimestamps,
 } from "./conversion.js";
 import { UpptimeAdapterError } from "./errors.js";
+import type { FetchImplementation } from "./fetch.js";
 import { loadUpptimeSnapshot } from "./github.js";
 import { materializeVelvetDocuments } from "./materialization.js";
 
@@ -13,7 +14,7 @@ export interface SyncVelvetDataOptions {
   generatedAt?: string;
   token?: string;
   apiBaseUrl?: string;
-  fetch?: typeof globalThis.fetch;
+  fetch?: FetchImplementation;
 }
 
 export async function syncVelvetData(

@@ -1,5 +1,6 @@
 import { extractUpptimeSiteSlugs } from "./conversion.js";
 import { UpptimeAdapterError } from "./errors.js";
+import type { FetchImplementation } from "./fetch.js";
 import type {
   UpptimeCommit,
   UpptimeIssue,
@@ -12,7 +13,7 @@ export interface GitHubUpptimeSourceOptions {
   ref?: string;
   token?: string;
   apiBaseUrl?: string;
-  fetch?: typeof globalThis.fetch;
+  fetch?: FetchImplementation;
 }
 
 interface GitHubContent {
@@ -53,7 +54,7 @@ function normalizeGitHubTimestamp(value: string, context: string): string {
 
 class GitHubSource {
   private readonly apiBaseUrl: string;
-  private readonly fetchImplementation: typeof globalThis.fetch;
+  private readonly fetchImplementation: FetchImplementation;
   private readonly headers: HeadersInit;
 
   constructor(private readonly options: GitHubUpptimeSourceOptions) {

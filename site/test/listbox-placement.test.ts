@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "bun:test";
 
 test("opens upward when the footer leaves more room above the trigger", async () => {
   const { resolveListboxPlacement } = await import(

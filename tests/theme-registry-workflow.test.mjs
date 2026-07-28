@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import test from "node:test";
+import { test } from "bun:test";
 
 const WORKFLOW_URL = new URL(
   "../.github/workflows/theme-registry.yml",
@@ -15,6 +15,9 @@ test("provides a reusable theme validation and Pages publishing workflow", async
   assert.match(workflow, /repository:\s*phranck\/velvet/);
   assert.match(workflow, /ref:\s*\$\{\{ inputs\.tooling-ref \}\}/);
   assert.match(workflow, /scripts\/build-theme-registry\.mjs/);
+  assert.match(workflow, /oven-sh\/setup-bun@v2/);
+  assert.match(workflow, /bun-version-file:\s*velvet-tooling\/package\.json/);
+  assert.doesNotMatch(workflow, /actions\/setup-node|\bnode\s+/);
   assert.match(workflow, /actions\/upload-pages-artifact@v5/);
   assert.match(workflow, /actions\/deploy-pages@v5/);
 });
@@ -26,7 +29,7 @@ test("includes the theme registry checks in the root test command", async () => 
 
   assert.equal(
     packageDocument.scripts["test:theme-registry"],
-    "node --test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
+    "bun test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
   );
   assert.match(packageDocument.scripts.test, /test:theme-registry/);
 });

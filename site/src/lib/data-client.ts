@@ -8,6 +8,8 @@ import {
   type StatusDocument,
 } from "@velvet/contracts";
 
+import type { FetchImplementation } from "./fetch.js";
+
 export interface VelvetSnapshot {
   status: StatusDocument;
   responseTimes: ResponseTimesDocument;
@@ -40,7 +42,7 @@ type Validator<T> = (value: unknown) => ContractValidationResult<T>;
 
 export function createVelvetDataClient(
   dataBaseUrl: string,
-  fetchImplementation: typeof fetch = globalThis.fetch,
+  fetchImplementation: FetchImplementation = globalThis.fetch,
 ): VelvetDataClient {
   const baseUrl = dataBaseUrl.replace(/\/+$/, "");
 

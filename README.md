@@ -180,11 +180,20 @@ HTML, CSS, JavaScript, and font assets live under [`configurator/`](configurator
 
 ## Develop
 
+Velvet pins Bun 1.3.14 as its package manager and JavaScript runtime.
+
+| Environment | Supported path |
+| --- | --- |
+| Local macOS | Bun 1.3.14 on Apple Silicon or Intel |
+| Linux CI | `oven-sh/setup-bun@v2` reading the root `packageManager` pin |
+| Playwright | Chromium installed through `bunx --bun playwright` |
+| Composite Actions | `oven-sh/setup-bun@v2` with Bun 1.3.14 pinned explicitly |
+
 ```bash
-npm ci
-npm run build
-npm test
-npm run typecheck
+bun install --frozen-lockfile
+bun run build
+bun run test
+bun run typecheck
 ```
 
 The site, social card, SEO generator, compatibility adapter, and sync Action all

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { after, before, test } from "node:test";
+import { afterAll, beforeAll, test } from "bun:test";
 
 import type { VelvetConfig, VelvetLayout } from "../src/lib/config.js";
 import { resolveTheme } from "../src/lib/theme.js";
@@ -17,11 +17,11 @@ import {
 
 let renderer: SvelteRenderer;
 
-before(async () => {
+beforeAll(async () => {
   renderer = await createSvelteRenderer();
 });
 
-after(async () => {
+afterAll(async () => {
   await renderer.close();
 });
 

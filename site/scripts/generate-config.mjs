@@ -11,7 +11,7 @@ import { resolveTheme } from "../src/lib/theme.js";
  * valid Upptime config. Everything else (owner, repo, name, logo, navbar) is read
  * from the standard Upptime fields.
  *
- * Usage: node generate-config.mjs <.upptimerc.yml> <out/config.json> [repository-data-path]
+ * Usage: bun generate-config.mjs <.upptimerc.yml> <out/config.json> [repository-data-path]
  */
 const [
   ,

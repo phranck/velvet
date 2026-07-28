@@ -3,7 +3,7 @@ import { constants } from "node:fs";
 import { access } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import test from "node:test";
+import { test } from "bun:test";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const commandPath = resolve(projectRoot, "config");

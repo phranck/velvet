@@ -25,9 +25,9 @@ import type { DayStatus, RangeKey } from "../src/lib/types";
  * updates this card automatically — there is no duplicated geometry to drift.
  *
  * Built as SVG and rasterised with resvg (no browser), light enough to run in the
- * Velvet Action on every deploy. Run via `tsx` so it can import the TypeScript modules.
+ * Velvet Action on every deploy. Bun runs the TypeScript modules directly.
  *
- * Usage: tsx generate-og.ts <config.json> <status.json> <out.png>
+ * Usage: bun generate-og.ts <config.json> <status.json> <out.png>
  */
 const [, , configPath = "public/config.json", statusPath = "", outPath = "dist/og.png"] =
   process.argv;
@@ -100,7 +100,7 @@ function icon(phClass: string, x: number, y: number, size: number, colour: strin
       .replace(/<svg[^>]*>/, "")
       .replace(/<\/svg>\s*$/, "");
   } catch {
-    inner = "";
+    // Keep the empty icon fallback.
   }
   return `<g transform="translate(${x},${y}) scale(${(size / 256).toFixed(4)})" fill="${colour}">${inner}</g>`;
 }

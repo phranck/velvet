@@ -11,7 +11,7 @@
 - [ ] Scan version and Action references. The release notes must identify the
   intended `v1.8.0` release, consumer examples must use the supported `@v1`
   Action tag, and no stale release pin may remain in published documentation.
-- [ ] If package manifests, `package-lock.json`, external font or icon URLs,
+- [ ] If package manifests, `bun.lock`, external font or icon URLs,
   copied source, assets, or generated build contents changed, regenerate the
   locked dependency-license inventory, inspect the actual `velvet-dist` output,
   and update `LICENSING.md` and `THIRD_PARTY_NOTICES.md` before release.

@@ -88,6 +88,6 @@ installed dependency tree.
 ## Release rule
 
 Every release follows the licensing step in [RELEASING.md](RELEASING.md). A
-change to package manifests, `package-lock.json`, external asset URLs, copied
+change to package manifests, `bun.lock`, external asset URLs, copied
 source, or generated build contents requires a fresh inventory and notice
 review before release.

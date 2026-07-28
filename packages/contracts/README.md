@@ -26,7 +26,7 @@ the repository [licensing and provenance policy](../../LICENSING.md).
 The standalone files under `schemas/velvet-data/v1` are generated from the same source:
 
 ```bash
-npm run schemas --workspace @velvet/contracts
+bun run --filter @velvet/contracts schemas
 ```
 
 Do not edit generated schema files directly. The schema parity test fails if they differ from the TypeScript source.
@@ -65,7 +65,7 @@ Codes and paths are suitable for programmatic handling. Messages are human-reada
 Valid and invalid examples live under `fixtures`. They cover dual-stack and IPv4-only services, partial and empty history, unavailable response samples, incidents, maintenance, and every required invariant.
 
 ```bash
-npm test --workspace @velvet/contracts
-npm run typecheck --workspace @velvet/contracts
-npm run build --workspace @velvet/contracts
+bun run --filter @velvet/contracts test
+bun run --filter @velvet/contracts typecheck
+bun run --filter @velvet/contracts build
 ```

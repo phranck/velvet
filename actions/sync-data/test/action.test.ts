@@ -5,7 +5,7 @@ import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
-import test from "node:test";
+import { test } from "bun:test";
 
 const executeFile = promisify(execFile);
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
@@ -195,6 +195,7 @@ async function runSync(
     cwd: repository,
     env: {
       ...process.env,
+      PATH: `${dirname(process.execPath)}:${process.env.PATH ?? ""}`,
       VELVET_ROOT: repositoryRoot,
       VELVET_WORKSPACE: repository,
       VELVET_OUTPUT: output,

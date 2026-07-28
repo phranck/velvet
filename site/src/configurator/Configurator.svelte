@@ -550,7 +550,7 @@
         <span class="tool-subtitle">configurator</span>
       </h1>
       <div class="live-swatches" aria-hidden="true">
-        {#each PALETTE_KEYS as key}
+        {#each PALETTE_KEYS as key (key)}
           <span style:background={themeConfiguration.palette[key]}></span>
         {/each}
       </div>
@@ -818,7 +818,7 @@
         <div class="line-style-control">
           <span>IPv4 line</span>
           <div class="segmented line-styles">
-            {#each LINE_STYLES as option}
+            {#each LINE_STYLES as option (option)}
               <label>
                 <input
                   type="radio"
@@ -834,7 +834,7 @@
         <div class="line-style-control">
           <span>IPv6 line</span>
           <div class="segmented line-styles">
-            {#each LINE_STYLES as option}
+            {#each LINE_STYLES as option (option)}
               <label>
                 <input
                   type="radio"

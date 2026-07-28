@@ -37,7 +37,7 @@ export function parseConfiguratorYaml(source: string): ParsedConfiguratorYaml {
   try {
     loaded = source.trim() ? load(source) : {};
   } catch (error) {
-    throw new Error(`Invalid YAML: ${(error as Error).message}`);
+    throw new Error(`Invalid YAML: ${(error as Error).message}`, { cause: error });
   }
 
   if (!isRecord(loaded)) {

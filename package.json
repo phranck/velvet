@@ -2,22 +2,35 @@
   "name": "velvet",
   "private": true,
   "type": "module",
+  "packageManager": "bun@1.3.14",
   "workspaces": [
     "actions/*",
     "packages/*",
     "site"
   ],
   "scripts": {
-    "build": "npm run build --workspace @velvet/contracts && npm run build --workspace @velvet/upptime-adapter && npm run build --workspace @velvet/site",
-    "test": "npm run test:lockfile && npm run test:workspace-gates && npm run test:theme-registry && npm run test:configurator-cli && npm run test --workspace @velvet/contracts && npm run test --workspace @velvet/upptime-adapter && npm run test --workspace @velvet/sync-data-action && npm run test --workspace @velvet/site",
-    "test:lockfile": "node --test tests/lockfile.test.mjs",
-    "test:workspace-gates": "node --test tests/workspace-gates.test.mjs",
-    "test:theme-registry": "node --test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
-    "test:configurator-cli": "node --test tests/config-cli.test.mjs tests/configurator-distribution.test.mjs",
-    "pretypecheck": "npm run build --workspace @velvet/contracts",
-    "typecheck": "npm run typecheck --workspace @velvet/contracts && npm run typecheck --workspace @velvet/upptime-adapter && npm run typecheck --workspace @velvet/sync-data-action && npm run typecheck --workspace @velvet/site"
+    "build": "bun run --filter @velvet/contracts build && bun run --filter @velvet/upptime-adapter build && bun run --filter @velvet/site build",
+    "check": "bun run lint && bun run typecheck && bun run test && bun run build",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "test": "bun run test:toolchain && bun run test:ci && bun run test:lockfile && bun run test:workspace-gates && bun run test:theme-registry && bun run test:configurator-cli && bun run --filter @velvet/contracts test && bun run --filter @velvet/upptime-adapter test && bun run --filter @velvet/sync-data-action test && bun run --filter @velvet/site test",
+    "test:toolchain": "bun test tests/bun-toolchain.test.mjs",
+    "test:ci": "bun test tests/ci-workflow.test.mjs",
+    "test:lockfile": "bun test tests/lockfile.test.mjs",
+    "test:workspace-gates": "bun test tests/workspace-gates.test.mjs",
+    "test:theme-registry": "bun test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
+    "test:configurator-cli": "bun test tests/config-cli.test.mjs tests/configurator-distribution.test.mjs",
+    "pretypecheck": "bun run --filter @velvet/contracts build",
+    "typecheck": "bun run --filter @velvet/contracts typecheck && bun run --filter @velvet/upptime-adapter typecheck && bun run --filter @velvet/sync-data-action typecheck && bun run --filter @velvet/site typecheck"
   },
   "engines": {
-    "node": ">=22"
+    "bun": ">=1.3.14"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.8.0",
+    "eslint-plugin-svelte": "3.22.0",
+    "globals": "17.8.0",
+    "typescript-eslint": "8.65.0"
   }
 }

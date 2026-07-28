@@ -20,9 +20,9 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-node@v7
+    - uses: oven-sh/setup-bun@v2
       with:
-        node-version: "22"
+        bun-version: "1.3.14"
     - name: Build Velvet site
       shell: bash
       env:
@@ -33,12 +33,12 @@ runs:
         VELVET_SITE: ${{ github.action_path }}/site
       run: |
         set -euo pipefail
-        npm --prefix "$VELVET_ROOT" ci
-        npm --prefix "$VELVET_ROOT" run build --workspace @velvet/contracts
-        node "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json" "$VELVET_DATA"
-        npm --prefix "$VELVET_ROOT" run build --workspace @velvet/site
-        "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist/og.png"
-        "$VELVET_ROOT/node_modules/.bin/tsx" "$VELVET_SITE/scripts/generate-seo.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist"
+        bun --cwd "$VELVET_ROOT" install --frozen-lockfile
+        bun --cwd "$VELVET_ROOT" run --filter @velvet/contracts build
+        bun "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json" "$VELVET_DATA"
+        bun --cwd "$VELVET_ROOT" run --filter @velvet/site build
+        bun "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist/og.png"
+        bun "$VELVET_SITE/scripts/generate-seo.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist"
         cp "$VELVET_ROOT/LICENSE" "$VELVET_SITE/dist/LICENSE"
         cp "$VELVET_ROOT/THIRD_PARTY_NOTICES.md" "$VELVET_SITE/dist/THIRD_PARTY_NOTICES.md"
         rm -rf "$VELVET_OUTPUT"

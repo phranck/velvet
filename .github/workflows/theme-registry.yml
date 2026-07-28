@@ -31,12 +31,12 @@ jobs:
           repository: phranck/velvet
           ref: ${{ inputs.tooling-ref }}
           path: velvet-tooling
-      - uses: actions/setup-node@v7
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "22"
+          bun-version-file: velvet-tooling/package.json
       - name: Validate themes and build registry
         run: >-
-          node velvet-tooling/scripts/build-theme-registry.mjs
+          bun velvet-tooling/scripts/build-theme-registry.mjs
           --themes theme-content/themes
           --output theme-content/dist/index.json
       - name: Configure Pages

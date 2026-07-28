@@ -30,8 +30,9 @@
     const end = new Date(`${d.date}T00:00:00Z`);
     // Aggregated bar (1y / all): show the bucket's date span instead of one day.
     if (d.spanDays > 1) {
-      const start = new Date(end);
-      start.setUTCDate(end.getUTCDate() - (d.spanDays - 1));
+      const start = new Date(
+        end.getTime() - (d.spanDays - 1) * 24 * 60 * 60 * 1_000,
+      );
       return `${fmtShort(start)} – ${fmtShort(end)}\n${label(d)}`;
     }
     const full = end.toLocaleDateString(undefined, {
