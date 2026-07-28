@@ -33,6 +33,15 @@ test("builds the standalone configurator at the repository root", async () => {
   assert.doesNotMatch(html, /<script[^>]+src=/);
 });
 
+test("builds status-page assets relative to the deployed Pages path", async () => {
+  await execFileAsync(vite, ["build"], { cwd: siteRoot });
+
+  const html = await readFile(resolve(siteRoot, "dist/index.html"), "utf8");
+  assert.match(html, /src="\.\/assets\//);
+  assert.match(html, /href="\.\/assets\//);
+  assert.doesNotMatch(html, /(?:src|href)="\/(?:assets\/|favicon\.ico)/);
+});
+
 test("generated runtime config points to Velvet repository data", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-"));
   const input = resolve(directory, ".upptimerc.yml");

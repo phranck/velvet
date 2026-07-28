@@ -2,14 +2,13 @@ import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 /**
- * Vite config for the MusicCloud status front-end.
+ * Vite config for the Velvet status front-end.
  *
- * `base: "/"` because the site is served from a custom apex-style subdomain
- * (status.musiccloud.io) via GitHub Pages, not from a repo sub-path.
- * Output goes to `dist/`, which the deploy workflow publishes to `gh-pages`.
+ * Relative asset URLs work for custom domains, user sites, and repository
+ * subpaths without requiring consumer-specific build configuration.
  */
 export default defineConfig({
-  base: "/",
+  base: "./",
   plugins: [svelte()],
   build: {
     outDir: "dist",
