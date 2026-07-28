@@ -69,6 +69,34 @@ test("defines the reusable sync-data composite action", async () => {
   );
 });
 
+test("prepares the adapter once before running the sync script", async () => {
+  const packageDocument = JSON.parse(
+    await readFile(join(repositoryRoot, "actions/sync-data/package.json"), "utf8"),
+  ) as { scripts: { pretest?: string } };
+  const actionSource = await readFile(
+    join(repositoryRoot, "actions/sync-data/action.yml"),
+    "utf8",
+  );
+  const syncScript = await readFile(
+    join(repositoryRoot, "actions/sync-data/scripts/sync.sh"),
+    "utf8",
+  );
+
+  const buildCommands =
+    "bun run --filter @velvet/contracts build && " +
+    "bun run --filter @velvet/upptime-adapter build";
+  assert.equal(packageDocument.scripts.pretest, buildCommands);
+  assert.match(
+    actionSource,
+    /bun run --cwd "\$VELVET_ROOT" --filter @velvet\/contracts build/,
+  );
+  assert.match(
+    actionSource,
+    /bun run --cwd "\$VELVET_ROOT" --filter @velvet\/upptime-adapter build/,
+  );
+  assert.doesNotMatch(syncScript, /--filter @velvet\/(?:contracts|upptime-adapter) build/);
+});
+
 test("reference workflow serializes with Upptime and cannot trigger itself", async () => {
   const workflow = await yaml<ReferenceWorkflowDocument>(
     "actions/sync-data/examples/sync-velvet-data.yml",

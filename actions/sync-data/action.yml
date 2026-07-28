@@ -21,6 +21,13 @@ runs:
       env:
         VELVET_ROOT: ${{ github.action_path }}/../..
       run: bun install --cwd "$VELVET_ROOT" --frozen-lockfile --ignore-scripts
+    - name: Build Velvet adapter
+      shell: bash
+      env:
+        VELVET_ROOT: ${{ github.action_path }}/../..
+      run: |
+        bun run --cwd "$VELVET_ROOT" --filter @velvet/contracts build
+        bun run --cwd "$VELVET_ROOT" --filter @velvet/upptime-adapter build
     - name: Publish Velvet data snapshot
       shell: bash
       env:

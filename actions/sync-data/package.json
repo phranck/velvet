@@ -5,6 +5,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "pretest": "bun run --filter @velvet/contracts build && bun run --filter @velvet/upptime-adapter build",
     "test": "bun test test/*.test.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
