@@ -11,6 +11,12 @@ import {
 } from "../src/index.js";
 import { statusLmaaSpaceSnapshot } from "./fixtures/status-lmaa-space.js";
 
+const expectedFileNames = [
+  "incidents.json",
+  "response-times.json",
+  "status.json",
+];
+
 test("materializes one complete Velvet snapshot", async () => {
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "velvet-materialize-"));
   const outputDirectory = join(temporaryDirectory, "velvet-data", "v1");
@@ -23,11 +29,7 @@ test("materializes one complete Velvet snapshot", async () => {
 
     await materializeVelvetDocuments(outputDirectory, documents);
 
-    assert.deepEqual(await readdir(outputDirectory), [
-      "incidents.json",
-      "response-times.json",
-      "status.json",
-    ]);
+    assert.deepEqual((await readdir(outputDirectory)).sort(), expectedFileNames);
     for (const [fileName, contents] of Object.entries(expected)) {
       assert.equal(await readFile(join(outputDirectory, fileName), "utf8"), contents);
     }
@@ -49,11 +51,7 @@ test("replaces a previous snapshot as one complete document set", async () => {
 
     await materializeVelvetDocuments(outputDirectory, documents);
 
-    assert.deepEqual(await readdir(outputDirectory), [
-      "incidents.json",
-      "response-times.json",
-      "status.json",
-    ]);
+    assert.deepEqual((await readdir(outputDirectory)).sort(), expectedFileNames);
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
