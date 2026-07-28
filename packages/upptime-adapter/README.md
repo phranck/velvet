@@ -33,6 +33,12 @@ history file, paginated history commits, and paginated GitHub Issues. A sibling
 with the `<slug>-ipv6` convention is folded into the base service. Unmatched
 IPv4 or IPv6 checks remain independent services instead of being discarded.
 
+A repository without a `history/` directory is treated as a fresh Upptime
+installation. The adapter emits configured checks as `unknown`, with no
+availability or response-time samples, and uses the injected generation time as
+the monitoring start. A history directory with missing or malformed files is
+still rejected as partial upstream data.
+
 `monitoringStartedAt` is the earliest timestamp found in the current history
 files or parsed response-time commits. Down response checks become unavailable
 samples with a `null` response time. Non-Upptime commits are ignored, while a

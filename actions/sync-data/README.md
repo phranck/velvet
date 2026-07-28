@@ -24,6 +24,13 @@ the stable `github-actions[bot]` identity and the loop-safe commit message
 `chore(velvet): sync data [skip ci]`. An unchanged normalized snapshot does not
 create a commit. A non-fast-forward push fails instead of overwriting newer data.
 
+On a fresh Upptime repository with no `history/` directory, the action publishes
+a valid initial snapshot: each configured check is `unknown`, and availability
+and response-time data are empty. The action never creates or changes Upptime
+history. Once Upptime has written its first history files, the next sync replaces
+that initial state with the measured snapshot. Missing files inside an existing
+history remain an error and leave the last valid Velvet snapshot untouched.
+
 Use a different repository-relative output directory only when necessary. The
 directory must still end in the v1 contract segment:
 

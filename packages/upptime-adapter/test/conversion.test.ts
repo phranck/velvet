@@ -135,6 +135,70 @@ test("reports missing history with a stable error code", () => {
   );
 });
 
+test("converts a fresh repository into an unknown no-history snapshot", () => {
+  const snapshot = createSingleSiteSnapshot();
+  snapshot.historyState = "absent";
+  snapshot.summaryJson = "[]";
+  snapshot.histories = {};
+  snapshot.commits = {};
+  snapshot.issues = [
+    {
+      number: 42,
+      title: "Website is down",
+      body: "Investigating the outage.",
+      state: "open",
+      createdAt: "2026-07-06T12:00:00.000Z",
+      closedAt: null,
+      labels: ["status", "website"],
+    },
+  ];
+
+  const documents = convertUpptimeSnapshot(snapshot, {
+    generatedAt: "2026-07-06T13:00:00.000Z",
+  });
+
+  assert.deepEqual(documents.status, {
+    schemaVersion: 1,
+    generatedAt: "2026-07-06T13:00:00.000Z",
+    monitoringStartedAt: "2026-07-06T13:00:00.000Z",
+    services: [
+      {
+        id: "website",
+        name: "Website",
+        status: "unknown",
+        checks: [
+          {
+            id: "ipv4",
+            protocol: "ipv4",
+            status: "unknown",
+            checkedAt: null,
+            responseTimeMs: null,
+          },
+        ],
+        dailyAvailability: [],
+      },
+    ],
+  });
+  assert.deepEqual(documents.responseTimes, {
+    schemaVersion: 1,
+    generatedAt: "2026-07-06T13:00:00.000Z",
+    monitoringStartedAt: "2026-07-06T13:00:00.000Z",
+    series: [],
+  });
+  assert.deepEqual(documents.incidents.events, [
+    {
+      id: "incident-42",
+      kind: "incident",
+      state: "open",
+      title: "Website is down",
+      summary: "Investigating the outage.",
+      affectedServiceIds: ["website"],
+      startsAt: "2026-07-06T12:00:00.000Z",
+      endsAt: null,
+    },
+  ]);
+});
+
 test("reports malformed Upptime commits with a stable error code", () => {
   const snapshot = createSingleSiteSnapshot();
   snapshot.commits.website = [

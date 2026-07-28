@@ -26,7 +26,10 @@ async function writeFixtureFile(
   await writeFile(destination, contents, "utf8");
 }
 
-async function createFixtureRepository(root: string): Promise<string> {
+async function createFixtureRepository(
+  root: string,
+  options: { history?: boolean } = {},
+): Promise<string> {
   const remote = join(root, "consumer.git");
   const repository = join(root, "consumer");
   await executeFile("git", ["init", "--bare", remote]);
@@ -39,32 +42,28 @@ async function createFixtureRepository(root: string): Promise<string> {
     ".upptimerc.yml",
     "sites:\n  - name: Website\n    url: https://example.invalid/health\n",
   );
-  await writeFixtureFile(
-    repository,
-    "history/summary.json",
-    `${JSON.stringify([
-      {
-        name: "Website",
-        slug: "website",
-        status: "up",
-        time: 100,
-        dailyMinutesDown: {},
-      },
-    ])}\n`,
-  );
-  await writeFixtureFile(
-    repository,
-    "history/website.yml",
-    "status: up\nresponseTime: 100\nlastUpdated: 2026-07-06T12:00:00.000Z\nstartTime: 2026-07-05T10:00:00.000Z\n",
-  );
+  if (options.history !== false) {
+    await writeFixtureFile(
+      repository,
+      "history/summary.json",
+      `${JSON.stringify([
+        {
+          name: "Website",
+          slug: "website",
+          status: "up",
+          time: 100,
+          dailyMinutesDown: {},
+        },
+      ])}\n`,
+    );
+    await writeFixtureFile(
+      repository,
+      "history/website.yml",
+      "status: up\nresponseTime: 100\nlastUpdated: 2026-07-06T12:00:00.000Z\nstartTime: 2026-07-05T10:00:00.000Z\n",
+    );
+  }
   await writeFixtureFile(repository, "consumer.config.yml", "enabled: true\n");
-  await git(
-    repository,
-    "add",
-    ".upptimerc.yml",
-    "consumer.config.yml",
-    "history",
-  );
+  await git(repository, "add", ".upptimerc.yml", "consumer.config.yml", ".");
   await git(repository, "commit", "-m", "Initial Upptime fixture");
   await git(repository, "remote", "add", "origin", remote);
   await git(repository, "push", "--set-upstream", "origin", "main");
@@ -81,10 +80,12 @@ function contentResponse(contents: string): string {
 async function startGitHubApi(): Promise<{
   apiUrl: string;
   close: () => Promise<void>;
+  setHistoryState: (state: "available" | "absent" | "missing-summary") => void;
   setIssues: (issues: Array<Record<string, unknown>>) => void;
   setSummary: (summary: string) => void;
 }> {
   let issues: Array<Record<string, unknown>> = [];
+  let historyState: "available" | "absent" | "missing-summary" = "available";
   let summary = JSON.stringify([
     {
       name: "Website",
@@ -97,6 +98,24 @@ async function startGitHubApi(): Promise<{
   const server: Server = createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");
     response.setHeader("content-type", "application/json");
+
+    if (historyState === "absent" && url.pathname.includes("/history")) {
+      response.statusCode = 404;
+      response.end(JSON.stringify({ message: "Not found" }));
+      return;
+    }
+
+    if (historyState === "missing-summary") {
+      if (url.pathname.endsWith("/history")) {
+        response.end(JSON.stringify([]));
+        return;
+      }
+      if (url.pathname.endsWith("/history/summary.json")) {
+        response.statusCode = 404;
+        response.end(JSON.stringify({ message: "Not found" }));
+        return;
+      }
+    }
 
     if (url.pathname.endsWith("/.upptimerc.yml")) {
       response.end(
@@ -151,6 +170,9 @@ async function startGitHubApi(): Promise<{
 
   return {
     apiUrl: `http://127.0.0.1:${port}`,
+    setHistoryState: (nextHistoryState) => {
+      historyState = nextHistoryState;
+    },
     setIssues: (nextIssues) => {
       issues = nextIssues;
     },
@@ -212,6 +234,93 @@ test("publishes all Velvet documents in one fixture repository commit", async ()
       (await readFile(join(repository, "velvet-data/v1/status.json"), "utf8"))
         .includes('"schemaVersion": 1'),
       true,
+    );
+  } finally {
+    await api.close();
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("publishes a valid no-history snapshot for a fresh repository", async () => {
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "velvet-action-"));
+  const api = await startGitHubApi();
+
+  try {
+    const repository = await createFixtureRepository(temporaryDirectory, {
+      history: false,
+    });
+    const sourceConfig = await readFile(join(repository, ".upptimerc.yml"), "utf8");
+    const consumerConfig = await readFile(
+      join(repository, "consumer.config.yml"),
+      "utf8",
+    );
+    api.setHistoryState("absent");
+
+    await runSync(repository, api.apiUrl);
+
+    const status = JSON.parse(
+      await readFile(join(repository, "velvet-data/v1/status.json"), "utf8"),
+    );
+    const responseTimes = JSON.parse(
+      await readFile(
+        join(repository, "velvet-data/v1/response-times.json"),
+        "utf8",
+      ),
+    );
+    const incidents = JSON.parse(
+      await readFile(join(repository, "velvet-data/v1/incidents.json"), "utf8"),
+    );
+    assert.deepEqual(
+      (await git(repository, "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"))
+        .split("\n")
+        .sort(),
+      [
+        "velvet-data/v1/incidents.json",
+        "velvet-data/v1/response-times.json",
+        "velvet-data/v1/status.json",
+      ],
+    );
+    assert.equal(status.services[0]?.status, "unknown");
+    assert.equal(status.services[0]?.checks[0]?.checkedAt, null);
+    assert.deepEqual(responseTimes.series, []);
+    assert.deepEqual(incidents.events, []);
+    assert.equal(await readFile(join(repository, ".upptimerc.yml"), "utf8"), sourceConfig);
+    assert.equal(
+      await readFile(join(repository, "consumer.config.yml"), "utf8"),
+      consumerConfig,
+    );
+    await assert.rejects(readFile(join(repository, "history/summary.json"), "utf8"));
+  } finally {
+    await api.close();
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("keeps the last snapshot when existing history lacks its summary", async () => {
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "velvet-action-"));
+  const api = await startGitHubApi();
+
+  try {
+    const repository = await createFixtureRepository(temporaryDirectory);
+    await runSync(repository, api.apiUrl);
+    const publishedCommit = await git(repository, "rev-parse", "HEAD");
+    const publishedFiles = await Promise.all(
+      ["status.json", "response-times.json", "incidents.json"].map((fileName) =>
+        readFile(join(repository, "velvet-data/v1", fileName), "utf8"),
+      ),
+    );
+    api.setHistoryState("missing-summary");
+
+    await assert.rejects(runSync(repository, api.apiUrl));
+
+    assert.equal(await git(repository, "rev-parse", "HEAD"), publishedCommit);
+    assert.deepEqual(
+      await Promise.all(
+        ["status.json", "response-times.json", "incidents.json"].map((fileName) =>
+          readFile(join(repository, "velvet-data/v1", fileName), "utf8"),
+        ),
+      ),
+      publishedFiles,
     );
   } finally {
     await api.close();
