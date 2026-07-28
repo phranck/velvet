@@ -416,13 +416,37 @@ function incidentsFor(
         const metadata = maintenanceMetadata(issue.body);
         const generatedAtTimestamp = Date.parse(generatedAt);
         const startsAt = Date.parse(metadata.startsAt);
-        const endsAt = Date.parse(metadata.endsAt);
-        const state =
-          generatedAtTimestamp < startsAt
-            ? "scheduled"
-            : generatedAtTimestamp < endsAt
-              ? "active"
-              : "completed";
+        const plannedEndsAt = Date.parse(metadata.endsAt);
+        const closedAt =
+          issue.state === "closed" && issue.closedAt !== null
+            ? normalizeInputTimestamp(
+                issue.closedAt,
+                `maintenance ${issue.number} close`,
+              )
+            : null;
+        const closedAtTimestamp =
+          closedAt === null ? null : Date.parse(closedAt);
+        if (closedAtTimestamp !== null && closedAtTimestamp < startsAt) {
+          return [];
+        }
+        const endsAt =
+          closedAt !== null &&
+          closedAtTimestamp !== null &&
+          closedAtTimestamp < plannedEndsAt
+            ? closedAt
+            : metadata.endsAt;
+        const endsAtTimestamp = Date.parse(endsAt);
+        let state: "scheduled" | "active" | "completed";
+        if (
+          closedAtTimestamp !== null ||
+          generatedAtTimestamp >= endsAtTimestamp
+        ) {
+          state = "completed";
+        } else if (generatedAtTimestamp < startsAt) {
+          state = "scheduled";
+        } else {
+          state = "active";
+        }
         return [
           {
             id: `maintenance-${issue.number}`,
@@ -432,7 +456,7 @@ function incidentsFor(
             summary: sanitizeIssueSummary(issue.body),
             affectedServiceIds: serviceIdsForSlugs(metadata.affectedSlugs),
             startsAt: metadata.startsAt,
-            endsAt: metadata.endsAt,
+            endsAt,
           },
         ];
       }
