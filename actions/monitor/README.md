@@ -19,6 +19,11 @@ validated private state and public v1 documents to the dedicated
 5. Run **Velvet status** manually once. The first successful run creates
    `velvet-data` automatically.
 
+For an existing Upptime installation, initialize `velvet-data` from the
+validated `vum` bundle before the first native status run. This preserves the
+imported availability, response-time, incident, and maintenance history. Do
+not start native monitoring from an empty data branch after migration.
+
 The status workflow runs every five minutes, through manual dispatch, or for a
 `repository_dispatch` event of type `velvet-monitor`. It needs:
 
@@ -80,6 +85,11 @@ second conflict stops without overwriting newer data.
 history exceeds that period, the current complete snapshot becomes a new root
 commit through an exact lease-protected update of `velvet-data`. The action
 never rewrites the default branch or deletes historical GitHub Issues.
+
+Completed incidents and maintenance windows imported by `vum` remain in the
+private state for the same retention period. Every status run merges them with
+native Velvet Issues. A native event with the same ID replaces the imported
+copy permanently.
 
 ## Updating the pinned Action
 

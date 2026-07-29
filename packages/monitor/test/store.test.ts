@@ -16,6 +16,7 @@ type TestStateContent = {
   current: { checks: unknown[]; services: unknown[] };
   stateChanges: unknown[];
   importedDailyAvailability: unknown[];
+  importedEvents: unknown[];
   maintenanceWindows: unknown[];
   responseSamples: unknown[];
   documents: {
@@ -25,7 +26,7 @@ type TestStateContent = {
 };
 
 type TestPersistentState = TestStateContent & {
-  schemaVersion: 3;
+  schemaVersion: 4;
   processedRuns: TestRun[];
 };
 
@@ -93,6 +94,7 @@ function stateContent(generatedAt: string): TestStateContent {
     current: { checks: [], services: [] },
     stateChanges: [],
     importedDailyAvailability: [],
+    importedEvents: [],
     maintenanceWindows: [],
     responseSamples: [],
     documents: {
@@ -147,7 +149,7 @@ test("persists the confirmed transition timestamp for each check", async () => {
 
   const result = await updateMonitorState(path, firstRun, () => content);
 
-  assert.equal(result.state.schemaVersion, 3);
+  assert.equal(result.state.schemaVersion, 4);
   assert.deepEqual(await readMonitorState(path), result.state);
 });
 
@@ -186,12 +188,17 @@ test("migrates schema version 1 state without losing confirmed checks", async ()
   const { readMonitorState } = await storeFunctions();
   const path = await statePath();
   const firstRun = run("run-1", 1);
+  const legacyContent: Partial<TestStateContent> = structuredClone(
+    stateContent(firstRun.completedAt),
+  );
+  delete legacyContent.importedDailyAvailability;
+  delete legacyContent.importedEvents;
   const legacyState = {
-    ...stateContent(firstRun.completedAt),
+    ...legacyContent,
     schemaVersion: 1,
     processedRuns: [firstRun],
   };
-  legacyState.current.checks.push(
+  legacyState.current!.checks.push(
     {
       serviceId: "website",
       checkId: "homepage",
@@ -226,8 +233,9 @@ test("migrates schema version 1 state without losing confirmed checks", async ()
     | Array<{ confirmedAt: string | null }>
     | undefined;
 
-  assert.equal(migrated?.schemaVersion, 3);
+  assert.equal(migrated?.schemaVersion, 4);
   assert.deepEqual(migrated?.importedDailyAvailability, []);
+  assert.deepEqual(migrated?.importedEvents, []);
   assert.equal(migratedChecks?.[0]?.confirmedAt, firstRun.completedAt);
   assert.equal(migratedChecks?.[1]?.confirmedAt, null);
 });
@@ -240,6 +248,7 @@ test("migrates schema version 2 state with empty imported history", async () => 
     stateContent(firstRun.completedAt),
   );
   delete legacyContent.importedDailyAvailability;
+  delete legacyContent.importedEvents;
   const legacyState = {
     ...legacyContent,
     schemaVersion: 2,
@@ -249,8 +258,34 @@ test("migrates schema version 2 state with empty imported history", async () => 
 
   const migrated = await readMonitorState(path);
 
-  assert.equal(migrated?.schemaVersion, 3);
+  assert.equal(migrated?.schemaVersion, 4);
   assert.deepEqual(migrated?.importedDailyAvailability, []);
+  assert.deepEqual(migrated?.importedEvents, []);
+});
+
+test("migrates schema version 3 state with empty imported events", async () => {
+  const { readMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const legacyContent: Partial<TestStateContent> = structuredClone(
+    stateContent(firstRun.completedAt),
+  );
+  delete legacyContent.importedEvents;
+  const legacyState = {
+    ...legacyContent,
+    schemaVersion: 3,
+    processedRuns: [firstRun],
+  };
+  await writeFile(path, `${JSON.stringify(legacyState)}\n`, "utf8");
+
+  const migrated = await readMonitorState(path);
+
+  assert.equal(migrated?.schemaVersion, 4);
+  assert.deepEqual(
+    (migrated as TestPersistentState & { importedEvents?: unknown[] } | null)
+      ?.importedEvents,
+    [],
+  );
 });
 
 test("persists imported daily availability with source provenance", async () => {
@@ -281,6 +316,106 @@ test("persists imported daily availability with source provenance", async () => 
     result.state.importedDailyAvailability,
     content.importedDailyAvailability,
   );
+});
+
+test("persists imported incident history with source provenance", async () => {
+  const { readMonitorState, updateMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const content = {
+    ...stateContent(firstRun.completedAt),
+    importedEvents: [
+      {
+        event: {
+          id: "incident-7",
+          kind: "incident",
+          state: "resolved",
+          title: "Website was unavailable",
+          summary: "Imported from the previous monitor.",
+          affectedServiceIds: ["website"],
+          startsAt: "2026-07-28T10:00:00.000Z",
+          endsAt: "2026-07-28T10:15:00.000Z",
+        },
+        source: {
+          kind: "upptime",
+          repository: "example/status",
+          commit: "0123456789abcdef0123456789abcdef01234567",
+          issueUrl: "https://github.com/example/status/issues/7",
+        },
+      },
+    ],
+  };
+
+  const result = await updateMonitorState(path, firstRun, () => content);
+
+  assert.deepEqual(
+    (
+      (await readMonitorState(path)) as TestPersistentState & {
+        importedEvents: unknown[];
+      }
+    ).importedEvents,
+    content.importedEvents,
+  );
+  assert.deepEqual(
+    (result.state as TestPersistentState & { importedEvents: unknown[] })
+      .importedEvents,
+    content.importedEvents,
+  );
+});
+
+test("rejects imported events whose Issue provenance does not match", async () => {
+  const { updateMonitorState } = await storeFunctions();
+  const firstRun = run("run-1", 1);
+  const importedEvent = {
+    event: {
+      id: "incident-7",
+      kind: "incident",
+      state: "resolved",
+      title: "Website was unavailable",
+      summary: "Imported from the previous monitor.",
+      affectedServiceIds: ["website"],
+      startsAt: "2026-07-28T10:00:00.000Z",
+      endsAt: "2026-07-28T10:15:00.000Z",
+    },
+    source: {
+      kind: "upptime",
+      repository: "example/status",
+      commit: "0123456789abcdef0123456789abcdef01234567",
+      issueUrl: "https://github.com/example/status/issues/7",
+    },
+  };
+  const invalidEvents = [
+    {
+      ...importedEvent,
+      source: {
+        ...importedEvent.source,
+        issueUrl: "https://github.com/example/status/issues/8",
+      },
+    },
+    {
+      ...importedEvent,
+      event: { ...importedEvent.event, id: "maintenance-7" },
+    },
+    {
+      ...importedEvent,
+      event: { ...importedEvent.event, id: "outage-7" },
+    },
+  ];
+
+  for (const invalidEvent of invalidEvents) {
+    const path = await statePath();
+    const content = {
+      ...stateContent(firstRun.completedAt),
+      importedEvents: [invalidEvent],
+    };
+    await assert.rejects(
+      updateMonitorState(path, firstRun, () => content),
+      (error: unknown) =>
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "STATE_INVALID",
+    );
+  }
 });
 
 test("rejects an invalid imported availability date as invalid state", async () => {

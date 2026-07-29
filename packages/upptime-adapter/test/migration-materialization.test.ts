@@ -64,12 +64,12 @@ sites:
   };
 }
 
-function migration(): UpptimeMigrationResult {
+function migration(sourceSnapshot = snapshot()): UpptimeMigrationResult {
   const candidate = Reflect.get(adapter, "createUpptimeMigration");
   if (typeof candidate !== "function") {
     assert.fail("createUpptimeMigration must be exported");
   }
-  return candidate(snapshot(), {
+  return candidate(sourceSnapshot, {
     repository: "example/status",
     ref: "main",
     commit: SOURCE_COMMIT,
@@ -195,4 +195,30 @@ test("never removes files added to an initially empty destination", async () => 
     await readFile(join(destination, "keep.txt"), "utf8"),
     "keep\n",
   );
+});
+
+test("refuses to materialize a migration with an unresolved legacy incident", async () => {
+  const root = await temporaryRoot();
+  const destination = join(root, "output");
+  const sourceSnapshot = snapshot();
+  sourceSnapshot.issues = [
+    {
+      number: 9,
+      title: "Website is down",
+      body: "Investigating the outage.",
+      state: "open",
+      createdAt: "2026-07-29T10:00:00.000Z",
+      closedAt: null,
+      labels: ["status", "website"],
+    },
+  ];
+
+  await assert.rejects(
+    materialize(destination, migration(sourceSnapshot)),
+    (error: unknown) =>
+      error instanceof Error &&
+      "code" in error &&
+      error.code === "INVALID_INPUT",
+  );
+  assert.deepEqual(await readdir(root), []);
 });

@@ -47,6 +47,20 @@ type MigrationResult = {
         path: string;
       };
     }>;
+    importedEvents: Array<{
+      event: {
+        id: string;
+        kind: string;
+        state: string;
+        endsAt: string | null;
+      };
+      source: {
+        kind: string;
+        repository: string;
+        commit: string;
+        issueUrl: string;
+      };
+    }>;
     maintenanceWindows: Array<{
       id: string;
       affectedServiceIds: string[];
@@ -77,7 +91,7 @@ type MigrationResult = {
     responseTimes: {
       series: Array<{ protocol: string }>;
     };
-    incidents: { events: unknown[] };
+    incidents: { events: Array<{ state: string }> };
   };
   report: {
     source: {
@@ -205,7 +219,7 @@ test("creates a validated IPv4 migration bundle with provenance", () => {
     configuration.data.services.map(({ id }) => id),
     ["website"],
   );
-  assert.equal(result.state.schemaVersion, 3);
+  assert.equal(result.state.schemaVersion, 4);
   assert.equal(
     validateStatusDocument(result.documents.status).success,
     true,
@@ -253,6 +267,17 @@ test("creates a validated IPv4 migration bundle with provenance", () => {
       number: 7,
       url: "https://github.com/example/status/issues/7",
       kind: "incident",
+    },
+  ]);
+  assert.deepEqual(result.state.importedEvents, [
+    {
+      event: result.documents.incidents.events[0],
+      source: {
+        kind: "upptime",
+        repository: "example/status",
+        commit: SOURCE_COMMIT,
+        issueUrl: "https://github.com/example/status/issues/7",
+      },
     },
   ]);
   assert.match(result.report.source.issuesDigest, /^[0-9a-f]{64}$/u);
@@ -522,6 +547,34 @@ test("migrates evidenced maintenance into public and private history", () => {
       kind: "maintenance",
     },
   ]);
+});
+
+test("reports unresolved incidents without freezing them in monitor state", () => {
+  const snapshot = simpleSnapshot();
+  snapshot.issues = [
+    {
+      number: 9,
+      title: "Website is down",
+      body: "Investigating the outage.",
+      state: "open",
+      createdAt: "2026-07-29T10:00:00.000Z",
+      closedAt: null,
+      labels: ["status", "website"],
+    },
+  ];
+
+  const result = createMigration(snapshot);
+
+  assert.equal(result.documents.incidents.events[0]?.state, "open");
+  assert.deepEqual(result.state.importedEvents, []);
+  assert.equal(
+    result.report.findings.some(
+      ({ code, source }) =>
+        code === "UNRESOLVED_INCIDENT_BLOCKS_CUTOVER" &&
+        source === "https://github.com/example/status/issues/9",
+    ),
+    true,
+  );
 });
 
 test("rejects an empty Upptime installation without producing invalid Velvet output", () => {

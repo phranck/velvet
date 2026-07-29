@@ -39,6 +39,14 @@ totals are retained without inventing status-change timestamps. The current
 partial day is omitted because its downtime cannot be placed safely within the
 day.
 
+Completed incidents and maintenance windows are stored in both the public
+incident document and the private monitor state with source provenance. Native
+Velvet status runs keep them for 365 days and merge them with new native
+events. An unresolved legacy incident appears as a cutover blocker in the dry
+run report. `vum --write` refuses to create the final bundle until every such
+incident is resolved, because Velvet cannot safely continue updating an
+Upptime-managed incident after cutover.
+
 Request header values are never copied into configuration or reports. `vum`
 creates deterministic environment-variable names and reports the matching
 GitHub Secret and workflow mapping. Unsupported HTTP methods, body checks,

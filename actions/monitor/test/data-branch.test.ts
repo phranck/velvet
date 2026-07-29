@@ -103,6 +103,7 @@ function content(
     current: { checks: [], services: [] },
     stateChanges: [],
     importedDailyAvailability: [],
+    importedEvents: [],
     maintenanceWindows: [],
     responseSamples: [],
     documents: {

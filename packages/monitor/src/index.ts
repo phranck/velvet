@@ -54,6 +54,7 @@ export type {
   MonitorCheckState,
   MonitorDailyAvailability,
   MonitorImportedDailyAvailability,
+  MonitorImportedEvent,
   MonitorMaintenanceWindow,
   MonitorPersistentState,
   MonitorResponseSample,

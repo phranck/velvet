@@ -9,6 +9,8 @@ import { randomUUID } from "node:crypto";
 import { basename, dirname, join } from "node:path";
 
 import {
+  CONTRACT_SCHEMA_VERSION,
+  validateIncidentsDocument,
   validateResponseTimesDocument,
   validateStatusDocument,
 } from "@velvet/contracts";
@@ -17,6 +19,7 @@ import {
   MONITOR_STATE_SCHEMA_VERSION,
   type MonitorCheckState,
   type MonitorImportedDailyAvailability,
+  type MonitorImportedEvent,
   type MonitorMaintenanceWindow,
   type MonitorPersistentState,
   type MonitorResponseSample,
@@ -218,10 +221,17 @@ function migrateLegacyPersistentState(value: unknown): unknown {
     };
   }
   if (isRecord(migrated) && migrated.schemaVersion === 2) {
+    migrated = {
+      ...migrated,
+      schemaVersion: 3,
+      importedDailyAvailability: [],
+    };
+  }
+  if (isRecord(migrated) && migrated.schemaVersion === 3) {
     return {
       ...migrated,
       schemaVersion: MONITOR_STATE_SCHEMA_VERSION,
-      importedDailyAvailability: [],
+      importedEvents: [],
     };
   }
   return migrated;
@@ -360,6 +370,87 @@ function isImportedDailyAvailability(
   );
 }
 
+function validationTimestampForImportedEvent(
+  event: MonitorImportedEvent["event"],
+): string | null {
+  if (event.kind === "incident") {
+    return event.state === "resolved" && event.endsAt !== null
+      ? event.endsAt
+      : null;
+  }
+  if (event.state === "scheduled") {
+    const timestamp = Date.parse(event.startsAt) - 1;
+    return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
+  }
+  return event.state === "active" ? event.startsAt : event.endsAt;
+}
+
+function isImportedEvent(value: unknown): value is MonitorImportedEvent {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, ["event", "source"]) ||
+    !isRecord(value.event) ||
+    !isRecord(value.source) ||
+    !hasExactKeys(value.source, [
+      "kind",
+      "repository",
+      "commit",
+      "issueUrl",
+    ]) ||
+    value.source.kind !== "upptime" ||
+    typeof value.source.repository !== "string" ||
+    !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(
+      value.source.repository,
+    ) ||
+    typeof value.source.commit !== "string" ||
+    !/^[0-9a-f]{40}$/u.test(value.source.commit) ||
+    typeof value.source.issueUrl !== "string"
+  ) {
+    return false;
+  }
+
+  let issueUrl: URL;
+  try {
+    issueUrl = new URL(value.source.issueUrl);
+  } catch {
+    return false;
+  }
+  if (
+    issueUrl.protocol !== "https:" ||
+    issueUrl.hostname !== "github.com" ||
+    issueUrl.username !== "" ||
+    issueUrl.password !== "" ||
+    issueUrl.search !== "" ||
+    issueUrl.hash !== "" ||
+    !new RegExp(
+      `^/${value.source.repository.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}/issues/[1-9][0-9]*$`,
+      "u",
+    ).test(issueUrl.pathname)
+  ) {
+    return false;
+  }
+
+  const issueNumber = issueUrl.pathname.split("/").at(-1);
+  if (
+    (value.event.kind !== "incident" &&
+      value.event.kind !== "maintenance") ||
+    value.event.id !== `${value.event.kind}-${issueNumber}`
+  ) {
+    return false;
+  }
+
+  const event = value.event as MonitorImportedEvent["event"];
+  const generatedAt = validationTimestampForImportedEvent(event);
+  return (
+    generatedAt !== null &&
+    validateIncidentsDocument({
+      schemaVersion: CONTRACT_SCHEMA_VERSION,
+      generatedAt,
+      events: [event],
+    }).success
+  );
+}
+
 function isRun(value: unknown): value is MonitorRun {
   return (
     isRecord(value) &&
@@ -394,6 +485,7 @@ function isPersistentState(value: unknown): value is MonitorPersistentState {
       "current",
       "stateChanges",
       "importedDailyAvailability",
+      "importedEvents",
       "maintenanceWindows",
       "responseSamples",
       "documents",
@@ -414,6 +506,8 @@ function isPersistentState(value: unknown): value is MonitorPersistentState {
     !value.importedDailyAvailability.every(
       isImportedDailyAvailability,
     ) ||
+    !Array.isArray(value.importedEvents) ||
+    !value.importedEvents.every(isImportedEvent) ||
     !Array.isArray(value.maintenanceWindows) ||
     !value.maintenanceWindows.every(isMaintenanceWindow) ||
     !Array.isArray(value.responseSamples) ||
@@ -494,6 +588,20 @@ function isPersistentState(value: unknown): value is MonitorPersistentState {
     }
     previousImportedIdentity = identity;
     importedIdentities.add(identity);
+  }
+
+  let previousImportedEventIdentity = "";
+  const importedEventIds = new Set<string>();
+  for (const imported of value.importedEvents) {
+    const identity = `${imported.event.startsAt}\u0000${imported.event.id}`;
+    if (
+      identity.localeCompare(previousImportedEventIdentity) < 0 ||
+      importedEventIds.has(imported.event.id)
+    ) {
+      return false;
+    }
+    previousImportedEventIdentity = identity;
+    importedEventIds.add(imported.event.id);
   }
 
   const statusResult = validateStatusDocument(value.documents.status);

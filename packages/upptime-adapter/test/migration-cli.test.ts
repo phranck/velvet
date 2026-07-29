@@ -172,3 +172,54 @@ test("rejects write mode without a destination and never supports force", async 
     );
   }
 });
+
+test("refuses to write a migration while a legacy incident is unresolved", async () => {
+  const candidate = Reflect.get(adapter, "runVum");
+  if (typeof candidate !== "function") {
+    assert.fail("@velvet/upptime-adapter must export runVum");
+  }
+  const loaded = migrationSource();
+  loaded.snapshot.issues = [
+    {
+      number: 9,
+      title: "Website is down",
+      body: "Investigating the outage.",
+      state: "open",
+      createdAt: "2026-07-29T10:00:00.000Z",
+      closedAt: null,
+      labels: ["status", "website"],
+    },
+  ];
+  const create = Reflect.get(adapter, "createUpptimeMigration");
+  assert.equal(typeof create, "function");
+  let materialized = false;
+
+  await assert.rejects(
+    (candidate as unknown as RunVum)(
+      [
+        "--repository",
+        "example/status",
+        "--write",
+        "--destination",
+        "./migration-output",
+      ],
+      {},
+      {
+        load: async () => loaded,
+        create: create as (
+          snapshot: UpptimeSnapshot,
+          source: LoadedUpptimeMigrationSnapshot["source"],
+        ) => UpptimeMigrationResult,
+        materialize: async () => {
+          materialized = true;
+        },
+        write: () => undefined,
+      },
+    ),
+    (error: unknown) =>
+      error instanceof Error &&
+      "code" in error &&
+      error.code === "INVALID_INPUT",
+  );
+  assert.equal(materialized, false);
+});

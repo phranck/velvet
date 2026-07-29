@@ -63,6 +63,13 @@ contain latency; unsuccessful or unobserved samples contain `null`. Only this
 sample history follows `history.retentionDays`. A response-only run can call
 `createResponseTimesDocument` without updating uptime state.
 
+The private state can also retain completed incident and maintenance events
+imported during a one-time migration. Each imported event keeps its source
+repository, pinned commit, and GitHub Issue URL. Native Velvet events take
+ownership when they use the same event ID. Imported events are removed after
+`history.retentionDays`; unresolved legacy incidents are never frozen into
+private state.
+
 `createStatusDocument`, `createResponseTimesDocument`, and
 `createMonitorDocuments` validate every generated public value against the
 Velvet v1 contracts before returning it. Invalid output throws

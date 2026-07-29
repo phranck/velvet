@@ -195,7 +195,7 @@ test("adds response samples without changing uptime state or incidents", async (
   if (first.outcome !== "prepared") return;
   const currentState: MonitorPersistentState = {
     ...first.content,
-    schemaVersion: 3,
+    schemaVersion: 4,
     processedRuns: [first.run],
   };
   const responseTimestamps = [
@@ -380,7 +380,7 @@ incidents: { failureThreshold: 1, recoveryThreshold: 1 }
   if (first.outcome !== "prepared") return;
   const currentState: MonitorPersistentState = {
     ...first.content,
-    schemaVersion: 3,
+    schemaVersion: 4,
     processedRuns: [first.run],
   };
   const secondTimestamps = [
@@ -466,7 +466,7 @@ test("retains imported daily availability across native status runs", async () =
         },
       },
     ],
-    schemaVersion: 3,
+    schemaVersion: 4,
     processedRuns: [first.run],
   };
   const secondTimestamps = [
@@ -510,4 +510,387 @@ test("retains imported daily availability across native status runs", async () =
       unavailableSeconds: 600,
     },
   );
+});
+
+test("retains imported incident history when native incidents are reconciled", async () => {
+  const runMonitorAction = await runnerFunction();
+  const migrationConfiguration = configuration().replace(
+    "retentionDays: 30",
+    "retentionDays: 365",
+  );
+  const expiredEvent = {
+    id: "incident-6",
+    kind: "incident" as const,
+    state: "resolved" as const,
+    title: "Expired incident",
+    summary: "Older than the configured retention period.",
+    affectedServiceIds: ["website"],
+    startsAt: "2025-07-27T10:00:00.000Z",
+    endsAt: "2025-07-28T10:15:00.000Z",
+  };
+  const importedEvent = {
+    id: "incident-7",
+    kind: "incident" as const,
+    state: "resolved" as const,
+    title: "Website was unavailable",
+    summary: "Imported from the previous monitor.",
+    affectedServiceIds: ["website"],
+    startsAt: "2026-07-28T10:00:00.000Z",
+    endsAt: "2026-07-28T10:15:00.000Z",
+  };
+  const importedIncidents: IncidentsDocument = {
+    schemaVersion: 1,
+    generatedAt: "2026-07-29T12:00:01.000Z",
+    events: [expiredEvent, importedEvent],
+  };
+  const firstTimestamps = [
+    new Date("2026-07-29T12:00:00.000Z"),
+    new Date("2026-07-29T12:00:01.000Z"),
+  ];
+  const first = await runMonitorAction(
+    {
+      mode: "status",
+      runId: "131:status",
+      repository: "example/status",
+      configurationSource: migrationConfiguration,
+      currentState: null,
+      currentIncidents: null,
+    },
+    {
+      now: () => firstTimestamps.shift()!,
+      executeChecks: async () => [observation("available")],
+      reconcileIncidents: async () => ({
+        document: {
+          schemaVersion: 1,
+          generatedAt: "2026-07-29T12:00:01.000Z",
+          events: [],
+        },
+      }),
+      writeSummary: async () => undefined,
+    },
+  );
+  assert.equal(first.outcome, "prepared");
+  if (first.outcome !== "prepared") return;
+  const currentState = {
+    ...first.content,
+    importedEvents: [
+      {
+        event: expiredEvent,
+        source: {
+          kind: "upptime",
+          repository: "example/status",
+          commit: "0123456789abcdef0123456789abcdef01234567",
+          issueUrl: "https://github.com/example/status/issues/6",
+        },
+      },
+      {
+        event: importedEvent,
+        source: {
+          kind: "upptime",
+          repository: "example/status",
+          commit: "0123456789abcdef0123456789abcdef01234567",
+          issueUrl: "https://github.com/example/status/issues/7",
+        },
+      },
+    ],
+    schemaVersion: 4,
+    processedRuns: [first.run],
+  } as MonitorPersistentState;
+  const secondTimestamps = [
+    new Date("2026-07-29T12:05:00.000Z"),
+    new Date("2026-07-29T12:05:01.000Z"),
+  ];
+
+  const second = await runMonitorAction(
+    {
+      mode: "status",
+      runId: "132:status",
+      repository: "example/status",
+      configurationSource: migrationConfiguration,
+      currentState,
+      currentIncidents: importedIncidents,
+    },
+    {
+      now: () => secondTimestamps.shift()!,
+      executeChecks: async () => [
+        {
+          ...observation("available"),
+          checkedAt: "2026-07-29T12:05:00.500Z",
+        },
+      ],
+      reconcileIncidents: async () => ({
+        document: {
+          schemaVersion: 1,
+          generatedAt: "2026-07-29T12:05:01.000Z",
+          events: [],
+        },
+      }),
+      writeSummary: async () => undefined,
+    },
+  );
+
+  assert.equal(second.outcome, "prepared");
+  if (second.outcome !== "prepared") return;
+  assert.deepEqual(second.incidents.events, [importedEvent]);
+  assert.deepEqual(
+    second.content.importedEvents.map(({ event }) => event.id),
+    ["incident-7"],
+  );
+
+  const nativeEvent = {
+    ...importedEvent,
+    state: "open" as const,
+    title: "Native incident",
+    startsAt: "2026-07-29T12:09:00.000Z",
+    endsAt: null,
+  };
+  const thirdTimestamps = [
+    new Date("2026-07-29T12:10:00.000Z"),
+    new Date("2026-07-29T12:10:01.000Z"),
+  ];
+  const third = await runMonitorAction(
+    {
+      mode: "status",
+      runId: "133:status",
+      repository: "example/status",
+      configurationSource: migrationConfiguration,
+      currentState: {
+        ...second.content,
+        schemaVersion: 4,
+        processedRuns: [first.run, second.run],
+      },
+      currentIncidents: second.incidents,
+    },
+    {
+      now: () => thirdTimestamps.shift()!,
+      executeChecks: async () => [
+        {
+          ...observation("available"),
+          checkedAt: "2026-07-29T12:10:00.500Z",
+        },
+      ],
+      reconcileIncidents: async () => ({
+        document: {
+          schemaVersion: 1,
+          generatedAt: "2026-07-29T12:10:01.000Z",
+          events: [nativeEvent],
+        },
+      }),
+      writeSummary: async () => undefined,
+    },
+  );
+
+  assert.equal(third.outcome, "prepared");
+  if (third.outcome !== "prepared") return;
+  assert.deepEqual(third.incidents.events, [nativeEvent]);
+  assert.deepEqual(third.content.importedEvents, []);
+
+  const fourthTimestamps = [
+    new Date("2026-07-29T12:15:00.000Z"),
+    new Date("2026-07-29T12:15:01.000Z"),
+  ];
+  const fourth = await runMonitorAction(
+    {
+      mode: "status",
+      runId: "134:status",
+      repository: "example/status",
+      configurationSource: migrationConfiguration,
+      currentState: {
+        ...third.content,
+        schemaVersion: 4,
+        processedRuns: [first.run, second.run, third.run],
+      },
+      currentIncidents: third.incidents,
+    },
+    {
+      now: () => fourthTimestamps.shift()!,
+      executeChecks: async () => [
+        {
+          ...observation("available"),
+          checkedAt: "2026-07-29T12:15:00.500Z",
+        },
+      ],
+      reconcileIncidents: async () => ({
+        document: {
+          schemaVersion: 1,
+          generatedAt: "2026-07-29T12:15:01.000Z",
+          events: [],
+        },
+      }),
+      writeSummary: async () => undefined,
+    },
+  );
+
+  assert.equal(fourth.outcome, "prepared");
+  if (fourth.outcome !== "prepared") return;
+  assert.deepEqual(fourth.incidents.events, []);
+});
+
+test("advances imported maintenance through its lifecycle and retention", async () => {
+  const runMonitorAction = await runnerFunction();
+  const maintenanceConfiguration = configuration().replace(
+    "retentionDays: 30",
+    "retentionDays: 1",
+  );
+  const importedMaintenance = {
+    id: "maintenance-8",
+    kind: "maintenance" as const,
+    state: "scheduled" as const,
+    title: "Database maintenance",
+    summary: "Imported planned work.",
+    affectedServiceIds: ["website"],
+    startsAt: "2026-07-29T12:05:00.000Z",
+    endsAt: "2026-07-29T12:10:00.000Z",
+  };
+  const runStatus = async (
+    runId: string,
+    startedAt: string,
+    completedAt: string,
+    currentState: MonitorPersistentState | null,
+    currentIncidents: IncidentsDocument | null,
+    nativeEvents: IncidentsDocument["events"],
+  ): Promise<RunnerResult> => {
+    const timestamps = [new Date(startedAt), new Date(completedAt)];
+    return runMonitorAction(
+      {
+        mode: "status",
+        runId,
+        repository: "example/status",
+        configurationSource: maintenanceConfiguration,
+        currentState,
+        currentIncidents,
+      },
+      {
+        now: () => timestamps.shift()!,
+        executeChecks: async () => [
+          {
+            ...observation("available"),
+            checkedAt: new Date(Date.parse(startedAt) + 500).toISOString(),
+          },
+        ],
+        reconcileIncidents: async () => ({
+          document: {
+            schemaVersion: 1,
+            generatedAt: completedAt,
+            events: nativeEvents,
+          },
+        }),
+        writeSummary: async () => undefined,
+      },
+    );
+  };
+
+  const initial = await runStatus(
+    "135:status",
+    "2026-07-29T12:00:00.000Z",
+    "2026-07-29T12:00:01.000Z",
+    null,
+    null,
+    [],
+  );
+  assert.equal(initial.outcome, "prepared");
+  if (initial.outcome !== "prepared") return;
+  const seededState: MonitorPersistentState = {
+    ...initial.content,
+    importedEvents: [
+      {
+        event: importedMaintenance,
+        source: {
+          kind: "upptime",
+          repository: "example/status",
+          commit: "0123456789abcdef0123456789abcdef01234567",
+          issueUrl: "https://github.com/example/status/issues/8",
+        },
+      },
+    ],
+    schemaVersion: 4,
+    processedRuns: [initial.run],
+  };
+  const importedDocument: IncidentsDocument = {
+    schemaVersion: 1,
+    generatedAt: "2026-07-29T12:00:01.000Z",
+    events: [importedMaintenance],
+  };
+
+  const scheduled = await runStatus(
+    "136:status",
+    "2026-07-29T12:04:00.000Z",
+    "2026-07-29T12:04:01.000Z",
+    seededState,
+    importedDocument,
+    [],
+  );
+  assert.equal(scheduled.outcome, "prepared");
+  if (scheduled.outcome !== "prepared") return;
+  assert.equal(scheduled.incidents.events[0]?.state, "scheduled");
+
+  const active = await runStatus(
+    "137:status",
+    "2026-07-29T12:06:00.000Z",
+    "2026-07-29T12:06:01.000Z",
+    {
+      ...scheduled.content,
+      schemaVersion: 4,
+      processedRuns: [initial.run, scheduled.run],
+    },
+    scheduled.incidents,
+    [],
+  );
+  assert.equal(active.outcome, "prepared");
+  if (active.outcome !== "prepared") return;
+  assert.equal(active.incidents.events[0]?.state, "active");
+
+  const nativeMaintenance = {
+    id: "maintenance-9",
+    kind: "maintenance" as const,
+    state: "active" as const,
+    title: "Native maintenance",
+    summary: "Created through Velvet.",
+    affectedServiceIds: ["website"],
+    startsAt: "2026-07-29T12:10:00.000Z",
+    endsAt: "2026-07-29T12:20:00.000Z",
+  };
+  const completed = await runStatus(
+    "138:status",
+    "2026-07-29T12:11:00.000Z",
+    "2026-07-29T12:11:01.000Z",
+    {
+      ...active.content,
+      schemaVersion: 4,
+      processedRuns: [initial.run, scheduled.run, active.run],
+    },
+    active.incidents,
+    [nativeMaintenance],
+  );
+  assert.equal(completed.outcome, "prepared");
+  if (completed.outcome !== "prepared") return;
+  assert.deepEqual(
+    completed.incidents.events.map(({ id, state }) => ({ id, state })),
+    [
+      { id: "maintenance-8", state: "completed" },
+      { id: "maintenance-9", state: "active" },
+    ],
+  );
+
+  const expired = await runStatus(
+    "139:status",
+    "2026-07-31T12:11:00.000Z",
+    "2026-07-31T12:11:01.000Z",
+    {
+      ...completed.content,
+      schemaVersion: 4,
+      processedRuns: [
+        initial.run,
+        scheduled.run,
+        active.run,
+        completed.run,
+      ],
+    },
+    completed.incidents,
+    [],
+  );
+  assert.equal(expired.outcome, "prepared");
+  if (expired.outcome !== "prepared") return;
+  assert.deepEqual(expired.content.importedEvents, []);
+  assert.deepEqual(expired.incidents.events, []);
 });

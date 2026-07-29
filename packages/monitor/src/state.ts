@@ -1,4 +1,5 @@
 import type {
+  IncidentsDocument,
   ResponseTimesDocument,
   StatusDocument,
 } from "@velvet/contracts";
@@ -66,6 +67,16 @@ export interface MonitorImportedDailyAvailability
   };
 }
 
+export interface MonitorImportedEvent {
+  event: IncidentsDocument["events"][number];
+  source: {
+    kind: "upptime";
+    repository: string;
+    commit: string;
+    issueUrl: string;
+  };
+}
+
 export interface MonitorResponseSample {
   serviceId: string;
   checkId: string;
@@ -73,7 +84,7 @@ export interface MonitorResponseSample {
   responseTimeMs: number | null;
 }
 
-export const MONITOR_STATE_SCHEMA_VERSION = 3 as const;
+export const MONITOR_STATE_SCHEMA_VERSION = 4 as const;
 
 export interface MonitorRun {
   id: string;
@@ -90,6 +101,7 @@ export interface MonitorStateContent {
   };
   stateChanges: MonitorStateChange[];
   importedDailyAvailability: MonitorImportedDailyAvailability[];
+  importedEvents: MonitorImportedEvent[];
   maintenanceWindows: MonitorMaintenanceWindow[];
   responseSamples: MonitorResponseSample[];
   documents: {
