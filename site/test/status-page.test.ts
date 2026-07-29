@@ -98,6 +98,7 @@ const incidentsDocument: IncidentsDocument = {
 async function renderStatusPage(
   layout: VelvetLayout,
   allServicesOpen = true,
+  incidents: IncidentsDocument = incidentsDocument,
 ): Promise<string> {
   const config: VelvetConfig = {
     owner: "example",
@@ -122,7 +123,7 @@ async function renderStatusPage(
     config,
     statusDocument,
     responseTimesDocument,
-    incidentsDocument,
+    incidentsDocument: incidents,
     range: "month",
     openMap: { website: allServicesOpen },
     updated: "Jul 27, 2026, 12:00 PM",
@@ -165,6 +166,30 @@ test("renders the existing cards layout through the same page component", async 
   assert.match(html, /data-layout="cards"/);
   assert.match(html, /class="range-bar(?:\s|")/);
   assert.equal(html.match(/<section class="card(?:\s|")/g)?.length, 1);
+});
+
+test("renders completed maintenance in the affected service history", async () => {
+  const html = await renderStatusPage("cards", true, {
+    schemaVersion: 1,
+    generatedAt: statusDocument.generatedAt,
+    events: [
+      {
+        id: "maintenance-13",
+        kind: "maintenance",
+        state: "completed",
+        title: "Website maintenance",
+        summary: "Production verification.",
+        affectedServiceIds: ["website"],
+        startsAt: "2026-07-27T10:00:00.000Z",
+        endsAt: "2026-07-27T10:30:00.000Z",
+      },
+    ],
+  });
+
+  assert.match(html, /data-maintenance="true"/);
+  assert.match(html, /data-tip="[^"]*Website maintenance/);
+  assert.match(html, /class="[^"]*seg[^"]*maintenance/);
+  assert.doesNotMatch(html, /class="[^"]*card maint/);
 });
 
 test("uses the shared rotating chevron to toggle every service card", async () => {

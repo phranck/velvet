@@ -115,3 +115,87 @@ test("keeps only active incident and maintenance events", () => {
     ["open-incident", "scheduled-maintenance"],
   );
 });
+
+test("marks completed maintenance on the affected service day without changing availability", () => {
+  const maintenance: IncidentEvent = {
+    id: "maintenance-13",
+    kind: "maintenance",
+    state: "completed",
+    title: "Website maintenance",
+    summary: "Production verification.",
+    affectedServiceIds: ["website"],
+    startsAt: "2026-07-27T10:00:00.000Z",
+    endsAt: "2026-07-27T10:30:00.000Z",
+  };
+  const operationalService: Service = {
+    ...service,
+    status: "operational",
+    dailyAvailability: [
+      {
+        date: "2026-07-27",
+        monitoredSeconds: 43_200,
+        unavailableSeconds: 0,
+      },
+    ],
+  };
+
+  const [day] = barsForRange(
+    operationalService,
+    "day",
+    "2026-07-27T12:00:00.000Z",
+    "2026-07-26T00:00:00.000Z",
+    [maintenance],
+  );
+
+  assert.equal(day?.status, "operational");
+  assert.deepEqual(
+    day?.maintenance.map(({ id, title, startsAt, endsAt }) => ({
+      id,
+      title,
+      startsAt,
+      endsAt,
+    })),
+    [
+      {
+        id: "maintenance-13",
+        title: "Website maintenance",
+        startsAt: "2026-07-27T10:00:00.000Z",
+        endsAt: "2026-07-27T10:30:00.000Z",
+      },
+    ],
+  );
+  assert.equal(
+    uptimeForRange(
+      operationalService,
+      "day",
+      "2026-07-27T12:00:00.000Z",
+      "2026-07-26T00:00:00.000Z",
+    ),
+    "100.00%",
+  );
+});
+
+test("keeps outage priority and deduplicates maintenance in aggregated bars", () => {
+  const maintenance: IncidentEvent = {
+    id: "maintenance-14",
+    kind: "maintenance",
+    state: "completed",
+    title: "Cross-day maintenance",
+    summary: "",
+    affectedServiceIds: ["website"],
+    startsAt: "2026-07-26T23:30:00.000Z",
+    endsAt: "2026-07-27T00:30:00.000Z",
+  };
+
+  const bars = barsForRange(
+    service,
+    "year",
+    "2026-07-27T12:00:00.000Z",
+    "2026-07-26T00:00:00.000Z",
+    [maintenance],
+  );
+  const latest = bars.at(-1);
+
+  assert.equal(latest?.status, "outage");
+  assert.deepEqual(latest?.maintenance.map(({ id }) => id), ["maintenance-14"]);
+});

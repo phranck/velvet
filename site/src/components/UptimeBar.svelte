@@ -7,10 +7,13 @@
     range,
   }: { days: DayStatus[]; rangeLabel: string; range: RangeKey } = $props();
 
-  function color(status: DayStatus["status"]): string {
-    if (status === "operational") return "var(--grid-operational)";
-    if (status === "unknown") return "var(--grid-no-data)";
-    if (status === "degraded") return "var(--grid-degraded)";
+  function color(day: DayStatus): string {
+    if (day.status === "operational" && day.maintenance.length > 0) {
+      return "var(--grid-maintenance)";
+    }
+    if (day.status === "operational") return "var(--grid-operational)";
+    if (day.status === "unknown") return "var(--grid-no-data)";
+    if (day.status === "degraded") return "var(--grid-degraded)";
     return "var(--grid-outage)";
   }
 
@@ -26,6 +29,16 @@
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
 
+  function maintenanceLabel(d: DayStatus): string {
+    return d.maintenance
+      .map((event) => {
+        const startsAt = new Date(event.startsAt).toLocaleString();
+        const endsAt = new Date(event.endsAt).toLocaleString();
+        return `Maintenance: ${event.title}\n${startsAt} – ${endsAt}`;
+      })
+      .join("\n");
+  }
+
   function tip(d: DayStatus): string {
     const end = new Date(`${d.date}T00:00:00Z`);
     // Aggregated bar (1y / all): show the bucket's date span instead of one day.
@@ -33,20 +46,35 @@
       const start = new Date(
         end.getTime() - (d.spanDays - 1) * 24 * 60 * 60 * 1_000,
       );
-      return `${fmtShort(start)} – ${fmtShort(end)}\n${label(d)}`;
+      return [
+        `${fmtShort(start)} – ${fmtShort(end)}`,
+        label(d),
+        maintenanceLabel(d),
+      ]
+        .filter(Boolean)
+        .join("\n");
     }
     const full = end.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
-    return `${full}\n${label(d)}`;
+    return [full, label(d), maintenanceLabel(d)].filter(Boolean).join("\n");
   }
 </script>
 
 <div class="bar" class:rounded={range === "quarter"}>
   {#each days as d (d.date)}
-    <span class="seg" class:ghost={!d.hasData} style:--c={color(d.status)} data-tip={tip(d)}></span>
+    <span
+      class="seg"
+      class:ghost={!d.hasData && d.maintenance.length === 0}
+      class:maintenance={d.maintenance.length > 0}
+      style:--c={color(d)}
+      data-maintenance={d.maintenance.length > 0 ? "true" : undefined}
+      data-tip={tip(d)}
+      role={d.maintenance.length > 0 ? "img" : undefined}
+      aria-label={d.maintenance.length > 0 ? tip(d) : undefined}
+    ></span>
   {/each}
 </div>
 <div class="labels mono">
@@ -75,6 +103,10 @@
   .seg.ghost {
     background: var(--grid-no-data);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-tertiary) 14%, transparent);
+  }
+  .seg.maintenance {
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--grid-maintenance) 72%, var(--text-primary));
   }
   .seg:hover {
     transform: scaleY(1.12);

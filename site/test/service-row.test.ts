@@ -31,6 +31,7 @@ const days: DayStatus[] = [
     minutesDown: 0,
     hasData: true,
     spanDays: 1,
+    maintenance: [],
   },
 ];
 
