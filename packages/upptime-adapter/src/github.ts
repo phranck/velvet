@@ -2,6 +2,9 @@ import { extractUpptimeSiteSlugs } from "./conversion.js";
 import { UpptimeAdapterError } from "./errors.js";
 import type { FetchImplementation } from "./fetch.js";
 import type {
+  UpptimeMigrationSource,
+} from "./migration-types.js";
+import type {
   UpptimeCommit,
   UpptimeIssue,
   UpptimeSnapshot,
@@ -16,6 +19,23 @@ export interface GitHubUpptimeSourceOptions {
   fetch?: FetchImplementation;
 }
 
+export interface GitHubUpptimeMigrationSourceOptions {
+  repository: string;
+  ref?: string;
+  token?: string;
+  apiBaseUrl?: string;
+  fetch?: FetchImplementation;
+}
+
+export interface LoadedUpptimeMigrationSnapshot {
+  source: UpptimeMigrationSource;
+  snapshot: UpptimeSnapshot;
+}
+
+interface UpptimeSnapshotLoadBehavior {
+  allowPartialHistory?: boolean;
+}
+
 interface GitHubContent {
   content: string;
   encoding: string;
@@ -25,6 +45,18 @@ interface GitHubCommit {
   sha: string;
   commit: {
     message: string;
+    committer?: { date?: string | null } | null;
+    author?: { date?: string | null } | null;
+  };
+}
+
+interface GitHubRepository {
+  default_branch: string;
+}
+
+interface GitHubRevision {
+  sha: string;
+  commit: {
     committer?: { date?: string | null } | null;
     author?: { date?: string | null } | null;
   };
@@ -72,11 +104,11 @@ class GitHubSource {
     };
   }
 
-  private repositoryUrl(path: string): URL {
+  private repositoryUrl(path?: string): URL {
     const owner = encodeURIComponent(this.options.owner);
     const repo = encodeURIComponent(this.options.repo);
     return new URL(
-      `${this.apiBaseUrl}/repos/${owner}/${repo}/${path}`,
+      `${this.apiBaseUrl}/repos/${owner}/${repo}${path === undefined ? "" : `/${path}`}`,
     );
   }
 
@@ -197,6 +229,55 @@ class GitHubSource {
     }
   }
 
+  async resolveRevision(ref?: string): Promise<{
+    ref: string;
+    commit: string;
+    committedAt: string;
+  }> {
+    let resolvedRef = ref;
+    if (resolvedRef === undefined) {
+      const response = await this.request(this.repositoryUrl());
+      const repository = await this.responseJson(response, "repository");
+      if (
+        !isGitHubRepository(repository) ||
+        repository.default_branch.length === 0
+      ) {
+        throw new UpptimeAdapterError(
+          "PARTIAL_UPSTREAM_DATA",
+          "GitHub returned invalid repository metadata",
+        );
+      }
+      resolvedRef = repository.default_branch;
+    }
+    const encodedRef = encodeURIComponent(resolvedRef);
+    const response = await this.request(
+      this.repositoryUrl(`commits/${encodedRef}`),
+    );
+    const revision = await this.responseJson(response, `revision ${resolvedRef}`);
+    if (!isGitHubRevision(revision)) {
+      throw new UpptimeAdapterError(
+        "PARTIAL_UPSTREAM_DATA",
+        `GitHub returned invalid revision metadata for ${resolvedRef}`,
+      );
+    }
+    const committedAt =
+      revision.commit.committer?.date ?? revision.commit.author?.date;
+    if (typeof committedAt !== "string") {
+      throw new UpptimeAdapterError(
+        "PARTIAL_UPSTREAM_DATA",
+        `GitHub returned no timestamp for revision ${resolvedRef}`,
+      );
+    }
+    return {
+      ref: resolvedRef,
+      commit: revision.sha,
+      committedAt: normalizeGitHubTimestamp(
+        committedAt,
+        `revision ${revision.sha}`,
+      ),
+    };
+  }
+
   private async paginated<T>(initialUrl: URL): Promise<T[]> {
     const values: T[] = [];
     let nextUrl: URL | null = initialUrl;
@@ -292,8 +373,31 @@ class GitHubSource {
   }
 }
 
+function isGitHubRepository(value: unknown): value is GitHubRepository {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "default_branch" in value &&
+    typeof value.default_branch === "string"
+  );
+}
+
+function isGitHubRevision(value: unknown): value is GitHubRevision {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "sha" in value &&
+    typeof value.sha === "string" &&
+    /^[0-9a-f]{40}$/u.test(value.sha) &&
+    "commit" in value &&
+    typeof value.commit === "object" &&
+    value.commit !== null
+  );
+}
+
 export async function loadUpptimeSnapshot(
   options: GitHubUpptimeSourceOptions,
+  behavior: UpptimeSnapshotLoadBehavior = {},
 ): Promise<UpptimeSnapshot> {
   const source = new GitHubSource(options);
   const configYaml = await source.content(".upptimerc.yml");
@@ -302,23 +406,24 @@ export async function loadUpptimeSnapshot(
     summaryJson = await source.content("history/summary.json");
   } catch (error) {
     if (
-      !(
-        error instanceof UpptimeAdapterError &&
-        error.code === "PARTIAL_UPSTREAM_DATA" &&
-        error.status === 404 &&
-        !(await source.exists("history"))
-      )
+      !(error instanceof UpptimeAdapterError) ||
+      error.code !== "PARTIAL_UPSTREAM_DATA" ||
+      error.status !== 404
     ) {
       throw error;
     }
-    return {
-      configYaml,
-      summaryJson: "[]",
-      histories: {},
-      commits: {},
-      issues: await source.issues(),
-      historyState: "absent",
-    };
+    if (!(await source.exists("history"))) {
+      return {
+        configYaml,
+        summaryJson: "[]",
+        histories: {},
+        commits: {},
+        issues: await source.issues(),
+        historyState: "absent",
+      };
+    }
+    if (behavior.allowPartialHistory !== true) throw error;
+    summaryJson = "[]";
   }
   const slugs = extractUpptimeSiteSlugs(configYaml);
   const histories: Record<string, string> = {};
@@ -326,7 +431,19 @@ export async function loadUpptimeSnapshot(
 
   for (const slug of slugs) {
     const path = `history/${slug}.yml`;
-    histories[slug] = await source.content(path);
+    try {
+      histories[slug] = await source.content(path);
+    } catch (error) {
+      if (
+        behavior.allowPartialHistory === true &&
+        error instanceof UpptimeAdapterError &&
+        error.code === "MISSING_HISTORY" &&
+        error.status === 404
+      ) {
+        continue;
+      }
+      throw error;
+    }
     commits[slug] = await source.commits(path);
   }
 
@@ -336,5 +453,48 @@ export async function loadUpptimeSnapshot(
     histories,
     commits,
     issues: await source.issues(),
+  };
+}
+
+export async function loadUpptimeMigrationSnapshot(
+  options: GitHubUpptimeMigrationSourceOptions,
+): Promise<LoadedUpptimeMigrationSnapshot> {
+  const repositoryParts = options.repository.split("/");
+  const owner = repositoryParts[0];
+  const repo = repositoryParts[1];
+  if (
+    repositoryParts.length !== 2 ||
+    owner === undefined ||
+    owner.length === 0 ||
+    repo === undefined ||
+    repo.length === 0
+  ) {
+    throw new UpptimeAdapterError(
+      "INVALID_INPUT",
+      `Invalid GitHub repository ${options.repository}`,
+    );
+  }
+  const sharedOptions = {
+    owner,
+    repo,
+    ...(options.token === undefined ? {} : { token: options.token }),
+    ...(options.apiBaseUrl === undefined
+      ? {}
+      : { apiBaseUrl: options.apiBaseUrl }),
+    ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
+  };
+  const revision = await new GitHubSource(sharedOptions).resolveRevision(
+    options.ref,
+  );
+  const snapshot = await loadUpptimeSnapshot({
+    ...sharedOptions,
+    ref: revision.commit,
+  }, { allowPartialHistory: true });
+  return {
+    source: {
+      repository: options.repository,
+      ...revision,
+    },
+    snapshot,
   };
 }

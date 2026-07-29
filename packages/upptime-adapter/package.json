@@ -7,6 +7,9 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "vum": "./dist/vum.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -19,12 +22,14 @@
   ],
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
-    "pretest": "bun run --filter @velvet/contracts build",
+    "pretest": "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build",
     "test": "bun test test/*.test.ts",
-    "typecheck": "tsc --project tsconfig.json --noEmit"
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "vum": "bun src/vum.ts"
   },
   "dependencies": {
     "@velvet/contracts": "1.0.0",
+    "@velvet/monitor": "1.0.0",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
