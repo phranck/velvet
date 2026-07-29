@@ -137,6 +137,7 @@ function isCheckState(value: unknown): value is MonitorCheckState {
       "checkId",
       "status",
       "confirmedStatus",
+      "confirmedAt",
       "targetAvailability",
       "failureStreak",
       "recoveryStreak",
@@ -149,6 +150,7 @@ function isCheckState(value: unknown): value is MonitorCheckState {
     isIdentifier(value.checkId) &&
     isMonitorStatus(value.status) &&
     ["up", "down", null].includes(value.confirmedStatus as string | null) &&
+    (value.confirmedAt === null || isTimestamp(value.confirmedAt)) &&
     isTargetAvailability(value.targetAvailability) &&
     Number.isInteger(value.failureStreak) &&
     (value.failureStreak as number) >= 0 &&
@@ -165,6 +167,55 @@ function isCheckState(value: unknown): value is MonitorCheckState {
         (value.statusCode as number) <= 599)) &&
     isFailureCode(value.failureCode)
   );
+}
+
+function migrateLegacyCheckState(value: unknown): MonitorCheckState | null {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, [
+      "serviceId",
+      "checkId",
+      "status",
+      "confirmedStatus",
+      "targetAvailability",
+      "failureStreak",
+      "recoveryStreak",
+      "checkedAt",
+      "responseTimeMs",
+      "statusCode",
+      "failureCode",
+    ])
+  ) {
+    return null;
+  }
+  const migrated = {
+    ...value,
+    confirmedAt: value.confirmedStatus === null ? null : value.checkedAt,
+  };
+  return isCheckState(migrated) ? migrated : null;
+}
+
+function migrateLegacyPersistentState(value: unknown): unknown {
+  if (
+    !isRecord(value) ||
+    value.schemaVersion !== 1 ||
+    !isRecord(value.current) ||
+    !Array.isArray(value.current.checks)
+  ) {
+    return value;
+  }
+  const checks = value.current.checks.map(migrateLegacyCheckState);
+  if (checks.some((check) => check === null)) {
+    return value;
+  }
+  return {
+    ...value,
+    schemaVersion: MONITOR_STATE_SCHEMA_VERSION,
+    current: {
+      ...value.current,
+      checks,
+    },
+  };
 }
 
 function isServiceState(value: unknown): value is MonitorServiceState {
@@ -378,7 +429,7 @@ export async function readMonitorState(
   }
 
   try {
-    const value: unknown = JSON.parse(source);
+    const value = migrateLegacyPersistentState(JSON.parse(source) as unknown);
     if (!isPersistentState(value)) {
       throw new MonitorStateStoreError("STATE_INVALID");
     }

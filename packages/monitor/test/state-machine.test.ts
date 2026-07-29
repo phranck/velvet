@@ -17,6 +17,7 @@ type TestCheckState = {
   checkId: string;
   status: "up" | "degraded" | "down" | "unavailable";
   confirmedStatus: "up" | "down" | null;
+  confirmedAt: string | null;
   targetAvailability: "available" | "unavailable" | "unobserved";
   failureStreak: number;
   recoveryStreak: number;
@@ -105,6 +106,7 @@ test("initial successful observation creates an up check state", async () => {
     checkId: "readiness",
     status: "up",
     confirmedStatus: "up",
+    confirmedAt: "2026-07-29T12:00:00.000Z",
     targetAvailability: "available",
     failureStreak: 0,
     recoveryStreak: 0,
@@ -133,10 +135,12 @@ test("confirms down only after the configured consecutive failures", async () =>
 
   assert.equal(firstFailure.status, "degraded");
   assert.equal(firstFailure.confirmedStatus, null);
+  assert.equal(firstFailure.confirmedAt, null);
   assert.equal(firstFailure.failureStreak, 1);
   assert.equal(firstFailure.recoveryStreak, 0);
   assert.equal(confirmedFailure.status, "down");
   assert.equal(confirmedFailure.confirmedStatus, "down");
+  assert.equal(confirmedFailure.confirmedAt, "2026-07-29T12:01:00.000Z");
   assert.equal(confirmedFailure.failureStreak, 2);
   assert.equal(confirmedFailure.recoveryStreak, 0);
 });
@@ -173,11 +177,13 @@ test("confirms recovery only after consecutive successful runs", async () => {
 
   assert.equal(firstRecovery.status, "degraded");
   assert.equal(firstRecovery.confirmedStatus, "down");
+  assert.equal(firstRecovery.confirmedAt, "2026-07-29T12:01:00.000Z");
   assert.equal(firstRecovery.targetAvailability, "available");
   assert.equal(firstRecovery.failureStreak, 0);
   assert.equal(firstRecovery.recoveryStreak, 1);
   assert.equal(recovered.status, "up");
   assert.equal(recovered.confirmedStatus, "up");
+  assert.equal(recovered.confirmedAt, "2026-07-29T12:03:00.000Z");
   assert.equal(recovered.failureStreak, 0);
   assert.equal(recovered.recoveryStreak, 0);
 });

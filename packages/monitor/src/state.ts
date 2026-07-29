@@ -18,6 +18,7 @@ export interface MonitorCheckState {
   checkId: string;
   status: MonitorStatus;
   confirmedStatus: "up" | "down" | null;
+  confirmedAt: string | null;
   targetAvailability: TargetAvailability;
   failureStreak: number;
   recoveryStreak: number;
@@ -61,7 +62,7 @@ export interface MonitorResponseSample {
   responseTimeMs: number | null;
 }
 
-export const MONITOR_STATE_SCHEMA_VERSION = 1 as const;
+export const MONITOR_STATE_SCHEMA_VERSION = 2 as const;
 
 export interface MonitorRun {
   id: string;

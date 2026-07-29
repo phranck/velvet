@@ -56,6 +56,7 @@ export function updateCheckState(
       ...commonState,
       status: "unavailable",
       confirmedStatus: previous?.confirmedStatus ?? null,
+      confirmedAt: previous?.confirmedAt ?? null,
       failureStreak: previous?.failureStreak ?? 0,
       recoveryStreak: previous?.recoveryStreak ?? 0,
     };
@@ -69,12 +70,19 @@ export function updateCheckState(
     const confirmedDown =
       previous?.confirmedStatus === "down" ||
       failureStreak >= thresholds.failureThreshold;
+    const confirmedStatus = confirmedDown
+      ? "down"
+      : (previous?.confirmedStatus ?? null);
     return {
       ...commonState,
       status: confirmedDown ? "down" : "degraded",
-      confirmedStatus: confirmedDown
-        ? "down"
-        : (previous?.confirmedStatus ?? null),
+      confirmedStatus,
+      confirmedAt:
+        confirmedStatus === null
+          ? null
+          : confirmedStatus === previous?.confirmedStatus
+          ? (previous?.confirmedAt ?? null)
+          : observation.checkedAt,
       failureStreak,
       recoveryStreak: 0,
     };
@@ -90,6 +98,9 @@ export function updateCheckState(
       ...commonState,
       status: confirmedUp ? "up" : "degraded",
       confirmedStatus: confirmedUp ? "up" : "down",
+      confirmedAt: confirmedUp
+        ? observation.checkedAt
+        : previous.confirmedAt,
       failureStreak: 0,
       recoveryStreak: confirmedUp ? 0 : recoveryStreak,
     };
@@ -99,6 +110,10 @@ export function updateCheckState(
     ...commonState,
     status: "up",
     confirmedStatus: "up",
+    confirmedAt:
+      previous?.confirmedStatus === "up"
+        ? previous.confirmedAt
+        : observation.checkedAt,
     failureStreak: 0,
     recoveryStreak: 0,
   };
