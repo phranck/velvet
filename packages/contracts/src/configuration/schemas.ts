@@ -229,6 +229,14 @@ const HttpCheckSchema = Type.Object(
         description: "Maximum followed redirects. Defaults to 5.",
       }),
     ),
+    timeoutMs: Type.Optional(
+      Type.Integer({
+        minimum: 100,
+        maximum: 60_000,
+        description:
+          "Absolute request timeout in milliseconds across all redirects. Defaults to 10000.",
+      }),
+    ),
     headers: Type.Optional(
       Type.Array(SecretHeaderSchema, { maxItems: 16 }),
     ),

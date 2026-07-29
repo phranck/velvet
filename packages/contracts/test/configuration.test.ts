@@ -75,6 +75,7 @@ services:
             method: "GET",
             expectedStatusCodes: [200],
             maxRedirects: 5,
+            timeoutMs: 10_000,
             headers: [],
             jsonAssertions: [],
           },
@@ -108,6 +109,7 @@ services:
         method: GET
         expectedStatusCodes: [200, 204]
         maxRedirects: 2
+        timeoutMs: 2500
         headers:
           - name: Authorization
             secret: API_HEALTH_TOKEN
@@ -127,6 +129,7 @@ services:
     method: "GET",
     expectedStatusCodes: [200, 204],
     maxRedirects: 2,
+    timeoutMs: 2_500,
     headers: [{ name: "Authorization", secret: "API_HEALTH_TOKEN" }],
     jsonAssertions: [{ path: "/status", equals: "ok" }],
   });
@@ -280,6 +283,38 @@ services:
   assert.equal(result.success, false);
   if (result.success) return;
   assert.equal(JSON.stringify(result.errors).includes(secretValue), false);
+});
+
+test("rejects request headers that can override transport framing or routing", () => {
+  for (const name of [
+    "Connection",
+    "Content-Length",
+    "Host",
+    "Proxy-Authorization",
+    "TE",
+    "Trailer",
+    "Transfer-Encoding",
+    "Upgrade",
+  ]) {
+    const result = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - name: API
+    checks:
+      - name: Health
+        url: https://api.example.com/health
+        headers:
+          - { name: ${name}, secret: API_HEALTH_TOKEN }
+`);
+
+    assertConfigurationError(
+      result,
+      "UNSAFE_REQUEST_HEADER",
+      "/services/0/checks/0/headers/0/name",
+    );
+  }
 });
 
 test("rejects environment-variable interpolation in configuration strings", () => {

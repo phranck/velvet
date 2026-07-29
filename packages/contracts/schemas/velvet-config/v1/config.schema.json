@@ -1452,6 +1452,12 @@
                   "description": "Maximum followed redirects. Defaults to 5.",
                   "type": "integer"
                 },
+                "timeoutMs": {
+                  "minimum": 100,
+                  "maximum": 60000,
+                  "description": "Absolute request timeout in milliseconds across all redirects. Defaults to 10000.",
+                  "type": "integer"
+                },
                 "headers": {
                   "maxItems": 16,
                   "type": "array",

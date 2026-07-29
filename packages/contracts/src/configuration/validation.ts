@@ -20,6 +20,16 @@ type UnknownRecord = Record<string, unknown>;
 const SECRET_INTERPOLATION = /\$(?:\{[A-Z_][A-Z0-9_]*\}|[A-Z_][A-Z0-9_]*)/;
 const ENVIRONMENT_VARIABLE = /^[A-Z_][A-Z0-9_]*$/;
 const HEADER_NAME = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+const UNSAFE_REQUEST_HEADERS = new Set([
+  "connection",
+  "content-length",
+  "host",
+  "proxy-authorization",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+]);
 const UNSAFE_JSON_SEGMENTS = new Set([
   "__proto__",
   "constructor",
@@ -220,6 +230,14 @@ function inspectCheck(
               "HTTP header name is invalid.",
             ),
           );
+        } else if (UNSAFE_REQUEST_HEADERS.has(canonicalName)) {
+          errors.push(
+            configurationError(
+              "UNSAFE_REQUEST_HEADER",
+              `${path}/headers/${index}/name`,
+              "HTTP header must not control request routing, framing, or connection behavior.",
+            ),
+          );
         }
       }
       if (
@@ -386,6 +404,7 @@ function normalizeCheck(
       method: check.method === "HEAD" ? "HEAD" : "GET",
       expectedStatusCodes: [...(check.expectedStatusCodes ?? [200])],
       maxRedirects: check.maxRedirects ?? 5,
+      timeoutMs: check.timeoutMs ?? 10_000,
       headers: (check.headers ?? []).map((header) => ({ ...header })),
       jsonAssertions: (check.jsonAssertions ?? []).map((assertion) => ({
         ...assertion,
