@@ -18,11 +18,6 @@ interface AvailabilityInterval {
   targetAvailability: TargetAvailability;
 }
 
-interface TimeInterval {
-  startsAt: number;
-  endsAt: number;
-}
-
 export interface DailyAvailabilityInput {
   serviceId: string;
   monitoringStartedAt: string;
@@ -167,51 +162,12 @@ function availabilityIntervals(
   return intervals;
 }
 
-function maintenanceIntervals(
-  input: DailyAvailabilityInput,
-): TimeInterval[] {
-  const ordered = input.maintenanceWindows
-    .filter(({ affectedServiceIds }) =>
-      affectedServiceIds.includes(input.serviceId),
-    )
-    .map(({ startsAt, endsAt }) => ({
-      startsAt: Date.parse(startsAt),
-      endsAt: Date.parse(endsAt),
-    }))
-    .filter(({ startsAt, endsAt }) => startsAt < endsAt)
-    .sort((left, right) => left.startsAt - right.startsAt);
-
-  const merged: TimeInterval[] = [];
-  for (const interval of ordered) {
-    const previous = merged.at(-1);
-    if (previous === undefined || interval.startsAt > previous.endsAt) {
-      merged.push({ ...interval });
-      continue;
-    }
-    previous.endsAt = Math.max(previous.endsAt, interval.endsAt);
-  }
-  return merged;
-}
-
-function coveredDuration(
-  startsAt: number,
-  endsAt: number,
-  intervals: TimeInterval[],
-): number {
-  return intervals.reduce((duration, interval) => {
-    const coveredStartsAt = Math.max(startsAt, interval.startsAt);
-    const coveredEndsAt = Math.min(endsAt, interval.endsAt);
-    return duration + Math.max(0, coveredEndsAt - coveredStartsAt);
-  }, 0);
-}
-
 export function deriveDailyAvailability(
   input: DailyAvailabilityInput,
 ): MonitorDailyAvailability[] {
   const monitoringStartedAt = Date.parse(input.monitoringStartedAt);
   const generatedAt = Date.parse(input.generatedAt);
   const intervals = availabilityIntervals(input);
-  const maintenance = maintenanceIntervals(input);
   const days: MonitorDailyAvailability[] = [];
 
   for (
@@ -233,8 +189,7 @@ export function deriveDailyAvailability(
         continue;
       }
 
-      const duration =
-        endsAt - startsAt - coveredDuration(startsAt, endsAt, maintenance);
+      const duration = endsAt - startsAt;
       monitoredMs += duration;
       if (interval.targetAvailability === "unavailable") {
         unavailableMs += duration;

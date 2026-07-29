@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "bun:test";
-import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -24,7 +24,7 @@ type TestStateContent = {
 };
 
 type TestPersistentState = TestStateContent & {
-  schemaVersion: 1;
+  schemaVersion: 2;
   processedRuns: TestRun[];
 };
 
@@ -121,6 +121,81 @@ test("writes and reads the first complete private state", async () => {
   assert.equal(result.outcome, "written");
   assert.deepEqual(result.state.processedRuns, [firstRun]);
   assert.deepEqual(await readMonitorState(path), result.state);
+});
+
+test("persists the confirmed transition timestamp for each check", async () => {
+  const { readMonitorState, updateMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const content = stateContent(firstRun.completedAt);
+  content.current.checks.push({
+    serviceId: "website",
+    checkId: "homepage",
+    status: "down",
+    confirmedStatus: "down",
+    confirmedAt: firstRun.completedAt,
+    targetAvailability: "unavailable",
+    failureStreak: 2,
+    recoveryStreak: 0,
+    checkedAt: firstRun.completedAt,
+    responseTimeMs: null,
+    statusCode: 503,
+    failureCode: "UNEXPECTED_STATUS",
+  });
+
+  const result = await updateMonitorState(path, firstRun, () => content);
+
+  assert.equal(result.state.schemaVersion, 2);
+  assert.deepEqual(await readMonitorState(path), result.state);
+});
+
+test("migrates schema version 1 state without losing confirmed checks", async () => {
+  const { readMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const legacyState = {
+    ...stateContent(firstRun.completedAt),
+    schemaVersion: 1,
+    processedRuns: [firstRun],
+  };
+  legacyState.current.checks.push(
+    {
+      serviceId: "website",
+      checkId: "homepage",
+      status: "down",
+      confirmedStatus: "down",
+      targetAvailability: "unavailable",
+      failureStreak: 2,
+      recoveryStreak: 0,
+      checkedAt: firstRun.completedAt,
+      responseTimeMs: null,
+      statusCode: 503,
+      failureCode: "UNEXPECTED_STATUS",
+    },
+    {
+      serviceId: "api",
+      checkId: "readiness",
+      status: "degraded",
+      confirmedStatus: null,
+      targetAvailability: "unavailable",
+      failureStreak: 1,
+      recoveryStreak: 0,
+      checkedAt: firstRun.completedAt,
+      responseTimeMs: null,
+      statusCode: 503,
+      failureCode: "UNEXPECTED_STATUS",
+    },
+  );
+  await writeFile(path, `${JSON.stringify(legacyState)}\n`, "utf8");
+
+  const migrated = await readMonitorState(path);
+  const migratedChecks = migrated?.current.checks as
+    | Array<{ confirmedAt: string | null }>
+    | undefined;
+
+  assert.equal(migrated?.schemaVersion, 2);
+  assert.equal(migratedChecks?.[0]?.confirmedAt, firstRun.completedAt);
+  assert.equal(migratedChecks?.[1]?.confirmedAt, null);
 });
 
 test("returns the stored state for a duplicate run without writing", async () => {

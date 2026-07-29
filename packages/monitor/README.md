@@ -55,8 +55,8 @@ is derived from these state intervals:
 - `available` counts as monitored time.
 - `unavailable` counts as monitored and unavailable time.
 - `unobserved` is excluded because no reliable target result exists.
-- Explicit maintenance coverage for a service is excluded from monitored and
-  unavailable time. Measurements and state changes are still retained.
+- Planned maintenance does not change measured availability. It remains a
+  separate neutral event in the incident history.
 
 `appendResponseSamples` stores response times separately. Successful samples
 contain latency; unsuccessful or unobserved samples contain `null`. Only this

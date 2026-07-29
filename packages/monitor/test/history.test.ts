@@ -145,7 +145,7 @@ test("keeps a short target failure in daily availability", async () => {
   ]);
 });
 
-test("excludes explicitly covered maintenance from measured time", async () => {
+test("keeps measured downtime during planned maintenance", async () => {
   const { deriveDailyAvailability } = await historyFunctions();
   const dailyAvailability = deriveDailyAvailability({
     serviceId: "website",
@@ -169,8 +169,8 @@ test("excludes explicitly covered maintenance from measured time", async () => {
   assert.deepEqual(dailyAvailability, [
     {
       date: "2026-07-29",
-      monitoredSeconds: 9_000,
-      unavailableSeconds: 1_800,
+      monitoredSeconds: 10_800,
+      unavailableSeconds: 3_600,
     },
   ]);
 });
