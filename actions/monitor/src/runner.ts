@@ -11,6 +11,7 @@ import {
   aggregateServiceTargetAvailability,
   appendResponseSamples,
   appendStateChanges,
+  compactImportedDailyAvailability,
   compactStateChanges,
   createResponseTimesDocument,
   createStatusDocument,
@@ -303,6 +304,19 @@ export async function runMonitorAction(
       retentionDays: parsedConfiguration.history.retentionDays,
     },
   );
+  const previousImportedDailyAvailability = (
+    input.currentState?.importedDailyAvailability ?? []
+  ).filter(({ serviceId }) => configuredServiceIds.has(serviceId));
+  const importedDailyAvailability =
+    runMode === "status"
+      ? compactImportedDailyAvailability(
+          previousImportedDailyAvailability,
+          {
+            generatedAt: completedAt,
+            retentionDays: parsedConfiguration.history.retentionDays,
+          },
+        )
+      : previousImportedDailyAvailability;
   const documentServices = parsedConfiguration.services.map((service) => ({
     id: service.id,
     name: service.name,
@@ -317,6 +331,7 @@ export async function runMonitorAction(
           retentionDays: parsedConfiguration.history.retentionDays,
           services: documentServices,
           stateChanges,
+          importedDailyAvailability,
           maintenanceWindows:
             input.currentState?.maintenanceWindows ?? [],
         });
@@ -334,6 +349,7 @@ export async function runMonitorAction(
     monitoringStartedAt,
     current: { checks, services },
     stateChanges,
+    importedDailyAvailability,
     maintenanceWindows: input.currentState?.maintenanceWindows ?? [],
     responseSamples,
     documents: { status, responseTimes },

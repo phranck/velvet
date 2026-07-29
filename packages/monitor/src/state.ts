@@ -22,7 +22,7 @@ export interface MonitorCheckState {
   targetAvailability: TargetAvailability;
   failureStreak: number;
   recoveryStreak: number;
-  checkedAt: string;
+  checkedAt: string | null;
   responseTimeMs: number | null;
   statusCode: number | null;
   failureCode: CheckFailureCode | null;
@@ -55,6 +55,17 @@ export interface MonitorDailyAvailability {
   unavailableSeconds: number;
 }
 
+export interface MonitorImportedDailyAvailability
+  extends MonitorDailyAvailability {
+  serviceId: string;
+  source: {
+    kind: "upptime";
+    repository: string;
+    commit: string;
+    path: string;
+  };
+}
+
 export interface MonitorResponseSample {
   serviceId: string;
   checkId: string;
@@ -62,7 +73,7 @@ export interface MonitorResponseSample {
   responseTimeMs: number | null;
 }
 
-export const MONITOR_STATE_SCHEMA_VERSION = 2 as const;
+export const MONITOR_STATE_SCHEMA_VERSION = 3 as const;
 
 export interface MonitorRun {
   id: string;
@@ -78,6 +89,7 @@ export interface MonitorStateContent {
     services: MonitorServiceState[];
   };
   stateChanges: MonitorStateChange[];
+  importedDailyAvailability: MonitorImportedDailyAvailability[];
   maintenanceWindows: MonitorMaintenanceWindow[];
   responseSamples: MonitorResponseSample[];
   documents: {

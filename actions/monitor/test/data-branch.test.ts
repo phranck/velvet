@@ -102,6 +102,7 @@ function content(
     monitoringStartedAt,
     current: { checks: [], services: [] },
     stateChanges: [],
+    importedDailyAvailability: [],
     maintenanceWindows: [],
     responseSamples: [],
     documents: {
