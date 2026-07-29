@@ -20,6 +20,7 @@ import {
 import { readMonitorState } from "@velvet/monitor";
 
 import { UpptimeAdapterError } from "./errors.js";
+import { hasUpptimeMigrationCutoverBlockers } from "./migration.js";
 import type { UpptimeMigrationResult } from "./migration-types.js";
 
 export interface UpptimeMigrationMaterializationDependencies {
@@ -29,6 +30,12 @@ export interface UpptimeMigrationMaterializationDependencies {
 export function serializeUpptimeMigration(
   migration: UpptimeMigrationResult,
 ): ReadonlyMap<string, string> {
+  if (hasUpptimeMigrationCutoverBlockers(migration.report)) {
+    throw new UpptimeAdapterError(
+      "INVALID_INPUT",
+      "Resolve every legacy incident reported as a cutover blocker before writing the migration bundle",
+    );
+  }
   if (
     !parseVelvetConfiguration(migration.configurationYaml).success ||
     !validateStatusDocument(migration.documents.status).success ||

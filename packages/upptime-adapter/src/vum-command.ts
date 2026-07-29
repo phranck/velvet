@@ -1,7 +1,10 @@
 import { UpptimeAdapterError } from "./errors.js";
 import { loadUpptimeMigrationSnapshot } from "./github.js";
 import { materializeUpptimeMigration } from "./migration-materialization.js";
-import { createUpptimeMigration } from "./migration.js";
+import {
+  createUpptimeMigration,
+  hasUpptimeMigrationCutoverBlockers,
+} from "./migration.js";
 import type {
   LoadedUpptimeMigrationSnapshot,
 } from "./github.js";
@@ -144,6 +147,12 @@ export async function runVum(
   });
   const migration = create(loaded.snapshot, loaded.source);
   if (options.write) {
+    if (hasUpptimeMigrationCutoverBlockers(migration.report)) {
+      throw new UpptimeAdapterError(
+        "INVALID_INPUT",
+        "Resolve every legacy incident reported as a cutover blocker before writing the migration bundle",
+      );
+    }
     await materialize(options.destination!, migration);
   }
   writeOutput(

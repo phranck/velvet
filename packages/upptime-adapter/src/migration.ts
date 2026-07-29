@@ -13,6 +13,7 @@ import {
   createStatusDocument,
   type MonitorCheckState,
   type MonitorImportedDailyAvailability,
+  type MonitorImportedEvent,
   type MonitorMaintenanceWindow,
   type MonitorPersistentState,
   type MonitorResponseSample,
@@ -68,6 +69,9 @@ const HANDLED_SITE_OPTIONS = new Set([
   "type",
   ...UNSUPPORTED_BODY_OPTIONS,
 ]);
+const CUTOVER_BLOCKER_CODES = new Set([
+  "UNRESOLVED_INCIDENT_BLOCKS_CUTOVER",
+]);
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -121,6 +125,12 @@ interface MigrationContext {
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function hasUpptimeMigrationCutoverBlockers(
+  report: UpptimeMigrationReport,
+): boolean {
+  return report.findings.some(({ code }) => CUTOVER_BLOCKER_CODES.has(code));
 }
 
 function slugify(value: string): string {
@@ -816,10 +826,12 @@ function createIncidents(
   context: MigrationContext,
 ): {
   document: IncidentsDocument;
+  importedEvents: MonitorImportedEvent[];
   issueSources: UpptimeMigrationIssueSource[];
   maintenanceWindows: MonitorMaintenanceWindow[];
 } {
   const events: IncidentsDocument["events"] = [];
+  const importedEvents: MonitorImportedEvent[] = [];
   const issueSources: UpptimeMigrationIssueSource[] = [];
   const maintenanceWindows: MonitorMaintenanceWindow[] = [];
   for (const issue of [...snapshot.issues].sort(
@@ -863,7 +875,7 @@ function createIncidents(
           : Date.parse(generatedAt) < Date.parse(metadata.startsAt)
             ? "scheduled"
             : "active";
-      events.push({
+      const event: IncidentsDocument["events"][number] = {
         id: `maintenance-${issue.number}`,
         kind: "maintenance",
         state,
@@ -872,6 +884,16 @@ function createIncidents(
         affectedServiceIds,
         startsAt: metadata.startsAt,
         endsAt,
+      };
+      events.push(event);
+      importedEvents.push({
+        event,
+        source: {
+          kind: "upptime",
+          repository: source.repository,
+          commit: source.commit,
+          issueUrl: sourceUrl,
+        },
       });
       maintenanceWindows.push({
         id: `maintenance-${issue.number}`,
@@ -899,7 +921,7 @@ function createIncidents(
       );
       continue;
     }
-    events.push({
+    const event: IncidentsDocument["events"][number] = {
       id: `incident-${issue.number}`,
       kind: "incident",
       state: issue.state === "open" ? "open" : "resolved",
@@ -911,7 +933,26 @@ function createIncidents(
         issue.state === "open" || issue.closedAt === null
           ? null
           : normalizeTimestamp(issue.closedAt, `issue ${issue.number} end`),
-    });
+    };
+    events.push(event);
+    if (event.state === "resolved") {
+      importedEvents.push({
+        event,
+        source: {
+          kind: "upptime",
+          repository: source.repository,
+          commit: source.commit,
+          issueUrl: sourceUrl,
+        },
+      });
+    } else {
+      finding(
+        context,
+        "UNRESOLVED_INCIDENT_BLOCKS_CUTOVER",
+        sourceUrl,
+        "Resolve this legacy incident before writing the final Velvet migration bundle.",
+      );
+    }
     issueSources.push({
       number: issue.number,
       url: sourceUrl,
@@ -921,6 +962,11 @@ function createIncidents(
   events.sort((left, right) =>
     `${left.startsAt}\u0000${left.id}`.localeCompare(
       `${right.startsAt}\u0000${right.id}`,
+    ),
+  );
+  importedEvents.sort((left, right) =>
+    `${left.event.startsAt}\u0000${left.event.id}`.localeCompare(
+      `${right.event.startsAt}\u0000${right.event.id}`,
     ),
   );
   const document: IncidentsDocument = {
@@ -934,7 +980,7 @@ function createIncidents(
       "Generated incidents document failed validation",
     );
   }
-  return { document, issueSources, maintenanceWindows };
+  return { document, importedEvents, issueSources, maintenanceWindows };
 }
 
 function issuesDigest(issues: UpptimeIssue[]): string {
@@ -1336,6 +1382,7 @@ export function createUpptimeMigration(
     current: { checks: currentChecks, services: currentServices },
     stateChanges,
     importedDailyAvailability,
+    importedEvents: incidentResult.importedEvents,
     maintenanceWindows: incidentResult.maintenanceWindows,
     responseSamples,
     documents: { status, responseTimes },
