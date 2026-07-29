@@ -1,0 +1,1567 @@
+{
+  "$id": "urn:velvet:schema:configuration:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Canonical configuration for a GitHub-native Velvet status repository.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "repository",
+    "statusPage",
+    "services"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "description": "Velvet configuration contract version.",
+      "const": 1,
+      "type": "number"
+    },
+    "repository": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "owner",
+        "name"
+      ],
+      "properties": {
+        "owner": {
+          "minLength": 1,
+          "maxLength": 39,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "type": "string"
+        }
+      }
+    },
+    "statusPage": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "maxLength": 128,
+          "type": "string"
+        },
+        "customDomain": {
+          "minLength": 1,
+          "maxLength": 253,
+          "pattern": "^(?=.{1,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,63}$",
+          "type": "string"
+        },
+        "logoUrl": {
+          "minLength": 1,
+          "maxLength": 2048,
+          "type": "string"
+        },
+        "logoHeight": {
+          "minimum": 16,
+          "maximum": 256,
+          "type": "integer"
+        },
+        "showPoweredBy": {
+          "type": "boolean"
+        },
+        "layout": {
+          "anyOf": [
+            {
+              "const": "grouped",
+              "type": "string"
+            },
+            {
+              "const": "cards",
+              "type": "string"
+            }
+          ]
+        },
+        "defaultRange": {
+          "anyOf": [
+            {
+              "const": "24h",
+              "type": "string"
+            },
+            {
+              "const": "7d",
+              "type": "string"
+            },
+            {
+              "const": "30d",
+              "type": "string"
+            },
+            {
+              "const": "90d",
+              "type": "string"
+            },
+            {
+              "const": "1yr",
+              "type": "string"
+            }
+          ]
+        },
+        "navigation": {
+          "maxItems": 16,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "title",
+              "href"
+            ],
+            "properties": {
+              "title": {
+                "minLength": 1,
+                "maxLength": 128,
+                "type": "string"
+              },
+              "href": {
+                "minLength": 1,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "theme": {
+          "additionalProperties": false,
+          "description": "Presentation theme. Setup writes a complete system theme; hand-written files may override selected roles.",
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "minLength": 1,
+              "maxLength": 128,
+              "type": "string"
+            },
+            "palette": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "canvas": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "foreground": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "accent": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "alternate": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "warning": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "danger": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "textPrimary": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "textSecondary": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "textTertiary": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                }
+              }
+            },
+            "grid": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "operational": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "degraded": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "outage": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "noData": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            },
+            "chart": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "line": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "lineStyle": {
+                  "anyOf": [
+                    {
+                      "const": "solid",
+                      "type": "string"
+                    },
+                    {
+                      "const": "dashed",
+                      "type": "string"
+                    },
+                    {
+                      "const": "dotted",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "fill": {
+                  "type": "boolean"
+                },
+                "background": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "backgroundOpacity": {
+                  "minimum": 0,
+                  "maximum": 1,
+                  "type": "number"
+                }
+              }
+            },
+            "background": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "start": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "end": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "blobs": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "count": {
+                      "minimum": 1,
+                      "maximum": 5,
+                      "type": "integer"
+                    },
+                    "colors": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "anyOf": [
+                            {
+                              "const": "auto",
+                              "type": "string"
+                            },
+                            {
+                              "anyOf": [
+                                {
+                                  "const": "canvas",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "foreground",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "accent",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "alternate",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "warning",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "danger",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "textPrimary",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "textSecondary",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "textTertiary",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            {
+                              "pattern": "^#[0-9a-fA-F]{6}$",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        {
+                          "anyOf": [
+                            {
+                              "const": "auto",
+                              "type": "string"
+                            },
+                            {
+                              "anyOf": [
+                                {
+                                  "const": "canvas",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "foreground",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "accent",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "alternate",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "warning",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "danger",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "textPrimary",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "textSecondary",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "textTertiary",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            {
+                              "pattern": "^#[0-9a-fA-F]{6}$",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  }
+                }
+              }
+            },
+            "card": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "background": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "border": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "separator": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "borderEnabled": {
+                  "type": "boolean"
+                },
+                "shadowEnabled": {
+                  "type": "boolean"
+                },
+                "radius": {
+                  "minimum": 0,
+                  "maximum": 32,
+                  "type": "integer"
+                },
+                "padding": {
+                  "minimum": 0,
+                  "maximum": 32,
+                  "type": "integer"
+                },
+                "maxWidth": {
+                  "anyOf": [
+                    {
+                      "const": 640,
+                      "type": "number"
+                    },
+                    {
+                      "const": 760,
+                      "type": "number"
+                    },
+                    {
+                      "const": 920,
+                      "type": "number"
+                    },
+                    {
+                      "const": 1080,
+                      "type": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            "headline": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "start": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "end": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            },
+            "service": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "icon": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            },
+            "text": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "primary": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "secondary": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "tertiary": {
+                  "anyOf": [
+                    {
+                      "const": "auto",
+                      "type": "string"
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "const": "canvas",
+                          "type": "string"
+                        },
+                        {
+                          "const": "foreground",
+                          "type": "string"
+                        },
+                        {
+                          "const": "accent",
+                          "type": "string"
+                        },
+                        {
+                          "const": "alternate",
+                          "type": "string"
+                        },
+                        {
+                          "const": "warning",
+                          "type": "string"
+                        },
+                        {
+                          "const": "danger",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textPrimary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textSecondary",
+                          "type": "string"
+                        },
+                        {
+                          "const": "textTertiary",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "fonts": {
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "sans": {
+              "minLength": 1,
+              "maxLength": 128,
+              "type": "string"
+            },
+            "mono": {
+              "minLength": 1,
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        },
+        "icons": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {
+              "minLength": 1,
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        },
+        "analytics": {
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "umami": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "websiteId",
+                "src"
+              ],
+              "properties": {
+                "websiteId": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "src": {
+                  "minLength": 1,
+                  "maxLength": 2048,
+                  "type": "string"
+                }
+              }
+            },
+            "googleAnalytics": {
+              "pattern": "^G-[A-Z0-9]+$",
+              "type": "string"
+            }
+          }
+        },
+        "seo": {
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "title": {
+              "minLength": 1,
+              "maxLength": 128,
+              "type": "string"
+            },
+            "description": {
+              "minLength": 1,
+              "maxLength": 300,
+              "type": "string"
+            },
+            "image": {
+              "minLength": 1,
+              "maxLength": 2048,
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "services": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "Public service component. Use name plus url for one default check, or checks for multiple named endpoints.",
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+            "description": "Stable lowercase kebab-case identifier.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 128,
+            "type": "string"
+          },
+          "url": {
+            "minLength": 1,
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "checks": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "name",
+                "url"
+              ],
+              "properties": {
+                "id": {
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+                  "description": "Stable lowercase kebab-case identifier.",
+                  "type": "string"
+                },
+                "name": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "url": {
+                  "minLength": 1,
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                "method": {
+                  "description": "Safe HTTP method. Velvet supports GET and HEAD.",
+                  "type": "string"
+                },
+                "expectedStatusCodes": {
+                  "minItems": 1,
+                  "maxItems": 32,
+                  "uniqueItems": true,
+                  "description": "Final HTTP status codes that count as healthy. Defaults to only 200.",
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "maxRedirects": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "description": "Maximum followed redirects. Defaults to 5.",
+                  "type": "integer"
+                },
+                "headers": {
+                  "maxItems": 16,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "secret"
+                    ],
+                    "properties": {
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "description": "HTTP header name.",
+                        "type": "string"
+                      },
+                      "secret": {
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "description": "Environment-variable name containing the header value. Secret values never belong in velvet.yml.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "jsonAssertions": {
+                  "maxItems": 16,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "Optional explicit JSON health assertion. Status-only checks do not inspect the response body.",
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "equals"
+                    ],
+                    "properties": {
+                      "path": {
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "RFC 6901 JSON Pointer identifying the response value.",
+                        "type": "string"
+                      },
+                      "equals": {
+                        "anyOf": [
+                          {
+                            "maxLength": 1024,
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "incidents": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "failureThreshold": {
+          "minimum": 1,
+          "maximum": 20,
+          "type": "integer"
+        },
+        "recoveryThreshold": {
+          "minimum": 1,
+          "maximum": 20,
+          "type": "integer"
+        },
+        "incidentLabel": {
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+          "description": "Stable lowercase kebab-case identifier.",
+          "type": "string"
+        },
+        "maintenanceLabel": {
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+          "description": "Stable lowercase kebab-case identifier.",
+          "type": "string"
+        }
+      }
+    },
+    "history": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "retentionDays": {
+          "minimum": 1,
+          "maximum": 3650,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

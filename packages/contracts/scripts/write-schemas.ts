@@ -5,23 +5,48 @@ import {
   ResponseTimesDocumentSchema,
   StatusDocumentSchema,
 } from "../src/schemas.js";
+import { VelvetConfigurationSchema } from "../src/configuration/schemas.js";
 
-const outputDirectory = new URL("../schemas/velvet-data/v1/", import.meta.url);
+const dataOutputDirectory = new URL(
+  "../schemas/velvet-data/v1/",
+  import.meta.url,
+);
+const configurationOutputDirectory = new URL(
+  "../schemas/velvet-config/v1/",
+  import.meta.url,
+);
 
-await mkdir(outputDirectory, { recursive: true });
+await Promise.all([
+  mkdir(dataOutputDirectory, { recursive: true }),
+  mkdir(configurationOutputDirectory, { recursive: true }),
+]);
 
 const schemas = {
-  "status.schema.json": StatusDocumentSchema,
-  "response-times.schema.json": ResponseTimesDocumentSchema,
-  "incidents.schema.json": IncidentsDocumentSchema,
+  data: {
+    "status.schema.json": StatusDocumentSchema,
+    "response-times.schema.json": ResponseTimesDocumentSchema,
+    "incidents.schema.json": IncidentsDocumentSchema,
+  },
+  configuration: {
+    "config.schema.json": VelvetConfigurationSchema,
+  },
 };
 
 await Promise.all(
-  Object.entries(schemas).map(([fileName, schema]) =>
-    writeFile(
-      new URL(fileName, outputDirectory),
-      `${JSON.stringify(schema, null, 2)}\n`,
-      "utf8",
+  [
+    ...Object.entries(schemas.data).map(([fileName, schema]) =>
+      writeFile(
+        new URL(fileName, dataOutputDirectory),
+        `${JSON.stringify(schema, null, 2)}\n`,
+        "utf8",
+      ),
     ),
-  ),
+    ...Object.entries(schemas.configuration).map(([fileName, schema]) =>
+      writeFile(
+        new URL(fileName, configurationOutputDirectory),
+        `${JSON.stringify(schema, null, 2)}\n`,
+        "utf8",
+      ),
+    ),
+  ],
 );

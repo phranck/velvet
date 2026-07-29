@@ -1,0 +1,17 @@
+schemaVersion: 1
+repository:
+  owner: example
+  name: status
+statusPage:
+  name: Example Status
+services:
+  - name: Protected website
+    checks:
+      - name: Origin
+        url: https://example.com/private
+        method: HEAD
+        expectedStatusCodes: [200, 401]
+        maxRedirects: 2
+        headers:
+          - name: Authorization
+            secret: WEBSITE_HEALTH_TOKEN
