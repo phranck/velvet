@@ -16,6 +16,7 @@ export type ConfigurationValidationErrorCode =
   | "INVALID_SECRET_REFERENCE"
   | "INVALID_SERVICE_CHECKS"
   | "UNSAFE_JSON_ASSERTION"
+  | "UNSAFE_REQUEST_HEADER"
   | "UNSUPPORTED_CONFIGURATION_METHOD"
   | "UNSUPPORTED_CONFIGURATION_STATUS_CODE"
   | "UNSUPPORTED_CONFIGURATION_VERSION";
@@ -47,6 +48,7 @@ export interface NormalizedHttpCheck {
   method: "GET" | "HEAD";
   expectedStatusCodes: number[];
   maxRedirects: number;
+  timeoutMs: number;
   headers: NormalizedHttpHeader[];
   jsonAssertions: NormalizedJsonAssertion[];
 }

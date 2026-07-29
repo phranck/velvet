@@ -44,7 +44,8 @@ services:
 
 Assertions use safe RFC 6901 JSON Pointers and scalar expected values. Advanced
 checks may also use `HEAD`, select final status codes, lower the redirect bound,
-and reference request-header values by environment-variable name:
+set an absolute timeout from `100` through `60000` milliseconds, and reference
+request-header values by environment-variable name:
 
 ```yaml
 headers:
@@ -54,7 +55,9 @@ headers:
 
 Do not put a secret value, `$VARIABLE`, or `${VARIABLE}` expression in
 `velvet.yml`. Consumers resolve the named environment secret only while issuing
-the request and must redact it from output and logs.
+the request and must redact it from output and logs. Request-routing, framing,
+and connection headers such as `Host`, `Content-Length`, and
+`Transfer-Encoding` cannot be configured.
 
 The normalized configuration keeps endpoint URLs inside the monitor boundary.
 The public `velvet-data/v1` documents deliberately contain no endpoint URL,
@@ -167,6 +170,7 @@ Configuration validation has its own stable codes:
 - `INVALID_SECRET_REFERENCE`
 - `INVALID_SERVICE_CHECKS`
 - `UNSAFE_JSON_ASSERTION`
+- `UNSAFE_REQUEST_HEADER`
 - `UNSUPPORTED_CONFIGURATION_METHOD`
 - `UNSUPPORTED_CONFIGURATION_STATUS_CODE`
 - `UNSUPPORTED_CONFIGURATION_VERSION`
