@@ -146,6 +146,7 @@ test("prepares a status snapshot only after its status document is valid", async
   assert.equal(result.content.current.checks[0]?.status, "down");
   assert.equal(result.content.current.checks[0]?.confirmedStatus, "down");
   assert.equal(result.content.stateChanges.length, 1);
+  assert.deepEqual(result.content.importedDailyAvailability, []);
   assert.equal(result.content.documents.status.services[0]?.status, "outage");
   assert.equal(
     (reconciledInputs[0]?.checkStates as Array<{ status: string }>)[0]
@@ -194,7 +195,7 @@ test("adds response samples without changing uptime state or incidents", async (
   if (first.outcome !== "prepared") return;
   const currentState: MonitorPersistentState = {
     ...first.content,
-    schemaVersion: 2,
+    schemaVersion: 3,
     processedRuns: [first.run],
   };
   const responseTimestamps = [
@@ -379,7 +380,7 @@ incidents: { failureThreshold: 1, recoveryThreshold: 1 }
   if (first.outcome !== "prepared") return;
   const currentState: MonitorPersistentState = {
     ...first.content,
-    schemaVersion: 2,
+    schemaVersion: 3,
     processedRuns: [first.run],
   };
   const secondTimestamps = [
@@ -416,5 +417,97 @@ incidents: { failureThreshold: 1, recoveryThreshold: 1 }
       ({ serviceId }) => serviceId === "website",
     ),
     true,
+  );
+});
+
+test("retains imported daily availability across native status runs", async () => {
+  const runMonitorAction = await runnerFunction();
+  const firstTimestamps = [
+    new Date("2026-07-29T12:00:00.000Z"),
+    new Date("2026-07-29T12:00:01.000Z"),
+  ];
+  const emptyIncidents: IncidentsDocument = {
+    schemaVersion: 1,
+    generatedAt: "2026-07-29T12:00:01.000Z",
+    events: [],
+  };
+  const first = await runMonitorAction(
+    {
+      mode: "status",
+      runId: "129:status",
+      repository: "example/status",
+      configurationSource: configuration(),
+      currentState: null,
+      currentIncidents: null,
+    },
+    {
+      now: () => firstTimestamps.shift()!,
+      executeChecks: async () => [observation("available")],
+      reconcileIncidents: async () => ({ document: emptyIncidents }),
+      writeSummary: async () => undefined,
+    },
+  );
+  assert.equal(first.outcome, "prepared");
+  if (first.outcome !== "prepared") return;
+  const currentState: MonitorPersistentState = {
+    ...first.content,
+    monitoringStartedAt: "2026-07-27T00:00:00.000Z",
+    importedDailyAvailability: [
+      {
+        serviceId: "website",
+        date: "2026-07-27",
+        monitoredSeconds: 86_400,
+        unavailableSeconds: 600,
+        source: {
+          kind: "upptime",
+          repository: "example/status",
+          commit: "0123456789abcdef0123456789abcdef01234567",
+          path: "history/website.yml",
+        },
+      },
+    ],
+    schemaVersion: 3,
+    processedRuns: [first.run],
+  };
+  const secondTimestamps = [
+    new Date("2026-07-29T12:05:00.000Z"),
+    new Date("2026-07-29T12:05:01.000Z"),
+  ];
+
+  const second = await runMonitorAction(
+    {
+      mode: "status",
+      runId: "130:status",
+      repository: "example/status",
+      configurationSource: configuration(),
+      currentState,
+      currentIncidents: emptyIncidents,
+    },
+    {
+      now: () => secondTimestamps.shift()!,
+      executeChecks: async () => [
+        {
+          ...observation("available"),
+          checkedAt: "2026-07-29T12:05:00.500Z",
+        },
+      ],
+      reconcileIncidents: async () => ({ document: emptyIncidents }),
+      writeSummary: async () => undefined,
+    },
+  );
+
+  assert.equal(second.outcome, "prepared");
+  if (second.outcome !== "prepared") return;
+  assert.deepEqual(
+    second.content.importedDailyAvailability,
+    currentState.importedDailyAvailability,
+  );
+  assert.deepEqual(
+    second.content.documents.status.services[0]?.dailyAvailability[0],
+    {
+      date: "2026-07-27",
+      monitoredSeconds: 86_400,
+      unavailableSeconds: 600,
+    },
   );
 });

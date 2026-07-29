@@ -1,5 +1,6 @@
 import type {
   MonitorDailyAvailability,
+  MonitorImportedDailyAvailability,
   MonitorMaintenanceWindow,
   MonitorResponseSample,
   MonitorServiceState,
@@ -35,6 +36,19 @@ export interface StateChangeRun {
 export interface ResponseSampleRetention {
   generatedAt: string;
   retentionDays: number;
+}
+
+export interface ImportedDailyAvailabilityRetention {
+  generatedAt: string;
+  retentionDays: number;
+}
+
+export interface DailyAvailabilityMergeInput
+  extends ImportedDailyAvailabilityRetention {
+  serviceId: string;
+  monitoringStartedAt: string;
+  imported: MonitorImportedDailyAvailability[];
+  native: MonitorDailyAvailability[];
 }
 
 export function appendStateChanges(
@@ -149,6 +163,55 @@ function dayStart(timestamp: number): number {
     date.getUTCFullYear(),
     date.getUTCMonth(),
     date.getUTCDate(),
+  );
+}
+
+export function compactImportedDailyAvailability(
+  history: MonitorImportedDailyAvailability[],
+  options: ImportedDailyAvailabilityRetention,
+): MonitorImportedDailyAvailability[] {
+  const cutoff =
+    Date.parse(options.generatedAt) - options.retentionDays * DAY_MS;
+  const generatedDate = options.generatedAt.slice(0, 10);
+
+  return history
+    .filter(
+      ({ date }) =>
+        Date.parse(`${date}T00:00:00.000Z`) >= cutoff &&
+        date <= generatedDate,
+    )
+    .sort(
+      (left, right) =>
+        left.date.localeCompare(right.date) ||
+        left.serviceId.localeCompare(right.serviceId),
+    );
+}
+
+export function mergeDailyAvailability(
+  input: DailyAvailabilityMergeInput,
+): MonitorDailyAvailability[] {
+  const firstMonitoringDate = input.monitoringStartedAt.slice(0, 10);
+  const valuesByDate = new Map<string, MonitorDailyAvailability>();
+
+  for (const value of compactImportedDailyAvailability(input.imported, input)) {
+    if (
+      value.serviceId !== input.serviceId ||
+      value.date < firstMonitoringDate
+    ) {
+      continue;
+    }
+    valuesByDate.set(value.date, {
+      date: value.date,
+      monitoredSeconds: value.monitoredSeconds,
+      unavailableSeconds: value.unavailableSeconds,
+    });
+  }
+  for (const value of input.native) {
+    valuesByDate.set(value.date, value);
+  }
+
+  return [...valuesByDate.values()].sort((left, right) =>
+    left.date.localeCompare(right.date),
   );
 }
 

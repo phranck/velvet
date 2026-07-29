@@ -6,10 +6,14 @@ import {
   type StatusDocument,
 } from "@velvet/contracts";
 
-import { deriveDailyAvailability } from "./history.js";
+import {
+  deriveDailyAvailability,
+  mergeDailyAvailability,
+} from "./history.js";
 import { aggregateServiceStatus } from "./state-machine.js";
 import type {
   MonitorCheckState,
+  MonitorImportedDailyAvailability,
   MonitorMaintenanceWindow,
   MonitorResponseSample,
   MonitorStateChange,
@@ -28,6 +32,7 @@ export interface MonitorStatusDocumentInput {
   retentionDays: number;
   services: MonitorDocumentService[];
   stateChanges: MonitorStateChange[];
+  importedDailyAvailability?: MonitorImportedDailyAvailability[];
   maintenanceWindows: MonitorMaintenanceWindow[];
 }
 
@@ -98,13 +103,20 @@ export function createStatusDocument(
         checkedAt: check.checkedAt,
         responseTimeMs: check.responseTimeMs,
       })),
-      dailyAvailability: deriveDailyAvailability({
+      dailyAvailability: mergeDailyAvailability({
         serviceId: service.id,
         monitoringStartedAt: input.monitoringStartedAt,
         generatedAt: input.generatedAt,
         retentionDays: input.retentionDays,
-        stateChanges: input.stateChanges,
-        maintenanceWindows: input.maintenanceWindows,
+        imported: input.importedDailyAvailability ?? [],
+        native: deriveDailyAvailability({
+          serviceId: service.id,
+          monitoringStartedAt: input.monitoringStartedAt,
+          generatedAt: input.generatedAt,
+          retentionDays: input.retentionDays,
+          stateChanges: input.stateChanges,
+          maintenanceWindows: input.maintenanceWindows,
+        }),
       }),
     })),
   };

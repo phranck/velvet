@@ -7,6 +7,53 @@ in the generated Velvet documents.
 
 ## Usage
 
+### Non-destructive migration
+
+`vum` means Velvet Upptime Migrate. It reads an Upptime repository directly
+from GitHub and performs a dry run by default:
+
+```sh
+vum --repository example/status
+```
+
+Use `--json` for the machine-readable report. Files are created only when both
+write options are present:
+
+```sh
+vum \
+  --repository example/status \
+  --write \
+  --destination ./velvet-migration
+```
+
+The destination must be new or empty. `vum` has no force or overwrite mode. It
+writes the complete bundle to a temporary sibling, validates every generated
+file, and publishes the directory only after all checks pass. The source is
+accessed exclusively through GitHub GET requests.
+
+The output contains `velvet.yml`, `.velvet/monitor-state.json`, the three
+`velvet-data/v1` documents, `migration-report.json`, and
+`MIGRATION_REPORT.md`. IPv6 and Globalping services are omitted from active
+configuration and history and listed in the reports. Supported IPv4 daily
+totals are retained without inventing status-change timestamps. The current
+partial day is omitted because its downtime cannot be placed safely within the
+day.
+
+Request header values are never copied into configuration or reports. `vum`
+creates deterministic environment-variable names and reports the matching
+GitHub Secret and workflow mapping. Unsupported HTTP methods, body checks,
+secret-backed URLs, malformed optional history, and other behavior changes are
+reported rather than silently converted.
+
+Set `GITHUB_TOKEN` for private repositories or higher API limits. An optional
+`--ref` selects the source branch, tag, or commit. Without it, `vum` resolves
+the default branch once and pins all Git content and commit queries to the
+resulting full commit SHA. GitHub Issues are not part of Git commits, so the
+report records an issue-state digest as additional provenance. Byte-identical
+reruns require both the pinned commit and the issue state to remain unchanged.
+
+### Compatibility conversion API
+
 ```ts
 import {
   convertUpptimeSnapshot,
@@ -53,6 +100,8 @@ returning them. Serialization repeats validation and produces newline-terminated
 Failures are reported as `UpptimeAdapterError` with one of these codes:
 
 - `CONTRACT_VALIDATION_FAILED`
+- `DESTINATION_NOT_EMPTY`
+- `DESTINATION_WRITE_FAILED`
 - `GITHUB_RATE_LIMITED`
 - `GITHUB_REQUEST_FAILED`
 - `INVALID_INPUT`

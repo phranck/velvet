@@ -83,6 +83,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
+        "@velvet/monitor": "1.0.0",
         "js-yaml": "^4.1.0",
       },
       "devDependencies": {

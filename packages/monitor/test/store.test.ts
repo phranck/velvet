@@ -15,6 +15,7 @@ type TestStateContent = {
   monitoringStartedAt: string;
   current: { checks: unknown[]; services: unknown[] };
   stateChanges: unknown[];
+  importedDailyAvailability: unknown[];
   maintenanceWindows: unknown[];
   responseSamples: unknown[];
   documents: {
@@ -24,7 +25,7 @@ type TestStateContent = {
 };
 
 type TestPersistentState = TestStateContent & {
-  schemaVersion: 2;
+  schemaVersion: 3;
   processedRuns: TestRun[];
 };
 
@@ -91,6 +92,7 @@ function stateContent(generatedAt: string): TestStateContent {
     monitoringStartedAt: "2026-07-29T00:00:00.000Z",
     current: { checks: [], services: [] },
     stateChanges: [],
+    importedDailyAvailability: [],
     maintenanceWindows: [],
     responseSamples: [],
     documents: {
@@ -145,7 +147,38 @@ test("persists the confirmed transition timestamp for each check", async () => {
 
   const result = await updateMonitorState(path, firstRun, () => content);
 
-  assert.equal(result.state.schemaVersion, 2);
+  assert.equal(result.state.schemaVersion, 3);
+  assert.deepEqual(await readMonitorState(path), result.state);
+});
+
+test("persists an unobserved check without inventing a check timestamp", async () => {
+  const { readMonitorState, updateMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const content = stateContent(firstRun.completedAt);
+  content.current.checks.push({
+    serviceId: "website",
+    checkId: "homepage",
+    status: "unavailable",
+    confirmedStatus: null,
+    confirmedAt: null,
+    targetAvailability: "unobserved",
+    failureStreak: 0,
+    recoveryStreak: 0,
+    checkedAt: null,
+    responseTimeMs: null,
+    statusCode: null,
+    failureCode: null,
+  });
+  content.current.services.push({
+    serviceId: "website",
+    status: "unavailable",
+    targetAvailability: "unobserved",
+  });
+
+  const result = await updateMonitorState(path, firstRun, () => content);
+
+  assert.equal(result.outcome, "written");
   assert.deepEqual(await readMonitorState(path), result.state);
 });
 
@@ -193,9 +226,88 @@ test("migrates schema version 1 state without losing confirmed checks", async ()
     | Array<{ confirmedAt: string | null }>
     | undefined;
 
-  assert.equal(migrated?.schemaVersion, 2);
+  assert.equal(migrated?.schemaVersion, 3);
+  assert.deepEqual(migrated?.importedDailyAvailability, []);
   assert.equal(migratedChecks?.[0]?.confirmedAt, firstRun.completedAt);
   assert.equal(migratedChecks?.[1]?.confirmedAt, null);
+});
+
+test("migrates schema version 2 state with empty imported history", async () => {
+  const { readMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const legacyContent: Partial<TestStateContent> = structuredClone(
+    stateContent(firstRun.completedAt),
+  );
+  delete legacyContent.importedDailyAvailability;
+  const legacyState = {
+    ...legacyContent,
+    schemaVersion: 2,
+    processedRuns: [firstRun],
+  };
+  await writeFile(path, `${JSON.stringify(legacyState)}\n`, "utf8");
+
+  const migrated = await readMonitorState(path);
+
+  assert.equal(migrated?.schemaVersion, 3);
+  assert.deepEqual(migrated?.importedDailyAvailability, []);
+});
+
+test("persists imported daily availability with source provenance", async () => {
+  const { readMonitorState, updateMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const content = stateContent(firstRun.completedAt);
+  content.importedDailyAvailability.push({
+    serviceId: "website",
+    date: "2026-07-28",
+    monitoredSeconds: 86_400,
+    unavailableSeconds: 600,
+    source: {
+      kind: "upptime",
+      repository: "example/status",
+      commit: "0123456789abcdef0123456789abcdef01234567",
+      path: "history/website.yml",
+    },
+  });
+
+  const result = await updateMonitorState(path, firstRun, () => content);
+
+  assert.deepEqual(
+    (await readMonitorState(path))?.importedDailyAvailability,
+    content.importedDailyAvailability,
+  );
+  assert.deepEqual(
+    result.state.importedDailyAvailability,
+    content.importedDailyAvailability,
+  );
+});
+
+test("rejects an invalid imported availability date as invalid state", async () => {
+  const { updateMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const content = stateContent(firstRun.completedAt);
+  content.importedDailyAvailability.push({
+    serviceId: "website",
+    date: "2026-99-99",
+    monitoredSeconds: 86_400,
+    unavailableSeconds: 600,
+    source: {
+      kind: "upptime",
+      repository: "example/status",
+      commit: "0123456789abcdef0123456789abcdef01234567",
+      path: "history/website.yml",
+    },
+  });
+
+  await assert.rejects(
+    updateMonitorState(path, firstRun, () => content),
+    (error: unknown) =>
+      error instanceof Error &&
+      "code" in error &&
+      error.code === "STATE_INVALID",
+  );
 });
 
 test("returns the stored state for a duplicate run without writing", async () => {

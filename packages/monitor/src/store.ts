@@ -16,6 +16,7 @@ import {
 import {
   MONITOR_STATE_SCHEMA_VERSION,
   type MonitorCheckState,
+  type MonitorImportedDailyAvailability,
   type MonitorMaintenanceWindow,
   type MonitorPersistentState,
   type MonitorResponseSample,
@@ -156,7 +157,7 @@ function isCheckState(value: unknown): value is MonitorCheckState {
     (value.failureStreak as number) >= 0 &&
     Number.isInteger(value.recoveryStreak) &&
     (value.recoveryStreak as number) >= 0 &&
-    isTimestamp(value.checkedAt) &&
+    (value.checkedAt === null || isTimestamp(value.checkedAt)) &&
     (value.responseTimeMs === null ||
       (typeof value.responseTimeMs === "number" &&
         Number.isFinite(value.responseTimeMs) &&
@@ -196,26 +197,34 @@ function migrateLegacyCheckState(value: unknown): MonitorCheckState | null {
 }
 
 function migrateLegacyPersistentState(value: unknown): unknown {
+  let migrated = value;
   if (
-    !isRecord(value) ||
-    value.schemaVersion !== 1 ||
-    !isRecord(value.current) ||
-    !Array.isArray(value.current.checks)
+    isRecord(migrated) &&
+    migrated.schemaVersion === 1 &&
+    isRecord(migrated.current) &&
+    Array.isArray(migrated.current.checks)
   ) {
-    return value;
+    const checks = migrated.current.checks.map(migrateLegacyCheckState);
+    if (checks.some((check) => check === null)) {
+      return value;
+    }
+    migrated = {
+      ...migrated,
+      schemaVersion: 2,
+      current: {
+        ...migrated.current,
+        checks,
+      },
+    };
   }
-  const checks = value.current.checks.map(migrateLegacyCheckState);
-  if (checks.some((check) => check === null)) {
-    return value;
+  if (isRecord(migrated) && migrated.schemaVersion === 2) {
+    return {
+      ...migrated,
+      schemaVersion: MONITOR_STATE_SCHEMA_VERSION,
+      importedDailyAvailability: [],
+    };
   }
-  return {
-    ...value,
-    schemaVersion: MONITOR_STATE_SCHEMA_VERSION,
-    current: {
-      ...value.current,
-      checks,
-    },
-  };
+  return migrated;
 }
 
 function isServiceState(value: unknown): value is MonitorServiceState {
@@ -287,6 +296,70 @@ function isResponseSample(value: unknown): value is MonitorResponseSample {
   );
 }
 
+function isDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
+    return false;
+  }
+  try {
+    return (
+      new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) ===
+      value
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isSafeSourcePath(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 1_024 &&
+    !value.startsWith("/") &&
+    !value.includes("\0") &&
+    !value.split("/").includes("..")
+  );
+}
+
+function isImportedDailyAvailability(
+  value: unknown,
+): value is MonitorImportedDailyAvailability {
+  return (
+    isRecord(value) &&
+    hasExactKeys(value, [
+      "serviceId",
+      "date",
+      "monitoredSeconds",
+      "unavailableSeconds",
+      "source",
+    ]) &&
+    isIdentifier(value.serviceId) &&
+    isDate(value.date) &&
+    Number.isInteger(value.monitoredSeconds) &&
+    (value.monitoredSeconds as number) >= 1 &&
+    (value.monitoredSeconds as number) <= 86_400 &&
+    Number.isInteger(value.unavailableSeconds) &&
+    (value.unavailableSeconds as number) >= 0 &&
+    (value.unavailableSeconds as number) <=
+      (value.monitoredSeconds as number) &&
+    isRecord(value.source) &&
+    hasExactKeys(value.source, [
+      "kind",
+      "repository",
+      "commit",
+      "path",
+    ]) &&
+    value.source.kind === "upptime" &&
+    typeof value.source.repository === "string" &&
+    /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(
+      value.source.repository,
+    ) &&
+    typeof value.source.commit === "string" &&
+    /^[0-9a-f]{40}$/u.test(value.source.commit) &&
+    isSafeSourcePath(value.source.path)
+  );
+}
+
 function isRun(value: unknown): value is MonitorRun {
   return (
     isRecord(value) &&
@@ -320,6 +393,7 @@ function isPersistentState(value: unknown): value is MonitorPersistentState {
       "monitoringStartedAt",
       "current",
       "stateChanges",
+      "importedDailyAvailability",
       "maintenanceWindows",
       "responseSamples",
       "documents",
@@ -336,6 +410,10 @@ function isPersistentState(value: unknown): value is MonitorPersistentState {
     !value.current.services.every(isServiceState) ||
     !Array.isArray(value.stateChanges) ||
     !value.stateChanges.every(isStateChange) ||
+    !Array.isArray(value.importedDailyAvailability) ||
+    !value.importedDailyAvailability.every(
+      isImportedDailyAvailability,
+    ) ||
     !Array.isArray(value.maintenanceWindows) ||
     !value.maintenanceWindows.every(isMaintenanceWindow) ||
     !Array.isArray(value.responseSamples) ||
@@ -402,6 +480,20 @@ function isPersistentState(value: unknown): value is MonitorPersistentState {
     }
     previousSampleAt = timestamp;
     sampleIds.add(identity);
+  }
+
+  let previousImportedIdentity = "";
+  const importedIdentities = new Set<string>();
+  for (const imported of value.importedDailyAvailability) {
+    const identity = `${imported.date}\u0000${imported.serviceId}`;
+    if (
+      identity.localeCompare(previousImportedIdentity) < 0 ||
+      importedIdentities.has(identity)
+    ) {
+      return false;
+    }
+    previousImportedIdentity = identity;
+    importedIdentities.add(identity);
   }
 
   const statusResult = validateStatusDocument(value.documents.status);
