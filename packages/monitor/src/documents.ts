@@ -25,6 +25,7 @@ export interface MonitorDocumentService {
 export interface MonitorStatusDocumentInput {
   generatedAt: string;
   monitoringStartedAt: string;
+  retentionDays: number;
   services: MonitorDocumentService[];
   stateChanges: MonitorStateChange[];
   maintenanceWindows: MonitorMaintenanceWindow[];
@@ -101,6 +102,7 @@ export function createStatusDocument(
         serviceId: service.id,
         monitoringStartedAt: input.monitoringStartedAt,
         generatedAt: input.generatedAt,
+        retentionDays: input.retentionDays,
         stateChanges: input.stateChanges,
         maintenanceWindows: input.maintenanceWindows,
       }),

@@ -32,6 +32,7 @@ type DeriveDailyAvailability = (input: {
   serviceId: string;
   monitoringStartedAt: string;
   generatedAt: string;
+  retentionDays: number;
   stateChanges: TestStateChange[];
   maintenanceWindows: TestMaintenanceWindow[];
 }) => DailyAvailability[];
@@ -40,6 +41,12 @@ type AppendStateChanges = (
   history: TestStateChange[],
   serviceStates: TestServiceState[],
   run: { runId: string; changedAt: string },
+) => TestStateChange[];
+
+type CompactStateChanges = (
+  history: TestStateChange[],
+  generatedAt: string,
+  retentionDays: number,
 ) => TestStateChange[];
 
 type TestResponseSample = {
@@ -89,6 +96,19 @@ async function stateHistoryFunctions(): Promise<{
   };
 }
 
+async function compactionFunctions(): Promise<{
+  compactStateChanges: CompactStateChanges;
+}> {
+  const module = (await historyModule) as Record<string, unknown>;
+  if (typeof module.compactStateChanges !== "function") {
+    assert.fail("@velvet/monitor must export compactStateChanges");
+  }
+  return {
+    compactStateChanges:
+      module.compactStateChanges as CompactStateChanges,
+  };
+}
+
 async function responseHistoryFunctions(): Promise<{
   appendResponseSamples: AppendResponseSamples;
 }> {
@@ -128,6 +148,7 @@ test("keeps a short target failure in daily availability", async () => {
     serviceId: "website",
     monitoringStartedAt: "2026-07-29T00:00:00.000Z",
     generatedAt: "2026-07-29T02:00:00.000Z",
+    retentionDays: 365,
     stateChanges: [
       stateChange("2026-07-29T00:00:00.000Z", "available"),
       stateChange("2026-07-29T01:00:00.000Z", "unavailable"),
@@ -151,6 +172,7 @@ test("keeps measured downtime during planned maintenance", async () => {
     serviceId: "website",
     monitoringStartedAt: "2026-07-29T00:00:00.000Z",
     generatedAt: "2026-07-29T03:00:00.000Z",
+    retentionDays: 365,
     stateChanges: [
       stateChange("2026-07-29T00:00:00.000Z", "available"),
       stateChange("2026-07-29T01:00:00.000Z", "unavailable"),
@@ -181,6 +203,7 @@ test("splits measured downtime at UTC day boundaries", async () => {
     serviceId: "website",
     monitoringStartedAt: "2026-07-29T23:59:30.000Z",
     generatedAt: "2026-07-30T00:00:30.000Z",
+    retentionDays: 365,
     stateChanges: [
       stateChange("2026-07-29T23:59:30.000Z", "available"),
       stateChange("2026-07-29T23:59:45.000Z", "unavailable"),
@@ -209,6 +232,7 @@ test("excludes periods without a reliable target result", async () => {
     serviceId: "website",
     monitoringStartedAt: "2026-07-29T00:00:00.000Z",
     generatedAt: "2026-07-29T02:00:00.000Z",
+    retentionDays: 365,
     stateChanges: [
       stateChange("2026-07-29T00:00:00.000Z", "available"),
       stateChange("2026-07-29T01:00:00.000Z", "unobserved"),
@@ -257,6 +281,7 @@ test("matches every generated six-minute availability sequence", async () => {
       serviceId: "website",
       monitoringStartedAt: "2026-07-29T00:00:00.000Z",
       generatedAt: "2026-07-29T00:06:00.000Z",
+      retentionDays: 365,
       stateChanges: sequence,
       maintenanceWindows: [],
     });
@@ -273,6 +298,56 @@ test("matches every generated six-minute availability sequence", async () => {
       },
     ]);
   }
+});
+
+test("limits daily availability to the configured history window", async () => {
+  const { deriveDailyAvailability } = await historyFunctions();
+  const dailyAvailability = deriveDailyAvailability({
+    serviceId: "website",
+    monitoringStartedAt: "2026-07-27T00:00:00.000Z",
+    generatedAt: "2026-07-29T12:00:00.000Z",
+    retentionDays: 1,
+    stateChanges: [
+      stateChange("2026-07-27T00:00:00.000Z", "available"),
+      stateChange("2026-07-28T18:00:00.000Z", "unavailable"),
+      stateChange("2026-07-29T06:00:00.000Z", "available"),
+    ],
+    maintenanceWindows: [],
+  });
+
+  assert.deepEqual(dailyAvailability, [
+    {
+      date: "2026-07-28",
+      monitoredSeconds: 43_200,
+      unavailableSeconds: 21_600,
+    },
+    {
+      date: "2026-07-29",
+      monitoredSeconds: 43_200,
+      unavailableSeconds: 21_600,
+    },
+  ]);
+});
+
+test("keeps one cutoff state per service when compacting history", async () => {
+  const { compactStateChanges } = await compactionFunctions();
+  const history = [
+    stateChange("2026-07-27T00:00:00.000Z", "available"),
+    stateChange("2026-07-28T00:00:00.000Z", "unavailable"),
+    stateChange("2026-07-28T06:00:00.000Z", "available", {
+      serviceId: "api",
+    }),
+    stateChange("2026-07-28T18:00:00.000Z", "available"),
+  ];
+
+  const compacted = compactStateChanges(
+    history,
+    "2026-07-29T12:00:00.000Z",
+    1,
+  );
+
+  assert.deepEqual(compacted, [history[1], history[2], history[3]]);
+  assert.equal(history.length, 4);
 });
 
 test("appends only display or measured availability changes", async () => {

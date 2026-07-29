@@ -301,6 +301,18 @@ function isRun(value: unknown): value is MonitorRun {
   );
 }
 
+function retainProcessedRuns(
+  runs: MonitorRun[],
+  stateChanges: MonitorStateChange[],
+  newestRunId: string,
+): MonitorRun[] {
+  const retainedRunIds = new Set(
+    stateChanges.map(({ runId }) => runId),
+  );
+  retainedRunIds.add(newestRunId);
+  return runs.filter(({ id }) => retainedRunIds.has(id));
+}
+
 function isPersistentState(value: unknown): value is MonitorPersistentState {
   if (
     !isRecord(value) ||
@@ -487,7 +499,11 @@ export async function updateMonitorState(
     const candidate = {
       ...content,
       schemaVersion: MONITOR_STATE_SCHEMA_VERSION,
-      processedRuns: [...(current?.processedRuns ?? []), run],
+      processedRuns: retainProcessedRuns(
+        [...(current?.processedRuns ?? []), run],
+        content.stateChanges,
+        run.id,
+      ),
     };
     const serialized = `${JSON.stringify(candidate, null, 2)}\n`;
     const parsed: unknown = JSON.parse(serialized);

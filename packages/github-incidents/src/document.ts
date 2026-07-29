@@ -15,6 +15,7 @@ import type {
 
 export interface CreateIncidentsDocumentInput {
   generatedAt: string;
+  retentionDays: number;
   services: MaintenanceService[];
   issues: GitHubIssue[];
 }
@@ -121,7 +122,16 @@ export function createIncidentsDocument(
     }
   }
 
-  events.sort(
+  const cutoff =
+    Date.parse(generatedAt) - input.retentionDays * 86_400_000;
+  const retainedEvents = events.filter((event) => {
+    if (event.kind === "incident" && event.state === "open") return true;
+    if (event.kind === "maintenance" && event.state !== "completed") {
+      return true;
+    }
+    return event.endsAt !== null && Date.parse(event.endsAt) >= cutoff;
+  });
+  retainedEvents.sort(
     (left, right) =>
       right.startsAt.localeCompare(left.startsAt) ||
       left.id.localeCompare(right.id),
@@ -129,7 +139,7 @@ export function createIncidentsDocument(
   const document: IncidentsDocument = {
     schemaVersion: CONTRACT_SCHEMA_VERSION,
     generatedAt,
-    events,
+    events: retainedEvents,
   };
   if (!validateIncidentsDocument(document).success) {
     throw new GitHubIncidentsError("INVALID_INCIDENT_DOCUMENT");

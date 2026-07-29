@@ -105,6 +105,7 @@ class RestGitHubIssuesClient implements GitHubIssuesClient {
   private readonly createErrorId: NonNullable<
     GitHubIssuesClientOptions["createErrorId"]
   >;
+  private readonly locallyWrittenIssues = new Map<number, GitHubIssue>();
 
   constructor(private readonly options: GitHubIssuesClientOptions) {
     this.apiBaseUrl = new URL(options.apiBaseUrl ?? "https://api.github.com");
@@ -134,6 +135,7 @@ class RestGitHubIssuesClient implements GitHubIssuesClient {
     init: RequestInit = {},
     allowedStatuses: number[] = [],
   ): Promise<Response> {
+    const method = (init.method ?? "GET").toUpperCase();
     let response: Response;
     try {
       response = await this.fetchImplementation(url, {
@@ -142,6 +144,7 @@ class RestGitHubIssuesClient implements GitHubIssuesClient {
           accept: "application/vnd.github+json",
           authorization: `Bearer ${this.options.token}`,
           "x-github-api-version": GITHUB_API_VERSION,
+          ...(method === "GET" ? { "cache-control": "no-cache" } : {}),
           ...(init.body === undefined ? {} : { "content-type": "application/json" }),
           ...init.headers,
         },
@@ -215,7 +218,13 @@ class RestGitHubIssuesClient implements GitHubIssuesClient {
       }
       url = this.nextUrl(response);
     }
-    return issues;
+    const merged = new Map(issues.map((issue) => [issue.number, issue]));
+    for (const issue of this.locallyWrittenIssues.values()) {
+      if (issue.labels.includes(label)) {
+        merged.set(issue.number, issue);
+      }
+    }
+    return [...merged.values()];
   }
 
   async listComments(issueNumber: number): Promise<GitHubComment[]> {
@@ -271,6 +280,7 @@ class RestGitHubIssuesClient implements GitHubIssuesClient {
     if (issue === null) {
       throw this.error("INVALID_GITHUB_RESPONSE", response.status);
     }
+    this.locallyWrittenIssues.set(issue.number, issue);
     return issue;
   }
 
@@ -291,6 +301,7 @@ class RestGitHubIssuesClient implements GitHubIssuesClient {
     if (issue === null) {
       throw this.error("INVALID_GITHUB_RESPONSE", response.status);
     }
+    this.locallyWrittenIssues.set(issue.number, issue);
     return issue;
   }
 

@@ -135,6 +135,34 @@ services:
   });
 });
 
+test("accepts at most 365 days of retained history", () => {
+  const accepted = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - { name: Website, url: https://example.com }
+history: { retentionDays: 365 }
+`);
+
+  assert.equal(accepted.success, true);
+
+  const rejected = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - { name: Website, url: https://example.com }
+history: { retentionDays: 366 }
+`);
+
+  assertConfigurationError(
+    rejected,
+    "INVALID_CONFIGURATION",
+    "/history/retentionDays",
+  );
+});
+
 test("rejects duplicate derived service identifiers", () => {
   const result = parse(`
 schemaVersion: 1

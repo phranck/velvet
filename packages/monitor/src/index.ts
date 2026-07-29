@@ -16,6 +16,7 @@ export type {
 export {
   appendResponseSamples,
   appendStateChanges,
+  compactStateChanges,
   deriveDailyAvailability,
 } from "./history.js";
 export type {

@@ -22,6 +22,7 @@ export interface DailyAvailabilityInput {
   serviceId: string;
   monitoringStartedAt: string;
   generatedAt: string;
+  retentionDays: number;
   stateChanges: MonitorStateChange[];
   maintenanceWindows: MonitorMaintenanceWindow[];
 }
@@ -68,6 +69,37 @@ export function appendStateChanges(
   }
 
   return nextHistory;
+}
+
+export function compactStateChanges(
+  history: MonitorStateChange[],
+  generatedAt: string,
+  retentionDays: number,
+): MonitorStateChange[] {
+  const cutoff = Date.parse(generatedAt) - retentionDays * DAY_MS;
+  const boundaryByService = new Map<string, MonitorStateChange>();
+  const retained: MonitorStateChange[] = [];
+
+  for (const change of history) {
+    if (Date.parse(change.changedAt) <= cutoff) {
+      const boundary = boundaryByService.get(change.serviceId);
+      if (
+        boundary === undefined ||
+        change.changedAt.localeCompare(boundary.changedAt) > 0
+      ) {
+        boundaryByService.set(change.serviceId, change);
+      }
+      continue;
+    }
+    retained.push(change);
+  }
+
+  return [...boundaryByService.values(), ...retained].sort(
+    (left, right) =>
+      left.changedAt.localeCompare(right.changedAt) ||
+      left.serviceId.localeCompare(right.serviceId) ||
+      left.runId.localeCompare(right.runId),
+  );
 }
 
 export function appendResponseSamples(
@@ -125,16 +157,20 @@ function availabilityIntervals(
 ): AvailabilityInterval[] {
   const monitoringStartedAt = Date.parse(input.monitoringStartedAt);
   const generatedAt = Date.parse(input.generatedAt);
+  const availabilityStartsAt = Math.max(
+    monitoringStartedAt,
+    generatedAt - input.retentionDays * DAY_MS,
+  );
   const changes = input.stateChanges
     .filter(({ serviceId }) => serviceId === input.serviceId)
     .sort((left, right) => left.changedAt.localeCompare(right.changedAt));
   const intervals: AvailabilityInterval[] = [];
-  let intervalStartsAt = monitoringStartedAt;
+  let intervalStartsAt = availabilityStartsAt;
   let targetAvailability: TargetAvailability = "unobserved";
 
   for (const change of changes) {
     const changedAt = Date.parse(change.changedAt);
-    if (changedAt <= monitoringStartedAt) {
+    if (changedAt <= availabilityStartsAt) {
       targetAvailability = change.targetAvailability;
       continue;
     }
@@ -167,11 +203,15 @@ export function deriveDailyAvailability(
 ): MonitorDailyAvailability[] {
   const monitoringStartedAt = Date.parse(input.monitoringStartedAt);
   const generatedAt = Date.parse(input.generatedAt);
+  const availabilityStartsAt = Math.max(
+    monitoringStartedAt,
+    generatedAt - input.retentionDays * DAY_MS,
+  );
   const intervals = availabilityIntervals(input);
   const days: MonitorDailyAvailability[] = [];
 
   for (
-    let currentDay = dayStart(monitoringStartedAt);
+    let currentDay = dayStart(availabilityStartsAt);
     currentDay < generatedAt;
     currentDay += DAY_MS
   ) {

@@ -23,12 +23,12 @@ permissions:
 ```
 
 Every workflow that can update Velvet incidents must share one concurrency
-group. Queue runs instead of replacing a waiting run:
+group. Let the running job finish and keep the newest pending run:
 
 ```yaml
 concurrency:
   group: velvet-status-data
-  queue: max
+  cancel-in-progress: false
 ```
 
 This serial execution is part of duplicate prevention. The package also checks
