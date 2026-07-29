@@ -9,7 +9,7 @@ test("builds contracts before typechecking dependent workspaces", async () => {
 
   assert.equal(
     packageDocument.scripts.pretypecheck,
-    "bun run --filter @velvet/contracts build",
+    "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build",
   );
 });
 
@@ -39,6 +39,40 @@ test("runs monitor gates after its contracts dependency", async () => {
     assert.notEqual(script.indexOf(monitorCommand), -1);
     assert.equal(
       script.indexOf(contractsCommand) < script.indexOf(monitorCommand),
+      true,
+    );
+  }
+});
+
+test("runs GitHub incident gates after contracts and monitor", async () => {
+  const packageDocument = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  const incidentPackage = JSON.parse(
+    await readFile(
+      new URL("../packages/github-incidents/package.json", import.meta.url),
+      "utf8",
+    ),
+  );
+
+  assert.equal(
+    incidentPackage.scripts.pretest,
+    "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build",
+  );
+  for (const gate of ["build", "test", "typecheck"]) {
+    const script = packageDocument.scripts[gate];
+    const contractsCommand = `bun run --filter @velvet/contracts ${gate}`;
+    const monitorCommand = `bun run --filter @velvet/monitor ${gate}`;
+    const incidentsCommand = `bun run --filter @velvet/github-incidents ${gate}`;
+
+    assert.equal(typeof script, "string");
+    assert.notEqual(script.indexOf(incidentsCommand), -1);
+    assert.equal(
+      script.indexOf(contractsCommand) < script.indexOf(incidentsCommand),
+      true,
+    );
+    assert.equal(
+      script.indexOf(monitorCommand) < script.indexOf(incidentsCommand),
       true,
     );
   }
