@@ -35,9 +35,16 @@ type TestResponseSample = {
   responseTimeMs: number | null;
 };
 
+type DailyAvailability = {
+  date: string;
+  monitoredSeconds: number;
+  unavailableSeconds: number;
+};
+
 type TestDocumentInput = {
   generatedAt: string;
   monitoringStartedAt: string;
+  retentionDays: number;
   services: Array<{
     id: string;
     name: string;
@@ -118,6 +125,7 @@ test("creates contract-valid status and response-time documents", async () => {
   const documents = createMonitorDocuments({
     generatedAt: "2026-07-29T02:00:00.000Z",
     monitoringStartedAt: "2026-07-29T00:00:00.000Z",
+    retentionDays: 365,
     services: [
       {
         id: "website",
@@ -246,6 +254,52 @@ test("creates contract-valid status and response-time documents", async () => {
   });
 });
 
+test("passes the configured retention period to status history", async () => {
+  const { createMonitorDocuments } = await documentFunctions();
+  const documents = createMonitorDocuments({
+    generatedAt: "2026-07-29T12:00:00.000Z",
+    monitoringStartedAt: "2026-07-27T00:00:00.000Z",
+    retentionDays: 1,
+    services: [
+      {
+        id: "website",
+        name: "Website",
+        checks: [
+          checkState("primary", {
+            checkedAt: "2026-07-29T11:59:00.000Z",
+          }),
+        ],
+      },
+    ],
+    stateChanges: [
+      {
+        runId: "run-1",
+        serviceId: "website",
+        changedAt: "2026-07-27T00:00:00.000Z",
+        status: "up",
+        targetAvailability: "available",
+      },
+    ],
+    maintenanceWindows: [],
+    responseSamples: [],
+  }) as {
+    status: { services: Array<{ dailyAvailability: DailyAvailability[] }> };
+  };
+
+  assert.deepEqual(documents.status.services[0]?.dailyAvailability, [
+    {
+      date: "2026-07-28",
+      monitoredSeconds: 43_200,
+      unavailableSeconds: 0,
+    },
+    {
+      date: "2026-07-29",
+      monitoredSeconds: 43_200,
+      unavailableSeconds: 0,
+    },
+  ]);
+});
+
 test("rejects generated documents that fail the public contract", async () => {
   const { createMonitorDocuments } = await documentFunctions();
 
@@ -254,6 +308,7 @@ test("rejects generated documents that fail the public contract", async () => {
       createMonitorDocuments({
         generatedAt: "2026-07-29T02:00:00.000Z",
         monitoringStartedAt: "2026-07-29T00:00:00.000Z",
+        retentionDays: 365,
         services: [
           {
             id: "invalid service id",

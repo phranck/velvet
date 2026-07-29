@@ -380,7 +380,7 @@ export const VelvetConfigurationSchema = Type.Object(
       Type.Object(
         {
           retentionDays: Type.Optional(
-            Type.Integer({ minimum: 1, maximum: 3_650 }),
+            Type.Integer({ minimum: 1, maximum: 365 }),
           ),
         },
         { additionalProperties: false },

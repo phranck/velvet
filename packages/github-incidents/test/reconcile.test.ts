@@ -62,6 +62,7 @@ type TestService = {
 
 type ReconcileInput = {
   generatedAt: string;
+  retentionDays: number;
   services: TestService[];
   checkStates: TestCheckState[];
   incidentLabel: string;
@@ -87,6 +88,7 @@ async function reconciliationFunctions(): Promise<{
   ) => Promise<ReconcileResult>;
   createIncidentsDocument: (input: {
     generatedAt: string;
+    retentionDays: number;
     services: TestService[];
     issues: GitHubIssue[];
   }) => { events: Array<Record<string, unknown>> };
@@ -258,6 +260,7 @@ function issue(
 function input(checkStates: TestCheckState[], generatedAt: string): ReconcileInput {
   return {
     generatedAt,
+    retentionDays: 365,
     services,
     checkStates,
     incidentLabel: "incident",
@@ -297,6 +300,37 @@ test("creates one incident for a confirmed transition and stays duplicate-free",
   assert.equal(second.document.events.length, 1);
   assert.equal(first.document.events[0]?.kind, "incident");
   assert.equal(first.document.events[0]?.state, "open");
+});
+
+test("reuses an open incident when its data snapshot was not published", async () => {
+  const { reconcileGitHubIncidents, serializeVelvetMetadata } =
+    await reconciliationFunctions();
+  const existing = issue(
+    11,
+    "Public API / Readiness is unavailable",
+    serializeVelvetMetadata({
+      schemaVersion: 1,
+      kind: "incident",
+      serviceId: "api",
+      checkId: "readiness",
+      transitionAt: "2026-07-29T12:01:00.000Z",
+      startedAt: "2026-07-29T12:01:00.000Z",
+    }),
+    "incident",
+  );
+  const client = new MemoryGitHubIssuesClient([existing]);
+
+  const result = await reconcileGitHubIncidents(
+    input(
+      [checkState("api", "readiness", "down", "2026-07-29T12:06:00.000Z")],
+      "2026-07-29T12:10:00.000Z",
+    ),
+    { client },
+  );
+
+  assert.equal(client.issues.length, 1);
+  assert.equal(client.issues[0]?.number, 11);
+  assert.equal(result.document.events[0]?.id, "incident-11");
 });
 
 test("comments once and closes only incidents for a confirmed recovery", async () => {
@@ -428,6 +462,7 @@ test("publishes the open primary when an older duplicate is already closed", asy
 
   const document = createIncidentsDocument({
     generatedAt: "2026-07-29T12:30:00.000Z",
+    retentionDays: 365,
     services,
     issues: [
       issue(16, "Closed duplicate", marker, "incident", {
@@ -450,6 +485,106 @@ test("publishes the open primary when an older duplicate is already closed", asy
       endsAt: null,
     },
   ]);
+});
+
+test("retains only recent completed events plus active and future events", async () => {
+  const { createIncidentsDocument, serializeVelvetMetadata } =
+    await reconciliationFunctions();
+  const incidentMarker = (
+    serviceId: string,
+    checkId: string,
+    startedAt: string,
+  ): string =>
+    serializeVelvetMetadata({
+      schemaVersion: 1,
+      kind: "incident",
+      serviceId,
+      checkId,
+      transitionAt: startedAt,
+      startedAt,
+    });
+  const maintenanceMarker = (
+    startsAt: string,
+    endsAt: string,
+  ): string =>
+    serializeVelvetMetadata({
+      schemaVersion: 1,
+      kind: "maintenance",
+      targets: [{ serviceId: "api", checkId: "readiness" }],
+      startsAt,
+      endsAt,
+      summary: "Database work.",
+    });
+
+  const document = createIncidentsDocument({
+    generatedAt: "2026-07-29T12:00:00.000Z",
+    retentionDays: 1,
+    services,
+    issues: [
+      issue(
+        50,
+        "Old resolved incident",
+        incidentMarker("api", "readiness", "2026-07-26T00:00:00.000Z"),
+        "incident",
+        {
+          state: "closed",
+          closedAt: "2026-07-27T00:00:00.000Z",
+        },
+      ),
+      issue(
+        51,
+        "Recent resolved incident",
+        incidentMarker("api", "version", "2026-07-28T13:00:00.000Z"),
+        "incident",
+        {
+          state: "closed",
+          closedAt: "2026-07-28T14:00:00.000Z",
+        },
+      ),
+      issue(
+        52,
+        "Long-running incident",
+        incidentMarker("website", "homepage", "2026-07-01T00:00:00.000Z"),
+        "incident",
+      ),
+      issue(
+        53,
+        "[Maintenance] Old maintenance",
+        maintenanceMarker(
+          "2026-07-26T00:00:00.000Z",
+          "2026-07-26T01:00:00.000Z",
+        ),
+        "maintenance",
+        {
+          state: "closed",
+          closedAt: "2026-07-26T01:00:00.000Z",
+        },
+      ),
+      issue(
+        54,
+        "[Maintenance] Active maintenance",
+        maintenanceMarker(
+          "2026-07-29T11:00:00.000Z",
+          "2026-07-29T13:00:00.000Z",
+        ),
+        "maintenance",
+      ),
+      issue(
+        55,
+        "[Maintenance] Scheduled maintenance",
+        maintenanceMarker(
+          "2026-07-30T11:00:00.000Z",
+          "2026-07-30T13:00:00.000Z",
+        ),
+        "maintenance",
+      ),
+    ],
+  });
+
+  assert.deepEqual(
+    document.events.map(({ id }) => id).sort(),
+    ["incident-51", "incident-52", "maintenance-54", "maintenance-55"],
+  );
 });
 
 test("publishes a recovery even when GitHub closes the issue after the run timestamp", async () => {
@@ -568,6 +703,7 @@ test("returns contract-valid public data without raw issue bodies", async () => 
   })}`;
   const incidents = createIncidentsDocument({
     generatedAt: "2026-07-29T12:30:00.000Z",
+    retentionDays: 365,
     services,
     issues: [
       issue(40, "Public API / Readiness is unavailable", secretBody, "incident"),

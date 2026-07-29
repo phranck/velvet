@@ -325,7 +325,44 @@ test("can write the next run after an interrupted replacement", async () => {
   );
 
   assert.equal(recovered.outcome, "written");
-  assert.deepEqual(recovered.state.processedRuns, [firstRun, secondRun]);
+  assert.deepEqual(recovered.state.processedRuns, [secondRun]);
+});
+
+test("drops processed runs no longer referenced by compacted state", async () => {
+  const { updateMonitorState } = await storeFunctions();
+  const path = await statePath();
+  const firstRun = run("run-1", 1);
+  const secondRun = run("run-2", 2);
+  const thirdRun = run("run-3", 3);
+  const firstChange = {
+    runId: firstRun.id,
+    serviceId: "website",
+    changedAt: firstRun.completedAt,
+    status: "up",
+    targetAvailability: "available",
+  };
+  const secondChange = {
+    runId: secondRun.id,
+    serviceId: "website",
+    changedAt: secondRun.completedAt,
+    status: "down",
+    targetAvailability: "unavailable",
+  };
+
+  await updateMonitorState(path, firstRun, () => ({
+    ...stateContent(firstRun.completedAt),
+    stateChanges: [firstChange],
+  }));
+  await updateMonitorState(path, secondRun, () => ({
+    ...stateContent(secondRun.completedAt),
+    stateChanges: [firstChange, secondChange],
+  }));
+  const compacted = await updateMonitorState(path, thirdRun, () => ({
+    ...stateContent(thirdRun.completedAt),
+    stateChanges: [secondChange],
+  }));
+
+  assert.deepEqual(compacted.state.processedRuns, [secondRun, thirdRun]);
 });
 
 test("rejects an incomplete private state before replacing the file", async () => {

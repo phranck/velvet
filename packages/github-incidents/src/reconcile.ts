@@ -34,6 +34,7 @@ import type {
 
 export interface ReconcileGitHubIncidentsInput {
   generatedAt: string;
+  retentionDays: number;
   services: MaintenanceService[];
   checkStates: MonitorCheckState[];
   incidentLabel: string;
@@ -268,6 +269,26 @@ export async function reconcileGitHubIncidents(
     }
 
     const transitionIdentity = `${state.serviceId}\u0000${state.checkId}\u0000${state.confirmedAt}`;
+    const openTargetIncidents = incidentIssues()
+      .filter(
+        ({ issue, metadata }) =>
+          issue.state === "open" &&
+          targetIdentity(metadata.serviceId, metadata.checkId) === target,
+      )
+      .sort((left, right) => left.issue.number - right.issue.number);
+    if (openTargetIncidents.length > 0) {
+      const primary = openTargetIncidents[0]!;
+      for (const duplicate of openTargetIncidents.slice(1)) {
+        const actionId = `incident:${duplicate.issue.number}:duplicate-of-${primary.issue.number}`;
+        await ensureComment(
+          duplicate.issue.number,
+          actionId,
+          `Velvet identified this as a duplicate of incident #${primary.issue.number} and is closing it without deleting its history.`,
+        );
+        await updateIssue(duplicate.issue.number, { state: "closed" });
+      }
+      continue;
+    }
     const transitionIncidents = incidentIssues().filter(
       ({ metadata }) => incidentIdentity(metadata) === transitionIdentity,
     );
@@ -346,6 +367,7 @@ export async function reconcileGitHubIncidents(
   return {
     document: createIncidentsDocument({
       generatedAt: input.generatedAt,
+      retentionDays: input.retentionDays,
       services: input.services,
       issues: [...issues.values()],
     }),

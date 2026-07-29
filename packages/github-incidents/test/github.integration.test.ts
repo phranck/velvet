@@ -99,6 +99,7 @@ test.skipIf(!repository || !token || !explicitlyIsolated)(
       await reconcileGitHubIncidents(
         {
           generatedAt: startedAt,
+          retentionDays: 365,
           services,
           checkStates: [state("down", startedAt)],
           incidentLabel,
@@ -110,6 +111,7 @@ test.skipIf(!repository || !token || !explicitlyIsolated)(
       await reconcileGitHubIncidents(
         {
           generatedAt: startedAt,
+          retentionDays: 365,
           services,
           checkStates: [state("down", startedAt)],
           incidentLabel,
@@ -120,6 +122,7 @@ test.skipIf(!repository || !token || !explicitlyIsolated)(
       await reconcileGitHubIncidents(
         {
           generatedAt: recoveredAt,
+          retentionDays: 365,
           services,
           checkStates: [state("up", recoveredAt)],
           incidentLabel,

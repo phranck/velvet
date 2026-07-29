@@ -1564,7 +1564,7 @@
       "properties": {
         "retentionDays": {
           "minimum": 1,
-          "maximum": 3650,
+          "maximum": 365,
           "type": "integer"
         }
       }
