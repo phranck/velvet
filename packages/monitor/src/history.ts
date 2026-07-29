@@ -1,0 +1,255 @@
+import type {
+  MonitorDailyAvailability,
+  MonitorMaintenanceWindow,
+  MonitorResponseSample,
+  MonitorServiceState,
+  MonitorStateChange,
+} from "./state.js";
+import type {
+  MonitorObservation,
+  TargetAvailability,
+} from "./orchestrator.js";
+
+const DAY_MS = 86_400_000;
+
+interface AvailabilityInterval {
+  startsAt: number;
+  endsAt: number;
+  targetAvailability: TargetAvailability;
+}
+
+interface TimeInterval {
+  startsAt: number;
+  endsAt: number;
+}
+
+export interface DailyAvailabilityInput {
+  serviceId: string;
+  monitoringStartedAt: string;
+  generatedAt: string;
+  stateChanges: MonitorStateChange[];
+  maintenanceWindows: MonitorMaintenanceWindow[];
+}
+
+export interface StateChangeRun {
+  runId: string;
+  changedAt: string;
+}
+
+export interface ResponseSampleRetention {
+  generatedAt: string;
+  retentionDays: number;
+}
+
+export function appendStateChanges(
+  history: MonitorStateChange[],
+  serviceStates: MonitorServiceState[],
+  run: StateChangeRun,
+): MonitorStateChange[] {
+  const nextHistory = [...history];
+  const latestByService = new Map<string, MonitorStateChange>();
+  for (const change of history) {
+    latestByService.set(change.serviceId, change);
+  }
+
+  for (const service of serviceStates) {
+    const previous = latestByService.get(service.serviceId);
+    if (
+      previous?.status === service.status &&
+      previous.targetAvailability === service.targetAvailability
+    ) {
+      continue;
+    }
+
+    const change: MonitorStateChange = {
+      runId: run.runId,
+      serviceId: service.serviceId,
+      changedAt: run.changedAt,
+      status: service.status,
+      targetAvailability: service.targetAvailability,
+    };
+    nextHistory.push(change);
+    latestByService.set(service.serviceId, change);
+  }
+
+  return nextHistory;
+}
+
+export function appendResponseSamples(
+  history: MonitorResponseSample[],
+  observations: Array<
+    Pick<
+      MonitorObservation,
+      "serviceId" | "checkId" | "checkedAt" | "responseTimeMs"
+    >
+  >,
+  options: ResponseSampleRetention,
+): MonitorResponseSample[] {
+  const earliestTimestamp =
+    Date.parse(options.generatedAt) - options.retentionDays * DAY_MS;
+  const samplesByIdentity = new Map<string, MonitorResponseSample>();
+  const append = (sample: MonitorResponseSample): void => {
+    if (Date.parse(sample.timestamp) < earliestTimestamp) {
+      return;
+    }
+    const identity = `${sample.serviceId}\u0000${sample.checkId}\u0000${sample.timestamp}`;
+    if (!samplesByIdentity.has(identity)) {
+      samplesByIdentity.set(identity, sample);
+    }
+  };
+
+  history.forEach(append);
+  observations.forEach((observation) => {
+    append({
+      serviceId: observation.serviceId,
+      checkId: observation.checkId,
+      timestamp: observation.checkedAt,
+      responseTimeMs: observation.responseTimeMs,
+    });
+  });
+
+  return [...samplesByIdentity.values()].sort(
+    (left, right) =>
+      left.timestamp.localeCompare(right.timestamp) ||
+      left.serviceId.localeCompare(right.serviceId) ||
+      left.checkId.localeCompare(right.checkId),
+  );
+}
+
+function dayStart(timestamp: number): number {
+  const date = new Date(timestamp);
+  return Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+  );
+}
+
+function availabilityIntervals(
+  input: DailyAvailabilityInput,
+): AvailabilityInterval[] {
+  const monitoringStartedAt = Date.parse(input.monitoringStartedAt);
+  const generatedAt = Date.parse(input.generatedAt);
+  const changes = input.stateChanges
+    .filter(({ serviceId }) => serviceId === input.serviceId)
+    .sort((left, right) => left.changedAt.localeCompare(right.changedAt));
+  const intervals: AvailabilityInterval[] = [];
+  let intervalStartsAt = monitoringStartedAt;
+  let targetAvailability: TargetAvailability = "unobserved";
+
+  for (const change of changes) {
+    const changedAt = Date.parse(change.changedAt);
+    if (changedAt <= monitoringStartedAt) {
+      targetAvailability = change.targetAvailability;
+      continue;
+    }
+    if (changedAt >= generatedAt) {
+      break;
+    }
+
+    intervals.push({
+      startsAt: intervalStartsAt,
+      endsAt: changedAt,
+      targetAvailability,
+    });
+    intervalStartsAt = changedAt;
+    targetAvailability = change.targetAvailability;
+  }
+
+  if (intervalStartsAt < generatedAt) {
+    intervals.push({
+      startsAt: intervalStartsAt,
+      endsAt: generatedAt,
+      targetAvailability,
+    });
+  }
+
+  return intervals;
+}
+
+function maintenanceIntervals(
+  input: DailyAvailabilityInput,
+): TimeInterval[] {
+  const ordered = input.maintenanceWindows
+    .filter(({ affectedServiceIds }) =>
+      affectedServiceIds.includes(input.serviceId),
+    )
+    .map(({ startsAt, endsAt }) => ({
+      startsAt: Date.parse(startsAt),
+      endsAt: Date.parse(endsAt),
+    }))
+    .filter(({ startsAt, endsAt }) => startsAt < endsAt)
+    .sort((left, right) => left.startsAt - right.startsAt);
+
+  const merged: TimeInterval[] = [];
+  for (const interval of ordered) {
+    const previous = merged.at(-1);
+    if (previous === undefined || interval.startsAt > previous.endsAt) {
+      merged.push({ ...interval });
+      continue;
+    }
+    previous.endsAt = Math.max(previous.endsAt, interval.endsAt);
+  }
+  return merged;
+}
+
+function coveredDuration(
+  startsAt: number,
+  endsAt: number,
+  intervals: TimeInterval[],
+): number {
+  return intervals.reduce((duration, interval) => {
+    const coveredStartsAt = Math.max(startsAt, interval.startsAt);
+    const coveredEndsAt = Math.min(endsAt, interval.endsAt);
+    return duration + Math.max(0, coveredEndsAt - coveredStartsAt);
+  }, 0);
+}
+
+export function deriveDailyAvailability(
+  input: DailyAvailabilityInput,
+): MonitorDailyAvailability[] {
+  const monitoringStartedAt = Date.parse(input.monitoringStartedAt);
+  const generatedAt = Date.parse(input.generatedAt);
+  const intervals = availabilityIntervals(input);
+  const maintenance = maintenanceIntervals(input);
+  const days: MonitorDailyAvailability[] = [];
+
+  for (
+    let currentDay = dayStart(monitoringStartedAt);
+    currentDay < generatedAt;
+    currentDay += DAY_MS
+  ) {
+    const nextDay = currentDay + DAY_MS;
+    let monitoredMs = 0;
+    let unavailableMs = 0;
+
+    for (const interval of intervals) {
+      const startsAt = Math.max(interval.startsAt, currentDay);
+      const endsAt = Math.min(interval.endsAt, nextDay);
+      if (
+        startsAt >= endsAt ||
+        interval.targetAvailability === "unobserved"
+      ) {
+        continue;
+      }
+
+      const duration =
+        endsAt - startsAt - coveredDuration(startsAt, endsAt, maintenance);
+      monitoredMs += duration;
+      if (interval.targetAvailability === "unavailable") {
+        unavailableMs += duration;
+      }
+    }
+
+    const monitoredSeconds = Math.floor(monitoredMs / 1_000);
+    if (monitoredSeconds > 0) {
+      days.push({
+        date: new Date(currentDay).toISOString().slice(0, 10),
+        monitoredSeconds,
+        unavailableSeconds: Math.floor(unavailableMs / 1_000),
+      });
+    }
+  }
+
+  return days;
+}
