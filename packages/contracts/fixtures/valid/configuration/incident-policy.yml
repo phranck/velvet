@@ -1,0 +1,13 @@
+schemaVersion: 1
+repository:
+  owner: example
+  name: status
+statusPage:
+  name: Example Status
+services:
+  - name: Website
+    url: https://example.com
+incidents:
+  failureThreshold: 3
+  recoveryThreshold: 2
+  incidentLabel: service-incident

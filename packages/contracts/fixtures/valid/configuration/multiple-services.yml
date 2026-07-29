@@ -1,0 +1,16 @@
+schemaVersion: 1
+repository:
+  owner: example
+  name: status
+statusPage:
+  name: Example Status
+  layout: cards
+services:
+  - name: Website
+    url: https://example.com
+  - name: API
+    checks:
+      - name: Public API
+        url: https://api.example.com
+      - name: API readiness
+        url: https://api.example.com/ready
