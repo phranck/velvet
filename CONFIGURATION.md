@@ -1,5 +1,124 @@
 # Velvet configuration reference
 
+## GitHub-native monitor configuration
+
+The standalone monitor reads `velvet.yml`. This is separate from the temporary
+`.upptimerc.yml` compatibility configuration documented below.
+
+The smallest monitor configuration checks one website with a direct IPv4 GET
+request. A final HTTP 200 response means available:
+
+```yaml
+schemaVersion: 1
+repository:
+  owner: your-username
+  name: your-status-repo
+statusPage:
+  name: Example Status
+services:
+  - name: Website
+    url: https://example.com
+```
+
+`repository.owner` and `repository.name` must match the repository in which the
+workflow runs. Velvet stops before checks, Issue changes, or data publication if
+the complete configuration is invalid or the repository does not match.
+
+For multiple checks under one displayed service, use the named-check form:
+
+```yaml
+services:
+  - id: api
+    name: Public API
+    checks:
+      - name: Readiness
+        url: https://api.example.com/ready
+      - name: Version
+        url: https://api.example.com/version
+        expectedStatusCodes: [200, 204]
+        timeoutMs: 5000
+```
+
+The native monitor supports direct HTTP or HTTPS `GET` and `HEAD` requests.
+Checks are IPv4-only. A simple check evaluates the final status code and does
+not require a special JSON response. Optional JSON assertions are explicit:
+
+```yaml
+services:
+  - name: API
+    checks:
+      - name: Health
+        url: https://api.example.com/health
+        jsonAssertions:
+          - path: /status
+            equals: ok
+```
+
+### Header secrets
+
+Secret values never belong in `velvet.yml`. Reference only the environment
+variable name:
+
+```yaml
+services:
+  - name: Private API
+    checks:
+      - name: Health
+        url: https://api.example.com/health
+        headers:
+          - name: Authorization
+            secret: API_HEALTH_TOKEN
+```
+
+Then map only that repository secret into both installed monitor workflow
+steps:
+
+```yaml
+env:
+  API_HEALTH_TOKEN: ${{ secrets.API_HEALTH_TOKEN }}
+```
+
+Do not pass all repository secrets to the action. A missing or invalid
+configured secret stops the run without replacing the last valid data.
+
+### Incidents and history
+
+```yaml
+incidents:
+  failureThreshold: 2
+  recoveryThreshold: 2
+  incidentLabel: incident
+  maintenanceLabel: maintenance
+history:
+  retentionDays: 365
+```
+
+`failureThreshold` and `recoveryThreshold` count consecutive measurements and
+default to `2`. `history.retentionDays` accepts `1` through `365` and defaults
+to `365`. The same period applies to public availability, response samples,
+resolved incidents, completed maintenance, private transition history, and the
+generated branch history. Open incidents and scheduled or active maintenance
+remain visible. Historical GitHub Issues are never deleted.
+
+### Generated data
+
+The monitor owns only these files on the dedicated `velvet-data` branch:
+
+- `.velvet/monitor-state.json`
+- `velvet-data/v1/status.json`
+- `velvet-data/v1/response-times.json`
+- `velvet-data/v1/incidents.json`
+
+Every successful run publishes one complete commit. Invalid configuration,
+unsafe request setup, missing secrets, invalid stored or generated data, and
+Git conflicts leave the previous snapshot unchanged. The action never rewrites
+the default branch.
+
+See the [monitor action guide](actions/monitor/README.md) for the installable
+workflows, permissions, schedules, and verification commands.
+
+---
+
 Velvet keeps page identity and appearance in **`.upptimerc.yml`** while the
 temporary compatibility monitor remains Upptime. Runtime presentation data
 comes exclusively from the validated documents under `velvet-data/v1`.

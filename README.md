@@ -11,8 +11,8 @@
 <br>
 
 Velvet provides selectable uptime history, native response-time charts,
-first-class IPv4 and IPv6 status, configurable themes, and GitHub Pages
-deployment without a server or database.
+GitHub-hosted IPv4 monitoring, configurable themes, and GitHub Pages deployment
+without a server or database.
 
 ## How it works
 
@@ -28,9 +28,16 @@ Velvet v1 separates temporary monitoring inputs from the public status page:
 4. The browser loads and validates `status.json`, `response-times.json`, and
    `incidents.json`. It never reads Upptime history or raw GitHub Issues.
 
-The monitor is not independent from Upptime yet. Upptime remains the temporary
-source for checks and history; the compatibility adapter is the controlled
-boundary between those inputs and Velvet's public contract.
+The standalone monitor is now packaged under
+[`actions/monitor`](actions/monitor). It performs direct IPv4 HTTP checks,
+stores generated state on the dedicated `velvet-data` branch, and manages
+incident and maintenance Issues. Existing installations remain on the Upptime
+compatibility path until the migration and template work in the remaining M2
+issues is complete.
+
+The native monitor intentionally has no remote probe provider. IPv6 monitoring
+is deferred until GitHub-hosted runners provide documented native IPv6
+connectivity.
 
 ## Deploy from an existing Upptime repository
 
