@@ -39,22 +39,37 @@ async function api(
   path: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  const response = await fetch(
-    `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}${path}`,
-    {
-      ...init,
-      headers: {
-        accept: "application/vnd.github+json",
-        authorization: `Bearer ${token}`,
-        "x-github-api-version": "2026-03-10",
-        ...(init.body === undefined ? {} : { "content-type": "application/json" }),
+  const method = (init.method ?? "GET").toUpperCase();
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await fetch(
+      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}${path}`,
+      {
+        ...init,
+        headers: {
+          accept: "application/vnd.github+json",
+          authorization: `Bearer ${token}`,
+          "x-github-api-version": "2026-03-10",
+          ...(method === "GET" ? { "cache-control": "no-cache" } : {}),
+          ...(init.body === undefined
+            ? {}
+            : { "content-type": "application/json" }),
+        },
       },
-    },
-  );
-  if (!response.ok) {
-    throw new Error(`GitHub integration request failed with ${response.status}.`);
+    );
+    if (response.ok) return response;
+    if (
+      method === "GET" &&
+      [502, 503, 504].includes(response.status) &&
+      attempt < 2
+    ) {
+      await delay(1_000);
+      continue;
+    }
+    throw new Error(
+      `GitHub integration ${method} ${path} failed with ${response.status}.`,
+    );
   }
-  return response;
+  throw new Error(`GitHub integration ${method} ${path} failed.`);
 }
 
 async function cloneRepository(
@@ -123,6 +138,19 @@ async function dispatchAndWait(
   assert.fail("The dispatched Velvet workflow did not complete.");
 }
 
+async function waitForIssues(
+  client: ReturnType<typeof createGitHubIssuesClient>,
+  label: string,
+  matches: (issue: GitHubIssue) => boolean,
+): Promise<GitHubIssue[]> {
+  for (let attempt = 0; attempt < 15; attempt += 1) {
+    const issues = (await client.listIssues(label)).filter(matches);
+    if (issues.length > 0) return issues;
+    await delay(1_000);
+  }
+  return [];
+}
+
 test.skipIf(
   !repository || !token || !explicitlyIsolated || !dispatchEnabled,
 )(
@@ -170,14 +198,18 @@ history: { retentionDays: 1 }
       });
 
       await runMonitorCli(environment("status", `${identity}-status-1`));
-      const incidents = (await client.listIssues(incidentLabel)).filter(
+      const incidents = await waitForIssues(
+        client,
+        incidentLabel,
         ({ body }) => {
           const metadata = parseVelvetMetadata(body);
-          return metadata?.kind === "incident" && metadata.serviceId === serviceId;
+          return (
+            metadata?.kind === "incident" && metadata.serviceId === serviceId
+          );
         },
       );
-      assert.equal(incidents.length, 1);
       ownedIssues.push(...incidents);
+      assert.equal(incidents.length, 1);
 
       const startsAt = new Date(Date.now() + 600_000).toISOString();
       const endsAt = new Date(Date.now() + 1_200_000).toISOString();
@@ -195,6 +227,17 @@ history: { retentionDays: 1 }
         labels: [maintenanceLabel],
       });
       ownedIssues.push(maintenance);
+      const maintenanceObserver = createGitHubIssuesClient({
+        owner,
+        repo,
+        token,
+      });
+      const visibleMaintenance = await waitForIssues(
+        maintenanceObserver,
+        maintenanceLabel,
+        ({ number }) => number === maintenance.number,
+      );
+      assert.equal(visibleMaintenance.length, 1);
       await runMonitorCli(environment("status", `${identity}-status-2`));
       const beforeResponse = await loadDataBranch(firstWorkspace);
       assert.equal(

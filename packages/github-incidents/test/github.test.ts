@@ -197,11 +197,32 @@ test("lists paginated issues with current version headers and filters pull reque
   assert.equal(issues[0]?.createdAt, "2026-07-29T12:01:00.000Z");
   assert.equal(issues[1]?.closedAt, "2026-07-29T12:04:00.000Z");
   assert.equal(requests[0]?.headers.get("authorization"), "Bearer github-token");
+  assert.equal(requests[0]?.headers.get("cache-control"), "no-cache");
   assert.equal(
     requests[0]?.headers.get("x-github-api-version"),
     "2026-03-10",
   );
   assert.equal(new URL(requests[0]!.url).searchParams.get("state"), "all");
+});
+
+test("keeps an issue visible while GitHub's issue list catches up", async () => {
+  const client = await createClient(async (input, init) => {
+    const request = new Request(input, init);
+    if (request.method === "POST") {
+      return Response.json(apiIssue(), { status: 201 });
+    }
+    return Response.json([]);
+  });
+
+  const created = await client.createIssue({
+    title: "Website is unavailable",
+    body: "Incident details",
+    labels: ["incident"],
+  });
+  const listed = await client.listIssues("incident");
+
+  assert.equal(created.number, 12);
+  assert.deepEqual(listed.map(({ number }) => number), [12]);
 });
 
 test("creates a missing label but leaves an existing label unchanged", async () => {
