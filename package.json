@@ -21,7 +21,7 @@
     "test:workspace-gates": "bun test tests/workspace-gates.test.mjs",
     "test:theme-registry": "bun test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
     "test:configurator-cli": "bun test tests/config-cli.test.mjs tests/configurator-distribution.test.mjs",
-    "pretypecheck": "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build",
+    "pretypecheck": "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build",
     "typecheck": "bun run --filter @velvet/contracts typecheck && bun run --filter @velvet/monitor typecheck && bun run --filter @velvet/github-incidents typecheck && bun run --filter @velvet/monitor-action typecheck && bun run --filter @velvet/upptime-adapter typecheck && bun run --filter @velvet/sync-data-action typecheck && bun run --filter @velvet/site typecheck"
   },
   "engines": {
