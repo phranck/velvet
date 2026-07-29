@@ -77,3 +77,38 @@ test("runs GitHub incident gates after contracts and monitor", async () => {
     );
   }
 });
+
+test("runs the monitor action gates after all runtime dependencies", async () => {
+  const packageDocument = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  const actionPackage = JSON.parse(
+    await readFile(
+      new URL("../actions/monitor/package.json", import.meta.url),
+      "utf8",
+    ),
+  );
+
+  assert.equal(
+    actionPackage.scripts.pretest,
+    "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build",
+  );
+  for (const gate of ["build", "test", "typecheck"]) {
+    const script = packageDocument.scripts[gate];
+    const actionCommand = `bun run --filter @velvet/monitor-action ${gate}`;
+    const dependencyCommands = [
+      `bun run --filter @velvet/contracts ${gate}`,
+      `bun run --filter @velvet/monitor ${gate}`,
+      `bun run --filter @velvet/github-incidents ${gate}`,
+    ];
+
+    assert.equal(typeof script, "string");
+    assert.notEqual(script.indexOf(actionCommand), -1);
+    for (const dependencyCommand of dependencyCommands) {
+      assert.equal(
+        script.indexOf(dependencyCommand) < script.indexOf(actionCommand),
+        true,
+      );
+    }
+  }
+});

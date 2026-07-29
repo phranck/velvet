@@ -9,11 +9,11 @@
     "site"
   ],
   "scripts": {
-    "build": "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build && bun run --filter @velvet/upptime-adapter build && bun run --filter @velvet/site build",
+    "build": "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build && bun run --filter @velvet/monitor-action build && bun run --filter @velvet/upptime-adapter build && bun run --filter @velvet/site build",
     "check": "bun run lint && bun run typecheck && bun run test && bun run build",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "test": "bun run test:toolchain && bun run test:ci && bun run test:lockfile && bun run test:workspace-gates && bun run test:theme-registry && bun run test:configurator-cli && bun run --filter @velvet/contracts test && bun run --filter @velvet/monitor test && bun run --filter @velvet/github-incidents test && bun run --filter @velvet/upptime-adapter test && bun run --filter @velvet/sync-data-action test && bun run --filter @velvet/site test",
+    "test": "bun run test:toolchain && bun run test:ci && bun run test:lockfile && bun run test:workspace-gates && bun run test:theme-registry && bun run test:configurator-cli && bun run --filter @velvet/contracts test && bun run --filter @velvet/monitor test && bun run --filter @velvet/github-incidents test && bun run --filter @velvet/monitor-action test && bun run --filter @velvet/upptime-adapter test && bun run --filter @velvet/sync-data-action test && bun run --filter @velvet/site test",
     "test:toolchain": "bun test tests/bun-toolchain.test.mjs",
     "test:ci": "bun test tests/ci-workflow.test.mjs",
     "pretest:lockfile": "bun run --filter @velvet/contracts build",
@@ -22,7 +22,7 @@
     "test:theme-registry": "bun test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
     "test:configurator-cli": "bun test tests/config-cli.test.mjs tests/configurator-distribution.test.mjs",
     "pretypecheck": "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build",
-    "typecheck": "bun run --filter @velvet/contracts typecheck && bun run --filter @velvet/monitor typecheck && bun run --filter @velvet/github-incidents typecheck && bun run --filter @velvet/upptime-adapter typecheck && bun run --filter @velvet/sync-data-action typecheck && bun run --filter @velvet/site typecheck"
+    "typecheck": "bun run --filter @velvet/contracts typecheck && bun run --filter @velvet/monitor typecheck && bun run --filter @velvet/github-incidents typecheck && bun run --filter @velvet/monitor-action typecheck && bun run --filter @velvet/upptime-adapter typecheck && bun run --filter @velvet/sync-data-action typecheck && bun run --filter @velvet/site typecheck"
   },
   "engines": {
     "bun": ">=1.3.14"
