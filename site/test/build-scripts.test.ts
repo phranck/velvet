@@ -78,6 +78,184 @@ test("generated runtime config points to Velvet repository data", async () => {
   assert.equal("showSubscribe" in config, false);
 });
 
+test("generated runtime config accepts native Velvet configuration", async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), "velvet-native-config-"));
+  const input = resolve(directory, "velvet.yml");
+  const output = resolve(directory, "config.json");
+  await writeFile(
+    input,
+    [
+      "schemaVersion: 1",
+      "repository:",
+      "  owner: example",
+      "  name: status",
+      "statusPage:",
+      "  name: Example Status",
+      "services:",
+      "  - name: Website",
+      "    url: https://example.com",
+      "",
+    ].join("\n"),
+  );
+
+  await bun([
+    resolve(siteRoot, "scripts/generate-config.mjs"),
+    input,
+    output,
+    ".velvet-data/velvet-data/v1",
+  ]);
+
+  const config = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(config.owner, "example");
+  assert.equal(config.repo, "status");
+  assert.equal(config.name, "Example Status");
+  assert.equal(config.dataBranch, "velvet-data");
+  assert.equal(
+    config.dataBaseUrl,
+    "https://raw.githubusercontent.com/example/status/velvet-data/velvet-data/v1",
+  );
+});
+
+test("generated runtime config preserves native appearance and custom domain", async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), "velvet-native-page-"));
+  const input = resolve(directory, "velvet.yml");
+  const output = resolve(directory, "public/config.json");
+  await writeFile(
+    input,
+    [
+      "schemaVersion: 1",
+      "repository:",
+      "  owner: example",
+      "  name: status",
+      "statusPage:",
+      "  name: Example Status",
+      "  customDomain: status.example.com",
+      "  logoUrl: https://example.com/logo.svg",
+      "  logoHeight: 64",
+      "  showPoweredBy: false",
+      "  layout: cards",
+      "  defaultRange: 90d",
+      "  navigation:",
+      "    - title: History",
+      "      href: /history",
+      "  theme:",
+      "    name: Native Theme",
+      "    palette:",
+      "      canvas: '#101010'",
+      "      foreground: '#f0f0f0'",
+      "      accent: '#16a34a'",
+      "      alternate: '#38bdf8'",
+      "      warning: '#d29922'",
+      "      danger: '#f85149'",
+      "    grid:",
+      "      operational: accent",
+      "      degraded: warning",
+      "      outage: danger",
+      "    chart:",
+      "      line: alternate",
+      "      lineStyle: dotted",
+      "      fill: true",
+      "      background: canvas",
+      "      backgroundOpacity: 0.2",
+      "  fonts:",
+      "    sans: Example Sans",
+      "    mono: Example Mono",
+      "  icons:",
+      "    website: ph-globe",
+      "  analytics:",
+      "    umami:",
+      "      websiteId: 12345678-1234-1234-1234-123456789abc",
+      "      src: https://analytics.example.com/script.js",
+      "    googleAnalytics: G-ABC123",
+      "  seo:",
+      "    title: Example System Status",
+      "    description: Current availability for Example.",
+      "    image: https://example.com/status.png",
+      "services:",
+      "  - name: Website",
+      "    url: https://example.com",
+      "",
+    ].join("\n"),
+  );
+
+  await bun([
+    resolve(siteRoot, "scripts/generate-config.mjs"),
+    input,
+    output,
+    ".velvet-data/velvet-data/v1",
+  ]);
+
+  const config = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(config.url, "https://status.example.com/");
+  assert.equal(config.logoUrl, "https://example.com/logo.svg");
+  assert.equal(config.logoHeight, 64);
+  assert.equal(config.showPoweredBy, false);
+  assert.equal(config.layout, "cards");
+  assert.equal(config.defaultRange, "quarter");
+  assert.deepEqual(config.navbar, [{ title: "History", href: "/history" }]);
+  assert.equal(config.theme.name, "Native Theme");
+  assert.equal(config.theme.palette.accent, "#16a34a");
+  assert.equal(config.theme.grid.operational, "#16a34a");
+  assert.equal(config.theme.protocol.ipv4, "#38bdf8");
+  assert.equal(config.theme.chart.ipv4LineStyle, "dotted");
+  assert.equal(config.theme.chart.fill, true);
+  assert.equal(config.theme.chart.background, "#101010");
+  assert.equal(config.theme.chart.backgroundOpacity, 0.2);
+  assert.equal(config.theme.fontSans, "Example Sans");
+  assert.equal(config.theme.fontMono, "Example Mono");
+  assert.deepEqual(config.icons, { website: "ph-globe" });
+  assert.deepEqual(config.umami, {
+    websiteId: "12345678-1234-1234-1234-123456789abc",
+    src: "https://analytics.example.com/script.js",
+  });
+  assert.equal(config.googleAnalytics, "G-ABC123");
+  assert.deepEqual(config.seo, {
+    title: "Example System Status",
+    description: "Current availability for Example.",
+    image: "https://example.com/status.png",
+  });
+  assert.equal(await readFile(resolve(directory, "public/CNAME"), "utf8"), "status.example.com\n");
+});
+
+test("invalid native configuration stops before writing runtime config", async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), "velvet-invalid-native-"));
+  const input = resolve(directory, "velvet.yml");
+  const output = resolve(directory, "config.json");
+  await writeFile(
+    input,
+    [
+      "schemaVersion: 1",
+      "repository:",
+      "  owner: example",
+      "  name: status",
+      "statusPage:",
+      "  name: Example Status",
+      "services:",
+      "  - name: Website",
+      "",
+    ].join("\n"),
+  );
+
+  await assert.rejects(
+    bun([
+      resolve(siteRoot, "scripts/generate-config.mjs"),
+      input,
+      output,
+    ]),
+    (error: Error & { stderr?: string }) => {
+      assert.match(
+        error.stderr ?? "",
+        /Invalid velvet\.yml:\nINVALID_SERVICE_CHECKS at \/services\/0: A service must set either url or checks, but not both\./,
+      );
+      return true;
+    },
+  );
+  await assert.rejects(
+    readFile(output, "utf8"),
+    (error: NodeJS.ErrnoException) => error.code === "ENOENT",
+  );
+});
+
 test("generated runtime config preserves an explicit public data URL", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-url-"));
   const input = resolve(directory, ".upptimerc.yml");

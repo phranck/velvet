@@ -2,16 +2,19 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { load } from "js-yaml";
 
+import { parseVelvetConfiguration } from "@velvet/contracts";
+
 import { resolveTheme } from "../src/lib/theme.js";
 
 /**
- * Generate Velvet's runtime `config.json` from a consumer's Upptime `.upptimerc.yml`.
+ * Generate Velvet's runtime `config.json` from native `velvet.yml` or a
+ * compatibility Upptime `.upptimerc.yml`.
  *
- * Velvet-specific options live under `status-website.velvet` so the file stays a
- * valid Upptime config. Everything else (owner, repo, name, logo, navbar) is read
- * from the standard Upptime fields.
+ * Native input is validated through `@velvet/contracts` and reads public data
+ * from the dedicated `velvet-data` branch. Compatibility input keeps the legacy
+ * appearance and data-location behavior unchanged.
  *
- * Usage: bun generate-config.mjs <.upptimerc.yml> <out/config.json> [repository-data-path]
+ * Usage: bun generate-config.mjs <config.yml> <out/config.json> [local-data-path]
  */
 const [
   ,
@@ -21,15 +24,69 @@ const [
   repositoryDataPath = "velvet-data/v1",
 ] = process.argv;
 
-const rc = load(readFileSync(inputPath, "utf8")) ?? {};
-if (!rc.owner || !rc.repo) {
+const source = readFileSync(inputPath, "utf8");
+const rc = load(source) ?? {};
+const nativeResult = rc.schemaVersion === undefined
+  ? null
+  : parseVelvetConfiguration(source);
+if (nativeResult !== null && !nativeResult.success) {
+  throw new Error(
+    `Invalid velvet.yml:\n${nativeResult.errors
+      .map((error) => `${error.code} at ${error.path}: ${error.message}`)
+      .join("\n")}`,
+  );
+}
+const native = nativeResult?.success ? nativeResult.data : null;
+const owner = native?.repository.owner ?? rc.owner;
+const repo = native?.repository.name ?? rc.repo;
+if (!owner || !repo) {
   throw new Error("`.upptimerc.yml` must set `owner` and `repo`");
 }
 
-const sw = rc["status-website"] ?? {};
-const velvet = sw.velvet ?? {};
+const nativeTheme = (theme) => {
+  if (!theme) return {};
+  const { chart, ...rest } = theme;
+  return {
+    ...rest,
+    ...(chart
+      ? {
+          protocol: { ipv4: chart.line },
+          chart: {
+            ipv4LineStyle: chart.lineStyle,
+            fill: chart.fill,
+            background: chart.background,
+            backgroundOpacity: chart.backgroundOpacity,
+          },
+        }
+      : {}),
+  };
+};
+
+const sw = native === null
+  ? (rc["status-website"] ?? {})
+  : {
+      cname: native.statusPage.customDomain,
+      name: native.statusPage.name,
+      logoUrl: native.statusPage.logoUrl,
+      navbar: native.statusPage.navigation,
+    };
+const velvet = native === null
+  ? (sw.velvet ?? {})
+  : {
+      layout: native.statusPage.layout,
+      defaultRange: native.statusPage.defaultRange,
+      logoHeight: native.statusPage.logoHeight,
+      showPoweredBy: native.statusPage.showPoweredBy,
+      theme: nativeTheme(native.statusPage.theme),
+      fontSans: native.statusPage.fonts?.sans,
+      fontMono: native.statusPage.fonts?.mono,
+      icons: native.statusPage.icons,
+      umami: native.statusPage.analytics?.umami,
+      googleAnalytics: native.statusPage.analytics?.googleAnalytics,
+      seo: native.statusPage.seo,
+    };
 const themeInput = velvet.theme && typeof velvet.theme === "object" ? velvet.theme : {};
-const dataBranch = velvet.dataBranch ?? "main";
+const dataBranch = native === null ? (velvet.dataBranch ?? "main") : "velvet-data";
 const normalizedDataPath = repositoryDataPath.replaceAll("\\", "/").replace(/^\.\//, "");
 const dataPathSegments = normalizedDataPath.split("/").filter(Boolean);
 if (
@@ -39,8 +96,12 @@ if (
 ) {
   throw new Error("Velvet data must use a repository-relative path");
 }
-const encodedDataPath = dataPathSegments.map(encodeURIComponent).join("/");
-const defaultDataBaseUrl = `https://raw.githubusercontent.com/${encodeURIComponent(rc.owner)}/${encodeURIComponent(rc.repo)}/${encodeURIComponent(dataBranch)}/${encodedDataPath}`;
+const publicDataPath = native === null ? normalizedDataPath : "velvet-data/v1";
+const encodedDataPath = publicDataPath
+  .split("/")
+  .map(encodeURIComponent)
+  .join("/");
+const defaultDataBaseUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(dataBranch)}/${encodedDataPath}`;
 let dataBaseUrl = defaultDataBaseUrl;
 if (typeof velvet.dataBaseUrl === "string" && velvet.dataBaseUrl.trim()) {
   const publicDataUrl = new URL(velvet.dataBaseUrl.trim());
@@ -55,7 +116,7 @@ if (typeof velvet.dataBaseUrl === "string" && velvet.dataBaseUrl.trim()) {
 }
 
 const subst = (s) =>
-  typeof s === "string" ? s.replaceAll("$OWNER", rc.owner).replaceAll("$REPO", rc.repo) : s;
+  typeof s === "string" ? s.replaceAll("$OWNER", owner).replaceAll("$REPO", repo) : s;
 
 // Accept either the internal range key (`quarter`) or the user-facing label
 // (`90d`) for `velvet.defaultRange`; fall back to the 30d view on anything else.
@@ -73,10 +134,10 @@ const normalizeRange = (value) => {
 // else a project page). Powers the SEO canonical/og:url tags and the sitemap.
 const siteUrl = (() => {
   if (sw.cname) return `https://${sw.cname}/`;
-  const owner = String(rc.owner).toLowerCase();
-  return String(rc.repo).toLowerCase() === `${owner}.github.io`
-    ? `https://${owner}.github.io/`
-    : `https://${owner}.github.io/${rc.repo}/`;
+  const normalizedOwner = String(owner).toLowerCase();
+  return String(repo).toLowerCase() === `${normalizedOwner}.github.io`
+    ? `https://${normalizedOwner}.github.io/`
+    : `https://${normalizedOwner}.github.io/${repo}/`;
 })();
 
 // SEO overrides (all optional). Only the fields the consumer set are emitted; the
@@ -88,12 +149,12 @@ for (const key of ["title", "description", "image"]) {
 }
 
 const config = {
-  owner: rc.owner,
-  repo: rc.repo,
+  owner,
+  repo,
   url: siteUrl,
   dataBranch,
   dataBaseUrl,
-  name: sw.name ?? rc.repo,
+  name: sw.name ?? repo,
   logoUrl: sw.logoUrl,
   navbar: Array.isArray(sw.navbar)
     ? sw.navbar.map((n) => ({ title: n.title, href: subst(n.href) }))
