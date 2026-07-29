@@ -6,6 +6,8 @@ import {
   createGitHubIssuesClient,
   parseVelvetMetadata,
   reconcileGitHubIncidents,
+  type GitHubIssue,
+  type GitHubIssuesClient,
 } from "../src/index.js";
 import type { MonitorCheckState } from "@velvet/monitor";
 
@@ -13,6 +15,38 @@ const repository = process.env.VELVET_GITHUB_INTEGRATION_REPOSITORY;
 const token = process.env.GITHUB_TOKEN;
 const explicitlyIsolated =
   process.env.VELVET_GITHUB_INTEGRATION_ISOLATED === "true";
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function findOwnedIssues(
+  client: GitHubIssuesClient,
+  incidentLabel: string,
+  serviceId: string,
+): Promise<GitHubIssue[]> {
+  return (await client.listIssues(incidentLabel)).filter(({ body }) => {
+    const metadata = parseVelvetMetadata(body);
+    return metadata?.kind === "incident" && metadata.serviceId === serviceId;
+  });
+}
+
+async function waitForOwnedIssue(
+  client: GitHubIssuesClient,
+  incidentLabel: string,
+  serviceId: string,
+): Promise<GitHubIssue[]> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const ownedIssues = await findOwnedIssues(
+      client,
+      incidentLabel,
+      serviceId,
+    );
+    if (ownedIssues.length > 0) return ownedIssues;
+    await delay(1_000);
+  }
+  assert.fail("The integration issue did not become visible through GitHub.");
+}
 
 test.skipIf(!repository || !token || !explicitlyIsolated)(
   "creates and closes only its own issue in an isolated GitHub repository",
@@ -72,6 +106,17 @@ test.skipIf(!repository || !token || !explicitlyIsolated)(
         },
         { client },
       );
+      await waitForOwnedIssue(client, incidentLabel, serviceId);
+      await reconcileGitHubIncidents(
+        {
+          generatedAt: startedAt,
+          services,
+          checkStates: [state("down", startedAt)],
+          incidentLabel,
+          maintenanceLabel,
+        },
+        { client },
+      );
       await reconcileGitHubIncidents(
         {
           generatedAt: recoveredAt,
@@ -83,21 +128,19 @@ test.skipIf(!repository || !token || !explicitlyIsolated)(
         { client },
       );
 
-      const ownedIssues = (await client.listIssues(incidentLabel)).filter(
-        ({ body }) => {
-          const metadata = parseVelvetMetadata(body);
-          return metadata?.kind === "incident" && metadata.serviceId === serviceId;
-        },
+      const ownedIssues = await findOwnedIssues(
+        client,
+        incidentLabel,
+        serviceId,
       );
       assert.equal(ownedIssues.length, 1);
       assert.equal(ownedIssues[0]?.state, "closed");
       assert.equal((await client.listComments(ownedIssues[0]!.number)).length, 1);
     } finally {
-      const ownedIssues = (await client.listIssues(incidentLabel)).filter(
-        ({ body }) => {
-          const metadata = parseVelvetMetadata(body);
-          return metadata?.kind === "incident" && metadata.serviceId === serviceId;
-        },
+      const ownedIssues = await findOwnedIssues(
+        client,
+        incidentLabel,
+        serviceId,
       );
       for (const ownedIssue of ownedIssues) {
         if (ownedIssue.state === "open") {
@@ -110,4 +153,5 @@ test.skipIf(!repository || !token || !explicitlyIsolated)(
       }
     }
   },
+  30_000,
 );
