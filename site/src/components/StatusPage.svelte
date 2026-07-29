@@ -119,6 +119,7 @@
         range,
         statusDocument.generatedAt,
         statusDocument.monitoringStartedAt,
+        incidentsDocument.events,
       )}
       uptime={uptimeForRange(
         service,

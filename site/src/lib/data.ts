@@ -1,12 +1,14 @@
 import type {
   DayStatus,
   IncidentEvent,
+  MaintenanceEvent,
   RangeKey,
   Service,
   ServiceStatus,
 } from "./types";
 
 const DOWN_SEGMENT_THRESHOLD = 0.3;
+const DAY_MS = 24 * 60 * 60 * 1_000;
 
 interface RangeSpec {
   days: number;
@@ -74,11 +76,29 @@ function rangeDates(generatedAt: string, days: number): string[] {
   });
 }
 
+function maintenanceForPeriod(
+  events: IncidentEvent[],
+  serviceId: string,
+  startsAt: number,
+  endsAt: number,
+): MaintenanceEvent[] {
+  return events
+    .filter(
+      (event): event is MaintenanceEvent =>
+        event.kind === "maintenance" &&
+        event.affectedServiceIds.includes(serviceId) &&
+        Date.parse(event.startsAt) < endsAt &&
+        Date.parse(event.endsAt) > startsAt,
+    )
+    .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
+}
+
 export function barsForRange(
   service: Service,
   range: RangeKey,
   generatedAt: string,
   monitoringStartedAt: string,
+  events: IncidentEvent[] = [],
 ): DayStatus[] {
   const spec = RANGE_SPECS[range];
   const availability = new Map(
@@ -88,6 +108,7 @@ export function barsForRange(
   const days = rangeDates(generatedAt, spec.days).map((date) => {
     const day = availability.get(date);
     const hasData = date >= monitoringStartDate && day !== undefined;
+    const dayStartsAt = Date.parse(`${date}T00:00:00.000Z`);
     return {
       date,
       status:
@@ -100,6 +121,12 @@ export function barsForRange(
       minutesDown:
         day === undefined ? 0 : Math.round(day.unavailableSeconds / 60),
       hasData,
+      maintenance: maintenanceForPeriod(
+        events,
+        service.id,
+        dayStartsAt,
+        dayStartsAt + DAY_MS,
+      ),
     };
   });
 
@@ -114,6 +141,13 @@ export function barsForRange(
   while (cursor < days.length) {
     const bucket = days.slice(cursor, cursor + size);
     const monitoredDays = bucket.filter(({ hasData }) => hasData);
+    const maintenance = [
+      ...new Map(
+        bucket
+          .flatMap((day) => day.maintenance)
+          .map((event) => [event.id, event]),
+      ).values(),
+    ];
     bars.push({
       date: bucket[bucket.length - 1]!.date,
       status: worstStatus(monitoredDays.map(({ status }) => status)),
@@ -123,6 +157,7 @@ export function barsForRange(
       ),
       hasData: monitoredDays.length > 0,
       spanDays: bucket.length,
+      maintenance,
     });
     cursor += size;
     size = spec.bucketDays;
