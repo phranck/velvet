@@ -164,6 +164,52 @@ test("prepares a status snapshot only after its status document is valid", async
   });
 });
 
+test("keeps the later incident generation time after GitHub closes an issue", async () => {
+  const runMonitorAction = await runnerFunction();
+  const timestamps = [
+    new Date("2026-07-29T12:00:00.000Z"),
+    new Date("2026-07-29T12:00:01.000Z"),
+  ];
+  const incidents: IncidentsDocument = {
+    schemaVersion: 1,
+    generatedAt: "2026-07-29T12:00:02.000Z",
+    events: [
+      {
+        id: "incident-1",
+        kind: "incident",
+        state: "resolved",
+        title: "Website was unavailable",
+        summary: "Website recovered.",
+        affectedServiceIds: ["website"],
+        startsAt: "2026-07-29T11:59:00.000Z",
+        endsAt: "2026-07-29T12:00:02.000Z",
+      },
+    ],
+  };
+
+  const result = await runMonitorAction(
+    {
+      mode: "status",
+      runId: "123-recovery:status",
+      repository: "example/status",
+      configurationSource: configuration(),
+      currentState: null,
+      currentIncidents: null,
+    },
+    {
+      now: () => timestamps.shift()!,
+      executeChecks: async () => [observation("available")],
+      reconcileIncidents: async () => ({ document: incidents }),
+      writeSummary: async () => undefined,
+    },
+  );
+
+  assert.equal(result.outcome, "prepared");
+  if (result.outcome !== "prepared") return;
+  assert.equal(result.incidents.generatedAt, incidents.generatedAt);
+  assert.deepEqual(result.incidents.events, incidents.events);
+});
+
 test("adds response samples without changing uptime state or incidents", async () => {
   const runMonitorAction = await runnerFunction();
   const firstTimestamps = [
