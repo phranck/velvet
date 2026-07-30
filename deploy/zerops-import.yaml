@@ -1,0 +1,12 @@
+#yamlPreprocessor=on
+project:
+  name: velvet-setup
+
+services:
+  - hostname: setup
+    type: bun@1.3
+    minContainers: 1
+    maxContainers: 1
+    enableSubdomainAccess: true
+    envSecrets:
+      SESSION_SECRET: <@generateRandomString(<64>)>

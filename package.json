@@ -14,12 +14,13 @@
     "check": "bun run lint && bun run typecheck && bun run test && bun run build",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "test": "bun run test:toolchain && bun run test:ci && bun run test:lockfile && bun run test:workspace-gates && bun run test:theme-registry && bun run test:configurator-cli && bun run --filter @velvet/contracts test && bun run --filter @velvet/monitor test && bun run --filter @velvet/github-incidents test && bun run --filter @velvet/monitor-action test && bun run --filter @velvet/upptime-adapter test && bun run --filter @velvet/sync-data-action test && bun run --filter @velvet/setup-service test && bun run --filter @velvet/site test",
+    "test": "bun run test:toolchain && bun run test:ci && bun run test:lockfile && bun run test:workspace-gates && bun run test:deployment && bun run test:theme-registry && bun run test:configurator-cli && bun run --filter @velvet/contracts test && bun run --filter @velvet/monitor test && bun run --filter @velvet/github-incidents test && bun run --filter @velvet/monitor-action test && bun run --filter @velvet/upptime-adapter test && bun run --filter @velvet/sync-data-action test && bun run --filter @velvet/setup-service test && bun run --filter @velvet/site test",
     "test:toolchain": "bun test tests/bun-toolchain.test.mjs",
     "test:ci": "bun test tests/ci-workflow.test.mjs",
     "pretest:lockfile": "bun run --filter @velvet/contracts build",
     "test:lockfile": "bun test tests/lockfile.test.mjs",
     "test:workspace-gates": "bun test tests/workspace-gates.test.mjs",
+    "test:deployment": "bun test tests/setup-service-deployment.test.mjs",
     "test:theme-registry": "bun test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
     "test:configurator-cli": "bun test tests/config-cli.test.mjs tests/configurator-distribution.test.mjs",
     "pretypecheck": "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build",
@@ -33,6 +34,7 @@
     "eslint": "10.8.0",
     "eslint-plugin-svelte": "3.22.0",
     "globals": "17.8.0",
+    "js-yaml": "^4.1.0",
     "typescript-eslint": "8.65.0"
   }
 }

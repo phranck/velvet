@@ -6,6 +6,7 @@ import type { SetupEvent } from "@velvet/contracts";
 import type { SetupServiceConfig } from "../src/config.js";
 import type { GitHubSetupClient } from "../src/github.js";
 import { createSetupHandler } from "../src/handler.js";
+import type { AuditLogInput } from "../src/observability.js";
 import { createRateLimiter } from "../src/rate-limit.js";
 import { createSessionStore } from "../src/session.js";
 
@@ -57,7 +58,10 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
   };
 }
 
-function harness(github = githubClient()) {
+function harness(
+  github = githubClient(),
+  logger: Parameters<typeof createSetupHandler>[0]["logger"] = () => {},
+) {
   let tokenIndex = 0;
   let idIndex = 0;
   const sessions = createSessionStore({
@@ -68,7 +72,7 @@ function harness(github = githubClient()) {
     config,
     sessions,
     github,
-    logger: () => {},
+    logger,
     randomToken: () => `${tokenIndex++}`.padStart(43, "B"),
     requestId: () => `request${idIndex++}`.padEnd(20, "0"),
     errorId: () => `error${idIndex++}`.padEnd(20, "0"),
@@ -276,6 +280,28 @@ test("explains missing installation and organization approval without claiming s
   assert.equal(pendingEvent.error.code, "ORGANIZATION_APPROVAL_REQUIRED");
 });
 
+test("rejects an installation id that GitHub did not grant to the authenticated user", async () => {
+  const { handler, sessions } = harness();
+  const browser = await authenticate(handler, sessions);
+  const install = await handler(
+    new Request(`${origin}/api/auth/install`, {
+      headers: { Cookie: `__Host-velvet_session=${browser.cookie}` },
+    }),
+  );
+  assert.equal(install.status, 302);
+  const session = sessions.fromCookie(browser.cookie)!;
+
+  const callback = await handler(
+    new Request(
+      `${origin}/api/auth/installed?installation_id=999&setup_action=install&state=${session.installState}`,
+      { headers: { Cookie: `__Host-velvet_session=${browser.cookie}` } },
+    ),
+  );
+  assert.equal(callback.status, 403);
+  assert.equal((await callback.json()).error.code, "INSTALLATION_REQUIRED");
+  assert.equal(session.installation, undefined);
+});
+
 test("returns safe status, revokes authorization on logout, and destroys the session", async () => {
   let revokedToken = "";
   const github = githubClient({ async revokeUserToken(token) { revokedToken = token; } });
@@ -309,6 +335,35 @@ test("returns safe status, revokes authorization on logout, and destroys the ses
   assert.equal(revokedToken, "user-token");
   assert.equal(sessions.fromCookie(browser.cookie), null);
   assert.match(logout.headers.get("Set-Cookie")!, /Max-Age=0/);
+});
+
+test("destroys the local session when GitHub token revocation fails", async () => {
+  const events: AuditLogInput[] = [];
+  const github = githubClient({
+    async revokeUserToken() {
+      throw new Error("upstream response containing secret-token");
+    },
+  });
+  const { handler, sessions } = harness(github, (event) => events.push(event));
+  const browser = await authenticate(handler, sessions);
+
+  const logout = await handler(
+    new Request(`${origin}/api/logout`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+    }),
+  );
+
+  assert.equal(logout.status, 204);
+  assert.equal(sessions.fromCookie(browser.cookie), null);
+  assert.match(logout.headers.get("Set-Cookie")!, /Max-Age=0/);
+  assert.equal(events.at(-1)?.operation, "logout-revoke");
+  assert.equal(events.at(-1)?.outcome, "fallback");
+  assert.doesNotMatch(JSON.stringify(events), /secret-token/);
 });
 
 test("bounds setup attempts and rejects oversized bodies before parsing", async () => {
