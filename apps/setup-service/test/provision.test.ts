@@ -21,6 +21,22 @@ const normalizedRequest = (() => {
   return result.data;
 })();
 
+const customDomainRequest = (() => {
+  const result = validateSetupRequest({
+    configuration: {
+      schemaVersion: 1,
+      repository: { owner: "example", name: "status" },
+      statusPage: {
+        name: "Example Status",
+        customDomain: "STATUS.Example.COM",
+      },
+      services: [{ name: "Website", url: "https://example.com" }],
+    },
+  });
+  if (!result.success) throw new Error("Custom-domain test configuration is invalid.");
+  return result.data;
+})();
+
 function authenticatedSession() {
   let index = 0;
   const session = createSessionStore({
@@ -75,6 +91,9 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
     async enablePages() {
       calls.push("enable-pages");
       return { htmlUrl: "https://example.github.io/status/", status: "building" };
+    },
+    async configurePagesCustomDomain() {
+      calls.push("configure-pages-custom-domain");
     },
     async dispatchWorkflow() {
       calls.push("dispatch-workflow");
@@ -154,6 +173,39 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
   assert.equal(result.installationUrl, "https://example.github.io/status/");
   assert.equal(session.operation?.state, "succeeded");
   assert.equal("installationToken" in (session.provisioning ?? {}), false);
+});
+
+test("writes and configures a custom domain without waiting for DNS", async () => {
+  const session = authenticatedSession();
+  const { client, calls } = successfulGitHub({
+    async writeConfiguration(_token, _owner, _repository, source) {
+      calls.push("write-configuration");
+      assert.match(source, /customDomain: status\.example\.com/);
+    },
+    async configurePagesCustomDomain(_token, _owner, _repository, customDomain) {
+      calls.push(`configure-pages-custom-domain:${customDomain}`);
+    },
+  });
+
+  const result = await provisionVelvet({
+    session,
+    request: customDomainRequest,
+    github: client,
+    onEvent: () => {},
+    operationId: () => "O".repeat(26),
+    sleep: async () => {},
+  });
+
+  assert.ok(
+    calls.indexOf("enable-pages") <
+      calls.indexOf("configure-pages-custom-domain:status.example.com"),
+  );
+  assert.ok(
+    calls.indexOf("configure-pages-custom-domain:status.example.com") <
+      calls.indexOf("dispatch-workflow"),
+  );
+  assert.equal(result.installationUrl, "https://status.example.com/");
+  assert.equal(session.operation?.state, "succeeded");
 });
 
 test("requires a temporary installation before creating the repository", async () => {

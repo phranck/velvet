@@ -60,6 +60,7 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
     async getConfigurationSha() { throw new Error("unused"); },
     async writeConfiguration() { throw new Error("unused"); },
     async enablePages() { throw new Error("unused"); },
+    async configurePagesCustomDomain() { throw new Error("unused"); },
     async dispatchWorkflow() { throw new Error("unused"); },
     async workflowJobs() { throw new Error("unused"); },
     async workflowRun() { throw new Error("unused"); },

@@ -27,6 +27,7 @@ test("builds a canonical minimal website check with contract defaults", () => {
   assert.equal(result.success, true);
   if (!result.success) return;
   assert.deepEqual(result.request.configuration.statusPage.icons, {});
+  assert.equal("customDomain" in result.request.configuration.statusPage, false);
   assert.equal(result.request.configuration.services[0].checks[0].method, "GET");
   assert.deepEqual(
     result.request.configuration.services[0].checks[0].expectedStatusCodes,
@@ -35,6 +36,57 @@ test("builds a canonical minimal website check with contract defaults", () => {
   assert.equal(result.request.configuration.services[0].checks[0].maxRedirects, 5);
   assert.equal(result.request.configuration.services[0].checks[0].timeoutMs, 10_000);
   assert.deepEqual(result.request.configuration.services[0].checks[0].jsonAssertions, []);
+});
+
+test("normalizes an optional custom-domain hostname before setup", () => {
+  const draft = Object.assign(createOnboardingDraft(), {
+    customDomain: "  Status.Example.COM  ",
+  });
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.services = [
+    {
+      ...createServiceDraft("website"),
+      name: "Website",
+      url: "https://example.com",
+    },
+  ];
+
+  const result = buildSetupRequest(draft);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.equal(
+    result.request.configuration.statusPage.customDomain,
+    "status.example.com",
+  );
+});
+
+test("rejects custom-domain values that are not plain hostnames", () => {
+  for (const customDomain of [
+    "https://status.example.com",
+    "status.example.com/path",
+    "status.example.com:443",
+    "user@status.example.com",
+    "*.example.com",
+  ]) {
+    const draft = Object.assign(createOnboardingDraft(), { customDomain });
+    draft.repositoryOwner = "velvet-user";
+    draft.repositoryName = "status";
+    draft.statusPageName = "My Status";
+    draft.services[0].name = "Website";
+    draft.services[0].url = "https://example.com";
+
+    const result = buildSetupRequest(draft);
+
+    assert.equal(result.success, false, customDomain);
+    if (result.success) continue;
+    assert.equal(
+      result.errors.customDomain,
+      "Enter a hostname without https://, a path, port, credentials, or wildcard.",
+    );
+  }
 });
 
 test("serializes only an explicit curated icon under the normalized service id", () => {

@@ -85,6 +85,12 @@ export interface GitHubSetupClient {
     owner: string,
     repository: string,
   ): Promise<GitHubPagesSite>;
+  configurePagesCustomDomain(
+    installationToken: string,
+    owner: string,
+    repository: string,
+    customDomain: string,
+  ): Promise<void>;
   dispatchWorkflow(
     installationToken: string,
     owner: string,
@@ -338,6 +344,19 @@ export function createGitHubSetupClient(
         { method: "POST", body: JSON.stringify({ build_type: "workflow" }) },
       );
       return parsePages(body);
+    },
+
+    async configurePagesCustomDomain(
+      installationToken,
+      owner,
+      repository,
+      customDomain,
+    ) {
+      await githubRequest<void>(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/pages`,
+        installationToken,
+        { method: "PUT", body: JSON.stringify({ cname: customDomain }) },
+      );
     },
 
     async dispatchWorkflow(installationToken, owner, repository) {

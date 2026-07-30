@@ -29,6 +29,7 @@ class MemoryStorage implements OnboardingSessionStorage {
 test("preserves incomplete onboarding input for an authentication return", () => {
   const draft = createOnboardingDraft();
   draft.repositoryOwner = "velvet-user";
+  draft.customDomain = "status.example.com";
   draft.services[0].name = "Website";
   draft.services[0].headers.push({
     id: "header",
@@ -39,6 +40,20 @@ test("preserves incomplete onboarding input for an authentication return", () =>
 
   assert.equal(persistOnboardingDraft(draft, storage), true);
   assert.deepEqual(loadOnboardingDraft(storage), draft);
+});
+
+test("restores older setup sessions without a custom-domain field", () => {
+  const draft = createOnboardingDraft();
+  const legacyDraft: Partial<ReturnType<typeof createOnboardingDraft>> =
+    structuredClone(draft);
+  delete legacyDraft.customDomain;
+  const storage = new MemoryStorage();
+  storage.setItem(
+    ONBOARDING_SESSION_STORAGE_KEY,
+    JSON.stringify({ version: 1, draft: legacyDraft }),
+  );
+
+  assert.equal(loadOnboardingDraft(storage)?.customDomain, "");
 });
 
 test("discards malformed onboarding storage and clears completed setup data", () => {

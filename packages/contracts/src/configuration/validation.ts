@@ -3,6 +3,7 @@ import { load } from "js-yaml";
 
 import {
   CONFIGURATION_SCHEMA_VERSION,
+  CUSTOM_DOMAIN_PATTERN,
   VelvetConfigurationSchema,
   type VelvetConfigurationInput,
 } from "./schemas.js";
@@ -35,6 +36,7 @@ const UNSAFE_JSON_SEGMENTS = new Set([
   "constructor",
   "prototype",
 ]);
+const CUSTOM_DOMAIN = new RegExp(CUSTOM_DOMAIN_PATTERN);
 
 const configurationError = (
   code: ConfigurationValidationErrorCode,
@@ -341,6 +343,11 @@ export function configurationIdentifierFromName(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+export function normalizeCustomDomain(value: string): string | null {
+  const normalized = value.trim().toLowerCase();
+  return CUSTOM_DOMAIN.test(normalized) ? normalized : null;
+}
+
 function resolvedIdentifier(
   id: string | undefined,
   name: string,
@@ -498,7 +505,7 @@ function normalizeConfiguration(
         navigation: (statusPage.navigation ?? []).map((entry) => ({ ...entry })),
         icons: { ...(statusPage.icons ?? {}) },
         ...(statusPage.customDomain
-          ? { customDomain: statusPage.customDomain }
+          ? { customDomain: statusPage.customDomain.toLowerCase() }
           : {}),
         ...(statusPage.logoUrl
           ? { logoUrl: parseHttpUrl(statusPage.logoUrl)! }
