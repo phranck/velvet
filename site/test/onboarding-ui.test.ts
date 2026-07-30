@@ -138,12 +138,15 @@ test("uses reusable squircle steps and directional card motion", async () => {
   assert.match(onboarding, /animation-duration:\s*350ms/);
   assert.match(onboarding, /animation-timing-function:\s*ease-in-out/);
   assert.match(squircleStep, /data-squircle-step/);
-  assert.match(squircleStep, /createSquircleRectPath/);
+  assert.match(squircleStep, /createSquirclePath/);
   assert.match(squircleStep, /bind:clientWidth/);
-  assert.match(squircleStep, /bind:clientHeight/);
+  assert.match(squircleStep, /aspect-ratio:\s*1/);
+  assert.doesNotMatch(squircleStep, /bind:clientHeight/);
   assert.doesNotMatch(squircleStep, /preserveAspectRatio="none"/);
   assert.match(squircleStep, /stroke-width="1"/);
   assert.match(squircleStep, /stroke-width="4"/);
+  assert.match(onboarding, /grid-template-columns:\s*repeat\(4, var\(--step-size\)\)/);
+  assert.doesNotMatch(onboarding, /\.steps li\s*\{[^}]*flex:\s*1 1 0/s);
 });
 
 test("standalone onboarding uses its own build entry", async () => {

@@ -581,10 +581,13 @@
     line-height: 1.6;
   }
   .steps {
-    --step-gap: clamp(0.875rem, 2vw, 1.25rem);
+    --step-size: clamp(4.25rem, 18vw, 5.25rem);
+    --step-gap: clamp(0.65rem, 3vw, 1.5rem);
 
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, var(--step-size));
     align-items: center;
+    justify-content: center;
     gap: var(--step-gap);
     margin-bottom: 1rem;
     padding: 0;
@@ -592,14 +595,14 @@
   }
   .steps li {
     position: relative;
-    min-width: 0;
-    flex: 1 1 0;
+    width: var(--step-size);
+    height: var(--step-size);
   }
   .step-connector {
     position: absolute;
     top: 50%;
-    left: calc(100% + 0.2rem);
-    width: calc(var(--step-gap) - 0.4rem);
+    left: calc(100% + 3px);
+    width: calc(var(--step-gap) - 6px);
     height: 2px;
     transform: translateY(-50%);
     border-radius: 999px;

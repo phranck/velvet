@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { createSquircleRectPath } from "../lib/squircle.js";
+  import { createSquirclePath } from "../lib/squircle.js";
 
-  const CORNER_RADIUS = 24;
   const OUTER_PATH_INSET = 1;
   const INNER_PATH_INSET = 5.5;
 
@@ -21,13 +20,12 @@
     onSelect: () => void;
   } = $props();
 
-  let width = $state(0);
-  let height = $state(0);
+  let size = $state(0);
   const outerPath = $derived(
-    createSquircleRectPath(width, height, CORNER_RADIUS, OUTER_PATH_INSET),
+    createSquirclePath(size, OUTER_PATH_INSET),
   );
   const innerPath = $derived(
-    createSquircleRectPath(width, height, CORNER_RADIUS, INNER_PATH_INSET),
+    createSquirclePath(size, INNER_PATH_INSET),
   );
 </script>
 
@@ -39,10 +37,9 @@
   aria-current={active ? "step" : undefined}
   {disabled}
   onclick={onSelect}
-  bind:clientWidth={width}
-  bind:clientHeight={height}
+  bind:clientWidth={size}
 >
-  <svg viewBox={`0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`} aria-hidden="true">
+  <svg viewBox={`0 0 ${Math.max(size, 1)} ${Math.max(size, 1)}`} aria-hidden="true">
     <path
       d={outerPath}
       fill="none"
@@ -66,7 +63,8 @@
   button {
     position: relative;
     width: 100%;
-    height: 84px;
+    height: auto;
+    aspect-ratio: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
