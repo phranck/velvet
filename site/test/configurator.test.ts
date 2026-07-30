@@ -3,6 +3,7 @@ import { test } from "bun:test";
 
 import {
   cloneConfiguratorTheme,
+  configuratorServiceOptions,
   exportConfigurationYaml,
   exportVelvetYaml,
   parseConfiguratorYaml,
@@ -247,4 +248,49 @@ status-website:
 `),
     /theme\.palette\.textPrimary.*hex/i,
   );
+});
+
+test("round-trips native Velvet layout, theme, and curated service icons", () => {
+  const imported = parseConfiguratorYaml(`
+schemaVersion: 1
+repository:
+  owner: velvet-user
+  name: status
+statusPage:
+  name: Example Status
+  layout: cards
+  icons:
+    website: ph-globe
+  theme:
+    name: Velvet Default
+    palette:
+      accent: "#6366f1"
+    chart:
+      line: accent
+      lineStyle: dotted
+services:
+  - name: Website
+    url: https://example.com
+`);
+
+  assert.equal(imported.settings.layout, "cards");
+  assert.deepEqual(imported.settings.icons, { website: "ph-globe" });
+  assert.equal(imported.settings.theme.protocol.ipv4, "accent");
+  assert.equal(imported.settings.theme.chart.ipv4LineStyle, "dotted");
+
+  const updated = updateConfiguratorDocument(imported.document, {
+    ...imported.settings,
+    icons: { website: "ph-hard-drives" },
+  });
+  const statusPage = updated.statusPage as Record<string, unknown>;
+  const theme = statusPage.theme as Record<string, unknown>;
+  assert.equal(statusPage.layout, "cards");
+  assert.deepEqual(statusPage.icons, { website: "ph-hard-drives" });
+  assert.equal((theme.chart as Record<string, unknown>).line, "accent");
+  assert.equal((theme.chart as Record<string, unknown>).lineStyle, "dotted");
+  assert.equal("protocol" in theme, false);
+  assert.equal("status-website" in updated, false);
+  assert.deepEqual(configuratorServiceOptions(imported.document), [
+    { id: "website", name: "Website" },
+  ]);
 });

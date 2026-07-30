@@ -1,0 +1,325 @@
+import {
+  validateVelvetConfiguration,
+  type NormalizedVelvetConfiguration,
+  type VelvetConfigurationInput,
+} from "@velvet/contracts";
+
+import { isCuratedServiceIcon } from "../lib/icons.js";
+import {
+  SYSTEM_THEMES,
+  canonicalSystemTheme,
+  systemThemeById,
+} from "./system-themes.js";
+
+export type AssertionValueType = "string" | "number" | "boolean" | "null";
+
+export interface HeaderDraft {
+  id: string;
+  name: string;
+  secret: string;
+}
+
+export interface JsonAssertionDraft {
+  id: string;
+  path: string;
+  valueType: AssertionValueType;
+  value: string;
+}
+
+export interface ServiceDraft {
+  id: string;
+  name: string;
+  url: string;
+  icon: string | null;
+  advanced: boolean;
+  method: "GET" | "HEAD";
+  expectedStatusCodes: string;
+  maxRedirects: number;
+  timeoutMs: number;
+  headers: HeaderDraft[];
+  jsonAssertions: JsonAssertionDraft[];
+}
+
+export interface OnboardingDraft {
+  repositoryOwner: string;
+  repositoryName: string;
+  statusPageName: string;
+  themeId: string;
+  services: ServiceDraft[];
+}
+
+export interface SetupRequest {
+  configuration: NormalizedVelvetConfiguration;
+}
+
+export type OnboardingValidationResult =
+  | { success: true; request: SetupRequest }
+  | { success: false; errors: Record<string, string> };
+
+export type SetupProgressStage =
+  | "authenticating"
+  | "creating-repository"
+  | "writing-configuration"
+  | "enabling-pages"
+  | "starting-monitor"
+  | "waiting-for-deployment";
+
+export interface SetupClient {
+  provision(
+    request: SetupRequest,
+    onProgress?: (stage: SetupProgressStage) => void,
+  ): Promise<{ installationUrl: string }>;
+}
+
+export type SetupSubmissionResult =
+  | { state: "invalid"; errors: Record<string, string> }
+  | { state: "permission-required"; message: string }
+  | { state: "failed"; message: string }
+  | { state: "success"; installationUrl: string };
+
+let nextDraftId = 0;
+
+export function createServiceDraft(id = createDraftId("service")): ServiceDraft {
+  return {
+    id,
+    name: "",
+    url: "",
+    icon: null,
+    advanced: false,
+    method: "GET",
+    expectedStatusCodes: "200",
+    maxRedirects: 5,
+    timeoutMs: 10_000,
+    headers: [],
+    jsonAssertions: [],
+  };
+}
+
+export function createHeaderDraft(): HeaderDraft {
+  return { id: createDraftId("header"), name: "", secret: "" };
+}
+
+export function createJsonAssertionDraft(): JsonAssertionDraft {
+  return {
+    id: createDraftId("assertion"),
+    path: "",
+    valueType: "string",
+    value: "",
+  };
+}
+
+function createDraftId(prefix: string): string {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  return uuid ? `${prefix}-${uuid}` : `${prefix}-${++nextDraftId}`;
+}
+
+export function createOnboardingDraft(): OnboardingDraft {
+  return {
+    repositoryOwner: "",
+    repositoryName: "status",
+    statusPageName: "Status",
+    themeId: SYSTEM_THEMES[0].id,
+    services: [createServiceDraft()],
+  };
+}
+
+export function buildSetupRequest(
+  draft: OnboardingDraft,
+): OnboardingValidationResult {
+  const errors: Record<string, string> = {};
+  const theme = systemThemeById(draft.themeId);
+  if (!theme) errors.themeId = "Choose one of the available system themes.";
+
+  const services = draft.services.map((service, index) => {
+    if (service.icon !== null && !isCuratedServiceIcon(service.icon)) {
+      errors[`services.${index}.icon`] = "Choose an icon from the available set.";
+    }
+    if (!service.advanced) {
+      return { name: service.name.trim(), url: service.url.trim() };
+    }
+
+    const expectedStatusCodes = parseStatusCodes(
+      service.expectedStatusCodes,
+      `services.${index}.expectedStatusCodes`,
+      errors,
+    );
+    const headers = service.headers
+      .filter(({ name, secret }) => name.trim() || secret.trim())
+      .map(({ name, secret }) => ({
+        name: name.trim(),
+        secret: secret.trim(),
+      }));
+    const jsonAssertions = service.jsonAssertions
+      .filter(({ path, value, valueType }) =>
+        path.trim() || value.trim() || valueType === "null",
+      )
+      .map(({ path, value, valueType }, assertionIndex) => ({
+        path: path.trim(),
+        equals: parseAssertionValue(
+          value,
+          valueType,
+          `services.${index}.jsonAssertions.${assertionIndex}.value`,
+          errors,
+        ),
+      }));
+
+    return {
+      name: service.name.trim(),
+      checks: [
+        {
+          name: service.name.trim(),
+          url: service.url.trim(),
+          method: service.method,
+          expectedStatusCodes,
+          maxRedirects: service.maxRedirects,
+          timeoutMs: service.timeoutMs,
+          headers,
+          jsonAssertions,
+        },
+      ],
+    };
+  });
+
+  if (draft.services.length === 0) {
+    errors.services = "Add at least one service.";
+  }
+  if (Object.keys(errors).length > 0 || !theme) {
+    return { success: false, errors };
+  }
+
+  const baseInput: VelvetConfigurationInput = {
+    schemaVersion: 1,
+    repository: {
+      owner: draft.repositoryOwner.trim(),
+      name: draft.repositoryName.trim(),
+    },
+    statusPage: {
+      name: draft.statusPageName.trim(),
+      theme: canonicalSystemTheme(theme),
+    },
+    services,
+    history: { retentionDays: 365 },
+  };
+  const baseResult = validateVelvetConfiguration(baseInput);
+  if (!baseResult.success) {
+    return { success: false, errors: mapContractErrors(baseResult.errors) };
+  }
+
+  const icons = Object.fromEntries(
+    baseResult.data.services.flatMap((service, index) => {
+      const icon = draft.services[index].icon;
+      return icon ? [[service.id, icon]] : [];
+    }),
+  );
+  const finalResult = validateVelvetConfiguration({
+    ...baseInput,
+    statusPage: { ...baseInput.statusPage, icons },
+  });
+  if (!finalResult.success) {
+    return { success: false, errors: mapContractErrors(finalResult.errors) };
+  }
+  return { success: true, request: { configuration: finalResult.data } };
+}
+
+export async function submitOnboarding(
+  draft: OnboardingDraft,
+  client: SetupClient,
+  onProgress?: (stage: SetupProgressStage) => void,
+): Promise<SetupSubmissionResult> {
+  const validation = buildSetupRequest(draft);
+  if (!validation.success) {
+    return { state: "invalid", errors: validation.errors };
+  }
+
+  try {
+    const result = await client.provision(validation.request, onProgress);
+    return { state: "success", installationUrl: result.installationUrl };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "SETUP_FAILED";
+    if (message === "SETUP_PERMISSION_REQUIRED") {
+      return {
+        state: "permission-required",
+        message: "Velvet needs permission to create and configure the repository.",
+      };
+    }
+    return {
+      state: "failed",
+      message: "Setup could not finish. Your entries are still here, so you can retry.",
+    };
+  }
+}
+
+function parseStatusCodes(
+  source: string,
+  path: string,
+  errors: Record<string, string>,
+): number[] {
+  const entries = source
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map(Number);
+  if (
+    entries.length === 0 ||
+    entries.some((value) => !Number.isInteger(value) || value < 100 || value > 599)
+  ) {
+    errors[path] = "Enter HTTP status codes from 100 through 599.";
+  }
+  return entries;
+}
+
+function parseAssertionValue(
+  value: string,
+  type: AssertionValueType,
+  path: string,
+  errors: Record<string, string>,
+): string | number | boolean | null {
+  if (type === "null") return null;
+  if (type === "boolean") {
+    if (value !== "true" && value !== "false") {
+      errors[path] = "Enter true or false.";
+    }
+    return value === "true";
+  }
+  if (type === "number") {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || value.trim() === "") {
+      errors[path] = "Enter a valid number.";
+    }
+    return parsed;
+  }
+  return value;
+}
+
+function mapContractErrors(
+  contractErrors: readonly { path: string; message: string }[],
+): Record<string, string> {
+  return Object.fromEntries(
+    contractErrors.map(({ path, message }) => [fieldPath(path), message]),
+  );
+}
+
+function fieldPath(path: string): string {
+  const parts = path.split("/").filter(Boolean);
+  if (parts[0] === "repository" && parts[1] === "owner") {
+    return "repositoryOwner";
+  }
+  if (parts[0] === "repository" && parts[1] === "name") {
+    return "repositoryName";
+  }
+  if (parts[0] === "statusPage" && parts[1] === "name") {
+    return "statusPageName";
+  }
+  if (parts[0] === "services" && parts[1]) {
+    if (parts.includes("url")) return `services.${parts[1]}.url`;
+    if (parts.includes("expectedStatusCodes")) {
+      return `services.${parts[1]}.expectedStatusCodes`;
+    }
+    if (parts.includes("maxRedirects")) return `services.${parts[1]}.maxRedirects`;
+    if (parts.includes("timeoutMs")) return `services.${parts[1]}.timeoutMs`;
+    if (parts.includes("headers") || parts.includes("jsonAssertions")) {
+      return `services.${parts[1]}.advanced`;
+    }
+    return `services.${parts[1]}.name`;
+  }
+  return path === "/" ? "form" : parts.join(".");
+}

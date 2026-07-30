@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import StatusPage from "../components/StatusPage.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import * as ServiceIconPicker from "../components/service-icon-picker";
+  import * as ThemeCard from "../components/theme-card";
   import {
     applyTheme,
     type VelvetConfig,
@@ -13,6 +15,11 @@
     resolveTheme,
   } from "../lib/theme.js";
   import type { RangeKey } from "../lib/types";
+  import {
+    CURATED_SERVICE_ICONS,
+    iconFor,
+  } from "../lib/icons.js";
+  import { SYSTEM_THEMES } from "../onboarding/system-themes.js";
   import ColorControl from "./ColorControl.svelte";
   import ColorSourceControl from "./ColorSourceControl.svelte";
   import ConfiguratorSection from "./ConfiguratorSection.svelte";
@@ -20,6 +27,7 @@
   import ThemeDropdown from "./ThemeDropdown.svelte";
   import {
     cloneConfiguratorTheme,
+    configuratorServiceOptions,
     exportConfigurationYaml,
     exportVelvetYaml,
     parseConfiguratorYaml,
@@ -142,6 +150,7 @@
   let themeConfiguration = $state<ConfiguratorTheme>(
     cloneConfiguratorTheme(INITIAL_SETTINGS.theme),
   );
+  let icons = $state<Record<string, string>>({ ...INITIAL_SETTINGS.icons });
   let sectionState = $state(readStoredSectionState());
   let sidebarCollapsed = $state(readStoredSidebarCollapsed());
   let importedDocument = $state<ConfiguratorDocument | null>(
@@ -184,11 +193,19 @@
   const settings = $derived<ConfiguratorSettings>({
     layout,
     theme: themeConfiguration,
+    icons,
   });
   const previewConfig = $derived<VelvetConfig>({
     ...PREVIEW_CONFIG,
     layout,
     theme,
+    icons: { ...PREVIEW_CONFIG.icons, ...icons },
+  });
+  const configuredServices = $derived.by(() => {
+    const imported = configuratorServiceOptions(importedDocument);
+    return imported.length > 0
+      ? imported
+      : PREVIEW_STATUS.services.map(({ id, name }) => ({ id, name }));
   });
   const settingsDirty = $derived(
     isConfiguratorDirty(settings, selectedBaseline),
@@ -244,6 +261,7 @@
   function applySettings(value: ConfiguratorSettings): void {
     layout = value.layout;
     themeConfiguration = cloneConfiguratorTheme(value.theme);
+    icons = { ...value.icons };
   }
 
   async function refreshThemeRegistry(): Promise<void> {
@@ -259,13 +277,24 @@
     themeConfiguration = nextTheme;
     selectedThemeId = entry.id;
     loadedThemeName = entry.name;
-    selectedBaseline = exportedSettingsFingerprint({ layout, theme: nextTheme });
+    selectedBaseline = exportedSettingsFingerprint({
+      layout,
+      theme: nextTheme,
+      icons,
+    });
     notice = "Theme loaded from the registry.";
     importError = "";
   }
 
   function updatePalette(key: PaletteKey, value: string): void {
     themeConfiguration.palette[key] = value;
+  }
+
+  function selectServiceIcon(serviceId: string, icon: string | null): void {
+    const nextIcons = { ...icons };
+    if (icon === null) delete nextIcons[serviceId];
+    else nextIcons[serviceId] = icon;
+    icons = nextIcons;
   }
 
   function togglePreviewService(serviceId: string): void {
@@ -625,6 +654,25 @@
         onToggle={toggleSection}
       >
         <p class="section-help">Start from a community theme or keep editing locally.</p>
+        <ThemeCard.Root
+          legend="System themes"
+          description="The same four starting themes shown during setup."
+          compact
+        >
+          {#each SYSTEM_THEMES as systemTheme (systemTheme.id)}
+            <ThemeCard.Option
+              name={systemTheme.name}
+              value={systemTheme.id}
+              screenshot={systemTheme.screenshot}
+              selected={selectedThemeId === systemTheme.id}
+              radioName="configurator-system-theme"
+              onSelect={(value) => {
+                const entry = EMBEDDED_THEME_REGISTRY.themes.find(({ id }) => id === value);
+                if (entry) selectTheme(entry);
+              }}
+            />
+          {/each}
+        </ThemeCard.Root>
         <ThemeDropdown
           themes={registryThemes}
           selectedId={selectedThemeId}
@@ -642,6 +690,42 @@
             bind:value={themeConfiguration.name}
           />
         </label>
+      </ConfiguratorSection>
+
+      <ConfiguratorSection
+        id="icons"
+        title="Service Icons"
+        icon="ph-shapes"
+        open={sectionState.icons}
+        onToggle={toggleSection}
+      >
+        <p class="section-help">
+          Keep Automatic for Velvet's service mapping, or save one explicit icon.
+        </p>
+        <div class="service-icon-groups">
+          {#each configuredServices as service (service.id)}
+            <ServiceIconPicker.Root legend={service.name}>
+              <ServiceIconPicker.Option
+                label="Automatic"
+                icon={iconFor(service.id)}
+                value={null}
+                selected={!icons[service.id]}
+                radioName={`configurator-${service.id}-icon`}
+                onSelect={(value) => selectServiceIcon(service.id, value)}
+              />
+              {#each CURATED_SERVICE_ICONS as option (option.icon)}
+                <ServiceIconPicker.Option
+                  label={option.label}
+                  icon={option.icon}
+                  value={option.icon}
+                  selected={icons[service.id] === option.icon}
+                  radioName={`configurator-${service.id}-icon`}
+                  onSelect={(value) => selectServiceIcon(service.id, value)}
+                />
+              {/each}
+            </ServiceIconPicker.Root>
+          {/each}
+        </div>
       </ConfiguratorSection>
 
       <ConfiguratorSection
@@ -831,22 +915,6 @@
             {/each}
           </div>
         </div>
-        <div class="line-style-control">
-          <span>IPv6 line</span>
-          <div class="segmented line-styles">
-            {#each LINE_STYLES as option (option)}
-              <label>
-                <input
-                  type="radio"
-                  name="ipv6-line-style"
-                  value={option}
-                  bind:group={themeConfiguration.chart.ipv6LineStyle}
-                />
-                <span>{option}</span>
-              </label>
-            {/each}
-          </div>
-        </div>
         <div class="switch-row">
           <div>
             <strong>Chart fill</strong>
@@ -905,8 +973,7 @@
           </div>
           <div class="override-group">
             <h3>Protocols</h3>
-            <ColorSourceControl name="protocol-ipv4" label="IPv4" source={themeConfiguration.protocol.ipv4} automaticColor={theme.protocol.ipv4} palette={themeConfiguration.palette} onChange={(value) => (themeConfiguration.protocol.ipv4 = value)} />
-            <ColorSourceControl name="protocol-ipv6" label="IPv6" source={themeConfiguration.protocol.ipv6} automaticColor={theme.protocol.ipv6} palette={themeConfiguration.palette} onChange={(value) => (themeConfiguration.protocol.ipv6 = value)} />
+            <ColorSourceControl name="protocol-ipv4" label="Response line" source={themeConfiguration.protocol.ipv4} automaticColor={theme.protocol.ipv4} palette={themeConfiguration.palette} onChange={(value) => (themeConfiguration.protocol.ipv4 = value)} />
           </div>
           <div class="override-group">
             <h3>Gradients</h3>
@@ -955,6 +1022,11 @@
     --tool-faint: #6f7280;
     --tool-accent: #8ca5ff;
     --tool-error: #ff7e8c;
+    --picker-accent: var(--tool-accent);
+    --picker-line: var(--tool-line);
+    --picker-muted: var(--tool-muted);
+    --picker-surface: var(--tool-input);
+    --picker-text: var(--tool-text);
     --tool-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     min-height: 100vh;
     display: grid;
@@ -1250,6 +1322,10 @@
     gap: 12px;
     margin-top: 14px;
   }
+  .service-icon-groups {
+    display: grid;
+    gap: 18px;
+  }
   .text-control {
     display: grid;
     gap: 7px;
@@ -1326,9 +1402,6 @@
   }
   .segmented input:focus-visible + span {
     outline: 2px solid var(--tool-accent);
-  }
-  .line-style-control + .line-style-control {
-    margin-top: 14px;
   }
   .line-style-control > span {
     display: block;

@@ -35,6 +35,20 @@ test("builds the standalone configurator at the repository root", async () => {
   assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
 });
 
+test("builds the standalone onboarding at the repository root", async () => {
+  await bun(["run", "--bun", "vite", "build", "--config", "vite.onboarding.ts"]);
+
+  const html = await readFile(
+    resolve(repositoryRoot, "onboarding/index.html"),
+    "utf8",
+  );
+  assert.match(html, /<title>Set up Velvet<\/title>/);
+  assert.match(html, /Set up Velvet/);
+  assert.match(html, /<script[^>]+src="\.\/assets\/[^"]+\.js"/);
+  assert.match(html, /<link[^>]+href="\.\/assets\/[^"]+\.css"/);
+  assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
+});
+
 test("builds status-page assets relative to the deployed Pages path", async () => {
   await bun(["run", "--bun", "vite", "build"]);
 
@@ -52,6 +66,14 @@ test("pins the deterministic screenshot browser to UTC", async () => {
 
   assert.match(screenshot, /clock\.setFixedTime/);
   assert.match(screenshot, /timezoneId:\s*"UTC"/);
+
+  const themeScreenshots = await readFile(
+    resolve(siteRoot, "scripts/system-theme-screenshots.mjs"),
+    "utf8",
+  );
+  assert.match(themeScreenshots, /clock\.setFixedTime/);
+  assert.match(themeScreenshots, /timezoneId:\s*"UTC"/);
+  assert.match(themeScreenshots, /EMBEDDED_THEME_REGISTRY/);
 });
 
 test("generated runtime config points to Velvet repository data", async () => {

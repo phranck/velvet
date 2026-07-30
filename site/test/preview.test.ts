@@ -18,15 +18,13 @@ function responseSeries(serviceId: string, protocol: "ipv4" | "ipv6") {
 
 test("fills the 90-day preview range with 82 days of dummy response data", () => {
   const websiteIpv4 = responseSeries("website", "ipv4");
-  const websiteIpv6 = responseSeries("website", "ipv6");
   const backendIpv4 = responseSeries("backend", "ipv4");
-  const backendIpv6 = responseSeries("backend", "ipv6");
   const { start, end } = responseRangeWindow(
     "quarter",
     PREVIEW_RESPONSE_TIMES.generatedAt,
   );
 
-  for (const series of [websiteIpv4, websiteIpv6, backendIpv4, backendIpv6]) {
+  for (const series of [websiteIpv4, backendIpv4]) {
     assert.equal(series.samples.length, 82);
     assert.ok(
       series.samples.every(({ responseTimeMs }) => responseTimeMs !== null),
@@ -34,6 +32,16 @@ test("fills the 90-day preview range with 82 days of dummy response data", () =>
     assert.ok(Date.parse(series.samples[0]!.timestamp) >= start);
     assert.equal(Date.parse(series.samples.at(-1)!.timestamp), end);
   }
+  assert.equal(
+    PREVIEW_RESPONSE_TIMES.series.some(({ protocol }) => protocol === "ipv6"),
+    false,
+  );
+  assert.equal(
+    PREVIEW_STATUS.services.some(({ checks }) =>
+      checks.some(({ protocol }) => protocol === "ipv6"),
+    ),
+    false,
+  );
 });
 
 test("fills 82 days of the 90-day preview availability grid", () => {

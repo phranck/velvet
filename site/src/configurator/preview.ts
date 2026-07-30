@@ -82,16 +82,9 @@ export const PREVIEW_STATUS: StatusDocument = {
         {
           id: "website-ipv4",
           protocol: "ipv4",
-          status: "operational",
-          checkedAt: "2026-07-27T12:00:00.000Z",
-          responseTimeMs: 108,
-        },
-        {
-          id: "website-ipv6",
-          protocol: "ipv6",
           status: "degraded",
           checkedAt: "2026-07-27T12:00:00.000Z",
-          responseTimeMs: 184,
+          responseTimeMs: 108,
         },
       ],
       dailyAvailability: previewDailyAvailability(PREVIEW_GENERATED_AT, {
@@ -111,13 +104,6 @@ export const PREVIEW_STATUS: StatusDocument = {
           status: "operational",
           checkedAt: "2026-07-27T12:00:00.000Z",
           responseTimeMs: 82,
-        },
-        {
-          id: "backend-ipv6",
-          protocol: "ipv6",
-          status: "operational",
-          checkedAt: "2026-07-27T12:00:00.000Z",
-          responseTimeMs: 121,
         },
       ],
       dailyAvailability: previewDailyAvailability(PREVIEW_GENERATED_AT, {
@@ -139,22 +125,10 @@ export const PREVIEW_RESPONSE_TIMES: ResponseTimesDocument = {
       samples: previewResponseSamples(PREVIEW_STATUS.generatedAt, 108, 16, 0.8),
     },
     {
-      serviceId: "backend",
-      checkId: "backend-ipv6",
-      protocol: "ipv6",
-      samples: previewResponseSamples(PREVIEW_STATUS.generatedAt, 184, 22, 2.2),
-    },
-    {
       serviceId: "website",
       checkId: "website-ipv4",
       protocol: "ipv4",
       samples: previewResponseSamples(PREVIEW_STATUS.generatedAt, 82, 12, 1.3),
-    },
-    {
-      serviceId: "website",
-      checkId: "website-ipv6",
-      protocol: "ipv6",
-      samples: previewResponseSamples(PREVIEW_STATUS.generatedAt, 121, 18, 2.7),
     },
   ],
 };

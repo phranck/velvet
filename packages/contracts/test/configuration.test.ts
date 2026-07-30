@@ -17,6 +17,10 @@ const parseVelvetConfiguration = Reflect.get(
   contracts,
   "parseVelvetConfiguration",
 ) as ((source: string) => ConfigurationResult) | undefined;
+const configurationIdentifierFromName = Reflect.get(
+  contracts,
+  "configurationIdentifierFromName",
+) as ((name: string) => string) | undefined;
 
 function parse(source: string): ConfigurationResult {
   if (typeof parseVelvetConfiguration !== "function") {
@@ -35,6 +39,12 @@ function assertConfigurationError(
   assert.equal(result.errors[0]?.code, code);
   assert.equal(result.errors[0]?.path, path);
 }
+
+test("exports the canonical service identifier mapping", () => {
+  assert.equal(typeof configurationIdentifierFromName, "function");
+  assert.equal(configurationIdentifierFromName?.("Object Storage"), "object-storage");
+  assert.equal(configurationIdentifierFromName?.("Überwachung API"), "uberwachung-api");
+});
 
 test("normalizes a service name and URL into a complete direct HTTP check", () => {
   const result = parse(`

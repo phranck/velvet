@@ -30,6 +30,13 @@ test("marks every exported setting change dirty while ignoring preview state", (
     ),
     true,
   );
+  assert.equal(
+    isConfiguratorDirty(
+      { ...settings, icons: { website: "ph-globe" } },
+      baseline,
+    ),
+    true,
+  );
 });
 
 test("routes platform save shortcuts without hijacking unrelated keys", () => {

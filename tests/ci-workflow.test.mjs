@@ -41,6 +41,10 @@ test("runs independent repository gates for pull requests and main", async () =>
   assert.match(lintJob, /docker:\/\/rhysd\/actionlint:1\.7\.12/);
   assert.match(lintJob, /bun run lint/);
   assert.match(typecheckJob, /bun run typecheck/);
+  assert.match(
+    testJob,
+    /name:\s*Install Playwright browser[\s\S]*bunx playwright install --with-deps chromium[\s\S]*name:\s*Test/,
+  );
   assert.match(testJob, /bun run test/);
   assert.match(buildJob, /bun run build/);
   assert.doesNotMatch(workflow, /actions\/setup-node|\bnpm\b|\bnpx\b/);

@@ -332,7 +332,7 @@ function inspectConfiguration(value: unknown): ConfigurationValidationError[] {
   return errors;
 }
 
-function identifierFromName(value: string): string {
+export function configurationIdentifierFromName(value: string): string {
   return value
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -346,7 +346,7 @@ function resolvedIdentifier(
   name: string,
   path: string,
 ): { id?: string; error?: ConfigurationValidationError } {
-  const resolved = id ?? identifierFromName(name);
+  const resolved = id ?? configurationIdentifierFromName(name);
   if (!resolved || resolved.length > 64) {
     return {
       error: configurationError(
