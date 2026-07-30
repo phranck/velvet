@@ -39,15 +39,21 @@ export function createGitHubAuthorizationUrl(input: {
 export function createGitHubInstallationUrl(
   appSlug: string,
   state: string,
+  targetId: number,
+  repositoryId: number,
 ): string {
   if (!APP_SLUG_PATTERN.test(appSlug)) {
     throw new TypeError("GitHub App slug is invalid.");
   }
   checkedToken(state, "Installation state");
+  checkedIdentifier(targetId, "GitHub installation target");
+  checkedIdentifier(repositoryId, "GitHub repository");
   const url = new URL(
-    `https://github.com/apps/${appSlug}/installations/new`,
+    `https://github.com/apps/${appSlug}/installations/new/permissions`,
   );
   url.searchParams.set("state", state);
+  url.searchParams.set("suggested_target_id", String(targetId));
+  url.searchParams.append("repository_ids[]", String(repositoryId));
   return url.href;
 }
 
@@ -58,6 +64,13 @@ function secureRandomToken(): string {
 function checkedToken(value: string, label: string): string {
   if (!TOKEN_PATTERN.test(value)) {
     throw new TypeError(`${label} is invalid.`);
+  }
+  return value;
+}
+
+function checkedIdentifier(value: number, label: string): number {
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new TypeError(`${label} ID is invalid.`);
   }
   return value;
 }

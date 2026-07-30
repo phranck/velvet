@@ -25,6 +25,7 @@ export interface SetupServerSession {
     repository?: {
       id: number;
       owner: string;
+      ownerId: number;
       name: string;
       htmlUrl: string;
     };

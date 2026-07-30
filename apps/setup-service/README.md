@@ -12,7 +12,7 @@ when the service is unavailable or when the GitHub App is later uninstalled.
 
 Register a GitHub App owned by the Velvet maintainer with these settings:
 
-- Homepage URL: the public setup origin.
+- Homepage URL: `https://velvet.li`.
 - Callback URL: `<PUBLIC_ORIGIN>/api/auth/callback`.
 - Setup URL: `<PUBLIC_ORIGIN>/api/auth/installed`.
 - Expire user authorization tokens: enabled.
@@ -21,6 +21,11 @@ Register a GitHub App owned by the Velvet maintainer with these settings:
 - Device Flow: disabled.
 - Webhook: inactive. The setup service subscribes to no events.
 - Installation scope: Any account.
+
+Velvet creates the repository after OAuth authorization and before requesting
+the GitHub App installation. The installation URL preselects exactly that new
+repository through its GitHub repository ID. Never replace this with the generic
+installation URL, because GitHub otherwise selects all repositories by default.
 
 Set only these repository permissions:
 
@@ -79,9 +84,11 @@ the application, followed by a service restart.
 
 ## Partial setup recovery
 
-The current browser session records each completed step. A retry reuses the
-repository already created by that session, mints a fresh repository-restricted
-installation token, and continues from the first incomplete step.
+The current browser session records each completed step. The repository is
+created before the GitHub App installation so GitHub can limit the installation
+to that repository. A retry reuses the repository already created by that
+session, mints a fresh repository-restricted installation token, and continues
+from the first incomplete step.
 
 If the service restarted after repository creation, inspect the named repository
 before cleanup. A generated repository containing only the untouched template

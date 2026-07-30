@@ -86,6 +86,39 @@ test("redirects an unauthenticated browser without accepting a browser token", a
 test("redirects to the verified GitHub App installation URL", async () => {
   const redirects: string[] = [];
   let calls = 0;
+  const installationUrl =
+    `https://github.com/apps/velvet-setup/installations/new/permissions?` +
+    `state=${"S".repeat(43)}&suggested_target_id=255022500&repository_ids%5B%5D=123456789`;
+  const client = createBrowserSetupClient(
+    async () => {
+      calls += 1;
+      if (calls === 1) {
+        return Response.json({ authenticated: true, csrfToken: "C".repeat(43) });
+      }
+      return new Response(
+        JSON.stringify({
+          type: "permission-required",
+          error: {
+            code: "INSTALLATION_REQUIRED",
+            message: "Install Velvet.",
+            errorId: "E".repeat(26),
+          },
+          installationUrl,
+        }),
+        { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+      );
+    },
+    undefined,
+    (url) => redirects.push(url),
+  );
+
+  await assert.rejects(() => client.provision(validRequest()), /SETUP_REDIRECT_STARTED/);
+  assert.equal(redirects[0], installationUrl);
+});
+
+test("rejects an installation URL that would grant access to every repository", async () => {
+  const redirects: string[] = [];
+  let calls = 0;
   const client = createBrowserSetupClient(
     async () => {
       calls += 1;
@@ -109,8 +142,8 @@ test("redirects to the verified GitHub App installation URL", async () => {
     (url) => redirects.push(url),
   );
 
-  await assert.rejects(() => client.provision(validRequest()), /SETUP_REDIRECT_STARTED/);
-  assert.match(redirects[0]!, /^https:\/\/github\.com\/apps\/velvet-setup\//);
+  await assert.rejects(() => client.provision(validRequest()), /SETUP_FAILED/);
+  assert.deepEqual(redirects, []);
 });
 
 test("rejects malformed events and non-HTTPS installation URLs", async () => {

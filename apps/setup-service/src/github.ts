@@ -26,6 +26,7 @@ export interface GitHubRepository {
   id: number;
   name: string;
   owner: string;
+  ownerId: number;
   htmlUrl: string;
   defaultBranch: string;
 }
@@ -390,7 +391,8 @@ function parseRepository(value: unknown): GitHubRepository {
     typeof value.html_url !== "string" ||
     typeof value.default_branch !== "string" ||
     !isRecord(value.owner) ||
-    typeof value.owner.login !== "string"
+    typeof value.owner.login !== "string" ||
+    !positiveInteger(value.owner.id)
   ) {
     throw new Error("GitHub repository response was invalid.");
   }
@@ -398,6 +400,7 @@ function parseRepository(value: unknown): GitHubRepository {
     id: value.id,
     name: value.name,
     owner: value.owner.login,
+    ownerId: value.owner.id,
     htmlUrl: value.html_url,
     defaultBranch: value.default_branch,
   };

@@ -38,20 +38,8 @@ export async function provisionVelvet(
       { status: 401, recoverable: true },
     );
   }
-  const installation = input.session.installation;
   const owner = input.request.configuration.repository.owner;
   const repositoryName = input.request.configuration.repository.name;
-  if (
-    !installation ||
-    installation.accountLogin.toLowerCase() !== owner.toLowerCase()
-  ) {
-    throw new SetupServiceError(
-      "INSTALLATION_REQUIRED",
-      "Install Velvet for the selected repository owner before continuing.",
-      { status: 403, recoverable: true },
-    );
-  }
-
   const source = serializeVelvetConfiguration(input.request.configuration);
   const configurationHash = createHash("sha256").update(source).digest("hex");
   const existing = input.session.provisioning;
@@ -121,9 +109,22 @@ export async function provisionVelvet(
       state.repository = {
         id: repository.id,
         owner: repository.owner,
+        ownerId: repository.ownerId,
         name: repository.name,
         htmlUrl: repository.htmlUrl,
       };
+    }
+
+    const installation = input.session.installation;
+    if (
+      !installation ||
+      installation.accountLogin.toLowerCase() !== owner.toLowerCase()
+    ) {
+      throw new SetupServiceError(
+        "INSTALLATION_REQUIRED",
+        "Install Velvet for the selected repository before continuing.",
+        { status: 403, recoverable: true },
+      );
     }
 
     const installationToken = await input.github.createInstallationToken(

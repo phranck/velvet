@@ -45,6 +45,7 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
         id: 99,
         name: "status",
         owner: "example",
+        ownerId: 255_022_500,
         htmlUrl: "https://github.com/example/status",
         defaultBranch: "main",
       };
@@ -128,9 +129,9 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
   assert.equal("installationToken" in (session.provisioning ?? {}), false);
 });
 
-test("stops before GitHub when repository owner does not match the installation", async () => {
+test("creates the repository before requesting its GitHub App installation", async () => {
   const session = authenticatedSession();
-  session.installation = { id: 8, accountLogin: "other", accountType: "Organization" };
+  delete session.installation;
   const { client, calls } = successfulGitHub();
 
   await assert.rejects(
@@ -147,7 +148,14 @@ test("stops before GitHub when repository owner does not match the installation"
       return true;
     },
   );
-  assert.deepEqual(calls, []);
+  assert.deepEqual(calls, ["create-repository"]);
+  assert.deepEqual(session.provisioning?.repository, {
+    id: 99,
+    owner: "example",
+    ownerId: 255_022_500,
+    name: "status",
+    htmlUrl: "https://github.com/example/status",
+  });
 });
 
 test("maps a GitHub rate limit to a safe retryable setup error", async () => {

@@ -149,17 +149,35 @@ function safeInstallationUrl(source: string): string {
 
 function safeGitHubInstallationUrl(source: string): string {
   const url = new URL(source);
+  const allowedParameters = new Set([
+    "state",
+    "suggested_target_id",
+    "repository_ids[]",
+  ]);
   if (
     url.origin !== "https://github.com" ||
-    !/^\/apps\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\/installations\/new$/.test(
+    !/^\/apps\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\/installations\/new\/permissions$/.test(
       url.pathname,
     ) ||
+    url.searchParams.getAll("state").length !== 1 ||
     !/^[A-Za-z0-9_-]{43,128}$/.test(url.searchParams.get("state") ?? "") ||
-    [...url.searchParams.keys()].some((key) => key !== "state")
+    !singlePositiveIdentifier(url.searchParams, "suggested_target_id") ||
+    !singlePositiveIdentifier(url.searchParams, "repository_ids[]") ||
+    [...url.searchParams.keys()].some((key) => !allowedParameters.has(key))
   ) {
     throw new Error("SETUP_FAILED");
   }
   return url.href;
+}
+
+function singlePositiveIdentifier(
+  parameters: URLSearchParams,
+  key: string,
+): boolean {
+  const values = parameters.getAll(key);
+  if (values.length !== 1 || !/^[1-9]\d*$/.test(values[0] ?? "")) return false;
+  const value = Number(values[0]);
+  return Number.isSafeInteger(value);
 }
 
 async function readJsonResponse(response: Response): Promise<unknown> {

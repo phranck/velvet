@@ -34,13 +34,40 @@ test("builds a PKCE S256 authorization without putting a secret in the URL", () 
   assert.equal(url.searchParams.get("client_secret"), null);
 });
 
-test("builds an allowlisted GitHub App installation URL with state", () => {
+test("builds an allowlisted GitHub App installation URL for one repository", () => {
+  const url = new URL(
+    createGitHubInstallationUrl(
+      "velvet-setup",
+      "s".repeat(43),
+      255_022_500,
+      123_456_789,
+    ),
+  );
   assert.equal(
-    createGitHubInstallationUrl("velvet-setup", "s".repeat(43)),
-    `https://github.com/apps/velvet-setup/installations/new?state=${"s".repeat(43)}`,
+    url.pathname,
+    "/apps/velvet-setup/installations/new/permissions",
+  );
+  assert.equal(url.searchParams.get("state"), "s".repeat(43));
+  assert.equal(url.searchParams.get("suggested_target_id"), "255022500");
+  assert.deepEqual(url.searchParams.getAll("repository_ids[]"), ["123456789"]);
+  assert.throws(
+    () =>
+      createGitHubInstallationUrl(
+        "../attacker",
+        "s".repeat(43),
+        255_022_500,
+        123_456_789,
+      ),
+    /slug/i,
   );
   assert.throws(
-    () => createGitHubInstallationUrl("../attacker", "s".repeat(43)),
-    /slug/i,
+    () =>
+      createGitHubInstallationUrl(
+        "velvet-setup",
+        "s".repeat(43),
+        0,
+        123_456_789,
+      ),
+    /target/i,
   );
 });

@@ -100,6 +100,25 @@ function harness(
   return { handler, sessions };
 }
 
+function realProvisionHarness(github: GitHubSetupClient) {
+  let tokenIndex = 0;
+  let idIndex = 0;
+  const sessions = createSessionStore({
+    secret: config.sessionSecret,
+    randomToken: () => `${tokenIndex++}`.padStart(43, "A"),
+  });
+  const handler = createSetupHandler({
+    config,
+    sessions,
+    github,
+    logger: () => {},
+    randomToken: () => `${tokenIndex++}`.padStart(43, "B"),
+    requestId: () => `request${idIndex++}`.padEnd(20, "0"),
+    errorId: () => `error${idIndex++}`.padEnd(20, "0"),
+  });
+  return { handler, sessions };
+}
+
 async function createBrowserSession(
   handler: (request: Request) => Promise<Response>,
 ): Promise<{ cookie: string; csrfToken: string }> {
@@ -243,8 +262,20 @@ test("requires exact origin and CSRF before streaming setup progress", async () 
 });
 
 test("explains missing installation and organization approval without claiming success", async () => {
-  const github = githubClient({ async listInstallations() { return []; } });
-  const { handler, sessions } = harness(github);
+  const github = githubClient({
+    async listInstallations() { return []; },
+    async createRepositoryFromTemplate() {
+      return {
+        id: 123_456_789,
+        name: "status",
+        owner: "example",
+        ownerId: 255_022_500,
+        htmlUrl: "https://github.com/example/status",
+        defaultBranch: "main",
+      };
+    },
+  });
+  const { handler, sessions } = realProvisionHarness(github);
   const browser = await authenticate(handler, sessions);
   const request = () =>
     handler(
@@ -260,10 +291,17 @@ test("explains missing installation and organization approval without claiming s
       }),
     );
 
-  const firstEvent = JSON.parse((await (await request()).text()).trim());
+  const firstEvents = (await (await request()).text())
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  const firstEvent = firstEvents.at(-1);
   assert.equal(firstEvent.type, "permission-required");
   assert.equal(firstEvent.error.code, "INSTALLATION_REQUIRED");
-  assert.match(firstEvent.installationUrl, /^https:\/\/github\.com\/apps\/velvet-setup\/installations\/new\?state=/);
+  assert.match(
+    firstEvent.installationUrl,
+    /^https:\/\/github\.com\/apps\/velvet-setup\/installations\/new\/permissions\?/,
+  );
 
   const session = sessions.fromCookie(browser.cookie)!;
   const callback = await handler(
@@ -280,16 +318,92 @@ test("explains missing installation and organization approval without claiming s
   assert.equal(pendingEvent.error.code, "ORGANIZATION_APPROVAL_REQUIRED");
 });
 
-test("rejects an installation id that GitHub did not grant to the authenticated user", async () => {
-  const { handler, sessions } = harness();
+test("creates the repository before offering an installation limited to it", async () => {
+  const github = githubClient({
+    async listInstallations() { return []; },
+    async createRepositoryFromTemplate() {
+      return {
+        id: 123_456_789,
+        name: "status",
+        owner: "example",
+        ownerId: 255_022_500,
+        htmlUrl: "https://github.com/example/status",
+        defaultBranch: "main",
+      };
+    },
+  });
+  const { handler, sessions } = realProvisionHarness(github);
   const browser = await authenticate(handler, sessions);
-  const install = await handler(
-    new Request(`${origin}/api/auth/install`, {
-      headers: { Cookie: `__Host-velvet_session=${browser.cookie}` },
+  const response = await handler(
+    new Request(`${origin}/api/setup`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+        "Content-Type": "application/json",
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+      body: setupBody,
     }),
   );
-  assert.equal(install.status, 302);
+  const events = (await response.text()).trim().split("\n").map((line) => JSON.parse(line));
+
+  assert.deepEqual(events.map((event) => event.type), [
+    "progress",
+    "permission-required",
+  ]);
+  assert.equal(events[0].stage, "creating-repository");
+  const installationUrl = new URL(events[1].installationUrl);
+  assert.equal(
+    installationUrl.pathname,
+    "/apps/velvet-setup/installations/new/permissions",
+  );
+  assert.equal(installationUrl.searchParams.get("suggested_target_id"), "255022500");
+  assert.deepEqual(installationUrl.searchParams.getAll("repository_ids[]"), [
+    "123456789",
+  ]);
   const session = sessions.fromCookie(browser.cookie)!;
+  assert.equal(session.provisioning?.repository?.id, 123_456_789);
+  assert.equal(session.installState, installationUrl.searchParams.get("state"));
+});
+
+test("rejects an installation id that GitHub did not grant to the authenticated user", async () => {
+  let installationChecks = 0;
+  const github = githubClient({
+    async listInstallations() {
+      installationChecks += 1;
+      return installationChecks === 1
+        ? []
+        : [{ id: 7, accountLogin: "example", accountType: "User" }];
+    },
+    async createRepositoryFromTemplate() {
+      return {
+        id: 123_456_789,
+        name: "status",
+        owner: "example",
+        ownerId: 255_022_500,
+        htmlUrl: "https://github.com/example/status",
+        defaultBranch: "main",
+      };
+    },
+  });
+  const { handler, sessions } = realProvisionHarness(github);
+  const browser = await authenticate(handler, sessions);
+  const setup = await handler(
+    new Request(`${origin}/api/setup`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+        "Content-Type": "application/json",
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+      body: setupBody,
+    }),
+  );
+  await setup.text();
+  const session = sessions.fromCookie(browser.cookie)!;
+  assert.ok(session.installState);
 
   const callback = await handler(
     new Request(

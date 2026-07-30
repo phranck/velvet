@@ -220,20 +220,6 @@ export function createSetupHandler(
         }
       }
 
-      if (route === "/api/auth/install") {
-        if (request.method !== "GET") return reject(methodError(), "installation-start");
-        if (!authenticated(session)) {
-          return reject(authenticationRequired(), "installation-start");
-        }
-        const state = randomToken();
-        session.installState = state;
-        return finish(
-          redirectResponse(
-            createGitHubInstallationUrl(options.config.github.appSlug, state),
-          ),
-        );
-      }
-
       if (route === "/api/auth/installed") {
         if (request.method !== "GET") return reject(methodError(), "installation-callback");
         if (!authenticated(session) || !session.installState) {
@@ -451,45 +437,71 @@ function setupStreamResponse(input: {
           );
           const owner = input.request.configuration.repository.owner;
           const installation = installationForOwner(installations, owner);
-          if (!installation) {
-            const state = input.randomToken();
-            input.session.installState = state;
-            const approvalPending = input.session.organizationApprovalPending === true;
-            const error = new SetupServiceError(
-              approvalPending
-                ? "ORGANIZATION_APPROVAL_REQUIRED"
-                : "INSTALLATION_REQUIRED",
-              approvalPending
-                ? "A GitHub organization owner still needs to approve the Velvet installation."
-                : "Install Velvet for the selected repository owner before continuing.",
-              { status: 403, recoverable: true },
-            );
-            emit({
-              type: "permission-required",
-              error: publicSetupError(error, currentErrorId),
-              installationUrl: createGitHubInstallationUrl(input.appSlug, state),
-            });
-            input.logger({
-              level: "warn",
-              requestId: input.requestId,
-              route: "/api/setup",
-              operation: "installation-access",
-              status: 403,
-              outcome: "rejected",
-              code: error.code,
-              errorId: currentErrorId,
-            });
-            return;
+          if (installation) {
+            input.session.installation = installation;
+            input.session.organizationApprovalPending = false;
+          } else {
+            delete input.session.installation;
           }
-          input.session.installation = installation;
-          input.session.organizationApprovalPending = false;
-          await input.provision({
-            session: input.session,
-            request: input.request,
-            github: input.github,
-            onEvent: emit,
-            errorId: () => currentErrorId,
-          });
+          try {
+            await input.provision({
+              session: input.session,
+              request: input.request,
+              github: input.github,
+              onEvent: emit,
+              errorId: () => currentErrorId,
+            });
+          } catch (cause) {
+            const repository = input.session.provisioning?.repository;
+            if (
+              cause instanceof SetupServiceError &&
+              cause.code === "INSTALLATION_REQUIRED" &&
+              repository
+            ) {
+              const state = input.randomToken();
+              input.session.installState = state;
+              const approvalPending =
+                input.session.organizationApprovalPending === true;
+              const error = approvalPending
+                ? new SetupServiceError(
+                    "ORGANIZATION_APPROVAL_REQUIRED",
+                    "A GitHub organization owner still needs to approve the Velvet installation.",
+                    { status: 403, recoverable: true },
+                  )
+                : cause;
+              const publicError = publicSetupError(error, currentErrorId);
+              if (input.session.operation) {
+                input.session.operation = {
+                  ...input.session.operation,
+                  state: "permission-required",
+                  repositoryUrl: repository.htmlUrl,
+                  error: publicError,
+                };
+              }
+              emit({
+                type: "permission-required",
+                error: publicError,
+                installationUrl: createGitHubInstallationUrl(
+                  input.appSlug,
+                  state,
+                  repository.ownerId,
+                  repository.id,
+                ),
+              });
+              input.logger({
+                level: "warn",
+                requestId: input.requestId,
+                route: "/api/setup",
+                operation: "installation-access",
+                status: 403,
+                outcome: "rejected",
+                code: error.code,
+                errorId: currentErrorId,
+              });
+              return;
+            }
+            throw cause;
+          }
           input.logger({
             level: "info",
             requestId: input.requestId,

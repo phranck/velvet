@@ -72,7 +72,7 @@ test("restricts installation tokens and repository changes to the Velvet setup f
       name: "status",
       html_url: "https://github.com/example/status",
       default_branch: "main",
-      owner: { login: "example" },
+      owner: { login: "example", id: 255_022_500 },
     },
     { sha: "template-sha" },
     { content: { sha: "commit-sha" } },
@@ -102,6 +102,7 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     "status",
   );
   assert.equal(repository.id, 99);
+  assert.equal(repository.ownerId, 255_022_500);
   assert.equal(await client.getConfigurationSha("installation-token", "example", "status"), "template-sha");
   await client.writeConfiguration(
     "installation-token",
