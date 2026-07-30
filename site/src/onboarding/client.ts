@@ -36,7 +36,13 @@ export function createBrowserSetupClient(
 ): SetupClient {
   return {
     async provision(request, onProgress) {
-      onProgress?.("authenticating");
+      let lastProgressStage: SetupProgressStage | undefined;
+      const reportProgress = (stage: SetupProgressStage): void => {
+        if (stage === lastProgressStage) return;
+        lastProgressStage = stage;
+        onProgress?.(stage);
+      };
+      reportProgress("authenticating");
       const sessionResponse = await fetchImplementation("/api/session", {
         method: "GET",
         credentials: "include",
@@ -79,7 +85,7 @@ export function createBrowserSetupClient(
       let deploymentStarted = false;
       for await (const event of events) {
         if (event.type === "progress") {
-          onProgress?.(event.stage);
+          reportProgress(event.stage);
           deploymentStarted ||= BACKGROUND_PROGRESS_STAGES.has(event.stage);
         } else if (event.type === "permission-required") {
           navigate(safeGitHubInstallationUrl(event.installationUrl, event.access));
@@ -91,7 +97,7 @@ export function createBrowserSetupClient(
         }
       }
       if (deploymentStarted) {
-        return pollSetupStatus(fetchImplementation);
+        return pollSetupStatus(fetchImplementation, reportProgress);
       }
       throw new Error("SETUP_FAILED");
     },
@@ -100,6 +106,7 @@ export function createBrowserSetupClient(
 
 async function pollSetupStatus(
   fetchImplementation: SetupFetchImplementation,
+  onProgress: (stage: SetupProgressStage) => void,
 ): Promise<{ installationUrl: string }> {
   for (let check = 0; check < MAX_STATUS_CHECKS; check += 1) {
     const response = await fetchImplementation("/api/setup/status", {
@@ -110,6 +117,7 @@ async function pollSetupStatus(
     if (!response.ok) throw new Error("SETUP_FAILED");
     const status = validateSetupStatus(await readJsonResponse(response));
     if (!status.success) throw new Error("SETUP_FAILED");
+    if (status.data.stage) onProgress(status.data.stage);
     if (status.data.state === "succeeded") {
       if (!status.data.installationUrl) throw new Error("SETUP_FAILED");
       return {

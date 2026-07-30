@@ -272,7 +272,7 @@ test("requires exact origin and CSRF before streaming setup progress", async () 
   assert.deepEqual(events.map((event) => event.type), ["progress", "success"]);
 });
 
-test("closes the setup response before background deployment polling finishes", async () => {
+test("closes the setup response as soon as the background workflow starts", async () => {
   let releaseProvisioning: (() => void) | undefined;
   let provisioningFinished = false;
   let tokenIndex = 0;
@@ -289,9 +289,9 @@ test("closes the setup response before background deployment polling finishes", 
       session.operation = {
         operationId: "O".repeat(26),
         state: "running",
-        stage: "waiting-for-deployment",
+        stage: "starting-monitor",
       };
-      onEvent({ type: "progress", stage: "waiting-for-deployment" });
+      onEvent({ type: "progress", stage: "starting-monitor" });
       await new Promise<void>((resolve) => {
         releaseProvisioning = resolve;
       });
@@ -339,7 +339,7 @@ test("closes the setup response before background deployment polling finishes", 
   assert.equal(closedBeforeProvisioningFinished, true);
   assert.equal(provisioningFinished, true);
   assert.deepEqual(body.trim().split("\n").map((line) => JSON.parse(line)), [
-    { type: "progress", stage: "waiting-for-deployment" },
+    { type: "progress", stage: "starting-monitor" },
   ]);
 });
 

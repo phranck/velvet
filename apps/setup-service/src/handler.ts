@@ -430,7 +430,7 @@ function setupStreamResponse(input: {
           controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
           if (
             event.type === "progress" &&
-            event.stage === "waiting-for-deployment"
+            event.stage === "starting-monitor"
           ) {
             controller.close();
             responseClosed = true;
