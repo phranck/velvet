@@ -95,7 +95,9 @@ retry reuses the repository already created by that session, mints a fresh
 repository-restricted installation token, and continues from the first
 incomplete step. If Velvet is already installed for selected repositories, a
 new repository created by the app is added to that selected installation by
-GitHub and the temporary step is unnecessary.
+GitHub and the temporary step is unnecessary. Velvet waits until GitHub reports
+that exact repository as accessible before minting an installation token; a
+bounded propagation delay remains safely retryable.
 
 If the service restarted after repository creation, inspect the named repository
 before cleanup. A generated repository containing only the untouched template

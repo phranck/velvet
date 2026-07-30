@@ -56,6 +56,7 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
     async createRepositoryFromTemplate() { throw new Error("unused"); },
     async createInstallationToken() { throw new Error("unused"); },
     async deleteInstallation() { throw new Error("unused"); },
+    async repositoryInstallation() { throw new Error("unused"); },
     async getConfigurationSha() { throw new Error("unused"); },
     async writeConfiguration() { throw new Error("unused"); },
     async enablePages() { throw new Error("unused"); },

@@ -24,6 +24,7 @@ interface ProvisionVelvetInput {
   operationId?: () => string;
   errorId?: () => string;
   sleep?: (milliseconds: number) => Promise<void>;
+  maxRepositoryAccessChecks?: number;
   maxWorkflowChecks?: number;
 }
 
@@ -69,6 +70,7 @@ export async function provisionVelvet(
     input.session.operation?.operationId ??
     (input.operationId ?? (() => randomUUID().replaceAll("-", "")))();
   const errorId = input.errorId ?? (() => randomUUID().replaceAll("-", ""));
+  const sleep = input.sleep ?? ((milliseconds) => Bun.sleep(milliseconds));
   const state =
     existing ??
     (input.session.provisioning = {
@@ -137,6 +139,14 @@ export async function provisionVelvet(
       delete input.session.installation;
       throw installationRequired(true);
     }
+    await waitForRepositoryAccess({
+      github: input.github,
+      installationId: installation.id,
+      owner: state.repository.owner,
+      repository: state.repository.name,
+      sleep,
+      maxChecks: input.maxRepositoryAccessChecks ?? 20,
+    });
 
     const installationToken = await input.github.createInstallationToken(
       installation.id,
@@ -189,7 +199,6 @@ export async function provisionVelvet(
     }
 
     progress("waiting-for-deployment");
-    const sleep = input.sleep ?? ((milliseconds) => Bun.sleep(milliseconds));
     const maxWorkflowChecks = input.maxWorkflowChecks ?? 120;
     let completed = false;
     for (let check = 0; check < maxWorkflowChecks; check += 1) {
@@ -255,6 +264,40 @@ export async function provisionVelvet(
     };
     throw setupError;
   }
+}
+
+async function waitForRepositoryAccess(input: {
+  github: GitHubSetupClient;
+  installationId: number;
+  owner: string;
+  repository: string;
+  sleep: (milliseconds: number) => Promise<void>;
+  maxChecks: number;
+}): Promise<void> {
+  for (let check = 0; check < input.maxChecks; check += 1) {
+    try {
+      const installation = await input.github.repositoryInstallation(
+        input.owner,
+        input.repository,
+      );
+      if (installation.id !== input.installationId) {
+        throw new SetupServiceError(
+          "INSTALLATION_REQUIRED",
+          "Install Velvet for the selected repository before continuing.",
+          { status: 403, recoverable: true },
+        );
+      }
+      return;
+    } catch (error) {
+      if (!(error instanceof GitHubApiError) || error.status !== 404) throw error;
+    }
+    await input.sleep(500);
+  }
+  throw new SetupServiceError(
+    "SETUP_PARTIAL",
+    "GitHub is still granting Velvet access to the new repository. Retry setup.",
+    { status: 503, recoverable: true },
+  );
 }
 
 function installationForOwner(

@@ -62,6 +62,10 @@ export interface GitHubSetupClient {
   ): Promise<GitHubRepository>;
   createInstallationToken(installationId: number, repositoryId: number): Promise<string>;
   deleteInstallation(installationId: number): Promise<void>;
+  repositoryInstallation(
+    owner: string,
+    repository: string,
+  ): Promise<GitHubInstallation>;
   getConfigurationSha(
     installationToken: string,
     owner: string,
@@ -284,6 +288,19 @@ export function createGitHubSetupClient(
         appJwt,
         { method: "DELETE" },
       );
+    },
+
+    async repositoryInstallation(owner, repository) {
+      const appJwt = createGitHubAppJwt(
+        options.appId,
+        options.privateKey,
+        nowSeconds,
+      );
+      const body = await githubRequest<unknown>(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/installation`,
+        appJwt,
+      );
+      return parseInstallation(body);
     },
 
     async getConfigurationSha(installationToken, owner, repository) {
