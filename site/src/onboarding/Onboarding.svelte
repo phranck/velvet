@@ -1,15 +1,8 @@
 <script lang="ts">
-  import { configurationIdentifierFromName } from "@velvet/contracts";
   import { onMount } from "svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
-  import ServiceIconPicker from "../components/service-icon-picker/ServiceIconPicker.svelte";
+  import * as ServiceEditor from "../components/service-editor";
   import * as ThemeCard from "../components/theme-card";
-  import {
-    CURATED_SERVICE_ICONS,
-    DEFAULT_SERVICE_ICON,
-    iconFor,
-  } from "../lib/icons.js";
-  import { disclosureMotion } from "../lib/disclosure-motion.js";
   import { createBrowserSetupClient } from "./client.js";
   import {
     clearOnboardingDraft,
@@ -18,8 +11,6 @@
   } from "./onboarding-session.js";
   import {
     createOnboardingDraft,
-    createHeaderDraft,
-    createJsonAssertionDraft,
     createServiceDraft,
     submitOnboarding,
     type SetupProgressStage,
@@ -100,10 +91,6 @@
     globalThis.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
-  function automaticServiceIcon(name: string): string {
-    return iconFor(configurationIdentifierFromName(name));
-  }
-
   function addService(): void {
     draft.services.push(createServiceDraft());
   }
@@ -111,24 +98,6 @@
   function removeService(index: number): void {
     if (draft.services.length === 1) return;
     draft.services.splice(index, 1);
-  }
-
-  function addHeader(serviceIndex: number): void {
-    draft.services[serviceIndex].headers.push(createHeaderDraft());
-  }
-
-  function addAssertion(serviceIndex: number): void {
-    draft.services[serviceIndex].jsonAssertions.push(
-      createJsonAssertionDraft(),
-    );
-  }
-
-  function removeHeader(serviceIndex: number, headerIndex: number): void {
-    draft.services[serviceIndex].headers.splice(headerIndex, 1);
-  }
-
-  function removeAssertion(serviceIndex: number, assertionIndex: number): void {
-    draft.services[serviceIndex].jsonAssertions.splice(assertionIndex, 1);
   }
 
   function nextStep(): void {
@@ -271,138 +240,17 @@
           </div>
         </div>
 
-        <div class="service-list">
+        <ServiceEditor.List onAdd={addService}>
           {#each draft.services as service, serviceIndex (service.id)}
-            <article class="service-editor">
-              <header>
-                <div class="service-title">
-                  <i class={`ph-duotone ${service.icon ?? automaticServiceIcon(service.name)}`} aria-hidden="true"></i>
-                  <strong>{service.name || `Service ${serviceIndex + 1}`}</strong>
-                </div>
-                {#if draft.services.length > 1}
-                  <button class="icon-button" type="button" aria-label={`Remove service ${serviceIndex + 1}`} onclick={() => removeService(serviceIndex)}>
-                    <i class="ph-duotone ph-trash" aria-hidden="true"></i>
-                  </button>
-                {/if}
-              </header>
-              <div class="form-grid two-columns">
-                <label>
-                  <span>Service name</span>
-                  <input placeholder="Website" bind:value={service.name} aria-invalid={errors[`services.${serviceIndex}.name`] ? "true" : undefined} />
-                  {#if errors[`services.${serviceIndex}.name`]}<small class="field-error">{errors[`services.${serviceIndex}.name`]}</small>{/if}
-                </label>
-                <label>
-                  <span>Website URL</span>
-                  <input type="url" inputmode="url" placeholder="https://example.com" bind:value={service.url} aria-invalid={errors[`services.${serviceIndex}.url`] ? "true" : undefined} />
-                  {#if errors[`services.${serviceIndex}.url`]}<small class="field-error">{errors[`services.${serviceIndex}.url`]}</small>{/if}
-                </label>
-              </div>
-
-              <ServiceIconPicker
-                id={`service-${service.id}-icon`}
-                legend="Service icon"
-                description="Optional. Automatic keeps the configuration small and chooses a matching fallback."
-                value={service.icon}
-                automaticIcon={service.name ? automaticServiceIcon(service.name) : DEFAULT_SERVICE_ICON}
-                options={CURATED_SERVICE_ICONS}
-                onChange={(value) => (service.icon = value)}
-              />
-              {#if errors[`services.${serviceIndex}.icon`]}<small class="field-error">{errors[`services.${serviceIndex}.icon`]}</small>{/if}
-
-              <details data-advanced-open={service.advanced}>
-                <summary
-                  onclick={(event) => {
-                    event.preventDefault();
-                    service.advanced = !service.advanced;
-                  }}
-                >
-                  <span>Advanced health check</span>
-                  <i class="ph-duotone ph-caret-circle-down advanced-caret" aria-hidden="true"></i>
-                </summary>
-                <div use:disclosureMotion={service.advanced} class="advanced-motion" data-disclosure-content>
-                  <div class="advanced-content">
-                  <p>
-                    Use this only for a dedicated health endpoint, alternate success codes, secret-backed request headers, or a JSON response assertion.
-                  </p>
-                  {#if errors[`services.${serviceIndex}.advanced`]}
-                    <small class="field-error">{errors[`services.${serviceIndex}.advanced`]}</small>
-                  {/if}
-                  <div class="form-grid three-columns">
-                    <label>
-                      <span>Method</span>
-                      <select bind:value={service.method}>
-                        <option value="GET">GET</option>
-                        <option value="HEAD">HEAD</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span>Healthy status codes</span>
-                      <input inputmode="numeric" bind:value={service.expectedStatusCodes} />
-                      {#if errors[`services.${serviceIndex}.expectedStatusCodes`]}<small class="field-error">{errors[`services.${serviceIndex}.expectedStatusCodes`]}</small>{/if}
-                    </label>
-                    <label>
-                      <span>Timeout in ms</span>
-                      <input type="number" min="100" max="60000" step="100" bind:value={service.timeoutMs} />
-                      {#if errors[`services.${serviceIndex}.timeoutMs`]}<small class="field-error">{errors[`services.${serviceIndex}.timeoutMs`]}</small>{/if}
-                    </label>
-                    <label>
-                      <span>Maximum redirects</span>
-                      <input type="number" min="0" max="10" bind:value={service.maxRedirects} />
-                      {#if errors[`services.${serviceIndex}.maxRedirects`]}<small class="field-error">{errors[`services.${serviceIndex}.maxRedirects`]}</small>{/if}
-                    </label>
-                  </div>
-
-                  <div class="advanced-group">
-                    <div class="advanced-heading">
-                      <div>
-                        <strong>Request headers</strong>
-                        <span>Reference a GitHub Actions secret by name. Never paste its value here.</span>
-                      </div>
-                      <button type="button" class="small-button" onclick={() => addHeader(serviceIndex)}>Add header</button>
-                    </div>
-                    {#each service.headers as header, headerIndex (header.id)}
-                      <div class="repeatable-row">
-                        <label><span>Header name</span><input placeholder="Authorization" bind:value={header.name} /></label>
-                        <label><span>Secret name</span><input placeholder="API_HEALTH_TOKEN" bind:value={header.secret} /></label>
-                        <button class="icon-button" type="button" aria-label="Remove request header" onclick={() => removeHeader(serviceIndex, headerIndex)}><i class="ph-duotone ph-trash" aria-hidden="true"></i></button>
-                      </div>
-                    {/each}
-                  </div>
-
-                  <div class="advanced-group">
-                    <div class="advanced-heading">
-                      <div>
-                        <strong>JSON response assertions</strong>
-                        <span>Optional. Velvet ignores the response body unless you add an assertion.</span>
-                      </div>
-                      <button type="button" class="small-button" onclick={() => addAssertion(serviceIndex)}>Add assertion</button>
-                    </div>
-                    {#each service.jsonAssertions as assertion, assertionIndex (assertion.id)}
-                      <div class="repeatable-row assertion-row">
-                        <label><span>JSON pointer</span><input placeholder="/status" bind:value={assertion.path} /></label>
-                        <label>
-                          <span>Value type</span>
-                          <select bind:value={assertion.valueType}>
-                            {#each ["string", "number", "boolean", "null"] as valueType (valueType)}
-                              <option value={valueType}>{valueType}</option>
-                            {/each}
-                          </select>
-                        </label>
-                        <label><span>Expected value</span><input disabled={assertion.valueType === "null"} bind:value={assertion.value} /></label>
-                        <button class="icon-button" type="button" aria-label="Remove JSON assertion" onclick={() => removeAssertion(serviceIndex, assertionIndex)}><i class="ph-duotone ph-trash" aria-hidden="true"></i></button>
-                      </div>
-                    {/each}
-                  </div>
-                  </div>
-                </div>
-              </details>
-            </article>
+            <ServiceEditor.Root
+              {service}
+              index={serviceIndex}
+              {errors}
+              canRemove={draft.services.length > 1}
+              onRemove={() => removeService(serviceIndex)}
+            />
           {/each}
-        </div>
-        <button class="add-service" type="button" onclick={addService}>
-          <i class="ph-duotone ph-plus-circle" aria-hidden="true"></i>
-          Add another service
-        </button>
+        </ServiceEditor.List>
       </section>
 
       <section class="step-panel" hidden={step !== 2} aria-labelledby="theme-title">
@@ -517,6 +365,15 @@
     --picker-popover: var(--setup-panel-raised);
     --picker-surface: var(--setup-card);
     --picker-text: var(--setup-text);
+    --service-editor-accent: var(--setup-accent);
+    --service-editor-card: var(--setup-card);
+    --service-editor-control-height: var(--setup-control-height);
+    --service-editor-control-radius: var(--setup-control-radius);
+    --service-editor-error: var(--setup-error);
+    --service-editor-input: var(--setup-input);
+    --service-editor-muted: var(--setup-muted);
+    --service-editor-raised: var(--setup-panel-raised);
+    --service-editor-text: var(--setup-text);
     min-height: 100vh;
   }
   .onboarding-shell button {
@@ -652,8 +509,7 @@
     font-size: clamp(1.35rem, 3vw, 1.75rem);
     letter-spacing: -0.025em;
   }
-  .section-heading p,
-  .advanced-content > p {
+  .section-heading p {
     margin: 0.45rem 0 0;
     color: var(--setup-muted);
     font-size: 0.9rem;
@@ -665,9 +521,6 @@
   }
   .two-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .three-columns {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .full-width {
     grid-column: 1 / -1;
@@ -682,8 +535,7 @@
     font-size: 0.8rem;
     font-weight: 650;
   }
-  input,
-  select {
+  input {
     width: 100%;
     height: var(--setup-control-height);
     min-width: 0;
@@ -698,8 +550,7 @@
   input::placeholder {
     color: #747887;
   }
-  input:focus-visible,
-  select:focus-visible {
+  input:focus-visible {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--setup-accent) 22%, transparent);
   }
   input[aria-invalid="true"] {
@@ -713,22 +564,6 @@
     color: var(--setup-error);
     font-size: 0.75rem;
   }
-  .service-list,
-  .service-icon-groups {
-    display: grid;
-    gap: 1rem;
-  }
-  .service-editor {
-    --picker-surface: var(--setup-input);
-
-    display: grid;
-    gap: 1.35rem;
-    padding: 1.15rem;
-    border-radius: 0.85rem;
-    background: var(--setup-card);
-  }
-  .service-editor > header,
-  .advanced-heading,
   .form-actions,
   .page-footer {
     display: flex;
@@ -736,118 +571,11 @@
     justify-content: space-between;
     gap: 1rem;
   }
-  .service-title {
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-  }
-  .service-title i {
-    color: var(--setup-accent);
-    font-size: 1.35rem;
-  }
-  .service-title strong {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .icon-button,
-  .small-button,
-  .add-service,
   .primary-button,
   .secondary-button {
     border-radius: var(--setup-control-radius);
     cursor: pointer;
     font-weight: 650;
-  }
-  .icon-button {
-    width: var(--setup-control-height);
-    height: var(--setup-control-height);
-    display: grid;
-    flex: none;
-    place-items: center;
-    padding: 0;
-    background: transparent;
-    color: var(--setup-muted);
-  }
-  .icon-button:hover {
-    color: var(--setup-error);
-  }
-  .add-service {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding: 0 0.8rem;
-    background: var(--setup-panel-raised);
-    color: var(--setup-text);
-  }
-  summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 1rem 0 0;
-    color: var(--setup-muted);
-    cursor: pointer;
-    font-size: 0.82rem;
-    font-weight: 700;
-    list-style: none;
-  }
-  summary::-webkit-details-marker {
-    display: none;
-  }
-  summary:hover {
-    color: var(--setup-text);
-  }
-  .advanced-caret {
-    width: 1.25rem;
-    height: 1.25rem;
-    flex: none;
-    font-size: 1.25rem;
-    line-height: 1;
-    transition: transform 200ms ease-in-out;
-  }
-  details[data-advanced-open="true"] .advanced-caret {
-    transform: rotate(180deg);
-  }
-  .advanced-content {
-    display: grid;
-    gap: 1.35rem;
-    padding-top: 1rem;
-  }
-  .advanced-group {
-    display: grid;
-    gap: 0.8rem;
-    padding-top: 1rem;
-  }
-  .advanced-heading strong,
-  .advanced-heading span {
-    display: block;
-  }
-  .advanced-heading strong {
-    font-size: 0.85rem;
-  }
-  .advanced-heading span {
-    margin-top: 0.2rem;
-    color: var(--setup-muted);
-    font-size: 0.75rem;
-  }
-  .small-button {
-    flex: none;
-    padding: 0 0.65rem;
-    background: var(--setup-panel-raised);
-    color: var(--setup-text);
-    font-size: 0.75rem;
-  }
-  .repeatable-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    align-items: end;
-    gap: 0.65rem;
-  }
-  .assertion-row {
-    grid-template-columns: 1fr 0.7fr 1fr auto;
   }
   .review-grid {
     display: grid;
@@ -951,7 +679,6 @@
     color: var(--setup-text);
   }
   button:focus-visible,
-  summary:focus-visible,
   a:focus-visible {
     outline: 2px solid var(--setup-accent);
     outline-offset: 3px;
@@ -970,16 +697,8 @@
       grid-template-columns: repeat(2, 1fr);
     }
     .two-columns,
-    .three-columns,
     .review-grid {
       grid-template-columns: 1fr;
-    }
-    .repeatable-row,
-    .assertion-row {
-      grid-template-columns: 1fr;
-    }
-    .repeatable-row .icon-button {
-      justify-self: end;
     }
   }
 
@@ -994,10 +713,6 @@
     }
     .section-heading {
       gap: 0.65rem;
-    }
-    .advanced-heading {
-      align-items: flex-start;
-      flex-direction: column;
     }
   }
 
