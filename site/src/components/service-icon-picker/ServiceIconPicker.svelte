@@ -32,6 +32,7 @@
   let placement = $state<ListboxPlacement>("down");
   let maxOptionsHeight = $state(288);
   let suppressTriggerFocusRing = $state(false);
+  const DESKTOP_COLUMN_COUNT = 11;
   const availableOptions = $derived([
     { label: "Automatic", icon: automaticIcon, value: null },
     ...options.map((option) => ({ ...option, value: option.icon })),
@@ -113,13 +114,28 @@
     const focusedIndex = optionElements().indexOf(
       document.activeElement as HTMLButtonElement,
     );
+    const currentIndex = Math.max(0, focusedIndex);
+    const columnCount = optionsElement
+      ? getComputedStyle(optionsElement).gridTemplateColumns
+          .trim()
+          .split(/\s+/).length
+      : DESKTOP_COLUMN_COUNT;
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      void openAt((Math.max(0, focusedIndex) + 1) % availableOptions.length);
+      void openAt((currentIndex + columnCount) % availableOptions.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       void openAt(
-        (focusedIndex <= 0 ? availableOptions.length : focusedIndex) - 1,
+        (currentIndex - columnCount + availableOptions.length) %
+          availableOptions.length,
+      );
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      void openAt((currentIndex + 1) % availableOptions.length);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      void openAt(
+        (currentIndex - 1 + availableOptions.length) % availableOptions.length,
       );
     } else if (event.key === "Home") {
       event.preventDefault();
@@ -176,6 +192,7 @@
       aria-haspopup="listbox"
       aria-expanded={open}
       aria-controls={`${id}-listbox`}
+      title={`${legend}: ${selected.label}`}
       onclick={() => {
         suppressTriggerFocusRing = false;
         activeIndex = selectedIndex;
@@ -186,7 +203,6 @@
       onkeydown={handleTriggerKeydown}
     >
       <i class={`ph-duotone ${selected.icon} preview-icon`} aria-hidden="true"></i>
-      <span>{selected.label}</span>
       <i class="ph-duotone ph-caret-down caret" aria-hidden="true"></i>
     </button>
 
@@ -209,15 +225,12 @@
           type="button"
           role="option"
           aria-selected={option.value === value}
+          aria-label={option.label}
+          title={option.label}
           tabindex={open ? 0 : -1}
           onclick={() => choose(option)}
         >
           <i class={`ph-duotone ${option.icon}`} aria-hidden="true"></i>
-          <span>{option.label}</span>
-          <i
-            class={`ph-duotone ${option.value === value ? "ph-check-fat" : "ph-blank"} check`}
-            aria-hidden="true"
-          ></i>
         </button>
       {/each}
     </div>
@@ -256,10 +269,10 @@
     cursor: pointer;
   }
   .trigger {
-    width: 100%;
+    width: 4.25rem;
     height: 2.5rem;
     display: grid;
-    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+    grid-template-columns: 1.5rem auto;
     align-items: center;
     gap: 0.55rem;
     padding: 0 0.75rem;
@@ -281,18 +294,9 @@
       color-mix(in srgb, var(--picker-accent, #6366f1) 45%, transparent);
     outline-offset: 2px;
   }
-  .trigger span,
-  .options span {
-    min-width: 0;
-    overflow: hidden;
-    font-size: 0.8rem;
-    font-weight: 650;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .preview-icon {
     color: var(--picker-accent, #6366f1);
-    font-size: 1.25rem;
+    font-size: 1.4rem;
   }
   .caret {
     color: var(--picker-muted, #6f7280);
@@ -306,10 +310,10 @@
     position: absolute;
     z-index: 40;
     top: calc(100% + 0.35rem);
-    right: 0;
     left: 0;
+    width: min(100%, 25.5rem);
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(11, minmax(0, 1fr));
     gap: 0.25rem;
     overflow-x: hidden;
     overflow-y: auto;
@@ -344,16 +348,14 @@
     transform: translateY(0) scale(1);
   }
   .options button {
+    position: relative;
     min-width: 0;
-    height: 2.5rem;
+    aspect-ratio: 1;
     display: grid;
-    grid-template-columns: 1.25rem minmax(0, 1fr) 1rem;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0 0.55rem;
+    place-items: center;
+    padding: 0;
     border-radius: 0.45rem;
     background: transparent;
-    text-align: left;
   }
   .options button:hover,
   .options button:focus-visible {
@@ -366,21 +368,27 @@
   .options button[aria-selected="true"] {
     background: color-mix(
       in srgb,
-      var(--picker-accent, #6366f1) 12%,
+      var(--picker-accent, #6366f1) 24%,
       var(--picker-surface, #ffffff)
     );
   }
+  .options button[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    bottom: 0.2rem;
+    width: 0.22rem;
+    height: 0.22rem;
+    border-radius: 50%;
+    background: var(--picker-accent, #6366f1);
+  }
   .options button i {
     color: var(--picker-accent, #6366f1);
-    font-size: 1.05rem;
-  }
-  .options .check {
-    font-size: 0.85rem;
+    font-size: 1.4rem;
   }
 
   @media (max-width: 520px) {
     .options {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
   }
 

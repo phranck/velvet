@@ -1028,7 +1028,7 @@
     position: relative;
     grid-column: 2;
     grid-row: 1;
-    width: clamp(340px, calc(100vw - 720px), 390px);
+    width: clamp(360px, calc(100vw - 720px), 440px);
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -1042,7 +1042,7 @@
     width: 48px;
   }
   .sidebar-shell {
-    width: clamp(340px, calc(100vw - 720px), 390px);
+    width: clamp(360px, calc(100vw - 720px), 440px);
     height: 100%;
     min-height: 0;
     display: flex;
