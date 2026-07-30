@@ -18,6 +18,8 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
     "@fontsource/plaster": "^5.3.0",
     "@velvet/contracts": "1.0.0"
   },

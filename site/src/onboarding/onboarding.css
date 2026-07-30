@@ -1,6 +1,11 @@
+@import "@fontsource/barlow/latin-400.css";
+@import "@fontsource/barlow/latin-600.css";
+@import "@fontsource/barlow/latin-700.css";
+@import "@fontsource/barlow-condensed/latin-600.css";
+
 :root {
   color-scheme: dark;
-  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-family: "Barlow", "Segoe UI", sans-serif;
   background: #0a0b0f;
 }
 

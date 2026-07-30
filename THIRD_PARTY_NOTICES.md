@@ -13,11 +13,16 @@ page Action copies it into every generated site together with Velvet's own
 | [`esm-env`](https://github.com/benmccann/esm-env/blob/main/LICENSE) | 1.2.2 | MIT | Environment flags are compiled into the browser JavaScript bundle through Svelte. |
 | [Phosphor Core](https://github.com/phosphor-icons/core/blob/main/LICENSE) | 2.1.1 | MIT | Selected SVG data can be embedded in generated social images. |
 | [Phosphor Web](https://github.com/phosphor-icons/web/blob/v2.1.2/LICENSE) | 2.1.2 | MIT | Icon CSS and fonts are loaded by the browser from unpkg. |
+| [Barlow](https://github.com/google/fonts/blob/main/ofl/barlow/OFL.txt) | Google Fonts v13 via `@fontsource/barlow` 5.3.0 | OFL-1.1 | Latin 400, 600, and 700 font files are bundled with browser onboarding. |
+| [Barlow Condensed](https://github.com/google/fonts/blob/main/ofl/barlowcondensed/OFL.txt) | Google Fonts v13 via `@fontsource/barlow-condensed` 5.3.0 | OFL-1.1 | The Latin 600 font files are bundled with browser onboarding. |
+| [Plaster](https://github.com/google/fonts/blob/main/ofl/plaster/OFL.txt) | `@fontsource/plaster` 5.3.0 | OFL-1.1 | Wordmark font files are bundled with Velvet browser tools. |
 | [Inter](https://github.com/rsms/inter/blob/master/LICENSE.txt) | Google Fonts service | OFL-1.1 | Font files are loaded by the browser from Google Fonts and are not bundled by Velvet. |
 | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt) | Google Fonts service | OFL-1.1 | Font files are loaded by the browser from Google Fonts and are not bundled by Velvet. |
 
 The external font URL does not pin font-file versions; Google Fonts selects the
-served files. The family licenses above still apply to those files.
+served files. The family licenses above still apply to those files. Browser
+onboarding includes the complete Barlow, Barlow Condensed, and Plaster license
+text as a linked build asset.
 
 ## Direct build, sync, and verification dependencies
 
@@ -48,9 +53,9 @@ separate distributed use is listed above.
 | `vite` | 6.4.3 | MIT |
 
 The complete locked tree was generated from `bun.lock` and manually
-reviewed on 2026-07-28. It contains 221 external package entries: 170 MIT, 18
+reviewed on 2026-07-30. It contains 223 external package entries: 170 MIT, 18
 Apache-2.0, 13 MPL-2.0, 8 BSD-2-Clause, 7 ISC, 2 BSD-3-Clause, 1
-BlueOak-1.0.0, 1 OFL-1.1, and 1 Python-2.0.
+BlueOak-1.0.0, 3 OFL-1.1, and 1 Python-2.0.
 Every locked entry declares license metadata. Package license files installed
 under `node_modules` remain the authoritative texts for build-only and
 transitive dependencies.

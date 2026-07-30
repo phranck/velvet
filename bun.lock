@@ -109,6 +109,8 @@
     "site": {
       "name": "@velvet/site",
       "dependencies": {
+        "@fontsource/barlow": "^5.3.0",
+        "@fontsource/barlow-condensed": "^5.3.0",
         "@fontsource/plaster": "^5.3.0",
         "@velvet/contracts": "1.0.0",
       },
@@ -198,6 +200,10 @@
     "@eslint/object-schema": ["@eslint/object-schema@3.0.5", "", {}, "sha512-vqTaUEgxzm+YDSdElad6PiRoX4t8VGDjCtt05zn4nU810UIx/uNEV7/lZJ6KwFThKZOzOxzXy48da+No7HZaMw=="],
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.7.2", "", { "dependencies": { "@eslint/core": "^1.2.1", "levn": "^0.4.1" } }, "sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A=="],
+
+    "@fontsource/barlow": ["@fontsource/barlow@5.3.0", "", {}, "sha512-tGR0y6QObRtKv71MOth44222+mdNFM/ZWFWDV1VLzNbG4oK9PNRlyJzmkck4vHAi9ibHBXgt4SlY51amFP55CA=="],
+
+    "@fontsource/barlow-condensed": ["@fontsource/barlow-condensed@5.3.0", "", {}, "sha512-RA7MmIx0v3eQ6Gcf74qLVLOwLB0GpPOzx+eU9iG/AmCnSJGcIWYeU8y6CEMGZ210MGwGg5CZhzLkkvyZdTTk1g=="],
 
     "@fontsource/plaster": ["@fontsource/plaster@5.3.0", "", {}, "sha512-1+b9GtPe6HuFZkaBxqGtjhcLdPDyHBhXTJ8CqeFHxx5WNdkHBVEM17m0MFuJepNSKBLQKGOHvuzTG9eVIRcCkw=="],
 

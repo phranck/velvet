@@ -75,11 +75,36 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
+    assert.equal(await page.locator(".topbar").count(), 0);
+    assert.equal(await page.locator(".page-footer").count(), 0);
     assert.equal(
-      await page.locator(".topbar").evaluate((element) =>
-        getComputedStyle(element).borderBottomWidth,
+      await page.locator("[data-onboarding-palette-color]").count(),
+      9,
+    );
+    assert.equal(
+      await page.locator(".intro").evaluate((element) =>
+        getComputedStyle(element).textAlign,
       ),
-      "0px",
+      "center",
+    );
+    assert.equal(
+      await page.locator(".intro > p").evaluate((element) =>
+        element.getBoundingClientRect().width ===
+        element.parentElement?.getBoundingClientRect().width,
+      ),
+      true,
+    );
+    assert.match(
+      await page.locator(".onboarding-shell").evaluate((element) =>
+        getComputedStyle(element).fontFamily,
+      ),
+      /Barlow/,
+    );
+    assert.match(
+      await page.locator(".section-heading h2").first().evaluate((element) =>
+        getComputedStyle(element).fontFamily,
+      ),
+      /Barlow Condensed/,
     );
     assert.equal(
       await page.locator(".form-actions").evaluate((element) =>
@@ -113,6 +138,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         ),
       ]),
       [40, 40, 40],
+    );
+    assert.equal(
+      await page.getByRole("button", { name: "Continue" }).evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "12.8px",
     );
     await page.getByLabel("Repository owner").fill("velvet-user");
     await page.getByLabel("Repository name").fill("status");

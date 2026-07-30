@@ -21,7 +21,13 @@ afterAll(async () => {
 test("renders the focused onboarding flow with progressive advanced checks", async () => {
   const html = await renderer.render("/src/onboarding/Onboarding.svelte", {});
 
-  assert.match(html, /Set up Velvet/);
+  assert.match(html, /Velvet/);
+  assert.match(html, /ONBOARDING/);
+  assert.match(html, /data-onboarding-palette/);
+  assert.equal(html.match(/data-onboarding-palette-color/g)?.length, 9);
+  assert.doesNotMatch(html, /Set up Velvet/);
+  assert.doesNotMatch(html, /Your status page, without local setup/);
+  assert.doesNotMatch(html, /Monitoring and publishing with GitHub/);
   assert.match(html, /Repository owner/);
   assert.match(html, /Repository name/);
   assert.match(html, /Status page name/);
@@ -33,6 +39,18 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.match(html, /data-theme-card-group/);
   assert.equal(html.match(/data-theme-card-option/g)?.length, 4);
   assert.match(html, /aria-live="polite"/);
+});
+
+test("uses the local Barlow family for onboarding typography", async () => {
+  const styles = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/onboarding.css"),
+    "utf8",
+  );
+
+  assert.match(styles, /@fontsource\/barlow\/latin-400\.css/);
+  assert.match(styles, /@fontsource\/barlow\/latin-600\.css/);
+  assert.match(styles, /@fontsource\/barlow-condensed\/latin-600\.css/);
+  assert.match(styles, /font-family:\s*"Barlow"/);
 });
 
 test("uses the shared theme and icon components in onboarding and configurator", async () => {
