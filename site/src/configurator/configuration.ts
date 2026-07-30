@@ -1,6 +1,8 @@
 import { dump, load } from "js-yaml";
+import { configurationIdentifierFromName } from "@velvet/contracts";
 
 import type { VelvetLayout } from "../lib/config";
+import { canonicalConfiguratorTheme } from "../lib/configuration-theme.js";
 import {
   normalizeThemeConfiguration,
   resolveTheme,
@@ -12,11 +14,17 @@ export type ConfiguratorDocument = Record<string, unknown>;
 export interface ConfiguratorSettings {
   layout: VelvetLayout;
   theme: ConfiguratorTheme;
+  icons: Record<string, string>;
 }
 
 export interface ParsedConfiguratorYaml {
   document: ConfiguratorDocument;
   settings: ConfiguratorSettings;
+}
+
+export interface ConfiguratorServiceOption {
+  id: string;
+  name: string;
 }
 
 export function cloneConfiguratorTheme(
@@ -49,24 +57,39 @@ export function parseConfiguratorYaml(source: string): ParsedConfiguratorYaml {
     "status-website",
   );
   const velvet = optionalMapping(statusWebsite?.velvet, "status-website.velvet");
+  const nativeStatusPage = optionalMapping(loaded.statusPage, "statusPage");
+  const nativeThemeDocument = optionalMapping(
+    nativeStatusPage?.theme,
+    "statusPage.theme",
+  );
   const themeDocument = optionalMapping(
-    velvet?.theme,
+    nativeThemeDocument ?? velvet?.theme,
     "status-website.velvet.theme",
   );
-  const themeInput = {
-    ...themeDocument,
-    accent: themeDocument?.accent ?? velvet?.accent,
-    accentDeg: velvet?.accentDeg,
-    accentDown: velvet?.accentDown,
-  } as NonNullable<Parameters<typeof resolveTheme>[0]>;
+  const themeInput = nativeThemeDocument
+    ? configuratorThemeFromCanonical(nativeThemeDocument)
+    : ({
+        ...themeDocument,
+        accent: themeDocument?.accent ?? velvet?.accent,
+        accentDeg: velvet?.accentDeg,
+        accentDown: velvet?.accentDown,
+      } as NonNullable<Parameters<typeof resolveTheme>[0]>);
   const theme = normalizeThemeConfiguration(themeInput);
   validateHexTheme(resolveTheme(theme));
+  const icons = iconMapping(
+    nativeStatusPage?.icons ?? velvet?.icons,
+    nativeStatusPage ? "statusPage.icons" : "status-website.velvet.icons",
+  );
 
   return {
     document: structuredClone(loaded),
     settings: {
-      layout: velvet?.layout === "cards" ? "cards" : "grouped",
+      layout:
+        nativeStatusPage?.layout === "cards" || velvet?.layout === "cards"
+          ? "cards"
+          : "grouped",
       theme,
+      icons,
     },
   };
 }
@@ -76,6 +99,19 @@ export function updateConfiguratorDocument(
   settings: ConfiguratorSettings,
 ): ConfiguratorDocument {
   const updated = cloneConfigurationDocument(document);
+  if (isNativeConfiguration(updated)) {
+    const statusPage = isRecord(updated.statusPage)
+      ? { ...updated.statusPage }
+      : {};
+    delete statusPage.icons;
+    statusPage.layout = settings.layout;
+    statusPage.theme = canonicalConfiguratorTheme(settings.theme);
+    if (Object.keys(settings.icons).length > 0) {
+      statusPage.icons = { ...settings.icons };
+    }
+    updated.statusPage = statusPage;
+    return updated;
+  }
   const statusWebsite = isRecord(updated["status-website"])
     ? { ...updated["status-website"] }
     : {};
@@ -87,11 +123,15 @@ export function updateConfiguratorDocument(
   delete existingVelvet.accentDeg;
   delete existingVelvet.accentDown;
   delete existingVelvet.showSubscribe;
+  delete existingVelvet.icons;
 
   statusWebsite.velvet = {
     ...existingVelvet,
     layout: settings.layout,
     theme: cloneConfiguratorTheme(settings.theme),
+    ...(Object.keys(settings.icons).length > 0
+      ? { icons: { ...settings.icons } }
+      : {}),
   };
   updated["status-website"] = statusWebsite;
   return updated;
@@ -102,6 +142,9 @@ export function exportVelvetYaml(
   settings: ConfiguratorSettings,
 ): string {
   const updated = updateConfiguratorDocument(document, settings);
+  if (isNativeConfiguration(updated)) {
+    return dump({ statusPage: updated.statusPage }, YAML_OPTIONS);
+  }
   const statusWebsite = updated["status-website"] as ConfiguratorDocument;
   return dump(
     {
@@ -125,6 +168,27 @@ export function exportConfigurationYaml(
       "status-website": { name: "Status" },
     } satisfies ConfiguratorDocument);
   return dump(updateConfiguratorDocument(base, settings), YAML_OPTIONS);
+}
+
+export function configuratorServiceOptions(
+  document: ConfiguratorDocument | null,
+): ConfiguratorServiceOption[] {
+  if (!document) return [];
+  const candidates = Array.isArray(document.services)
+    ? document.services
+    : Array.isArray(document.sites)
+      ? document.sites
+      : [];
+  const seen = new Set<string>();
+  return candidates.flatMap((candidate) => {
+    if (!isRecord(candidate) || typeof candidate.name !== "string") return [];
+    const name = candidate.name.trim();
+    const explicitId = typeof candidate.id === "string" ? candidate.id.trim() : "";
+    const id = explicitId || configurationIdentifierFromName(name);
+    if (!name || !id || seen.has(id)) return [];
+    seen.add(id);
+    return [{ id, name }];
+  });
 }
 
 function cloneConfigurationDocument(
@@ -170,6 +234,39 @@ function optionalMapping(
   if (value === undefined) return undefined;
   if (!isRecord(value)) throw new Error(`${path} must be a mapping.`);
   return value;
+}
+
+function iconMapping(value: unknown, path: string): Record<string, string> {
+  const mapping = optionalMapping(value, path);
+  if (!mapping) return {};
+  const icons: Record<string, string> = {};
+  for (const [serviceId, icon] of Object.entries(mapping)) {
+    if (typeof icon !== "string") throw new Error(`${path}.${serviceId} must be a string.`);
+    icons[serviceId] = icon;
+  }
+  return icons;
+}
+
+function isNativeConfiguration(document: ConfiguratorDocument): boolean {
+  return document.schemaVersion === 1 || isRecord(document.statusPage);
+}
+
+function configuratorThemeFromCanonical(
+  source: ConfiguratorDocument,
+): NonNullable<Parameters<typeof resolveTheme>[0]> {
+  const chart = optionalMapping(source.chart, "statusPage.theme.chart");
+  const { line, lineStyle, ...remainingChart } = chart ?? {};
+  return {
+    ...source,
+    protocol: {
+      ...(isRecord(source.protocol) ? source.protocol : {}),
+      ...(line === undefined ? {} : { ipv4: line }),
+    },
+    chart: {
+      ...remainingChart,
+      ...(lineStyle === undefined ? {} : { ipv4LineStyle: lineStyle }),
+    },
+  } as NonNullable<Parameters<typeof resolveTheme>[0]>;
 }
 
 function isRecord(value: unknown): value is ConfiguratorDocument {

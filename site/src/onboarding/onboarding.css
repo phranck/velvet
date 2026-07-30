@@ -1,0 +1,27 @@
+:root {
+  color-scheme: dark;
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  background: #0a0b0f;
+}
+
+html,
+body,
+#onboarding {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 16% 8%, rgba(99, 102, 241, 0.2), transparent 28rem),
+    radial-gradient(circle at 88% 28%, rgba(217, 70, 239, 0.1), transparent 26rem),
+    #0a0b0f;
+  color: #e8eaed;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}

@@ -7,6 +7,7 @@ export type {
   VelvetThemeInput,
 } from "./schemas.js";
 export {
+  configurationIdentifierFromName,
   parseVelvetConfiguration,
   validateVelvetConfiguration,
 } from "./validation.js";

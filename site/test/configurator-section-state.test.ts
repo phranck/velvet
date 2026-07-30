@@ -38,6 +38,7 @@ test("serializes only the stable section identifiers", () => {
     }),
     JSON.stringify({
       themes: true,
+      icons: true,
       palette: true,
       layout: true,
       chart: true,

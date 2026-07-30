@@ -52,13 +52,13 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /ph-folder-open/);
   assert.match(html, /ph-copy/);
   assert.match(html, /ph-download-simple/);
-  assert.equal(html.match(/data-configurator-section/g)?.length, 7);
-  assert.equal(html.match(/<details[^>]+open/g)?.length, 7);
+  assert.equal(html.match(/data-configurator-section/g)?.length, 8);
+  assert.equal(html.match(/<details[^>]+open/g)?.length, 8);
   assert.equal(html.match(/data-slider-tick/g)?.length, 9);
   assert.match(html, /data-toggle-all-sections/);
   assert.match(html, /Collapse all sections/);
   assert.match(html, /ph-caret-circle-double-down/);
-  assert.equal(html.match(/ph-caret-circle-down/g)?.length, 9);
+  assert.equal(html.match(/ph-caret-circle-down/g)?.length, 10);
   assert.match(html, /data-sidebar-collapse-toggle/);
   assert.match(html, /ph-caret-circle-double-left/);
   assert.match(html, /aria-controls="velvet-configurator-sidebar-content"/);
@@ -66,7 +66,7 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /class="sidebar-footer(?:\s|")/);
   assert.match(html, /Loaded Velvet Default\./);
   assert.match(html, /name="ipv4-line-style"/);
-  assert.match(html, /name="ipv6-line-style"/);
+  assert.doesNotMatch(html, /name="ipv6-line-style"/);
   assert.match(html, /Chart fill/);
   assert.match(html, /Canvas color/);
   assert.match(html, /Canvas opacity/);
@@ -80,11 +80,12 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /Website/);
   assert.match(html, /Backend/);
   assert.match(html, /IPv4/);
-  assert.match(html, /IPv6/);
+  assert.doesNotMatch(html, /IPv6/);
   assert.match(html, /Response time/);
 
   const expectedSectionTitles = [
     "Theme",
+    "Service Icons",
     "Named Colors",
     "Background",
     "Cards",
