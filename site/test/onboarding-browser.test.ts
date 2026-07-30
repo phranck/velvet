@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { test } from "bun:test";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { chromium } from "playwright";
 import { createServer } from "vite";
+
+import { parseConfiguratorYaml } from "../src/configurator/configuration.js";
 
 test("completes onboarding with keyboard, narrow viewport, and reduced motion", async () => {
   const server = await createServer({
@@ -344,6 +347,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     );
 
     await page.setViewportSize({ width: 1280, height: 800 });
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "showSaveFilePicker", {
+        configurable: true,
+        value: undefined,
+      });
+    });
     await page.goto(`http://127.0.0.1:${address.port}/configurator.html`);
     assert.equal(
       await page.locator(".control-panel").evaluate((element) =>
@@ -357,7 +366,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await cloudyAutumn.click();
     assert.equal(await cloudyAutumn.locator("input").isChecked(), true);
     const websiteIcons = page.locator("[data-service-icon-picker]").first();
-    await websiteIcons.getByRole("button", { name: "Website: Automatic" }).click();
+    await websiteIcons.getByRole("button", { name: "Service icon: Automatic" }).click();
     assert.deepEqual(
       await websiteIcons.getByRole("listbox").evaluate((element) => {
         const style = getComputedStyle(element);
@@ -373,6 +382,143 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator("button.summary").first().locator(".ph-hard-drives").count(),
       1,
     );
+
+    const importedYaml = `schemaVersion: 1
+repository:
+  owner: velvet-user
+  name: status
+statusPage:
+  name: Example Status
+  customDomain: status.example.com
+  icons:
+    api: ph-brackets-curly
+services:
+  - name: API
+    checks:
+      - id: primary
+        name: Primary API
+        url: https://api.example.com/health
+        method: GET
+        expectedStatusCodes: [200, 204]
+        maxRedirects: 2
+        timeoutMs: 3500
+        headers:
+          - name: Authorization
+            secret: API_HEALTH_TOKEN
+        jsonAssertions:
+          - path: /healthy
+            equals: true
+      - id: fallback
+        name: Fallback API
+        url: https://fallback.example.com/health
+  - name: Website
+    url: https://example.com
+incidents:
+  failureThreshold: 3
+history:
+  retentionDays: 180
+`;
+    await page.locator("#yaml-file").setInputFiles({
+      name: "velvet.yml",
+      mimeType: "application/yaml",
+      buffer: Buffer.from(importedYaml),
+    });
+    await page.getByText("velvet.yml opened. Unrelated YAML fields will be preserved.")
+      .waitFor();
+
+    const serviceEditors = page.locator("[data-service-editor]");
+    assert.equal(await serviceEditors.count(), 2);
+    const firstService = serviceEditors.first();
+    assert.equal(await firstService.getByLabel("Service name").inputValue(), "API");
+    assert.equal(await firstService.getByLabel("Method").inputValue(), "GET");
+    assert.equal(
+      await firstService.getByLabel("Healthy status codes").inputValue(),
+      "200, 204",
+    );
+    assert.equal(await firstService.getByLabel("Timeout in ms").inputValue(), "3500");
+    assert.equal(await firstService.getByLabel("Maximum redirects").inputValue(), "2");
+    assert.equal(await firstService.getByLabel("Header name").inputValue(), "Authorization");
+    assert.equal(
+      await firstService.getByLabel("Secret name").inputValue(),
+      "API_HEALTH_TOKEN",
+    );
+    assert.equal(await firstService.getByLabel("JSON pointer").inputValue(), "/healthy");
+    assert.equal(await firstService.getByLabel("Expected value").inputValue(), "true");
+    assert.match(
+      await page.locator(".preserved-checks").textContent() ?? "",
+      /1\s+additional check is\s+kept unchanged/,
+    );
+
+    await firstService.getByLabel("Service name").fill("Core API");
+    await serviceEditors.nth(1).getByRole("button", { name: "Remove service 2" }).click();
+    assert.equal(await serviceEditors.count(), 1);
+    assert.equal(await page.getByRole("button", { name: "Remove service 1" }).count(), 0);
+    await page.getByRole("button", { name: "Add another service" }).click();
+    assert.equal(await serviceEditors.count(), 2);
+    const addedService = serviceEditors.nth(1);
+    await addedService.getByLabel("Service name").fill("Storage");
+    await addedService.getByLabel("Website URL").fill("https://storage.example.com");
+    const addedIconPicker = addedService.locator("[data-service-icon-picker]");
+    await addedIconPicker.getByRole("button", { name: "Service icon: Automatic" }).click();
+    await addedIconPicker.getByRole("option", { name: "Storage" }).click();
+    assert.deepEqual(
+      await page.locator("button.summary .name").allTextContents(),
+      ["Core API", "Storage"],
+    );
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(
+      await page.locator(".control-panel").evaluate((element) =>
+        element.getBoundingClientRect().width,
+      ),
+      390,
+    );
+    assert.equal(
+      await firstService.locator(".form-grid.two-columns").evaluate((element) =>
+        getComputedStyle(element).gridTemplateColumns.split(" ").length,
+      ),
+      1,
+    );
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download Config" }).click();
+    const download = await downloadPromise;
+    const downloadPath = await download.path();
+    assert.ok(downloadPath);
+    const saved = parseConfiguratorYaml(await readFile(downloadPath, "utf8"));
+    const repository = saved.document.repository as Record<string, unknown>;
+    const statusPage = saved.document.statusPage as Record<string, unknown>;
+    const incidents = saved.document.incidents as Record<string, unknown>;
+    const history = saved.document.history as Record<string, unknown>;
+    const savedServices = saved.document.services as Array<Record<string, unknown>>;
+    assert.deepEqual(repository, { owner: "velvet-user", name: "status" });
+    assert.equal(statusPage.customDomain, "status.example.com");
+    assert.equal(incidents.failureThreshold, 3);
+    assert.equal(history.retentionDays, 180);
+    assert.deepEqual(
+      savedServices.map(({ id, name }) => ({ id, name })),
+      [
+        { id: "core-api", name: "Core API" },
+        { id: "storage", name: "Storage" },
+      ],
+    );
+    const primaryChecks = savedServices[0]?.checks as Array<Record<string, unknown>>;
+    assert.equal(primaryChecks.length, 2);
+    assert.deepEqual(primaryChecks[0]?.expectedStatusCodes, [200, 204]);
+    assert.equal(primaryChecks[0]?.maxRedirects, 2);
+    assert.equal(primaryChecks[0]?.timeoutMs, 3500);
+    assert.deepEqual(primaryChecks[0]?.headers, [
+      { name: "Authorization", secret: "API_HEALTH_TOKEN" },
+    ]);
+    assert.deepEqual(primaryChecks[0]?.jsonAssertions, [
+      { path: "/healthy", equals: true },
+    ]);
+    assert.equal(primaryChecks[1]?.id, "fallback");
+    assert.deepEqual(statusPage.icons, {
+      "core-api": "ph-brackets-curly",
+      storage: "ph-hard-drives",
+    });
 
     const motionContext = await browser.newContext({
       viewport: { width: 1280, height: 800 },

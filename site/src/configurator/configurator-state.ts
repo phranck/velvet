@@ -11,7 +11,27 @@ export interface SaveShortcutEvent {
 export function exportedSettingsFingerprint(
   settings: ConfiguratorSettings,
 ): string {
-  return JSON.stringify(settings);
+  return JSON.stringify({
+    ...settings,
+    services:
+      settings.services?.map((service) => ({
+        serviceId: service.serviceId,
+        checkId: service.checkId,
+        checkName: service.checkName,
+        name: service.name,
+        url: service.url,
+        icon: service.icon,
+        method: service.method,
+        expectedStatusCodes: service.expectedStatusCodes,
+        maxRedirects: service.maxRedirects,
+        timeoutMs: service.timeoutMs,
+        headers: service.headers.map(({ name, secret }) => ({ name, secret })),
+        jsonAssertions: service.jsonAssertions.map(
+          ({ path, valueType, value }) => ({ path, valueType, value }),
+        ),
+        additionalChecks: service.additionalChecks,
+      })) ?? null,
+  });
 }
 
 export function isConfiguratorDirty(

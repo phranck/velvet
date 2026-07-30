@@ -1,8 +1,22 @@
 import { dump, load } from "js-yaml";
-import { configurationIdentifierFromName } from "@velvet/contracts";
+import {
+  configurationIdentifierFromName,
+  validateVelvetConfiguration,
+  type NormalizedHttpCheck,
+  type NormalizedJsonAssertion,
+  type NormalizedService,
+} from "@velvet/contracts";
 
+import {
+  createHeaderDraft,
+  createJsonAssertionDraft,
+  createServiceDraft,
+  validateServiceDrafts,
+  type ContractServiceDraft,
+} from "../components/service-editor";
 import type { VelvetLayout } from "../lib/config";
 import { canonicalConfiguratorTheme } from "../lib/configuration-theme.js";
+import { isCuratedServiceIcon } from "../lib/icons.js";
 import {
   normalizeThemeConfiguration,
   resolveTheme,
@@ -15,6 +29,14 @@ export interface ConfiguratorSettings {
   layout: VelvetLayout;
   theme: ConfiguratorTheme;
   icons: Record<string, string>;
+  services: ConfiguratorServiceDraft[] | null;
+}
+
+export interface ConfiguratorServiceDraft extends ContractServiceDraft {
+  serviceId: string | null;
+  checkId: string | null;
+  checkName: string | null;
+  additionalChecks: NormalizedHttpCheck[];
 }
 
 export interface ParsedConfiguratorYaml {
@@ -40,10 +62,41 @@ const YAML_OPTIONS = {
   quotingType: '"',
 } as const;
 
+const DEFAULT_NATIVE_DOCUMENT: ConfiguratorDocument = {
+  schemaVersion: 1,
+  repository: {
+    owner: "your-github-owner",
+    name: "your-status-repo",
+  },
+  statusPage: { name: "Status" },
+  services: [
+    { name: "Website", url: "https://example.com" },
+    { name: "Backend", url: "https://api.example.com/health" },
+  ],
+};
+
+export function createConfiguratorServiceDraft(): ConfiguratorServiceDraft {
+  return {
+    ...createServiceDraft(),
+    serviceId: null,
+    checkId: null,
+    checkName: null,
+    additionalChecks: [],
+  };
+}
+
+export function cloneConfiguratorServices(
+  services: readonly ConfiguratorServiceDraft[],
+): ConfiguratorServiceDraft[] {
+  return JSON.parse(JSON.stringify(services)) as ConfiguratorServiceDraft[];
+}
+
 export function parseConfiguratorYaml(source: string): ParsedConfiguratorYaml {
   let loaded: unknown;
   try {
-    loaded = source.trim() ? load(source) : {};
+    loaded = source.trim()
+      ? load(source)
+      : cloneConfigurationDocument(DEFAULT_NATIVE_DOCUMENT);
   } catch (error) {
     throw new Error(`Invalid YAML: ${(error as Error).message}`, { cause: error });
   }
@@ -80,6 +133,10 @@ export function parseConfiguratorYaml(source: string): ParsedConfiguratorYaml {
     nativeStatusPage?.icons ?? velvet?.icons,
     nativeStatusPage ? "statusPage.icons" : "status-website.velvet.icons",
   );
+  const nativeConfiguration = isNativeConfiguration(loaded);
+  const services = nativeConfiguration
+    ? nativeServiceDrafts(loaded, icons)
+    : null;
 
   return {
     document: structuredClone(loaded),
@@ -90,6 +147,7 @@ export function parseConfiguratorYaml(source: string): ParsedConfiguratorYaml {
           : "grouped",
       theme,
       icons,
+      services,
     },
   };
 }
@@ -99,18 +157,33 @@ export function updateConfiguratorDocument(
   settings: ConfiguratorSettings,
 ): ConfiguratorDocument {
   const updated = cloneConfigurationDocument(document);
-  if (isNativeConfiguration(updated)) {
+  if (settings.services !== null) {
+    const serviceValidation = validateServiceDrafts(settings.services);
+    if (!serviceValidation.success) {
+      throw new Error(
+        Object.values(serviceValidation.errors)[0] ??
+          "Add at least one valid service before saving.",
+      );
+    }
+    const nativeDocument = isNativeConfiguration(updated)
+      ? updated
+      : cloneConfigurationDocument(DEFAULT_NATIVE_DOCUMENT);
     const statusPage = isRecord(updated.statusPage)
       ? { ...updated.statusPage }
-      : {};
+      : { ...(nativeDocument.statusPage as ConfiguratorDocument) };
     delete statusPage.icons;
     statusPage.layout = settings.layout;
     statusPage.theme = canonicalConfiguratorTheme(settings.theme);
-    if (Object.keys(settings.icons).length > 0) {
-      statusPage.icons = { ...settings.icons };
+    if (Object.keys(serviceValidation.icons).length > 0) {
+      statusPage.icons = { ...serviceValidation.icons };
     }
-    updated.statusPage = statusPage;
-    return updated;
+    nativeDocument.statusPage = statusPage;
+    nativeDocument.services = serviceValidation.services;
+    const validation = validateVelvetConfiguration(nativeDocument);
+    if (!validation.success) {
+      throw new Error(validation.errors[0]?.message ?? "Invalid Velvet configuration.");
+    }
+    return nativeDocument;
   }
   const statusWebsite = isRecord(updated["status-website"])
     ? { ...updated["status-website"] }
@@ -162,11 +235,13 @@ export function exportConfigurationYaml(
 ): string {
   const base =
     document ??
-    ({
-      owner: "your-github-owner",
-      repo: "your-status-repo",
-      "status-website": { name: "Status" },
-    } satisfies ConfiguratorDocument);
+    (settings.services === null
+      ? ({
+          owner: "your-github-owner",
+          repo: "your-status-repo",
+          "status-website": { name: "Status" },
+        } satisfies ConfiguratorDocument)
+      : DEFAULT_NATIVE_DOCUMENT);
   return dump(updateConfiguratorDocument(base, settings), YAML_OPTIONS);
 }
 
@@ -249,6 +324,74 @@ function iconMapping(value: unknown, path: string): Record<string, string> {
 
 function isNativeConfiguration(document: ConfiguratorDocument): boolean {
   return document.schemaVersion === 1 || isRecord(document.statusPage);
+}
+
+function nativeServiceDrafts(
+  document: ConfiguratorDocument,
+  icons: Record<string, string>,
+): ConfiguratorServiceDraft[] {
+  const validation = validateVelvetConfiguration(document);
+  if (!validation.success) {
+    throw new Error(
+      validation.errors[0]?.message ?? "Invalid native Velvet configuration.",
+    );
+  }
+  const rawServices = Array.isArray(document.services) ? document.services : [];
+  return validation.data.services.map((service, index) =>
+    nativeServiceDraft(service, rawServices[index], icons[service.id]),
+  );
+}
+
+function nativeServiceDraft(
+  service: NormalizedService,
+  rawValue: unknown,
+  icon: string | undefined,
+): ConfiguratorServiceDraft {
+  const rawService = isRecord(rawValue) ? rawValue : {};
+  const rawChecks = Array.isArray(rawService.checks) ? rawService.checks : [];
+  const rawPrimaryCheck = isRecord(rawChecks[0]) ? rawChecks[0] : {};
+  const primary = service.checks[0]!;
+  const draft = createConfiguratorServiceDraft();
+  draft.name = service.name;
+  draft.url = primary.url;
+  draft.icon = icon && isCuratedServiceIcon(icon) ? icon : null;
+  draft.advanced = rawChecks.length > 0;
+  draft.method = primary.method;
+  draft.expectedStatusCodes = primary.expectedStatusCodes.join(", ");
+  draft.maxRedirects = primary.maxRedirects;
+  draft.timeoutMs = primary.timeoutMs;
+  draft.headers = primary.headers.map((header) => ({
+    ...createHeaderDraft(),
+    ...header,
+  }));
+  draft.jsonAssertions = primary.jsonAssertions.map((assertion) => ({
+    ...createJsonAssertionDraft(),
+    ...assertionDraftValue(assertion),
+  }));
+  draft.serviceId =
+    typeof rawService.id === "string" ? rawService.id : null;
+  draft.checkId =
+    typeof rawPrimaryCheck.id === "string" ? rawPrimaryCheck.id : null;
+  draft.checkName = rawChecks.length > 0 ? primary.name : null;
+  draft.additionalChecks = service.checks.slice(1).map((check) =>
+    structuredClone(check),
+  );
+  return draft;
+}
+
+function assertionDraftValue(assertion: NormalizedJsonAssertion): {
+  path: string;
+  valueType: "string" | "number" | "boolean" | "null";
+  value: string;
+} {
+  if (assertion.equals === null) {
+    return { path: assertion.path, valueType: "null", value: "" };
+  }
+  return {
+    path: assertion.path,
+    valueType: typeof assertion.equals as "string" | "number" | "boolean",
+    value: String(assertion.equals),
+  };
 }
 
 function configuratorThemeFromCanonical(

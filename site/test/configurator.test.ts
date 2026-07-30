@@ -3,6 +3,7 @@ import { test } from "bun:test";
 
 import {
   cloneConfiguratorTheme,
+  createConfiguratorServiceDraft,
   configuratorServiceOptions,
   exportConfigurationYaml,
   exportVelvetYaml,
@@ -216,10 +217,12 @@ test("creates a minimal config and rejects invalid imports", () => {
     exportConfigurationYaml(null, defaults.settings),
   );
 
-  assert.equal(minimal.document.owner, "your-github-owner");
-  assert.equal(minimal.document.repo, "your-status-repo");
+  assert.deepEqual(minimal.document.repository, {
+    owner: "your-github-owner",
+    name: "your-status-repo",
+  });
   assert.equal(
-    (minimal.document["status-website"] as Record<string, unknown>).name,
+    (minimal.document.statusPage as Record<string, unknown>).name,
     "Status",
   );
 
@@ -275,13 +278,15 @@ services:
 
   assert.equal(imported.settings.layout, "cards");
   assert.deepEqual(imported.settings.icons, { website: "ph-globe" });
+  assert.equal(imported.settings.services?.length, 1);
+  assert.equal(imported.settings.services?.[0]?.name, "Website");
+  assert.equal(imported.settings.services?.[0]?.url, "https://example.com/");
+  assert.equal(imported.settings.services?.[0]?.icon, "ph-globe");
   assert.equal(imported.settings.theme.protocol.ipv4, "accent");
   assert.equal(imported.settings.theme.chart.ipv4LineStyle, "dotted");
 
-  const updated = updateConfiguratorDocument(imported.document, {
-    ...imported.settings,
-    icons: { website: "ph-hard-drives" },
-  });
+  imported.settings.services![0]!.icon = "ph-hard-drives";
+  const updated = updateConfiguratorDocument(imported.document, imported.settings);
   const statusPage = updated.statusPage as Record<string, unknown>;
   const theme = statusPage.theme as Record<string, unknown>;
   assert.equal(statusPage.layout, "cards");
@@ -293,4 +298,144 @@ services:
   assert.deepEqual(configuratorServiceOptions(imported.document), [
     { id: "website", name: "Website" },
   ]);
+});
+
+test("renames, adds, and removes native services without stale icon mappings", () => {
+  const imported = parseConfiguratorYaml(`
+schemaVersion: 1
+repository:
+  owner: velvet-user
+  name: status
+statusPage:
+  name: Example Status
+  icons:
+    website: ph-globe
+services:
+  - name: Website
+    url: https://example.com
+`);
+  assert.ok(imported.settings.services);
+
+  imported.settings.services[0]!.name = "Public Site";
+  const backend = createConfiguratorServiceDraft();
+  backend.name = "Backend";
+  backend.url = "https://api.example.com/health";
+  backend.icon = "ph-gear-six";
+  imported.settings.services.push(backend);
+
+  const updated = updateConfiguratorDocument(imported.document, imported.settings);
+  const statusPage = updated.statusPage as Record<string, unknown>;
+  const services = updated.services as Array<Record<string, unknown>>;
+  assert.deepEqual(
+    services.map(({ id, name }) => ({ id, name })),
+    [
+      { id: "public-site", name: "Public Site" },
+      { id: "backend", name: "Backend" },
+    ],
+  );
+  assert.deepEqual(statusPage.icons, {
+    "public-site": "ph-globe",
+    backend: "ph-gear-six",
+  });
+  assert.equal("website" in (statusPage.icons as Record<string, unknown>), false);
+
+  imported.settings.services.splice(0, 1);
+  const removed = updateConfiguratorDocument(imported.document, imported.settings);
+  assert.deepEqual(
+    (removed.services as Array<Record<string, unknown>>).map(({ id }) => id),
+    ["backend"],
+  );
+  assert.deepEqual((removed.statusPage as Record<string, unknown>).icons, {
+    backend: "ph-gear-six",
+  });
+});
+
+test("preserves advanced native HTTP fields and additional checks", () => {
+  const imported = parseConfiguratorYaml(`
+schemaVersion: 1
+repository:
+  owner: velvet-user
+  name: status
+statusPage:
+  name: Example Status
+services:
+  - id: api
+    name: API
+    checks:
+      - id: primary
+        name: Primary API
+        url: https://api.example.com/health
+        method: GET
+        expectedStatusCodes: [200, 204]
+        maxRedirects: 2
+        timeoutMs: 3500
+        headers:
+          - name: Authorization
+            secret: API_HEALTH_TOKEN
+        jsonAssertions:
+          - path: /healthy
+            equals: true
+      - id: fallback
+        name: Fallback API
+        url: https://fallback.example.com/health
+`);
+  const service = imported.settings.services?.[0];
+  assert.ok(service);
+  assert.equal(service.method, "GET");
+  assert.equal(service.expectedStatusCodes, "200, 204");
+  assert.equal(service.maxRedirects, 2);
+  assert.equal(service.timeoutMs, 3500);
+  assert.deepEqual(
+    service.headers.map(({ name, secret }) => ({ name, secret })),
+    [{ name: "Authorization", secret: "API_HEALTH_TOKEN" }],
+  );
+  assert.deepEqual(
+    service.jsonAssertions.map(({ path, valueType, value }) => ({
+      path,
+      valueType,
+      value,
+    })),
+    [{ path: "/healthy", valueType: "boolean", value: "true" }],
+  );
+  assert.equal(service.additionalChecks.length, 1);
+
+  const updated = updateConfiguratorDocument(imported.document, imported.settings);
+  const checks = (updated.services as Array<{ checks: unknown[] }>)[0]!.checks;
+  assert.equal(checks.length, 2);
+  assert.deepEqual(checks[1], {
+    id: "fallback",
+    name: "Fallback API",
+    url: "https://fallback.example.com/health",
+    method: "GET",
+    expectedStatusCodes: [200],
+    maxRedirects: 5,
+    timeoutMs: 10000,
+    headers: [],
+    jsonAssertions: [],
+  });
+});
+
+test("keeps legacy monitoring targets read-only and starts new files as native Velvet", () => {
+  const legacy = parseConfiguratorYaml(`
+owner: example
+repo: status
+sites:
+  - name: Website
+    url: https://example.com
+status-website:
+  name: Example Status
+`);
+  assert.equal(legacy.settings.services, null);
+  assert.deepEqual(
+    updateConfiguratorDocument(legacy.document, legacy.settings).sites,
+    legacy.document.sites,
+  );
+
+  const fresh = parseConfiguratorYaml("");
+  assert.equal(fresh.settings.services?.length, 2);
+  const exported = parseConfiguratorYaml(
+    exportConfigurationYaml(null, fresh.settings),
+  );
+  assert.equal(exported.document.schemaVersion, 1);
+  assert.equal(exported.settings.services?.[0]?.name, "Website");
 });

@@ -8,10 +8,9 @@ import {
 
 import {
   createServiceDraft,
-  type AssertionValueType,
   type ServiceDraft,
 } from "../components/service-editor/model.js";
-import { isCuratedServiceIcon } from "../lib/icons.js";
+import { validateServiceDrafts } from "../components/service-editor/validation.js";
 import {
   SYSTEM_THEMES,
   canonicalSystemTheme,
@@ -103,60 +102,15 @@ export function buildSetupRequest(
       "Enter a hostname without https://, a path, port, credentials, or wildcard.";
   }
 
-  const services = draft.services.map((service, index) => {
-    if (service.icon !== null && !isCuratedServiceIcon(service.icon)) {
-      errors[`services.${index}.icon`] = "Choose an icon from the available set.";
-    }
-    if (!service.advanced) {
-      return { name: service.name.trim(), url: service.url.trim() };
-    }
-
-    const expectedStatusCodes = parseStatusCodes(
-      service.expectedStatusCodes,
-      `services.${index}.expectedStatusCodes`,
-      errors,
-    );
-    const headers = service.headers
-      .filter(({ name, secret }) => name.trim() || secret.trim())
-      .map(({ name, secret }) => ({
-        name: name.trim(),
-        secret: secret.trim(),
-      }));
-    const jsonAssertions = service.jsonAssertions
-      .filter(({ path, value, valueType }) =>
-        path.trim() || value.trim() || valueType === "null",
-      )
-      .map(({ path, value, valueType }, assertionIndex) => ({
-        path: path.trim(),
-        equals: parseAssertionValue(
-          value,
-          valueType,
-          `services.${index}.jsonAssertions.${assertionIndex}.value`,
-          errors,
-        ),
-      }));
-
-    return {
-      name: service.name.trim(),
-      checks: [
-        {
-          name: service.name.trim(),
-          url: service.url.trim(),
-          method: service.method,
-          expectedStatusCodes,
-          maxRedirects: service.maxRedirects,
-          timeoutMs: service.timeoutMs,
-          headers,
-          jsonAssertions,
-        },
-      ],
-    };
-  });
-
-  if (draft.services.length === 0) {
-    errors.services = "Add at least one service.";
+  const serviceValidation = validateServiceDrafts(draft.services);
+  if (!serviceValidation.success) {
+    Object.assign(errors, serviceValidation.errors);
   }
-  if (Object.keys(errors).length > 0 || !theme) {
+  if (
+    Object.keys(errors).length > 0 ||
+    !theme ||
+    !serviceValidation.success
+  ) {
     return { success: false, errors };
   }
 
@@ -171,23 +125,15 @@ export function buildSetupRequest(
       theme: canonicalSystemTheme(theme),
       ...(customDomain ? { customDomain } : {}),
     },
-    services,
+    services: serviceValidation.services,
     history: { retentionDays: 365 },
   };
-  const baseResult = validateVelvetConfiguration(baseInput);
-  if (!baseResult.success) {
-    return { success: false, errors: mapContractErrors(baseResult.errors) };
-  }
-
-  const icons = Object.fromEntries(
-    baseResult.data.services.flatMap((service, index) => {
-      const icon = draft.services[index].icon;
-      return icon ? [[service.id, icon]] : [];
-    }),
-  );
   const finalResult = validateVelvetConfiguration({
     ...baseInput,
-    statusPage: { ...baseInput.statusPage, icons },
+    statusPage: {
+      ...baseInput.statusPage,
+      icons: serviceValidation.icons,
+    },
   });
   if (!finalResult.success) {
     return { success: false, errors: mapContractErrors(finalResult.errors) };
@@ -229,47 +175,6 @@ export async function submitOnboarding(
       recoverable: true,
     };
   }
-}
-
-function parseStatusCodes(
-  source: string,
-  path: string,
-  errors: Record<string, string>,
-): number[] {
-  const entries = source
-    .split(/[\s,]+/)
-    .filter(Boolean)
-    .map(Number);
-  if (
-    entries.length === 0 ||
-    entries.some((value) => !Number.isInteger(value) || value < 100 || value > 599)
-  ) {
-    errors[path] = "Enter HTTP status codes from 100 through 599.";
-  }
-  return entries;
-}
-
-function parseAssertionValue(
-  value: string,
-  type: AssertionValueType,
-  path: string,
-  errors: Record<string, string>,
-): string | number | boolean | null {
-  if (type === "null") return null;
-  if (type === "boolean") {
-    if (value !== "true" && value !== "false") {
-      errors[path] = "Enter true or false.";
-    }
-    return value === "true";
-  }
-  if (type === "number") {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || value.trim() === "") {
-      errors[path] = "Enter a valid number.";
-    }
-    return parsed;
-  }
-  return value;
 }
 
 function mapContractErrors(

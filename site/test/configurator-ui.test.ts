@@ -53,12 +53,12 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /ph-copy/);
   assert.match(html, /ph-download-simple/);
   assert.equal(html.match(/data-configurator-section/g)?.length, 8);
-  assert.equal(html.match(/<details[^>]+open/g)?.length, 8);
+  assert.equal(html.match(/<details[^>]+open/g)?.length, 10);
   assert.equal(html.match(/data-slider-tick/g)?.length, 9);
   assert.match(html, /data-toggle-all-sections/);
   assert.match(html, /Collapse all sections/);
   assert.match(html, /ph-caret-circle-double-down/);
-  assert.equal(html.match(/ph-caret-circle-down/g)?.length, 10);
+  assert.equal(html.match(/ph-caret-circle-down/g)?.length, 12);
   assert.match(html, /data-sidebar-collapse-toggle/);
   assert.match(html, /ph-caret-circle-double-left/);
   assert.match(html, /aria-controls="velvet-configurator-sidebar-content"/);
@@ -85,7 +85,7 @@ test("renders the local controls in a right sidebar and two real services", asyn
 
   const expectedSectionTitles = [
     "Theme",
-    "Service Icons",
+    "Services",
     "Named Colors",
     "Background",
     "Cards",
@@ -123,6 +123,11 @@ test("renders the local controls in a right sidebar and two real services", asyn
     source,
     /\{#if directFileSavesAvailable\}[\s\S]*?Save Config[\s\S]*?Save Config as[\s\S]*?\{:else\}[\s\S]*?Download Config[\s\S]*?\{\/if\}/,
   );
+  assert.match(source, /import \* as ServiceEditor from "\.\.\/components\/service-editor"/);
+  assert.match(source, /<ServiceEditor\.List[\s\S]*<ServiceEditor\.Root/);
+  assert.match(html, /data-service-editor-list/);
+  assert.match(html, /Add another service/);
+  assert.doesNotMatch(html, /Service Icons/);
 });
 
 test("uses a full-workspace theme background and readable sidebar typography", async () => {
