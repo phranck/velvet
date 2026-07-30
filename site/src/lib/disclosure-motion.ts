@@ -132,19 +132,3 @@ export function createDisclosureMotion(
     },
   };
 }
-
-export function createHiddenDisclosureMotion(
-  content: HTMLElement,
-): DisclosureMotionController {
-  return createDisclosureMotion(
-    {
-      get open() {
-        return !content.hidden;
-      },
-      set open(open) {
-        content.hidden = !open;
-      },
-    },
-    content,
-  );
-}
