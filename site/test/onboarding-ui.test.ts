@@ -65,3 +65,15 @@ test("standalone onboarding uses its own build entry", async () => {
   assert.match(html, /src="\/src\/onboarding\/main\.ts"/);
   assert.match(viteConfig, /outDir:\s*onboardingOutDir/);
 });
+
+test("offers concrete recovery targets without exposing backend details", async () => {
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
+
+  assert.match(onboarding, /data-recovery-links/);
+  assert.match(onboarding, />Open repository</);
+  assert.match(onboarding, />View failed workflow</);
+  assert.match(onboarding, /Reference:/);
+});

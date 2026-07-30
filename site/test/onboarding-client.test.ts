@@ -5,16 +5,22 @@ import { createBrowserSetupClient } from "../src/onboarding/client.js";
 import {
   buildSetupRequest,
   createOnboardingDraft,
+  submitOnboarding,
   type SetupProgressStage,
 } from "../src/onboarding/state.js";
 
-function validRequest() {
+function validDraft() {
   const draft = createOnboardingDraft();
   draft.repositoryOwner = "velvet-user";
   draft.repositoryName = "status";
   draft.statusPageName = "Status";
   draft.services[0].name = "Website";
   draft.services[0].url = "https://example.com";
+  return draft;
+}
+
+function validRequest() {
+  const draft = validDraft();
   const result = buildSetupRequest(draft);
   assert.equal(result.success, true);
   if (!result.success) throw new Error("Missing setup request.");
@@ -68,7 +74,7 @@ test("posts one validated credentialed request and reads progress", async () => 
   assert.deepEqual(result, { installationUrl: "https://status.example.com/" });
 });
 
-test("polls the short setup status endpoint after deployment monitoring starts", async () => {
+test("polls the short setup status endpoint after the initial workflow starts", async () => {
   const calls: string[] = [];
   const client = createBrowserSetupClient(async (url) => {
     calls.push(String(url));
@@ -82,14 +88,14 @@ test("polls the short setup status endpoint after deployment monitoring starts",
       return Response.json({
         operationId: "O".repeat(26),
         state: "succeeded",
-        stage: "waiting-for-deployment",
+        stage: "building-page",
         installationUrl: "https://velvet-user.github.io/status/",
         repositoryUrl: "https://github.com/velvet-user/status",
         workflowRunId: 777,
       });
     }
     return new Response(
-      JSON.stringify({ type: "progress", stage: "waiting-for-deployment" }),
+      JSON.stringify({ type: "progress", stage: "checking-services" }),
       { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
     );
   });
@@ -99,6 +105,80 @@ test("polls the short setup status endpoint after deployment monitoring starts",
   assert.deepEqual(calls, ["/api/session", "/api/setup", "/api/setup/status"]);
   assert.deepEqual(result, {
     installationUrl: "https://velvet-user.github.io/status/",
+  });
+});
+
+test("keeps safe error details and recovery links for a failed workflow", async () => {
+  let calls = 0;
+  const client = createBrowserSetupClient(async () => {
+    calls += 1;
+    if (calls === 1) {
+      return Response.json({
+        authenticated: true,
+        csrfToken: "C".repeat(43),
+      });
+    }
+    return new Response(
+      JSON.stringify({
+        type: "error",
+        error: {
+          code: "WORKFLOW_FAILED",
+          message: "The initial Velvet workflow did not complete successfully.",
+          errorId: "E".repeat(26),
+        },
+        recoverable: true,
+        repositoryUrl: "https://github.com/velvet-user/status",
+        workflowRunId: 777,
+      }),
+      { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+    );
+  });
+
+  const result = await submitOnboarding(validDraft(), client);
+
+  assert.deepEqual(result, {
+    state: "failed",
+    message: "The initial Velvet workflow did not complete successfully.",
+    errorId: "E".repeat(26),
+    recoverable: true,
+    repositoryUrl: "https://github.com/velvet-user/status",
+    workflowUrl: "https://github.com/velvet-user/status/actions/runs/777",
+  });
+});
+
+test("does not expose recovery links outside GitHub", async () => {
+  let calls = 0;
+  const client = createBrowserSetupClient(async () => {
+    calls += 1;
+    if (calls === 1) {
+      return Response.json({
+        authenticated: true,
+        csrfToken: "C".repeat(43),
+      });
+    }
+    return new Response(
+      JSON.stringify({
+        type: "error",
+        error: {
+          code: "WORKFLOW_FAILED",
+          message: "The initial Velvet workflow did not complete successfully.",
+          errorId: "E".repeat(26),
+        },
+        recoverable: true,
+        repositoryUrl: "https://attacker.example/velvet-user/status",
+        workflowRunId: 777,
+      }),
+      { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+    );
+  });
+
+  const result = await submitOnboarding(validDraft(), client);
+
+  assert.deepEqual(result, {
+    state: "failed",
+    message: "Setup could not finish. Your entries are still here, so you can retry.",
+    errorId: "",
+    recoverable: true,
   });
 });
 

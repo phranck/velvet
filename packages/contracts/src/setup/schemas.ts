@@ -14,6 +14,10 @@ export const SetupProgressStageSchema = Type.Union([
   Type.Literal("writing-configuration"),
   Type.Literal("enabling-pages"),
   Type.Literal("starting-monitor"),
+  Type.Literal("checking-services"),
+  Type.Literal("publishing-data"),
+  Type.Literal("building-page"),
+  Type.Literal("deploying-page"),
   Type.Literal("waiting-for-deployment"),
 ]);
 
@@ -124,6 +128,8 @@ const SetupErrorEventSchema = Type.Object(
     type: Type.Literal("error"),
     error: SetupPublicErrorSchema,
     recoverable: Type.Boolean(),
+    repositoryUrl: Type.Optional(HttpsUrlSchema),
+    workflowRunId: Type.Optional(Type.Integer({ minimum: 1 })),
   },
   { additionalProperties: false },
 );
@@ -153,6 +159,7 @@ export const SetupStatusSchema = Type.Object(
     repositoryUrl: Type.Optional(HttpsUrlSchema),
     workflowRunId: Type.Optional(Type.Integer({ minimum: 1 })),
     error: Type.Optional(SetupPublicErrorSchema),
+    recoverable: Type.Optional(Type.Boolean()),
   },
   { additionalProperties: false },
 );

@@ -9,6 +9,7 @@ import { createSetupHandler } from "../src/handler.js";
 import type { AuditLogInput } from "../src/observability.js";
 import { createRateLimiter } from "../src/rate-limit.js";
 import { createSessionStore } from "../src/session.js";
+import { SetupServiceError } from "../src/setup-error.js";
 
 const origin = "https://setup.velvet.dev";
 const config = {
@@ -60,6 +61,7 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
     async writeConfiguration() { throw new Error("unused"); },
     async enablePages() { throw new Error("unused"); },
     async dispatchWorkflow() { throw new Error("unused"); },
+    async workflowJobs() { throw new Error("unused"); },
     async workflowRun() { throw new Error("unused"); },
     async pages() { throw new Error("unused"); },
     async revokeUserToken() {},
@@ -339,6 +341,59 @@ test("closes the setup response before background deployment polling finishes", 
   assert.deepEqual(body.trim().split("\n").map((line) => JSON.parse(line)), [
     { type: "progress", stage: "waiting-for-deployment" },
   ]);
+});
+
+test("returns safe repository and workflow recovery targets after setup fails", async () => {
+  let tokenIndex = 0;
+  const sessions = createSessionStore({
+    secret: config.sessionSecret,
+    randomToken: () => `${tokenIndex++}`.padStart(43, "A"),
+  });
+  const handler = createSetupHandler({
+    config,
+    sessions,
+    github: githubClient(),
+    logger: () => {},
+    errorId: () => "E".repeat(26),
+    provision: async ({ session }) => {
+      session.operation = {
+        operationId: "O".repeat(26),
+        state: "failed",
+        stage: "building-page",
+        repositoryUrl: "https://github.com/example/status",
+        workflowRunId: 777,
+        error: {
+          code: "WORKFLOW_FAILED",
+          message: "The initial Velvet workflow did not complete successfully.",
+          errorId: "E".repeat(26),
+        },
+      };
+      throw new SetupServiceError(
+        "WORKFLOW_FAILED",
+        "The initial Velvet workflow did not complete successfully.",
+        { recoverable: true },
+      );
+    },
+  });
+  const browser = await authenticate(handler, sessions);
+  const response = await handler(
+    new Request(`${origin}/api/setup`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+        "Content-Type": "application/json",
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+      body: setupBody,
+    }),
+  );
+  const event = JSON.parse((await response.text()).trim());
+
+  assert.equal(event.type, "error");
+  assert.equal(event.error.errorId, "E".repeat(26));
+  assert.equal(event.repositoryUrl, "https://github.com/example/status");
+  assert.equal(event.workflowRunId, 777);
 });
 
 test("explains missing installation and organization approval without claiming success", async () => {

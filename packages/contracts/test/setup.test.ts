@@ -86,8 +86,24 @@ test("pins safe public session, progress, status, and error envelopes", () => {
         errorId: "01J00000000000000000000000",
       },
       recoverable: true,
+      repositoryUrl: "https://github.com/example/status",
+      workflowRunId: 777,
     }).success,
     true,
+  );
+  assert.equal(
+    validateSetupEvent({
+      type: "error",
+      error: {
+        code: "WORKFLOW_FAILED",
+        message: "The initial workflow failed.",
+        errorId: "01J00000000000000000000000",
+      },
+      recoverable: true,
+      repositoryUrl: "javascript:alert(1)",
+      workflowRunId: 777,
+    }).success,
+    false,
   );
   assert.equal(
     validateSetupStatus({
@@ -97,6 +113,32 @@ test("pins safe public session, progress, status, and error envelopes", () => {
     }).success,
     true,
   );
+  assert.equal(
+    validateSetupStatus({
+      operationId: "01J00000000000000000000000",
+      state: "failed",
+      stage: "building-page",
+      recoverable: true,
+      error: {
+        code: "WORKFLOW_FAILED",
+        message: "The initial workflow failed.",
+        errorId: "01J00000000000000000000000",
+      },
+    }).success,
+    true,
+  );
+  for (const stage of [
+    "checking-services",
+    "publishing-data",
+    "building-page",
+    "deploying-page",
+  ]) {
+    assert.equal(
+      validateSetupEvent({ type: "progress", stage }).success,
+      true,
+      stage,
+    );
+  }
   assert.equal(
     validateSetupEvent({
       type: "permission-required",

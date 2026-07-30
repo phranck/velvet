@@ -45,6 +45,12 @@ export interface GitHubWorkflowRun {
   htmlUrl: string;
 }
 
+export interface GitHubWorkflowJob {
+  name: string;
+  status: GitHubWorkflowRun["status"];
+  conclusion: string | null;
+}
+
 export interface GitHubPagesSite {
   htmlUrl: string;
   status: string | null;
@@ -84,6 +90,12 @@ export interface GitHubSetupClient {
     owner: string,
     repository: string,
   ): Promise<number>;
+  workflowJobs(
+    installationToken: string,
+    owner: string,
+    repository: string,
+    runId: number,
+  ): Promise<GitHubWorkflowJob[]>;
   workflowRun(
     installationToken: string,
     owner: string,
@@ -310,7 +322,7 @@ export function createGitHubSetupClient(
         {
           method: "PUT",
           body: JSON.stringify({
-            message: "Configure Velvet",
+            message: "Configure Velvet [skip ci]",
             content: Buffer.from(source).toString("base64"),
             sha,
             branch: "main",
@@ -338,6 +350,17 @@ export function createGitHubSetupClient(
         throw new Error("GitHub workflow dispatch response was invalid.");
       }
       return body.workflow_run_id;
+    },
+
+    async workflowJobs(installationToken, owner, repository, runId) {
+      const body = await githubRequest<unknown>(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/runs/${runId}/jobs?filter=latest&per_page=100`,
+        installationToken,
+      );
+      if (!isRecord(body) || !Array.isArray(body.jobs)) {
+        throw new Error("GitHub workflow jobs response was invalid.");
+      }
+      return body.jobs.map(parseWorkflowJob);
     },
 
     async workflowRun(installationToken, owner, repository, runId) {
@@ -448,6 +471,23 @@ function parseRepository(value: unknown): GitHubRepository {
     ownerId: value.owner.id,
     htmlUrl: value.html_url,
     defaultBranch: value.default_branch,
+  };
+}
+
+function parseWorkflowJob(value: unknown): GitHubWorkflowJob {
+  if (
+    !isRecord(value) ||
+    !positiveInteger(value.id) ||
+    typeof value.name !== "string" ||
+    !workflowStatus(value.status) ||
+    (value.conclusion !== null && typeof value.conclusion !== "string")
+  ) {
+    throw new Error("GitHub workflow job response was invalid.");
+  }
+  return {
+    name: value.name,
+    status: value.status,
+    conclusion: value.conclusion,
   };
 }
 

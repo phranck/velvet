@@ -82,6 +82,29 @@ test("restricts installation tokens and repository changes to the Velvet setup f
       run_url: "https://api.github.com/repos/example/status/actions/runs/777",
       html_url: "https://github.com/example/status/actions/runs/777",
     },
+    {
+      total_count: 3,
+      jobs: [
+        {
+          id: 1,
+          name: "Check services and publish initial data",
+          status: "completed",
+          conclusion: "success",
+        },
+        {
+          id: 2,
+          name: "Build status page",
+          status: "in_progress",
+          conclusion: null,
+        },
+        {
+          id: 3,
+          name: "Deploy to GitHub Pages",
+          status: "queued",
+          conclusion: null,
+        },
+      ],
+    },
   ];
   const client = createGitHubSetupClient({
     appId: "12345",
@@ -116,6 +139,18 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     await client.dispatchWorkflow("installation-token", "example", "status"),
     777,
   );
+  assert.deepEqual(
+    await client.workflowJobs("installation-token", "example", "status", 777),
+    [
+      {
+        name: "Check services and publish initial data",
+        status: "completed",
+        conclusion: "success",
+      },
+      { name: "Build status page", status: "in_progress", conclusion: null },
+      { name: "Deploy to GitHub Pages", status: "queued", conclusion: null },
+    ],
+  );
 
   assert.deepEqual(await requests[0]!.json(), {
     repository_ids: [99],
@@ -141,7 +176,7 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     "https://api.github.com/repos/example/status/contents/velvet.yml",
   );
   assert.deepEqual(await requests[3]!.json(), {
-    message: "Configure Velvet",
+    message: "Configure Velvet [skip ci]",
     content: Buffer.from("schemaVersion: 1\n").toString("base64"),
     sha: "template-sha",
     branch: "main",
@@ -152,6 +187,10 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     "https://api.github.com/repos/example/status/actions/workflows/velvet.yml/dispatches",
   );
   assert.deepEqual(await requests[5]!.json(), { ref: "main" });
+  assert.equal(
+    requests[6]!.url,
+    "https://api.github.com/repos/example/status/actions/runs/777/jobs?filter=latest&per_page=100",
+  );
 
   for (const request of requests.slice(0, 1).concat(requests.slice(1))) {
     if (request.url.startsWith("https://api.github.com/")) {

@@ -10,11 +10,25 @@ import {
 import {
   GitHubApiError,
   type GitHubSetupClient,
+  type GitHubWorkflowJob,
 } from "./github.js";
 import type { SetupServerSession } from "./session.js";
 import { publicSetupError, SetupServiceError } from "./setup-error.js";
 
 type SetupSuccessEvent = Extract<SetupEvent, { type: "success" }>;
+
+const DEPLOYMENT_STAGES = [
+  "checking-services",
+  "publishing-data",
+  "building-page",
+  "deploying-page",
+] as const satisfies readonly SetupProgressStage[];
+
+const WORKFLOW_JOB_NAMES = {
+  monitor: "Check services and publish initial data",
+  build: "Build status page",
+  deploy: "Deploy to GitHub Pages",
+} as const;
 
 interface ProvisionVelvetInput {
   session: SetupServerSession;
@@ -77,9 +91,13 @@ export async function provisionVelvet(
       configurationHash,
     });
   let stage: SetupProgressStage = "creating-repository";
+  let lastEmittedStage: SetupProgressStage | null = null;
+  let deploymentStageIndex = -1;
 
   const progress = (nextStage: SetupProgressStage): void => {
+    if (nextStage === lastEmittedStage) return;
     stage = nextStage;
+    lastEmittedStage = nextStage;
     input.session.operation = {
       operationId,
       state: "running",
@@ -88,6 +106,14 @@ export async function provisionVelvet(
       ...(state.workflowRunId ? { workflowRunId: state.workflowRunId } : {}),
     };
     input.onEvent({ type: "progress", stage });
+  };
+
+  const progressThrough = (nextStage: (typeof DEPLOYMENT_STAGES)[number]): void => {
+    const nextIndex = DEPLOYMENT_STAGES.indexOf(nextStage);
+    for (let index = deploymentStageIndex + 1; index <= nextIndex; index += 1) {
+      progress(DEPLOYMENT_STAGES[index]!);
+    }
+    deploymentStageIndex = Math.max(deploymentStageIndex, nextIndex);
   };
 
   try {
@@ -183,6 +209,10 @@ export async function provisionVelvet(
       state.pagesEnabled = true;
     }
 
+    if (state.workflowFailed) {
+      delete state.workflowRunId;
+      delete state.workflowFailed;
+    }
     if (!state.workflowRunId) {
       progress("starting-monitor");
       state.workflowRunId = await input.github.dispatchWorkflow(
@@ -192,10 +222,17 @@ export async function provisionVelvet(
       );
     }
 
-    progress("waiting-for-deployment");
     const maxWorkflowChecks = input.maxWorkflowChecks ?? 120;
     let completed = false;
     for (let check = 0; check < maxWorkflowChecks; check += 1) {
+      const jobs = await input.github.workflowJobs(
+        installationToken,
+        state.repository.owner,
+        state.repository.name,
+        state.workflowRunId,
+      );
+      const currentDeploymentStage = deploymentStageForJobs(jobs);
+      if (currentDeploymentStage) progressThrough(currentDeploymentStage);
       const run = await input.github.workflowRun(
         installationToken,
         state.repository.owner,
@@ -204,12 +241,14 @@ export async function provisionVelvet(
       );
       if (run.status === "completed") {
         if (run.conclusion !== "success") {
+          state.workflowFailed = true;
           throw new SetupServiceError(
             "WORKFLOW_FAILED",
             "The initial Velvet workflow did not complete successfully.",
             { recoverable: true },
           );
         }
+        delete state.workflowFailed;
         completed = true;
         break;
       }
@@ -222,6 +261,9 @@ export async function provisionVelvet(
         { status: 202, recoverable: true },
       );
     }
+
+    progressThrough("deploying-page");
+    progress("waiting-for-deployment");
 
     const pages = await input.github.pages(
       installationToken,
@@ -255,9 +297,29 @@ export async function provisionVelvet(
       ...(state.repository ? { repositoryUrl: state.repository.htmlUrl } : {}),
       ...(state.workflowRunId ? { workflowRunId: state.workflowRunId } : {}),
       error: publicError,
+      recoverable: setupError.recoverable,
     };
     throw setupError;
   }
+}
+
+function deploymentStageForJobs(
+  jobs: readonly GitHubWorkflowJob[],
+): (typeof DEPLOYMENT_STAGES)[number] | null {
+  const byName = new Map(jobs.map((job) => [job.name, job]));
+  const deploy = byName.get(WORKFLOW_JOB_NAMES.deploy);
+  if (deploy?.status === "in_progress" || deploy?.status === "completed") {
+    return "deploying-page";
+  }
+  const build = byName.get(WORKFLOW_JOB_NAMES.build);
+  if (build?.status === "in_progress" || build?.status === "completed") {
+    return "building-page";
+  }
+  const monitor = byName.get(WORKFLOW_JOB_NAMES.monitor);
+  if (monitor?.status === "completed" && monitor.conclusion === "success") {
+    return "publishing-data";
+  }
+  return monitor ? "checking-services" : null;
 }
 
 async function waitForConfigurationAccess(input: {

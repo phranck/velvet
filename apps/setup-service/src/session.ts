@@ -42,6 +42,7 @@ export interface SetupServerSession {
     configurationCommitted?: boolean;
     pagesEnabled?: boolean;
     workflowRunId?: number;
+    workflowFailed?: boolean;
     installationUrl?: string;
   };
 }

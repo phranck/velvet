@@ -1,6 +1,7 @@
 import {
   validateVelvetConfiguration,
   type NormalizedVelvetConfiguration,
+  type SetupProgressStage as ContractSetupProgressStage,
   type VelvetConfigurationInput,
 } from "@velvet/contracts";
 
@@ -56,13 +57,7 @@ export type OnboardingValidationResult =
   | { success: true; request: SetupRequest }
   | { success: false; errors: Record<string, string> };
 
-export type SetupProgressStage =
-  | "authenticating"
-  | "creating-repository"
-  | "writing-configuration"
-  | "enabling-pages"
-  | "starting-monitor"
-  | "waiting-for-deployment";
+export type SetupProgressStage = ContractSetupProgressStage;
 
 export interface SetupClient {
   provision(
@@ -71,10 +66,28 @@ export interface SetupClient {
   ): Promise<{ installationUrl: string }>;
 }
 
+export interface SetupFailure {
+  message: string;
+  errorId: string;
+  recoverable: boolean;
+  repositoryUrl?: string;
+  workflowUrl?: string;
+}
+
+export class SetupClientError extends Error {
+  readonly failure: SetupFailure;
+
+  constructor(failure: SetupFailure) {
+    super("SETUP_FAILED");
+    this.name = "SetupClientError";
+    this.failure = failure;
+  }
+}
+
 export type SetupSubmissionResult =
   | { state: "invalid"; errors: Record<string, string> }
   | { state: "permission-required"; message: string }
-  | { state: "failed"; message: string }
+  | ({ state: "failed" } & SetupFailure)
   | { state: "success"; installationUrl: string };
 
 let nextDraftId = 0;
@@ -235,6 +248,9 @@ export async function submitOnboarding(
     const result = await client.provision(validation.request, onProgress);
     return { state: "success", installationUrl: result.installationUrl };
   } catch (error) {
+    if (error instanceof SetupClientError) {
+      return { state: "failed", ...error.failure };
+    }
     const message = error instanceof Error ? error.message : "SETUP_FAILED";
     if (
       message === "SETUP_PERMISSION_REQUIRED" ||
@@ -248,6 +264,8 @@ export async function submitOnboarding(
     return {
       state: "failed",
       message: "Setup could not finish. Your entries are still here, so you can retry.",
+      errorId: "",
+      recoverable: true,
     };
   }
 }
