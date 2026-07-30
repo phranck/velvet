@@ -112,3 +112,26 @@ test("runs the monitor action gates after all runtime dependencies", async () =>
     }
   }
 });
+
+test("runs setup service gates from the root workspace", async () => {
+  const packageDocument = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  const setupPackage = JSON.parse(
+    await readFile(
+      new URL("../apps/setup-service/package.json", import.meta.url),
+      "utf8",
+    ),
+  );
+
+  assert.equal(
+    setupPackage.scripts.prebuild,
+    "bun run --filter @velvet/contracts build && bun run --filter @velvet/site onboarding:build",
+  );
+  for (const gate of ["build", "test", "typecheck"]) {
+    assert.match(
+      packageDocument.scripts[gate],
+      new RegExp(`bun run --filter @velvet/setup-service ${gate}`),
+    );
+  }
+});

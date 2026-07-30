@@ -1,7 +1,11 @@
-import type {
-  SetupClient,
-  SetupProgressStage,
-} from "./state.js";
+import {
+  validateSetupEvent,
+  validateSetupSession,
+  validateSetupStatus,
+  type SetupEvent,
+} from "@velvet/contracts";
+
+import type { SetupClient, SetupProgressStage } from "./state.js";
 
 const PROGRESS_STAGES = new Set<SetupProgressStage>([
   "authenticating",
@@ -12,12 +16,8 @@ const PROGRESS_STAGES = new Set<SetupProgressStage>([
   "waiting-for-deployment",
 ]);
 const MAX_RESPONSE_BYTES = 256 * 1_024;
-
-interface SetupEvent {
-  type: "progress" | "permission-required" | "success" | "error";
-  stage?: SetupProgressStage;
-  installationUrl?: string;
-}
+const MAX_STATUS_CHECKS = 125;
+const STATUS_POLL_INTERVAL_MS = 2_000;
 
 export type SetupFetchImplementation = (
   input: RequestInfo | URL,
@@ -26,36 +26,99 @@ export type SetupFetchImplementation = (
 
 export function createBrowserSetupClient(
   fetchImplementation: SetupFetchImplementation = globalThis.fetch,
-  endpoint = "./api/setup",
+  endpoint = "/api/setup",
+  navigate: (url: string) => void = browserNavigate,
 ): SetupClient {
   return {
     async provision(request, onProgress) {
+      onProgress?.("authenticating");
+      const sessionResponse = await fetchImplementation("/api/session", {
+        method: "GET",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (!sessionResponse.ok) throw new Error("SETUP_FAILED");
+      const session = validateSetupSession(await readJsonResponse(sessionResponse));
+      if (!session.success) throw new Error("SETUP_FAILED");
+      if (!session.data.authenticated) {
+        navigate("/api/auth/start");
+        throw new Error("SETUP_REDIRECT_STARTED");
+      }
+      if (!session.data.csrfToken) throw new Error("SETUP_FAILED");
+
       const response = await fetchImplementation(endpoint, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Accept: "application/x-ndjson",
+          "Content-Type": "application/json",
+          "X-Velvet-CSRF": session.data.csrfToken,
+        },
         body: JSON.stringify(request),
       });
-      if (response.status === 401 || response.status === 403) {
-        throw new Error("SETUP_PERMISSION_REQUIRED");
+      if (response.status === 401) {
+        navigate("/api/auth/start");
+        throw new Error("SETUP_REDIRECT_STARTED");
       }
       if (!response.ok || !response.body) throw new Error("SETUP_FAILED");
+      if (
+        !response.headers
+          .get("Content-Type")
+          ?.toLowerCase()
+          .startsWith("application/x-ndjson")
+      ) {
+        throw new Error("SETUP_FAILED");
+      }
 
       const events = readSetupEvents(response.body);
+      let deploymentStarted = false;
       for await (const event of events) {
-        if (event.type === "progress" && event.stage) {
+        if (event.type === "progress") {
           onProgress?.(event.stage);
+          deploymentStarted ||= event.stage === "waiting-for-deployment";
         } else if (event.type === "permission-required") {
-          throw new Error("SETUP_PERMISSION_REQUIRED");
-        } else if (event.type === "success" && event.installationUrl) {
+          navigate(safeGitHubInstallationUrl(event.installationUrl, event.access));
+          throw new Error("SETUP_REDIRECT_STARTED");
+        } else if (event.type === "success") {
           return { installationUrl: safeInstallationUrl(event.installationUrl) };
         } else if (event.type === "error") {
           throw new Error("SETUP_FAILED");
         }
       }
+      if (deploymentStarted) {
+        return pollSetupStatus(fetchImplementation);
+      }
       throw new Error("SETUP_FAILED");
     },
   };
+}
+
+async function pollSetupStatus(
+  fetchImplementation: SetupFetchImplementation,
+): Promise<{ installationUrl: string }> {
+  for (let check = 0; check < MAX_STATUS_CHECKS; check += 1) {
+    const response = await fetchImplementation("/api/setup/status", {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw new Error("SETUP_FAILED");
+    const status = validateSetupStatus(await readJsonResponse(response));
+    if (!status.success) throw new Error("SETUP_FAILED");
+    if (status.data.state === "succeeded") {
+      if (!status.data.installationUrl) throw new Error("SETUP_FAILED");
+      return {
+        installationUrl: safeInstallationUrl(status.data.installationUrl),
+      };
+    }
+    if (status.data.state !== "running") throw new Error("SETUP_FAILED");
+    await wait(STATUS_POLL_INTERVAL_MS);
+  }
+  throw new Error("SETUP_FAILED");
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => globalThis.setTimeout(resolve, milliseconds));
 }
 
 async function* readSetupEvents(
@@ -103,22 +166,15 @@ function parseSetupEvent(source: string): SetupEvent {
   } catch {
     throw new Error("SETUP_FAILED");
   }
-  if (!isRecord(value) || typeof value.type !== "string") {
+  const result = validateSetupEvent(value);
+  if (!result.success) throw new Error("SETUP_FAILED");
+  if (
+    result.data.type === "progress" &&
+    !PROGRESS_STAGES.has(result.data.stage as SetupProgressStage)
+  ) {
     throw new Error("SETUP_FAILED");
   }
-  if (
-    value.type === "progress" &&
-    typeof value.stage === "string" &&
-    PROGRESS_STAGES.has(value.stage as SetupProgressStage)
-  ) {
-    return { type: "progress", stage: value.stage as SetupProgressStage };
-  }
-  if (value.type === "permission-required") return { type: value.type };
-  if (value.type === "error") return { type: value.type };
-  if (value.type === "success" && typeof value.installationUrl === "string") {
-    return { type: value.type, installationUrl: value.installationUrl };
-  }
-  throw new Error("SETUP_FAILED");
+  return result.data;
 }
 
 function safeInstallationUrl(source: string): string {
@@ -127,6 +183,60 @@ function safeInstallationUrl(source: string): string {
   return url.href;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function safeGitHubInstallationUrl(
+  source: string,
+  access: "temporary-account" | "repository",
+): string {
+  const url = new URL(source);
+  const allowedParameters = new Set([
+    "state",
+    "suggested_target_id",
+    "repository_ids[]",
+  ]);
+  if (
+    url.origin !== "https://github.com" ||
+    !/^\/apps\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\/installations\/new\/permissions$/.test(
+      url.pathname,
+    ) ||
+    url.searchParams.getAll("state").length !== 1 ||
+    !/^[A-Za-z0-9_-]{43,128}$/.test(url.searchParams.get("state") ?? "") ||
+    !singlePositiveIdentifier(url.searchParams, "suggested_target_id") ||
+    (access === "repository"
+      ? !singlePositiveIdentifier(url.searchParams, "repository_ids[]")
+      : url.searchParams.has("repository_ids[]")) ||
+    [...url.searchParams.keys()].some((key) => !allowedParameters.has(key))
+  ) {
+    throw new Error("SETUP_FAILED");
+  }
+  return url.href;
+}
+
+function singlePositiveIdentifier(
+  parameters: URLSearchParams,
+  key: string,
+): boolean {
+  const values = parameters.getAll(key);
+  if (values.length !== 1 || !/^[1-9]\d*$/.test(values[0] ?? "")) return false;
+  const value = Number(values[0]);
+  return Number.isSafeInteger(value);
+}
+
+async function readJsonResponse(response: Response): Promise<unknown> {
+  if (!response.body) throw new Error("SETUP_FAILED");
+  const declaredLength = Number(response.headers.get("Content-Length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
+    throw new Error("SETUP_FAILED");
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.byteLength > MAX_RESPONSE_BYTES) throw new Error("SETUP_FAILED");
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new Error("SETUP_FAILED");
+  }
+}
+
+function browserNavigate(url: string): void {
+  if (!globalThis.location) throw new Error("SETUP_FAILED");
+  globalThis.location.assign(url);
 }

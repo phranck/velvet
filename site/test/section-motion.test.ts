@@ -95,7 +95,7 @@ test("keeps details open until concurrent height and opacity collapse finishes",
     { height: "120px", opacity: 1 },
     { height: "0px", opacity: 0 },
   ]);
-  assert.equal(animations[0].options.duration, 160);
+  assert.equal(animations[0].options.duration, 200);
   assert.equal(animations[0].options.easing, "ease-in-out");
   assert.equal(content.style.overflow, "clip");
 

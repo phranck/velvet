@@ -39,30 +39,29 @@
     display: grid;
     gap: 0.55rem;
     padding: 0.38rem;
-    border: 1px solid var(--picker-line, #d7d9e0);
+    border: 0;
     border-radius: 0.75rem;
     background: var(--picker-surface, #ffffff);
     color: var(--picker-text, #171922);
     cursor: pointer;
     transition:
-      border-color 160ms ease,
       background 160ms ease,
-      box-shadow 160ms ease,
       transform 160ms ease;
   }
   label:hover {
-    border-color: var(--picker-accent, #6366f1);
+    background: color-mix(
+      in srgb,
+      var(--picker-accent, #6366f1) 7%,
+      var(--picker-surface, #ffffff)
+    );
     transform: translateY(-1px);
   }
   label.selected {
-    border-color: var(--picker-accent, #6366f1);
     background: color-mix(
       in srgb,
-      var(--picker-accent, #6366f1) 9%,
+      var(--picker-accent, #6366f1) 16%,
       var(--picker-surface, #ffffff)
     );
-    box-shadow: 0 0 0 2px
-      color-mix(in srgb, var(--picker-accent, #6366f1) 20%, transparent);
   }
   input {
     position: absolute;

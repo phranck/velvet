@@ -17,6 +17,15 @@ export const CURATED_SERVICE_ICONS: readonly CuratedServiceIcon[] = [
   { icon: "ph-shopping-cart", label: "Shop" },
   { icon: "ph-broadcast", label: "Network" },
   { icon: "ph-shield-check", label: "Security" },
+  { icon: "ph-cpu", label: "Compute" },
+  { icon: "ph-device-mobile", label: "Mobile app" },
+  { icon: "ph-credit-card", label: "Payments" },
+  { icon: "ph-chat-circle", label: "Chat" },
+  { icon: "ph-phone", label: "Phone" },
+  { icon: "ph-play-circle", label: "Media" },
+  { icon: "ph-key", label: "Authentication" },
+  { icon: "ph-map-pin", label: "Location" },
+  { icon: "ph-calendar", label: "Calendar" },
 ] as const;
 
 const CURATED_ICON_NAMES = new Set(

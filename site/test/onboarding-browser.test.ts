@@ -25,12 +25,28 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       hasTouch: true,
     });
     const page = await context.newPage();
+    let sessionCalls = 0;
     let setupCalls = 0;
     await page.route("https://phranck.github.io/velvet-themes/index.json", (route) =>
       route.abort(),
     );
+    await page.route("**/api/session", async (route) => {
+      sessionCalls += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          authenticated: true,
+          csrfToken: "S".repeat(43),
+        }),
+      });
+    });
     await page.route("**/api/setup", async (route) => {
       setupCalls += 1;
+      assert.equal(
+        await route.request().headerValue("x-velvet-csrf"),
+        "S".repeat(43),
+      );
       await route.fulfill({
         status: 200,
         contentType: "application/x-ndjson",
@@ -40,12 +56,64 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           JSON.stringify({
             type: "success",
             installationUrl: "https://velvet-user.github.io/status/",
+            repositoryUrl: "https://github.com/velvet-user/status",
           }),
         ].join("\n"),
       });
     });
 
     await page.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
+    assert.equal(
+      await page.locator("form").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.equal(
+      await page.locator(".steps button").first().evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.equal(
+      await page.locator(".topbar").evaluate((element) =>
+        getComputedStyle(element).borderBottomWidth,
+      ),
+      "0px",
+    );
+    assert.equal(
+      await page.locator(".form-actions").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    const ownerInput = page.getByLabel("Repository owner");
+    assert.equal(
+      await ownerInput.evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.notEqual(
+      await ownerInput.evaluate((element) =>
+        getComputedStyle(element).backgroundColor,
+      ),
+      await page.locator("form").evaluate((element) =>
+        getComputedStyle(element).backgroundColor,
+      ),
+    );
+    assert.deepEqual(
+      await Promise.all([
+        ownerInput.evaluate((element) => element.getBoundingClientRect().height),
+        page.getByRole("button", { name: "Continue" }).evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+        page.locator(".steps button").first().evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+      ]),
+      [40, 40, 40],
+    );
     await page.getByLabel("Repository owner").fill("velvet-user");
     await page.getByLabel("Repository name").fill("status");
     await page.getByLabel("Status page name").fill("My Status");
@@ -53,8 +121,64 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
 
     await page.getByLabel("Service name").fill("Website");
     await page.getByLabel("Website URL").fill("https://example.com");
-    await page.getByTitle("Storage").click();
-    assert.equal(await page.getByTitle("Storage").locator("input").isChecked(), true);
+    const setupIconPicker = page.locator("[data-service-icon-picker]").first();
+    const setupIconTrigger = setupIconPicker.getByRole("button", {
+      name: "Service icon: Automatic",
+    });
+    assert.equal(await setupIconTrigger.getAttribute("aria-expanded"), "false");
+    assert.equal(
+      await setupIconTrigger.evaluate((element) => element.getBoundingClientRect().height),
+      40,
+    );
+    await setupIconTrigger.click();
+    const setupIconOptions = setupIconPicker.getByRole("option");
+    assert.equal(await setupIconOptions.count(), 22);
+    assert.equal(await setupIconOptions.locator("i:first-child").count(), 22);
+    assert.equal(
+      await setupIconPicker.getByRole("listbox").evaluate((element) =>
+        getComputedStyle(element).position,
+      ),
+      "absolute",
+    );
+    await setupIconPicker.getByRole("option", { name: "Storage" }).click();
+    assert.equal(
+      await setupIconPicker.getByRole("button", { name: "Service icon: Storage" })
+        .getAttribute("aria-expanded"),
+      "false",
+    );
+    assert.equal(
+      await setupIconPicker.getByRole("button", { name: "Service icon: Storage" })
+        .locator(".ph-hard-drives").count(),
+      1,
+    );
+    assert.equal(
+      await page.locator(".service-editor").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.equal(
+      await page.locator("details").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    await page.setViewportSize({ width: 1280, height: 800 });
+    assert.deepEqual(
+      await Promise.all([
+        page.getByRole("button", { name: "Add another service" }).evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+        page.getByRole("button", { name: "Back" }).evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+        page.getByRole("button", { name: "Continue" }).evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+      ]),
+      [40, 40, 40],
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "Continue" }).click();
 
     if (process.env.VELVET_ONBOARDING_SCREENSHOT) {
@@ -66,13 +190,34 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
 
     const themeRadios = page.locator('input[name="system-theme"]');
     assert.equal(await themeRadios.count(), 4);
+    assert.equal(
+      await page.locator("[data-theme-card-option]").first().evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
     await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");
     assert.equal(await themeRadios.nth(1).isChecked(), true);
     await page.getByRole("button", { name: "Continue" }).click();
-    await page.getByRole("button", { name: "Create status page" }).click();
+    assert.equal(
+      await page.locator(".review-grid > div").first().evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    await page.goto(
+      `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
+    );
 
     await page.getByText("Your Velvet status page is ready.").waitFor();
+    assert.equal(
+      await page.locator(".deployment-progress").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);
     assert.equal(
       await page.getByRole("link", { name: "Open your status page" }).getAttribute("href"),
@@ -84,7 +229,8 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     }));
     assert.ok(dimensions.document <= dimensions.viewport);
     assert.equal(
-      await page.getByTitle("Storage").evaluate((element) =>
+      await page.locator("[data-service-icon-picker] [role='listbox']").first()
+        .evaluate((element) =>
         getComputedStyle(element).transitionDuration,
       ),
       "0s",
@@ -98,11 +244,67 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await cloudyAutumn.click();
     assert.equal(await cloudyAutumn.locator("input").isChecked(), true);
     const websiteIcons = page.locator("[data-service-icon-picker]").first();
-    await websiteIcons.getByTitle("Storage").click();
+    await websiteIcons.getByRole("button", { name: "Website: Automatic" }).click();
+    await websiteIcons.getByRole("option", { name: "Storage" }).click();
     assert.equal(
       await page.locator("button.summary").first().locator(".ph-hard-drives").count(),
       1,
     );
+
+    const motionContext = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      reducedMotion: "no-preference",
+    });
+    const motionPage = await motionContext.newPage();
+    await motionPage.route("https://phranck.github.io/velvet-themes/index.json", (route) =>
+      route.abort(),
+    );
+    await motionPage.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
+    await motionPage.getByLabel("Repository owner").fill("velvet-user");
+    await motionPage.getByLabel("Repository name").fill("status");
+    await motionPage.getByLabel("Status page name").fill("My Status");
+    await motionPage.getByRole("button", { name: "Continue" }).click();
+    const advancedDetails = motionPage.locator("details").first();
+    const advancedContent = advancedDetails.locator("[data-disclosure-content]");
+    await advancedDetails.locator("summary").click();
+    assert.equal(await advancedDetails.getAttribute("open"), "");
+    assert.deepEqual(
+      await advancedContent.evaluate((element) =>
+        element.getAnimations().map((animation) => ({
+          duration: animation.effect?.getTiming().duration,
+          easing: animation.effect?.getTiming().easing,
+        })),
+      ),
+      [{ duration: 200, easing: "ease-in-out" }],
+    );
+    const motionIconPicker = motionPage.locator("[data-service-icon-picker]").first();
+    const motionIconListbox = motionIconPicker.getByRole("listbox");
+    await motionIconPicker.getByRole("button", { name: "Service icon: Automatic" }).click();
+    assert.match(
+      await motionIconListbox.evaluate((element) =>
+        getComputedStyle(element).transitionDuration,
+      ),
+      /0\.2s/,
+    );
+    await motionPage.keyboard.press("Escape");
+    const motionIconTrigger = motionIconPicker.getByRole("button", {
+      name: "Service icon: Automatic",
+    });
+    await motionIconTrigger.focus();
+    await motionPage.keyboard.press("End");
+    assert.equal(
+      await motionIconPicker.getByRole("option", { name: "Calendar" }).evaluate(
+        (element) => element === document.activeElement,
+      ),
+      true,
+    );
+    await motionPage.keyboard.press("Enter");
+    assert.equal(
+      await motionIconPicker.getByRole("button", { name: "Service icon: Calendar" })
+        .getAttribute("aria-expanded"),
+      "false",
+    );
+    await motionContext.close();
   } finally {
     await browser.close();
     await server.close();

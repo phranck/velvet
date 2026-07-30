@@ -1,13 +1,15 @@
 <script lang="ts">
   import { configurationIdentifierFromName } from "@velvet/contracts";
+  import { onMount } from "svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
-  import * as ServiceIconPicker from "../components/service-icon-picker";
+  import ServiceIconPicker from "../components/service-icon-picker/ServiceIconPicker.svelte";
   import * as ThemeCard from "../components/theme-card";
   import {
     CURATED_SERVICE_ICONS,
     DEFAULT_SERVICE_ICON,
     iconFor,
   } from "../lib/icons.js";
+  import { disclosureMotion } from "../lib/disclosure-motion.js";
   import { createBrowserSetupClient } from "./client.js";
   import {
     clearOnboardingDraft,
@@ -25,9 +27,8 @@
   import { SYSTEM_THEMES, systemThemeById } from "./system-themes.js";
 
   const STEPS = ["Status page", "Services", "Theme", "Publish"] as const;
-  const SETUP_ENDPOINT =
-    import.meta.env.VITE_VELVET_SETUP_API_URL?.trim() || "./api/setup";
   const SESSION_STORAGE = browserSessionStorage();
+  const GITHUB_RETURN = githubReturnState();
   const PROGRESS_LABELS: Record<SetupProgressStage, string> = {
     authenticating: "Connecting your GitHub account",
     "creating-repository": "Creating the status repository",
@@ -37,7 +38,7 @@
     "waiting-for-deployment": "Waiting for the status page",
   };
 
-  let step = $state(0);
+  let step = $state(GITHUB_RETURN ? STEPS.length - 1 : 0);
   let draft = $state(
     loadOnboardingDraft(SESSION_STORAGE) ?? createOnboardingDraft(),
   );
@@ -53,12 +54,42 @@
     persistOnboardingDraft($state.snapshot(draft), SESSION_STORAGE);
   });
 
+  onMount(() => {
+    if (!GITHUB_RETURN) return;
+    clearGitHubReturnParameter();
+    if (GITHUB_RETURN === "approval-required") {
+      submissionState = "permission-required";
+      resultMessage = "A GitHub organization owner still needs to approve Velvet.";
+      return;
+    }
+    void publish();
+  });
+
   function browserSessionStorage(): Storage | null {
     try {
       return globalThis.sessionStorage ?? null;
     } catch {
       return null;
     }
+  }
+
+  function githubReturnState(): "connected" | "installed" | "approval-required" | null {
+    try {
+      const value = new URL(globalThis.location.href).searchParams.get("github");
+      return value === "connected" ||
+        value === "installed" ||
+        value === "approval-required"
+        ? value
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearGitHubReturnParameter(): void {
+    const url = new URL(globalThis.location.href);
+    url.searchParams.delete("github");
+    globalThis.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
   function automaticServiceIcon(name: string): string {
@@ -122,7 +153,7 @@
     submissionState = "idle";
     const result = await submitOnboarding(
       draft,
-      createBrowserSetupClient(globalThis.fetch, SETUP_ENDPOINT),
+      createBrowserSetupClient(),
       (stage) => {
         if (!progress.includes(stage)) progress = [...progress, stage];
       },
@@ -246,31 +277,29 @@
                 </label>
               </div>
 
-              <ServiceIconPicker.Root legend="Service icon" description="Optional. Automatic keeps the configuration small and chooses a matching fallback.">
-                <ServiceIconPicker.Option
-                  label="Automatic"
-                  icon={service.name ? automaticServiceIcon(service.name) : DEFAULT_SERVICE_ICON}
-                  value={null}
-                  selected={service.icon === null}
-                  radioName={`service-${service.id}-icon`}
-                  onSelect={(value) => (service.icon = value)}
-                />
-                {#each CURATED_SERVICE_ICONS as option (option.icon)}
-                  <ServiceIconPicker.Option
-                    label={option.label}
-                    icon={option.icon}
-                    value={option.icon}
-                    selected={service.icon === option.icon}
-                    radioName={`service-${service.id}-icon`}
-                    onSelect={(value) => (service.icon = value)}
-                  />
-                {/each}
-              </ServiceIconPicker.Root>
+              <ServiceIconPicker
+                id={`service-${service.id}-icon`}
+                legend="Service icon"
+                description="Optional. Automatic keeps the configuration small and chooses a matching fallback."
+                value={service.icon}
+                automaticIcon={service.name ? automaticServiceIcon(service.name) : DEFAULT_SERVICE_ICON}
+                options={CURATED_SERVICE_ICONS}
+                onChange={(value) => (service.icon = value)}
+              />
               {#if errors[`services.${serviceIndex}.icon`]}<small class="field-error">{errors[`services.${serviceIndex}.icon`]}</small>{/if}
 
-              <details bind:open={service.advanced}>
-                <summary>Advanced health check</summary>
-                <div class="advanced-content">
+              <details data-advanced-open={service.advanced}>
+                <summary
+                  onclick={(event) => {
+                    event.preventDefault();
+                    service.advanced = !service.advanced;
+                  }}
+                >
+                  <span>Advanced health check</span>
+                  <i class="ph-duotone ph-caret-circle-down advanced-caret" aria-hidden="true"></i>
+                </summary>
+                <div use:disclosureMotion={service.advanced} class="advanced-motion" data-disclosure-content>
+                  <div class="advanced-content">
                   <p>
                     Use this only for a dedicated health endpoint, alternate success codes, secret-backed request headers, or a JSON response assertion.
                   </p>
@@ -343,6 +372,7 @@
                       </div>
                     {/each}
                   </div>
+                  </div>
                 </div>
               </details>
             </article>
@@ -391,6 +421,9 @@
           <div><span>Services</span><strong>{draft.services.length}</strong></div>
           <div><span>Theme</span><strong>{selectedTheme?.name ?? "Choose a theme"}</strong></div>
         </div>
+        <p class="github-permission-note">
+          On a first setup, GitHub asks twice. Velvet uses the first approval only to create this repository, removes it immediately, and then asks for access to this repository alone.
+        </p>
 
         {#if submitting || progress.length > 0}
           <ol class="deployment-progress" aria-label="Deployment progress">
@@ -433,9 +466,7 @@
   </main>
 
   <footer class="page-footer">
-    <span>GitHub-native monitoring</span>
-    <span>No personal access token</span>
-    <span>No Upptime or Globalping</span>
+    <span>Monitoring and publishing with GitHub</span>
   </footer>
 </div>
 
@@ -444,17 +475,24 @@
     --setup-accent: #8ca5ff;
     --setup-panel: rgba(27, 29, 38, 0.9);
     --setup-panel-raised: #272a36;
-    --setup-input: #171922;
-    --setup-line: #363a47;
+    --setup-card: #222530;
+    --setup-input: #11131a;
     --setup-text: #efedf5;
     --setup-muted: #979aa8;
     --setup-error: #ff8d9a;
+    --setup-control-height: 2.5rem;
+    --setup-control-radius: 0.55rem;
     --picker-accent: var(--setup-accent);
-    --picker-line: var(--setup-line);
     --picker-muted: var(--setup-muted);
-    --picker-surface: var(--setup-input);
+    --picker-popover: var(--setup-panel-raised);
+    --picker-surface: var(--setup-card);
     --picker-text: var(--setup-text);
     min-height: 100vh;
+  }
+  .onboarding-shell button {
+    min-height: var(--setup-control-height);
+    border: 0;
+    outline: none;
   }
   .topbar {
     max-width: 1120px;
@@ -463,7 +501,6 @@
     justify-content: space-between;
     margin: 0 auto;
     padding: 1.35rem 1.5rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--setup-line) 75%, transparent);
   }
   .brand {
     --velvet-wordmark-size: 1.9rem;
@@ -517,14 +554,14 @@
     margin-bottom: 1rem;
   }
   .steps button {
+    height: var(--setup-control-height);
     min-width: 0;
     display: flex;
     align-items: center;
     gap: 0.55rem;
-    padding: 0.7rem 0.75rem;
-    border: 1px solid var(--setup-line);
-    border-radius: 0.7rem;
-    background: rgba(23, 25, 34, 0.72);
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--setup-control-radius);
+    background: var(--setup-card);
     color: var(--setup-muted);
     cursor: pointer;
     font-size: 0.78rem;
@@ -536,16 +573,15 @@
     opacity: 0.55;
   }
   .steps button.active {
-    border-color: color-mix(in srgb, var(--setup-accent) 65%, var(--setup-line));
-    background: color-mix(in srgb, var(--setup-accent) 10%, var(--setup-input));
+    background: color-mix(in srgb, var(--setup-accent) 14%, var(--setup-card));
     color: var(--setup-text);
   }
   .steps button.complete {
     color: var(--setup-text);
   }
   .steps button > span {
-    width: 1.45rem;
-    height: 1.45rem;
+    width: 1.35rem;
+    height: 1.35rem;
     display: grid;
     flex: none;
     place-items: center;
@@ -555,8 +591,7 @@
     font-size: 0.7rem;
   }
   form {
-    overflow: hidden;
-    border: 1px solid var(--setup-line);
+    overflow: visible;
     border-radius: 1rem;
     background: var(--setup-panel);
     box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.3);
@@ -620,25 +655,26 @@
   input,
   select {
     width: 100%;
+    height: var(--setup-control-height);
     min-width: 0;
-    padding: 0.72rem 0.8rem;
-    border: 1px solid var(--setup-line);
-    border-radius: 0.58rem;
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: var(--setup-control-radius);
     outline: none;
     background: var(--setup-input);
     color: var(--setup-text);
     box-sizing: border-box;
   }
   input::placeholder {
-    color: #666a78;
+    color: #747887;
   }
   input:focus-visible,
   select:focus-visible {
-    border-color: var(--setup-accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--setup-accent) 22%, transparent);
   }
   input[aria-invalid="true"] {
-    border-color: var(--setup-error);
+    background: color-mix(in srgb, var(--setup-error) 9%, var(--setup-input));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--setup-error) 70%, transparent);
   }
   input:disabled {
     opacity: 0.55;
@@ -653,12 +689,13 @@
     gap: 1rem;
   }
   .service-editor {
+    --picker-surface: var(--setup-input);
+
     display: grid;
     gap: 1.35rem;
     padding: 1.15rem;
-    border: 1px solid var(--setup-line);
     border-radius: 0.85rem;
-    background: rgba(23, 25, 34, 0.7);
+    background: var(--setup-card);
   }
   .service-editor > header,
   .advanced-heading,
@@ -689,14 +726,13 @@
   .add-service,
   .primary-button,
   .secondary-button {
-    border: 1px solid var(--setup-line);
-    border-radius: 0.58rem;
+    border-radius: var(--setup-control-radius);
     cursor: pointer;
     font-weight: 650;
   }
   .icon-button {
-    width: 2.2rem;
-    height: 2.2rem;
+    width: var(--setup-control-height);
+    height: var(--setup-control-height);
     display: grid;
     flex: none;
     place-items: center;
@@ -712,22 +748,38 @@
     align-items: center;
     gap: 0.5rem;
     margin-top: 1rem;
-    padding: 0.65rem 0.85rem;
+    padding: 0 0.8rem;
     background: var(--setup-panel-raised);
     color: var(--setup-text);
   }
-  details {
-    border-top: 1px solid var(--setup-line);
-  }
   summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     padding: 1rem 0 0;
     color: var(--setup-muted);
     cursor: pointer;
     font-size: 0.82rem;
     font-weight: 700;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
   }
   summary:hover {
     color: var(--setup-text);
+  }
+  .advanced-caret {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: transform 200ms ease-in-out;
+  }
+  details[data-advanced-open="true"] .advanced-caret {
+    transform: rotate(180deg);
   }
   .advanced-content {
     display: grid;
@@ -738,7 +790,6 @@
     display: grid;
     gap: 0.8rem;
     padding-top: 1rem;
-    border-top: 1px solid var(--setup-line);
   }
   .advanced-heading strong,
   .advanced-heading span {
@@ -754,7 +805,7 @@
   }
   .small-button {
     flex: none;
-    padding: 0.5rem 0.65rem;
+    padding: 0 0.65rem;
     background: var(--setup-panel-raised);
     color: var(--setup-text);
     font-size: 0.75rem;
@@ -777,9 +828,8 @@
     display: grid;
     gap: 0.3rem;
     padding: 1rem;
-    border: 1px solid var(--setup-line);
     border-radius: 0.7rem;
-    background: var(--setup-input);
+    background: var(--setup-card);
   }
   .review-grid span {
     color: var(--setup-muted);
@@ -789,13 +839,19 @@
   .review-grid strong {
     overflow-wrap: anywhere;
   }
+  .github-permission-note {
+    margin: 1rem 0 0;
+    color: var(--setup-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
   .deployment-progress {
     display: grid;
     gap: 0.6rem;
     margin: 1.4rem 0 0;
     padding: 1rem;
-    border: 1px solid var(--setup-line);
     border-radius: 0.7rem;
+    background: var(--setup-card);
     list-style: none;
   }
   .deployment-progress li {
@@ -827,19 +883,18 @@
     font-weight: 700;
   }
   .form-actions {
-    min-height: 4.8rem;
+    min-height: 4rem;
     justify-content: flex-end;
-    padding: 0.8rem clamp(1.25rem, 4vw, 2.4rem);
-    border-top: 1px solid var(--setup-line);
+    padding: 0.55rem clamp(1.25rem, 4vw, 2.4rem);
+    border-radius: 0 0 1rem 1rem;
     background: rgba(16, 17, 22, 0.75);
   }
   .primary-button,
   .secondary-button {
     min-width: 7.5rem;
-    padding: 0.72rem 1rem;
+    padding: 0 0.9rem;
   }
   .primary-button {
-    border-color: color-mix(in srgb, var(--setup-accent) 65%, var(--setup-line));
     background: var(--setup-accent);
     color: #10131c;
   }
@@ -867,12 +922,6 @@
     color: var(--setup-muted);
     font-size: 0.72rem;
   }
-  .page-footer span + span::before {
-    content: "·";
-    margin-right: 1rem;
-    color: var(--setup-line);
-  }
-
   @media (max-width: 720px) {
     .steps {
       grid-template-columns: repeat(2, 1fr);

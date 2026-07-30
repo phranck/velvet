@@ -35,7 +35,7 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.match(html, /aria-live="polite"/);
 });
 
-test("uses the shared theme and icon compound components in onboarding and configurator", async () => {
+test("uses the shared theme and icon components in onboarding and configurator", async () => {
   const onboarding = await readFile(
     resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
     "utf8",
@@ -46,9 +46,9 @@ test("uses the shared theme and icon compound components in onboarding and confi
   );
 
   assert.match(onboarding, /import \* as ThemeCard from "\.\.\/components\/theme-card"/);
-  assert.match(onboarding, /import \* as ServiceIconPicker from "\.\.\/components\/service-icon-picker"/);
+  assert.match(onboarding, /import ServiceIconPicker from "\.\.\/components\/service-icon-picker\/ServiceIconPicker\.svelte"/);
   assert.match(configurator, /import \* as ThemeCard from "\.\.\/components\/theme-card"/);
-  assert.match(configurator, /import \* as ServiceIconPicker from "\.\.\/components\/service-icon-picker"/);
+  assert.match(configurator, /import ServiceIconPicker from "\.\.\/components\/service-icon-picker\/ServiceIconPicker\.svelte"/);
 });
 
 test("standalone onboarding uses its own build entry", async () => {

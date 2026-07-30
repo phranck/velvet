@@ -1,0 +1,240 @@
+import assert from "node:assert/strict";
+import { generateKeyPairSync, verify } from "node:crypto";
+import { test } from "bun:test";
+
+import {
+  GITHUB_API_VERSION,
+  GitHubApiError,
+  createGitHubAppJwt,
+  createGitHubSetupClient,
+} from "../src/github.js";
+
+const { privateKey, publicKey } = generateKeyPairSync("rsa", {
+  modulusLength: 2_048,
+});
+const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
+
+test("signs a short-lived RS256 GitHub App JWT", () => {
+  const token = createGitHubAppJwt("12345", privateKeyPem, () => 1_000_000);
+  const [header, payload, signature] = token.split(".");
+  assert.deepEqual(JSON.parse(Buffer.from(header!, "base64url").toString()), {
+    alg: "RS256",
+    typ: "JWT",
+  });
+  assert.deepEqual(JSON.parse(Buffer.from(payload!, "base64url").toString()), {
+    iat: 999_940,
+    exp: 1_000_540,
+    iss: "12345",
+  });
+  assert.equal(
+    verify(
+      "RSA-SHA256",
+      Buffer.from(`${header}.${payload}`),
+      publicKey,
+      Buffer.from(signature!, "base64url"),
+    ),
+    true,
+  );
+});
+
+test("uses PKCE for OAuth exchange and never puts the client secret in the URL", async () => {
+  const requests: Request[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async (request) => {
+      requests.push(request);
+      return Response.json({ access_token: "user-token", token_type: "bearer" });
+    },
+  });
+
+  assert.equal(await client.exchangeOAuthCode("oauth-code", "verifier"), "user-token");
+  const request = requests[0]!;
+  assert.equal(request.url, "https://github.com/login/oauth/access_token");
+  assert.equal(request.method, "POST");
+  assert.equal(request.headers.get("Accept"), "application/json");
+  assert.deepEqual(await request.json(), {
+    client_id: "Iv1.client",
+    client_secret: "client-secret",
+    code: "oauth-code",
+    code_verifier: "verifier",
+  });
+});
+
+test("restricts installation tokens and repository changes to the Velvet setup flow", async () => {
+  const requests: Request[] = [];
+  const responses = [
+    { token: "installation-token", expires_at: "2026-07-30T12:00:00Z" },
+    {
+      id: 99,
+      name: "status",
+      html_url: "https://github.com/example/status",
+      default_branch: "main",
+      owner: { login: "example", id: 255_022_500 },
+    },
+    { sha: "template-sha" },
+    { content: { sha: "commit-sha" } },
+    { html_url: "https://example.github.io/status/", status: "built" },
+    {
+      workflow_run_id: 777,
+      run_url: "https://api.github.com/repos/example/status/actions/runs/777",
+      html_url: "https://github.com/example/status/actions/runs/777",
+    },
+  ];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    nowSeconds: () => 1_000_000,
+    fetch: async (request) => {
+      requests.push(request);
+      return Response.json(responses.shift(), { status: 200 });
+    },
+  });
+
+  assert.equal(await client.createInstallationToken(7, 99), "installation-token");
+  const repository = await client.createRepositoryFromTemplate(
+    "user-token",
+    "example",
+    "status",
+  );
+  assert.equal(repository.id, 99);
+  assert.equal(repository.ownerId, 255_022_500);
+  assert.equal(await client.getConfigurationSha("installation-token", "example", "status"), "template-sha");
+  await client.writeConfiguration(
+    "installation-token",
+    "example",
+    "status",
+    "schemaVersion: 1\n",
+    "template-sha",
+  );
+  await client.enablePages("installation-token", "example", "status");
+  assert.equal(
+    await client.dispatchWorkflow("installation-token", "example", "status"),
+    777,
+  );
+
+  assert.deepEqual(await requests[0]!.json(), {
+    repository_ids: [99],
+    permissions: {
+      actions: "write",
+      administration: "write",
+      contents: "write",
+      pages: "write",
+    },
+  });
+  assert.equal(
+    requests[1]!.url,
+    "https://api.github.com/repos/phranck/velvet-template/generate",
+  );
+  assert.deepEqual(await requests[1]!.json(), {
+    owner: "example",
+    name: "status",
+    include_all_branches: false,
+    private: false,
+  });
+  assert.equal(
+    requests[2]!.url,
+    "https://api.github.com/repos/example/status/contents/velvet.yml",
+  );
+  assert.deepEqual(await requests[3]!.json(), {
+    message: "Configure Velvet",
+    content: Buffer.from("schemaVersion: 1\n").toString("base64"),
+    sha: "template-sha",
+    branch: "main",
+  });
+  assert.deepEqual(await requests[4]!.json(), { build_type: "workflow" });
+  assert.equal(
+    requests[5]!.url,
+    "https://api.github.com/repos/example/status/actions/workflows/velvet.yml/dispatches",
+  );
+  assert.deepEqual(await requests[5]!.json(), { ref: "main" });
+
+  for (const request of requests.slice(0, 1).concat(requests.slice(1))) {
+    if (request.url.startsWith("https://api.github.com/")) {
+      assert.equal(request.headers.get("X-GitHub-Api-Version"), GITHUB_API_VERSION);
+    }
+  }
+});
+
+test("resolves installation targets and removes temporary installations with an app JWT", async () => {
+  const requests: Request[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    nowSeconds: () => 1_000_000,
+    fetch: async (request) => {
+      requests.push(request);
+      if (request.method === "DELETE") return new Response(null, { status: 202 });
+      return Response.json({ id: 255_022_500, login: "example", type: "User" });
+    },
+  });
+
+  assert.deepEqual(await client.account("user-token", "example"), {
+    id: 255_022_500,
+    login: "example",
+    type: "User",
+  });
+  await client.deleteInstallation(7);
+
+  assert.equal(requests[0]?.url, "https://api.github.com/users/example");
+  assert.equal(requests[0]?.headers.get("Authorization"), "Bearer user-token");
+  assert.equal(requests[1]?.url, "https://api.github.com/app/installations/7");
+  assert.equal(requests[1]?.method, "DELETE");
+  assert.match(requests[1]?.headers.get("Authorization") ?? "", /^Bearer [^.]+\.[^.]+\.[^.]+$/);
+});
+
+test("accepts a newly requested workflow run as still in progress", async () => {
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async () => Response.json({
+      id: 777,
+      status: "requested",
+      conclusion: null,
+      html_url: "https://github.com/example/status/actions/runs/777",
+    }),
+  });
+
+  assert.equal(
+    (await client.workflowRun("installation-token", "example", "status", 777)).status,
+    "requested",
+  );
+});
+
+test("returns bounded GitHub errors without response bodies or credentials", async () => {
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async () =>
+      Response.json(
+        { message: "secret-token leaked by upstream" },
+        {
+          status: 403,
+          headers: { "X-GitHub-Request-Id": "ABC:123", "Retry-After": "60" },
+        },
+      ),
+  });
+
+  await assert.rejects(
+    () => client.viewer("secret-token"),
+    (error: unknown) => {
+      assert.equal(error instanceof GitHubApiError, true);
+      assert.equal((error as Error).message, "GitHub API request failed.");
+      assert.equal((error as GitHubApiError).status, 403);
+      assert.equal((error as GitHubApiError).requestId, "ABC:123");
+      assert.equal((error as GitHubApiError).retryAfterSeconds, 60);
+      assert.doesNotMatch(JSON.stringify(error), /secret-token/);
+      return true;
+    },
+  );
+});

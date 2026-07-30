@@ -1,0 +1,22 @@
+zerops:
+  - setup: setup
+    build:
+      base: bun@1.3
+      buildCommands:
+        - bun install --frozen-lockfile
+        - bun run --filter @velvet/setup-service build
+      deployFiles:
+        - apps/setup-service/dist
+    run:
+      base: bun@1.3
+      ports:
+        - port: 3000
+          httpSupport: true
+      envVariables:
+        NODE_ENV: production
+        PORT: "3000"
+      start: bun apps/setup-service/dist/main.js
+      healthCheck:
+        httpGet:
+          port: 3000
+          path: /healthz

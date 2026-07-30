@@ -1,11 +1,16 @@
 export const DISCLOSURE_MOTION_OPTIONS: KeyframeAnimationOptions = {
-  duration: 160,
+  duration: 200,
   easing: "ease-in-out",
   fill: "forwards",
 };
 
 export interface DisclosureMotionController {
   setExpanded(expanded: boolean, reducedMotion?: boolean): void;
+  destroy(): void;
+}
+
+export interface DisclosureMotionAction {
+  update(expanded: boolean): void;
   destroy(): void;
 }
 
@@ -130,5 +135,29 @@ export function createDisclosureMotion(
       animation.cancel();
       animation = null;
     },
+  };
+}
+
+export function disclosureMotion(
+  content: HTMLElement,
+  expanded: boolean,
+): DisclosureMotionAction {
+  const details = content.closest("details");
+  if (!details) {
+    throw new Error("Disclosure motion content must be inside a details element.");
+  }
+
+  const controller = createDisclosureMotion(details, content);
+  const setExpanded = (nextExpanded: boolean): void => {
+    const reducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    controller.setExpanded(nextExpanded, reducedMotion);
+  };
+
+  setExpanded(expanded);
+
+  return {
+    update: setExpanded,
+    destroy: controller.destroy,
   };
 }

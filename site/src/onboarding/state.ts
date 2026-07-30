@@ -236,10 +236,13 @@ export async function submitOnboarding(
     return { state: "success", installationUrl: result.installationUrl };
   } catch (error) {
     const message = error instanceof Error ? error.message : "SETUP_FAILED";
-    if (message === "SETUP_PERMISSION_REQUIRED") {
+    if (
+      message === "SETUP_PERMISSION_REQUIRED" ||
+      message === "SETUP_REDIRECT_STARTED"
+    ) {
       return {
         state: "permission-required",
-        message: "Velvet needs permission to create and configure the repository.",
+        message: "Continue with GitHub to grant the required permission.",
       };
     }
     return {

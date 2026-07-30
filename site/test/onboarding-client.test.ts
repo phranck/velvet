@@ -23,40 +23,197 @@ function validRequest() {
 
 test("posts one validated credentialed request and reads progress", async () => {
   const stages: SetupProgressStage[] = [];
-  let capturedUrl = "";
-  let capturedInit: RequestInit | undefined;
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
   const client = createBrowserSetupClient(async (url, init) => {
-    capturedUrl = String(url);
-    capturedInit = init;
+    calls.push({ url: String(url), ...(init ? { init } : {}) });
+    if (String(url) === "/api/session") {
+      return Response.json({
+        authenticated: true,
+        csrfToken: "C".repeat(43),
+        user: {
+          login: "velvet-user",
+          avatarUrl: "https://avatars.githubusercontent.com/u/1",
+        },
+      });
+    }
     return new Response(
       [
         JSON.stringify({ type: "progress", stage: "creating-repository" }),
         JSON.stringify({ type: "progress", stage: "waiting-for-deployment" }),
-        JSON.stringify({ type: "success", installationUrl: "https://status.example.com" }),
+        JSON.stringify({
+          type: "success",
+          installationUrl: "https://status.example.com",
+          repositoryUrl: "https://github.com/velvet-user/status",
+        }),
       ].join("\n"),
-      { status: 200 },
+      { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
     );
   });
 
   const result = await client.provision(validRequest(), (stage) => stages.push(stage));
 
-  assert.equal(capturedUrl, "./api/setup");
-  assert.equal(capturedInit?.method, "POST");
-  assert.equal(capturedInit?.credentials, "include");
-  assert.match(String(capturedInit?.body), /"schemaVersion":1/);
-  assert.deepEqual(stages, ["creating-repository", "waiting-for-deployment"]);
+  assert.deepEqual(calls.map((call) => call.url), ["/api/session", "/api/setup"]);
+  assert.equal(calls[1]?.init?.method, "POST");
+  assert.equal(calls[1]?.init?.credentials, "include");
+  assert.equal(
+    new Headers(calls[1]?.init?.headers).get("X-Velvet-CSRF"),
+    "C".repeat(43),
+  );
+  assert.match(String(calls[1]?.init?.body), /"schemaVersion":1/);
+  assert.deepEqual(stages, [
+    "authenticating",
+    "creating-repository",
+    "waiting-for-deployment",
+  ]);
   assert.deepEqual(result, { installationUrl: "https://status.example.com/" });
 });
 
-test("maps authorization responses without accepting a browser token", async () => {
-  const client = createBrowserSetupClient(async () =>
-    new Response("", { status: 403 }),
+test("polls the short setup status endpoint after deployment monitoring starts", async () => {
+  const calls: string[] = [];
+  const client = createBrowserSetupClient(async (url) => {
+    calls.push(String(url));
+    if (String(url) === "/api/session") {
+      return Response.json({
+        authenticated: true,
+        csrfToken: "C".repeat(43),
+      });
+    }
+    if (String(url) === "/api/setup/status") {
+      return Response.json({
+        operationId: "O".repeat(26),
+        state: "succeeded",
+        stage: "waiting-for-deployment",
+        installationUrl: "https://velvet-user.github.io/status/",
+        repositoryUrl: "https://github.com/velvet-user/status",
+        workflowRunId: 777,
+      });
+    }
+    return new Response(
+      JSON.stringify({ type: "progress", stage: "waiting-for-deployment" }),
+      { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+    );
+  });
+
+  const result = await client.provision(validRequest());
+
+  assert.deepEqual(calls, ["/api/session", "/api/setup", "/api/setup/status"]);
+  assert.deepEqual(result, {
+    installationUrl: "https://velvet-user.github.io/status/",
+  });
+});
+
+test("redirects an unauthenticated browser without accepting a browser token", async () => {
+  const redirects: string[] = [];
+  const client = createBrowserSetupClient(
+    async () => Response.json({ authenticated: false, csrfToken: "C".repeat(43) }),
+    undefined,
+    (url) => redirects.push(url),
   );
 
   await assert.rejects(
     () => client.provision(validRequest()),
-    /SETUP_PERMISSION_REQUIRED/,
+    /SETUP_REDIRECT_STARTED/,
   );
+  assert.deepEqual(redirects, ["/api/auth/start"]);
+});
+
+test("redirects to the verified GitHub App installation URL", async () => {
+  const redirects: string[] = [];
+  let calls = 0;
+  const installationUrl =
+    `https://github.com/apps/velvet-setup/installations/new/permissions?` +
+    `state=${"S".repeat(43)}&suggested_target_id=255022500&repository_ids%5B%5D=123456789`;
+  const client = createBrowserSetupClient(
+    async () => {
+      calls += 1;
+      if (calls === 1) {
+        return Response.json({ authenticated: true, csrfToken: "C".repeat(43) });
+      }
+      return new Response(
+        JSON.stringify({
+          type: "permission-required",
+          access: "repository",
+          error: {
+            code: "INSTALLATION_REQUIRED",
+            message: "Install Velvet.",
+            errorId: "E".repeat(26),
+          },
+          installationUrl,
+        }),
+        { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+      );
+    },
+    undefined,
+    (url) => redirects.push(url),
+  );
+
+  await assert.rejects(() => client.provision(validRequest()), /SETUP_REDIRECT_STARTED/);
+  assert.equal(redirects[0], installationUrl);
+});
+
+test("rejects an installation URL that would grant access to every repository", async () => {
+  const redirects: string[] = [];
+  let calls = 0;
+  const client = createBrowserSetupClient(
+    async () => {
+      calls += 1;
+      if (calls === 1) {
+        return Response.json({ authenticated: true, csrfToken: "C".repeat(43) });
+      }
+      return new Response(
+        JSON.stringify({
+          type: "permission-required",
+          access: "repository",
+          error: {
+            code: "INSTALLATION_REQUIRED",
+            message: "Install Velvet.",
+            errorId: "E".repeat(26),
+          },
+          installationUrl: `https://github.com/apps/velvet-setup/installations/new?state=${"S".repeat(43)}`,
+        }),
+        { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+      );
+    },
+    undefined,
+    (url) => redirects.push(url),
+  );
+
+  await assert.rejects(() => client.provision(validRequest()), /SETUP_FAILED/);
+  assert.deepEqual(redirects, []);
+});
+
+test("allows only the explicit temporary account URL for the bootstrap step", async () => {
+  const redirects: string[] = [];
+  let calls = 0;
+  const installationUrl =
+    `https://github.com/apps/velvet-setup/installations/new/permissions?` +
+    `state=${"S".repeat(43)}&suggested_target_id=255022500`;
+  const client = createBrowserSetupClient(
+    async () => {
+      calls += 1;
+      if (calls === 1) {
+        return Response.json({ authenticated: true, csrfToken: "C".repeat(43) });
+      }
+      return new Response(
+        JSON.stringify({
+          type: "permission-required",
+          access: "temporary-account",
+          error: {
+            code: "INSTALLATION_REQUIRED",
+            message: "Temporarily install Velvet.",
+            errorId: "E".repeat(26),
+          },
+          installationUrl,
+        }),
+        { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+      );
+    },
+    undefined,
+    (url) => redirects.push(url),
+  );
+
+  await assert.rejects(() => client.provision(validRequest()), /SETUP_REDIRECT_STARTED/);
+  assert.deepEqual(redirects, [installationUrl]);
 });
 
 test("rejects malformed events and non-HTTPS installation URLs", async () => {
@@ -65,9 +222,17 @@ test("rejects malformed events and non-HTTPS installation URLs", async () => {
     JSON.stringify({ type: "progress", stage: "unknown-stage" }),
     JSON.stringify({ type: "success", installationUrl: "javascript:alert(1)" }),
   ]) {
-    const client = createBrowserSetupClient(async () =>
-      new Response(body, { status: 200 }),
-    );
+    let calls = 0;
+    const client = createBrowserSetupClient(async () => {
+      calls += 1;
+      if (calls === 1) {
+        return Response.json({ authenticated: true, csrfToken: "C".repeat(43) });
+      }
+      return new Response(body, {
+        status: 200,
+        headers: { "Content-Type": "application/x-ndjson" },
+      });
+    });
     await assert.rejects(() => client.provision(validRequest()), /SETUP_FAILED/);
   }
 });

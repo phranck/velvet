@@ -150,6 +150,25 @@ test("leaves the draft untouched when provisioning needs a retry", async () => {
   assert.deepEqual(draft, snapshot);
 });
 
+test("keeps the draft while GitHub authorization continues", async () => {
+  const draft = createOnboardingDraft();
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.services[0].name = "Website";
+  draft.services[0].url = "https://example.com";
+  const snapshot = structuredClone(draft);
+
+  const result = await submitOnboarding(draft, {
+    async provision() {
+      throw new Error("SETUP_REDIRECT_STARTED");
+    },
+  });
+
+  assert.equal(result.state, "permission-required");
+  assert.deepEqual(draft, snapshot);
+});
+
 test("creates stable unique UI keys for repeatable service rows", () => {
   assert.notEqual(createServiceDraft().id, createServiceDraft().id);
 });
