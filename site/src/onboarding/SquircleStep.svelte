@@ -39,7 +39,29 @@
   onclick={onSelect}
   bind:clientWidth={size}
 >
-  <svg viewBox={`0 0 ${Math.max(size, 1)} ${Math.max(size, 1)}`} aria-hidden="true">
+  <svg class="base-outline" viewBox={`0 0 ${Math.max(size, 1)} ${Math.max(size, 1)}`} aria-hidden="true">
+    <path
+      d={outerPath}
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1"
+      stroke-linejoin="round"
+    ></path>
+    <path
+      d={innerPath}
+      fill="none"
+      stroke="currentColor"
+      stroke-width="4"
+      stroke-linejoin="round"
+    ></path>
+  </svg>
+  <svg
+    class="active-highlight"
+    class:visible={active}
+    data-step-active-highlight
+    viewBox={`0 0 ${Math.max(size, 1)} ${Math.max(size, 1)}`}
+    aria-hidden="true"
+  >
     <path
       d={outerPath}
       fill="none"
@@ -80,6 +102,9 @@
     font: inherit;
     font-size: var(--setup-text-body);
     font-weight: 650;
+    transition:
+      color 350ms ease-in-out,
+      opacity 350ms ease-in-out;
   }
   svg {
     position: absolute;
@@ -89,8 +114,18 @@
     height: 100%;
     display: block;
     overflow: visible;
-    color: color-mix(in srgb, var(--setup-muted) 46%, transparent);
     pointer-events: none;
+  }
+  .base-outline {
+    color: color-mix(in srgb, var(--setup-muted) 46%, transparent);
+  }
+  .active-highlight {
+    color: var(--setup-accent);
+    opacity: 0;
+    transition: opacity 350ms ease-in-out;
+  }
+  .active-highlight.visible {
+    opacity: 1;
   }
   .number,
   .label {
@@ -114,18 +149,22 @@
   button.active {
     color: var(--setup-text);
   }
-  button.active svg {
-    color: var(--setup-accent);
-  }
-  button.complete svg {
+  button.complete .base-outline {
     color: color-mix(in srgb, var(--setup-accent) 55%, transparent);
   }
-  button:focus-visible svg {
+  button:focus-visible .base-outline {
     color: var(--setup-accent);
     filter: drop-shadow(0 0 4px color-mix(in srgb, var(--setup-accent) 55%, transparent));
   }
   button:disabled {
     cursor: default;
     opacity: 0.5;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    .active-highlight {
+      transition: none;
+    }
   }
 </style>

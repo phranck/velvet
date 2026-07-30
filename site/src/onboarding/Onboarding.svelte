@@ -3,6 +3,7 @@
   import RainbowScale from "../components/RainbowScale.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
   import * as ServiceEditor from "../components/service-editor";
+  import * as StepCard from "../components/step-card";
   import * as ThemeCard from "../components/theme-card";
   import {
     createViewTransitionController,
@@ -253,8 +254,9 @@
     </nav>
 
     <form onsubmit={(event) => { event.preventDefault(); void publish(); }} novalidate>
+      <StepCard.Root>
       <div class="step-card-viewport" data-step-card-viewport>
-      <section class="step-panel" hidden={step !== 0} aria-labelledby="identity-title">
+      <StepCard.Body active={step === 0} labelledBy="identity-title">
         <div class="section-heading">
           <div class="section-title">
             <span>01</span>
@@ -337,9 +339,9 @@
             </aside>
           {/if}
         </div>
-      </section>
+      </StepCard.Body>
 
-      <section class="step-panel" hidden={step !== 1} aria-labelledby="services-title">
+      <StepCard.Body active={step === 1} labelledBy="services-title">
         <div class="section-heading">
           <div class="section-title">
             <span>02</span>
@@ -362,9 +364,9 @@
             />
           {/each}
         </ServiceEditor.List>
-      </section>
+      </StepCard.Body>
 
-      <section class="step-panel" hidden={step !== 2} aria-labelledby="theme-title">
+      <StepCard.Body active={step === 2} labelledBy="theme-title">
         <div class="section-heading">
           <div class="section-title">
             <span>03</span>
@@ -388,9 +390,9 @@
           {/each}
         </ThemeCard.Root>
         {#if errors.themeId}<small class="field-error">{errors.themeId}</small>{/if}
-      </section>
+      </StepCard.Body>
 
-      <section class="step-panel" hidden={step !== 3} aria-labelledby="publish-title">
+      <StepCard.Body active={step === 3} labelledBy="publish-title">
         <div class="section-heading">
           <div class="section-title">
             <span>04</span>
@@ -433,10 +435,10 @@
           {/if}
           {#if setupErrorId}<small>Reference: <code>{setupErrorId}</code></small>{/if}
         </div>
-      </section>
+      </StepCard.Body>
       </div>
 
-      <footer class="form-actions" data-form-actions-card>
+      <StepCard.Footer>
         {#if step > 0 && !submitting}
           <button class="secondary-button" type="button" onclick={previousStep}>Back</button>
         {/if}
@@ -457,7 +459,8 @@
                     : "Create status page"}
           </button>
         {/if}
-      </footer>
+      </StepCard.Footer>
+      </StepCard.Root>
     </form>
   </main>
   <footer class="page-footer">
@@ -582,7 +585,7 @@
   }
   .steps {
     --step-size: clamp(4.25rem, 18vw, 5.25rem);
-    --step-gap: clamp(0.65rem, 3vw, 1.5rem);
+    --step-gap: clamp(0.8rem, 4vw, 2.25rem);
 
     display: grid;
     grid-template-columns: repeat(4, var(--step-size));
@@ -619,18 +622,7 @@
   .step-card-viewport {
     position: relative;
   }
-  .step-panel {
-    min-height: 27rem;
-    padding: clamp(1.25rem, 4vw, 2.4rem);
-    border-radius: 1rem;
-    background: var(--setup-panel);
-    box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(18px);
-  }
-  .step-panel[hidden] {
-    display: none;
-  }
-  .step-panel:not([hidden]) {
+  .step-card-viewport :global([data-step-card-body]:not([hidden])) {
     view-transition-name: onboarding-step-card;
   }
   .section-heading {
@@ -759,12 +751,6 @@
     font-family: inherit;
     overflow-wrap: anywhere;
   }
-  .form-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
   .primary-button,
   .secondary-button {
     border-radius: var(--setup-control-radius);
@@ -855,15 +841,6 @@
   .result code {
     color: var(--setup-text);
     font-family: inherit;
-  }
-  .form-actions {
-    min-height: 4rem;
-    justify-content: flex-end;
-    padding: 0.55rem clamp(1.25rem, 4vw, 2.4rem);
-    border-radius: 1rem;
-    background: rgba(16, 17, 22, 0.75);
-    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.22);
-    backdrop-filter: blur(18px);
   }
   .primary-button,
   .secondary-button {

@@ -146,6 +146,10 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       /Barlow Condensed/,
     );
+    const stepCard = page.locator("[data-step-card]");
+    assert.equal(await stepCard.count(), 1);
+    assert.equal(await stepCard.locator("[data-step-card-body]").count(), 4);
+    assert.equal(await stepCard.locator("[data-step-card-footer]").count(), 1);
     assert.equal(
       await page.locator(".form-actions").evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
@@ -216,7 +220,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     );
     assert.equal(await page.locator("[data-step-connector]").count(), 3);
     assert.deepEqual(
-      await page.locator("[data-squircle-step]").first().locator("path")
+      await page.locator("[data-squircle-step]").first().locator("svg:not([data-step-active-highlight]) path")
+        .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke-width"))),
+      ["1", "4"],
+    );
+    assert.deepEqual(
+      await page.locator("[data-squircle-step]").first().locator("[data-step-active-highlight] path")
         .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke-width"))),
       ["1", "4"],
     );
@@ -377,6 +386,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         return [Math.round(width), Math.round(height)];
       }),
       [84, 84],
+    );
+    assert.equal(
+      await page.locator(".steps").evaluate((element) =>
+        getComputedStyle(element).columnGap,
+      ),
+      "36px",
     );
     assert.deepEqual(
       await Promise.all([
@@ -707,6 +722,26 @@ history:
     await motionPage.getByLabel("Repository name").fill("status");
     await motionPage.getByLabel("Status page name").fill("My Status");
     await motionPage.getByRole("button", { name: "Continue" }).click();
+    await motionPage.waitForFunction(
+      () =>
+        [...document.querySelectorAll("[data-step-active-highlight]")]
+          .flatMap((element) => element.getAnimations()).length >= 2,
+      undefined,
+      { polling: "raf", timeout: 1_000 },
+    );
+    const highlightAnimations = await motionPage
+      .locator("[data-step-active-highlight]")
+      .evaluateAll((elements) =>
+        elements.flatMap((element) =>
+          element.getAnimations().map((animation) => ({
+            duration: animation.effect?.getTiming().duration,
+            easing: animation.effect?.getTiming().easing,
+          })),
+        ),
+      );
+    assert.ok(highlightAnimations.length >= 2);
+    assert.ok(highlightAnimations.every(({ duration }) => duration === 350));
+    assert.ok(highlightAnimations.every(({ easing }) => easing === "ease-in-out"));
     await motionPage.waitForFunction(
       () => Array.isArray(
         (globalThis as typeof globalThis & { __onboardingTransitionAnimations?: unknown })

@@ -49,8 +49,11 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.equal(html.match(/data-squircle-step=""/g)?.length, 4);
   assert.equal(html.match(/data-step-connector/g)?.length, 3);
   assert.match(html, />Basics</);
+  assert.match(html, /data-step-card=""/);
   assert.match(html, /data-step-card-viewport/);
-  assert.match(html, /data-form-actions-card/);
+  assert.match(html, /data-step-card-body/);
+  assert.match(html, /data-step-card-footer/);
+  assert.doesNotMatch(html, /data-form-actions-card/);
   assert.match(html, /© by/);
   assert.match(html, /href="https:\/\/layered\.work"/);
   assert.match(html, /target="_blank"/);
@@ -131,6 +134,11 @@ test("uses reusable squircle steps and directional card motion", async () => {
   );
 
   assert.match(onboarding, /import SquircleStep from "\.\/SquircleStep\.svelte"/);
+  assert.match(onboarding, /import \* as StepCard from "\.\.\/components\/step-card"/);
+  assert.match(
+    onboarding,
+    /<StepCard\.Root>[\s\S]*<StepCard\.Body[\s\S]*<StepCard\.Footer>/,
+  );
   assert.match(onboarding, /createViewTransitionController/);
   assert.match(onboarding, /view-transition-name:\s*onboarding-step-card/);
   assert.match(onboarding, /onboarding-slide-out-forward/);
@@ -138,6 +146,8 @@ test("uses reusable squircle steps and directional card motion", async () => {
   assert.match(onboarding, /animation-duration:\s*350ms/);
   assert.match(onboarding, /animation-timing-function:\s*ease-in-out/);
   assert.match(squircleStep, /data-squircle-step/);
+  assert.match(squircleStep, /data-step-active-highlight/);
+  assert.match(squircleStep, /transition:\s*opacity 350ms ease-in-out/);
   assert.match(squircleStep, /createSquirclePath/);
   assert.match(squircleStep, /bind:clientWidth/);
   assert.match(squircleStep, /aspect-ratio:\s*1/);
@@ -146,7 +156,34 @@ test("uses reusable squircle steps and directional card motion", async () => {
   assert.match(squircleStep, /stroke-width="1"/);
   assert.match(squircleStep, /stroke-width="4"/);
   assert.match(onboarding, /grid-template-columns:\s*repeat\(4, var\(--step-size\)\)/);
+  assert.match(onboarding, /--step-gap:\s*clamp\(0\.8rem, 4vw, 2\.25rem\)/);
   assert.doesNotMatch(onboarding, /\.steps li\s*\{[^}]*flex:\s*1 1 0/s);
+});
+
+test("exposes the reusable StepCard compound component", async () => {
+  const index = await readFile(
+    resolve(import.meta.dirname, "../src/components/step-card/index.ts"),
+    "utf8",
+  );
+  const root = await readFile(
+    resolve(import.meta.dirname, "../src/components/step-card/StepCardRoot.svelte"),
+    "utf8",
+  );
+  const body = await readFile(
+    resolve(import.meta.dirname, "../src/components/step-card/StepCardBody.svelte"),
+    "utf8",
+  );
+  const footer = await readFile(
+    resolve(import.meta.dirname, "../src/components/step-card/StepCardFooter.svelte"),
+    "utf8",
+  );
+
+  assert.match(index, /Root/);
+  assert.match(index, /Body/);
+  assert.match(index, /Footer/);
+  assert.match(root, /data-step-card/);
+  assert.match(body, /data-step-card-body/);
+  assert.match(footer, /data-step-card-footer/);
 });
 
 test("standalone onboarding uses its own build entry", async () => {
