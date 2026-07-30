@@ -144,7 +144,6 @@ function compactImportedEvents(
 function mergeImportedEvents(
   nativeDocument: IncidentsDocument,
   importedEvents: MonitorImportedEvent[],
-  generatedAt: string,
 ): IncidentsDocument {
   const eventsById = new Map(
     importedEvents.map(({ event }) => [event.id, event]),
@@ -154,7 +153,7 @@ function mergeImportedEvents(
   }
   return {
     schemaVersion: CONTRACT_SCHEMA_VERSION,
-    generatedAt,
+    generatedAt: nativeDocument.generatedAt,
     events: [...eventsById.values()].sort((left, right) =>
       `${left.startsAt}\u0000${left.id}`.localeCompare(
         `${right.startsAt}\u0000${right.id}`,
@@ -450,7 +449,6 @@ export async function runMonitorAction(
     incidents = mergeImportedEvents(
       reconciliation.document,
       retainedImportedEvents,
-      completedAt,
     );
     incidentResult = "reconciled";
   }
