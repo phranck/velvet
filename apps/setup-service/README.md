@@ -64,7 +64,7 @@ secret, and fixes horizontal scaling to one container. Import the service, add
 the remaining runtime values, and deploy from the repository root:
 
 ```sh
-zcli push setup --setup setup --workspace-state clean
+zcli push setup --setup setup --workspace-state clean --zerops-yaml-path zerops.yaml
 ```
 
 The service uses a **Single container** because OAuth state, user authorization,

@@ -77,6 +77,7 @@ test("documents minimum GitHub permissions, secrets, recovery, and rotation", as
     "GITHUB_APP_PRIVATE_KEY",
     "SESSION_SECRET",
     "Single container",
+    "--zerops-yaml-path zerops.yaml",
     "Partial setup recovery",
     "Key rotation",
   ]) {
