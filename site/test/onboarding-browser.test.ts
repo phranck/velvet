@@ -47,6 +47,13 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         await route.request().headerValue("x-velvet-csrf"),
         "S".repeat(43),
       );
+      const request = JSON.parse(route.request().postData() ?? "null") as {
+        configuration?: { statusPage?: { customDomain?: string } };
+      };
+      assert.equal(
+        request.configuration?.statusPage?.customDomain,
+        "status.example.com",
+      );
       await route.fulfill({
         status: 200,
         contentType: "application/x-ndjson",
@@ -55,7 +62,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           JSON.stringify({ type: "progress", stage: "waiting-for-deployment" }),
           JSON.stringify({
             type: "success",
-            installationUrl: "https://velvet-user.github.io/status/",
+            installationUrl: "https://status.example.com/",
             repositoryUrl: "https://github.com/velvet-user/status",
           }),
         ].join("\n"),
@@ -63,6 +70,18 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     });
 
     await page.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
+    assert.equal(
+      await page.locator("body").evaluate((element) =>
+        getComputedStyle(element).backgroundAttachment,
+      ),
+      "fixed, fixed, fixed",
+    );
+    assert.equal(
+      await page.locator("body").evaluate((element) =>
+        getComputedStyle(element).backgroundRepeat,
+      ),
+      "no-repeat, no-repeat, no-repeat",
+    );
     assert.equal(
       await page.locator("form").evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
@@ -143,11 +162,50 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.getByRole("button", { name: "Continue" }).evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
-      "12.8px",
+      "14px",
+    );
+    assert.equal(
+      await page.locator(".steps button").first().evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "14px",
+    );
+    assert.deepEqual(
+      await page.locator(".onboarding-brand-block").evaluate((element) => {
+        const widths = [
+          element.querySelector<HTMLElement>(".velvet-wordmark"),
+          element.querySelector<HTMLElement>(".onboarding-brand > span"),
+          element.querySelector<HTMLElement>(".onboarding-palette"),
+        ].map((child) => Math.round(child?.getBoundingClientRect().width ?? 0));
+        return widths;
+      }),
+      [270, 270, 270],
+    );
+    assert.equal(
+      await page.locator(".onboarding-brand .velvet-wordmark").evaluate(
+        (element) => getComputedStyle(element).textAlign,
+      ),
+      "center",
     );
     await page.getByLabel("Repository owner").fill("velvet-user");
     await page.getByLabel("Repository name").fill("status");
     await page.getByLabel("Status page name").fill("My Status");
+    const customDomainInput = page.getByLabel("Custom domain (optional)");
+    await customDomainInput.fill("https://status.example.com/path");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByText(
+      "Enter a hostname without https://, a path, port, credentials, or wildcard.",
+    ).waitFor();
+    assert.equal(setupCalls, 0);
+    assert.equal(
+      await page.locator('.steps button[aria-current="step"]').textContent(),
+      "1 Status page",
+    );
+    await customDomainInput.fill("STATUS.Example.COM");
+    assert.match(
+      await page.getByText(/CNAME/).textContent() ?? "",
+      /velvet-user\.github\.io/,
+    );
     await page.getByRole("button", { name: "Continue" }).click();
 
     await page.getByLabel("Service name").fill("Website");
@@ -240,6 +298,14 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(await themeRadios.nth(1).isChecked(), true);
     await page.getByRole("button", { name: "Continue" }).click();
     assert.equal(
+      await page.locator(".review-grid").getByText("status.example.com").count(),
+      1,
+    );
+    assert.match(
+      await page.getByText(/DNS changes happen outside Velvet/).textContent() ?? "",
+      /may take time to propagate/,
+    );
+    assert.equal(
       await page.locator(".review-grid > div").first().evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
       ),
@@ -249,7 +315,9 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
     );
 
-    await page.getByText("Your Velvet status page is ready.").waitFor();
+    await page.getByText(
+      "Velvet is published. Your custom domain will work after its DNS records have propagated.",
+    ).waitFor();
     assert.equal(
       await page.locator(".deployment-progress").evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
@@ -260,7 +328,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(setupCalls, 1);
     assert.equal(
       await page.getByRole("link", { name: "Open your status page" }).getAttribute("href"),
-      "https://velvet-user.github.io/status/",
+      "https://status.example.com/",
     );
     const dimensions = await page.evaluate(() => ({
       viewport: window.innerWidth,

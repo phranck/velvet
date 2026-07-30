@@ -31,6 +31,8 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.match(html, /Repository owner/);
   assert.match(html, /Repository name/);
   assert.match(html, /Status page name/);
+  assert.match(html, /Custom domain \(optional\)/);
+  assert.doesNotMatch(html, /DNS change required/);
   assert.match(html, /Service name/);
   assert.match(html, /https:\/\/example\.com/);
   assert.match(html, /Advanced health check/);

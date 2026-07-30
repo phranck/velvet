@@ -30,6 +30,44 @@ test("validates and normalizes the only accepted setup request", () => {
   );
 });
 
+test("normalizes a custom domain and rejects non-hostname input", () => {
+  const valid = validateSetupRequest({
+    configuration: {
+      ...configuration,
+      statusPage: {
+        ...configuration.statusPage,
+        customDomain: "Status.Example.COM",
+      },
+    },
+  });
+
+  assert.equal(valid.success, true);
+  if (!valid.success) return;
+  assert.equal(
+    valid.data.configuration.statusPage.customDomain,
+    "status.example.com",
+  );
+
+  for (const customDomain of [
+    "https://status.example.com",
+    "status.example.com/path",
+    "status.example.com:443",
+    "user@status.example.com",
+    "*.example.com",
+  ]) {
+    assert.equal(
+      validateSetupRequest({
+        configuration: {
+          ...configuration,
+          statusPage: { ...configuration.statusPage, customDomain },
+        },
+      }).success,
+      false,
+      customDomain,
+    );
+  }
+});
+
 test("rejects arbitrary setup operations and paths", () => {
   const result = validateSetupRequest({
     configuration,

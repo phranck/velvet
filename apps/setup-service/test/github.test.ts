@@ -199,6 +199,35 @@ test("restricts installation tokens and repository changes to the Velvet setup f
   }
 });
 
+test("sets a Pages custom domain without checking DNS propagation", async () => {
+  const requests: Request[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async (request) => {
+      requests.push(request);
+      return new Response(null, { status: 204 });
+    },
+  });
+  await client.configurePagesCustomDomain(
+    "installation-token",
+    "example",
+    "status",
+    "status.example.com",
+  );
+
+  assert.equal(requests.length, 1);
+  assert.equal(
+    requests[0]?.url,
+    "https://api.github.com/repos/example/status/pages",
+  );
+  assert.equal(requests[0]?.method, "PUT");
+  assert.deepEqual(await requests[0]!.json(), { cname: "status.example.com" });
+  assert.equal(requests.some((request) => request.url.endsWith("/pages/health")), false);
+});
+
 test("resolves installation targets and removes temporary installations with an app JWT", async () => {
   const requests: Request[] = [];
   const client = createGitHubSetupClient({

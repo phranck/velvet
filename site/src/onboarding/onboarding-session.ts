@@ -71,6 +71,7 @@ function parseDraft(value: unknown): OnboardingDraft {
     typeof value.repositoryOwner !== "string" ||
     typeof value.repositoryName !== "string" ||
     typeof value.statusPageName !== "string" ||
+    (value.customDomain !== undefined && typeof value.customDomain !== "string") ||
     typeof value.themeId !== "string" ||
     !Array.isArray(value.services) ||
     value.services.length === 0
@@ -81,6 +82,7 @@ function parseDraft(value: unknown): OnboardingDraft {
     repositoryOwner: value.repositoryOwner,
     repositoryName: value.repositoryName,
     statusPageName: value.statusPageName,
+    customDomain: value.customDomain ?? "",
     themeId: value.themeId,
     services: value.services.map(parseService),
   };

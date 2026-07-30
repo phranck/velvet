@@ -55,6 +55,7 @@ export async function provisionVelvet(
   }
   const owner = input.request.configuration.repository.owner;
   const repositoryName = input.request.configuration.repository.name;
+  const customDomain = input.request.configuration.statusPage.customDomain;
   const source = serializeVelvetConfiguration(input.request.configuration);
   const configurationHash = createHash("sha256").update(source).digest("hex");
   const existing = input.session.provisioning;
@@ -206,6 +207,14 @@ export async function provisionVelvet(
           state.repository.name,
         );
       }
+      if (customDomain) {
+        await input.github.configurePagesCustomDomain(
+          installationToken,
+          state.repository.owner,
+          state.repository.name,
+          customDomain,
+        );
+      }
       state.pagesEnabled = true;
     }
 
@@ -270,10 +279,13 @@ export async function provisionVelvet(
       state.repository.owner,
       state.repository.name,
     );
-    state.installationUrl = pages.htmlUrl;
+    const installationUrl = customDomain
+      ? `https://${customDomain}/`
+      : pages.htmlUrl;
+    state.installationUrl = installationUrl;
     const result: SetupSuccessEvent = {
       type: "success",
-      installationUrl: pages.htmlUrl,
+      installationUrl,
       repositoryUrl: state.repository.htmlUrl,
       workflowRunId: state.workflowRunId,
     };
@@ -281,7 +293,7 @@ export async function provisionVelvet(
       operationId,
       state: "succeeded",
       stage,
-      installationUrl: pages.htmlUrl,
+      installationUrl,
       repositoryUrl: state.repository.htmlUrl,
       workflowRunId: state.workflowRunId,
     };

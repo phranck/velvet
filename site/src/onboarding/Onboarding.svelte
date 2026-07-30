@@ -12,6 +12,7 @@
     persistOnboardingDraft,
   } from "./onboarding-session.js";
   import {
+    buildSetupRequest,
     createOnboardingDraft,
     createServiceDraft,
     submitOnboarding,
@@ -50,6 +51,10 @@
   let retryAvailable = $state(false);
   let submissionState = $state<"idle" | "permission-required" | "failed" | "success">("idle");
   const selectedTheme = $derived(systemThemeById(draft.themeId));
+  const customDomain = $derived(draft.customDomain.trim().toLowerCase());
+  const pagesDnsTarget = $derived(
+    `${draft.repositoryOwner.trim() || "your-github-name"}.github.io`,
+  );
 
   $effect(() => {
     persistOnboardingDraft($state.snapshot(draft), SESSION_STORAGE);
@@ -108,6 +113,10 @@
       if (!draft.repositoryOwner.trim()) currentErrors.repositoryOwner = "Enter your GitHub name.";
       if (!draft.repositoryName.trim()) currentErrors.repositoryName = "Enter a repository name.";
       if (!draft.statusPageName.trim()) currentErrors.statusPageName = "Enter a status page name.";
+      const validation = buildSetupRequest(draft);
+      if (!validation.success && validation.errors.customDomain) {
+        currentErrors.customDomain = validation.errors.customDomain;
+      }
     }
     if (step === 1) {
       draft.services.forEach((service, index) => {
@@ -151,7 +160,9 @@
       submissionState = "success";
       clearOnboardingDraft(SESSION_STORAGE);
       installationUrl = result.installationUrl;
-      resultMessage = "Your Velvet status page is ready.";
+      resultMessage = customDomain
+        ? "Velvet is published. Your custom domain will work after its DNS records have propagated."
+        : "Your Velvet status page is ready.";
       return;
     }
     if (result.state === "permission-required") {
@@ -176,17 +187,19 @@
 <div class="onboarding-shell">
   <main>
     <section class="intro">
-      <h1 class="onboarding-brand">
-        <VelvetWordmark />
-        <span>ONBOARDING</span>
-      </h1>
-      <div class="onboarding-palette" data-onboarding-palette aria-hidden="true">
-        {#each PALETTE_KEYS as key (key)}
-          <span
-            data-onboarding-palette-color
-            style:background={selectedTheme?.theme.palette[key]}
-          ></span>
-        {/each}
+      <div class="onboarding-brand-block">
+        <h1 class="onboarding-brand">
+          <VelvetWordmark />
+          <span>ONBOARDING</span>
+        </h1>
+        <div class="onboarding-palette" data-onboarding-palette aria-hidden="true">
+          {#each PALETTE_KEYS as key (key)}
+            <span
+              data-onboarding-palette-color
+              style:background={selectedTheme?.theme.palette[key]}
+            ></span>
+          {/each}
+        </div>
       </div>
       <p>
         Tell Velvet what to watch, choose a theme, and publish through your GitHub account.
@@ -234,6 +247,40 @@
             <input autocomplete="organization" bind:value={draft.statusPageName} aria-invalid={errors.statusPageName ? "true" : undefined} />
             {#if errors.statusPageName}<small class="field-error">{errors.statusPageName}</small>{/if}
           </label>
+          <label class="full-width">
+            <span>Custom domain (optional)</span>
+            <input
+              autocomplete="url"
+              autocapitalize="none"
+              inputmode="url"
+              placeholder="status.example.com"
+              spellcheck={false}
+              bind:value={draft.customDomain}
+              aria-describedby="custom-domain-help"
+              aria-invalid={errors.customDomain ? "true" : undefined}
+            />
+            <small id="custom-domain-help" class="field-hint">
+              Enter only the hostname, without https://, a path, port, credentials, or wildcard.
+            </small>
+            {#if errors.customDomain}<small class="field-error">{errors.customDomain}</small>{/if}
+          </label>
+          {#if draft.customDomain.trim()}
+            <aside class="dns-guidance full-width" aria-label="Required DNS change">
+              <strong>DNS change required</strong>
+              <p>
+                DNS changes happen outside Velvet and may take time to propagate. After publishing,
+                update the records at your DNS provider.
+              </p>
+              <ul>
+                <li><b>Subdomain:</b> CNAME to <code>{pagesDnsTarget}</code></li>
+                <li>
+                  <b>Root domain:</b> ALIAS or ANAME to <code>{pagesDnsTarget}</code>, or A records
+                  to <code>185.199.108.153</code>, <code>185.199.109.153</code>,
+                  <code>185.199.110.153</code>, and <code>185.199.111.153</code>
+                </li>
+              </ul>
+            </aside>
+          {/if}
         </div>
       </section>
 
@@ -295,6 +342,9 @@
           <div><span>Status page</span><strong>{draft.statusPageName}</strong></div>
           <div><span>Services</span><strong>{draft.services.length}</strong></div>
           <div><span>Theme</span><strong>{selectedTheme?.name ?? "Choose a theme"}</strong></div>
+          {#if customDomain}
+            <div class="review-wide"><span>Custom domain</span><strong>{customDomain}</strong></div>
+          {/if}
         </div>
         <p class="github-permission-note">
           On a first setup, GitHub asks twice. Velvet uses the first approval only to create this repository, removes it immediately, and then asks for access to this repository alone.
@@ -362,7 +412,7 @@
     --setup-error: #ff8d9a;
     --setup-control-height: 2.5rem;
     --setup-control-radius: 0.55rem;
-    --setup-button-font-size: 0.8rem;
+    --setup-button-font-size: 0.875rem;
     --setup-font: "Barlow", "Segoe UI", sans-serif;
     --setup-heading-font: "Barlow Condensed", "Arial Narrow", sans-serif;
     --picker-accent: var(--setup-accent);
@@ -400,15 +450,25 @@
     margin-bottom: 2.5rem;
     text-align: center;
   }
-  .onboarding-brand {
-    --velvet-wordmark-size: clamp(2.6rem, 7vw, 4rem);
-
-    width: max-content;
+  .onboarding-brand-block {
+    width: min(100%, 270px);
     display: grid;
-    justify-items: center;
+    justify-items: stretch;
+  }
+  .onboarding-brand {
+    --velvet-wordmark-size: clamp(3.5rem, 16vw, 4rem);
+
+    width: 100%;
+    display: grid;
+    justify-items: stretch;
     gap: 0.4rem;
     margin: 0;
     color: var(--setup-accent);
+  }
+  .onboarding-brand :global(.velvet-wordmark) {
+    width: 100%;
+    display: block;
+    text-align: center;
   }
   .onboarding-brand > span {
     width: 100%;
@@ -416,12 +476,14 @@
     font-family: var(--setup-heading-font);
     font-size: clamp(0.95rem, 2.5vw, 1.2rem);
     font-weight: 600;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.08em;
     line-height: 1;
-    text-align: center;
+    text-align: justify;
+    text-align-last: justify;
+    text-justify: inter-character;
   }
   .onboarding-palette {
-    width: min(100%, 270px);
+    width: 100%;
     height: 5px;
     display: grid;
     grid-template-columns: repeat(9, 1fr);
@@ -453,7 +515,7 @@
     background: var(--setup-card);
     color: var(--setup-muted);
     cursor: pointer;
-    font-size: 0.78rem;
+    font-size: 0.875rem;
     font-weight: 650;
     text-align: left;
   }
@@ -567,6 +629,37 @@
     color: var(--setup-error);
     font-size: 0.75rem;
   }
+  .field-hint {
+    color: var(--setup-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+  .dns-guidance {
+    padding: 0.9rem 1rem;
+    border-radius: 0.7rem;
+    background: var(--setup-card);
+    color: var(--setup-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .dns-guidance strong,
+  .dns-guidance b,
+  .dns-guidance code {
+    color: var(--setup-text);
+  }
+  .dns-guidance p {
+    margin: 0.3rem 0 0;
+  }
+  .dns-guidance ul {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.65rem 0 0;
+    padding-left: 1.2rem;
+  }
+  .dns-guidance code {
+    font-family: inherit;
+    overflow-wrap: anywhere;
+  }
   .form-actions {
     display: flex;
     align-items: center;
@@ -598,6 +691,9 @@
   }
   .review-grid strong {
     overflow-wrap: anywhere;
+  }
+  .review-grid .review-wide {
+    grid-column: 1 / -1;
   }
   .github-permission-note {
     margin: 1rem 0 0;
@@ -703,7 +799,7 @@
     }
     .steps button {
       padding: 0.6rem;
-      font-size: 0.72rem;
+      font-size: 0.875rem;
     }
     .section-heading {
       gap: 0.65rem;

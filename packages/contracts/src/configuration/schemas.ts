@@ -1,6 +1,8 @@
 import { Type, type Static } from "@sinclair/typebox";
 
 export const CONFIGURATION_SCHEMA_VERSION = 1 as const;
+export const CUSTOM_DOMAIN_PATTERN =
+  "^(?=.{1,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,63}$";
 
 const configurationSchemaOptions = {
   $id: "urn:velvet:schema:configuration:v1",
@@ -268,8 +270,7 @@ const StatusPageSchema = Type.Object(
       Type.String({
         minLength: 1,
         maxLength: 253,
-        pattern:
-          "^(?=.{1,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,63}$",
+        pattern: CUSTOM_DOMAIN_PATTERN,
       }),
     ),
     logoUrl: Type.Optional(UrlSchema),

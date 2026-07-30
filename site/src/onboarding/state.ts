@@ -1,4 +1,5 @@
 import {
+  normalizeCustomDomain,
   validateVelvetConfiguration,
   type NormalizedVelvetConfiguration,
   type SetupProgressStage as ContractSetupProgressStage,
@@ -31,6 +32,7 @@ export interface OnboardingDraft {
   repositoryOwner: string;
   repositoryName: string;
   statusPageName: string;
+  customDomain: string;
   themeId: string;
   services: ServiceDraft[];
 }
@@ -81,6 +83,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     repositoryOwner: "",
     repositoryName: "status",
     statusPageName: "Status",
+    customDomain: "",
     themeId: SYSTEM_THEMES[0].id,
     services: [createServiceDraft()],
   };
@@ -92,6 +95,13 @@ export function buildSetupRequest(
   const errors: Record<string, string> = {};
   const theme = systemThemeById(draft.themeId);
   if (!theme) errors.themeId = "Choose one of the available system themes.";
+  const customDomain = draft.customDomain.trim()
+    ? normalizeCustomDomain(draft.customDomain)
+    : null;
+  if (draft.customDomain.trim() && !customDomain) {
+    errors.customDomain =
+      "Enter a hostname without https://, a path, port, credentials, or wildcard.";
+  }
 
   const services = draft.services.map((service, index) => {
     if (service.icon !== null && !isCuratedServiceIcon(service.icon)) {
@@ -159,6 +169,7 @@ export function buildSetupRequest(
     statusPage: {
       name: draft.statusPageName.trim(),
       theme: canonicalSystemTheme(theme),
+      ...(customDomain ? { customDomain } : {}),
     },
     services,
     history: { retentionDays: 365 },
@@ -279,6 +290,9 @@ function fieldPath(path: string): string {
   }
   if (parts[0] === "statusPage" && parts[1] === "name") {
     return "statusPageName";
+  }
+  if (parts[0] === "statusPage" && parts[1] === "customDomain") {
+    return "customDomain";
   }
   if (parts[0] === "services" && parts[1]) {
     if (parts.includes("url")) return `services.${parts[1]}.url`;
