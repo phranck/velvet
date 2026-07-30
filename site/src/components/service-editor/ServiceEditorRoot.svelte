@@ -286,6 +286,7 @@
   }
   .service-title strong {
     overflow: hidden;
+    font-size: var(--service-editor-font-size, 1rem);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -306,7 +307,7 @@
   }
   label > span {
     color: var(--service-editor-text, #efedf5);
-    font-size: 0.8rem;
+    font-size: var(--service-editor-font-size, 0.8rem);
     font-weight: 650;
   }
   input,
@@ -345,7 +346,7 @@
   }
   .field-error {
     color: var(--service-editor-error, #ff8d9a);
-    font-size: 0.75rem;
+    font-size: var(--service-editor-small-font-size, 0.75rem);
   }
   button {
     min-height: var(--service-editor-control-height, 2.5rem);
@@ -380,7 +381,7 @@
     padding: 1rem 0 0;
     color: var(--service-editor-muted, #979aa8);
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: var(--service-editor-font-size, 0.82rem);
     font-weight: 700;
     list-style: none;
   }
@@ -409,7 +410,7 @@
   .advanced-content > p {
     margin: 0.45rem 0 0;
     color: var(--service-editor-muted, #979aa8);
-    font-size: 0.9rem;
+    font-size: var(--service-editor-small-font-size, 0.9rem);
     line-height: 1.5;
   }
   .advanced-group {
@@ -422,19 +423,19 @@
     display: block;
   }
   .advanced-heading strong {
-    font-size: 0.85rem;
+    font-size: var(--service-editor-font-size, 0.85rem);
   }
   .advanced-heading span {
     margin-top: 0.2rem;
     color: var(--service-editor-muted, #979aa8);
-    font-size: 0.75rem;
+    font-size: var(--service-editor-small-font-size, 0.75rem);
   }
   .small-button {
     flex: none;
     padding: 0 0.65rem;
     background: var(--service-editor-raised, #272a36);
     color: var(--service-editor-text, #efedf5);
-    font-size: 0.75rem;
+    font-size: var(--service-editor-font-size, 0.75rem);
   }
   button:focus-visible,
   summary:focus-visible {

@@ -44,6 +44,10 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
 });
 
 test("uses the local Barlow family for onboarding typography", async () => {
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
   const styles = await readFile(
     resolve(import.meta.dirname, "../src/onboarding/onboarding.css"),
     "utf8",
@@ -53,6 +57,11 @@ test("uses the local Barlow family for onboarding typography", async () => {
   assert.match(styles, /@fontsource\/barlow\/latin-600\.css/);
   assert.match(styles, /@fontsource\/barlow-condensed\/latin-600\.css/);
   assert.match(styles, /font-family:\s*"Barlow"/);
+  assert.match(onboarding, /--setup-text-small:\s*0\.9375rem/);
+  assert.match(onboarding, /--setup-text-body:\s*1rem/);
+  assert.match(onboarding, /--setup-text-lead:\s*1\.125rem/);
+  assert.match(onboarding, /--service-editor-small-font-size:\s*var\(--setup-text-small\)/);
+  assert.match(onboarding, /--theme-card-font-size:\s*var\(--setup-text-body\)/);
 });
 
 test("uses the shared theme and icon components in onboarding and configurator", async () => {

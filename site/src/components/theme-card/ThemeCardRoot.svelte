@@ -32,13 +32,13 @@
   legend {
     padding: 0;
     color: var(--picker-text, currentColor);
-    font-size: 1rem;
+    font-size: var(--theme-card-font-size, 1rem);
     font-weight: 700;
   }
   p {
     margin: 0.35rem 0 1rem;
     color: var(--picker-muted, #6f7280);
-    font-size: 0.875rem;
+    font-size: var(--theme-card-description-font-size, 0.875rem);
     line-height: 1.45;
   }
   .options {

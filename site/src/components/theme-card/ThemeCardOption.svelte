@@ -111,7 +111,7 @@
   strong {
     padding: 0 0.25rem 0.18rem;
     overflow: hidden;
-    font-size: 0.85rem;
+    font-size: var(--theme-card-font-size, 0.85rem);
     line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;

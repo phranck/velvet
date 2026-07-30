@@ -165,13 +165,30 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.getByRole("button", { name: "Continue" }).evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
-      "14px",
+      "16px",
     );
     assert.equal(
       await page.locator(".steps button").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
-      "14px",
+      "16px",
+    );
+    assert.equal(
+      await page.getByLabel("Repository owner").locator("xpath=preceding-sibling::span")
+        .evaluate((element) => getComputedStyle(element).fontSize),
+      "16px",
+    );
+    assert.equal(
+      await page.locator(".field-hint").evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "15px",
+    );
+    assert.equal(
+      await page.locator(".section-heading p").first().evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "15px",
     );
     assert.deepEqual(
       await page.locator(".onboarding-brand-block").evaluate((element) => {
@@ -199,6 +216,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByText(
       "Enter a hostname without https://, a path, port, credentials, or wildcard.",
     ).waitFor();
+    assert.equal(
+      await page.locator(".field-error").evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "15px",
+    );
     assert.equal(setupCalls, 0);
     assert.equal(
       await page.locator('.steps button[aria-current="step"]').textContent(),
@@ -208,6 +231,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.match(
       await page.getByText(/CNAME/).textContent() ?? "",
       /velvet-user\.github\.io/,
+    );
+    assert.equal(
+      await page.locator(".dns-guidance").evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "15px",
     );
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -258,6 +287,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "0px",
     );
     assert.equal(
+      await page.locator(".service-editor label > span").first().evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "16px",
+    );
+    assert.equal(
       await page.locator("details").evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
       ),
@@ -290,6 +325,20 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
 
     const themeRadios = page.locator('input[name="system-theme"]');
     assert.equal(await themeRadios.count(), 4);
+    assert.deepEqual(
+      await Promise.all([
+        page.locator("[data-theme-card-group] legend").evaluate((element) =>
+          getComputedStyle(element).fontSize,
+        ),
+        page.locator("[data-theme-card-group] > p").evaluate((element) =>
+          getComputedStyle(element).fontSize,
+        ),
+        page.locator("[data-theme-card-option] strong").first().evaluate((element) =>
+          getComputedStyle(element).fontSize,
+        ),
+      ]),
+      ["16px", "15px", "16px"],
+    );
     assert.equal(
       await page.locator("[data-theme-card-option]").first().evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
@@ -314,6 +363,20 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
+    assert.deepEqual(
+      await Promise.all([
+        page.locator(".review-grid span").first().evaluate((element) =>
+          getComputedStyle(element).fontSize,
+        ),
+        page.locator(".review-grid strong").first().evaluate((element) =>
+          getComputedStyle(element).fontSize,
+        ),
+        page.locator(".github-permission-note").evaluate((element) =>
+          getComputedStyle(element).fontSize,
+        ),
+      ]),
+      ["15px", "16px", "15px"],
+    );
     await page.goto(
       `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
     );
@@ -326,6 +389,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         getComputedStyle(element).borderTopWidth,
       ),
       "0px",
+    );
+    assert.equal(
+      await page.locator(".deployment-progress li").first().evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "16px",
     );
     assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);

@@ -247,13 +247,13 @@
   legend {
     padding: 0;
     color: var(--picker-text, currentColor);
-    font-size: 0.9rem;
+    font-size: var(--picker-label-font-size, 0.9rem);
     font-weight: 700;
   }
   p {
     margin: 0.3rem 0 0.75rem;
     color: var(--picker-muted, #6f7280);
-    font-size: 0.8rem;
+    font-size: var(--picker-description-font-size, 0.8rem);
     line-height: 1.4;
   }
   .picker {

@@ -412,10 +412,15 @@
     --setup-error: #ff8d9a;
     --setup-control-height: 2.5rem;
     --setup-control-radius: 0.55rem;
-    --setup-button-font-size: 0.875rem;
+    --setup-text-small: 0.9375rem;
+    --setup-text-body: 1rem;
+    --setup-text-lead: 1.125rem;
+    --setup-button-font-size: var(--setup-text-body);
     --setup-font: "Barlow", "Segoe UI", sans-serif;
     --setup-heading-font: "Barlow Condensed", "Arial Narrow", sans-serif;
     --picker-accent: var(--setup-accent);
+    --picker-description-font-size: var(--setup-text-small);
+    --picker-label-font-size: var(--setup-text-body);
     --picker-muted: var(--setup-muted);
     --picker-popover: var(--setup-panel-raised);
     --picker-surface: var(--setup-card);
@@ -425,12 +430,17 @@
     --service-editor-control-height: var(--setup-control-height);
     --service-editor-control-radius: var(--setup-control-radius);
     --service-editor-error: var(--setup-error);
+    --service-editor-font-size: var(--setup-text-body);
     --service-editor-input: var(--setup-input);
     --service-editor-muted: var(--setup-muted);
     --service-editor-raised: var(--setup-panel-raised);
+    --service-editor-small-font-size: var(--setup-text-small);
     --service-editor-text: var(--setup-text);
+    --theme-card-description-font-size: var(--setup-text-small);
+    --theme-card-font-size: var(--setup-text-body);
     min-height: 100vh;
     font-family: var(--setup-font);
+    font-size: var(--setup-text-body);
   }
   .onboarding-shell :global(button) {
     min-height: var(--setup-control-height);
@@ -495,7 +505,7 @@
     max-width: none;
     margin: 1.25rem 0 0;
     color: var(--setup-muted);
-    font-size: clamp(1rem, 2vw, 1.15rem);
+    font-size: var(--setup-text-lead);
     line-height: 1.6;
   }
   .steps {
@@ -515,7 +525,7 @@
     background: var(--setup-card);
     color: var(--setup-muted);
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: var(--setup-text-body);
     font-weight: 650;
     text-align: left;
   }
@@ -539,7 +549,7 @@
     border-radius: 50%;
     background: var(--setup-panel-raised);
     color: var(--setup-accent);
-    font-size: 0.7rem;
+    font-size: var(--setup-text-small);
   }
   form {
     overflow: visible;
@@ -563,21 +573,21 @@
   .section-heading > span {
     padding-top: 0.2rem;
     color: var(--setup-accent);
-    font-size: 0.72rem;
+    font-size: var(--setup-text-small);
     letter-spacing: 0.08em;
   }
   h2 {
     margin: 0;
     color: var(--setup-text);
     font-family: var(--setup-heading-font);
-    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    font-size: clamp(1.5rem, 3vw, 1.875rem);
     font-weight: 600;
     letter-spacing: -0.025em;
   }
   .section-heading p {
     margin: 0.45rem 0 0;
     color: var(--setup-muted);
-    font-size: 0.9rem;
+    font-size: var(--setup-text-small);
     line-height: 1.5;
   }
   .form-grid {
@@ -597,7 +607,7 @@
   }
   label > span {
     color: var(--setup-text);
-    font-size: 0.8rem;
+    font-size: var(--setup-text-body);
     font-weight: 650;
   }
   input {
@@ -611,6 +621,7 @@
     background: var(--setup-input);
     color: var(--setup-text);
     box-sizing: border-box;
+    font: inherit;
   }
   input::placeholder {
     color: #747887;
@@ -627,11 +638,11 @@
   }
   .field-error {
     color: var(--setup-error);
-    font-size: 0.75rem;
+    font-size: var(--setup-text-small);
   }
   .field-hint {
     color: var(--setup-muted);
-    font-size: 0.78rem;
+    font-size: var(--setup-text-small);
     line-height: 1.45;
   }
   .dns-guidance {
@@ -639,7 +650,7 @@
     border-radius: 0.7rem;
     background: var(--setup-card);
     color: var(--setup-muted);
-    font-size: 0.82rem;
+    font-size: var(--setup-text-small);
     line-height: 1.5;
   }
   .dns-guidance strong,
@@ -686,7 +697,7 @@
   }
   .review-grid span {
     color: var(--setup-muted);
-    font-size: 0.72rem;
+    font-size: var(--setup-text-small);
     text-transform: uppercase;
   }
   .review-grid strong {
@@ -698,7 +709,7 @@
   .github-permission-note {
     margin: 1rem 0 0;
     color: var(--setup-muted);
-    font-size: 0.82rem;
+    font-size: var(--setup-text-small);
     line-height: 1.5;
   }
   .deployment-progress {
@@ -715,7 +726,7 @@
     align-items: center;
     gap: 0.55rem;
     color: var(--setup-muted);
-    font-size: 0.82rem;
+    font-size: var(--setup-text-body);
   }
   .deployment-progress li.complete {
     color: var(--setup-text);
@@ -747,6 +758,7 @@
     display: block;
     margin-top: 0.65rem;
     color: var(--setup-muted);
+    font-size: var(--setup-text-small);
   }
   .result code {
     color: var(--setup-text);
@@ -799,7 +811,6 @@
     }
     .steps button {
       padding: 0.6rem;
-      font-size: 0.875rem;
     }
     .section-heading {
       gap: 0.65rem;
