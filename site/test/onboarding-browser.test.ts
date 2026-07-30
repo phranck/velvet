@@ -63,6 +63,18 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     });
 
     await page.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
+    assert.equal(
+      await page.locator("form").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.equal(
+      await page.locator(".steps button").first().evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
     await page.getByLabel("Repository owner").fill("velvet-user");
     await page.getByLabel("Repository name").fill("status");
     await page.getByLabel("Status page name").fill("My Status");
@@ -72,6 +84,18 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByLabel("Website URL").fill("https://example.com");
     await page.getByTitle("Storage").click();
     assert.equal(await page.getByTitle("Storage").locator("input").isChecked(), true);
+    assert.equal(
+      await page.locator(".service-editor").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.equal(
+      await page.getByTitle("Storage").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
     await page.getByRole("button", { name: "Continue" }).click();
 
     if (process.env.VELVET_ONBOARDING_SCREENSHOT) {
@@ -83,15 +107,33 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
 
     const themeRadios = page.locator('input[name="system-theme"]');
     assert.equal(await themeRadios.count(), 4);
+    assert.equal(
+      await page.locator("[data-theme-card-option]").first().evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
     await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");
     assert.equal(await themeRadios.nth(1).isChecked(), true);
     await page.getByRole("button", { name: "Continue" }).click();
+    assert.equal(
+      await page.locator(".review-grid > div").first().evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
     await page.goto(
       `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
     );
 
     await page.getByText("Your Velvet status page is ready.").waitFor();
+    assert.equal(
+      await page.locator(".deployment-progress").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
     assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);
     assert.equal(

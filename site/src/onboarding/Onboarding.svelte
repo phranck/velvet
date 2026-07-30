@@ -475,6 +475,7 @@
     --setup-accent: #8ca5ff;
     --setup-panel: rgba(27, 29, 38, 0.9);
     --setup-panel-raised: #272a36;
+    --setup-card: #222530;
     --setup-input: #171922;
     --setup-line: #363a47;
     --setup-text: #efedf5;
@@ -483,9 +484,13 @@
     --picker-accent: var(--setup-accent);
     --picker-line: var(--setup-line);
     --picker-muted: var(--setup-muted);
-    --picker-surface: var(--setup-input);
+    --picker-surface: var(--setup-card);
     --picker-text: var(--setup-text);
     min-height: 100vh;
+  }
+  .onboarding-shell button {
+    border: 0;
+    outline: none;
   }
   .topbar {
     max-width: 1120px;
@@ -553,9 +558,8 @@
     align-items: center;
     gap: 0.55rem;
     padding: 0.7rem 0.75rem;
-    border: 1px solid var(--setup-line);
     border-radius: 0.7rem;
-    background: rgba(23, 25, 34, 0.72);
+    background: var(--setup-card);
     color: var(--setup-muted);
     cursor: pointer;
     font-size: 0.78rem;
@@ -567,8 +571,7 @@
     opacity: 0.55;
   }
   .steps button.active {
-    border-color: color-mix(in srgb, var(--setup-accent) 65%, var(--setup-line));
-    background: color-mix(in srgb, var(--setup-accent) 10%, var(--setup-input));
+    background: color-mix(in srgb, var(--setup-accent) 14%, var(--setup-card));
     color: var(--setup-text);
   }
   .steps button.complete {
@@ -587,7 +590,6 @@
   }
   form {
     overflow: hidden;
-    border: 1px solid var(--setup-line);
     border-radius: 1rem;
     background: var(--setup-panel);
     box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.3);
@@ -684,12 +686,13 @@
     gap: 1rem;
   }
   .service-editor {
+    --picker-surface: var(--setup-input);
+
     display: grid;
     gap: 1.35rem;
     padding: 1.15rem;
-    border: 1px solid var(--setup-line);
     border-radius: 0.85rem;
-    background: rgba(23, 25, 34, 0.7);
+    background: var(--setup-card);
   }
   .service-editor > header,
   .advanced-heading,
@@ -720,7 +723,6 @@
   .add-service,
   .primary-button,
   .secondary-button {
-    border: 1px solid var(--setup-line);
     border-radius: 0.58rem;
     cursor: pointer;
     font-weight: 650;
@@ -808,9 +810,8 @@
     display: grid;
     gap: 0.3rem;
     padding: 1rem;
-    border: 1px solid var(--setup-line);
     border-radius: 0.7rem;
-    background: var(--setup-input);
+    background: var(--setup-card);
   }
   .review-grid span {
     color: var(--setup-muted);
@@ -831,8 +832,8 @@
     gap: 0.6rem;
     margin: 1.4rem 0 0;
     padding: 1rem;
-    border: 1px solid var(--setup-line);
     border-radius: 0.7rem;
+    background: var(--setup-card);
     list-style: none;
   }
   .deployment-progress li {
@@ -876,7 +877,6 @@
     padding: 0.72rem 1rem;
   }
   .primary-button {
-    border-color: color-mix(in srgb, var(--setup-accent) 65%, var(--setup-line));
     background: var(--setup-accent);
     color: #10131c;
   }

@@ -37,29 +37,30 @@
     align-content: center;
     gap: 0.28rem;
     padding: 0.5rem 0.25rem;
-    border: 1px solid var(--picker-line, #d7d9e0);
+    border: 0;
     border-radius: 0.65rem;
     background: var(--picker-surface, #ffffff);
     color: var(--picker-muted, #6f7280);
     cursor: pointer;
     transition:
-      border-color 150ms ease,
       background 150ms ease,
       color 150ms ease;
   }
-  label:hover,
-  label.selected {
-    border-color: var(--picker-accent, #6366f1);
+  label:hover {
+    background: color-mix(
+      in srgb,
+      var(--picker-accent, #6366f1) 7%,
+      var(--picker-surface, #ffffff)
+    );
     color: var(--picker-text, #171922);
   }
   label.selected {
     background: color-mix(
       in srgb,
-      var(--picker-accent, #6366f1) 10%,
+      var(--picker-accent, #6366f1) 16%,
       var(--picker-surface, #ffffff)
     );
-    box-shadow: 0 0 0 2px
-      color-mix(in srgb, var(--picker-accent, #6366f1) 18%, transparent);
+    color: var(--picker-text, #171922);
   }
   input {
     position: absolute;
