@@ -194,12 +194,20 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "column",
     );
-    assert.equal(
-      await page.locator(".steps button").first().evaluate((element) =>
-        element.getBoundingClientRect().height,
-      ),
-      84,
-    );
+    const mobileStepGeometry = await page.locator(".steps").evaluate((steps) => {
+      const buttons = [...steps.querySelectorAll("button")];
+      const first = buttons[0]?.getBoundingClientRect();
+      const last = buttons.at(-1)?.getBoundingClientRect();
+      const container = steps.getBoundingClientRect();
+      return {
+        width: first?.width ?? 0,
+        height: first?.height ?? 0,
+        occupiedWidth: first && last ? last.right - first.left : 0,
+        containerWidth: container.width,
+      };
+    });
+    assert.ok(Math.abs(mobileStepGeometry.width - mobileStepGeometry.height) < 0.1);
+    assert.ok(mobileStepGeometry.occupiedWidth < mobileStepGeometry.containerWidth);
     assert.equal(
       await page.locator("[data-squircle-step-number]").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
@@ -360,6 +368,16 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "0px",
     );
     await page.setViewportSize({ width: 1280, height: 800 });
+    await page.waitForFunction(
+      () => (document.querySelector(".steps button")?.getBoundingClientRect().width ?? 0) > 80,
+    );
+    assert.deepEqual(
+      await page.locator(".steps button").first().evaluate((element) => {
+        const { width, height } = element.getBoundingClientRect();
+        return [Math.round(width), Math.round(height)];
+      }),
+      [84, 84],
+    );
     assert.deepEqual(
       await Promise.all([
         page.getByRole("button", { name: "Add another service" }).evaluate((element) =>
