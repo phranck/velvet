@@ -4,7 +4,11 @@
 
 **A static, themeable status page built from a validated, versioned data contract.**
 
-<img src="docs/screenshot.png" alt="Velvet status page" width="820">
+<a href="https://setup.velvet.li/onboarding/">
+  <img src="docs/screenshot.png" alt="Velvet status page" width="820">
+</a>
+
+**[Create your status page](https://setup.velvet.li/onboarding/)**
 
 </div>
 
