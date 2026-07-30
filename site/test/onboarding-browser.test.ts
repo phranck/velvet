@@ -98,9 +98,27 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "0px",
     );
     assert.equal(await page.locator(".topbar").count(), 0);
-    assert.equal(await page.locator(".page-footer").count(), 0);
+    assert.equal(await page.locator(".page-footer").count(), 1);
     assert.equal(
-      await page.locator("[data-onboarding-palette-color]").count(),
+      await page.locator(".page-footer").evaluate((element) =>
+        getComputedStyle(element).position,
+      ),
+      "fixed",
+    );
+    assert.deepEqual(
+      await page.getByRole("link", { name: "LAYERED" }).evaluate((element) => ({
+        href: (element as HTMLAnchorElement).href,
+        target: (element as HTMLAnchorElement).target,
+        rel: (element as HTMLAnchorElement).rel,
+      })),
+      {
+        href: "https://layered.work/",
+        target: "_blank",
+        rel: "noopener noreferrer",
+      },
+    );
+    assert.equal(
+      await page.locator("[data-rainbow-color]").count(),
       9,
     );
     assert.equal(
@@ -134,7 +152,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
-    const ownerInput = page.getByLabel("Repository owner");
+    const ownerInput = page.getByLabel("Your GitHub name");
     assert.equal(
       await ownerInput.evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
@@ -155,11 +173,8 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         page.getByRole("button", { name: "Continue" }).evaluate((element) =>
           element.getBoundingClientRect().height,
         ),
-        page.locator(".steps button").first().evaluate((element) =>
-          element.getBoundingClientRect().height,
-        ),
       ]),
-      [40, 40, 40],
+      [40, 40],
     );
     assert.equal(
       await page.getByRole("button", { name: "Continue" }).evaluate((element) =>
@@ -174,12 +189,48 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "16px",
     );
     assert.equal(
-      await page.getByLabel("Repository owner").locator("xpath=preceding-sibling::span")
+      await page.locator(".steps button").first().evaluate((element) =>
+        getComputedStyle(element).flexDirection,
+      ),
+      "column",
+    );
+    assert.equal(
+      await page.locator(".steps button").first().evaluate((element) =>
+        element.getBoundingClientRect().height,
+      ),
+      84,
+    );
+    assert.equal(
+      await page.locator("[data-squircle-step-number]").first().evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "24px",
+    );
+    assert.equal(await page.locator("[data-step-connector]").count(), 3);
+    assert.deepEqual(
+      await page.locator("[data-squircle-step]").first().locator("path")
+        .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke-width"))),
+      ["1", "4"],
+    );
+    assert.equal(
+      await page.getByLabel("Your GitHub name").locator("xpath=preceding-sibling::span")
         .evaluate((element) => getComputedStyle(element).fontSize),
       "16px",
     );
+    assert.deepEqual(
+      await page.getByLabel("Your GitHub name").evaluate((input) => {
+        const label = input.previousElementSibling as HTMLElement;
+        const inputRect = input.getBoundingClientRect();
+        const labelRect = label.getBoundingClientRect();
+        return {
+          left: Math.round(labelRect.left - inputRect.left),
+          right: Math.round(inputRect.right - labelRect.right),
+        };
+      }),
+      { left: 9, right: 9 },
+    );
     assert.equal(
-      await page.locator(".field-hint").evaluate((element) =>
+      await page.locator(".field-hint").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
       "15px",
@@ -207,7 +258,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "center",
     );
-    await page.getByLabel("Repository owner").fill("velvet-user");
+    await page.getByLabel("Your GitHub name").fill("velvet-user");
     await page.getByLabel("Repository name").fill("status");
     await page.getByLabel("Status page name").fill("My Status");
     const customDomainInput = page.getByLabel("Custom domain (optional)");
@@ -224,8 +275,10 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     );
     assert.equal(setupCalls, 0);
     assert.equal(
-      await page.locator('.steps button[aria-current="step"]').textContent(),
-      "1 Status page",
+      (await page.locator('.steps button[aria-current="step"]').textContent())
+        ?.replace(/\s+/g, " ")
+        .trim(),
+      "1 Basics",
     );
     await customDomainInput.fill("STATUS.Example.COM");
     assert.match(
@@ -241,7 +294,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByRole("button", { name: "Continue" }).click();
 
     await page.getByLabel("Service name").fill("Website");
-    await page.getByLabel("Website URL").fill("https://example.com");
+    await page.getByLabel("URL to monitor").fill("https://example.com");
     const setupIconPicker = page.locator("[data-service-icon-picker]").first();
     const setupIconTrigger = setupIconPicker.getByRole("button", {
       name: "Service icon: Automatic",
@@ -322,7 +375,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         fullPage: true,
       });
     }
-
     const themeRadios = page.locator('input[name="system-theme"]');
     assert.equal(await themeRadios.count(), 4);
     assert.deepEqual(
@@ -598,10 +650,62 @@ history:
       route.abort(),
     );
     await motionPage.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
-    await motionPage.getByLabel("Repository owner").fill("velvet-user");
+    await motionPage.evaluate(() => {
+      const original = document.startViewTransition.bind(document);
+      document.startViewTransition = (update) => {
+        const transition = original(update);
+        void transition.ready.then(() => {
+          (globalThis as typeof globalThis & { __onboardingTransitionAnimations?: unknown })
+            .__onboardingTransitionAnimations = document.getAnimations().map((animation) => {
+              const effect = animation.effect as KeyframeEffect & {
+                pseudoElement?: string | null;
+              };
+              return {
+                name: animation instanceof CSSAnimation ? animation.animationName : "",
+                pseudo: effect.pseudoElement,
+                duration: effect.getTiming().duration,
+                keyframeEasing: effect.getKeyframes().map(({ easing }) => easing),
+              };
+            });
+        });
+        return transition;
+      };
+    });
+    await motionPage.getByLabel("Your GitHub name").fill("velvet-user");
     await motionPage.getByLabel("Repository name").fill("status");
     await motionPage.getByLabel("Status page name").fill("My Status");
     await motionPage.getByRole("button", { name: "Continue" }).click();
+    await motionPage.waitForFunction(
+      () => Array.isArray(
+        (globalThis as typeof globalThis & { __onboardingTransitionAnimations?: unknown })
+          .__onboardingTransitionAnimations,
+      ),
+      undefined,
+      { polling: "raf", timeout: 1_000 },
+    );
+    const transitionAnimations = await motionPage.evaluate(() =>
+      (globalThis as typeof globalThis & {
+        __onboardingTransitionAnimations: Array<{
+          name: string;
+          pseudo: string | null | undefined;
+          duration: number | CSSNumericValue | string;
+          keyframeEasing: Array<string | undefined>;
+        }>;
+      }).__onboardingTransitionAnimations,
+    );
+    const stepAnimations = transitionAnimations.filter(({ pseudo }) =>
+      pseudo?.includes("onboarding-step-card"),
+    );
+    assert.ok(stepAnimations.some(({ name }) => name.includes("onboarding-slide-in-forward")));
+    assert.ok(stepAnimations.some(({ name }) => name.includes("onboarding-slide-out-forward")));
+    assert.ok(stepAnimations.every(({ duration }) => duration === 200));
+    assert.ok(stepAnimations.every(({ keyframeEasing }) =>
+      keyframeEasing.every((easing) => easing === "ease-in-out"),
+    ));
+    assert.equal(
+      transitionAnimations.some(({ pseudo }) => pseudo === "::view-transition-group(root)"),
+      false,
+    );
     const advancedDetails = motionPage.locator("details").first();
     const advancedContent = advancedDetails.locator("[data-disclosure-content]");
     await advancedDetails.locator("summary").click();

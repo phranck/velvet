@@ -109,7 +109,7 @@
     transform: scale(1);
   }
   strong {
-    padding: 0 0.25rem 0.18rem;
+    padding: 0 var(--theme-card-option-text-inset, 0.25rem) 0.18rem;
     overflow: hidden;
     font-size: var(--theme-card-font-size, 0.85rem);
     line-height: 1.25;
