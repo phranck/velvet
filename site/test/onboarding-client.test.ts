@@ -76,6 +76,7 @@ test("posts one validated credentialed request and reads progress", async () => 
 
 test("polls the short setup status endpoint after the initial workflow starts", async () => {
   const calls: string[] = [];
+  const stages: SetupProgressStage[] = [];
   const client = createBrowserSetupClient(async (url) => {
     calls.push(String(url));
     if (String(url) === "/api/session") {
@@ -95,14 +96,22 @@ test("polls the short setup status endpoint after the initial workflow starts", 
       });
     }
     return new Response(
-      JSON.stringify({ type: "progress", stage: "checking-services" }),
+      JSON.stringify({ type: "progress", stage: "starting-monitor" }),
       { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
     );
   });
 
-  const result = await client.provision(validRequest());
+  const result = await client.provision(
+    validRequest(),
+    (stage) => stages.push(stage),
+  );
 
   assert.deepEqual(calls, ["/api/session", "/api/setup", "/api/setup/status"]);
+  assert.deepEqual(stages, [
+    "authenticating",
+    "starting-monitor",
+    "building-page",
+  ]);
   assert.deepEqual(result, {
     installationUrl: "https://velvet-user.github.io/status/",
   });
