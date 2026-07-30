@@ -1,0 +1,155 @@
+import { Type, type Static } from "@sinclair/typebox";
+
+import { VelvetConfigurationSchema } from "../configuration/schemas.js";
+
+const HttpsUrlSchema = Type.String({
+  minLength: 9,
+  maxLength: 2_048,
+  pattern: "^https://[^\\s]+$",
+});
+
+export const SetupProgressStageSchema = Type.Union([
+  Type.Literal("authenticating"),
+  Type.Literal("creating-repository"),
+  Type.Literal("writing-configuration"),
+  Type.Literal("enabling-pages"),
+  Type.Literal("starting-monitor"),
+  Type.Literal("waiting-for-deployment"),
+]);
+
+export const SetupErrorCodeSchema = Type.Union([
+  Type.Literal("AUTHENTICATION_REQUIRED"),
+  Type.Literal("AUTHENTICATION_FAILED"),
+  Type.Literal("INSTALLATION_REQUIRED"),
+  Type.Literal("ORGANIZATION_APPROVAL_REQUIRED"),
+  Type.Literal("INVALID_SETUP_REQUEST"),
+  Type.Literal("CSRF_REJECTED"),
+  Type.Literal("ORIGIN_REJECTED"),
+  Type.Literal("RATE_LIMITED"),
+  Type.Literal("GITHUB_RATE_LIMITED"),
+  Type.Literal("REPOSITORY_CONFLICT"),
+  Type.Literal("GITHUB_API_FAILED"),
+  Type.Literal("CONFIGURATION_COMMIT_FAILED"),
+  Type.Literal("PAGES_ENABLE_FAILED"),
+  Type.Literal("WORKFLOW_DISPATCH_FAILED"),
+  Type.Literal("WORKFLOW_FAILED"),
+  Type.Literal("SETUP_PARTIAL"),
+  Type.Literal("SETUP_FAILED"),
+]);
+
+export const SetupPublicErrorSchema = Type.Object(
+  {
+    code: SetupErrorCodeSchema,
+    message: Type.String({ minLength: 1, maxLength: 256 }),
+    errorId: Type.String({
+      minLength: 16,
+      maxLength: 64,
+      pattern: "^[A-Za-z0-9_-]+$",
+    }),
+  },
+  { additionalProperties: false },
+);
+
+export const SetupRequestSchema = Type.Object(
+  { configuration: VelvetConfigurationSchema },
+  { additionalProperties: false },
+);
+
+export const SetupSessionSchema = Type.Object(
+  {
+    authenticated: Type.Boolean(),
+    csrfToken: Type.Optional(
+      Type.String({
+        minLength: 43,
+        maxLength: 128,
+        pattern: "^[A-Za-z0-9_-]+$",
+      }),
+    ),
+    user: Type.Optional(
+      Type.Object(
+        { login: Type.String({ minLength: 1, maxLength: 39 }), avatarUrl: HttpsUrlSchema },
+        { additionalProperties: false },
+      ),
+    ),
+    installation: Type.Optional(
+      Type.Object(
+        {
+          id: Type.Integer({ minimum: 1 }),
+          accountLogin: Type.String({ minLength: 1, maxLength: 100 }),
+          accountType: Type.Union([Type.Literal("User"), Type.Literal("Organization")]),
+        },
+        { additionalProperties: false },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
+
+const SetupProgressEventSchema = Type.Object(
+  { type: Type.Literal("progress"), stage: SetupProgressStageSchema },
+  { additionalProperties: false },
+);
+
+const SetupPermissionEventSchema = Type.Object(
+  {
+    type: Type.Literal("permission-required"),
+    error: SetupPublicErrorSchema,
+    installationUrl: HttpsUrlSchema,
+  },
+  { additionalProperties: false },
+);
+
+const SetupSuccessEventSchema = Type.Object(
+  {
+    type: Type.Literal("success"),
+    installationUrl: HttpsUrlSchema,
+    repositoryUrl: HttpsUrlSchema,
+    workflowRunId: Type.Optional(Type.Integer({ minimum: 1 })),
+  },
+  { additionalProperties: false },
+);
+
+const SetupErrorEventSchema = Type.Object(
+  {
+    type: Type.Literal("error"),
+    error: SetupPublicErrorSchema,
+    recoverable: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+
+export const SetupEventSchema = Type.Union([
+  SetupProgressEventSchema,
+  SetupPermissionEventSchema,
+  SetupSuccessEventSchema,
+  SetupErrorEventSchema,
+]);
+
+export const SetupStatusSchema = Type.Object(
+  {
+    operationId: Type.String({
+      minLength: 16,
+      maxLength: 64,
+      pattern: "^[A-Za-z0-9_-]+$",
+    }),
+    state: Type.Union([
+      Type.Literal("running"),
+      Type.Literal("permission-required"),
+      Type.Literal("failed"),
+      Type.Literal("succeeded"),
+    ]),
+    stage: Type.Optional(SetupProgressStageSchema),
+    installationUrl: Type.Optional(HttpsUrlSchema),
+    repositoryUrl: Type.Optional(HttpsUrlSchema),
+    workflowRunId: Type.Optional(Type.Integer({ minimum: 1 })),
+    error: Type.Optional(SetupPublicErrorSchema),
+  },
+  { additionalProperties: false },
+);
+
+export type SetupErrorCode = Static<typeof SetupErrorCodeSchema>;
+export type SetupEvent = Static<typeof SetupEventSchema>;
+export type SetupProgressStage = Static<typeof SetupProgressStageSchema>;
+export type SetupPublicError = Static<typeof SetupPublicErrorSchema>;
+export type SetupSession = Static<typeof SetupSessionSchema>;
+export type SetupStatus = Static<typeof SetupStatusSchema>;
