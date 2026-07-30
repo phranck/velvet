@@ -1,4 +1,4 @@
-export const SECTION_MOTION_OPTIONS: KeyframeAnimationOptions = {
+export const DISCLOSURE_MOTION_OPTIONS: KeyframeAnimationOptions = {
   duration: 160,
   easing: "ease-in-out",
   fill: "forwards",
@@ -9,8 +9,12 @@ export interface DisclosureMotionController {
   destroy(): void;
 }
 
+interface DisclosureOpenState {
+  open: boolean;
+}
+
 export function createDisclosureMotion(
-  details: HTMLDetailsElement,
+  disclosure: DisclosureOpenState,
   content: HTMLElement,
 ): DisclosureMotionController {
   let animation: Animation | null = null;
@@ -53,14 +57,14 @@ export function createDisclosureMotion(
   }
 
   function setExpanded(expanded: boolean, reducedMotion = false): void {
-    if (!animation && details.open === expanded) return;
+    if (!animation && disclosure.open === expanded) return;
 
     interrupt();
     content.style.overflow = "clip";
 
     if (expanded) {
-      if (!details.open) {
-        details.open = true;
+      if (!disclosure.open) {
+        disclosure.open = true;
         content.style.height = "0px";
         content.style.opacity = "0";
       }
@@ -69,7 +73,11 @@ export function createDisclosureMotion(
       const startOpacity = currentOpacity(startHeight > 0 ? 1 : 0);
       const endHeight = content.scrollHeight;
 
-      if (reducedMotion || endHeight === 0 || typeof content.animate !== "function") {
+      if (
+        reducedMotion ||
+        endHeight === 0 ||
+        typeof content.animate !== "function"
+      ) {
         clearSizeStyles();
         return;
       }
@@ -79,7 +87,7 @@ export function createDisclosureMotion(
           { height: `${startHeight}px`, opacity: startOpacity },
           { height: `${endHeight}px`, opacity: 1 },
         ],
-        SECTION_MOTION_OPTIONS,
+        DISCLOSURE_MOTION_OPTIONS,
       );
       animation = candidate;
       finishWhenCurrent(candidate, clearSizeStyles);
@@ -91,8 +99,12 @@ export function createDisclosureMotion(
     content.style.height = `${startHeight}px`;
     content.style.opacity = `${startOpacity}`;
 
-    if (reducedMotion || startHeight === 0 || typeof content.animate !== "function") {
-      details.open = false;
+    if (
+      reducedMotion ||
+      startHeight === 0 ||
+      typeof content.animate !== "function"
+    ) {
+      disclosure.open = false;
       clearSizeStyles();
       return;
     }
@@ -102,11 +114,11 @@ export function createDisclosureMotion(
         { height: `${startHeight}px`, opacity: startOpacity },
         { height: "0px", opacity: 0 },
       ],
-      SECTION_MOTION_OPTIONS,
+      DISCLOSURE_MOTION_OPTIONS,
     );
     animation = candidate;
     finishWhenCurrent(candidate, () => {
-      details.open = false;
+      disclosure.open = false;
       clearSizeStyles();
     });
   }
@@ -119,4 +131,20 @@ export function createDisclosureMotion(
       animation = null;
     },
   };
+}
+
+export function createHiddenDisclosureMotion(
+  content: HTMLElement,
+): DisclosureMotionController {
+  return createDisclosureMotion(
+    {
+      get open() {
+        return !content.hidden;
+      },
+      set open(open) {
+        content.hidden = !open;
+      },
+    },
+    content,
+  );
 }

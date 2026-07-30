@@ -82,7 +82,7 @@ function fixture(open: boolean, naturalHeight = 120) {
 }
 
 test("keeps details open until concurrent height and opacity collapse finishes", async () => {
-  const motion = await import("../src/configurator/section-motion.js");
+  const motion = await import("../src/lib/disclosure-motion.js");
   assert.equal(typeof motion.createDisclosureMotion, "function");
 
   const { animations, content, details } = fixture(true);
@@ -108,7 +108,7 @@ test("keeps details open until concurrent height and opacity collapse finishes",
 });
 
 test("opens immediately and interrupts an active disclosure animation", async () => {
-  const motion = await import("../src/configurator/section-motion.js");
+  const motion = await import("../src/lib/disclosure-motion.js");
   assert.equal(typeof motion.createDisclosureMotion, "function");
 
   const { animations, content, details } = fixture(true);
@@ -129,7 +129,7 @@ test("opens immediately and interrupts an active disclosure animation", async ()
 });
 
 test("uses an immediate path for reduced motion", async () => {
-  const motion = await import("../src/configurator/section-motion.js");
+  const motion = await import("../src/lib/disclosure-motion.js");
   assert.equal(typeof motion.createDisclosureMotion, "function");
 
   const { animations, content, details } = fixture(true);
@@ -139,4 +139,32 @@ test("uses an immediate path for reduced motion", async () => {
   assert.equal(details.open, false);
   assert.equal(animations.length, 0);
   assert.equal(content.style.overflow, "");
+});
+
+test("drives a non-details disclosure through its hidden state", async () => {
+  const motion = await import("../src/lib/disclosure-motion.js");
+  const { createHiddenDisclosureMotion } = motion;
+  assert.equal(typeof createHiddenDisclosureMotion, "function");
+
+  const { animations, content, style } = fixture(false);
+  content.hidden = true;
+  content.getBoundingClientRect = () => {
+    const inlineHeight = Number.parseFloat(style.height);
+    return {
+      height: Number.isFinite(inlineHeight)
+        ? inlineHeight
+        : content.hidden
+          ? 0
+          : content.scrollHeight,
+    } as DOMRect;
+  };
+
+  const controller = createHiddenDisclosureMotion(content);
+  controller.setExpanded(true, false);
+
+  assert.equal(content.hidden, false);
+  assert.deepEqual(animations[0]?.frames, [
+    { height: "0px", opacity: 0 },
+    { height: "120px", opacity: 1 },
+  ]);
 });
