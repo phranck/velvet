@@ -2,6 +2,7 @@
   import { configurationIdentifierFromName } from "@velvet/contracts";
   import { onMount } from "svelte";
   import StatusPage from "../components/StatusPage.svelte";
+  import RainbowScale from "../components/RainbowScale.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
   import * as ServiceEditor from "../components/service-editor";
   import ServiceIconPicker from "../components/service-icon-picker/ServiceIconPicker.svelte";
@@ -654,9 +655,7 @@
         <span class="tool-subtitle">configurator</span>
       </h1>
       <div class="live-swatches" aria-hidden="true">
-        {#each PALETTE_KEYS as key (key)}
-          <span style:background={themeConfiguration.palette[key]}></span>
-        {/each}
+        <RainbowScale />
       </div>
       </header>
 
@@ -1274,9 +1273,6 @@
     height: 5px;
     margin: 20px auto 0;
   }
-  .live-swatches span {
-    transition: background 0.16s ease;
-  }
   .file-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1768,7 +1764,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .live-swatches span,
     .switch > span[aria-hidden="true"]::after,
     .control-panel,
     .sidebar-shell,

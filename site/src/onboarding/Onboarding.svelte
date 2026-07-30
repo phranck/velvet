@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
+  import RainbowScale from "../components/RainbowScale.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
   import * as ServiceEditor from "../components/service-editor";
   import * as ThemeCard from "../components/theme-card";
-  import { PALETTE_KEYS } from "../lib/theme.js";
+  import {
+    createViewTransitionController,
+    type ViewTransitionController,
+  } from "../lib/view-transition.js";
   import { createBrowserSetupClient } from "./client.js";
   import fontLicensesUrl from "./FONT-LICENSES.txt?url";
   import {
@@ -18,9 +22,10 @@
     submitOnboarding,
     type SetupProgressStage,
   } from "./state.js";
+  import SquircleStep from "./SquircleStep.svelte";
   import { SYSTEM_THEMES, systemThemeById } from "./system-themes.js";
 
-  const STEPS = ["Status page", "Services", "Theme", "Publish"] as const;
+  const STEPS = ["Basics", "Services", "Theme", "Publish"] as const;
   const SESSION_STORAGE = browserSessionStorage();
   const GITHUB_RETURN = githubReturnState();
   const PROGRESS_LABELS: Record<SetupProgressStage, string> = {
@@ -50,6 +55,7 @@
   let setupErrorId = $state("");
   let retryAvailable = $state(false);
   let submissionState = $state<"idle" | "permission-required" | "failed" | "success">("idle");
+  let stepTransitionController: ViewTransitionController | null = null;
   const selectedTheme = $derived(systemThemeById(draft.themeId));
   const customDomain = $derived(draft.customDomain.trim().toLowerCase());
   const pagesDnsTarget = $derived(
@@ -61,14 +67,21 @@
   });
 
   onMount(() => {
-    if (!GITHUB_RETURN) return;
-    clearGitHubReturnParameter();
-    if (GITHUB_RETURN === "approval-required") {
-      submissionState = "permission-required";
-      resultMessage = "A GitHub organization owner still needs to approve Velvet.";
-      return;
+    stepTransitionController = createViewTransitionController(document);
+    if (GITHUB_RETURN) {
+      clearGitHubReturnParameter();
+      if (GITHUB_RETURN === "approval-required") {
+        submissionState = "permission-required";
+        resultMessage = "A GitHub organization owner still needs to approve Velvet.";
+      } else {
+        void publish();
+      }
     }
-    void publish();
+    return () => {
+      stepTransitionController?.destroy();
+      stepTransitionController = null;
+      delete document.documentElement.dataset.onboardingDirection;
+    };
   });
 
   function browserSessionStorage(): Storage | null {
@@ -107,6 +120,18 @@
     draft.services.splice(index, 1);
   }
 
+  function changeStep(nextStep: number): void {
+    if (nextStep === step) return;
+    const direction = nextStep > step ? "forward" : "backward";
+    const reducedMotion =
+      globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    document.documentElement.dataset.onboardingDirection = direction;
+    stepTransitionController?.update(async () => {
+      step = nextStep;
+      await tick();
+    }, reducedMotion);
+  }
+
   function nextStep(): void {
     const currentErrors: Record<string, string> = {};
     if (step === 0) {
@@ -121,16 +146,18 @@
     if (step === 1) {
       draft.services.forEach((service, index) => {
         if (!service.name.trim()) currentErrors[`services.${index}.name`] = "Enter a service name.";
-        if (!service.url.trim()) currentErrors[`services.${index}.url`] = "Enter a website URL.";
+        if (!service.url.trim()) currentErrors[`services.${index}.url`] = "Enter a URL to monitor.";
       });
     }
     errors = currentErrors;
-    if (Object.keys(currentErrors).length === 0) step = Math.min(step + 1, STEPS.length - 1);
+    if (Object.keys(currentErrors).length === 0) {
+      changeStep(Math.min(step + 1, STEPS.length - 1));
+    }
   }
 
   function previousStep(): void {
     errors = {};
-    step = Math.max(0, step - 1);
+    changeStep(Math.max(0, step - 1));
   }
 
   async function publish(): Promise<void> {
@@ -190,15 +217,14 @@
       <div class="onboarding-brand-block">
         <h1 class="onboarding-brand">
           <VelvetWordmark />
-          <span>ONBOARDING</span>
+          <span aria-label="ONBOARDING">
+            {#each "ONBOARDING".split("") as letter, index (index)}
+              <span aria-hidden="true">{letter}</span>
+            {/each}
+          </span>
         </h1>
         <div class="onboarding-palette" data-onboarding-palette aria-hidden="true">
-          {#each PALETTE_KEYS as key (key)}
-            <span
-              data-onboarding-palette-color
-              style:background={selectedTheme?.theme.palette[key]}
-            ></span>
-          {/each}
+          <RainbowScale />
         </div>
       </div>
       <p>
@@ -206,45 +232,74 @@
       </p>
     </section>
 
-    <nav class="steps" aria-label="Setup progress">
-      {#each STEPS as label, index (label)}
-        <button
-          type="button"
-          class:active={index === step}
-          class:complete={index < step}
-          aria-current={index === step ? "step" : undefined}
-          disabled={index > step}
-          onclick={() => (step = index)}
-        >
-          <span>{index < step ? "✓" : index + 1}</span>
-          {label}
-        </button>
-      {/each}
+    <nav aria-label="Setup progress">
+      <ol class="steps">
+        {#each STEPS as label, index (label)}
+          <li>
+            <SquircleStep
+              number={index + 1}
+              {label}
+              active={index === step}
+              complete={index < step}
+              disabled={index > step}
+              onSelect={() => changeStep(index)}
+            />
+            {#if index < STEPS.length - 1}
+              <span class="step-connector" data-step-connector aria-hidden="true"></span>
+            {/if}
+          </li>
+        {/each}
+      </ol>
     </nav>
 
     <form onsubmit={(event) => { event.preventDefault(); void publish(); }} novalidate>
+      <div class="step-card-viewport" data-step-card-viewport>
       <section class="step-panel" hidden={step !== 0} aria-labelledby="identity-title">
         <div class="section-heading">
-          <span>01</span>
-          <div>
+          <div class="section-title">
+            <span>01</span>
             <h2 id="identity-title">Name your status page</h2>
-            <p>Velvet creates a new repository in your GitHub account.</p>
           </div>
+          <p>Choose the GitHub account, repository, public name, and optional domain for your status page.</p>
         </div>
         <div class="form-grid two-columns">
           <label>
-            <span>Repository owner</span>
-            <input autocomplete="username" bind:value={draft.repositoryOwner} aria-invalid={errors.repositoryOwner ? "true" : undefined} />
+            <span>Your GitHub name</span>
+            <input
+              autocomplete="username"
+              bind:value={draft.repositoryOwner}
+              aria-describedby="repository-owner-help"
+              aria-invalid={errors.repositoryOwner ? "true" : undefined}
+            />
+            <small id="repository-owner-help" class="field-hint">
+              Enter the GitHub username or organization that should own the repository.
+            </small>
             {#if errors.repositoryOwner}<small class="field-error">{errors.repositoryOwner}</small>{/if}
           </label>
           <label>
             <span>Repository name</span>
-            <input autocomplete="off" bind:value={draft.repositoryName} aria-invalid={errors.repositoryName ? "true" : undefined} />
+            <input
+              autocomplete="off"
+              bind:value={draft.repositoryName}
+              aria-describedby="repository-name-help"
+              aria-invalid={errors.repositoryName ? "true" : undefined}
+            />
+            <small id="repository-name-help" class="field-hint">
+              Velvet creates this repository for your status page. For example: status.
+            </small>
             {#if errors.repositoryName}<small class="field-error">{errors.repositoryName}</small>{/if}
           </label>
           <label class="full-width">
             <span>Status page name</span>
-            <input autocomplete="organization" bind:value={draft.statusPageName} aria-invalid={errors.statusPageName ? "true" : undefined} />
+            <input
+              autocomplete="organization"
+              bind:value={draft.statusPageName}
+              aria-describedby="status-page-name-help"
+              aria-invalid={errors.statusPageName ? "true" : undefined}
+            />
+            <small id="status-page-name-help" class="field-hint">
+              This is the public name visitors see on your status page.
+            </small>
             {#if errors.statusPageName}<small class="field-error">{errors.statusPageName}</small>{/if}
           </label>
           <label class="full-width">
@@ -286,11 +341,11 @@
 
       <section class="step-panel" hidden={step !== 1} aria-labelledby="services-title">
         <div class="section-heading">
-          <span>02</span>
-          <div>
+          <div class="section-title">
+            <span>02</span>
             <h2 id="services-title">Add services</h2>
-            <p>A normal website only needs a name and URL. Velvet checks for a final HTTP 200 response.</p>
           </div>
+          <p>Add every website, API, or endpoint you want to show. A name and URL are enough; Velvet considers a final HTTP 200 response healthy.</p>
         </div>
 
         <ServiceEditor.List onAdd={addService}>
@@ -301,6 +356,9 @@
               {errors}
               canRemove={draft.services.length > 1}
               onRemove={() => removeService(serviceIndex)}
+              serviceNameDescription="Shown publicly on your status page. For example: Website, API, or Storage."
+              urlLabel="URL to monitor"
+              urlDescription="The address Velvet checks. Use a normal website URL or a dedicated health endpoint."
             />
           {/each}
         </ServiceEditor.List>
@@ -308,13 +366,16 @@
 
       <section class="step-panel" hidden={step !== 2} aria-labelledby="theme-title">
         <div class="section-heading">
-          <span>03</span>
-          <div>
+          <div class="section-title">
+            <span>03</span>
             <h2 id="theme-title">Choose a starting theme</h2>
-            <p>You can fine-tune every visual detail later in the Configurator.</p>
           </div>
+          <p>Choose how your status page looks when it first goes live. You can change every visual detail later in the Configurator.</p>
         </div>
-        <ThemeCard.Root legend="System themes" description="Four complete themes are embedded in every Velvet installation.">
+        <ThemeCard.Root
+          legend="System themes"
+          description="Select one of the four included themes. Each preview shows its starting appearance."
+        >
           {#each SYSTEM_THEMES as theme (theme.id)}
             <ThemeCard.Option
               name={theme.name}
@@ -331,11 +392,11 @@
 
       <section class="step-panel" hidden={step !== 3} aria-labelledby="publish-title">
         <div class="section-heading">
-          <span>04</span>
-          <div>
+          <div class="section-title">
+            <span>04</span>
             <h2 id="publish-title">Review and publish</h2>
-            <p>Velvet validates the complete configuration before the setup service receives it.</p>
           </div>
+          <p>Review your choices. Velvet then creates the repository, starts monitoring, and publishes the status page with GitHub Pages.</p>
         </div>
         <div class="review-grid">
           <div><span>Repository</span><strong>{draft.repositoryOwner}/{draft.repositoryName}</strong></div>
@@ -347,7 +408,7 @@
           {/if}
         </div>
         <p class="github-permission-note">
-          On a first setup, GitHub asks twice. Velvet uses the first approval only to create this repository, removes it immediately, and then asks for access to this repository alone.
+          GitHub asks for two approvals during the first setup. The first lets Velvet create the repository and is removed immediately. The second gives Velvet access only to that new repository.
         </p>
 
         {#if submitting || progress.length > 0}
@@ -373,8 +434,9 @@
           {#if setupErrorId}<small>Reference: <code>{setupErrorId}</code></small>{/if}
         </div>
       </section>
+      </div>
 
-      <footer class="form-actions">
+      <footer class="form-actions" data-form-actions-card>
         {#if step > 0 && !submitting}
           <button class="secondary-button" type="button" onclick={previousStep}>Back</button>
         {/if}
@@ -398,6 +460,10 @@
       </footer>
     </form>
   </main>
+  <footer class="page-footer">
+    <span>© by </span>
+    <a href="https://layered.work" target="_blank" rel="noopener noreferrer">LAYERED</a>
+  </footer>
 </div>
 
 <style>
@@ -412,25 +478,41 @@
     --setup-error: #ff8d9a;
     --setup-control-height: 2.5rem;
     --setup-control-radius: 0.55rem;
-    --setup-button-font-size: 0.875rem;
+    --setup-text-small: 0.9375rem;
+    --setup-text-body: 1rem;
+    --setup-text-lead: 1.125rem;
+    --setup-button-font-size: var(--setup-text-body);
     --setup-font: "Barlow", "Segoe UI", sans-serif;
     --setup-heading-font: "Barlow Condensed", "Arial Narrow", sans-serif;
     --picker-accent: var(--setup-accent);
+    --picker-description-font-size: var(--setup-text-small);
+    --picker-label-font-size: var(--setup-text-body);
     --picker-muted: var(--setup-muted);
     --picker-popover: var(--setup-panel-raised);
     --picker-surface: var(--setup-card);
     --picker-text: var(--setup-text);
+    --picker-text-inset: var(--setup-control-radius);
     --service-editor-accent: var(--setup-accent);
     --service-editor-card: var(--setup-card);
+    --service-editor-card-radius: 0.85rem;
+    --service-editor-card-text-inset: var(--service-editor-card-radius);
     --service-editor-control-height: var(--setup-control-height);
     --service-editor-control-radius: var(--setup-control-radius);
     --service-editor-error: var(--setup-error);
+    --service-editor-font-size: var(--setup-text-body);
     --service-editor-input: var(--setup-input);
     --service-editor-muted: var(--setup-muted);
     --service-editor-raised: var(--setup-panel-raised);
+    --service-editor-small-font-size: var(--setup-text-small);
     --service-editor-text: var(--setup-text);
+    --service-editor-text-inset: var(--setup-control-radius);
+    --theme-card-description-font-size: var(--setup-text-small);
+    --theme-card-font-size: var(--setup-text-body);
+    --theme-card-option-text-inset: 0.52rem;
+    --theme-card-text-inset: 0.75rem;
     min-height: 100vh;
     font-family: var(--setup-font);
+    font-size: var(--setup-text-body);
   }
   .onboarding-shell :global(button) {
     min-height: var(--setup-control-height);
@@ -441,13 +523,13 @@
   main {
     width: min(100% - 2rem, 960px);
     margin: 0 auto;
-    padding: clamp(2.5rem, 6vw, 4.5rem) 0 4rem;
+    padding: clamp(2.5rem, 6vw, 4.5rem) 0 7rem;
   }
   .intro {
     width: 100%;
     display: grid;
     justify-items: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 3.5rem;
     text-align: center;
   }
   .onboarding-brand-block {
@@ -472,22 +554,18 @@
   }
   .onboarding-brand > span {
     width: 100%;
+    display: flex;
+    justify-content: space-between;
     color: var(--setup-text);
     font-family: var(--setup-heading-font);
     font-size: clamp(0.95rem, 2.5vw, 1.2rem);
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0;
     line-height: 1;
-    text-align: justify;
-    text-align-last: justify;
-    text-justify: inter-character;
   }
   .onboarding-palette {
     width: 100%;
     height: 5px;
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    gap: 3px;
     margin-top: 1.25rem;
   }
   .intro > p:last-child {
@@ -495,89 +573,90 @@
     max-width: none;
     margin: 1.25rem 0 0;
     color: var(--setup-muted);
-    font-size: clamp(1rem, 2vw, 1.15rem);
+    font-size: var(--setup-text-lead);
     line-height: 1.6;
   }
   .steps {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  .steps button {
-    height: var(--setup-control-height);
-    min-width: 0;
+    --step-gap: clamp(0.875rem, 2vw, 1.25rem);
+
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    padding: 0.35rem 0.7rem;
-    border-radius: var(--setup-control-radius);
-    background: var(--setup-card);
-    color: var(--setup-muted);
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 650;
-    text-align: left;
+    gap: var(--step-gap);
+    margin-bottom: 1rem;
+    padding: 0;
+    list-style: none;
   }
-  .steps button:disabled {
-    cursor: default;
-    opacity: 0.55;
+  .steps li {
+    position: relative;
+    min-width: 0;
+    flex: 1 1 0;
   }
-  .steps button.active {
-    background: color-mix(in srgb, var(--setup-accent) 14%, var(--setup-card));
-    color: var(--setup-text);
-  }
-  .steps button.complete {
-    color: var(--setup-text);
-  }
-  .steps button > span {
-    width: 1.35rem;
-    height: 1.35rem;
-    display: grid;
-    flex: none;
-    place-items: center;
-    border-radius: 50%;
-    background: var(--setup-panel-raised);
-    color: var(--setup-accent);
-    font-size: 0.7rem;
+  .step-connector {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 0.2rem);
+    width: calc(var(--step-gap) - 0.4rem);
+    height: 2px;
+    transform: translateY(-50%);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--setup-muted) 42%, transparent);
   }
   form {
+    display: grid;
+    gap: 0.75rem;
     overflow: visible;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .step-card-viewport {
+    position: relative;
+  }
+  .step-panel {
+    min-height: 27rem;
+    padding: clamp(1.25rem, 4vw, 2.4rem);
     border-radius: 1rem;
     background: var(--setup-panel);
     box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(18px);
   }
-  .step-panel {
-    min-height: 27rem;
-    padding: clamp(1.25rem, 4vw, 2.4rem);
-  }
   .step-panel[hidden] {
     display: none;
   }
+  .step-panel:not([hidden]) {
+    view-transition-name: onboarding-step-card;
+  }
   .section-heading {
-    display: flex;
-    gap: 1rem;
+    display: grid;
+    gap: 0.45rem;
+    margin-inline: 1rem;
     margin-bottom: 2rem;
   }
-  .section-heading > span {
-    padding-top: 0.2rem;
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .section-title > span {
     color: var(--setup-accent);
-    font-size: 0.72rem;
+    font-family: var(--setup-heading-font);
+    font-size: clamp(1.5rem, 3vw, 1.875rem);
+    font-weight: 600;
     letter-spacing: 0.08em;
+    line-height: 1.1;
   }
   h2 {
     margin: 0;
     color: var(--setup-text);
     font-family: var(--setup-heading-font);
-    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    font-size: clamp(1.5rem, 3vw, 1.875rem);
     font-weight: 600;
     letter-spacing: -0.025em;
   }
   .section-heading p {
-    margin: 0.45rem 0 0;
+    margin: 0;
     color: var(--setup-muted);
-    font-size: 0.9rem;
+    font-size: var(--setup-text-small);
     line-height: 1.5;
   }
   .form-grid {
@@ -596,8 +675,9 @@
     gap: 0.42rem;
   }
   label > span {
+    margin-inline: var(--setup-control-radius);
     color: var(--setup-text);
-    font-size: 0.8rem;
+    font-size: var(--setup-text-body);
     font-weight: 650;
   }
   input {
@@ -611,6 +691,7 @@
     background: var(--setup-input);
     color: var(--setup-text);
     box-sizing: border-box;
+    font: inherit;
   }
   input::placeholder {
     color: #747887;
@@ -625,13 +706,17 @@
   input:disabled {
     opacity: 0.55;
   }
+  .field-error,
+  .field-hint {
+    margin-inline: var(--setup-control-radius);
+  }
   .field-error {
     color: var(--setup-error);
-    font-size: 0.75rem;
+    font-size: var(--setup-text-small);
   }
   .field-hint {
     color: var(--setup-muted);
-    font-size: 0.78rem;
+    font-size: var(--setup-text-small);
     line-height: 1.45;
   }
   .dns-guidance {
@@ -639,8 +724,13 @@
     border-radius: 0.7rem;
     background: var(--setup-card);
     color: var(--setup-muted);
-    font-size: 0.82rem;
+    font-size: var(--setup-text-small);
     line-height: 1.5;
+  }
+  .dns-guidance > strong,
+  .dns-guidance > p,
+  .dns-guidance > ul {
+    margin-inline: 0.7rem;
   }
   .dns-guidance strong,
   .dns-guidance b,
@@ -648,12 +738,14 @@
     color: var(--setup-text);
   }
   .dns-guidance p {
-    margin: 0.3rem 0 0;
+    margin-top: 0.3rem;
+    margin-bottom: 0;
   }
   .dns-guidance ul {
     display: grid;
     gap: 0.35rem;
-    margin: 0.65rem 0 0;
+    margin-top: 0.65rem;
+    margin-bottom: 0;
     padding-left: 1.2rem;
   }
   .dns-guidance code {
@@ -686,8 +778,12 @@
   }
   .review-grid span {
     color: var(--setup-muted);
-    font-size: 0.72rem;
+    font-size: var(--setup-text-small);
     text-transform: uppercase;
+  }
+  .review-grid span,
+  .review-grid strong {
+    margin-inline: 0.7rem;
   }
   .review-grid strong {
     overflow-wrap: anywhere;
@@ -696,9 +792,9 @@
     grid-column: 1 / -1;
   }
   .github-permission-note {
-    margin: 1rem 0 0;
+    margin: 1rem 1rem 0;
     color: var(--setup-muted);
-    font-size: 0.82rem;
+    font-size: var(--setup-text-small);
     line-height: 1.5;
   }
   .deployment-progress {
@@ -715,7 +811,7 @@
     align-items: center;
     gap: 0.55rem;
     color: var(--setup-muted);
-    font-size: 0.82rem;
+    font-size: var(--setup-text-body);
   }
   .deployment-progress li.complete {
     color: var(--setup-text);
@@ -726,7 +822,7 @@
   }
   .result {
     min-height: 2rem;
-    margin-top: 1rem;
+    margin: 1rem 1rem 0;
     color: var(--setup-text);
   }
   .result p {
@@ -747,6 +843,7 @@
     display: block;
     margin-top: 0.65rem;
     color: var(--setup-muted);
+    font-size: var(--setup-text-small);
   }
   .result code {
     color: var(--setup-text);
@@ -756,8 +853,10 @@
     min-height: 4rem;
     justify-content: flex-end;
     padding: 0.55rem clamp(1.25rem, 4vw, 2.4rem);
-    border-radius: 0 0 1rem 1rem;
+    border-radius: 1rem;
     background: rgba(16, 17, 22, 0.75);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(18px);
   }
   .primary-button,
   .secondary-button {
@@ -782,10 +881,80 @@
     outline: 2px solid var(--setup-accent);
     outline-offset: 3px;
   }
-  @media (max-width: 720px) {
-    .steps {
-      grid-template-columns: repeat(2, 1fr);
+  .page-footer {
+    position: fixed;
+    z-index: 80;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    min-height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.5rem 1rem;
+    background: color-mix(in srgb, #0d0e14 88%, transparent);
+    color: var(--setup-muted);
+    box-sizing: border-box;
+    font-size: var(--setup-text-small);
+    backdrop-filter: blur(16px);
+  }
+  .page-footer a {
+    color: var(--setup-text);
+    font-weight: 650;
+    text-decoration: none;
+  }
+  :global(::view-transition-group(root)),
+  :global(::view-transition-old(root)),
+  :global(::view-transition-new(root)) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  :global(::view-transition-group(onboarding-step-card)),
+  :global(::view-transition-old(onboarding-step-card)),
+  :global(::view-transition-new(onboarding-step-card)) {
+    animation-duration: 200ms;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: both;
+    mix-blend-mode: normal;
+  }
+  :global(html[data-onboarding-direction="forward"]::view-transition-old(onboarding-step-card)) {
+    animation-name: onboarding-slide-out-forward;
+  }
+  :global(html[data-onboarding-direction="forward"]::view-transition-new(onboarding-step-card)) {
+    animation-name: onboarding-slide-in-forward;
+  }
+  :global(html[data-onboarding-direction="backward"]::view-transition-old(onboarding-step-card)) {
+    animation-name: onboarding-slide-out-backward;
+  }
+  :global(html[data-onboarding-direction="backward"]::view-transition-new(onboarding-step-card)) {
+    animation-name: onboarding-slide-in-backward;
+  }
+  @keyframes onboarding-slide-out-forward {
+    to {
+      opacity: 0;
+      transform: translateX(-10%);
     }
+  }
+  @keyframes onboarding-slide-in-forward {
+    from {
+      opacity: 0;
+      transform: translateX(10%);
+    }
+  }
+  @keyframes onboarding-slide-out-backward {
+    to {
+      opacity: 0;
+      transform: translateX(10%);
+    }
+  }
+  @keyframes onboarding-slide-in-backward {
+    from {
+      opacity: 0;
+      transform: translateX(-10%);
+    }
+  }
+  @media (max-width: 720px) {
     .two-columns,
     .review-grid {
       grid-template-columns: 1fr;
@@ -797,12 +966,8 @@
       width: min(100% - 1rem, 960px);
       padding-top: 2rem;
     }
-    .steps button {
-      padding: 0.6rem;
-      font-size: 0.875rem;
-    }
     .section-heading {
-      gap: 0.65rem;
+      margin-inline: var(--setup-control-radius);
     }
   }
 
@@ -812,6 +977,14 @@
     *::after {
       scroll-behavior: auto !important;
       transition-duration: 0.01ms !important;
+    }
+    :global(::view-transition-group(root)),
+    :global(::view-transition-old(root)),
+    :global(::view-transition-new(root)),
+    :global(::view-transition-group(onboarding-step-card)),
+    :global(::view-transition-old(onboarding-step-card)),
+    :global(::view-transition-new(onboarding-step-card)) {
+      animation: none !important;
     }
   }
 </style>

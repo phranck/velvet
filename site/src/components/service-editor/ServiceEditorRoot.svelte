@@ -20,12 +20,18 @@
     errors,
     canRemove,
     onRemove,
+    serviceNameDescription,
+    urlLabel = "Website URL",
+    urlDescription,
   }: {
     service: ServiceDraft;
     index: number;
     errors: Record<string, string>;
     canRemove: boolean;
     onRemove: () => void;
+    serviceNameDescription?: string;
+    urlLabel?: string;
+    urlDescription?: string;
   } = $props();
 
   function automaticServiceIcon(name: string): string {
@@ -68,21 +74,37 @@
       <input
         placeholder="Website"
         bind:value={service.name}
+        aria-describedby={serviceNameDescription
+          ? `service-${service.id}-name-help`
+          : undefined}
         aria-invalid={errors[`services.${index}.name`] ? "true" : undefined}
       />
+      {#if serviceNameDescription}
+        <small id={`service-${service.id}-name-help`} class="field-hint">
+          {serviceNameDescription}
+        </small>
+      {/if}
       {#if errors[`services.${index}.name`]}
         <small class="field-error">{errors[`services.${index}.name`]}</small>
       {/if}
     </label>
     <label>
-      <span>Website URL</span>
+      <span>{urlLabel}</span>
       <input
         type="url"
         inputmode="url"
         placeholder="https://example.com"
         bind:value={service.url}
+        aria-describedby={urlDescription
+          ? `service-${service.id}-url-help`
+          : undefined}
         aria-invalid={errors[`services.${index}.url`] ? "true" : undefined}
       />
+      {#if urlDescription}
+        <small id={`service-${service.id}-url-help`} class="field-hint">
+          {urlDescription}
+        </small>
+      {/if}
       {#if errors[`services.${index}.url`]}
         <small class="field-error">{errors[`services.${index}.url`]}</small>
       {/if}
@@ -263,7 +285,7 @@
     display: grid;
     gap: 1.35rem;
     padding: 1.15rem;
-    border-radius: 0.85rem;
+    border-radius: var(--service-editor-card-radius, 0.85rem);
     background: var(--service-editor-card, #222530);
     color: var(--service-editor-text, #efedf5);
   }
@@ -273,6 +295,9 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+  }
+  header {
+    margin-inline: var(--service-editor-card-text-inset, 0);
   }
   .service-title {
     min-width: 0;
@@ -286,6 +311,7 @@
   }
   .service-title strong {
     overflow: hidden;
+    font-size: var(--service-editor-font-size, 1rem);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -305,8 +331,9 @@
     gap: 0.42rem;
   }
   label > span {
+    margin-inline: var(--service-editor-text-inset, 0);
     color: var(--service-editor-text, #efedf5);
-    font-size: 0.8rem;
+    font-size: var(--service-editor-font-size, 0.8rem);
     font-weight: 650;
   }
   input,
@@ -343,9 +370,17 @@
   input:disabled {
     opacity: 0.55;
   }
+  .field-error,
+  .field-hint {
+    margin-inline: var(--service-editor-text-inset, 0);
+    font-size: var(--service-editor-small-font-size, 0.75rem);
+  }
   .field-error {
     color: var(--service-editor-error, #ff8d9a);
-    font-size: 0.75rem;
+  }
+  .field-hint {
+    color: var(--service-editor-muted, #979aa8);
+    line-height: 1.45;
   }
   button {
     min-height: var(--service-editor-control-height, 2.5rem);
@@ -377,10 +412,11 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    margin-inline: var(--service-editor-card-text-inset, 0);
     padding: 1rem 0 0;
     color: var(--service-editor-muted, #979aa8);
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: var(--service-editor-font-size, 0.82rem);
     font-weight: 700;
     list-style: none;
   }
@@ -407,9 +443,9 @@
     padding-top: 1rem;
   }
   .advanced-content > p {
-    margin: 0.45rem 0 0;
+    margin: 0.45rem var(--service-editor-text-inset, 0) 0;
     color: var(--service-editor-muted, #979aa8);
-    font-size: 0.9rem;
+    font-size: var(--service-editor-small-font-size, 0.9rem);
     line-height: 1.5;
   }
   .advanced-group {
@@ -422,19 +458,19 @@
     display: block;
   }
   .advanced-heading strong {
-    font-size: 0.85rem;
+    font-size: var(--service-editor-font-size, 0.85rem);
   }
   .advanced-heading span {
     margin-top: 0.2rem;
     color: var(--service-editor-muted, #979aa8);
-    font-size: 0.75rem;
+    font-size: var(--service-editor-small-font-size, 0.75rem);
   }
   .small-button {
     flex: none;
     padding: 0 0.65rem;
     background: var(--service-editor-raised, #272a36);
     color: var(--service-editor-text, #efedf5);
-    font-size: 0.75rem;
+    font-size: var(--service-editor-font-size, 0.75rem);
   }
   button:focus-visible,
   summary:focus-visible {
