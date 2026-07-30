@@ -105,6 +105,21 @@ test("uses the shared theme and icon components in onboarding and configurator",
   assert.match(configurator, /import RainbowScale from "\.\.\/components\/RainbowScale\.svelte"/);
 });
 
+test("uses a shared rainbow scale with clearly different edge hues", async () => {
+  const rainbowScale = await readFile(
+    resolve(import.meta.dirname, "../src/components/RainbowScale.svelte"),
+    "utf8",
+  );
+
+  assert.match(rainbowScale, /"#ff453a"/);
+  assert.match(
+    rainbowScale,
+    /"#ffd60a",\s*\n\s*"#30d158",\s*\n\s*"#00c7be",\s*\n\s*"#64d2ff"/,
+  );
+  assert.match(rainbowScale, /"#bf5af2",\s*\n\s*\] as const/);
+  assert.doesNotMatch(rainbowScale, /"#ff375f"/);
+});
+
 test("uses reusable squircle steps and directional card motion", async () => {
   const onboarding = await readFile(
     resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
@@ -120,9 +135,13 @@ test("uses reusable squircle steps and directional card motion", async () => {
   assert.match(onboarding, /view-transition-name:\s*onboarding-step-card/);
   assert.match(onboarding, /onboarding-slide-out-forward/);
   assert.match(onboarding, /onboarding-slide-in-backward/);
-  assert.match(onboarding, /animation-duration:\s*200ms/);
+  assert.match(onboarding, /animation-duration:\s*350ms/);
   assert.match(onboarding, /animation-timing-function:\s*ease-in-out/);
   assert.match(squircleStep, /data-squircle-step/);
+  assert.match(squircleStep, /createSquircleRectPath/);
+  assert.match(squircleStep, /bind:clientWidth/);
+  assert.match(squircleStep, /bind:clientHeight/);
+  assert.doesNotMatch(squircleStep, /preserveAspectRatio="none"/);
   assert.match(squircleStep, /stroke-width="1"/);
   assert.match(squircleStep, /stroke-width="4"/);
 });

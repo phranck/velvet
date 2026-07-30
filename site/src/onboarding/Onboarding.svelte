@@ -501,6 +501,8 @@
     --service-editor-error: var(--setup-error);
     --service-editor-font-size: var(--setup-text-body);
     --service-editor-input: var(--setup-input);
+    --service-editor-input-border: 1px solid
+      color-mix(in srgb, var(--setup-text) 8%, transparent);
     --service-editor-muted: var(--setup-muted);
     --service-editor-raised: var(--setup-panel-raised);
     --service-editor-small-font-size: var(--setup-text-small);
@@ -553,8 +555,9 @@
     text-align: center;
   }
   .onboarding-brand > span {
-    width: 100%;
+    width: 94%;
     display: flex;
+    justify-self: center;
     justify-content: space-between;
     color: var(--setup-text);
     font-family: var(--setup-heading-font);
@@ -564,8 +567,9 @@
     line-height: 1;
   }
   .onboarding-palette {
-    width: 100%;
+    width: 94%;
     height: 5px;
+    justify-self: center;
     margin-top: 1.25rem;
   }
   .intro > p:last-child {
@@ -685,7 +689,7 @@
     height: var(--setup-control-height);
     min-width: 0;
     padding: 0 0.75rem;
-    border: 0;
+    border: 1px solid color-mix(in srgb, var(--setup-text) 8%, transparent);
     border-radius: var(--setup-control-radius);
     outline: none;
     background: var(--setup-input);
@@ -913,7 +917,7 @@
   :global(::view-transition-group(onboarding-step-card)),
   :global(::view-transition-old(onboarding-step-card)),
   :global(::view-transition-new(onboarding-step-card)) {
-    animation-duration: 200ms;
+    animation-duration: 350ms;
     animation-timing-function: ease-in-out;
     animation-fill-mode: both;
     mix-blend-mode: normal;

@@ -350,6 +350,9 @@
     box-sizing: border-box;
     font: inherit;
   }
+  input {
+    border: var(--service-editor-input-border, 0);
+  }
   input::placeholder {
     color: var(--service-editor-placeholder, #747887);
   }

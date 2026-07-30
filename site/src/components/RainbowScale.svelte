@@ -4,11 +4,11 @@
     "#ff9f0a",
     "#ffd60a",
     "#30d158",
+    "#00c7be",
     "#64d2ff",
     "#0a84ff",
     "#5e5ce6",
     "#bf5af2",
-    "#ff375f",
   ] as const;
 </script>
 
