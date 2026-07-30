@@ -5,14 +5,19 @@ import {
   type SetupEvent,
 } from "@velvet/contracts";
 
-import type { SetupClient, SetupProgressStage } from "./state.js";
+import {
+  SetupClientError,
+  type SetupClient,
+  type SetupFailure,
+  type SetupProgressStage,
+} from "./state.js";
 
-const PROGRESS_STAGES = new Set<SetupProgressStage>([
-  "authenticating",
-  "creating-repository",
-  "writing-configuration",
-  "enabling-pages",
+const BACKGROUND_PROGRESS_STAGES = new Set<SetupProgressStage>([
   "starting-monitor",
+  "checking-services",
+  "publishing-data",
+  "building-page",
+  "deploying-page",
   "waiting-for-deployment",
 ]);
 const MAX_RESPONSE_BYTES = 256 * 1_024;
@@ -75,14 +80,14 @@ export function createBrowserSetupClient(
       for await (const event of events) {
         if (event.type === "progress") {
           onProgress?.(event.stage);
-          deploymentStarted ||= event.stage === "waiting-for-deployment";
+          deploymentStarted ||= BACKGROUND_PROGRESS_STAGES.has(event.stage);
         } else if (event.type === "permission-required") {
           navigate(safeGitHubInstallationUrl(event.installationUrl, event.access));
           throw new Error("SETUP_REDIRECT_STARTED");
         } else if (event.type === "success") {
           return { installationUrl: safeInstallationUrl(event.installationUrl) };
         } else if (event.type === "error") {
-          throw new Error("SETUP_FAILED");
+          throw setupClientError(event);
         }
       }
       if (deploymentStarted) {
@@ -111,10 +116,43 @@ async function pollSetupStatus(
         installationUrl: safeInstallationUrl(status.data.installationUrl),
       };
     }
+    if (status.data.state === "failed" && status.data.error) {
+      throw setupClientError({
+        error: status.data.error,
+        recoverable: status.data.recoverable === true,
+        ...(status.data.repositoryUrl
+          ? { repositoryUrl: status.data.repositoryUrl }
+          : {}),
+        ...(status.data.workflowRunId
+          ? { workflowRunId: status.data.workflowRunId }
+          : {}),
+      });
+    }
     if (status.data.state !== "running") throw new Error("SETUP_FAILED");
     await wait(STATUS_POLL_INTERVAL_MS);
   }
   throw new Error("SETUP_FAILED");
+}
+
+function setupClientError(input: {
+  error: { message: string; errorId: string };
+  recoverable: boolean;
+  repositoryUrl?: string;
+  workflowRunId?: number;
+}): SetupClientError {
+  const repositoryUrl = input.repositoryUrl
+    ? safeGitHubRepositoryUrl(input.repositoryUrl)
+    : undefined;
+  const failure: SetupFailure = {
+    message: input.error.message,
+    errorId: input.error.errorId,
+    recoverable: input.recoverable,
+    ...(repositoryUrl ? { repositoryUrl } : {}),
+    ...(repositoryUrl && input.workflowRunId
+      ? { workflowUrl: `${repositoryUrl}/actions/runs/${input.workflowRunId}` }
+      : {}),
+  };
+  return new SetupClientError(failure);
 }
 
 function wait(milliseconds: number): Promise<void> {
@@ -168,12 +206,6 @@ function parseSetupEvent(source: string): SetupEvent {
   }
   const result = validateSetupEvent(value);
   if (!result.success) throw new Error("SETUP_FAILED");
-  if (
-    result.data.type === "progress" &&
-    !PROGRESS_STAGES.has(result.data.stage as SetupProgressStage)
-  ) {
-    throw new Error("SETUP_FAILED");
-  }
   return result.data;
 }
 
@@ -181,6 +213,26 @@ function safeInstallationUrl(source: string): string {
   const url = new URL(source);
   if (url.protocol !== "https:") throw new Error("SETUP_FAILED");
   return url.href;
+}
+
+function safeGitHubRepositoryUrl(source: string): string {
+  const url = new URL(source);
+  const segments = url.pathname.split("/").filter(Boolean);
+  if (
+    url.origin !== "https://github.com" ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    segments.length !== 2 ||
+    segments.some(
+      (segment) =>
+        segment.length > 100 || !/^[A-Za-z0-9_.-]+$/.test(segment),
+    )
+  ) {
+    throw new Error("SETUP_FAILED");
+  }
+  return `https://github.com/${segments[0]}/${segments[1]}`;
 }
 
 function safeGitHubInstallationUrl(

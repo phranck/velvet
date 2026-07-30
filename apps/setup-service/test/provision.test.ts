@@ -80,6 +80,18 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
       calls.push("dispatch-workflow");
       return 777;
     },
+    async workflowJobs() {
+      calls.push("workflow-jobs");
+      return [
+        {
+          name: "Check services and publish initial data",
+          status: "completed",
+          conclusion: "success",
+        },
+        { name: "Build status page", status: "completed", conclusion: "success" },
+        { name: "Deploy to GitHub Pages", status: "completed", conclusion: "success" },
+      ];
+    },
     async workflowRun() {
       calls.push("workflow-run");
       return {
@@ -120,6 +132,7 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
     "write-configuration",
     "enable-pages",
     "dispatch-workflow",
+    "workflow-jobs",
     "workflow-run",
     "pages",
   ]);
@@ -130,6 +143,10 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
       "writing-configuration",
       "enabling-pages",
       "starting-monitor",
+      "checking-services",
+      "publishing-data",
+      "building-page",
+      "deploying-page",
       "waiting-for-deployment",
     ],
   );
@@ -278,6 +295,56 @@ test("resumes after a partial configuration failure without creating another rep
   assert.equal(calls.filter((call) => call === "create-repository").length, 1);
   assert.equal(calls.filter((call) => call === "create-installation-token").length, 2);
   assert.equal(calls.filter((call) => call === "write-configuration").length, 2);
+});
+
+test("dispatches a fresh setup workflow only after the user retries a failed run", async () => {
+  const session = authenticatedSession();
+  let workflowChecks = 0;
+  let workflowDispatches = 0;
+  const { client, calls } = successfulGitHub({
+    async dispatchWorkflow() {
+      calls.push("dispatch-workflow");
+      workflowDispatches += 1;
+      return workflowDispatches === 1 ? 777 : 778;
+    },
+    async workflowRun() {
+      calls.push("workflow-run");
+      workflowChecks += 1;
+      return {
+        id: workflowChecks === 1 ? 777 : 778,
+        status: "completed",
+        conclusion: workflowChecks === 1 ? "failure" : "success",
+        htmlUrl: `https://github.com/example/status/actions/runs/${workflowChecks === 1 ? 777 : 778}`,
+      };
+    },
+  });
+
+  await assert.rejects(
+    () => provisionVelvet({
+      session,
+      request: normalizedRequest,
+      github: client,
+      onEvent: () => {},
+      sleep: async () => {},
+    }),
+    (error: unknown) => {
+      assert.equal((error as SetupServiceError).code, "WORKFLOW_FAILED");
+      return true;
+    },
+  );
+  assert.equal(calls.filter((call) => call === "dispatch-workflow").length, 1);
+
+  const result = await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(result.type, "success");
+  assert.equal(calls.filter((call) => call === "create-repository").length, 1);
+  assert.equal(calls.filter((call) => call === "dispatch-workflow").length, 2);
 });
 
 test("does not recreate Pages when GitHub confirms it is already enabled", async () => {

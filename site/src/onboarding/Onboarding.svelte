@@ -35,6 +35,10 @@
     "writing-configuration": "Writing the validated configuration",
     "enabling-pages": "Enabling GitHub Pages",
     "starting-monitor": "Starting the first check",
+    "checking-services": "Checking your services",
+    "publishing-data": "Publishing the first status data",
+    "building-page": "Building your status page",
+    "deploying-page": "Publishing your status page",
     "waiting-for-deployment": "Waiting for the status page",
   };
 
@@ -47,6 +51,10 @@
   let progress = $state<SetupProgressStage[]>([]);
   let resultMessage = $state("");
   let installationUrl = $state("");
+  let repositoryUrl = $state("");
+  let workflowUrl = $state("");
+  let setupErrorId = $state("");
+  let retryAvailable = $state(false);
   let submissionState = $state<"idle" | "permission-required" | "failed" | "success">("idle");
   const selectedTheme = $derived(systemThemeById(draft.themeId));
 
@@ -150,6 +158,10 @@
     progress = [];
     resultMessage = "";
     installationUrl = "";
+    repositoryUrl = "";
+    workflowUrl = "";
+    setupErrorId = "";
+    retryAvailable = false;
     submissionState = "idle";
     const result = await submitOnboarding(
       draft,
@@ -171,8 +183,17 @@
       resultMessage = "Your Velvet status page is ready.";
       return;
     }
-    submissionState = result.state;
+    if (result.state === "permission-required") {
+      submissionState = result.state;
+      resultMessage = result.message;
+      return;
+    }
+    submissionState = "failed";
     resultMessage = result.message;
+    repositoryUrl = result.repositoryUrl ?? "";
+    workflowUrl = result.workflowUrl ?? "";
+    setupErrorId = result.errorId;
+    retryAvailable = result.recoverable;
   }
 </script>
 
@@ -439,6 +460,13 @@
         <div class="result" data-setup-state={submissionState} aria-live="polite">
           {#if resultMessage}<p>{resultMessage}</p>{/if}
           {#if installationUrl}<a href={installationUrl}>Open your status page</a>{/if}
+          {#if repositoryUrl || workflowUrl}
+            <div class="recovery-links" data-recovery-links>
+              {#if repositoryUrl}<a href={repositoryUrl} target="_blank" rel="noopener noreferrer">Open repository</a>{/if}
+              {#if workflowUrl}<a href={workflowUrl} target="_blank" rel="noopener noreferrer">View failed workflow</a>{/if}
+            </div>
+          {/if}
+          {#if setupErrorId}<small>Reference: <code>{setupErrorId}</code></small>{/if}
         </div>
       </section>
 
@@ -457,7 +485,9 @@
                 : submissionState === "permission-required"
                   ? "Continue with GitHub"
                   : submissionState === "failed"
-                    ? "Retry setup"
+                    ? retryAvailable
+                      ? "Retry setup"
+                      : "Try setup again"
                     : "Create status page"}
           </button>
         {/if}
@@ -881,6 +911,19 @@
     margin-top: 0.5rem;
     color: var(--setup-accent);
     font-weight: 700;
+  }
+  .recovery-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .result small {
+    display: block;
+    margin-top: 0.65rem;
+    color: var(--setup-muted);
+  }
+  .result code {
+    color: var(--setup-text);
   }
   .form-actions {
     min-height: 4rem;

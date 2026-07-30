@@ -531,10 +531,17 @@ function setupStreamResponse(input: {
           });
         } catch (cause) {
           const error = boundarySetupError(cause);
+          const operation = input.session.operation;
           emit({
             type: "error",
             error: publicSetupError(error, currentErrorId),
             recoverable: error.recoverable,
+            ...(operation?.repositoryUrl
+              ? { repositoryUrl: operation.repositoryUrl }
+              : {}),
+            ...(operation?.workflowRunId
+              ? { workflowRunId: operation.workflowRunId }
+              : {}),
           });
           input.logger({
             level: "error",

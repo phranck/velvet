@@ -5,6 +5,11 @@ It authenticates a user through a Velvet GitHub App, creates one repository from
 the allowlisted `phranck/velvet-template`, writes only `velvet.yml`, enables
 GitHub Pages, and starts `.github/workflows/velvet.yml`.
 
+That template-owned workflow performs the first service check, publishes the
+initial Velvet data, builds the site, and deploys GitHub Pages in order. The
+browser reports those stages separately and does not claim success until the
+workflow and Pages deployment are complete.
+
 Generated status pages do not call this service after setup. They keep running
 when the service is unavailable or when the GitHub App is later uninstalled.
 
@@ -99,6 +104,11 @@ GitHub and the temporary step is unnecessary. Velvet mints a token restricted
 to that repository, then waits until the token can read the generated
 configuration. A bounded GitHub permission propagation delay remains safely
 retryable.
+
+The setup configuration commit deliberately contains GitHub's `[skip ci]`
+marker. This prevents the template's normal push trigger from racing the
+manually dispatched first-deployment workflow. Later configuration commits made
+directly by the repository owner continue to trigger normal monitoring.
 
 If the service restarted after repository creation, inspect the named repository
 before cleanup. A generated repository containing only the untouched template
