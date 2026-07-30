@@ -35,6 +35,8 @@ export const SetupErrorCodeSchema = Type.Union([
   Type.Literal("WORKFLOW_FAILED"),
   Type.Literal("SETUP_PARTIAL"),
   Type.Literal("SETUP_FAILED"),
+  Type.Literal("NOT_FOUND"),
+  Type.Literal("METHOD_NOT_ALLOWED"),
 ]);
 
 export const SetupPublicErrorSchema = Type.Object(

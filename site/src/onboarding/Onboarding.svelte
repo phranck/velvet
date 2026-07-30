@@ -25,8 +25,6 @@
   import { SYSTEM_THEMES, systemThemeById } from "./system-themes.js";
 
   const STEPS = ["Status page", "Services", "Theme", "Publish"] as const;
-  const SETUP_ENDPOINT =
-    import.meta.env.VITE_VELVET_SETUP_API_URL?.trim() || "./api/setup";
   const SESSION_STORAGE = browserSessionStorage();
   const PROGRESS_LABELS: Record<SetupProgressStage, string> = {
     authenticating: "Connecting your GitHub account",
@@ -122,7 +120,7 @@
     submissionState = "idle";
     const result = await submitOnboarding(
       draft,
-      createBrowserSetupClient(globalThis.fetch, SETUP_ENDPOINT),
+      createBrowserSetupClient(),
       (stage) => {
         if (!progress.includes(stage)) progress = [...progress, stage];
       },

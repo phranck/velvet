@@ -37,6 +37,18 @@
         "typescript": "^5.7.0",
       },
     },
+    "apps/setup-service": {
+      "name": "@velvet/setup-service",
+      "version": "1.0.0",
+      "dependencies": {
+        "@velvet/contracts": "1.0.0",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.7.0",
+      },
+    },
     "packages/contracts": {
       "name": "@velvet/contracts",
       "version": "1.0.0",
@@ -341,6 +353,8 @@
     "@velvet/monitor": ["@velvet/monitor@workspace:packages/monitor"],
 
     "@velvet/monitor-action": ["@velvet/monitor-action@workspace:actions/monitor"],
+
+    "@velvet/setup-service": ["@velvet/setup-service@workspace:apps/setup-service"],
 
     "@velvet/site": ["@velvet/site@workspace:site"],
 
