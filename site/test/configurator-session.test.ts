@@ -100,6 +100,65 @@ status-website:
   assert.equal(restored.selectedThemeId, "sunny-spring");
 });
 
+test("persists native service edits through a configurator reload", () => {
+  const parsed = parseConfiguratorYaml(`
+schemaVersion: 1
+repository:
+  owner: velvet-user
+  name: status
+statusPage:
+  name: Example Status
+services:
+  - name: Website
+    url: https://example.com
+`);
+  const storage = new MemoryStorage();
+  assert.ok(parsed.settings.services);
+  parsed.settings.services[0]!.name = "Public Site";
+  parsed.settings.services[0]!.method = "HEAD";
+  parsed.settings.services[0]!.advanced = true;
+
+  assert.equal(
+    persistConfiguratorSession(
+      {
+        settings: parsed.settings,
+        importedDocument: parsed.document,
+        importedFilename: "velvet.yml",
+        selectedThemeId: null,
+        loadedThemeName: "Velvet Default",
+        selectedBaseline: exportedSettingsFingerprint(parsed.settings),
+      },
+      storage,
+    ),
+    true,
+  );
+
+  const restored = loadConfiguratorSession(storage);
+  assert.ok(restored?.settings.services);
+  assert.equal(restored.settings.services[0]!.name, "Public Site");
+  assert.equal(restored.settings.services[0]!.method, "HEAD");
+});
+
+test("keeps the last valid session while a service edit is incomplete", () => {
+  const parsed = parseConfiguratorYaml("");
+  const storage = new MemoryStorage();
+  const session = {
+    settings: parsed.settings,
+    importedDocument: null,
+    importedFilename: "velvet.yml",
+    selectedThemeId: "velvet-default",
+    loadedThemeName: "Velvet Default",
+    selectedBaseline: exportedSettingsFingerprint(parsed.settings),
+  };
+  assert.equal(persistConfiguratorSession(session, storage), true);
+  const previous = storage.getItem(CONFIGURATOR_SESSION_STORAGE_KEY);
+  assert.ok(parsed.settings.services);
+  parsed.settings.services[0]!.url = "";
+
+  assert.equal(persistConfiguratorSession(session, storage), false);
+  assert.equal(storage.getItem(CONFIGURATOR_SESSION_STORAGE_KEY), previous);
+});
+
 test("discards an invalid stored session without affecting other local data", () => {
   const storage = new MemoryStorage();
   storage.setItem(CONFIGURATOR_SESSION_STORAGE_KEY, "not json");

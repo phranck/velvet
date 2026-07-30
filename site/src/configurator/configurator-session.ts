@@ -39,20 +39,19 @@ export function persistConfiguratorSession(
 ): boolean {
   if (!storage) return false;
 
-  const stored: StoredConfiguratorSession = {
-    version: 1,
-    source: exportConfigurationYaml(
-      session.importedDocument,
-      session.settings,
-    ),
-    imported: session.importedDocument !== null,
-    filename: session.importedFilename,
-    selectedThemeId: session.selectedThemeId,
-    loadedThemeName: session.loadedThemeName,
-    selectedBaseline: session.selectedBaseline,
-  };
-
   try {
+    const stored: StoredConfiguratorSession = {
+      version: 1,
+      source: exportConfigurationYaml(
+        session.importedDocument,
+        session.settings,
+      ),
+      imported: session.importedDocument !== null,
+      filename: session.importedFilename,
+      selectedThemeId: session.selectedThemeId,
+      loadedThemeName: session.loadedThemeName,
+      selectedBaseline: session.selectedBaseline,
+    };
     storage.setItem(CONFIGURATOR_SESSION_STORAGE_KEY, JSON.stringify(stored));
     return true;
   } catch {

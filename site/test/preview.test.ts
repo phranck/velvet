@@ -4,6 +4,7 @@ import { test } from "bun:test";
 import {
   PREVIEW_RESPONSE_TIMES,
   PREVIEW_STATUS,
+  previewDocumentsForServices,
 } from "../src/configurator/preview.js";
 import { barsForRange } from "../src/lib/data.js";
 import { responseRangeWindow } from "../src/lib/response-chart.js";
@@ -56,4 +57,32 @@ test("fills 82 days of the 90-day preview availability grid", () => {
     assert.equal(service.dailyAvailability.length, 82);
     assert.equal(bars.filter(({ hasData }) => hasData).length, 82);
   }
+});
+
+test("maps edited service names, order, and identifiers into the live preview", () => {
+  const preview = previewDocumentsForServices([
+    { id: "api", name: "API" },
+    { id: "website", name: "Public Website" },
+    { id: "storage", name: "Storage" },
+  ]);
+
+  assert.deepEqual(
+    preview.status.services.map(({ id, name }) => ({ id, name })),
+    [
+      { id: "api", name: "API" },
+      { id: "website", name: "Public Website" },
+      { id: "storage", name: "Storage" },
+    ],
+  );
+  assert.deepEqual(
+    preview.responseTimes.series.map(({ serviceId, checkId }) => ({
+      serviceId,
+      checkId,
+    })),
+    [
+      { serviceId: "api", checkId: "api-ipv4" },
+      { serviceId: "website", checkId: "website-ipv4" },
+      { serviceId: "storage", checkId: "storage-ipv4" },
+    ],
+  );
 });

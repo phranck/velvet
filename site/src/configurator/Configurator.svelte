@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { configurationIdentifierFromName } from "@velvet/contracts";
   import { onMount } from "svelte";
   import StatusPage from "../components/StatusPage.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import * as ServiceEditor from "../components/service-editor";
   import ServiceIconPicker from "../components/service-icon-picker/ServiceIconPicker.svelte";
   import * as ThemeCard from "../components/theme-card";
   import {
@@ -27,11 +29,14 @@
   import ThemeDropdown from "./ThemeDropdown.svelte";
   import {
     cloneConfiguratorTheme,
+    cloneConfiguratorServices,
+    createConfiguratorServiceDraft,
     configuratorServiceOptions,
     exportConfigurationYaml,
     exportVelvetYaml,
     parseConfiguratorYaml,
     type ConfiguratorDocument,
+    type ConfiguratorServiceDraft,
     type ConfiguratorSettings,
     type ConfiguratorTheme,
   } from "./configuration";
@@ -74,9 +79,8 @@
   } from "./theme-registry";
   import {
     PREVIEW_CONFIG,
-    PREVIEW_INCIDENTS,
-    PREVIEW_RESPONSE_TIMES,
     PREVIEW_STATUS,
+    previewDocumentsForServices,
   } from "./preview";
 
   type PaletteKey = (typeof PALETTE_KEYS)[number];
@@ -151,6 +155,11 @@
     cloneConfiguratorTheme(INITIAL_SETTINGS.theme),
   );
   let icons = $state<Record<string, string>>({ ...INITIAL_SETTINGS.icons });
+  let services = $state<ConfiguratorServiceDraft[] | null>(
+    INITIAL_SETTINGS.services === null
+      ? null
+      : cloneConfiguratorServices(INITIAL_SETTINGS.services),
+  );
   let sectionState = $state(readStoredSectionState());
   let sidebarCollapsed = $state(readStoredSidebarCollapsed());
   let importedDocument = $state<ConfiguratorDocument | null>(
@@ -190,23 +199,52 @@
   );
 
   const theme = $derived(resolveTheme(themeConfiguration));
+  const serviceValidation = $derived(
+    services === null ? null : ServiceEditor.validateServiceDrafts(services),
+  );
+  const serviceErrors = $derived(
+    serviceValidation && !serviceValidation.success
+      ? serviceValidation.errors
+      : {},
+  );
+  const effectiveIcons = $derived(
+    serviceValidation?.success ? serviceValidation.icons : icons,
+  );
   const settings = $derived<ConfiguratorSettings>({
     layout,
     theme: themeConfiguration,
-    icons,
+    icons: effectiveIcons,
+    services,
   });
   const previewConfig = $derived<VelvetConfig>({
     ...PREVIEW_CONFIG,
     layout,
     theme,
-    icons: { ...PREVIEW_CONFIG.icons, ...icons },
+    icons: { ...PREVIEW_CONFIG.icons, ...effectiveIcons },
   });
   const configuredServices = $derived.by(() => {
+    if (serviceValidation?.success) {
+      return serviceValidation.services.map(({ id, name }) => ({ id, name }));
+    }
+    if (services !== null) {
+      const seen: string[] = [];
+      return services.map((service, index) => {
+        const preferred =
+          service.serviceId ?? configurationIdentifierFromName(service.name);
+        const base = preferred || `service-${index + 1}`;
+        const id = seen.includes(base) ? `${base}-${index + 1}` : base;
+        seen.push(id);
+        return { id, name: service.name.trim() || `Service ${index + 1}` };
+      });
+    }
     const imported = configuratorServiceOptions(importedDocument);
     return imported.length > 0
       ? imported
       : PREVIEW_STATUS.services.map(({ id, name }) => ({ id, name }));
   });
+  const previewDocuments = $derived(
+    previewDocumentsForServices(configuredServices),
+  );
   const settingsDirty = $derived(
     isConfiguratorDirty(settings, selectedBaseline),
   );
@@ -218,6 +256,15 @@
 
   $effect(() => {
     if (previewWorkspace) applyTheme(previewConfig, previewWorkspace);
+  });
+
+  $effect(() => {
+    const nextOpenMap = Object.fromEntries(
+      configuredServices.map(({ id }) => [id, previewOpenMap[id] ?? true]),
+    );
+    if (JSON.stringify(nextOpenMap) !== JSON.stringify(previewOpenMap)) {
+      previewOpenMap = nextOpenMap;
+    }
   });
 
   $effect(() => {
@@ -262,6 +309,9 @@
     layout = value.layout;
     themeConfiguration = cloneConfiguratorTheme(value.theme);
     icons = { ...value.icons };
+    services = value.services === null
+      ? null
+      : cloneConfiguratorServices(value.services);
   }
 
   async function refreshThemeRegistry(): Promise<void> {
@@ -280,7 +330,8 @@
     selectedBaseline = exportedSettingsFingerprint({
       layout,
       theme: nextTheme,
-      icons,
+      icons: effectiveIcons,
+      services,
     });
     notice = "Theme loaded from the registry.";
     importError = "";
@@ -306,8 +357,18 @@
 
   function setAllPreviewServices(open: boolean): void {
     previewOpenMap = Object.fromEntries(
-      PREVIEW_STATUS.services.map(({ id }) => [id, open]),
+      configuredServices.map(({ id }) => [id, open]),
     );
+  }
+
+  function addService(): void {
+    if (services === null) return;
+    services.push(createConfiguratorServiceDraft());
+  }
+
+  function removeService(index: number): void {
+    if (services === null || services.length <= 1) return;
+    services.splice(index, 1);
   }
 
   function persistSectionState(value: ConfiguratorSectionState): void {
@@ -389,8 +450,8 @@
   }
 
   async function copyVelvetBlock(): Promise<void> {
-    const source = exportVelvetYaml(importedDocument ?? {}, settings);
     try {
+      const source = exportVelvetYaml(importedDocument ?? {}, settings);
       await writeClipboard(source);
       notice = "Config copied to the clipboard.";
       importError = "";
@@ -418,7 +479,14 @@
     filename = importedFilename,
     chooseNewFile = false,
   ): Promise<boolean> {
-    const source = exportConfigurationYaml(importedDocument, value);
+    let source: string;
+    try {
+      source = exportConfigurationYaml(importedDocument, value);
+    } catch (error) {
+      notice = "Fix the highlighted service fields before saving.";
+      importError = (error as Error).message;
+      return false;
+    }
     if (directFileSavesAvailable) {
       try {
         let handle = chooseNewFile ? null : configurationFileHandle;
@@ -472,12 +540,17 @@
 
   function resetAppearance(): void {
     const defaultTheme = EMBEDDED_THEME_REGISTRY.themes[0];
-    applySettings({ ...DEFAULT_SETTINGS, theme: defaultTheme.theme });
+    layout = DEFAULT_SETTINGS.layout;
+    themeConfiguration = cloneConfiguratorTheme(defaultTheme.theme);
+    icons = {};
+    services?.forEach((service) => (service.icon = null));
     selectedThemeId = defaultTheme.id;
     loadedThemeName = defaultTheme.name;
     selectedBaseline = exportedSettingsFingerprint({
-      ...DEFAULT_SETTINGS,
+      layout,
       theme: defaultTheme.theme,
+      icons: {},
+      services,
     });
     notice = "Appearance reset to Velvet defaults.";
     importError = "";
@@ -511,7 +584,9 @@
     <header class="preview-header">
       <div>
         <span>Live preview</span>
-        <strong>Two services, every visual state</strong>
+        <strong>
+          {configuredServices.length} {configuredServices.length === 1 ? "service" : "services"}, every visual state
+        </strong>
       </div>
       <span class="preview-size">Status page</span>
     </header>
@@ -519,9 +594,9 @@
       <StatusPage
         config={previewConfig}
         showNavigation={false}
-        statusDocument={PREVIEW_STATUS}
-        responseTimesDocument={PREVIEW_RESPONSE_TIMES}
-        incidentsDocument={PREVIEW_INCIDENTS}
+        statusDocument={previewDocuments.status}
+        responseTimesDocument={previewDocuments.responseTimes}
+        incidentsDocument={previewDocuments.incidents}
         {range}
         openMap={previewOpenMap}
         updated="Jul 27, 2026, 12:00 PM"
@@ -694,26 +769,52 @@
 
       <ConfiguratorSection
         id="icons"
-        title="Service Icons"
-        icon="ph-shapes"
+        title="Services"
+        icon="ph-pulse"
         open={sectionState.icons}
         onToggle={toggleSection}
       >
-        <p class="section-help">
-          Keep Automatic for Velvet's service mapping, or save one explicit icon.
-        </p>
-        <div class="service-icon-groups">
-          {#each configuredServices as service (service.id)}
-            <ServiceIconPicker
-              id={`configurator-${service.id}-icon`}
-              legend={service.name}
-              value={icons[service.id] ?? null}
-              automaticIcon={iconFor(service.id)}
-              options={CURATED_SERVICE_ICONS}
-              onChange={(value) => selectServiceIcon(service.id, value)}
-            />
-          {/each}
-        </div>
+        {#if services !== null}
+          <p class="section-help">
+            Add, edit, or remove the services stored in this Velvet configuration.
+          </p>
+          <ServiceEditor.List onAdd={addService}>
+            {#each services as service, serviceIndex (service.id)}
+              <div class="configurator-service">
+                <ServiceEditor.Root
+                  {service}
+                  index={serviceIndex}
+                  errors={serviceErrors}
+                  canRemove={services.length > 1}
+                  onRemove={() => removeService(serviceIndex)}
+                />
+                {#if service.additionalChecks.length > 0}
+                  <p class="preserved-checks">
+                    {service.additionalChecks.length}
+                    {service.additionalChecks.length === 1 ? "additional check is" : "additional checks are"}
+                    kept unchanged when saving.
+                  </p>
+                {/if}
+              </div>
+            {/each}
+          </ServiceEditor.List>
+        {:else}
+          <p class="section-help">
+            Monitoring targets in this legacy file remain read-only. Icon choices are still saved.
+          </p>
+          <div class="service-icon-groups">
+            {#each configuredServices as service (service.id)}
+              <ServiceIconPicker
+                id={`configurator-${service.id}-icon`}
+                legend={service.name}
+                value={icons[service.id] ?? null}
+                automaticIcon={iconFor(service.id)}
+                options={CURATED_SERVICE_ICONS}
+                onChange={(value) => selectServiceIcon(service.id, value)}
+              />
+            {/each}
+          </div>
+        {/if}
       </ConfiguratorSection>
 
       <ConfiguratorSection
@@ -1016,6 +1117,16 @@
     --picker-popover: var(--tool-panel-raised);
     --picker-surface: var(--tool-input);
     --picker-text: var(--tool-text);
+    --service-editor-accent: var(--tool-accent);
+    --service-editor-card: var(--tool-panel-raised);
+    --service-editor-control-height: 2.25rem;
+    --service-editor-control-radius: 0.5rem;
+    --service-editor-error: var(--tool-error);
+    --service-editor-input: var(--tool-input);
+    --service-editor-muted: var(--tool-muted);
+    --service-editor-placeholder: var(--tool-faint);
+    --service-editor-raised: var(--tool-panel);
+    --service-editor-text: var(--tool-text);
     --tool-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     min-height: 100vh;
     display: grid;
@@ -1314,6 +1425,17 @@
   .service-icon-groups {
     display: grid;
     gap: 18px;
+  }
+  .configurator-service {
+    display: grid;
+    gap: 0.65rem;
+  }
+  .preserved-checks {
+    margin: 0;
+    padding: 0 0.25rem;
+    color: var(--tool-muted);
+    font-size: 12px;
+    line-height: 1.4;
   }
   .text-control {
     display: grid;

@@ -9,3 +9,9 @@ export {
   type JsonAssertionDraft,
   type ServiceDraft,
 } from "./model.js";
+export {
+  validateServiceDrafts,
+  type ContractServiceDraft,
+  type ServiceDraftContractMetadata,
+  type ServiceDraftValidationResult,
+} from "./validation.js";

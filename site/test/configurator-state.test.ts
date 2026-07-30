@@ -37,6 +37,19 @@ test("marks every exported setting change dirty while ignoring preview state", (
     ),
     true,
   );
+  assert.ok(settings.services);
+  const renamedServices = structuredClone(settings.services);
+  renamedServices[0]!.name = "Public Site";
+  assert.equal(
+    isConfiguratorDirty({ ...settings, services: renamedServices }, baseline),
+    true,
+  );
+  const disclosureOnly = structuredClone(settings.services);
+  disclosureOnly[0]!.advanced = !disclosureOnly[0]!.advanced;
+  assert.equal(
+    isConfiguratorDirty({ ...settings, services: disclosureOnly }, baseline),
+    false,
+  );
 });
 
 test("routes platform save shortcuts without hijacking unrelated keys", () => {

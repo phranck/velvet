@@ -138,3 +138,52 @@ export const PREVIEW_INCIDENTS: IncidentsDocument = {
   generatedAt: PREVIEW_STATUS.generatedAt,
   events: [],
 };
+
+export interface PreviewServiceOption {
+  id: string;
+  name: string;
+}
+
+export function previewDocumentsForServices(
+  services: readonly PreviewServiceOption[],
+): {
+  status: StatusDocument;
+  responseTimes: ResponseTimesDocument;
+  incidents: IncidentsDocument;
+} {
+  const selected = services.length > 0
+    ? services
+    : PREVIEW_STATUS.services.map(({ id, name }) => ({ id, name }));
+  const statusServices = selected.map((service, index) => {
+    const sample = PREVIEW_STATUS.services[index % PREVIEW_STATUS.services.length]!;
+    const sampleCheck = sample.checks[0]!;
+    return {
+      ...structuredClone(sample),
+      id: service.id,
+      name: service.name,
+      checks: [
+        {
+          ...sampleCheck,
+          id: `${service.id}-ipv4`,
+        },
+      ],
+    };
+  });
+  const responseSeries = selected.map((service, index) => {
+    const sampleService = PREVIEW_STATUS.services[index % PREVIEW_STATUS.services.length]!;
+    const sample = PREVIEW_RESPONSE_TIMES.series.find(
+      ({ serviceId }) => serviceId === sampleService.id,
+    )!;
+    return {
+      ...structuredClone(sample),
+      serviceId: service.id,
+      checkId: `${service.id}-ipv4`,
+    };
+  });
+
+  return {
+    status: { ...PREVIEW_STATUS, services: statusServices },
+    responseTimes: { ...PREVIEW_RESPONSE_TIMES, series: responseSeries },
+    incidents: structuredClone(PREVIEW_INCIDENTS),
+  };
+}
