@@ -4,7 +4,7 @@
   import {
     createDisclosureMotion,
     type DisclosureMotionController,
-  } from "./section-motion";
+  } from "../lib/disclosure-motion";
   import type { ConfiguratorSectionId } from "./section-state";
 
   let {

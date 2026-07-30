@@ -1,10 +1,15 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import type {
     RangeKey,
     ResponseTimesDocument,
     ServiceCheck,
   } from "../../lib/types";
   import type { VelvetTheme } from "../../lib/config";
+  import {
+    createHiddenDisclosureMotion,
+    type DisclosureMotionController,
+  } from "../../lib/disclosure-motion";
   import ProtocolStatus from "./ProtocolStatus.svelte";
   import ResponseTimeChart from "./ResponseTimeChart.svelte";
 
@@ -29,59 +34,64 @@
     id: string;
     chart: VelvetTheme["chart"];
   } = $props();
+
+  let renderedOpen = $state((() => open)());
+  let content: HTMLElement;
+  let motion: DisclosureMotionController | null = null;
+  let mounted = $state(false);
+
+  function reducedMotion(): boolean {
+    return (
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+    );
+  }
+
+  onMount(() => {
+    motion = createHiddenDisclosureMotion(content);
+    mounted = true;
+    return () => motion?.destroy();
+  });
+
+  $effect(() => {
+    const expanded = open;
+    if (mounted) motion?.setExpanded(expanded, reducedMotion());
+  });
 </script>
 
-<div class="detail-wrap" class:open>
-  <div class="detail-clip">
-    <div class="detail" {id} inert={!open}>
-      <div class="protocol-grid" role="list" aria-label="Protocol status">
-        {#each checks as check, index (check.id)}
-          {#if index > 0}
-            <span class="protocol-separator" aria-hidden="true">|</span>
-          {/if}
-          <ProtocolStatus {check} />
-        {/each}
-      </div>
-      <ResponseTimeChart
-        {serviceId}
-        {serviceName}
-        series={responseSeries}
-        {range}
-        {generatedAt}
-        {chart}
-      />
+<div
+  bind:this={content}
+  class="detail-wrap"
+  {id}
+  hidden={!renderedOpen}
+  inert={!open}
+>
+  <div class="detail">
+    <div class="protocol-grid" role="list" aria-label="Protocol status">
+      {#each checks as check, index (check.id)}
+        {#if index > 0}
+          <span class="protocol-separator" aria-hidden="true">|</span>
+        {/if}
+        <ProtocolStatus {check} />
+      {/each}
     </div>
+    <ResponseTimeChart
+      {serviceId}
+      {serviceName}
+      series={responseSeries}
+      {range}
+      {generatedAt}
+      {chart}
+    />
   </div>
 </div>
 
 <style>
-  .detail-wrap {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 240ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .detail-wrap.open {
-    grid-template-rows: 1fr;
-  }
-  .detail-clip {
-    overflow: hidden;
-    min-height: 0;
-  }
   .detail {
     margin-top: 13px;
     padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: 10px;
     background: var(--surface-2);
-    opacity: 0;
-    transform: translateY(-5px);
-    transition:
-      opacity 180ms ease,
-      transform 240ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .detail-wrap.open .detail {
-    opacity: 1;
-    transform: translateY(0);
   }
   .protocol-grid {
     display: flex;
@@ -95,12 +105,5 @@
     font-family: var(--font-mono);
     font-size: 14px;
     line-height: 1;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .detail-wrap,
-    .detail {
-      transition: none;
-    }
   }
 </style>

@@ -192,15 +192,17 @@ test("reuses the response chart inside service details", async () => {
   assert.match(html, /Response time history for Website/);
 });
 
-test("smoothly animates service disclosure with a reduced-motion fallback", async () => {
+test("reuses the shared interruptible disclosure motion for service details", async () => {
   const source = await readFile(
     resolve(import.meta.dirname, "../src/components/service/ServiceDetails.svelte"),
     "utf8",
   );
 
-  assert.match(source, /transition:\s*grid-template-rows/);
-  assert.match(source, /\.detail-wrap\.open[\s\S]*opacity:\s*1/);
-  assert.match(source, /prefers-reduced-motion:\s*reduce/);
+  assert.match(source, /createHiddenDisclosureMotion/);
+  assert.match(source, /motion\?\.setExpanded\(expanded, reducedMotion\(\)\)/);
+  assert.match(source, /hidden=\{!renderedOpen\}/);
+  assert.match(source, /inert=\{!open\}/);
+  assert.doesNotMatch(source, /grid-template-rows/);
 });
 
 test("uses one shared theme color for every service icon", async () => {
