@@ -134,11 +134,19 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     const setupIconOptions = setupIconPicker.getByRole("option");
     assert.equal(await setupIconOptions.count(), 22);
     assert.equal(await setupIconOptions.locator("i:first-child").count(), 22);
+    assert.equal(await setupIconOptions.locator("span").count(), 0);
+    assert.equal(await setupIconOptions.first().getAttribute("aria-label"), "Automatic");
     assert.equal(
       await setupIconPicker.getByRole("listbox").evaluate((element) =>
         getComputedStyle(element).position,
       ),
       "absolute",
+    );
+    assert.equal(
+      await setupIconPicker.getByRole("listbox").evaluate((element) =>
+        getComputedStyle(element).gridTemplateColumns.split(" ").length,
+      ),
+      6,
     );
     await setupIconPicker.getByRole("option", { name: "Storage" }).click();
     assert.equal(
@@ -238,6 +246,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`http://127.0.0.1:${address.port}/configurator.html`);
+    assert.equal(
+      await page.locator(".control-panel").evaluate((element) =>
+        element.getBoundingClientRect().width,
+      ),
+      440,
+    );
     const cloudyAutumn = page.locator(
       '[data-theme-card-option="cloudy-autumn"]',
     );
@@ -245,6 +259,16 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(await cloudyAutumn.locator("input").isChecked(), true);
     const websiteIcons = page.locator("[data-service-icon-picker]").first();
     await websiteIcons.getByRole("button", { name: "Website: Automatic" }).click();
+    assert.deepEqual(
+      await websiteIcons.getByRole("listbox").evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          columns: style.gridTemplateColumns.split(" ").length,
+          rows: style.gridTemplateRows.split(" ").length,
+        };
+      }),
+      { columns: 11, rows: 2 },
+    );
     await websiteIcons.getByRole("option", { name: "Storage" }).click();
     assert.equal(
       await page.locator("button.summary").first().locator(".ph-hard-drives").count(),
@@ -292,6 +316,20 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     });
     await motionIconTrigger.focus();
     await motionPage.keyboard.press("End");
+    assert.equal(
+      await motionIconPicker.getByRole("option", { name: "Calendar" }).evaluate(
+        (element) => element === document.activeElement,
+      ),
+      true,
+    );
+    await motionPage.keyboard.press("ArrowUp");
+    assert.equal(
+      await motionIconPicker.getByRole("option", { name: "Shop" }).evaluate(
+        (element) => element === document.activeElement,
+      ),
+      true,
+    );
+    await motionPage.keyboard.press("ArrowDown");
     assert.equal(
       await motionIconPicker.getByRole("option", { name: "Calendar" }).evaluate(
         (element) => element === document.activeElement,
