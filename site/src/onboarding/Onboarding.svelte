@@ -9,6 +9,7 @@
     DEFAULT_SERVICE_ICON,
     iconFor,
   } from "../lib/icons.js";
+  import { disclosureMotion } from "../lib/disclosure-motion.js";
   import { createBrowserSetupClient } from "./client.js";
   import {
     clearOnboardingDraft,
@@ -298,9 +299,18 @@
               </ServiceIconPicker.Root>
               {#if errors[`services.${serviceIndex}.icon`]}<small class="field-error">{errors[`services.${serviceIndex}.icon`]}</small>{/if}
 
-              <details bind:open={service.advanced}>
-                <summary>Advanced health check</summary>
-                <div class="advanced-content">
+              <details data-advanced-open={service.advanced}>
+                <summary
+                  onclick={(event) => {
+                    event.preventDefault();
+                    service.advanced = !service.advanced;
+                  }}
+                >
+                  <span>Advanced health check</span>
+                  <i class="ph-duotone ph-caret-circle-down advanced-caret" aria-hidden="true"></i>
+                </summary>
+                <div use:disclosureMotion={service.advanced} class="advanced-motion" data-disclosure-content>
+                  <div class="advanced-content">
                   <p>
                     Use this only for a dedicated health endpoint, alternate success codes, secret-backed request headers, or a JSON response assertion.
                   </p>
@@ -372,6 +382,7 @@
                         <button class="icon-button" type="button" aria-label="Remove JSON assertion" onclick={() => removeAssertion(serviceIndex, assertionIndex)}><i class="ph-duotone ph-trash" aria-hidden="true"></i></button>
                       </div>
                     {/each}
+                  </div>
                   </div>
                 </div>
               </details>
@@ -752,14 +763,33 @@
     color: var(--setup-text);
   }
   summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     padding: 1rem 0 0;
     color: var(--setup-muted);
     cursor: pointer;
     font-size: 0.82rem;
     font-weight: 700;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
   }
   summary:hover {
     color: var(--setup-text);
+  }
+  .advanced-caret {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: transform 200ms ease-in-out;
+  }
+  details[data-advanced-open="true"] .advanced-caret {
+    transform: rotate(180deg);
   }
   .advanced-content {
     display: grid;

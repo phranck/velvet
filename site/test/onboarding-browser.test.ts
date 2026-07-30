@@ -248,6 +248,34 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator("button.summary").first().locator(".ph-hard-drives").count(),
       1,
     );
+
+    const motionContext = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      reducedMotion: "no-preference",
+    });
+    const motionPage = await motionContext.newPage();
+    await motionPage.route("https://phranck.github.io/velvet-themes/index.json", (route) =>
+      route.abort(),
+    );
+    await motionPage.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
+    await motionPage.getByLabel("Repository owner").fill("velvet-user");
+    await motionPage.getByLabel("Repository name").fill("status");
+    await motionPage.getByLabel("Status page name").fill("My Status");
+    await motionPage.getByRole("button", { name: "Continue" }).click();
+    const advancedDetails = motionPage.locator("details").first();
+    const advancedContent = advancedDetails.locator("[data-disclosure-content]");
+    await advancedDetails.locator("summary").click();
+    assert.equal(await advancedDetails.getAttribute("open"), "");
+    assert.deepEqual(
+      await advancedContent.evaluate((element) =>
+        element.getAnimations().map((animation) => ({
+          duration: animation.effect?.getTiming().duration,
+          easing: animation.effect?.getTiming().easing,
+        })),
+      ),
+      [{ duration: 200, easing: "ease-in-out" }],
+    );
+    await motionContext.close();
   } finally {
     await browser.close();
     await server.close();
