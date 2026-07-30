@@ -4,6 +4,7 @@ import { test } from "bun:test";
 import { GitHubApiError } from "../src/github.js";
 import { createAuditLogger } from "../src/observability.js";
 import { createRateLimiter } from "../src/rate-limit.js";
+import { SetupServiceError } from "../src/setup-error.js";
 
 test("writes structured request outcomes with a redacted upstream cause", () => {
   const lines: string[] = [];
@@ -49,6 +50,44 @@ test("writes structured request outcomes with a redacted upstream cause", () => 
     },
   });
   assert.doesNotMatch(lines[0]!, /secret-token|Authorization|client-secret/);
+});
+
+test("keeps safe GitHub diagnostics through a setup error wrapper", () => {
+  const lines: string[] = [];
+  const logger = createAuditLogger({ write: (line) => lines.push(line) });
+  const upstream = new GitHubApiError(
+    new Response(null, {
+      status: 403,
+      headers: { "X-GitHub-Request-Id": "DEF:456" },
+    }),
+  );
+  Object.assign(upstream, { responseBody: "secret-token" });
+
+  logger({
+    level: "error",
+    requestId: "request-id",
+    route: "/api/setup",
+    operation: "provision",
+    status: 500,
+    outcome: "failed",
+    code: "GITHUB_API_FAILED",
+    errorId: "error-id",
+    cause: new SetupServiceError("GITHUB_API_FAILED", "Safe message.", {
+      cause: upstream,
+    }),
+  });
+
+  const cause = JSON.parse(lines[0]!).cause;
+  assert.deepEqual(cause, {
+    name: "SetupServiceError",
+    cause: {
+      name: "GitHubApiError",
+      status: 403,
+      githubRequestId: "DEF:456",
+      retryAfterSeconds: null,
+    },
+  });
+  assert.doesNotMatch(lines[0]!, /secret-token|responseBody/);
 });
 
 test("bounds rate-limit state and returns a retry delay", () => {

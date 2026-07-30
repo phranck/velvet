@@ -38,7 +38,10 @@ export function createAuditLogger(
   };
 }
 
-function redactedCause(cause: unknown): Record<string, unknown> {
+function redactedCause(
+  cause: unknown,
+  depth = 0,
+): Record<string, unknown> {
   if (cause instanceof GitHubApiError) {
     return {
       name: cause.name,
@@ -47,6 +50,13 @@ function redactedCause(cause: unknown): Record<string, unknown> {
       retryAfterSeconds: cause.retryAfterSeconds,
     };
   }
-  if (cause instanceof Error) return { name: cause.name };
+  if (cause instanceof Error) {
+    return {
+      name: cause.name,
+      ...(depth < 2 && cause.cause !== undefined
+        ? { cause: redactedCause(cause.cause, depth + 1) }
+        : {}),
+    };
+  }
   return { name: "UnknownError" };
 }
