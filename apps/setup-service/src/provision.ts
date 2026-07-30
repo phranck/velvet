@@ -24,7 +24,7 @@ interface ProvisionVelvetInput {
   operationId?: () => string;
   errorId?: () => string;
   sleep?: (milliseconds: number) => Promise<void>;
-  maxRepositoryAccessChecks?: number;
+  maxConfigurationAccessChecks?: number;
   maxWorkflowChecks?: number;
 }
 
@@ -139,15 +139,6 @@ export async function provisionVelvet(
       delete input.session.installation;
       throw installationRequired(true);
     }
-    await waitForRepositoryAccess({
-      github: input.github,
-      installationId: installation.id,
-      owner: state.repository.owner,
-      repository: state.repository.name,
-      sleep,
-      maxChecks: input.maxRepositoryAccessChecks ?? 20,
-    });
-
     const installationToken = await input.github.createInstallationToken(
       installation.id,
       state.repository.id,
@@ -155,11 +146,14 @@ export async function provisionVelvet(
 
     if (!state.configurationCommitted) {
       progress("writing-configuration");
-      const configurationSha = await input.github.getConfigurationSha(
+      const configurationSha = await waitForConfigurationAccess({
+        github: input.github,
         installationToken,
-        state.repository.owner,
-        state.repository.name,
-      );
+        owner: state.repository.owner,
+        repository: state.repository.name,
+        sleep,
+        maxChecks: input.maxConfigurationAccessChecks ?? 20,
+      });
       await input.github.writeConfiguration(
         installationToken,
         state.repository.owner,
@@ -266,32 +260,25 @@ export async function provisionVelvet(
   }
 }
 
-async function waitForRepositoryAccess(input: {
+async function waitForConfigurationAccess(input: {
   github: GitHubSetupClient;
-  installationId: number;
+  installationToken: string;
   owner: string;
   repository: string;
   sleep: (milliseconds: number) => Promise<void>;
   maxChecks: number;
-}): Promise<void> {
+}): Promise<string> {
   for (let check = 0; check < input.maxChecks; check += 1) {
     try {
-      const installation = await input.github.repositoryInstallation(
+      return await input.github.getConfigurationSha(
+        input.installationToken,
         input.owner,
         input.repository,
       );
-      if (installation.id !== input.installationId) {
-        throw new SetupServiceError(
-          "INSTALLATION_REQUIRED",
-          "Install Velvet for the selected repository before continuing.",
-          { status: 403, recoverable: true },
-        );
-      }
-      return;
     } catch (error) {
       if (!(error instanceof GitHubApiError) || error.status !== 404) throw error;
     }
-    await input.sleep(500);
+    if (check + 1 < input.maxChecks) await input.sleep(500);
   }
   throw new SetupServiceError(
     "SETUP_PARTIAL",

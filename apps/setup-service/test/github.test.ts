@@ -189,37 +189,6 @@ test("resolves installation targets and removes temporary installations with an 
   assert.match(requests[1]?.headers.get("Authorization") ?? "", /^Bearer [^.]+\.[^.]+\.[^.]+$/);
 });
 
-test("checks the exact repository installation with an app JWT", async () => {
-  const requests: Request[] = [];
-  const client = createGitHubSetupClient({
-    appId: "12345",
-    clientId: "Iv1.client",
-    clientSecret: "client-secret",
-    privateKey: privateKeyPem,
-    nowSeconds: () => 1_000_000,
-    fetch: async (request) => {
-      requests.push(request);
-      return Response.json({
-        id: 7,
-        account: { login: "example", type: "User" },
-        repository_selection: "selected",
-      });
-    },
-  });
-
-  assert.deepEqual(await client.repositoryInstallation("example", "status"), {
-    id: 7,
-    accountLogin: "example",
-    accountType: "User",
-    repositorySelection: "selected",
-  });
-  assert.equal(
-    requests[0]?.url,
-    "https://api.github.com/repos/example/status/installation",
-  );
-  assert.match(requests[0]?.headers.get("Authorization") ?? "", /^Bearer [^.]+\.[^.]+\.[^.]+$/);
-});
-
 test("returns bounded GitHub errors without response bodies or credentials", async () => {
   const client = createGitHubSetupClient({
     appId: "12345",

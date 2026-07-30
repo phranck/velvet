@@ -64,15 +64,6 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
       return "installation-token";
     },
     async deleteInstallation() { calls.push("delete-installation"); },
-    async repositoryInstallation() {
-      calls.push("repository-installation");
-      return {
-        id: 7,
-        accountLogin: "example",
-        accountType: "User",
-        repositorySelection: "selected",
-      };
-    },
     async getConfigurationSha() {
       calls.push("get-configuration");
       return "template-sha";
@@ -124,7 +115,6 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
 
   assert.deepEqual(calls, [
     "create-repository",
-    "repository-installation",
     "create-installation-token",
     "get-configuration",
     "write-configuration",
@@ -201,23 +191,18 @@ test("removes a temporary all-repository installation immediately after reposito
   assert.equal(session.provisioning?.repository?.id, 99);
 });
 
-test("waits until GitHub grants the selected installation access to a new repository", async () => {
+test("waits until the installation token can read the generated configuration", async () => {
   const session = authenticatedSession();
   let accessChecks = 0;
   let sleeps = 0;
   const { client, calls } = successfulGitHub({
-    async repositoryInstallation() {
-      calls.push("repository-installation");
+    async getConfigurationSha() {
+      calls.push("get-configuration");
       accessChecks += 1;
       if (accessChecks === 1) {
         throw new GitHubApiError(new Response(null, { status: 404 }));
       }
-      return {
-        id: 7,
-        accountLogin: "example",
-        accountType: "User",
-        repositorySelection: "selected",
-      };
+      return "template-sha";
     },
   });
 
@@ -233,8 +218,8 @@ test("waits until GitHub grants the selected installation access to a new reposi
   assert.equal(accessChecks, 2);
   assert.equal(sleeps, 1);
   assert.ok(
-    calls.indexOf("repository-installation") <
-      calls.indexOf("create-installation-token"),
+    calls.lastIndexOf("get-configuration") <
+      calls.indexOf("write-configuration"),
   );
 });
 
