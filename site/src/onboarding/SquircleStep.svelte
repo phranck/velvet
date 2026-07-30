@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { SQUIRCLE_PATH } from "../lib/squircle.js";
+  import { createSquircleRectPath } from "../lib/squircle.js";
+
+  const CORNER_RADIUS = 24;
+  const OUTER_PATH_INSET = 1;
+  const INNER_PATH_INSET = 5.5;
 
   let {
     number,
@@ -16,6 +20,15 @@
     disabled?: boolean;
     onSelect: () => void;
   } = $props();
+
+  let width = $state(0);
+  let height = $state(0);
+  const outerPath = $derived(
+    createSquircleRectPath(width, height, CORNER_RADIUS, OUTER_PATH_INSET),
+  );
+  const innerPath = $derived(
+    createSquircleRectPath(width, height, CORNER_RADIUS, INNER_PATH_INSET),
+  );
 </script>
 
 <button
@@ -26,25 +39,23 @@
   aria-current={active ? "step" : undefined}
   {disabled}
   onclick={onSelect}
+  bind:clientWidth={width}
+  bind:clientHeight={height}
 >
-  <svg class="outer-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+  <svg viewBox={`0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`} aria-hidden="true">
     <path
-      d={SQUIRCLE_PATH}
+      d={outerPath}
       fill="none"
       stroke="currentColor"
       stroke-width="1"
       stroke-linejoin="round"
-      vector-effect="non-scaling-stroke"
     ></path>
-  </svg>
-  <svg class="inner-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
     <path
-      d={SQUIRCLE_PATH}
+      d={innerPath}
       fill="none"
       stroke="currentColor"
       stroke-width="4"
       stroke-linejoin="round"
-      vector-effect="non-scaling-stroke"
     ></path>
   </svg>
   <span class="number" data-squircle-step-number>{number}</span>
@@ -75,20 +86,13 @@
   svg {
     position: absolute;
     z-index: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     display: block;
     overflow: visible;
     color: color-mix(in srgb, var(--setup-muted) 46%, transparent);
     pointer-events: none;
-  }
-  .outer-frame {
-    inset: 0;
-    width: 100%;
-    height: 100%;
-  }
-  .inner-frame {
-    inset: 4.5px;
-    width: calc(100% - 9px);
-    height: calc(100% - 9px);
   }
   .number,
   .label {

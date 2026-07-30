@@ -157,7 +157,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await ownerInput.evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
       ),
-      "0px",
+      "1px",
     );
     assert.notEqual(
       await ownerInput.evaluate((element) =>
@@ -245,12 +245,14 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator(".onboarding-brand-block").evaluate((element) => {
         const widths = [
           element.querySelector<HTMLElement>(".velvet-wordmark"),
-          element.querySelector<HTMLElement>(".onboarding-brand > span"),
+          element.querySelector<HTMLElement>(
+            '.onboarding-brand > span[aria-label="ONBOARDING"]',
+          ),
           element.querySelector<HTMLElement>(".onboarding-palette"),
         ].map((child) => Math.round(child?.getBoundingClientRect().width ?? 0));
         return widths;
       }),
-      [270, 270, 270],
+      [270, 254, 254],
     );
     assert.equal(
       await page.locator(".onboarding-brand .velvet-wordmark").evaluate(
@@ -295,6 +297,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
 
     await page.getByLabel("Service name").fill("Website");
     await page.getByLabel("URL to monitor").fill("https://example.com");
+    assert.equal(
+      await page.getByLabel("Service name").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "1px",
+    );
     const setupIconPicker = page.locator("[data-service-icon-picker]").first();
     const setupIconTrigger = setupIconPicker.getByRole("button", {
       name: "Service icon: Automatic",
@@ -551,6 +559,12 @@ history:
     assert.equal(await serviceEditors.count(), 2);
     const firstService = serviceEditors.first();
     assert.equal(await firstService.getByLabel("Service name").inputValue(), "API");
+    assert.equal(
+      await firstService.getByLabel("Service name").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
     assert.equal(await firstService.getByLabel("Method").inputValue(), "GET");
     assert.equal(
       await firstService.getByLabel("Healthy status codes").inputValue(),
@@ -698,7 +712,7 @@ history:
     );
     assert.ok(stepAnimations.some(({ name }) => name.includes("onboarding-slide-in-forward")));
     assert.ok(stepAnimations.some(({ name }) => name.includes("onboarding-slide-out-forward")));
-    assert.ok(stepAnimations.every(({ duration }) => duration === 200));
+    assert.ok(stepAnimations.every(({ duration }) => duration === 350));
     assert.ok(stepAnimations.every(({ keyframeEasing }) =>
       keyframeEasing.every((easing) => easing === "ease-in-out"),
     ));
