@@ -44,9 +44,19 @@ test("uses the shared theme and icon components in onboarding and configurator",
     resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
     "utf8",
   );
+  const serviceEditor = await readFile(
+    resolve(
+      import.meta.dirname,
+      "../src/components/service-editor/ServiceEditorRoot.svelte",
+    ),
+    "utf8",
+  );
 
   assert.match(onboarding, /import \* as ThemeCard from "\.\.\/components\/theme-card"/);
-  assert.match(onboarding, /import ServiceIconPicker from "\.\.\/components\/service-icon-picker\/ServiceIconPicker\.svelte"/);
+  assert.match(onboarding, /import \* as ServiceEditor from "\.\.\/components\/service-editor"/);
+  assert.match(onboarding, /<ServiceEditor\.List[\s\S]*<ServiceEditor\.Root/);
+  assert.doesNotMatch(onboarding, /<article class="service-editor"/);
+  assert.match(serviceEditor, /import ServiceIconPicker from "\.\.\/service-icon-picker\/ServiceIconPicker\.svelte"/);
   assert.match(configurator, /import \* as ThemeCard from "\.\.\/components\/theme-card"/);
   assert.match(configurator, /import ServiceIconPicker from "\.\.\/components\/service-icon-picker\/ServiceIconPicker\.svelte"/);
 });
