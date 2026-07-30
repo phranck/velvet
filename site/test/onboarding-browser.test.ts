@@ -25,12 +25,28 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       hasTouch: true,
     });
     const page = await context.newPage();
+    let sessionCalls = 0;
     let setupCalls = 0;
     await page.route("https://phranck.github.io/velvet-themes/index.json", (route) =>
       route.abort(),
     );
+    await page.route("**/api/session", async (route) => {
+      sessionCalls += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          authenticated: true,
+          csrfToken: "S".repeat(43),
+        }),
+      });
+    });
     await page.route("**/api/setup", async (route) => {
       setupCalls += 1;
+      assert.equal(
+        await route.request().headerValue("x-velvet-csrf"),
+        "S".repeat(43),
+      );
       await route.fulfill({
         status: 200,
         contentType: "application/x-ndjson",
@@ -40,6 +56,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           JSON.stringify({
             type: "success",
             installationUrl: "https://velvet-user.github.io/status/",
+            repositoryUrl: "https://github.com/velvet-user/status",
           }),
         ].join("\n"),
       });
@@ -73,6 +90,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByRole("button", { name: "Create status page" }).click();
 
     await page.getByText("Your Velvet status page is ready.").waitFor();
+    assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);
     assert.equal(
       await page.getByRole("link", { name: "Open your status page" }).getAttribute("href"),
