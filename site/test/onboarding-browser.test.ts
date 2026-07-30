@@ -75,6 +75,33 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
+    assert.equal(
+      await page.locator(".topbar").evaluate((element) =>
+        getComputedStyle(element).borderBottomWidth,
+      ),
+      "0px",
+    );
+    assert.equal(
+      await page.locator(".form-actions").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    const ownerInput = page.getByLabel("Repository owner");
+    assert.equal(
+      await ownerInput.evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.notEqual(
+      await ownerInput.evaluate((element) =>
+        getComputedStyle(element).backgroundColor,
+      ),
+      await page.locator("form").evaluate((element) =>
+        getComputedStyle(element).backgroundColor,
+      ),
+    );
     await page.getByLabel("Repository owner").fill("velvet-user");
     await page.getByLabel("Repository name").fill("status");
     await page.getByLabel("Status page name").fill("My Status");
@@ -92,6 +119,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     );
     assert.equal(
       await page.getByTitle("Storage").evaluate((element) =>
+        getComputedStyle(element).borderTopWidth,
+      ),
+      "0px",
+    );
+    assert.equal(
+      await page.locator("details").evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
       ),
       "0px",

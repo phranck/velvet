@@ -476,13 +476,11 @@
     --setup-panel: rgba(27, 29, 38, 0.9);
     --setup-panel-raised: #272a36;
     --setup-card: #222530;
-    --setup-input: #171922;
-    --setup-line: #363a47;
+    --setup-input: #11131a;
     --setup-text: #efedf5;
     --setup-muted: #979aa8;
     --setup-error: #ff8d9a;
     --picker-accent: var(--setup-accent);
-    --picker-line: var(--setup-line);
     --picker-muted: var(--setup-muted);
     --picker-surface: var(--setup-card);
     --picker-text: var(--setup-text);
@@ -499,7 +497,6 @@
     justify-content: space-between;
     margin: 0 auto;
     padding: 1.35rem 1.5rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--setup-line) 75%, transparent);
   }
   .brand {
     --velvet-wordmark-size: 1.9rem;
@@ -655,7 +652,7 @@
     width: 100%;
     min-width: 0;
     padding: 0.72rem 0.8rem;
-    border: 1px solid var(--setup-line);
+    border: 0;
     border-radius: 0.58rem;
     outline: none;
     background: var(--setup-input);
@@ -663,15 +660,15 @@
     box-sizing: border-box;
   }
   input::placeholder {
-    color: #666a78;
+    color: #747887;
   }
   input:focus-visible,
   select:focus-visible {
-    border-color: var(--setup-accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--setup-accent) 22%, transparent);
   }
   input[aria-invalid="true"] {
-    border-color: var(--setup-error);
+    background: color-mix(in srgb, var(--setup-error) 9%, var(--setup-input));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--setup-error) 70%, transparent);
   }
   input:disabled {
     opacity: 0.55;
@@ -749,9 +746,6 @@
     background: var(--setup-panel-raised);
     color: var(--setup-text);
   }
-  details {
-    border-top: 1px solid var(--setup-line);
-  }
   summary {
     padding: 1rem 0 0;
     color: var(--setup-muted);
@@ -771,7 +765,6 @@
     display: grid;
     gap: 0.8rem;
     padding-top: 1rem;
-    border-top: 1px solid var(--setup-line);
   }
   .advanced-heading strong,
   .advanced-heading span {
@@ -868,7 +861,6 @@
     min-height: 4.8rem;
     justify-content: flex-end;
     padding: 0.8rem clamp(1.25rem, 4vw, 2.4rem);
-    border-top: 1px solid var(--setup-line);
     background: rgba(16, 17, 22, 0.75);
   }
   .primary-button,
