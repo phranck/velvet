@@ -3,7 +3,9 @@
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
   import * as ServiceEditor from "../components/service-editor";
   import * as ThemeCard from "../components/theme-card";
+  import { PALETTE_KEYS } from "../lib/theme.js";
   import { createBrowserSetupClient } from "./client.js";
+  import fontLicensesUrl from "./FONT-LICENSES.txt?url";
   import {
     clearOnboardingDraft,
     loadOnboardingDraft,
@@ -168,20 +170,24 @@
 
 <svelte:head>
   <meta name="color-scheme" content="dark" />
+  <link rel="license" href={fontLicensesUrl} />
 </svelte:head>
 
 <div class="onboarding-shell">
-  <header class="topbar">
-    <a class="brand" href="../" aria-label="Velvet home">
-      <VelvetWordmark />
-    </a>
-    <span>Setup</span>
-  </header>
-
   <main>
     <section class="intro">
-      <p class="eyebrow">Your status page, without local setup</p>
-      <h1>Set up Velvet</h1>
+      <h1 class="onboarding-brand">
+        <VelvetWordmark />
+        <span>ONBOARDING</span>
+      </h1>
+      <div class="onboarding-palette" data-onboarding-palette aria-hidden="true">
+        {#each PALETTE_KEYS as key (key)}
+          <span
+            data-onboarding-palette-color
+            style:background={selectedTheme?.theme.palette[key]}
+          ></span>
+        {/each}
+      </div>
       <p>
         Tell Velvet what to watch, choose a theme, and publish through your GitHub account.
       </p>
@@ -342,10 +348,6 @@
       </footer>
     </form>
   </main>
-
-  <footer class="page-footer">
-    <span>Monitoring and publishing with GitHub</span>
-  </footer>
 </div>
 
 <style>
@@ -360,6 +362,9 @@
     --setup-error: #ff8d9a;
     --setup-control-height: 2.5rem;
     --setup-control-radius: 0.55rem;
+    --setup-button-font-size: 0.8rem;
+    --setup-font: "Barlow", "Segoe UI", sans-serif;
+    --setup-heading-font: "Barlow Condensed", "Arial Narrow", sans-serif;
     --picker-accent: var(--setup-accent);
     --picker-muted: var(--setup-muted);
     --picker-popover: var(--setup-panel-raised);
@@ -375,60 +380,57 @@
     --service-editor-raised: var(--setup-panel-raised);
     --service-editor-text: var(--setup-text);
     min-height: 100vh;
+    font-family: var(--setup-font);
   }
-  .onboarding-shell button {
+  .onboarding-shell :global(button) {
     min-height: var(--setup-control-height);
     border: 0;
     outline: none;
-  }
-  .topbar {
-    max-width: 1120px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 0 auto;
-    padding: 1.35rem 1.5rem;
-  }
-  .brand {
-    --velvet-wordmark-size: 1.9rem;
-
-    color: var(--setup-accent);
-    text-decoration: none;
-  }
-  .topbar > span {
-    color: var(--setup-muted);
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-size: var(--setup-button-font-size);
   }
   main {
     width: min(100% - 2rem, 960px);
     margin: 0 auto;
-    padding: clamp(2.5rem, 7vw, 5.5rem) 0 4rem;
+    padding: clamp(2.5rem, 6vw, 4.5rem) 0 4rem;
   }
   .intro {
-    max-width: 680px;
+    width: 100%;
+    display: grid;
+    justify-items: center;
     margin-bottom: 2.5rem;
+    text-align: center;
   }
-  .eyebrow {
-    margin: 0 0 0.75rem;
-    color: var(--setup-accent);
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  h1 {
+  .onboarding-brand {
+    --velvet-wordmark-size: clamp(2.6rem, 7vw, 4rem);
+
+    width: max-content;
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
     margin: 0;
-    font-size: clamp(2.4rem, 7vw, 4.5rem);
-    font-weight: 760;
-    letter-spacing: -0.055em;
-    line-height: 0.98;
+    color: var(--setup-accent);
+  }
+  .onboarding-brand > span {
+    width: 100%;
+    color: var(--setup-text);
+    font-family: var(--setup-heading-font);
+    font-size: clamp(0.95rem, 2.5vw, 1.2rem);
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    text-align: center;
+  }
+  .onboarding-palette {
+    width: min(100%, 270px);
+    height: 5px;
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 3px;
+    margin-top: 1.25rem;
   }
   .intro > p:last-child {
-    max-width: 590px;
+    width: 100%;
+    max-width: none;
     margin: 1.25rem 0 0;
     color: var(--setup-muted);
     font-size: clamp(1rem, 2vw, 1.15rem);
@@ -499,14 +501,15 @@
   .section-heading > span {
     padding-top: 0.2rem;
     color: var(--setup-accent);
-    font-family: "SFMono-Regular", Consolas, monospace;
     font-size: 0.72rem;
     letter-spacing: 0.08em;
   }
   h2 {
     margin: 0;
     color: var(--setup-text);
+    font-family: var(--setup-heading-font);
     font-size: clamp(1.35rem, 3vw, 1.75rem);
+    font-weight: 600;
     letter-spacing: -0.025em;
   }
   .section-heading p {
@@ -564,8 +567,7 @@
     color: var(--setup-error);
     font-size: 0.75rem;
   }
-  .form-actions,
-  .page-footer {
+  .form-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -652,6 +654,7 @@
   }
   .result code {
     color: var(--setup-text);
+    font-family: inherit;
   }
   .form-actions {
     min-height: 4rem;
@@ -682,15 +685,6 @@
   a:focus-visible {
     outline: 2px solid var(--setup-accent);
     outline-offset: 3px;
-  }
-  .page-footer {
-    width: min(100% - 2rem, 960px);
-    justify-content: center;
-    flex-wrap: wrap;
-    margin: 0 auto;
-    padding: 0 0 2.5rem;
-    color: var(--setup-muted);
-    font-size: 0.72rem;
   }
   @media (max-width: 720px) {
     .steps {
