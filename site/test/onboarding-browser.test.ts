@@ -102,6 +102,18 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         getComputedStyle(element).backgroundColor,
       ),
     );
+    assert.deepEqual(
+      await Promise.all([
+        ownerInput.evaluate((element) => element.getBoundingClientRect().height),
+        page.getByRole("button", { name: "Continue" }).evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+        page.locator(".steps button").first().evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+      ]),
+      [40, 40, 40],
+    );
     await page.getByLabel("Repository owner").fill("velvet-user");
     await page.getByLabel("Repository name").fill("status");
     await page.getByLabel("Status page name").fill("My Status");
@@ -144,6 +156,27 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         return [...rows.values()];
       }),
       [11, 11],
+    );
+    assert.deepEqual(
+      await serviceIconOptions.evaluateAll((elements) => [
+        new Set(elements.map((element) => element.getBoundingClientRect().height)).size,
+        Math.max(...elements.map((element) => element.getBoundingClientRect().height)),
+      ]),
+      [1, 58],
+    );
+    assert.deepEqual(
+      await Promise.all([
+        page.getByRole("button", { name: "Add another service" }).evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+        page.getByRole("button", { name: "Back" }).evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+        page.getByRole("button", { name: "Continue" }).evaluate((element) =>
+          element.getBoundingClientRect().height,
+        ),
+      ]),
+      [40, 40, 40],
     );
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "Continue" }).click();

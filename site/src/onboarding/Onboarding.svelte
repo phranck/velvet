@@ -480,6 +480,8 @@
     --setup-text: #efedf5;
     --setup-muted: #979aa8;
     --setup-error: #ff8d9a;
+    --setup-control-height: 2.5rem;
+    --setup-control-radius: 0.55rem;
     --picker-accent: var(--setup-accent);
     --picker-muted: var(--setup-muted);
     --picker-surface: var(--setup-card);
@@ -487,6 +489,7 @@
     min-height: 100vh;
   }
   .onboarding-shell button {
+    min-height: var(--setup-control-height);
     border: 0;
     outline: none;
   }
@@ -550,12 +553,13 @@
     margin-bottom: 1rem;
   }
   .steps button {
+    height: var(--setup-control-height);
     min-width: 0;
     display: flex;
     align-items: center;
     gap: 0.55rem;
-    padding: 0.7rem 0.75rem;
-    border-radius: 0.7rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--setup-control-radius);
     background: var(--setup-card);
     color: var(--setup-muted);
     cursor: pointer;
@@ -575,8 +579,8 @@
     color: var(--setup-text);
   }
   .steps button > span {
-    width: 1.45rem;
-    height: 1.45rem;
+    width: 1.35rem;
+    height: 1.35rem;
     display: grid;
     flex: none;
     place-items: center;
@@ -650,10 +654,11 @@
   input,
   select {
     width: 100%;
+    height: var(--setup-control-height);
     min-width: 0;
-    padding: 0.72rem 0.8rem;
+    padding: 0 0.75rem;
     border: 0;
-    border-radius: 0.58rem;
+    border-radius: var(--setup-control-radius);
     outline: none;
     background: var(--setup-input);
     color: var(--setup-text);
@@ -720,13 +725,13 @@
   .add-service,
   .primary-button,
   .secondary-button {
-    border-radius: 0.58rem;
+    border-radius: var(--setup-control-radius);
     cursor: pointer;
     font-weight: 650;
   }
   .icon-button {
-    width: 2.2rem;
-    height: 2.2rem;
+    width: var(--setup-control-height);
+    height: var(--setup-control-height);
     display: grid;
     flex: none;
     place-items: center;
@@ -742,7 +747,7 @@
     align-items: center;
     gap: 0.5rem;
     margin-top: 1rem;
-    padding: 0.65rem 0.85rem;
+    padding: 0 0.8rem;
     background: var(--setup-panel-raised);
     color: var(--setup-text);
   }
@@ -780,7 +785,7 @@
   }
   .small-button {
     flex: none;
-    padding: 0.5rem 0.65rem;
+    padding: 0 0.65rem;
     background: var(--setup-panel-raised);
     color: var(--setup-text);
     font-size: 0.75rem;
@@ -858,15 +863,15 @@
     font-weight: 700;
   }
   .form-actions {
-    min-height: 4.8rem;
+    min-height: 4rem;
     justify-content: flex-end;
-    padding: 0.8rem clamp(1.25rem, 4vw, 2.4rem);
+    padding: 0.55rem clamp(1.25rem, 4vw, 2.4rem);
     background: rgba(16, 17, 22, 0.75);
   }
   .primary-button,
   .secondary-button {
     min-width: 7.5rem;
-    padding: 0.72rem 1rem;
+    padding: 0 0.9rem;
   }
   .primary-button {
     background: var(--setup-accent);

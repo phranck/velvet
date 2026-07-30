@@ -31,16 +31,17 @@
 <style>
   label {
     min-width: 0;
-    min-height: 4.3rem;
+    min-height: 3.625rem;
     display: grid;
     place-items: center;
     align-content: center;
-    gap: 0.28rem;
-    padding: 0.5rem 0.25rem;
+    gap: 0.2rem;
+    padding: 0.35rem 0.2rem;
     border: 0;
     border-radius: 0.65rem;
     background: var(--picker-surface, #ffffff);
     color: var(--picker-muted, #6f7280);
+    box-sizing: border-box;
     cursor: pointer;
     transition:
       background 150ms ease,
@@ -73,7 +74,7 @@
     outline-offset: 2px;
   }
   i {
-    font-size: 1.45rem;
+    font-size: 1.3rem;
   }
   span {
     max-width: 100%;
