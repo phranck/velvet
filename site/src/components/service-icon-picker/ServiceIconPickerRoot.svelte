@@ -41,7 +41,7 @@
   }
   .options {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(4.6rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(4.3rem, 1fr));
     gap: 0.48rem;
   }
 </style>

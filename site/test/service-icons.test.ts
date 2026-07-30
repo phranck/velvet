@@ -8,8 +8,8 @@ import {
   isCuratedServiceIcon,
 } from "../src/lib/icons.js";
 
-test("offers one curated and unique Phosphor Duotone icon set", () => {
-  assert.ok(CURATED_SERVICE_ICONS.length >= 8);
+test("offers 21 curated icons for a 22-option picker with Automatic", () => {
+  assert.equal(CURATED_SERVICE_ICONS.length, 21);
   assert.equal(
     new Set(CURATED_SERVICE_ICONS.map(({ icon }) => icon)).size,
     CURATED_SERVICE_ICONS.length,

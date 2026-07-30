@@ -129,6 +129,23 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const serviceIconOptions = page.locator(
+      "[data-service-icon-picker] .options > label",
+    );
+    assert.equal(await serviceIconOptions.count(), 22);
+    assert.deepEqual(
+      await serviceIconOptions.evaluateAll((elements) => {
+        const rows = new Map<number, number>();
+        for (const element of elements) {
+          const top = Math.round(element.getBoundingClientRect().top);
+          rows.set(top, (rows.get(top) ?? 0) + 1);
+        }
+        return [...rows.values()];
+      }),
+      [11, 11],
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "Continue" }).click();
 
     if (process.env.VELVET_ONBOARDING_SCREENSHOT) {
