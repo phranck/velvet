@@ -40,7 +40,7 @@ export interface GitHubRepository {
 
 export interface GitHubWorkflowRun {
   id: number;
-  status: "queued" | "in_progress" | "completed";
+  status: "requested" | "waiting" | "pending" | "queued" | "in_progress" | "completed";
   conclusion: string | null;
   htmlUrl: string;
 }
@@ -496,7 +496,12 @@ function positiveInteger(value: unknown): value is number {
 function workflowStatus(
   value: unknown,
 ): value is GitHubWorkflowRun["status"] {
-  return value === "queued" || value === "in_progress" || value === "completed";
+  return value === "requested" ||
+    value === "waiting" ||
+    value === "pending" ||
+    value === "queued" ||
+    value === "in_progress" ||
+    value === "completed";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

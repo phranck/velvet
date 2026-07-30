@@ -189,6 +189,26 @@ test("resolves installation targets and removes temporary installations with an 
   assert.match(requests[1]?.headers.get("Authorization") ?? "", /^Bearer [^.]+\.[^.]+\.[^.]+$/);
 });
 
+test("accepts a newly requested workflow run as still in progress", async () => {
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async () => Response.json({
+      id: 777,
+      status: "requested",
+      conclusion: null,
+      html_url: "https://github.com/example/status/actions/runs/777",
+    }),
+  });
+
+  assert.equal(
+    (await client.workflowRun("installation-token", "example", "status", 777)).status,
+    "requested",
+  );
+});
+
 test("returns bounded GitHub errors without response bodies or credentials", async () => {
   const client = createGitHubSetupClient({
     appId: "12345",
