@@ -98,6 +98,7 @@ test("redirects to the verified GitHub App installation URL", async () => {
       return new Response(
         JSON.stringify({
           type: "permission-required",
+          access: "repository",
           error: {
             code: "INSTALLATION_REQUIRED",
             message: "Install Velvet.",
@@ -128,6 +129,7 @@ test("rejects an installation URL that would grant access to every repository", 
       return new Response(
         JSON.stringify({
           type: "permission-required",
+          access: "repository",
           error: {
             code: "INSTALLATION_REQUIRED",
             message: "Install Velvet.",
@@ -144,6 +146,40 @@ test("rejects an installation URL that would grant access to every repository", 
 
   await assert.rejects(() => client.provision(validRequest()), /SETUP_FAILED/);
   assert.deepEqual(redirects, []);
+});
+
+test("allows only the explicit temporary account URL for the bootstrap step", async () => {
+  const redirects: string[] = [];
+  let calls = 0;
+  const installationUrl =
+    `https://github.com/apps/velvet-setup/installations/new/permissions?` +
+    `state=${"S".repeat(43)}&suggested_target_id=255022500`;
+  const client = createBrowserSetupClient(
+    async () => {
+      calls += 1;
+      if (calls === 1) {
+        return Response.json({ authenticated: true, csrfToken: "C".repeat(43) });
+      }
+      return new Response(
+        JSON.stringify({
+          type: "permission-required",
+          access: "temporary-account",
+          error: {
+            code: "INSTALLATION_REQUIRED",
+            message: "Temporarily install Velvet.",
+            errorId: "E".repeat(26),
+          },
+          installationUrl,
+        }),
+        { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+      );
+    },
+    undefined,
+    (url) => redirects.push(url),
+  );
+
+  await assert.rejects(() => client.provision(validRequest()), /SETUP_REDIRECT_STARTED/);
+  assert.deepEqual(redirects, [installationUrl]);
 });
 
 test("rejects malformed events and non-HTTPS installation URLs", async () => {

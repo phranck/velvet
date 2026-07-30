@@ -17,11 +17,21 @@ export interface SetupServerSession {
   installState?: string;
   githubUserToken?: string;
   user?: { login: string; avatarUrl: string };
-  installation?: { id: number; accountLogin: string; accountType: "User" | "Organization" };
+  installation?: {
+    id: number;
+    accountLogin: string;
+    accountType: "User" | "Organization";
+    repositorySelection: "all" | "selected";
+  };
   organizationApprovalPending?: boolean;
   operation?: SetupStatus;
   provisioning?: {
     configurationHash: string;
+    target?: {
+      id: number;
+      login: string;
+      type: "User" | "Organization";
+    };
     repository?: {
       id: number;
       owner: string;

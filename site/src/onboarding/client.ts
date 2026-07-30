@@ -72,7 +72,7 @@ export function createBrowserSetupClient(
         if (event.type === "progress") {
           onProgress?.(event.stage);
         } else if (event.type === "permission-required") {
-          navigate(safeGitHubInstallationUrl(event.installationUrl));
+          navigate(safeGitHubInstallationUrl(event.installationUrl, event.access));
           throw new Error("SETUP_REDIRECT_STARTED");
         } else if (event.type === "success") {
           return { installationUrl: safeInstallationUrl(event.installationUrl) };
@@ -147,7 +147,10 @@ function safeInstallationUrl(source: string): string {
   return url.href;
 }
 
-function safeGitHubInstallationUrl(source: string): string {
+function safeGitHubInstallationUrl(
+  source: string,
+  access: "temporary-account" | "repository",
+): string {
   const url = new URL(source);
   const allowedParameters = new Set([
     "state",
@@ -162,7 +165,9 @@ function safeGitHubInstallationUrl(source: string): string {
     url.searchParams.getAll("state").length !== 1 ||
     !/^[A-Za-z0-9_-]{43,128}$/.test(url.searchParams.get("state") ?? "") ||
     !singlePositiveIdentifier(url.searchParams, "suggested_target_id") ||
-    !singlePositiveIdentifier(url.searchParams, "repository_ids[]") ||
+    (access === "repository"
+      ? !singlePositiveIdentifier(url.searchParams, "repository_ids[]")
+      : url.searchParams.has("repository_ids[]")) ||
     [...url.searchParams.keys()].some((key) => !allowedParameters.has(key))
   ) {
     throw new Error("SETUP_FAILED");

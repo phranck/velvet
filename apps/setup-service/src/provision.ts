@@ -91,6 +91,19 @@ export async function provisionVelvet(
   try {
     if (!state.repository) {
       progress("creating-repository");
+      const installation = installationForOwner(input.session, owner);
+      if (!installation) {
+        const target = state.target ?? await input.github.account(userToken, owner);
+        if (target.login.toLowerCase() !== owner.toLowerCase()) {
+          throw new SetupServiceError(
+            "GITHUB_API_FAILED",
+            "GitHub returned an unexpected installation target.",
+            { recoverable: true },
+          );
+        }
+        state.target = target;
+        throw installationRequired(false);
+      }
       const repository = await input.github.createRepositoryFromTemplate(
         userToken,
         owner,
@@ -115,16 +128,14 @@ export async function provisionVelvet(
       };
     }
 
-    const installation = input.session.installation;
-    if (
-      !installation ||
-      installation.accountLogin.toLowerCase() !== owner.toLowerCase()
-    ) {
-      throw new SetupServiceError(
-        "INSTALLATION_REQUIRED",
-        "Install Velvet for the selected repository before continuing.",
-        { status: 403, recoverable: true },
-      );
+    const installation = installationForOwner(input.session, owner);
+    if (!installation) {
+      throw installationRequired(true);
+    }
+    if (installation.repositorySelection === "all") {
+      await input.github.deleteInstallation(installation.id);
+      delete input.session.installation;
+      throw installationRequired(true);
     }
 
     const installationToken = await input.github.createInstallationToken(
@@ -244,6 +255,26 @@ export async function provisionVelvet(
     };
     throw setupError;
   }
+}
+
+function installationForOwner(
+  session: SetupServerSession,
+  owner: string,
+): SetupServerSession["installation"] | undefined {
+  const installation = session.installation;
+  return installation?.accountLogin.toLowerCase() === owner.toLowerCase()
+    ? installation
+    : undefined;
+}
+
+function installationRequired(repositoryCreated: boolean): SetupServiceError {
+  return new SetupServiceError(
+    "INSTALLATION_REQUIRED",
+    repositoryCreated
+      ? "Install Velvet for the selected repository before continuing."
+      : "Temporarily install Velvet so it can create the selected repository.",
+    { status: 403, recoverable: true },
+  );
 }
 
 function classifyProvisioningError(

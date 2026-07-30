@@ -68,7 +68,12 @@ test("pins safe public session, progress, status, and error envelopes", () => {
       authenticated: true,
       csrfToken: "A".repeat(43),
       user: { login: "example", avatarUrl: "https://avatars.githubusercontent.com/u/1" },
-      installation: { id: 12, accountLogin: "example", accountType: "User" },
+      installation: {
+        id: 12,
+        accountLogin: "example",
+        accountType: "User",
+        repositorySelection: "selected",
+      },
     }).success,
     true,
   );
@@ -89,6 +94,20 @@ test("pins safe public session, progress, status, and error envelopes", () => {
       operationId: "01J00000000000000000000000",
       state: "running",
       stage: "enabling-pages",
+    }).success,
+    true,
+  );
+  assert.equal(
+    validateSetupEvent({
+      type: "permission-required",
+      access: "temporary-account",
+      installationUrl:
+        "https://github.com/apps/velvet-setup/installations/new/permissions?state=abc",
+      error: {
+        code: "INSTALLATION_REQUIRED",
+        message: "Install Velvet before continuing.",
+        errorId: "01J00000000000000000000000",
+      },
     }).success,
     true,
   );

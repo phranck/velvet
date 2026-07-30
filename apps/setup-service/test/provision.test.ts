@@ -29,7 +29,12 @@ function authenticatedSession() {
   }).create();
   session.githubUserToken = "user-token";
   session.user = { login: "example", avatarUrl: "https://avatars.githubusercontent.com/u/1" };
-  session.installation = { id: 7, accountLogin: "example", accountType: "User" };
+  session.installation = {
+    id: 7,
+    accountLogin: "example",
+    accountType: "User",
+    repositorySelection: "selected",
+  };
   return session;
 }
 
@@ -38,6 +43,10 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
   const client: GitHubSetupClient = {
     async exchangeOAuthCode() { throw new Error("unused"); },
     async viewer() { throw new Error("unused"); },
+    async account() {
+      calls.push("account");
+      return { id: 255_022_500, login: "example", type: "User" };
+    },
     async listInstallations() { throw new Error("unused"); },
     async createRepositoryFromTemplate() {
       calls.push("create-repository");
@@ -54,6 +63,7 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
       calls.push("create-installation-token");
       return "installation-token";
     },
+    async deleteInstallation() { calls.push("delete-installation"); },
     async getConfigurationSha() {
       calls.push("get-configuration");
       return "template-sha";
@@ -129,7 +139,7 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
   assert.equal("installationToken" in (session.provisioning ?? {}), false);
 });
 
-test("creates the repository before requesting its GitHub App installation", async () => {
+test("requires a temporary installation before creating the repository", async () => {
   const session = authenticatedSession();
   delete session.installation;
   const { client, calls } = successfulGitHub();
@@ -148,14 +158,37 @@ test("creates the repository before requesting its GitHub App installation", asy
       return true;
     },
   );
-  assert.deepEqual(calls, ["create-repository"]);
-  assert.deepEqual(session.provisioning?.repository, {
-    id: 99,
-    owner: "example",
-    ownerId: 255_022_500,
-    name: "status",
-    htmlUrl: "https://github.com/example/status",
+  assert.deepEqual(calls, ["account"]);
+  assert.equal(session.provisioning?.repository, undefined);
+  assert.deepEqual(session.provisioning?.target, {
+    id: 255_022_500,
+    login: "example",
+    type: "User",
   });
+});
+
+test("removes a temporary all-repository installation immediately after repository creation", async () => {
+  const session = authenticatedSession();
+  session.installation!.repositorySelection = "all";
+  const { client, calls } = successfulGitHub();
+
+  await assert.rejects(
+    () =>
+      provisionVelvet({
+        session,
+        request: normalizedRequest,
+        github: client,
+        onEvent: () => {},
+      }),
+    (error: unknown) => {
+      assert.equal((error as SetupServiceError).code, "INSTALLATION_REQUIRED");
+      return true;
+    },
+  );
+
+  assert.deepEqual(calls, ["create-repository", "delete-installation"]);
+  assert.equal(session.installation, undefined);
+  assert.equal(session.provisioning?.repository?.id, 99);
 });
 
 test("maps a GitHub rate limit to a safe retryable setup error", async () => {

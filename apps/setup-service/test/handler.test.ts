@@ -42,11 +42,20 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
     async viewer() {
       return { login: "example", avatarUrl: "https://avatars.githubusercontent.com/u/1" };
     },
+    async account() {
+      return { id: 255_022_500, login: "example", type: "User" };
+    },
     async listInstallations() {
-      return [{ id: 7, accountLogin: "example", accountType: "User" }];
+      return [{
+        id: 7,
+        accountLogin: "example",
+        accountType: "User",
+        repositorySelection: "selected",
+      }];
     },
     async createRepositoryFromTemplate() { throw new Error("unused"); },
     async createInstallationToken() { throw new Error("unused"); },
+    async deleteInstallation() { throw new Error("unused"); },
     async getConfigurationSha() { throw new Error("unused"); },
     async writeConfiguration() { throw new Error("unused"); },
     async enablePages() { throw new Error("unused"); },
@@ -313,14 +322,29 @@ test("explains missing installation and organization approval without claiming s
   assert.equal(callback.status, 302);
   assert.equal(callback.headers.get("Location"), `${origin}/onboarding/?github=approval-required`);
 
-  const pendingEvent = JSON.parse((await (await request()).text()).trim());
+  const pendingEvent = (await (await request()).text())
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line))
+    .at(-1);
   assert.equal(pendingEvent.type, "permission-required");
   assert.equal(pendingEvent.error.code, "ORGANIZATION_APPROVAL_REQUIRED");
 });
 
-test("creates the repository before offering an installation limited to it", async () => {
+test("uses a temporary installation only to create the repository, then offers repository-only access", async () => {
+  let installationMode: "none" | "all" | "selected" = "none";
+  let deletedInstallation = 0;
   const github = githubClient({
-    async listInstallations() { return []; },
+    async listInstallations() {
+      return installationMode === "none"
+        ? []
+        : [{
+            id: 7,
+            accountLogin: "example",
+            accountType: "User",
+            repositorySelection: installationMode,
+          }];
+    },
     async createRepositoryFromTemplate() {
       return {
         id: 123_456_789,
@@ -331,29 +355,48 @@ test("creates the repository before offering an installation limited to it", asy
         defaultBranch: "main",
       };
     },
+    async deleteInstallation(installationId) {
+      deletedInstallation = installationId;
+      installationMode = "none";
+    },
   });
   const { handler, sessions } = realProvisionHarness(github);
   const browser = await authenticate(handler, sessions);
-  const response = await handler(
-    new Request(`${origin}/api/setup`, {
-      method: "POST",
-      headers: {
-        Cookie: `__Host-velvet_session=${browser.cookie}`,
-        Origin: origin,
-        "Content-Type": "application/json",
-        "X-Velvet-CSRF": browser.csrfToken,
-      },
-      body: setupBody,
-    }),
-  );
-  const events = (await response.text()).trim().split("\n").map((line) => JSON.parse(line));
+  const request = async () => {
+    const response = await handler(
+      new Request(`${origin}/api/setup`, {
+        method: "POST",
+        headers: {
+          Cookie: `__Host-velvet_session=${browser.cookie}`,
+          Origin: origin,
+          "Content-Type": "application/json",
+          "X-Velvet-CSRF": browser.csrfToken,
+        },
+        body: setupBody,
+      }),
+    );
+    return (await response.text()).trim().split("\n").map((line) => JSON.parse(line));
+  };
 
-  assert.deepEqual(events.map((event) => event.type), [
-    "progress",
-    "permission-required",
-  ]);
-  assert.equal(events[0].stage, "creating-repository");
-  const installationUrl = new URL(events[1].installationUrl);
+  const firstEvents = await request();
+  assert.equal(firstEvents.at(-1).access, "temporary-account");
+  const bootstrapUrl = new URL(firstEvents.at(-1).installationUrl);
+  assert.equal(bootstrapUrl.searchParams.get("suggested_target_id"), "255022500");
+  assert.deepEqual(bootstrapUrl.searchParams.getAll("repository_ids[]"), []);
+
+  let session = sessions.fromCookie(browser.cookie)!;
+  installationMode = "all";
+  const bootstrapCallback = await handler(
+    new Request(
+      `${origin}/api/auth/installed?installation_id=7&setup_action=install&state=${session.installState}`,
+      { headers: { Cookie: `__Host-velvet_session=${browser.cookie}` } },
+    ),
+  );
+  assert.equal(bootstrapCallback.status, 302);
+
+  const secondEvents = await request();
+  assert.equal(secondEvents.at(-1).access, "repository");
+  const installationUrl = new URL(secondEvents.at(-1).installationUrl);
   assert.equal(
     installationUrl.pathname,
     "/apps/velvet-setup/installations/new/permissions",
@@ -362,8 +405,10 @@ test("creates the repository before offering an installation limited to it", asy
   assert.deepEqual(installationUrl.searchParams.getAll("repository_ids[]"), [
     "123456789",
   ]);
-  const session = sessions.fromCookie(browser.cookie)!;
+  assert.equal(deletedInstallation, 7);
+  session = sessions.fromCookie(browser.cookie)!;
   assert.equal(session.provisioning?.repository?.id, 123_456_789);
+  assert.equal(session.installation, undefined);
   assert.equal(session.installState, installationUrl.searchParams.get("state"));
 });
 
@@ -374,7 +419,12 @@ test("rejects an installation id that GitHub did not grant to the authenticated 
       installationChecks += 1;
       return installationChecks === 1
         ? []
-        : [{ id: 7, accountLogin: "example", accountType: "User" }];
+        : [{
+            id: 7,
+            accountLogin: "example",
+            accountType: "User",
+            repositorySelection: "selected",
+          }];
     },
     async createRepositoryFromTemplate() {
       return {

@@ -16,10 +16,17 @@ export interface GitHubViewer {
   avatarUrl: string;
 }
 
+export interface GitHubAccount {
+  id: number;
+  login: string;
+  type: "User" | "Organization";
+}
+
 export interface GitHubInstallation {
   id: number;
   accountLogin: string;
   accountType: "User" | "Organization";
+  repositorySelection: "all" | "selected";
 }
 
 export interface GitHubRepository {
@@ -46,6 +53,7 @@ export interface GitHubPagesSite {
 export interface GitHubSetupClient {
   exchangeOAuthCode(code: string, codeVerifier: string): Promise<string>;
   viewer(userToken: string): Promise<GitHubViewer>;
+  account(userToken: string, login: string): Promise<GitHubAccount>;
   listInstallations(userToken: string): Promise<GitHubInstallation[]>;
   createRepositoryFromTemplate(
     userToken: string,
@@ -53,6 +61,7 @@ export interface GitHubSetupClient {
     name: string,
   ): Promise<GitHubRepository>;
   createInstallationToken(installationId: number, repositoryId: number): Promise<string>;
+  deleteInstallation(installationId: number): Promise<void>;
   getConfigurationSha(
     installationToken: string,
     owner: string,
@@ -200,6 +209,14 @@ export function createGitHubSetupClient(
       return { login: body.login, avatarUrl: body.avatar_url };
     },
 
+    async account(userToken, login) {
+      const body = await githubRequest<unknown>(
+        `/users/${encodeURIComponent(login)}`,
+        userToken,
+      );
+      return parseAccount(body);
+    },
+
     async listInstallations(userToken) {
       const body = await githubRequest<unknown>(
         "/user/installations?per_page=100",
@@ -254,6 +271,19 @@ export function createGitHubSetupClient(
         throw new Error("GitHub installation token response was invalid.");
       }
       return body.token;
+    },
+
+    async deleteInstallation(installationId) {
+      const appJwt = createGitHubAppJwt(
+        options.appId,
+        options.privateKey,
+        nowSeconds,
+      );
+      await githubRequest<void>(
+        `/app/installations/${installationId}`,
+        appJwt,
+        { method: "DELETE" },
+      );
     },
 
     async getConfigurationSha(installationToken, owner, repository) {
@@ -372,7 +402,9 @@ function parseInstallation(value: unknown): GitHubInstallation {
     !positiveInteger(value.id) ||
     !isRecord(value.account) ||
     typeof value.account.login !== "string" ||
-    (value.account.type !== "User" && value.account.type !== "Organization")
+    (value.account.type !== "User" && value.account.type !== "Organization") ||
+    (value.repository_selection !== "all" &&
+      value.repository_selection !== "selected")
   ) {
     throw new Error("GitHub installation entry was invalid.");
   }
@@ -380,7 +412,20 @@ function parseInstallation(value: unknown): GitHubInstallation {
     id: value.id,
     accountLogin: value.account.login,
     accountType: value.account.type,
+    repositorySelection: value.repository_selection,
   };
+}
+
+function parseAccount(value: unknown): GitHubAccount {
+  if (
+    !isRecord(value) ||
+    !positiveInteger(value.id) ||
+    typeof value.login !== "string" ||
+    (value.type !== "User" && value.type !== "Organization")
+  ) {
+    throw new Error("GitHub account response was invalid.");
+  }
+  return { id: value.id, login: value.login, type: value.type };
 }
 
 function parseRepository(value: unknown): GitHubRepository {

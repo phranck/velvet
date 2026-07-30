@@ -11,6 +11,7 @@ import {
 
 import {
   createGitHubAuthorizationUrl,
+  createGitHubBootstrapInstallationUrl,
   createGitHubInstallationUrl,
   createPkceAuthorization,
 } from "./auth.js";
@@ -455,9 +456,10 @@ function setupStreamResponse(input: {
             const repository = input.session.provisioning?.repository;
             if (
               cause instanceof SetupServiceError &&
-              cause.code === "INSTALLATION_REQUIRED" &&
-              repository
+              cause.code === "INSTALLATION_REQUIRED"
             ) {
+              const target = repository ?? input.session.provisioning?.target;
+              if (!target) throw cause;
               const state = input.randomToken();
               input.session.installState = state;
               const approvalPending =
@@ -474,19 +476,27 @@ function setupStreamResponse(input: {
                 input.session.operation = {
                   ...input.session.operation,
                   state: "permission-required",
-                  repositoryUrl: repository.htmlUrl,
+                  ...(repository ? { repositoryUrl: repository.htmlUrl } : {}),
                   error: publicError,
                 };
               }
+              const access = repository ? "repository" : "temporary-account";
               emit({
                 type: "permission-required",
+                access,
                 error: publicError,
-                installationUrl: createGitHubInstallationUrl(
-                  input.appSlug,
-                  state,
-                  repository.ownerId,
-                  repository.id,
-                ),
+                installationUrl: repository
+                  ? createGitHubInstallationUrl(
+                      input.appSlug,
+                      state,
+                      repository.ownerId,
+                      repository.id,
+                    )
+                  : createGitHubBootstrapInstallationUrl(
+                      input.appSlug,
+                      state,
+                      target.id,
+                    ),
               });
               input.logger({
                 level: "warn",

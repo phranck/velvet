@@ -22,10 +22,14 @@ Register a GitHub App owned by the Velvet maintainer with these settings:
 - Webhook: inactive. The setup service subscribes to no events.
 - Installation scope: Any account.
 
-Velvet creates the repository after OAuth authorization and before requesting
-the GitHub App installation. The installation URL preselects exactly that new
-repository through its GitHub repository ID. Never replace this with the generic
-installation URL, because GitHub otherwise selects all repositories by default.
+GitHub requires an app installation before a GitHub App user token can create a
+repository, but a repository-only installation requires that repository to
+already exist. First-time setup therefore uses two explicit approvals. The
+first temporarily installs Velvet on the selected account, creates only the
+requested repository, and immediately removes that installation. The second
+installation URL preselects exactly the new repository through its GitHub
+repository ID. The setup service will not configure the repository while an
+all-repositories installation remains active.
 
 Set only these repository permissions:
 
@@ -84,11 +88,14 @@ the application, followed by a service restart.
 
 ## Partial setup recovery
 
-The current browser session records each completed step. The repository is
-created before the GitHub App installation so GitHub can limit the installation
-to that repository. A retry reuses the repository already created by that
-session, mints a fresh repository-restricted installation token, and continues
-from the first incomplete step.
+The current browser session records each completed step. On the first setup for
+an account, Velvet requests the temporary installation, creates the repository,
+removes that installation, and requests access to the new repository alone. A
+retry reuses the repository already created by that session, mints a fresh
+repository-restricted installation token, and continues from the first
+incomplete step. If Velvet is already installed for selected repositories, a
+new repository created by the app is added to that selected installation by
+GitHub and the temporary step is unnecessary.
 
 If the service restarted after repository creation, inspect the named repository
 before cleanup. A generated repository containing only the untouched template

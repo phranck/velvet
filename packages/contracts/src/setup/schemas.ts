@@ -79,6 +79,10 @@ export const SetupSessionSchema = Type.Object(
           id: Type.Integer({ minimum: 1 }),
           accountLogin: Type.String({ minLength: 1, maxLength: 100 }),
           accountType: Type.Union([Type.Literal("User"), Type.Literal("Organization")]),
+          repositorySelection: Type.Union([
+            Type.Literal("all"),
+            Type.Literal("selected"),
+          ]),
         },
         { additionalProperties: false },
       ),
@@ -95,6 +99,10 @@ const SetupProgressEventSchema = Type.Object(
 const SetupPermissionEventSchema = Type.Object(
   {
     type: Type.Literal("permission-required"),
+    access: Type.Union([
+      Type.Literal("temporary-account"),
+      Type.Literal("repository"),
+    ]),
     error: SetupPublicErrorSchema,
     installationUrl: HttpsUrlSchema,
   },

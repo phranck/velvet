@@ -87,7 +87,9 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.keyboard.press("ArrowRight");
     assert.equal(await themeRadios.nth(1).isChecked(), true);
     await page.getByRole("button", { name: "Continue" }).click();
-    await page.getByRole("button", { name: "Create status page" }).click();
+    await page.goto(
+      `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
+    );
 
     await page.getByText("Your Velvet status page is ready.").waitFor();
     assert.equal(sessionCalls, 1);

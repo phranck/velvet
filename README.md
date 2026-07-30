@@ -116,9 +116,11 @@ in the [configuration reference](CONFIGURATION.md#compatibility-pipeline-and-vel
 
 ## Start a new status repository
 
-Use [velvet-template](https://github.com/phranck/velvet-template). It includes
-the temporary Upptime monitor, normalized Velvet snapshot workflow, Pages
-deployment, issue templates, and a configuration walkthrough.
+Use the [browser setup](https://setup.velvet.li/onboarding/) to choose services
+and a system theme, create the repository, and publish its GitHub Pages site.
+For manual setup, [velvet-template](https://github.com/phranck/velvet-template)
+contains the repository structure, workflows, issue templates, and
+configuration walkthrough.
 
 ## Velvet v1 data
 

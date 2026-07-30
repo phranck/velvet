@@ -160,6 +160,35 @@ test("restricts installation tokens and repository changes to the Velvet setup f
   }
 });
 
+test("resolves installation targets and removes temporary installations with an app JWT", async () => {
+  const requests: Request[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    nowSeconds: () => 1_000_000,
+    fetch: async (request) => {
+      requests.push(request);
+      if (request.method === "DELETE") return new Response(null, { status: 202 });
+      return Response.json({ id: 255_022_500, login: "example", type: "User" });
+    },
+  });
+
+  assert.deepEqual(await client.account("user-token", "example"), {
+    id: 255_022_500,
+    login: "example",
+    type: "User",
+  });
+  await client.deleteInstallation(7);
+
+  assert.equal(requests[0]?.url, "https://api.github.com/users/example");
+  assert.equal(requests[0]?.headers.get("Authorization"), "Bearer user-token");
+  assert.equal(requests[1]?.url, "https://api.github.com/app/installations/7");
+  assert.equal(requests[1]?.method, "DELETE");
+  assert.match(requests[1]?.headers.get("Authorization") ?? "", /^Bearer [^.]+\.[^.]+\.[^.]+$/);
+});
+
 test("returns bounded GitHub errors without response bodies or credentials", async () => {
   const client = createGitHubSetupClient({
     appId: "12345",

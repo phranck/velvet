@@ -57,6 +57,24 @@ export function createGitHubInstallationUrl(
   return url.href;
 }
 
+export function createGitHubBootstrapInstallationUrl(
+  appSlug: string,
+  state: string,
+  targetId: number,
+): string {
+  if (!APP_SLUG_PATTERN.test(appSlug)) {
+    throw new TypeError("GitHub App slug is invalid.");
+  }
+  checkedToken(state, "Installation state");
+  checkedIdentifier(targetId, "GitHub installation target");
+  const url = new URL(
+    `https://github.com/apps/${appSlug}/installations/new/permissions`,
+  );
+  url.searchParams.set("state", state);
+  url.searchParams.set("suggested_target_id", String(targetId));
+  return url.href;
+}
+
 function secureRandomToken(): string {
   return randomBytes(32).toString("base64url");
 }

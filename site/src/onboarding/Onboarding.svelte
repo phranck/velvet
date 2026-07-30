@@ -1,5 +1,6 @@
 <script lang="ts">
   import { configurationIdentifierFromName } from "@velvet/contracts";
+  import { onMount } from "svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
   import * as ServiceIconPicker from "../components/service-icon-picker";
   import * as ThemeCard from "../components/theme-card";
@@ -26,6 +27,7 @@
 
   const STEPS = ["Status page", "Services", "Theme", "Publish"] as const;
   const SESSION_STORAGE = browserSessionStorage();
+  const GITHUB_RETURN = githubReturnState();
   const PROGRESS_LABELS: Record<SetupProgressStage, string> = {
     authenticating: "Connecting your GitHub account",
     "creating-repository": "Creating the status repository",
@@ -35,7 +37,7 @@
     "waiting-for-deployment": "Waiting for the status page",
   };
 
-  let step = $state(0);
+  let step = $state(GITHUB_RETURN ? STEPS.length - 1 : 0);
   let draft = $state(
     loadOnboardingDraft(SESSION_STORAGE) ?? createOnboardingDraft(),
   );
@@ -51,12 +53,42 @@
     persistOnboardingDraft($state.snapshot(draft), SESSION_STORAGE);
   });
 
+  onMount(() => {
+    if (!GITHUB_RETURN) return;
+    clearGitHubReturnParameter();
+    if (GITHUB_RETURN === "approval-required") {
+      submissionState = "permission-required";
+      resultMessage = "A GitHub organization owner still needs to approve Velvet.";
+      return;
+    }
+    void publish();
+  });
+
   function browserSessionStorage(): Storage | null {
     try {
       return globalThis.sessionStorage ?? null;
     } catch {
       return null;
     }
+  }
+
+  function githubReturnState(): "connected" | "installed" | "approval-required" | null {
+    try {
+      const value = new URL(globalThis.location.href).searchParams.get("github");
+      return value === "connected" ||
+        value === "installed" ||
+        value === "approval-required"
+        ? value
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearGitHubReturnParameter(): void {
+    const url = new URL(globalThis.location.href);
+    url.searchParams.delete("github");
+    globalThis.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
   function automaticServiceIcon(name: string): string {
@@ -389,6 +421,9 @@
           <div><span>Services</span><strong>{draft.services.length}</strong></div>
           <div><span>Theme</span><strong>{selectedTheme?.name ?? "Choose a theme"}</strong></div>
         </div>
+        <p class="github-permission-note">
+          On a first setup, GitHub asks twice. Velvet uses the first approval only to create this repository, removes it immediately, and then asks for access to this repository alone.
+        </p>
 
         {#if submitting || progress.length > 0}
           <ol class="deployment-progress" aria-label="Deployment progress">
@@ -786,6 +821,12 @@
   }
   .review-grid strong {
     overflow-wrap: anywhere;
+  }
+  .github-permission-note {
+    margin: 1rem 0 0;
+    color: var(--setup-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
   }
   .deployment-progress {
     display: grid;
