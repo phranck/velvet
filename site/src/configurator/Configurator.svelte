@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import StatusPage from "../components/StatusPage.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
-  import * as ServiceIconPicker from "../components/service-icon-picker";
+  import ServiceIconPicker from "../components/service-icon-picker/ServiceIconPicker.svelte";
   import * as ThemeCard from "../components/theme-card";
   import {
     applyTheme,
@@ -704,26 +704,14 @@
         </p>
         <div class="service-icon-groups">
           {#each configuredServices as service (service.id)}
-            <ServiceIconPicker.Root legend={service.name}>
-              <ServiceIconPicker.Option
-                label="Automatic"
-                icon={iconFor(service.id)}
-                value={null}
-                selected={!icons[service.id]}
-                radioName={`configurator-${service.id}-icon`}
-                onSelect={(value) => selectServiceIcon(service.id, value)}
-              />
-              {#each CURATED_SERVICE_ICONS as option (option.icon)}
-                <ServiceIconPicker.Option
-                  label={option.label}
-                  icon={option.icon}
-                  value={option.icon}
-                  selected={icons[service.id] === option.icon}
-                  radioName={`configurator-${service.id}-icon`}
-                  onSelect={(value) => selectServiceIcon(service.id, value)}
-                />
-              {/each}
-            </ServiceIconPicker.Root>
+            <ServiceIconPicker
+              id={`configurator-${service.id}-icon`}
+              legend={service.name}
+              value={icons[service.id] ?? null}
+              automaticIcon={iconFor(service.id)}
+              options={CURATED_SERVICE_ICONS}
+              onChange={(value) => selectServiceIcon(service.id, value)}
+            />
           {/each}
         </div>
       </ConfiguratorSection>
@@ -1025,6 +1013,7 @@
     --picker-accent: var(--tool-accent);
     --picker-line: var(--tool-line);
     --picker-muted: var(--tool-muted);
+    --picker-popover: var(--tool-panel-raised);
     --picker-surface: var(--tool-input);
     --picker-text: var(--tool-text);
     --tool-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;

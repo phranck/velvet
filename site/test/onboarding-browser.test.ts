@@ -121,16 +121,38 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
 
     await page.getByLabel("Service name").fill("Website");
     await page.getByLabel("Website URL").fill("https://example.com");
-    await page.getByTitle("Storage").click();
-    assert.equal(await page.getByTitle("Storage").locator("input").isChecked(), true);
+    const setupIconPicker = page.locator("[data-service-icon-picker]").first();
+    const setupIconTrigger = setupIconPicker.getByRole("button", {
+      name: "Service icon: Automatic",
+    });
+    assert.equal(await setupIconTrigger.getAttribute("aria-expanded"), "false");
     assert.equal(
-      await page.locator(".service-editor").evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
+      await setupIconTrigger.evaluate((element) => element.getBoundingClientRect().height),
+      40,
+    );
+    await setupIconTrigger.click();
+    const setupIconOptions = setupIconPicker.getByRole("option");
+    assert.equal(await setupIconOptions.count(), 22);
+    assert.equal(await setupIconOptions.locator("i:first-child").count(), 22);
+    assert.equal(
+      await setupIconPicker.getByRole("listbox").evaluate((element) =>
+        getComputedStyle(element).position,
       ),
-      "0px",
+      "absolute",
+    );
+    await setupIconPicker.getByRole("option", { name: "Storage" }).click();
+    assert.equal(
+      await setupIconPicker.getByRole("button", { name: "Service icon: Storage" })
+        .getAttribute("aria-expanded"),
+      "false",
     );
     assert.equal(
-      await page.getByTitle("Storage").evaluate((element) =>
+      await setupIconPicker.getByRole("button", { name: "Service icon: Storage" })
+        .locator(".ph-hard-drives").count(),
+      1,
+    );
+    assert.equal(
+      await page.locator(".service-editor").evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
       ),
       "0px",
@@ -142,28 +164,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "0px",
     );
     await page.setViewportSize({ width: 1280, height: 800 });
-    const serviceIconOptions = page.locator(
-      "[data-service-icon-picker] .options > label",
-    );
-    assert.equal(await serviceIconOptions.count(), 22);
-    assert.deepEqual(
-      await serviceIconOptions.evaluateAll((elements) => {
-        const rows = new Map<number, number>();
-        for (const element of elements) {
-          const top = Math.round(element.getBoundingClientRect().top);
-          rows.set(top, (rows.get(top) ?? 0) + 1);
-        }
-        return [...rows.values()];
-      }),
-      [11, 11],
-    );
-    assert.deepEqual(
-      await serviceIconOptions.evaluateAll((elements) => [
-        new Set(elements.map((element) => element.getBoundingClientRect().height)).size,
-        Math.max(...elements.map((element) => element.getBoundingClientRect().height)),
-      ]),
-      [1, 58],
-    );
     assert.deepEqual(
       await Promise.all([
         page.getByRole("button", { name: "Add another service" }).evaluate((element) =>
@@ -229,7 +229,8 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     }));
     assert.ok(dimensions.document <= dimensions.viewport);
     assert.equal(
-      await page.getByTitle("Storage").evaluate((element) =>
+      await page.locator("[data-service-icon-picker] [role='listbox']").first()
+        .evaluate((element) =>
         getComputedStyle(element).transitionDuration,
       ),
       "0s",
@@ -243,7 +244,8 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await cloudyAutumn.click();
     assert.equal(await cloudyAutumn.locator("input").isChecked(), true);
     const websiteIcons = page.locator("[data-service-icon-picker]").first();
-    await websiteIcons.getByTitle("Storage").click();
+    await websiteIcons.getByRole("button", { name: "Website: Automatic" }).click();
+    await websiteIcons.getByRole("option", { name: "Storage" }).click();
     assert.equal(
       await page.locator("button.summary").first().locator(".ph-hard-drives").count(),
       1,
@@ -274,6 +276,33 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         })),
       ),
       [{ duration: 200, easing: "ease-in-out" }],
+    );
+    const motionIconPicker = motionPage.locator("[data-service-icon-picker]").first();
+    const motionIconListbox = motionIconPicker.getByRole("listbox");
+    await motionIconPicker.getByRole("button", { name: "Service icon: Automatic" }).click();
+    assert.match(
+      await motionIconListbox.evaluate((element) =>
+        getComputedStyle(element).transitionDuration,
+      ),
+      /0\.2s/,
+    );
+    await motionPage.keyboard.press("Escape");
+    const motionIconTrigger = motionIconPicker.getByRole("button", {
+      name: "Service icon: Automatic",
+    });
+    await motionIconTrigger.focus();
+    await motionPage.keyboard.press("End");
+    assert.equal(
+      await motionIconPicker.getByRole("option", { name: "Calendar" }).evaluate(
+        (element) => element === document.activeElement,
+      ),
+      true,
+    );
+    await motionPage.keyboard.press("Enter");
+    assert.equal(
+      await motionIconPicker.getByRole("button", { name: "Service icon: Calendar" })
+        .getAttribute("aria-expanded"),
+      "false",
     );
     await motionContext.close();
   } finally {

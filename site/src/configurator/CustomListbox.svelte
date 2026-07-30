@@ -4,7 +4,7 @@
   import {
     resolveListboxPlacement,
     type ListboxPlacement,
-  } from "./listbox-placement";
+  } from "../lib/listbox-placement";
 
   interface ListboxOption {
     value: string;

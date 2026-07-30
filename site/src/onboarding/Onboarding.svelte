@@ -2,7 +2,7 @@
   import { configurationIdentifierFromName } from "@velvet/contracts";
   import { onMount } from "svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
-  import * as ServiceIconPicker from "../components/service-icon-picker";
+  import ServiceIconPicker from "../components/service-icon-picker/ServiceIconPicker.svelte";
   import * as ThemeCard from "../components/theme-card";
   import {
     CURATED_SERVICE_ICONS,
@@ -277,26 +277,15 @@
                 </label>
               </div>
 
-              <ServiceIconPicker.Root legend="Service icon" description="Optional. Automatic keeps the configuration small and chooses a matching fallback.">
-                <ServiceIconPicker.Option
-                  label="Automatic"
-                  icon={service.name ? automaticServiceIcon(service.name) : DEFAULT_SERVICE_ICON}
-                  value={null}
-                  selected={service.icon === null}
-                  radioName={`service-${service.id}-icon`}
-                  onSelect={(value) => (service.icon = value)}
-                />
-                {#each CURATED_SERVICE_ICONS as option (option.icon)}
-                  <ServiceIconPicker.Option
-                    label={option.label}
-                    icon={option.icon}
-                    value={option.icon}
-                    selected={service.icon === option.icon}
-                    radioName={`service-${service.id}-icon`}
-                    onSelect={(value) => (service.icon = value)}
-                  />
-                {/each}
-              </ServiceIconPicker.Root>
+              <ServiceIconPicker
+                id={`service-${service.id}-icon`}
+                legend="Service icon"
+                description="Optional. Automatic keeps the configuration small and chooses a matching fallback."
+                value={service.icon}
+                automaticIcon={service.name ? automaticServiceIcon(service.name) : DEFAULT_SERVICE_ICON}
+                options={CURATED_SERVICE_ICONS}
+                onChange={(value) => (service.icon = value)}
+              />
               {#if errors[`services.${serviceIndex}.icon`]}<small class="field-error">{errors[`services.${serviceIndex}.icon`]}</small>{/if}
 
               <details data-advanced-open={service.advanced}>
@@ -495,6 +484,7 @@
     --setup-control-radius: 0.55rem;
     --picker-accent: var(--setup-accent);
     --picker-muted: var(--setup-muted);
+    --picker-popover: var(--setup-panel-raised);
     --picker-surface: var(--setup-card);
     --picker-text: var(--setup-text);
     min-height: 100vh;
@@ -601,7 +591,7 @@
     font-size: 0.7rem;
   }
   form {
-    overflow: hidden;
+    overflow: visible;
     border-radius: 1rem;
     background: var(--setup-panel);
     box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.3);
@@ -896,6 +886,7 @@
     min-height: 4rem;
     justify-content: flex-end;
     padding: 0.55rem clamp(1.25rem, 4vw, 2.4rem);
+    border-radius: 0 0 1rem 1rem;
     background: rgba(16, 17, 22, 0.75);
   }
   .primary-button,

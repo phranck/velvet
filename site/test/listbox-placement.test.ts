@@ -3,7 +3,7 @@ import { test } from "bun:test";
 
 test("opens upward when the footer leaves more room above the trigger", async () => {
   const { resolveListboxPlacement } = await import(
-    "../src/configurator/listbox-placement.js"
+    "../src/lib/listbox-placement.js"
   );
 
   assert.deepEqual(
@@ -18,7 +18,7 @@ test("opens upward when the footer leaves more room above the trigger", async ()
 
 test("keeps enough menus below the trigger", async () => {
   const { resolveListboxPlacement } = await import(
-    "../src/configurator/listbox-placement.js"
+    "../src/lib/listbox-placement.js"
   );
 
   assert.deepEqual(
@@ -33,7 +33,7 @@ test("keeps enough menus below the trigger", async () => {
 
 test("limits oversized menus to the larger available side", async () => {
   const { resolveListboxPlacement } = await import(
-    "../src/configurator/listbox-placement.js"
+    "../src/lib/listbox-placement.js"
   );
 
   assert.deepEqual(
