@@ -270,6 +270,77 @@ test("requires exact origin and CSRF before streaming setup progress", async () 
   assert.deepEqual(events.map((event) => event.type), ["progress", "success"]);
 });
 
+test("closes the setup response before background deployment polling finishes", async () => {
+  let releaseProvisioning: (() => void) | undefined;
+  let provisioningFinished = false;
+  let tokenIndex = 0;
+  const sessions = createSessionStore({
+    secret: config.sessionSecret,
+    randomToken: () => `${tokenIndex++}`.padStart(43, "A"),
+  });
+  const handler = createSetupHandler({
+    config,
+    sessions,
+    github: githubClient(),
+    logger: () => {},
+    provision: async ({ session, onEvent }) => {
+      session.operation = {
+        operationId: "O".repeat(26),
+        state: "running",
+        stage: "waiting-for-deployment",
+      };
+      onEvent({ type: "progress", stage: "waiting-for-deployment" });
+      await new Promise<void>((resolve) => {
+        releaseProvisioning = resolve;
+      });
+      provisioningFinished = true;
+      const success: SetupEvent = {
+        type: "success",
+        installationUrl: "https://example.github.io/status/",
+        repositoryUrl: "https://github.com/example/status",
+      };
+      session.operation = {
+        operationId: "O".repeat(26),
+        state: "succeeded",
+        stage: "waiting-for-deployment",
+        installationUrl: success.installationUrl,
+        repositoryUrl: success.repositoryUrl,
+      };
+      onEvent(success);
+      return success;
+    },
+  });
+  const browser = await authenticate(handler, sessions);
+  const response = await handler(
+    new Request(`${origin}/api/setup`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+        "Content-Type": "application/json",
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+      body: setupBody,
+    }),
+  );
+  let responseClosed = false;
+  const bodyPromise = response.text().then((body) => {
+    responseClosed = true;
+    return body;
+  });
+
+  await Bun.sleep(25);
+  const closedBeforeProvisioningFinished = responseClosed;
+  releaseProvisioning?.();
+  const body = await bodyPromise;
+
+  assert.equal(closedBeforeProvisioningFinished, true);
+  assert.equal(provisioningFinished, true);
+  assert.deepEqual(body.trim().split("\n").map((line) => JSON.parse(line)), [
+    { type: "progress", stage: "waiting-for-deployment" },
+  ]);
+});
+
 test("explains missing installation and organization approval without claiming success", async () => {
   const github = githubClient({
     async listInstallations() { return []; },

@@ -466,9 +466,7 @@
   </main>
 
   <footer class="page-footer">
-    <span>GitHub-native monitoring</span>
-    <span>No personal access token</span>
-    <span>No Upptime or Globalping</span>
+    <span>Monitoring and publishing with GitHub</span>
   </footer>
 </div>
 
@@ -906,12 +904,6 @@
     color: var(--setup-muted);
     font-size: 0.72rem;
   }
-  .page-footer span + span::before {
-    content: "·";
-    margin-right: 1rem;
-    color: var(--setup-line);
-  }
-
   @media (max-width: 720px) {
     .steps {
       grid-template-columns: repeat(2, 1fr);

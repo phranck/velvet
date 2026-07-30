@@ -68,6 +68,40 @@ test("posts one validated credentialed request and reads progress", async () => 
   assert.deepEqual(result, { installationUrl: "https://status.example.com/" });
 });
 
+test("polls the short setup status endpoint after deployment monitoring starts", async () => {
+  const calls: string[] = [];
+  const client = createBrowserSetupClient(async (url) => {
+    calls.push(String(url));
+    if (String(url) === "/api/session") {
+      return Response.json({
+        authenticated: true,
+        csrfToken: "C".repeat(43),
+      });
+    }
+    if (String(url) === "/api/setup/status") {
+      return Response.json({
+        operationId: "O".repeat(26),
+        state: "succeeded",
+        stage: "waiting-for-deployment",
+        installationUrl: "https://velvet-user.github.io/status/",
+        repositoryUrl: "https://github.com/velvet-user/status",
+        workflowRunId: 777,
+      });
+    }
+    return new Response(
+      JSON.stringify({ type: "progress", stage: "waiting-for-deployment" }),
+      { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+    );
+  });
+
+  const result = await client.provision(validRequest());
+
+  assert.deepEqual(calls, ["/api/session", "/api/setup", "/api/setup/status"]);
+  assert.deepEqual(result, {
+    installationUrl: "https://velvet-user.github.io/status/",
+  });
+});
+
 test("redirects an unauthenticated browser without accepting a browser token", async () => {
   const redirects: string[] = [];
   const client = createBrowserSetupClient(

@@ -420,12 +420,21 @@ function setupStreamResponse(input: {
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
+      let responseClosed = false;
       const emit = (event: SetupEvent): void => {
         if (!validateSetupEvent(event).success) {
           throw internalContractError();
         }
+        if (responseClosed) return;
         try {
           controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+          if (
+            event.type === "progress" &&
+            event.stage === "waiting-for-deployment"
+          ) {
+            controller.close();
+            responseClosed = true;
+          }
         } catch {
           // Provisioning continues when the browser disconnects; session status remains queryable.
         }
@@ -539,10 +548,12 @@ function setupStreamResponse(input: {
             cause,
           });
         } finally {
-          try {
-            controller.close();
-          } catch {
-            // The browser may have closed the stream after receiving a final event.
+          if (!responseClosed) {
+            try {
+              controller.close();
+            } catch {
+              // The browser may have closed the stream after receiving a final event.
+            }
           }
         }
       })();

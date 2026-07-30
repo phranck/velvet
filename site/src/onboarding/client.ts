@@ -1,6 +1,7 @@
 import {
   validateSetupEvent,
   validateSetupSession,
+  validateSetupStatus,
   type SetupEvent,
 } from "@velvet/contracts";
 
@@ -15,6 +16,8 @@ const PROGRESS_STAGES = new Set<SetupProgressStage>([
   "waiting-for-deployment",
 ]);
 const MAX_RESPONSE_BYTES = 256 * 1_024;
+const MAX_STATUS_CHECKS = 125;
+const STATUS_POLL_INTERVAL_MS = 2_000;
 
 export type SetupFetchImplementation = (
   input: RequestInfo | URL,
@@ -68,9 +71,11 @@ export function createBrowserSetupClient(
       }
 
       const events = readSetupEvents(response.body);
+      let deploymentStarted = false;
       for await (const event of events) {
         if (event.type === "progress") {
           onProgress?.(event.stage);
+          deploymentStarted ||= event.stage === "waiting-for-deployment";
         } else if (event.type === "permission-required") {
           navigate(safeGitHubInstallationUrl(event.installationUrl, event.access));
           throw new Error("SETUP_REDIRECT_STARTED");
@@ -80,9 +85,40 @@ export function createBrowserSetupClient(
           throw new Error("SETUP_FAILED");
         }
       }
+      if (deploymentStarted) {
+        return pollSetupStatus(fetchImplementation);
+      }
       throw new Error("SETUP_FAILED");
     },
   };
+}
+
+async function pollSetupStatus(
+  fetchImplementation: SetupFetchImplementation,
+): Promise<{ installationUrl: string }> {
+  for (let check = 0; check < MAX_STATUS_CHECKS; check += 1) {
+    const response = await fetchImplementation("/api/setup/status", {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw new Error("SETUP_FAILED");
+    const status = validateSetupStatus(await readJsonResponse(response));
+    if (!status.success) throw new Error("SETUP_FAILED");
+    if (status.data.state === "succeeded") {
+      if (!status.data.installationUrl) throw new Error("SETUP_FAILED");
+      return {
+        installationUrl: safeInstallationUrl(status.data.installationUrl),
+      };
+    }
+    if (status.data.state !== "running") throw new Error("SETUP_FAILED");
+    await wait(STATUS_POLL_INTERVAL_MS);
+  }
+  throw new Error("SETUP_FAILED");
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => globalThis.setTimeout(resolve, milliseconds));
 }
 
 async function* readSetupEvents(
