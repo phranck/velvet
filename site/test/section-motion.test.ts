@@ -140,31 +140,3 @@ test("uses an immediate path for reduced motion", async () => {
   assert.equal(animations.length, 0);
   assert.equal(content.style.overflow, "");
 });
-
-test("drives a non-details disclosure through its hidden state", async () => {
-  const motion = await import("../src/lib/disclosure-motion.js");
-  const { createHiddenDisclosureMotion } = motion;
-  assert.equal(typeof createHiddenDisclosureMotion, "function");
-
-  const { animations, content, style } = fixture(false);
-  content.hidden = true;
-  content.getBoundingClientRect = () => {
-    const inlineHeight = Number.parseFloat(style.height);
-    return {
-      height: Number.isFinite(inlineHeight)
-        ? inlineHeight
-        : content.hidden
-          ? 0
-          : content.scrollHeight,
-    } as DOMRect;
-  };
-
-  const controller = createHiddenDisclosureMotion(content);
-  controller.setExpanded(true, false);
-
-  assert.equal(content.hidden, false);
-  assert.deepEqual(animations[0]?.frames, [
-    { height: "0px", opacity: 0 },
-    { height: "120px", opacity: 1 },
-  ]);
-});

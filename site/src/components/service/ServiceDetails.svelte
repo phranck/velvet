@@ -1,15 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import type {
     RangeKey,
     ResponseTimesDocument,
     ServiceCheck,
   } from "../../lib/types";
   import type { VelvetTheme } from "../../lib/config";
-  import {
-    createHiddenDisclosureMotion,
-    type DisclosureMotionController,
-  } from "../../lib/disclosure-motion";
   import ProtocolStatus from "./ProtocolStatus.svelte";
   import ResponseTimeChart from "./ResponseTimeChart.svelte";
 
@@ -34,37 +29,9 @@
     id: string;
     chart: VelvetTheme["chart"];
   } = $props();
-
-  let renderedOpen = $state((() => open)());
-  let content: HTMLElement;
-  let motion: DisclosureMotionController | null = null;
-  let mounted = $state(false);
-
-  function reducedMotion(): boolean {
-    return (
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
-    );
-  }
-
-  onMount(() => {
-    motion = createHiddenDisclosureMotion(content);
-    mounted = true;
-    return () => motion?.destroy();
-  });
-
-  $effect(() => {
-    const expanded = open;
-    if (mounted) motion?.setExpanded(expanded, reducedMotion());
-  });
 </script>
 
-<div
-  bind:this={content}
-  class="detail-wrap"
-  {id}
-  hidden={!renderedOpen}
-  inert={!open}
->
+<div class="detail-wrap" {id} hidden={!open} inert={!open}>
   <div class="detail">
     <div class="protocol-grid" role="list" aria-label="Protocol status">
       {#each checks as check, index (check.id)}

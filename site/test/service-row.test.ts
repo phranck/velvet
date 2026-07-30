@@ -192,16 +192,17 @@ test("reuses the response chart inside service details", async () => {
   assert.match(html, /Response time history for Website/);
 });
 
-test("reuses the shared interruptible disclosure motion for service details", async () => {
+test("changes service details immediately without animating live height", async () => {
   const source = await readFile(
     resolve(import.meta.dirname, "../src/components/service/ServiceDetails.svelte"),
     "utf8",
   );
 
-  assert.match(source, /createHiddenDisclosureMotion/);
-  assert.match(source, /motion\?\.setExpanded\(expanded, reducedMotion\(\)\)/);
-  assert.match(source, /hidden=\{!renderedOpen\}/);
+  assert.match(source, /hidden=\{!open\}/);
   assert.match(source, /inert=\{!open\}/);
+  assert.doesNotMatch(source, /createHiddenDisclosureMotion/);
+  assert.doesNotMatch(source, /\.animate\(/);
+  assert.doesNotMatch(source, /height:\s*`?\$\{/);
   assert.doesNotMatch(source, /grid-template-rows/);
 });
 
@@ -229,7 +230,7 @@ test("uses the centered section disclosure icon for service cards", async () => 
   );
   assert.match(
     source,
-    /\.chevron\s*\{[^}]*transform 160ms ease-in-out/s,
+    /\.chevron\s*\{[^}]*transform 200ms ease-in-out/s,
   );
   assert.match(source, /\.chevron\s*\{[^}]*color:\s*var\(--service-icon\)/s);
   assert.doesNotMatch(source, /\.summary:hover \.chevron/);

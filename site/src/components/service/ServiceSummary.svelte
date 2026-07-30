@@ -89,7 +89,7 @@
     color: var(--service-icon);
     font-size: 22px;
     line-height: 1;
-    transition: transform 160ms ease-in-out;
+    transition: transform 200ms ease-in-out;
   }
   .chevron.open {
     transform: rotate(180deg);

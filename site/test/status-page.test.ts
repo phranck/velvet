@@ -99,6 +99,7 @@ async function renderStatusPage(
   layout: VelvetLayout,
   allServicesOpen = true,
   incidents: IncidentsDocument = incidentsDocument,
+  renderedStatus: StatusDocument = statusDocument,
 ): Promise<string> {
   const config: VelvetConfig = {
     owner: "example",
@@ -116,12 +117,14 @@ async function renderStatusPage(
     layout,
     defaultRange: "month",
     theme: resolveTheme(),
-    icons: { website: "ph-globe" },
+    icons: Object.fromEntries(
+      renderedStatus.services.map(({ id }) => [id, "ph-globe"]),
+    ),
   };
 
   return renderer.render("/src/components/StatusPage.svelte", {
     config,
-    statusDocument,
+    statusDocument: renderedStatus,
     responseTimesDocument,
     incidentsDocument: incidents,
     range: "month",
@@ -166,6 +169,35 @@ test("renders the existing cards layout through the same page component", async 
   assert.match(html, /data-layout="cards"/);
   assert.match(html, /class="range-bar(?:\s|")/);
   assert.equal(html.match(/<section class="card(?:\s|")/g)?.length, 1);
+});
+
+test("gives all five cards stable browser transition identities", async () => {
+  const serviceIds = ["backend", "dashboard", "database", "storage", "website"];
+  const fiveServices: StatusDocument = {
+    ...statusDocument,
+    services: serviceIds.map((id) => ({
+      ...statusDocument.services[0]!,
+      id,
+      name: id,
+      checks: [
+        {
+          ...statusDocument.services[0]!.checks[0]!,
+          id,
+        },
+      ],
+    })),
+  };
+  const html = await renderStatusPage(
+    "cards",
+    false,
+    incidentsDocument,
+    fiveServices,
+  );
+
+  for (const serviceId of serviceIds) {
+    assert.match(html, new RegExp(`view-transition-name: service-${serviceId}`));
+  }
+  assert.equal(html.match(/view-transition-name: service-/g)?.length, 5);
 });
 
 test("renders completed maintenance in the affected service history", async () => {
@@ -289,13 +321,21 @@ test("places the Velvet credit directly after the service cards", async () => {
   assert.doesNotMatch(page, /incidents\.atom/);
 });
 
-test("uses the shared disclosure transition without page-level FLIP animation", async () => {
-  const app = await readFile(
-    resolve(import.meta.dirname, "../src/App.svelte"),
+test("uses browser view transitions without live height animation", async () => {
+  const page = await readFile(
+    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
     "utf8",
   );
 
-  assert.doesNotMatch(app, /flipToggle/);
-  assert.doesNotMatch(app, /\.animate\(/);
-  assert.doesNotMatch(app, /getAnimations\(/);
+  assert.match(page, /createViewTransitionController/);
+  assert.match(page, /transitionState\(\(\) => onToggleAll\(!allOpen\)\)/);
+  assert.match(
+    page,
+    /transitionState\(\(\) => onToggleService\(service\.id\)\)/,
+  );
+  assert.match(page, /html:active-view-transition/);
+  assert.match(page, /::view-transition-group\(\*\)/);
+  assert.match(page, /animation-duration:\s*200ms/);
+  assert.match(page, /\.toggle-all i\s*\{[^}]*transform 200ms ease-in-out/s);
+  assert.doesNotMatch(page, /\.animate\(/);
 });

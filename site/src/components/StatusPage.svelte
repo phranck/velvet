@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount, tick } from "svelte";
   import type { VelvetConfig } from "../lib/config";
   import {
     barsForRange,
@@ -8,6 +9,10 @@
     visibleIncidentEvents,
   } from "../lib/data";
   import { iconFor } from "../lib/icons";
+  import {
+    createViewTransitionController,
+    type ViewTransitionController,
+  } from "../lib/view-transition";
   import type {
     IncidentsDocument,
     RangeKey,
@@ -63,6 +68,31 @@
   const allOpen = $derived(
     services.length > 0 && services.every((service) => openMap[service.id]),
   );
+  let viewTransitions: ViewTransitionController | null = null;
+
+  function reducedMotion(): boolean {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function transitionState(update: () => void): void {
+    if (!viewTransitions) {
+      update();
+      return;
+    }
+
+    viewTransitions.update(
+      async () => {
+        update();
+        await tick();
+      },
+      reducedMotion(),
+    );
+  }
+
+  onMount(() => {
+    viewTransitions = createViewTransitionController(document);
+    return () => viewTransitions?.destroy();
+  });
 </script>
 
 <main class="status-page" data-layout={config.layout}>
@@ -98,7 +128,7 @@
   {#snippet toggleAllButton()}
     <button
       class="toggle-all"
-      onclick={() => onToggleAll(!allOpen)}
+      onclick={() => transitionState(() => onToggleAll(!allOpen))}
       title={allOpen ? "Collapse all" : "Expand all"}
       aria-label={allOpen ? "Collapse all" : "Expand all"}
     >
@@ -134,7 +164,7 @@
         ({ serviceId }) => serviceId === service.id,
       )}
       open={openMap[service.id] === true}
-      onToggle={() => onToggleService(service.id)}
+      onToggle={() => transitionState(() => onToggleService(service.id))}
       chart={config.theme.chart}
     />
   {/snippet}
@@ -146,12 +176,15 @@
       {@render toggleAllButton()}
     </div>
     {#each services as service (service.id)}
-      <section class="card">
+      <section
+        class="card"
+        style={`view-transition-name: service-${service.id}`}
+      >
         {@render serviceRow(service)}
       </section>
     {/each}
   {:else}
-    <section class="card">
+    <section class="card" style="view-transition-name: service-group">
       <div class="group-head">
         <span class="group-name">{config.name.toUpperCase()}</span>
         {@render rangeButtons()}
@@ -183,6 +216,13 @@
     flex-direction: column;
     margin: 0 auto;
     padding: 0;
+  }
+  :global(html:active-view-transition) {
+    view-transition-name: none;
+  }
+  :global(::view-transition-group(*)) {
+    animation-duration: 200ms;
+    animation-timing-function: ease-in-out;
   }
   .nav {
     display: flex;
@@ -289,7 +329,7 @@
     flex: none;
     font-size: 22px;
     line-height: 1;
-    transition: transform 160ms ease-in-out;
+    transition: transform 200ms ease-in-out;
   }
   .toggle-all i.expanded {
     transform: rotate(180deg);
