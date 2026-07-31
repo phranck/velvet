@@ -32,6 +32,18 @@ untouched. Recovery writes the captured previous managed files as a normal new
 commit on the default branch with `force: false`; it never rewrites repository
 history.
 
+Ownership is proven from GitHub's own view of the change rather than assumed.
+Velvet refuses any repository whose default branch is the generated
+`velvet-data` history. Immediately before merging, it reads the technical pull
+request's changed files, including both sides of a rename, and stops the
+operation whilst the installation is still untouched if any path falls outside
+the closed Velvet-owned set. A change to `velvet.yml`, `README.md`, `LICENSE`,
+or any other user-owned file therefore cannot reach the default branch. The
+monitor rewrites `velvet-data` on its own schedule and replaces it with an
+unrelated root commit whenever it compacts elder history, so Velvet never
+compares that branch's commits. It only confirms that a data branch which
+existed before the merge still exists afterwards.
+
 ## GitHub App registration
 
 Register a GitHub App owned by the Velvet maintainer with these settings:

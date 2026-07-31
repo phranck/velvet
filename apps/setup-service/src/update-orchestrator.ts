@@ -23,6 +23,10 @@ import type {
   ManagedUpdateState,
 } from "./update-orchestrator-types.js";
 import { positiveInteger } from "./update-github-validation.js";
+import {
+  isProtectedBranch,
+  protectedChangedPaths,
+} from "./update-ownership.js";
 
 export type {
   ManagedUpdateOrchestrator,
@@ -119,6 +123,9 @@ async function reconcileManagedUpdate(
   const validation = validateVelvetReleaseManifest(release.manifest);
   if (!validation.success || validation.data.version !== request.version) {
     throw new ManagedUpdateError("The selected Velvet release is invalid.");
+  }
+  if (isProtectedBranch(repository.repository.defaultBranch)) {
+    return result(request, "failed", "protected_branch_target");
   }
 
   const [configurationFile, versionLockFile] = await Promise.all([
@@ -274,6 +281,14 @@ async function reconcileOpenPullRequest(
     return result(request, "failed", "checks_failed", pullRequest);
   }
 
+  // Ownership is proven immediately before the merge so that no change can slip
+  // into the pull request between the proof and the mutation it authorizes.
+  const changedPaths = await read(() => repository.changedPaths(pullRequest.number));
+  if (protectedChangedPaths(changedPaths).length > 0) {
+    return result(request, "failed", "protected_files_changed", pullRequest);
+  }
+  const dataBranchBeforeMerge = await read(() => repository.dataBranchHead());
+
   const merge = await repository.mergePullRequest(
     pullRequest.number,
     request.version,
@@ -281,6 +296,15 @@ async function reconcileOpenPullRequest(
   );
   if (!merge.merged || merge.sha === null) {
     return result(request, "failed", "merge_rejected", pullRequest);
+  }
+  if (dataBranchBeforeMerge !== null) {
+    // The monitor rewrites this branch on its own schedule, including elder
+    // history compaction that replaces it with an unrelated root commit. Only
+    // its disappearance proves that the update destroyed protected history.
+    const dataBranchAfterMerge = await read(() => repository.dataBranchHead());
+    if (dataBranchAfterMerge === null) {
+      return result(request, "failed", "data_branch_changed", pullRequest);
+    }
   }
   return reconcileMergedUpdate(context, {
     ...pullRequest,

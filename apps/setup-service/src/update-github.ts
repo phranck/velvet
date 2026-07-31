@@ -24,6 +24,7 @@ import {
   assertCommitSha,
   isRecord,
   nonNegativeInteger,
+  parseChangedPaths,
   parseCheckRun,
   parseCommitTree,
   parsePullRequest,
@@ -34,6 +35,7 @@ import {
   positiveInteger,
   validateManagedFiles,
 } from "./update-github-validation.js";
+import { VELVET_DATA_BRANCH } from "./update-ownership.js";
 
 export type {
   GitHubManagedFile,
@@ -49,6 +51,13 @@ export type {
 const UPDATE_USER_AGENT = "velvet-update-service";
 const MAX_CHECK_RUN_PAGES = 10;
 const PAGES_WORKFLOW_FILE = "velvet.yml";
+/**
+ * A managed update owns eight paths, so any page larger than nine entries can
+ * only be reached by a change set that already contains protected files. Ten
+ * entries therefore always expose a violation whilst keeping the response,
+ * which carries a diff per file, comfortably inside the size limit.
+ */
+const CHANGED_FILES_PAGE_SIZE = 10;
 const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
 
 export function updateBranchName(version: string): string {
@@ -264,6 +273,26 @@ function repositoryClient(
         })),
       );
       return files;
+    },
+
+    async changedPaths(pullRequestNumber) {
+      if (!positiveInteger(pullRequestNumber)) {
+        throw new TypeError("GitHub pull request number must be a positive integer.");
+      }
+      const body = await githubRequest<unknown>(
+        `${root}/pulls/${pullRequestNumber}/files?per_page=${CHANGED_FILES_PAGE_SIZE}`,
+        token,
+      );
+      return parseChangedPaths(body);
+    },
+
+    async dataBranchHead() {
+      try {
+        return await reference(VELVET_DATA_BRANCH);
+      } catch (error) {
+        if (error instanceof GitHubApiError && error.status === 404) return null;
+        throw error;
+      }
     },
 
     async updateBranchHead(version) {
