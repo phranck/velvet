@@ -16,6 +16,7 @@ export {
 export const TEMPLATE_REPOSITORY = "phranck/velvet-template";
 export const SETUP_WORKFLOW = "velvet.yml";
 export const CONFIGURATION_PATH = "velvet.yml";
+export const VERSION_LOCK_PATH = "velvet.lock.json";
 
 export interface GitHubViewer {
   login: string;
@@ -85,6 +86,12 @@ export interface GitHubSetupClient {
     repository: string,
     source: string,
     sha: string,
+  ): Promise<void>;
+  writeVersionLock(
+    installationToken: string,
+    owner: string,
+    repository: string,
+    source: string,
   ): Promise<void>;
   enablePages(
     installationToken: string,
@@ -273,6 +280,24 @@ export function createGitHubSetupClient(
             message: "Configure Velvet [skip ci]",
             content: Buffer.from(source).toString("base64"),
             sha,
+            branch: "main",
+          }),
+        },
+      );
+    },
+
+    async writeVersionLock(installationToken, owner, repository, source) {
+      // The lock does not exist in the template, so this creates it and
+      // deliberately sends no blob SHA. GitHub rejects the write if the path
+      // already exists, which stops a retry from overwriting a newer lock.
+      await githubRequest<unknown>(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/contents/${VERSION_LOCK_PATH}`,
+        installationToken,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            message: "Record the installed Velvet version [skip ci]",
+            content: Buffer.from(source).toString("base64"),
             branch: "main",
           }),
         },

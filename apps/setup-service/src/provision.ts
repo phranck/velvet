@@ -2,16 +2,21 @@ import { createHash, randomUUID } from "node:crypto";
 
 import {
   serializeVelvetConfiguration,
+  type NormalizedVelvetConfiguration,
   type SetupEvent,
   type SetupProgressStage,
   type SetupRequest,
 } from "@velvet/contracts";
+import { materializeManagedTemplateFiles } from "@velvet/template-files";
 
 import {
   GitHubApiError,
+  VERSION_LOCK_PATH,
   type GitHubSetupClient,
   type GitHubWorkflowJob,
 } from "./github.js";
+import { embeddedVelvetReleases } from "./update-releases.js";
+import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.js";
 import type { SetupServerSession } from "./session.js";
 import { publicSetupError, SetupServiceError } from "./setup-error.js";
 
@@ -35,6 +40,7 @@ interface ProvisionVelvetInput {
   request: SetupRequest;
   github: GitHubSetupClient;
   onEvent: (event: SetupEvent) => void;
+  releases?: ManagedUpdateReleaseProvider;
   operationId?: () => string;
   errorId?: () => string;
   sleep?: (milliseconds: number) => Promise<void>;
@@ -191,6 +197,19 @@ export async function provisionVelvet(
       state.configurationCommitted = true;
     }
 
+    if (!state.versionLockCommitted) {
+      await input.github.writeVersionLock(
+        installationToken,
+        state.repository.owner,
+        state.repository.name,
+        await versionLockSource(
+          input.releases ?? embeddedVelvetReleases(),
+          input.request.configuration,
+        ),
+      );
+      state.versionLockCommitted = true;
+    }
+
     if (!state.pagesEnabled) {
       progress("enabling-pages");
       try {
@@ -313,6 +332,44 @@ export async function provisionVelvet(
     };
     throw setupError;
   }
+}
+
+/**
+ * Renders the version lock that records which Velvet release an installation
+ * starts on.
+ *
+ * The lock is produced by the same generator a managed update uses, so a fresh
+ * installation records exactly what an update would write for that release.
+ * Without it an installation has no version to compare against and can never
+ * be updated.
+ *
+ * @param releases - Source describing the release being installed.
+ * @param configuration - Validated configuration for the new repository.
+ * @returns The serialized `velvet.lock.json` content.
+ * @throws When the release cannot produce a lock, which means the compiled-in
+ *   release artefact is broken and setup must not continue.
+ */
+async function versionLockSource(
+  releases: ManagedUpdateReleaseProvider,
+  configuration: NormalizedVelvetConfiguration,
+): Promise<string> {
+  const release = await releases.get(releases.latest());
+  const materialized = materializeManagedTemplateFiles({
+    manifest: release.manifest,
+    configuration,
+    sources: release.sources,
+  });
+  const lock = materialized.success
+    ? materialized.data.files.find((file) => file.path === VERSION_LOCK_PATH)
+    : undefined;
+  if (!lock) {
+    throw new SetupServiceError(
+      "CONFIGURATION_COMMIT_FAILED",
+      "The repository was created, but its Velvet version could not be recorded.",
+      { recoverable: true },
+    );
+  }
+  return lock.content;
 }
 
 function deploymentStageForJobs(

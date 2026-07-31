@@ -40,6 +40,7 @@ export interface SetupServerSession {
       htmlUrl: string;
     };
     configurationCommitted?: boolean;
+    versionLockCommitted?: boolean;
     pagesEnabled?: boolean;
     workflowRunId?: number;
     workflowFailed?: boolean;

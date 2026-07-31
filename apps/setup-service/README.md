@@ -2,8 +2,16 @@
 
 The setup service is the short-lived control plane behind browser onboarding.
 It authenticates a user through a Velvet GitHub App, creates one repository from
-the allowlisted `phranck/velvet-template`, writes only `velvet.yml`, enables
-GitHub Pages, and starts `.github/workflows/velvet.yml`.
+the allowlisted `phranck/velvet-template`, writes `velvet.yml` and the machine
+managed `velvet.lock.json`, enables GitHub Pages, and starts
+`.github/workflows/velvet.yml`.
+
+The version lock records the release the installation starts on and is produced
+by the same generator a managed update uses, so a fresh installation is already
+comparable against a newer release. Without it an installation would have no
+version to compare and could never be updated. The lock is written without a
+blob SHA, so GitHub refuses the write if the file already exists and a retried
+setup cannot overwrite a newer lock.
 
 That template-owned workflow performs the first service check, publishes the
 initial Velvet data, builds the site, and deploys GitHub Pages in order. The
