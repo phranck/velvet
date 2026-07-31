@@ -229,7 +229,7 @@ test("uses the shared theme and icon components in onboarding and configurator",
   );
   assert.match(
     iconOption,
-    /button\[aria-selected="true"\] i\s*\{[^}]*color:\s*var\(--picker-selected-icon,\s*#fff\)/s,
+    /\.service-icon-option\[aria-selected="true"\] \.service-icon-option-icon\s*\{[^}]*color:\s*var\(--picker-selected-icon,\s*#fff\)/s,
   );
   assert.doesNotMatch(iconOption, /button\[aria-selected="true"\]::after/);
   assert.match(
@@ -237,14 +237,17 @@ test("uses the shared theme and icon components in onboarding and configurator",
     /\.option-background\s*\{[^}]*transition:\s*none/s,
   );
   assert.match(iconOption, /\.selection-outline\s*\{[^}]*transition:\s*opacity 200ms ease-in-out/s);
-  assert.match(iconOption, /i\s*\{[^}]*transition:\s*none/s);
+  assert.match(
+    iconOption,
+    /\.service-icon-option > \.service-icon-option-icon\s*\{[^}]*transition:\s*none/s,
+  );
   assert.match(
     iconOption,
     /var\(--picker-accent,\s*#6366f1\) 28%,\s*var\(--picker-popover,/s,
   );
   assert.match(
     iconOption,
-    /button:hover i,\s*button:focus-visible i\s*\{[^}]*transform:\s*scale\(1\.1\)/s,
+    /\.service-icon-option:hover > \.service-icon-option-icon,\s*\.service-icon-option:focus-visible > \.service-icon-option-icon\s*\{[^}]*transform:\s*scale\(1\.1\)/s,
   );
   assert.match(
     configurator,

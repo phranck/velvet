@@ -27,6 +27,7 @@
 </script>
 
 <button
+  class="service-icon-option"
   type="button"
   role="option"
   aria-selected={selected}
@@ -38,6 +39,7 @@
   bind:clientWidth={size}
 >
   <svg
+    class="service-icon-option-shape"
     data-service-icon-squircle
     viewBox={`0 0 ${Math.max(size, 1)} ${Math.max(size, 1)}`}
     aria-hidden="true"
@@ -61,11 +63,11 @@
     ></path>
     <path class="focus-outline" d={focusPath}></path>
   </svg>
-  <i class={`ph-duotone ${icon}`} aria-hidden="true"></i>
+  <i class={`service-icon-option-icon ph-duotone ${icon}`} aria-hidden="true"></i>
 </button>
 
 <style>
-  button {
+  .service-icon-option {
     position: relative;
     min-width: 0;
     aspect-ratio: 1;
@@ -79,7 +81,7 @@
     cursor: pointer;
     font: inherit;
   }
-  svg {
+  .service-icon-option > .service-icon-option-shape {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -88,7 +90,7 @@
     overflow: visible;
     pointer-events: none;
   }
-  .option-background {
+  .service-icon-option .option-background {
     fill: color-mix(
       in srgb,
       var(--picker-accent, #6366f1) 28%,
@@ -97,7 +99,7 @@
     opacity: 0;
     transition: none;
   }
-  .selection-outline {
+  .service-icon-option .selection-outline {
     color: var(--picker-accent, #6366f1);
     opacity: 0;
     transform: scale(var(--picker-selection-scale, 1));
@@ -106,10 +108,10 @@
     vector-effect: non-scaling-stroke;
     transition: opacity 200ms ease-in-out;
   }
-  .selection-outline.outer {
+  .service-icon-option .selection-outline.outer {
     opacity: 0;
   }
-  .focus-outline {
+  .service-icon-option .focus-outline {
     fill: none;
     stroke: color-mix(
       in srgb,
@@ -120,38 +122,38 @@
     opacity: 0;
     transition: opacity 200ms ease-in-out;
   }
-  button:hover .option-background,
-  button:focus-visible .option-background {
+  .service-icon-option:hover .option-background,
+  .service-icon-option:focus-visible .option-background {
     opacity: 1;
   }
-  button:focus-visible .focus-outline {
+  .service-icon-option:focus-visible .focus-outline {
     opacity: 1;
   }
-  button[aria-selected="true"] .selection-outline {
+  .service-icon-option[aria-selected="true"] .selection-outline {
     opacity: 1;
   }
-  button[aria-selected="true"] i {
+  .service-icon-option[aria-selected="true"] .service-icon-option-icon {
     color: var(--picker-selected-icon, #fff);
   }
-  i {
+  .service-icon-option > .service-icon-option-icon {
     position: relative;
     z-index: 1;
     color: var(--picker-accent, #6366f1);
     font-size: var(--picker-icon-size, 1.4rem);
     transition: none;
   }
-  button:hover i,
-  button:focus-visible i {
+  .service-icon-option:hover > .service-icon-option-icon,
+  .service-icon-option:focus-visible > .service-icon-option-icon {
     transform: scale(1.1);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .selection-outline,
-    .focus-outline {
+    .service-icon-option .selection-outline,
+    .service-icon-option .focus-outline {
       transition-duration: 0s;
     }
-    button:hover i,
-    button:focus-visible i {
+    .service-icon-option:hover > .service-icon-option-icon,
+    .service-icon-option:focus-visible > .service-icon-option-icon {
       transform: none;
     }
   }

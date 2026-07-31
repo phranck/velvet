@@ -62,7 +62,7 @@
     align-items: center;
     gap: 1rem;
   }
-  .review-squircle {
+  .review-item .review-squircle {
     position: relative;
     width: 3.75rem;
     aspect-ratio: 1;
@@ -70,7 +70,7 @@
     place-items: center;
     color: var(--setup-muted);
   }
-  svg {
+  .review-item .review-squircle > svg {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -79,19 +79,19 @@
     overflow: visible;
     pointer-events: none;
   }
-  .outer-outline {
+  .review-item .outer-outline {
     opacity: 0.32;
   }
-  .inner-outline {
+  .review-item .inner-outline {
     opacity: 0.78;
   }
-  i {
+  .review-item .review-squircle > i {
     position: relative;
     z-index: 1;
     color: var(--setup-text);
     font-size: 1.4rem;
   }
-  .review-card {
+  .review-item .review-card {
     position: relative;
     isolation: isolate;
     min-width: 0;
@@ -104,7 +104,7 @@
     background: transparent;
     box-sizing: border-box;
   }
-  .review-card::before {
+  .review-item .review-card::before {
     content: "";
     position: absolute;
     z-index: -1;
@@ -124,21 +124,21 @@
       transparent 100%
     );
   }
-  .review-copy {
+  .review-item .review-copy {
     position: relative;
     z-index: 1;
     min-width: 0;
     display: grid;
     gap: 0.18rem;
   }
-  dt {
+  .review-item dt {
     color: var(--setup-muted);
     font-size: var(--setup-text-small);
     letter-spacing: 0.055em;
     line-height: 1.2;
     text-transform: uppercase;
   }
-  dd {
+  .review-item dd {
     margin: 0;
     overflow-wrap: anywhere;
     color: var(--setup-text);

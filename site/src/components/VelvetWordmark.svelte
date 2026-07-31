@@ -18,6 +18,8 @@
 
 <style>
   .velvet-wordmark {
+    width: var(--velvet-wordmark-width, auto);
+    display: var(--velvet-wordmark-display, inline);
     color: inherit;
     font-family: "Plaster", sans-serif;
     font-size: var(--velvet-wordmark-size, 1em);
@@ -25,6 +27,7 @@
     font-weight: 400;
     letter-spacing: normal;
     line-height: 1;
+    text-align: var(--velvet-wordmark-text-align, start);
     text-decoration: none;
   }
 </style>

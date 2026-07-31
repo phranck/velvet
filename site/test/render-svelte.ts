@@ -2,14 +2,18 @@ import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { createServer, type ViteDevServer } from "vite";
 
+import { createViteTestCache } from "./vite-test-cache.js";
+
 export interface SvelteRenderer {
   close(): Promise<void>;
   render(modulePath: string, props: Record<string, unknown>): Promise<string>;
 }
 
 export async function createSvelteRenderer(): Promise<SvelteRenderer> {
+  const cache = await createViteTestCache("svelte-renderer");
   const server: ViteDevServer = await createServer({
     root: resolve(import.meta.dirname, ".."),
+    cacheDir: cache.path,
     configFile: false,
     logLevel: "silent",
     appType: "custom",
@@ -21,7 +25,10 @@ export async function createSvelteRenderer(): Promise<SvelteRenderer> {
   )) as typeof import("svelte/server");
 
   return {
-    close: () => server.close(),
+    async close() {
+      await server.close();
+      await cache.cleanup();
+    },
     async render(modulePath, props) {
       const { default: component } = await server.ssrLoadModule(modulePath);
       return renderOnServer(component, { props }).body;

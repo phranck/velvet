@@ -7,10 +7,13 @@ import { chromium } from "playwright";
 import { createServer } from "vite";
 
 import { parseConfiguratorYaml } from "../src/configurator/configuration.js";
+import { createViteTestCache } from "./vite-test-cache.js";
 
 test("completes onboarding with keyboard, narrow viewport, and reduced motion", async () => {
+  const cache = await createViteTestCache("onboarding-browser");
   const server = await createServer({
     root: resolve(import.meta.dirname, ".."),
+    cacheDir: cache.path,
     configFile: false,
     logLevel: "silent",
     plugins: [svelte()],
@@ -1443,5 +1446,6 @@ history:
   } finally {
     await browser.close();
     await server.close();
+    await cache.cleanup();
   }
 }, 30_000);
