@@ -379,13 +379,88 @@ updates:
 `automaticSecurityUpdates` defaults to `true`. The preference applies only to
 releases explicitly classified as security updates that require neither a
 configuration migration nor a data migration. Feature releases, fixes without
-that classification, incompatible schema changes, and adoption of an existing
-installation always require confirmation in the Configurator.
+that classification, and incompatible schema changes always require
+confirmation.
 
-The update contract uses an immutable template commit and a closed list of
-Velvet-owned workflow and Issue-template files. It never makes `velvet.yml`,
-the `velvet-data` branch, incidents, maintenance history, repository secrets,
-Pages or domain settings, `README.md`, or `LICENSE` update targets.
+### How a release is classified
+
+Every release carries one of three classifications, and the classification must
+match how the version number moves. Publication is refused when they disagree,
+so a release cannot be labelled to make it look safer than it is.
+
+| Type | Version change | Meaning |
+| --- | --- | --- |
+| `security` | Patch only | Closes a security weakness |
+| `fix` | Patch only | Corrects behaviour |
+| `feature` | Major or minor | Adds or changes capability |
+
+### What may install without asking
+
+A release installs unattended only when every one of these holds. Any single
+failure means it waits for confirmation.
+
+- It is classified `security`.
+- It is explicitly marked eligible for automatic installation. The marking
+  alone is not enough; a release marked eligible whilst not being a
+  migration-free security release is rejected at publication.
+- It requires neither a configuration migration nor a data migration.
+- Your installation still has `automaticSecurityUpdates` enabled.
+- Its recorded template revision is immutable, and every file matches the hash
+  the release recorded for it.
+
+An automatic update that fails is not retried for that version. It will not
+open the same branch or pull request again and again.
+
+### What an update never touches
+
+The update contract works from an immutable template commit and a closed list
+of Velvet-owned workflow and Issue-template files, plus the machine-managed
+`velvet.lock.json`. Everything else is yours and is never an update target:
+`velvet.yml`, the complete `velvet-data` branch, incidents, maintenance
+history, repository secrets, Pages and domain settings, `README.md`, and
+`LICENSE`.
+
+This is proven rather than promised. Before merging, Velvet reads the changed
+files of its own pull request, including both sides of a rename, and stops
+whilst your installation is still untouched if any path falls outside that
+closed set. It also refuses to run at all against a repository whose default
+branch is the generated `velvet-data` history.
+
+The `velvet-data` branch is verified by existence rather than by comparison,
+because the monitor rewrites it on its own schedule and replaces it with an
+unrelated root commit whenever it compacts elder history. Comparing commits
+would raise false alarms on a perfectly healthy installation.
+
+Repository secrets are protected by absence of capability rather than by
+policy. The update token carries no permission that can read or write them.
+
+### What Velvet is allowed to do to your repository
+
+Updates use a token restricted to exactly one verified repository, requesting
+Actions read and write, Checks read, Contents write, Pull requests write, and
+Workflows write. It holds no Administration, Pages, Issues, Secrets,
+organisation, or account permission.
+
+Granting these is a one-time approval. Velvet cannot widen its own access
+afterwards, because the permissions come from the app registration you
+approved.
+
+### When something goes wrong
+
+A failed check before merging leaves your installation completely unchanged.
+Nothing was merged, so there is nothing to undo.
+
+If publication fails after merging, Velvet restores the previous managed files
+with a normal new commit and publishes them again. History is never rewritten
+and nothing is force-pushed, so your commit history stays intact and readable.
+
+An interrupted operation resumes from what the repository actually shows rather
+than from remembered state, so a restart in the middle of an update cannot
+leave it half applied. Repeating a request that already succeeded does nothing.
+
+Every failure reports a stable code, a message safe to show, and a unique error
+ID you can quote. The full cause is recorded in Velvet's logs, which never
+contain credentials, secret values, configuration content, or your status data.
 
 ## GitHub workflows and permissions
 
