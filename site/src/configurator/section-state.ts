@@ -1,4 +1,5 @@
 export const CONFIGURATOR_SECTION_IDS = [
+  "updates",
   "themes",
   "icons",
   "palette",

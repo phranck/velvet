@@ -24,7 +24,7 @@
   }
 
   .body:focus-visible {
-    outline: 2px solid currentColor;
+    outline: 2px solid var(--tool-accent);
     outline-offset: -2px;
   }
 </style>

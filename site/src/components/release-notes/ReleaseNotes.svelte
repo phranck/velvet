@@ -61,7 +61,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    color: var(--velvet-text, inherit);
+    color: var(--tool-text, inherit);
     line-height: 1.6;
     overflow-wrap: break-word;
   }
@@ -74,13 +74,13 @@
   }
 
   h2 {
-    font-size: 1.25rem;
-    font-weight: 640;
+    font-size: 15px;
+    font-weight: 650;
   }
 
   h3 {
-    font-size: 1rem;
-    font-weight: 620;
+    font-size: 14px;
+    font-weight: 650;
   }
 
   h2:not(:first-child),

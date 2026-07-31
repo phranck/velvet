@@ -9,12 +9,14 @@
 <style>
   footer {
     flex: 0 0 auto;
-    display: flex;
-    /* Actions sit to the right, matching the rest of the product. */
-    justify-content: flex-end;
+    /* Paired actions share the width, matching the Configurator's file
+       actions rather than sitting flush right. */
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     align-items: center;
-    gap: 0.75rem;
+    gap: 8px;
     padding: 1rem 1.5rem;
-    border-top: 1px solid rgb(255 255 255 / 0.1);
+    border-top: 1px solid var(--tool-line);
   }
 </style>
