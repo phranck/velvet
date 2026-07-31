@@ -44,6 +44,11 @@ async function buildDirectory(): Promise<string> {
   return mkdtemp(resolve(tmpdir(), "velvet-tool-build-"));
 }
 
+// Every build passes --emptyOutDir because the directory sits outside the
+// project root, where Vite otherwise asks for confirmation before clearing it.
+// With no terminal attached, as on CI, that prompt never gets an answer and the
+// build waits indefinitely.
+
 async function fixture(path: string): Promise<string> {
   return readFile(
     resolve(repositoryRoot, "packages/contracts/fixtures/valid", path),
@@ -57,6 +62,7 @@ test("builds the standalone configurator at the repository root", async () => {
     "run", "--bun", "vite", "build",
     "--config", "vite.configurator.ts",
     "--outDir", outDir,
+    "--emptyOutDir",
   ]);
 
   const html = await readFile(resolve(outDir, "index.html"), "utf8");
@@ -73,6 +79,7 @@ test("builds the standalone onboarding at the repository root", async () => {
     "run", "--bun", "vite", "build",
     "--config", "vite.onboarding.ts",
     "--outDir", outDir,
+    "--emptyOutDir",
   ]);
 
   const html = await readFile(resolve(outDir, "index.html"), "utf8");
@@ -85,7 +92,11 @@ test("builds the standalone onboarding at the repository root", async () => {
 
 test("builds status-page assets relative to the deployed Pages path", async () => {
   const outDir = await buildDirectory();
-  await bun(["run", "--bun", "vite", "build", "--outDir", outDir]);
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--outDir", outDir,
+    "--emptyOutDir",
+  ]);
 
   const html = await readFile(resolve(outDir, "index.html"), "utf8");
   assert.match(html, /src="\.\/assets\//);
