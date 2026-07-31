@@ -44,6 +44,39 @@ unrelated root commit whenever it compacts elder history, so Velvet never
 compares that branch's commits. It only confirms that a data branch which
 existed before the merge still exists afterwards.
 
+## Release source
+
+The version an installation can be updated to is compiled into this service as
+`src/velvet-release.generated.ts`. The artefact holds the validated release
+manifest together with the exact template file contents it was cut from, so an
+update writes reviewed bytes rather than whatever the template repository
+happens to serve at the moment it runs. Nothing is fetched at update time, which
+removes both a network dependency and the opportunity to influence an update
+from outside.
+
+Regenerate it whenever a new Velvet version is published:
+
+```sh
+bun run scripts/build-release.ts --version <semver> --type <security|fix|feature> \
+  --notes scripts/release-notes.md
+```
+
+The tool reads the current head of `phranck/velvet-template`, or an explicit
+`--commit`, downloads every Velvet-owned path at that exact revision, and hands
+the result to the shared publication rules. It also reads the artefact already
+in the repository and uses it as the predecessor, so forward versioning, release
+classification, and schema-migration flags are enforced automatically. A
+mistyped version or a feature published as a fix cannot be generated at all.
+
+Add `--automatic` only for a migration-free security release, which is the sole
+category eligible for unattended installation.
+
+`createEmbeddedReleaseProvider` validates the artefact when it is constructed,
+so a broken or tampered artefact fails immediately instead of part-way through
+a repository mutation. Until the Configurator update endpoint exists, no runtime
+path reaches the provider, so the bundler legitimately omits the artefact from
+`dist/`.
+
 ## GitHub App registration
 
 Register a GitHub App owned by the Velvet maintainer with these settings:

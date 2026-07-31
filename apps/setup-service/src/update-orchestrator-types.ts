@@ -17,6 +17,20 @@ export interface ManagedUpdateRelease {
 }
 
 export interface ManagedUpdateReleaseProvider {
+  /**
+   * Newest Velvet version this source can install.
+   *
+   * @returns The semantic version an installation can be brought up to.
+   */
+  latest(): string;
+  /**
+   * Resolves one release, including the template files it is cut from.
+   *
+   * @param version - Exact semantic version being requested.
+   * @returns The validated manifest and its immutable template sources.
+   * @throws When the source cannot serve that exact version, so an unknown or
+   *   superseded version never silently resolves to a different release.
+   */
   get(version: string): Promise<ManagedUpdateRelease>;
 }
 
