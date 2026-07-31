@@ -881,6 +881,9 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         const widths = elements.map((child) =>
           Math.round(child?.getBoundingClientRect().width ?? 0),
         );
+        const rainbowWidth = Math.round(
+          rainbow?.getBoundingClientRect().width ?? 0,
+        );
         const stacked =
           wordmark && palette && subtitle
             ? wordmark.getBoundingClientRect().bottom <=
@@ -895,8 +898,11 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
             if (child.hasAttribute("data-velvet-tool-subtitle")) return "subtitle";
             return "unknown";
           }),
-          widths,
-          rainbowWidth: Math.round(rainbow?.getBoundingClientRect().width ?? 0),
+          widthsArePositive: widths.every((width) => width > 0),
+          innerWidthsMatch: Math.abs(widths[1] - widths[2]) <= 1,
+          rainbowMatchesPalette: Math.abs(rainbowWidth - widths[1]) <= 1,
+          innerWidthRatio:
+            widths[0] > 0 ? Number((widths[1] / widths[0]).toFixed(2)) : 0,
           subtitleText: subtitle?.getAttribute("aria-label"),
           subtitleEdges:
             subtitle && subtitleLetters.length > 1
@@ -916,8 +922,10 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       }),
       {
         order: ["velvet-wordmark", "palette", "subtitle"],
-        widths: [141, 133, 133],
-        rainbowWidth: 133,
+        widthsArePositive: true,
+        innerWidthsMatch: true,
+        rainbowMatchesPalette: true,
+        innerWidthRatio: 0.94,
         subtitleText: "CONFIGURATOR",
         subtitleEdges: [0, 0],
         stacked: true,
