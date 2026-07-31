@@ -1,0 +1,572 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { test } from "bun:test";
+
+import {
+  MANAGED_TEMPLATE_PATHS,
+  parseVelvetVersionLock,
+  type VelvetManagedFile,
+  type VelvetReleaseManifest,
+  type VelvetVersionLock,
+} from "@velvet/contracts";
+
+import { GitHubApiError } from "../src/github-api.js";
+import {
+  createManagedUpdateOrchestrator,
+  type ManagedUpdateRelease,
+} from "../src/update-orchestrator.js";
+import type {
+  GitHubManagedFile,
+  GitHubRepositoryUpdateClient,
+  GitHubUpdateCheckRun,
+  GitHubUpdateClient,
+  GitHubUpdatePullRequest,
+  GitHubUpdateWorkflowRun,
+} from "../src/update-github.js";
+
+const baseSha = "1".repeat(40);
+const updateSha = "2".repeat(40);
+const mergeSha = "3".repeat(40);
+const revertSha = "4".repeat(40);
+const templateCommit = "a".repeat(40);
+
+const configuration = (automaticSecurityUpdates = true) => `
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - { name: Website, url: https://example.com }
+updates: { automaticSecurityUpdates: ${automaticSecurityUpdates} }
+`;
+
+const sources = {
+  ".github/ISSUE_TEMPLATE/config.yml": "blank_issues_enabled: false\n",
+  ".github/ISSUE_TEMPLATE/maintenance.yml": `
+name: Planned maintenance
+body:
+  - type: dropdown
+    id: affected-targets
+    attributes:
+      options: [Placeholder]
+`,
+  ".github/workflows/deploy-announce.yml": "name: Deploy announce\n",
+  ".github/workflows/maintenance-switch.yml": `
+name: Maintenance switch
+on:
+  workflow_dispatch:
+    inputs:
+      services: { default: placeholder }
+jobs: {}
+`,
+  ".github/workflows/velvet-response-times.yml": monitorWorkflow("response"),
+  ".github/workflows/velvet-status.yml": monitorWorkflow("status"),
+  ".github/workflows/velvet.yml": monitorWorkflow("status"),
+} as const;
+
+function monitorWorkflow(mode: "response" | "status"): string {
+  return `
+name: Velvet ${mode}
+on: { workflow_dispatch: {} }
+jobs:
+  monitor:
+    steps:
+      - uses: phranck/velvet/actions/monitor@${templateCommit}
+        with: { mode: ${mode} }
+`;
+}
+
+function hash(source: string): string {
+  return createHash("sha256").update(source).digest("hex");
+}
+
+function sourceFile(
+  path: keyof typeof sources,
+  generator?: Exclude<
+    VelvetManagedFile & { strategy: "generate" },
+    { generator: "version-lock-v1" }
+  >["generator"],
+): VelvetManagedFile {
+  return generator
+    ? {
+        path,
+        strategy: "generate",
+        generator,
+        sourcePath: path,
+        sha256: hash(sources[path]),
+      }
+    : {
+        path,
+        strategy: "replace",
+        sourcePath: path,
+        sha256: hash(sources[path]),
+      };
+}
+
+function release(
+  overrides: Partial<VelvetReleaseManifest> = {},
+): ManagedUpdateRelease {
+  const manifest: VelvetReleaseManifest = {
+    schemaVersion: 1,
+    version: "2.1.0",
+    releaseType: "feature",
+    automaticInstallEligible: false,
+    template: {
+      repository: "phranck/velvet-template",
+      commit: templateCommit,
+    },
+    compatibility: {
+      minimumInstalledVersion: "2.0.0",
+      configurationSchemaVersion: 1,
+      dataSchemaVersion: 1,
+      configurationMigrationRequired: false,
+      dataMigrationRequired: false,
+    },
+    managedFiles: [
+      sourceFile(".github/ISSUE_TEMPLATE/config.yml"),
+      sourceFile(
+        ".github/ISSUE_TEMPLATE/maintenance.yml",
+        "maintenance-issue-template-v1",
+      ),
+      sourceFile(".github/workflows/deploy-announce.yml"),
+      sourceFile(
+        ".github/workflows/maintenance-switch.yml",
+        "maintenance-workflow-v1",
+      ),
+      sourceFile(
+        ".github/workflows/velvet-response-times.yml",
+        "response-times-workflow-v1",
+      ),
+      sourceFile(
+        ".github/workflows/velvet-status.yml",
+        "status-workflow-v1",
+      ),
+      sourceFile(".github/workflows/velvet.yml", "pages-workflow-v1"),
+      {
+        path: "velvet.lock.json",
+        strategy: "generate",
+        generator: "version-lock-v1",
+      },
+    ],
+    releaseNotes: "# Velvet 2.1.0\n",
+    ...overrides,
+  };
+  return { manifest, sources };
+}
+
+const previousLock: VelvetVersionLock = {
+  schemaVersion: 1,
+  installedVersion: "2.0.0",
+  template: {
+    repository: "phranck/velvet-template",
+    commit: "b".repeat(40),
+  },
+  configurationSchemaVersion: 1,
+  dataSchemaVersion: 1,
+};
+
+const previousFiles: GitHubManagedFile[] = MANAGED_TEMPLATE_PATHS.map((path) => ({
+  path,
+  content: path === "velvet.lock.json"
+    ? `${JSON.stringify(previousLock, null, 2)}\n`
+    : `previous ${path}\n`,
+}));
+
+class FakeRepository implements GitHubRepositoryUpdateClient {
+  readonly repository = {
+    id: 99,
+    owner: "example",
+    name: "status",
+    defaultBranch: "main",
+  };
+  readonly mutations: string[] = [];
+  readonly checkRunsBySha = new Map<string, GitHubUpdateCheckRun[]>();
+  readonly workflowRunsBySha = new Map<string, GitHubUpdateWorkflowRun[]>();
+  defaultHead = baseSha;
+  branchHead: string | null = null;
+  currentFiles = structuredClone(previousFiles);
+  updateFiles: GitHubManagedFile[] | null = null;
+  lock = structuredClone(previousLock);
+  pullRequest: GitHubUpdatePullRequest | null = null;
+  configurationSource = configuration();
+  defaultHeadFailures = 0;
+  defaultHeadCalls = 0;
+  createPullRequestFailures = 0;
+
+  async defaultBranchHead(): Promise<string> {
+    this.defaultHeadCalls += 1;
+    if (this.defaultHeadFailures > 0) {
+      this.defaultHeadFailures -= 1;
+      throw new GitHubApiError(new Response(null, { status: 503 }));
+    }
+    return this.defaultHead;
+  }
+
+  async readConfiguration(): Promise<{ source: string; blobSha: string }> {
+    return { source: this.configurationSource, blobSha: "8".repeat(40) };
+  }
+
+  async readVersionLock(): Promise<{ lock: VelvetVersionLock; blobSha: string }> {
+    return { lock: structuredClone(this.lock), blobSha: "9".repeat(40) };
+  }
+
+  async readManagedFiles(ref: string): Promise<GitHubManagedFile[]> {
+    if (ref === baseSha) return structuredClone(previousFiles);
+    if (ref === updateSha && this.updateFiles) {
+      return structuredClone(this.updateFiles);
+    }
+    if (ref === this.defaultHead) return structuredClone(this.currentFiles);
+    throw new Error(`Unexpected managed-files ref ${ref}`);
+  }
+
+  async updateBranchHead(): Promise<string | null> {
+    return this.branchHead;
+  }
+
+  async createUpdateBranch(_version: string, expectedBaseSha: string): Promise<void> {
+    assert.equal(expectedBaseSha, this.defaultHead);
+    this.mutations.push("create-branch");
+    this.branchHead = expectedBaseSha;
+  }
+
+  async commitUpdate(
+    _version: string,
+    expectedHeadSha: string,
+    files: readonly GitHubManagedFile[],
+  ): Promise<string> {
+    assert.equal(expectedHeadSha, this.branchHead);
+    this.mutations.push("commit-update");
+    this.updateFiles = files.map((file) => ({ ...file }));
+    this.branchHead = updateSha;
+    return updateSha;
+  }
+
+  async createPullRequest(
+    _version: string,
+    expectedHeadSha: string,
+    expectedBaseSha: string,
+  ): Promise<GitHubUpdatePullRequest> {
+    this.mutations.push("create-pr");
+    if (this.createPullRequestFailures > 0) {
+      this.createPullRequestFailures -= 1;
+      throw new GitHubApiError(new Response(null, { status: 503 }));
+    }
+    this.pullRequest = {
+      number: 12,
+      state: "open",
+      htmlUrl: "https://github.com/example/status/pull/12",
+      headRef: "velvet/update/2.1.0",
+      headSha: expectedHeadSha,
+      baseRef: "main",
+      baseSha: expectedBaseSha,
+      mergedAt: null,
+      mergeCommitSha: null,
+    };
+    return structuredClone(this.pullRequest);
+  }
+
+  async pullRequests(): Promise<GitHubUpdatePullRequest[]> {
+    return this.pullRequest ? [structuredClone(this.pullRequest)] : [];
+  }
+
+  async checkRuns(headSha: string): Promise<GitHubUpdateCheckRun[]> {
+    return structuredClone(this.checkRunsBySha.get(headSha) ?? []);
+  }
+
+  async pagesWorkflowRuns(headSha: string): Promise<GitHubUpdateWorkflowRun[]> {
+    return structuredClone(this.workflowRunsBySha.get(headSha) ?? []);
+  }
+
+  async dispatchPagesWorkflow(expectedHeadSha: string): Promise<void> {
+    assert.equal(expectedHeadSha, this.defaultHead);
+    this.mutations.push(`dispatch:${expectedHeadSha}`);
+    this.workflowRunsBySha.set(expectedHeadSha, [
+      workflowRun(expectedHeadSha, "in_progress", null),
+    ]);
+  }
+
+  async mergePullRequest(): Promise<{ merged: boolean; sha: string }> {
+    assert.ok(this.pullRequest);
+    assert.ok(this.updateFiles);
+    this.mutations.push("merge");
+    this.pullRequest = {
+      ...this.pullRequest,
+      state: "closed",
+      mergedAt: "2026-07-31T12:00:00Z",
+      mergeCommitSha: mergeSha,
+    };
+    this.defaultHead = mergeSha;
+    this.currentFiles = structuredClone(this.updateFiles);
+    this.lock = lockFrom(this.currentFiles);
+    return { merged: true, sha: mergeSha };
+  }
+
+  async deleteUpdateBranch(): Promise<void> {
+    this.mutations.push("delete-branch");
+    this.branchHead = null;
+  }
+
+  async commitRevert(
+    _version: string,
+    expectedHeadSha: string,
+    files: readonly GitHubManagedFile[],
+  ): Promise<string> {
+    assert.equal(expectedHeadSha, this.defaultHead);
+    this.mutations.push("revert");
+    this.defaultHead = revertSha;
+    this.currentFiles = files.map((file) => ({ ...file }));
+    this.lock = lockFrom(this.currentFiles);
+    return revertSha;
+  }
+}
+
+function lockFrom(files: readonly GitHubManagedFile[]): VelvetVersionLock {
+  const source = files.find((file) => file.path === "velvet.lock.json")?.content;
+  assert.ok(source);
+  const parsed = parseVelvetVersionLock(source);
+  assert.equal(parsed.success, true);
+  return parsed.success ? parsed.data : (null as never);
+}
+
+function checkRun(
+  conclusion: string | null,
+  status: GitHubUpdateCheckRun["status"] = "completed",
+): GitHubUpdateCheckRun {
+  return {
+    id: 101,
+    name: "Validate managed update",
+    status,
+    conclusion,
+    htmlUrl: "https://github.com/example/status/actions/runs/101",
+    headSha: updateSha,
+  };
+}
+
+function workflowRun(
+  headSha: string,
+  status: GitHubUpdateWorkflowRun["status"],
+  conclusion: string | null,
+): GitHubUpdateWorkflowRun {
+  return {
+    id: Number(headSha[0]),
+    status,
+    conclusion,
+    htmlUrl: `https://github.com/example/status/actions/runs/${headSha[0]}`,
+    headSha,
+  };
+}
+
+function orchestrator(
+  repository: FakeRepository,
+  selectedRelease: ManagedUpdateRelease = release(),
+  overrides: { sleep?: (milliseconds: number) => Promise<void> } = {},
+) {
+  const github: GitHubUpdateClient = {
+    async forRepository() {
+      return repository;
+    },
+  };
+  return createManagedUpdateOrchestrator({
+    github,
+    releases: {
+      async get(version) {
+        assert.equal(version, selectedRelease.manifest.version);
+        return selectedRelease;
+      },
+    },
+    requiredCheckNames: ["Validate managed update"],
+    maxReadAttempts: 3,
+    ...(overrides.sleep ? { sleep: overrides.sleep } : {}),
+  });
+}
+
+const manualRequest = {
+  installationId: 7,
+  repositoryId: 99,
+  version: "2.1.0",
+  trigger: "manual" as const,
+};
+
+test("reconciles one manual update from branch creation through published cleanup", async () => {
+  const repository = new FakeRepository();
+  const updates = orchestrator(repository);
+
+  const prepared = await updates.reconcile(manualRequest);
+  assert.equal(prepared.state, "waiting_for_checks");
+  assert.equal(prepared.pullRequest?.number, 12);
+  assert.deepEqual(repository.mutations, [
+    "create-branch",
+    "commit-update",
+    "create-pr",
+  ]);
+
+  repository.checkRunsBySha.set(updateSha, [checkRun("success")]);
+  const publishing = await updates.reconcile(manualRequest);
+  assert.equal(publishing.state, "waiting_for_publication");
+  assert.deepEqual(repository.mutations.slice(-2), [
+    "merge",
+    `dispatch:${mergeSha}`,
+  ]);
+
+  repository.workflowRunsBySha.set(mergeSha, [
+    workflowRun(mergeSha, "completed", "success"),
+  ]);
+  const completed = await updates.reconcile(manualRequest);
+  assert.equal(completed.state, "succeeded");
+  assert.equal(repository.branchHead, null);
+
+  const repeated = await updates.reconcile(manualRequest);
+  assert.equal(repeated.state, "succeeded");
+  assert.equal(
+    repository.mutations.filter((mutation) => mutation === "create-pr").length,
+    1,
+  );
+  assert.equal(
+    repository.mutations.filter((mutation) => mutation.startsWith("dispatch:")).length,
+    1,
+  );
+});
+
+test("does not start an automatic update when the user disabled it or the release is not safe", async () => {
+  const disabledRepository = new FakeRepository();
+  disabledRepository.configurationSource = configuration(false);
+  const disabled = await orchestrator(
+    disabledRepository,
+    release({
+      version: "2.0.1",
+      releaseType: "security",
+      automaticInstallEligible: true,
+    }),
+  ).reconcile({
+    ...manualRequest,
+    version: "2.0.1",
+    trigger: "automatic-security",
+  });
+  assert.equal(disabled.state, "skipped");
+  assert.equal(disabled.reason, "automatic_security_disabled");
+  assert.deepEqual(disabledRepository.mutations, []);
+
+  const unsafeRepository = new FakeRepository();
+  const unsafe = await orchestrator(unsafeRepository).reconcile({
+    ...manualRequest,
+    trigger: "automatic-security",
+  });
+  assert.equal(unsafe.state, "skipped");
+  assert.equal(unsafe.reason, "release_not_automatic");
+  assert.deepEqual(unsafeRepository.mutations, []);
+});
+
+test("keeps a failed automatic update as terminal repository state", async () => {
+  const repository = new FakeRepository();
+  const automaticRelease = release({
+    version: "2.0.1",
+    releaseType: "security",
+    automaticInstallEligible: true,
+  });
+  const updates = orchestrator(repository, automaticRelease);
+  const request = {
+    ...manualRequest,
+    version: "2.0.1",
+    trigger: "automatic-security" as const,
+  };
+
+  assert.equal((await updates.reconcile(request)).state, "waiting_for_checks");
+  repository.checkRunsBySha.set(updateSha, [checkRun("failure")]);
+  assert.equal((await updates.reconcile(request)).state, "failed");
+  assert.equal((await updates.reconcile(request)).state, "failed");
+  assert.deepEqual(repository.mutations, [
+    "create-branch",
+    "commit-update",
+    "create-pr",
+  ]);
+});
+
+test("restores and republishes the previous managed version after publication fails", async () => {
+  const repository = new FakeRepository();
+  const updates = orchestrator(repository);
+
+  await updates.reconcile(manualRequest);
+  repository.checkRunsBySha.set(updateSha, [checkRun("success")]);
+  await updates.reconcile(manualRequest);
+  repository.workflowRunsBySha.set(mergeSha, [
+    workflowRun(mergeSha, "completed", "failure"),
+  ]);
+
+  const restoring = await updates.reconcile(manualRequest);
+  assert.equal(restoring.state, "restoring");
+  assert.equal(repository.mutations.filter((entry) => entry === "revert").length, 1);
+
+  const republishing = await updates.reconcile(manualRequest);
+  assert.equal(republishing.state, "waiting_for_recovery");
+  assert.equal(repository.mutations.at(-1), `dispatch:${revertSha}`);
+
+  repository.workflowRunsBySha.set(revertSha, [
+    workflowRun(revertSha, "completed", "success"),
+  ]);
+  assert.equal((await updates.reconcile(manualRequest)).state, "restored");
+  assert.equal((await updates.reconcile(manualRequest)).state, "restored");
+  assert.equal(repository.mutations.filter((entry) => entry === "revert").length, 1);
+});
+
+test("retries safe GitHub reads only up to the configured bound", async () => {
+  const repository = new FakeRepository();
+  repository.defaultHeadFailures = 2;
+  const delays: number[] = [];
+  const updates = orchestrator(repository, release(), {
+    sleep: async (milliseconds) => {
+      delays.push(milliseconds);
+    },
+  });
+
+  assert.equal((await updates.reconcile(manualRequest)).state, "waiting_for_checks");
+  assert.equal(repository.defaultHeadCalls, 3);
+  assert.deepEqual(delays, [250, 500]);
+});
+
+test("does not retry a failed mutation and resumes from its committed branch", async () => {
+  const repository = new FakeRepository();
+  repository.createPullRequestFailures = 1;
+  const updates = orchestrator(repository);
+
+  await assert.rejects(
+    () => updates.reconcile(manualRequest),
+    /GitHub API request failed/u,
+  );
+  assert.equal(
+    repository.mutations.filter((mutation) => mutation === "create-pr").length,
+    1,
+  );
+
+  const resumed = await updates.reconcile(manualRequest);
+  assert.equal(resumed.state, "waiting_for_checks");
+  assert.equal(
+    repository.mutations.filter((mutation) => mutation === "create-branch").length,
+    1,
+  );
+  assert.equal(
+    repository.mutations.filter((mutation) => mutation === "commit-update").length,
+    1,
+  );
+  assert.equal(
+    repository.mutations.filter((mutation) => mutation === "create-pr").length,
+    2,
+  );
+});
+
+test("stops retrying a safe read after the configured attempt limit", async () => {
+  const repository = new FakeRepository();
+  repository.defaultHeadFailures = 4;
+  const delays: number[] = [];
+  const updates = orchestrator(repository, release(), {
+    sleep: async (milliseconds) => {
+      delays.push(milliseconds);
+    },
+  });
+
+  await assert.rejects(
+    () => updates.reconcile(manualRequest),
+    /GitHub API request failed/u,
+  );
+  assert.equal(repository.defaultHeadCalls, 3);
+  assert.deepEqual(delays, [250, 500]);
+  assert.deepEqual(repository.mutations, []);
+});

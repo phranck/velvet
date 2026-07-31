@@ -43,6 +43,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
+        "@velvet/template-files": "1.0.0",
       },
       "devDependencies": {
         "@types/bun": "^1.3.14",
