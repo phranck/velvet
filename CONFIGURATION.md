@@ -1,12 +1,14 @@
 # Velvet configuration reference
 
-## GitHub-native monitor configuration
+`velvet.yml` is the canonical configuration for the GitHub-native Velvet
+monitor, browser onboarding, Configurator, build Action, and status page. The
+complete file is validated before Velvet checks an endpoint, changes an Issue,
+or publishes generated data. Unknown fields are rejected.
 
-The standalone monitor reads `velvet.yml`. This is separate from the temporary
-`.upptimerc.yml` compatibility configuration documented below.
+## Minimal configuration
 
-The smallest monitor configuration checks one website with a direct IPv4 GET
-request. A final HTTP 200 response means available:
+A normal website needs only a display name and URL. Velvet sends a direct IPv4
+`GET` request and considers a final HTTP `200` healthy:
 
 ```yaml
 schemaVersion: 1
@@ -21,38 +23,106 @@ services:
 ```
 
 `repository.owner` and `repository.name` must match the repository in which the
-workflow runs. Velvet stops before checks, Issue changes, or data publication if
-the complete configuration is invalid or the repository does not match.
+workflow runs. A mismatch stops before any check or repository mutation.
 
-For multiple checks under one displayed service, use the named-check form:
+## Top-level fields
+
+| Field | Required | Default | Description |
+| --- | --- | --- | --- |
+| `schemaVersion` | yes | none | Configuration contract version. Velvet v2 uses `1`. |
+| `repository.owner` | yes | none | GitHub user or organization that owns the status repository. |
+| `repository.name` | yes | none | Status repository name. |
+| `statusPage` | yes | none | Public identity, presentation, navigation, analytics, and SEO. |
+| `services` | yes | none | At least one public service with one or more HTTP checks. |
+| `incidents` | no | see below | Confirmation thresholds and GitHub Issue labels. |
+| `history` | no | see below | Retention policy for generated history. |
+
+Stable service and check IDs are derived from their names as lowercase
+kebab-case. Set an explicit `id` before renaming a service or check when its
+historical identity must stay unchanged.
+
+## Services and checks
+
+### One website or endpoint
+
+The compact service form creates one check whose ID and name are derived from
+the service:
+
+```yaml
+services:
+  - id: website
+    name: Website
+    url: https://example.com
+```
+
+### Several endpoints in one service
+
+Use `checks` instead of `url` when one public service contains several named
+endpoints. A service must use exactly one of these two forms.
 
 ```yaml
 services:
   - id: api
     name: Public API
     checks:
-      - name: Readiness
+      - id: readiness
+        name: Readiness
         url: https://api.example.com/ready
-      - name: Version
+      - id: version
+        name: Version
         url: https://api.example.com/version
+        method: HEAD
         expectedStatusCodes: [200, 204]
+        maxRedirects: 2
         timeoutMs: 5000
 ```
 
-The native monitor supports direct HTTP or HTTPS `GET` and `HEAD` requests.
-Checks are IPv4-only. A simple check evaluates the final status code and does
-not require a special JSON response. Optional JSON assertions are explicit:
+| Field | Required | Default | Description |
+| --- | --- | --- | --- |
+| `services[].id` | no | derived | Stable lowercase kebab-case service ID, at most 64 characters. |
+| `services[].name` | yes | none | Public service name, at most 128 characters. |
+| `services[].url` | one form | none | Compact single-check URL. Cannot be combined with `checks`. |
+| `services[].checks` | other form | none | One or more named checks. Cannot be combined with `url`. |
+| `checks[].id` | no | derived | Stable lowercase kebab-case check ID, unique inside the service. |
+| `checks[].name` | yes | none | Public check name. |
+| `checks[].url` | yes | none | Absolute HTTP or HTTPS URL. Credentials and fragments are rejected. |
+| `checks[].method` | no | `GET` | `GET` or `HEAD`. |
+| `checks[].expectedStatusCodes` | no | `[200]` | One to 32 unique final status codes from `100` through `599`. |
+| `checks[].maxRedirects` | no | `5` | Redirect limit from `0` through `10`. |
+| `checks[].timeoutMs` | no | `10000` | Absolute timeout across all redirects, from `100` through `60000` ms. |
+| `checks[].headers` | no | `[]` | Up to 16 header names with secret references. |
+| `checks[].jsonAssertions` | no | `[]` | Up to 16 explicit JSON response assertions. |
+
+Each check gets one initial attempt and at most one immediate retry. A status
+response outside `expectedStatusCodes`, DNS or TLS failure, timeout, failed JSON
+assertion, or invalid response counts as an unavailable measurement. Invalid
+configuration, missing configured secrets, unsafe request setup, cancellation,
+or an internal error aborts publication instead of reporting false downtime.
+
+### Optional JSON health assertions
+
+Status-only checks do not read or parse the body. Use `jsonAssertions` only when
+an endpoint intentionally exposes structured application health:
 
 ```yaml
 services:
   - name: API
     checks:
-      - name: Health
+      - name: Application health
         url: https://api.example.com/health
         jsonAssertions:
           - path: /status
             equals: ok
+          - path: /dependencies/database/ready
+            equals: true
 ```
+
+`path` is an RFC 6901 JSON Pointer. `equals` accepts a string, number, boolean,
+or `null`. Every assertion must match. Velvet reads at most 64 KiB for an
+asserted JSON response and never infers a schema from arbitrary content.
+
+`HEAD` cannot be combined with JSON assertions because a `HEAD` response has no
+body.
 
 ### Header secrets
 
@@ -70,18 +140,177 @@ services:
             secret: API_HEALTH_TOKEN
 ```
 
-Then map only that repository secret into both installed monitor workflow
-steps:
+Map that repository secret explicitly into both monitor workflow steps:
 
 ```yaml
 env:
   API_HEALTH_TOKEN: ${{ secrets.API_HEALTH_TOKEN }}
 ```
 
-Do not pass all repository secrets to the action. A missing or invalid
-configured secret stops the run without replacing the last valid data.
+Do not pass all repository secrets to the Action. Secret interpolation such as
+`$TOKEN` or `${TOKEN}` is rejected in configuration. Request-routing, framing,
+and connection headers such as `Host`, `Content-Length`, and
+`Transfer-Encoding` cannot be configured. Configured headers are removed on a
+cross-origin redirect.
 
-### Incidents and history
+## Status page
+
+```yaml
+statusPage:
+  name: Example Status
+  customDomain: status.example.com
+  logoUrl: https://example.com/logo.svg
+  logoHeight: 72
+  showPoweredBy: true
+  layout: grouped
+  defaultRange: 30d
+  navigation:
+    - title: Website
+      href: https://example.com
+  icons:
+    website: ph-globe
+```
+
+| Field | Required | Default | Description |
+| --- | --- | --- | --- |
+| `name` | yes | none | Public page name and default document title. |
+| `customDomain` | no | GitHub Pages URL | Hostname only, without scheme, path, port, credentials, or wildcard. |
+| `logoUrl` | no | none | Absolute HTTP(S) logo URL. |
+| `logoHeight` | no | `72` | Display height from `16` through `256` px. |
+| `showPoweredBy` | no | `true` | Shows the centered Powered by Velvet credit. |
+| `layout` | no | `grouped` | `grouped` for one shared service card or `cards` for one card per service. |
+| `defaultRange` | no | `30d` | Initial range: `24h`, `7d`, `30d`, `90d`, or `1yr`. A visitor's saved choice wins later. |
+| `navigation` | no | `[]` | Up to 16 links with `title` and `href`. |
+| `theme` | no | Velvet Default | Theme name plus optional semantic visual overrides. |
+| `fonts.sans` | no | `Inter` | CSS font-family for normal interface text. |
+| `fonts.mono` | no | `JetBrains Mono` | CSS font-family for times, values, and labels. |
+| `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
+| `analytics` | no | off | Optional Umami and Google Analytics settings. |
+| `seo` | no | generated | Optional title, description, and social-image overrides. |
+
+Setting `customDomain` writes a `CNAME` file into every build. The repository
+setting alone does not change DNS. Add the required DNS record with the domain
+provider and follow GitHub's
+[custom-domain documentation](https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages).
+Do not remove the GitHub Pages domain until the custom domain resolves and its
+certificate is active.
+
+## Themes
+
+Browser onboarding offers the four system themes as preview cards. The
+Configurator can select the same themes and edit every field below afterward.
+`theme.name` is required when a theme block exists.
+
+```yaml
+statusPage:
+  name: Example Status
+  theme:
+    name: Example Theme
+    palette:
+      canvas: "#0a0b0f"
+      foreground: "#e8eaed"
+      accent: "#6366f1"
+      alternate: "#38bdf8"
+      warning: "#d29922"
+      danger: "#f85149"
+      textPrimary: "#e8eaed"
+      textSecondary: "#8b8c90"
+      textTertiary: "#515256"
+    grid:
+      operational: accent
+      degraded: warning
+      outage: danger
+      noData: auto
+    chart:
+      line: accent
+      lineStyle: solid
+      fill: true
+      background: canvas
+      backgroundOpacity: 0.2
+    background:
+      start: auto
+      end: canvas
+      blobs:
+        enabled: true
+        count: 3
+        colors: [accent, alternate]
+    card:
+      background: auto
+      border: auto
+      separator: auto
+      borderEnabled: true
+      shadowEnabled: true
+      radius: 14
+      padding: 16
+      maxWidth: 760
+    headline:
+      start: textPrimary
+      end: textSecondary
+    service:
+      icon: accent
+    text:
+      primary: textPrimary
+      secondary: textSecondary
+      tertiary: textTertiary
+```
+
+Every palette value is a six-digit hexadecimal color. A semantic color field
+accepts `auto`, a palette key, or its own six-digit hexadecimal value.
+
+| Group | Fields and accepted values |
+| --- | --- |
+| `palette` | `canvas`, `foreground`, `accent`, `alternate`, `warning`, `danger`, `textPrimary`, `textSecondary`, `textTertiary` |
+| `grid` | `operational`, `degraded`, `outage`, `noData` |
+| `chart` | `line`; `lineStyle` as `solid`, `dashed`, or `dotted`; `fill`; `background`; `backgroundOpacity` from `0` through `1` |
+| `background` | `start`, `end`; `blobs.enabled`; `blobs.count` from `1` through `5`; exactly two `blobs.colors` |
+| `card` | `background`, `border`, `separator`; `borderEnabled`; `shadowEnabled`; `radius` and `padding` from `0` through `32`; `maxWidth` as `640`, `760`, `920`, or `1080` |
+| `headline` | `start`, `end` |
+| `service` | `icon` |
+| `text` | `primary`, `secondary`, `tertiary` |
+
+Response-time curves use monotone cubic interpolation without inventing values
+beyond local extrema. Unavailable samples remain visible gaps.
+
+### Service icons
+
+`statusPage.icons` maps the stable service ID to a
+[Phosphor](https://phosphoricons.com) class. The browser setup and Configurator
+offer the supported set visually. Unknown services use `ph-circle`.
+
+```yaml
+statusPage:
+  name: Example Status
+  icons:
+    website: ph-globe
+    api: ph-brackets-curly
+    database: ph-database
+```
+
+### Analytics and SEO
+
+```yaml
+statusPage:
+  name: Example Status
+  analytics:
+    umami:
+      websiteId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      src: https://analytics.example.com/script.js
+    googleAnalytics: G-XXXXXXXXXX
+  seo:
+    title: Example System Status
+    description: Current availability for Example.
+    image: https://example.com/status-social.png
+```
+
+Umami requires both `websiteId` and an absolute HTTP(S) `src`. Google Analytics
+requires a `G-` measurement ID. Trackers are omitted unless configured; the
+site owner remains responsible for consent and privacy obligations.
+
+Without SEO overrides, each build derives the title, description, canonical
+URL, Open Graph and Twitter metadata, a 1200 x 630 social card, `robots.txt`,
+and `sitemap.xml` from the page configuration and latest validated status.
+
+## Incidents and maintenance
 
 ```yaml
 incidents:
@@ -89,552 +318,167 @@ incidents:
   recoveryThreshold: 2
   incidentLabel: incident
   maintenanceLabel: maintenance
+```
+
+| Field | Default | Accepted values |
+| --- | --- | --- |
+| `failureThreshold` | `2` | Consecutive failed measurements from `1` through `20`. |
+| `recoveryThreshold` | `2` | Consecutive successful measurements from `1` through `20`. |
+| `incidentLabel` | `incident` | Lowercase kebab-case GitHub label. |
+| `maintenanceLabel` | `maintenance` | Lowercase kebab-case GitHub label. |
+
+A first failed measurement is pending and appears degraded. Reaching the
+failure threshold confirms the outage and opens one marked GitHub Issue. A
+recovered target counts as available immediately, while the displayed state
+waits for the recovery threshold. Confirmed recovery adds one comment and
+closes the same Issue. Manual closure during an active outage is reconciled by
+reopening the marked Issue; unrelated Issues are never changed.
+
+Planned maintenance is submitted through the generated Issue Form or the
+maintenance workflow. Velvet validates the selected service IDs and timestamps.
+Monitoring continues during maintenance. Covered outages do not create an
+incident until the maintenance window ends, but measured availability is never
+rewritten. Scheduled, active, and completed maintenance remains a neutral event
+in public history.
+
+## History and generated data
+
+```yaml
 history:
   retentionDays: 365
 ```
 
-`failureThreshold` and `recoveryThreshold` count consecutive measurements and
-default to `2`. `history.retentionDays` accepts `1` through `365` and defaults
-to `365`. The same period applies to public availability, response samples,
-resolved incidents, completed maintenance, private transition history, and the
-generated branch history. Open incidents and scheduled or active maintenance
-remain visible. Historical GitHub Issues are never deleted.
+`retentionDays` accepts `1` through `365` and defaults to `365`. The same window
+applies to public daily availability, response samples, resolved incidents,
+completed maintenance, private transition history, and generated branch
+history. Open incidents and scheduled or active maintenance remain visible.
+Historical GitHub Issues are never deleted.
 
-### Generated data
-
-The monitor owns only these files on the dedicated `velvet-data` branch:
+The monitor owns only these paths on the dedicated `velvet-data` branch:
 
 - `.velvet/monitor-state.json`
 - `velvet-data/v1/status.json`
 - `velvet-data/v1/response-times.json`
 - `velvet-data/v1/incidents.json`
 
-Every successful run publishes one complete commit. Invalid configuration,
-unsafe request setup, missing secrets, invalid stored or generated data, and
-Git conflicts leave the previous snapshot unchanged. The action never rewrites
-the default branch.
+Status and response workflows share the `velvet-status-data` concurrency group.
+Every successful run validates and publishes one complete commit. An unchanged
+or failed partial result never replaces the latest valid snapshot. When retained
+Git history exceeds the configured period, the current complete snapshot
+becomes a new root using an exact lease against the previously read branch head.
+The default branch is never force-pushed.
 
-See the [monitor action guide](actions/monitor/README.md) for the installable
-workflows, permissions, schedules, and verification commands.
+## GitHub workflows and permissions
 
----
+The direct template contains the supported workflows. Their essential access is:
 
-Velvet keeps page identity and appearance in **`.upptimerc.yml`** while the
-temporary compatibility monitor remains Upptime. Runtime presentation data
-comes exclusively from the validated documents under `velvet-data/v1`.
-
-This page documents every field Velvet reads, the compatibility pipeline, and
-the Upptime fields needed to monitor services. Upptime has additional options
-for notifications, schedules, assignees, localization, and commit messages.
-Those continue to affect monitoring but do not change Velvet's appearance. See
-the [Upptime configuration docs](https://upptime.js.org/docs/configuration) for
-that wider monitor configuration.
-
-> **Velvet vs. the stock Upptime page.** Velvet replaces Upptime's built-in
-> Svelte/Sapper page. That means the stock `status-website` appearance fields
-> (`theme`, `themeUrl`, `introTitle`, `introMessage`, `customHeadHtml`,
-> `customBodyHtml`, `customFootHtml`, `favicon`, `faviconSvg`, `scripts`, `js`,
-> `links`, `css`, `metaTags`) have **no effect** with Velvet. See
-> [Fields Velvet ignores](#fields-velvet-ignores). Use the
-> [`velvet:` block](#status-websitevelvet-velvet-appearance) instead.
-
----
-
-## Minimal config
-
-The smallest file that produces a working page:
-
-```yaml
-owner: your-username
-repo: your-status-repo
-skipDeleteIssues: true
-
-sites:
-  - name: Website
-    url: https://example.com
-
-status-website:
-  name: Example
-```
-
----
-
-## Top-level fields
-
-| Field | Required | Description |
+| Workflow | Purpose | Permissions |
 | --- | --- | --- |
-| `owner` | **yes** | GitHub user or org that owns the repository containing `velvet-data/v1`. |
-| `repo` | **yes** | Repository containing the versioned Velvet data documents. |
-| `skipDeleteIssues` | recommended | Keep short resolved Upptime incidents as closed Issues so the compatibility adapter can normalize their history. Set this to `true`. |
+| Velvet status | Five-minute checks, availability, incidents, maintenance | `contents: write`, `issues: write` |
+| Velvet response times | Samples at 00:00, 06:00, 12:00, 18:00 UTC | `contents: write` |
+| Velvet Pages | Build and deploy after valid data publication | `contents: read`, `pages: write`, `id-token: write` |
 
-`owner` and `repo` are required. Velvet's config generator throws without them.
+All installed third-party Actions and Velvet Actions are pinned to immutable
+commit IDs. Monitoring workflows do not run for pull requests or untrusted fork
+content. They use the repository-scoped `GITHUB_TOKEN`; no personal access token
+is required for ordinary monitoring or publishing.
 
----
+After changing services, update the choices in
+`.github/ISSUE_TEMPLATE/maintenance.yml` so its labels and embedded IDs match
+`velvet.yml`. Browser setup does this during installation.
 
-## Compatibility pipeline and Velvet v1 data
+## Failure and recovery
 
-Velvet owns the public data boundary even though Upptime still supplies the
-temporary monitoring inputs.
+Velvet distinguishes endpoint downtime from failures that make the measurement
+unreliable:
 
-| Stage | Responsibility |
-| --- | --- |
-| Upptime | Reads `sites`, performs checks, writes `history/summary.json` and per-check history, and opens or closes incident Issues. |
-| Velvet sync Action | Pins the current repository commit, reads Upptime configuration and history plus GitHub Issues, converts and validates all three Velvet documents, and commits one complete snapshot. |
-| Velvet build Action | Builds the status page, social card, and SEO output from `.upptimerc.yml` plus the committed Velvet snapshot. |
-| Browser | Loads `config.json` and the three validated Velvet documents. It does not read Upptime history or raw GitHub Issue payloads. |
+- HTTP, DNS, TLS, timeout, assertion, or final-status failures are valid endpoint
+  measurements.
+- Invalid configuration, missing secrets, unsafe request setup, invalid state or
+  output, cancellation, and internal failures stop publication.
+- GitHub errors expose a stable safe code and unique error ID. Logs never contain
+  endpoint URLs, secret names or values, authorization headers, request bodies,
+  or raw GitHub responses.
+- A safe data-branch conflict is retried once against the newer state. A stale
+  run stops without overwriting it.
 
-The remaining Upptime boundary is explicit: Velvet does not yet schedule or run
-service checks, write monitoring history, or own the complete monitor
-configuration. Do not remove Upptime workflows or `history/` while using the v1
-compatibility adapter.
+Correct the reported configuration, permission, secret mapping, or temporary
+GitHub failure, then rerun the failed workflow. The previous snapshot remains
+public throughout recovery. Never hand-edit one generated document or assemble
+a partial replacement.
 
-### The three documents
+## IPv4 and IPv6
 
-All files live in `velvet-data/v1` by default and carry `schemaVersion: 1` plus
-an ISO `generatedAt` timestamp.
+Velvet v2 performs direct HTTP(S) checks over IPv4 because GitHub-hosted runners
+do not provide documented native IPv6 connectivity. The configuration contains
+no external-probe option. IPv6 monitoring will be added only after those runners
+offer documented native support that works for every installation.
 
-| Document | Contents |
-| --- | --- |
-| `status.json` | Services, aggregate state, explicit IPv4 and IPv6 checks, current response times, monitoring start, and daily monitored and unavailable seconds. |
-| `response-times.json` | Timestamped series for every service and check. A `null` response time means the check was unavailable. |
-| `incidents.json` | Sanitized incident and maintenance events with stable IDs, states, affected service IDs, and start or end times. No endpoint URL or raw Issue payload is exposed. |
+The public v1 data schema can still validate historical dual-stack records so a
+migration report remains reproducible. New native monitor output is IPv4-only.
 
-The schemas, TypeScript types, validators, invariants, and valid and invalid
-examples are published under [`packages/contracts`](packages/contracts).
+## Build Action
 
-### Update triggers
-
-The reference sync workflow runs when:
-
-- `.upptimerc.yml` or `history/**` changes on the default branch;
-- either Velvet workflow file changes on the default branch;
-- an Issue is opened, closed, reopened, edited, labeled, or unlabeled;
-- a user starts `workflow_dispatch`;
-- the six-hour reconciliation schedule runs.
-
-Its concurrency group matches Upptime's repository mutation lock. The Action
-reads one source commit, writes all documents into a staging directory, validates
-the complete set, swaps the snapshot into place, and commits only when normalized
-output changed. A non-fast-forward push fails instead of replacing newer data.
-
-The Pages workflow must run after the **Sync Velvet data** workflow succeeds.
-Use `workflow_run`, as shown in the [README](README.md#2-build-and-deploy-after-synchronization).
-A snapshot commit made with `GITHUB_TOKEN` does not trigger a second push
-workflow.
-
-### Browser caching and refresh
-
-The browser requests the three documents in parallel with cache revalidation and
-validates every response before rendering. Initial rendering is all-or-nothing:
-an unavailable, malformed, or unsupported document produces a safe status-data
-error instead of mixing snapshots.
-
-Incident and maintenance data refreshes every 60 seconds while the tab is
-visible and immediately when the tab becomes visible again. A failed or invalid
-refresh keeps the latest valid incident document. A slower response cannot
-replace a newer document because `generatedAt` determines freshness.
-
-### Errors and recovery
-
-The compatibility adapter distinguishes invalid input, missing or partial
-history, malformed history commits, GitHub request or rate-limit failures, and
-contract validation failures. Any such failure stops before the Action stages a
-commit, leaving the last valid `velvet-data/v1` snapshot intact.
-
-A repository with no `history/` directory is a supported fresh-install state.
-Velvet publishes configured checks as `unknown` with empty availability and
-response series. Missing or malformed files inside an existing `history/`
-directory are treated as partial upstream data and do not replace the previous
-snapshot.
-
-After fixing the source data or GitHub availability, rerun **Sync Velvet data**
-manually. The scheduled reconciliation is a second recovery path. Do not delete
-the previous snapshot or manually assemble a partial replacement.
-
-### Migrating an existing status repository
-
-1. Set `skipDeleteIssues: true` and preserve any source data-license notices.
-2. Install the reference sync workflow and run it once.
-3. Verify that all three `velvet-data/v1` documents were committed and validate
-   against the v1 schemas.
-4. Change the Pages workflow to build with `phranck/velvet@v1` and
-   `data: velvet-data/v1` after successful synchronization.
-5. Set Pages to **GitHub Actions** and disable stock Upptime site builders.
-6. Keep Upptime monitoring and history workflows until Velvet ships an
-   independent monitor.
-
-The data-source change is breaking for older Velvet deployments that read
-Upptime runtime files or GitHub APIs directly. The compatibility pipeline is the
-migration path; do not point the v1 page at `history/summary.json`.
-
----
-
-## `sites`: what to monitor
-
-A list of endpoints. Each one becomes a row/card on the page. `name` and `url`
-are all you need; everything else is optional.
-
-| Field | Description | Example |
-| --- | --- | --- |
-| `name` | **Required.** Display name. Also the source of the service **slug** (see below), which links a service to its icon. | `Backend` |
-| `url` | **Required.** URL (or IP) to check. | `https://api.example.com/health` |
-| `method` | HTTP verb. Default `GET`. | `POST` |
-| `check` | Check type: omit for HTTP, or `tcp-ping` / `icmp-ping`. | `tcp-ping` |
-| `port` | Port for `tcp-ping`. | `443` |
-| `ipv6` | Force IPv6-only DNS resolution for this check. | `true` |
-| `headers` | Request headers, as `Key: Value` strings. Supports `$SECRET` env interpolation. | `["Authorization: Bearer $TOKEN"]` |
-| `body` | Request body (for `POST`/`PUT`). | `'{"ping":true}'` |
-| `expectedStatusCodes` | HTTP codes that count as **up**. Default: `200`–`299`. | `[200, 201, 401]` |
-| `maxResponseTime` | Milliseconds above which a response is **degraded** (amber). | `5000` |
-| `slug` | Override the auto-generated slug (see below). | `api-eu` |
-| `assignees` | GitHub usernames auto-assigned to this service's incident issues. | `["octocat"]` |
-| `icon` | Upptime's own favicon field. **Ignored by Velvet** because Velvet uses Phosphor icons via [`velvet.icons`](#icons). | n/a |
-| `__dangerous__disable_verify_peer` | Skip SSL certificate verification. | `true` |
-| `__dangerous__disable_verify_host` | Skip certificate hostname matching. | `true` |
-| `__dangerous__body_down` | Mark **down** if the response body contains this text. | `"File not found"` |
-| `__dangerous__body_degraded` | Mark **degraded** if the body contains this text. | `"maintenance"` |
-| `__dangerous__body_down_if_text_missing` | Mark **down** if this text is **absent**. | `'"status":"ok"'` |
-| `__dangerous__body_degraded_if_text_missing` | Mark **degraded** if this text is absent. | `'"status":"ok"'` |
-
-### How the slug works
-
-Velvet maps each service to its [icon](#icons) by **slug**. Upptime derives the
-slug from the `name`: lowercased, spaces and punctuation become hyphens. So:
-
-| `name` | slug |
-| --- | --- |
-| `Frontend` | `frontend` |
-| `Developer Site` | `developer-site` |
-| `API (EU)` | `api-eu` |
-
-Set `slug:` on the site to pin it explicitly. The slug is the key you use under
-[`velvet.icons`](#icons).
-
----
-
-## `status-website`: page identity
-
-| Field | Description | Example |
-| --- | --- | --- |
-| `name` | Brand name shown next to the logo and used for the browser tab title. Defaults to `repo`. | `Example` |
-| `logoUrl` | URL of a logo image shown top-left. If set, the **logo is shown instead of the name text**, and it links to `/`. | `https://example.com/logo.svg` |
-| `cname` | Custom domain. Velvet writes a `CNAME` file into the build so the domain survives each deploy. | `status.example.com` |
-| `navbar` | Additional links shown beside the brand. Each is `{ title, href }`. `$OWNER`/`$REPO` are substituted. A root `/` entry is suppressed because the brand already links there. Use `navbar: []` for none. | see below |
+The page Action defaults to native paths:
 
 ```yaml
-status-website:
-  name: Example
-  logoUrl: https://example.com/logo.svg
-  cname: status.example.com
-  navbar:
-    - title: History
-      href: https://github.com/$OWNER/$REPO/issues
-    - title: GitHub
-      href: https://github.com/$OWNER/$REPO
+- name: Build Velvet site
+  uses: phranck/velvet@<full-commit-sha>
+  with:
+    config: velvet.yml
+    data: .velvet-data/velvet-data/v1
+    output: velvet-dist
 ```
 
-### Fields Velvet ignores
+The workflow must check out the default branch and the generated `velvet-data`
+branch at `.velvet-data` first. The Action validates the configuration and data,
+builds the static site, generates SEO and social assets, and copies license
+notices into the output directory.
 
-These stock Upptime appearance fields do **nothing** with Velvet, because Velvet
-renders its own front-end: `theme`, `themeUrl`, `favicon`, `faviconSvg`,
-`introTitle`, `introMessage`, `customHeadHtml`, `customBodyHtml`,
-`customFootHtml`, `scripts`, `js`, `links`, `css`, `metaTags`. Configure
-Velvet's look through the [`velvet:` block](#status-websitevelvet-velvet-appearance)
-instead. (`baseUrl`, `robotsText`, `publish`, `apiBaseUrl`, `userContentBaseUrl`
-are infrastructure fields Upptime still honours.)
+## Migrate from Velvet v1.8
 
----
+Velvet v1.8 used an Upptime repository as the source and could include
+Globalping-backed IPv6 checks. This is a migration-only boundary in v2.
 
-## `status-website.velvet`: Velvet appearance
+Run [`vum`](packages/upptime-adapter) without `--write` first:
 
-All Velvet-specific options live here, so the file stays a valid Upptime config.
-
-```yaml
-status-website:
-  velvet:
-    layout: cards
-    # logoHeight: 72
-    # defaultRange: 30d
-    # showPoweredBy: true
-    # dataBranch: main
-    # dataBaseUrl: https://cdn.example/status/velvet-data/v1
-    # fontSans: "Inter"
-    # fontMono: "JetBrains Mono"
-    theme:
-      name: Example Theme
-      palette:
-        canvas: "#0a0b0f"
-        foreground: "#e8eaed"
-        accent: "#6366f1"
-        alternate: "#38bdf8"
-        warning: "#d29922"
-        danger: "#f85149"
-        textPrimary: "#e8eaed"
-        textSecondary: "#8b8c90"
-        textTertiary: "#515256"
-      grid:
-        operational: accent
-        degraded: warning
-        outage: danger
-        noData: auto
-      protocol:
-        ipv4: accent
-        ipv6: alternate
-      chart:
-        ipv4LineStyle: solid
-        ipv6LineStyle: dashed
-        fill: true
-        background: canvas
-        backgroundOpacity: 0.2
-      background:
-        start: auto
-        end: canvas
-        blobs:
-          enabled: true
-          count: 3
-          colors:
-            - accent
-            - alternate
-      card:
-        background: auto
-        border: auto
-        separator: auto
-        borderEnabled: true
-        shadowEnabled: true
-        radius: 14
-        padding: 16
-        maxWidth: 760
-      headline:
-        start: textPrimary
-        end: textSecondary
-      service:
-        icon: accent
-      text:
-        primary: textPrimary
-        secondary: textSecondary
-        tertiary: textTertiary
-    # Analytics is optional. A tracker is injected only when configured.
-    # umami:
-    #   websiteId: "xxxxxxxx-xxxx-xxxx-xxxx"
-    #   src: "https://analytics.example.com/script.js"
-    # googleAnalytics: "G-XXXXXXXXXX"
-    # SEO overrides are optional. Every field is auto-derived by default.
-    # seo:
-    #   title: "Acme System Status"
-    #   description: "Real-time uptime for Acme."
-    #   image: "https://acme.example/og.png"
-    icons:
-      frontend: ph-globe
-      backend: ph-gear-six
+```bash
+vum --repository owner/status
 ```
 
-| Field | Default | Description |
-| --- | --- | --- |
-| `layout` | `grouped` | `grouped` puts all services in one card; `cards` gives each service its own card. Any value other than `cards` is treated as `grouped`. |
-| `logoHeight` | `72` | Logo height in pixels. Width scales proportionally. |
-| `defaultRange` | `30d` | History window pre-selected on a visitor's first visit. Accepts a label (`24h`, `7d`, `30d`, `90d`, `1yr`) or the internal key (`day`, `week`, `month`, `quarter`, `year`). Once a visitor picks a range it is remembered and wins over this default. |
-| `showPoweredBy` | `true` | Show the centered "Powered by Velvet" credit after the service cards. |
-| `theme` | _(built-in)_ | Semantic colour configuration shared by the live page and generated social card. See [Theme](#theme). |
-| `fontSans` | `Inter` | Overrides the UI font (CSS `--font-sans`). See the note below. |
-| `fontMono` | `JetBrains Mono` | Overrides the monospace font (CSS `--font-mono`). |
-| `dataBranch` | `main` | Branch containing `velvet-data/v1`. |
-| `dataBaseUrl` | _(derived)_ | Optional public HTTP(S) base URL for the three Velvet v1 documents. It must serve the same snapshot supplied to the Action's `data` input; otherwise Velvet derives the raw GitHub URL from `owner`, `repo`, `dataBranch`, and that repository-relative input path. |
-| `umami` | _(off)_ | [Umami](https://umami.is) analytics. An object with `websiteId` (the site's `data-website-id`) and `src` (full tracking-script URL, e.g. `https://analytics.example.com/script.js`). **Both** are required; the tracker loads only when both are set. |
-| `googleAnalytics` | _(off)_ | Google Analytics 4 measurement ID (e.g. `G-XXXXXXXXXX`). The tracker loads when set. |
-| `seo` | _(auto)_ | Overrides for the auto-generated SEO (see [SEO & crawlers](#seo--crawlers)). An object with optional `title`, `description`, and `image` (og:image). Each defaults to an auto-derived value, so set only the ones you want to change. |
-| `icons` | _(built-ins)_ | Per-slug Phosphor icon overrides. See [Icons](#icons). |
+The dry run resolves one source revision, reads legacy configuration and
+history, checks GitHub Issue state, and reports unsupported behavior without
+changing either repository or local files. Resolve every open legacy incident
+before materializing the bundle:
 
-### Theme
-
-All theme values live under `status-website.velvet.theme`. The nine palette
-entries are six-digit hexadecimal colors. Every detailed color role accepts
-`auto`, one of the palette keys, or its own six-digit hexadecimal override.
-Palette references remain linked: changing a named color updates every role
-that references it. `auto` uses Velvet's semantic default for that role.
-
-| Field | Description |
-| --- | --- |
-| `name` | Theme name used by the local configurator and exported YAML. It is independent from `status-website.name`. |
-| `palette.canvas` | Base page and chart-canvas color. |
-| `palette.foreground` | High-contrast surface and default foreground color. |
-| `palette.accent` | Primary interactive and operational color. |
-| `palette.alternate` | Secondary accent and default IPv6 color. |
-| `palette.warning` | Default degraded-state color. |
-| `palette.danger` | Default outage color. |
-| `palette.textPrimary` | Default primary text color. |
-| `palette.textSecondary` | Default supporting text color. |
-| `palette.textTertiary` | Default low-emphasis text color. |
-| `grid.operational` | Uptime segments and status indicators for healthy checks. Defaults to `accent`. |
-| `grid.degraded` | Uptime segments and status indicators for degraded checks. Defaults to `warning`. |
-| `grid.outage` | Uptime segments and status indicators for outages. Defaults to `danger`. |
-| `grid.noData` | Uptime segments and status indicators without data. |
-| `protocol.ipv4` | IPv4 labels, legend, and response-time curve. Defaults to `accent`. |
-| `protocol.ipv6` | IPv6 labels, legend, and response-time curve. Defaults to `alternate`. |
-| `chart.ipv4LineStyle` | IPv4 curve style: `solid`, `dashed`, or `dotted`. |
-| `chart.ipv6LineStyle` | IPv6 curve style: `solid`, `dashed`, or `dotted`. |
-| `chart.fill` | Fade each protocol color below its response-time line. |
-| `chart.background` | Canvas color mixed across the complete service card. |
-| `chart.backgroundOpacity` | Canvas mix from `0` to `1`. |
-| `background.start` | Top colour of the vertical page gradient. |
-| `background.end` | Bottom colour of the vertical page gradient. |
-| `background.blobs.enabled` | Enables or disables the cloudy background blobs. |
-| `background.blobs.count` | Number of blobs, clamped to `1`–`5`. Their stable positions are distributed from the repository identity. |
-| `background.blobs.colors` | Exactly two colours, alternated across the blobs. |
-| `card.background` | Card background colour. |
-| `card.border` | Card border colour. |
-| `card.separator` | Separator-line colour inside and between cards. |
-| `card.borderEnabled` | Enables or disables card outlines without removing separators. |
-| `card.shadowEnabled` | Enables or disables the shared card shadow. |
-| `card.radius` | Corner radius in pixels, clamped to `0`–`32`. |
-| `card.padding` | Equal card padding in pixels, clamped to `0`–`32`. |
-| `card.maxWidth` | Service-card width: `640`, `760`, `920`, or `1080` pixels. Other numbers resolve to the nearest stage. |
-| `headline.start` | First status-headline gradient stop. |
-| `headline.end` | Second status-headline gradient stop. |
-| `service.icon` | Shared color for service icons and disclosure controls. |
-| `text.primary` | Main headings, service names, and primary values. |
-| `text.secondary` | Supporting labels and secondary values. |
-| `text.tertiary` | Range labels, footer text, and low-emphasis copy. |
-
-Response-time curves use monotone cubic interpolation. This smooths the graph
-without inventing values beyond local extrema; unavailable samples still split
-the curve into visible gaps.
-
-The former fields `status-website.velvet.accent`, `accentDeg`, and `accentDown`,
-plus `theme.accent`, remain supported for existing configurations. New
-configurations should use `theme.palette.accent`, `theme.grid.degraded`, and
-`theme.grid.outage`.
-
-> **Font note.** `fontSans`/`fontMono` only change the CSS font-family. Velvet
-> loads **Inter** and **JetBrains Mono** itself; to use a different family,
-> ensure it's available to the browser (e.g. a system font, or add an
-> `@import`/`<link>`. Custom `<head>` HTML is not configurable via
-> `.upptimerc.yml` with Velvet).
-
-> **Analytics note.** `umami` and `googleAnalytics` are independent. Enable
-> either, both, or neither. Velvet injects the configured tracker(s) into the
-> page at runtime once the config loads. You remain responsible for any
-> consent/privacy obligations (GDPR, etc.) for the analytics you turn on.
-
----
-
-## Icons
-
-Each service shows a [Phosphor](https://phosphoricons.com) icon (duotone weight).
-Pick any icon from phosphoricons.com and use its class name with the `ph-`
-prefix (Velvet adds the `ph-duotone` weight for you).
-
-```yaml
-velvet:
-  icons:
-    frontend: ph-globe          # key = service slug, value = ph-<icon>
-    "developer-site": ph-code   # quote slugs that contain a hyphen
+```bash
+vum --repository owner/status --write --destination ./velvet-migration
 ```
 
-- **Key** = the service [slug](#how-the-slug-works).
-- **Value** = a Phosphor class like `ph-globe`, `ph-database`, `ph-gear-six`.
-- Overrides win over the built-in defaults below; unknown slugs fall back to `ph-circle`.
+The destination must be new or empty. `vum` writes `velvet.yml`, private monitor
+state, all three public documents, and Markdown plus JSON provenance reports only
+after validating the complete bundle. It has no overwrite mode. Legacy IPv6 and
+Globalping services are listed and omitted instead of being converted silently.
 
-Built-in defaults (used when you don't override a slug):
+Review the report, preserve all applicable source-data notices, and switch
+configuration, native workflows, generated data, and Pages build in one reviewed
+cutover. Keep a pre-cutover commit or tag until status, response sampling,
+incidents, recovery, maintenance, data publication, and Pages are verified.
 
-| slug | icon |
-| --- | --- |
-| `frontend` | `ph-globe` |
-| `api` | `ph-brackets-curly` |
-| `backend` | `ph-gear-six` |
-| `dashboard` | `ph-gauge` |
-| `database` | `ph-database` |
-| `email` | `ph-envelope-simple` |
-| `developer-site` | `ph-code` |
-| _(anything else)_ | `ph-circle` |
+For rollback, disable the native schedules and revert the complete cutover
+commit. Do not run native and legacy monitors concurrently. Git history keeps
+the removed configuration and workflows recoverable, closed GitHub Issues are
+not deleted, and source license notices must remain with the imported data.
 
----
+Migration implementation and provenance details live in the
+[`@velvet/upptime-adapter` guide](packages/upptime-adapter/README.md). The legacy
+sync Action is retained for existing v1.8 installations only and is not part of
+a new v2 setup.
 
-## Separate IPv4 / IPv6 monitoring
+## Licensing and generated-data policy
 
-A plain check runs from the GitHub runner, which is IPv4-only. To check IPv6, route it through [Globalping](https://globalping.io) (`type: globalping`), whose probes are dual-stack. Choose per service:
-
-**IPv4 only**, using a normal check:
-
-```yaml
-- name: Frontend
-  url: https://example.com
-```
-
-**IPv6 only**, using one Globalping check. End the name in `IPv6` (slug `<x>-ipv6`) so Velvet shows an `IPv6` pill:
-
-```yaml
-- name: Mail IPv6
-  url: https://mail.example.com
-  type: globalping
-  check: http
-  ipv6: true
-```
-
-**Both, in one card**, using the normal check plus a sibling whose slug ends in `-ipv6`:
-
-```yaml
-- name: API
-  url: https://api.example.com
-- name: API IPv6        # slug "api-ipv6" → folded into the "api" card
-  url: https://api.example.com
-  type: globalping
-  check: http
-  ipv6: true
-```
-
-The compatibility adapter folds an `<base>-ipv6` entry into its `<base>` Velvet service: the card header shows `IPv4` / `IPv6` pills with status dots and the expanded detail lists both protocols. A standalone `<x>-ipv6` (no base) renders as an IPv6-only card; a plain check renders with no protocol pills.
-
-**Requirements:** add a `GLOBALPING_TOKEN` repository secret. Register at globalping.io and create a token under "Tokens" to lift the rate limit from 250 to 500 checks per hour. Cloud runners share IPs, so the unauthenticated limit is easy to hit. Globalping supports HTTP and PING checks only, not POST.
-
-## Deployment notes
-
-These are repo settings, not `.upptimerc.yml` fields, but you need them for the
-page to go live:
-
-1. **`GH_PAT` secret**: a classic Personal Access Token with `repo` + `workflow`
-   scopes. Upptime commits monitoring data and runs the workflows with it.
-2. **Pages source = "GitHub Actions"**: Settings → Pages → Build and deployment →
-   Source. Velvet deploys with the official Pages action; this bypasses the
-   `gh-pages` branch so Upptime's stock page can't overwrite it.
-3. If Upptime's **Static Site CI** / **Setup CI** push a stock page, disable them.
-
----
-
-## SEO & crawlers
-
-The page is fully indexable out of the box, with **no configuration required**. On
-each deploy Velvet derives the public URL (your `cname`, else the GitHub Pages
-URL) and writes, into the built site:
-
-- a per-deployment `<title>`, meta `description`, `robots: index, follow`,
-  `canonical`, and **Open Graph + Twitter Card** tags,
-- an **auto-generated 1200×630 social card** (`og.png`) that mirrors the page,
-  including the brand or logo, overall status, and first service with its uptime bar, used
-  as the `og:image` / `twitter:image` (with `og:image:width/height/type` set so
-  iMessage, Slack, etc. render a large preview),
-- a `robots.txt` that allows all crawlers and points at the sitemap,
-- a `sitemap.xml`.
-
-Because Velvet is a client-rendered app, these static tags are what non-JS
-crawlers and social-card scrapers read; JS-capable crawlers (e.g. Googlebot)
-additionally render the live status content.
-
-**Overrides.** Everything above is auto-derived; you only override what you want
-to change via the [`velvet.seo`](#status-websitevelvet-velvet-appearance) block:
-
-```yaml
-status-website:
-  velvet:
-    seo:
-      title: "Acme System Status"               # default: generated from the status name
-      description: "Real-time uptime for Acme."  # default: current status plus a line built from name
-      image: "https://acme.example/og.png"       # default: the auto-generated 1200×630 status card
-```
-
----
-
-## Full Upptime reference
-
-For monitoring options Velvet doesn't touch, including schedules, notification channels
-(Slack, Telegram, email, etc.), `assignees`, `i18n`, `commitMessages`, and more,
-see the [official Upptime configuration docs](https://upptime.js.org/docs/configuration).
+Velvet's MIT license covers its code, schemas, and original assets. Monitoring
+records, imported datasets, logos, fonts, and other third-party material keep
+their own rights and notices. The monitor never deletes historical GitHub
+Issues or source license files. See [LICENSING.md](LICENSING.md) and
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the complete boundary.

@@ -1,0 +1,59 @@
+# Native IPv4 demo configuration used by the README screenshot workflow.
+# The workflow runs this file through the same generate-config and build path as
+# an installed status repository, so contract or build regressions fail before
+# a new screenshot can be published.
+schemaVersion: 1
+
+repository:
+  owner: velvet-underground
+  name: status
+
+statusPage:
+  name: Velvet Underground Inc.
+  layout: cards
+  defaultRange: 90d
+  theme:
+    name: Velvet Demo
+    palette:
+      canvas: "#0a0b0f"
+      foreground: "#e8eaed"
+      accent: "#6366f1"
+      alternate: "#38bdf8"
+      warning: "#d29922"
+      danger: "#f85149"
+      textPrimary: "#e8eaed"
+      textSecondary: "#8b8c90"
+      textTertiary: "#515256"
+    grid:
+      operational: accent
+      degraded: warning
+      outage: danger
+      noData: auto
+    chart:
+      line: accent
+      lineStyle: solid
+      fill: true
+  icons:
+    website: ph-globe
+    api: ph-brackets-curly
+    database: ph-database
+    cdn: ph-cloud-arrow-up
+    auth: ph-lock-key
+    mail: ph-envelope-simple
+
+services:
+  - name: Website
+    url: https://velvet-underground.example
+  - name: API
+    url: https://api.velvet-underground.example/health
+  - name: Database
+    url: https://api.velvet-underground.example/health/db
+  - name: CDN
+    url: https://cdn.velvet-underground.example
+  - name: Auth
+    url: https://auth.velvet-underground.example/health
+  - name: Mail
+    url: https://api.velvet-underground.example/health/mail
+
+history:
+  retentionDays: 365

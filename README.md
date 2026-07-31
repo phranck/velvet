@@ -2,7 +2,7 @@
 
 # Velvet
 
-**A static, themeable status page built from a validated, versioned data contract.**
+**GitHub-native status monitoring and a polished status page, without a server or database.**
 
 <a href="https://setup.velvet.li/onboarding/">
   <img src="docs/screenshot.png" alt="Velvet status page" width="820">
@@ -14,172 +14,157 @@
 
 <br>
 
-Velvet provides selectable uptime history, native response-time charts,
-GitHub-hosted IPv4 monitoring, configurable themes, and GitHub Pages deployment
-without a server or database.
+Velvet monitors websites and HTTP endpoints from GitHub Actions, records
+incidents and planned maintenance in GitHub Issues, and publishes a themeable
+status page through GitHub Pages. A public website needs only a name and URL.
+
+## What Velvet provides
+
+- Direct IPv4 `GET` and `HEAD` checks from GitHub-hosted runners.
+- Five-minute status checks and separate six-hour response-time samples.
+- Automatic incident creation after confirmed failures and automatic recovery.
+- Planned maintenance that remains visible as a neutral history event.
+- Up to 365 days of availability, response-time, incident, and maintenance data.
+- Four system themes, detailed visual configuration, service icons, analytics,
+  SEO output, custom domains, and selectable history ranges.
+- A static GitHub Pages site that keeps working independently of the optional
+  browser setup service.
+
+GitHub is part of the platform. Every installation uses GitHub Actions for
+scheduling, GitHub Issues for incidents and maintenance, a dedicated Git branch
+for generated data, and GitHub Pages for the public site.
 
 ## How it works
 
-Velvet v1 separates temporary monitoring inputs from the public status page:
+1. `velvet.yml` defines the repository, page, services, and optional advanced
+   checks.
+2. The native Velvet monitor checks every configured endpoint over IPv4. The
+   status workflow runs every five minutes; the response workflow runs four
+   times per day.
+3. Successful runs publish one validated snapshot to the dedicated
+   `velvet-data` branch. The monitor never rewrites the default branch.
+4. The Pages workflow builds the site, social card, and SEO files from that
+   snapshot.
+5. The browser validates `status.json`, `response-times.json`, and
+   `incidents.json` before rendering them. Endpoint URLs and secrets never enter
+   these public documents.
 
-1. Upptime currently monitors services and writes `.upptimerc.yml`, `history/`,
-   and incident or maintenance Issues.
-2. [`phranck/velvet/actions/sync-data@v1`](actions/sync-data) reads one pinned
-   repository revision, converts those inputs, validates the result, and commits
-   one complete `velvet-data/v1` snapshot.
-3. [`phranck/velvet@v1`](action.yml) builds the page, social card, and SEO files
-   exclusively from that committed Velvet snapshot.
-4. The browser loads and validates `status.json`, `response-times.json`, and
-   `incidents.json`. It never reads Upptime history or raw GitHub Issues.
+Invalid configuration, an unavailable configured secret, unsafe request setup,
+invalid stored data, or a GitHub write conflict leaves the last valid public
+snapshot untouched.
 
-The standalone monitor is now packaged under
-[`actions/monitor`](actions/monitor). It performs direct IPv4 HTTP checks,
-stores generated state on the dedicated `velvet-data` branch, and manages
-incident and maintenance Issues. Existing installations remain on the Upptime
-compatibility path until the migration and template work in the remaining M2
-issues is complete.
+## Get started
 
-The native monitor intentionally has no remote probe provider. IPv6 monitoring
-is deferred until GitHub-hosted runners provide documented native IPv6
-connectivity.
+### Browser setup
 
-## Deploy from an existing Upptime repository
+Open [setup.velvet.li](https://setup.velvet.li/onboarding/). The onboarding asks
+for the repository and page name, services, an optional custom domain, and one
+of the four system themes. After GitHub approval it creates the repository,
+enables Pages, starts monitoring, and waits for the first deployment.
 
-### 1. Publish the Velvet snapshot
+The setup service is used only while installing. The generated repository and
+status page do not depend on it afterward.
 
-Copy [`actions/sync-data/examples/sync-velvet-data.yml`](actions/sync-data/examples/sync-velvet-data.yml)
-to `.github/workflows/sync-velvet-data.yml` in the status repository. The
-workflow reacts to monitoring history, incident and maintenance Issues, manual
-runs, and scheduled reconciliation. It needs `contents: write` and
-`issues: read`.
+### Direct template setup
 
-Set `skipDeleteIssues: true` in `.upptimerc.yml` so short resolved incidents
-remain available for normalization.
+The [Velvet template](https://github.com/phranck/velvet-template) is the direct
+template path and requires no local build:
 
-### 2. Build and deploy after synchronization
+1. Choose **Use this template**, then create a repository.
+2. Edit `velvet.yml`: replace the repository identity, set the public page name,
+   and list the services.
+3. Enable **Issues** under **Settings > General > Features**.
+4. Set **Settings > Pages > Source** to **GitHub Actions**.
+5. Commit the configuration. The first status run creates `velvet-data`, then
+   the Pages workflow publishes the site.
 
-Add `.github/workflows/velvet.yml`:
+Both setup paths create the same repository structure and use the same
+validated configuration contract.
 
-```yaml
-name: Velvet
+## Configure monitoring
 
-on:
-  workflow_run:
-    workflows: ["Sync Velvet data"]
-    types: [completed]
-  workflow_dispatch: {}
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: velvet-pages
-  cancel-in-progress: false
-
-jobs:
-  build:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    name: Build and deploy
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-      - name: Build Velvet site
-        uses: phranck/velvet@v1
-        with:
-          config: .upptimerc.yml
-          data: velvet-data/v1
-          output: velvet-dist
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: velvet-dist
-      - name: Deploy to GitHub Pages
-        id: deploy
-        uses: actions/deploy-pages@v5
-```
-
-The Pages workflow uses `workflow_run` deliberately. Commits created with the
-workflow `GITHUB_TOKEN` do not start a second push workflow, so a push-only Pages
-workflow can miss a newly synchronized snapshot.
-
-Finally, set **Settings > Pages > Source** to **GitHub Actions**. Disable
-Upptime's stock `site.yml` or `setup.yml` page workflows if they appear, so only
-Velvet publishes the status page.
-
-The complete trigger, failure, recovery, and migration behavior is documented
-in the [configuration reference](CONFIGURATION.md#compatibility-pipeline-and-velvet-v1-data).
-
-## Start a new status repository
-
-Use the [browser setup](https://setup.velvet.li/onboarding/) to choose services
-and a system theme, create the repository, and publish its GitHub Pages site.
-For manual setup, [velvet-template](https://github.com/phranck/velvet-template)
-contains the repository structure, workflows, issue templates, and
-configuration walkthrough.
-
-## Velvet v1 data
-
-The presentation-independent contract lives in
-[`packages/contracts`](packages/contracts):
-
-- `status.json` contains services, protocol checks, current state, response
-  times, monitoring start, and daily availability.
-- `response-times.json` contains timestamped response series. `null` means an
-  unavailable sample, not a zero-millisecond response.
-- `incidents.json` contains sanitized incident and maintenance events instead of
-  raw GitHub Issue payloads.
-
-Every document carries `schemaVersion` and `generatedAt`, is independently
-cacheable, and is validated before publication and again in the browser.
-
-## Configure
-
-Page identity remains in standard `status-website` fields. Velvet appearance
-and data-location settings live under `status-website.velvet`:
+This is a complete one-service `velvet.yml`:
 
 ```yaml
-owner: example
-repo: status
-skipDeleteIssues: true
-
-status-website:
+schemaVersion: 1
+repository:
+  owner: your-username
+  name: your-status-repo
+statusPage:
   name: Example Status
-  velvet:
-    layout: cards
-    theme:
-      name: Example Theme
-      palette:
-        canvas: "#0a0b0f"
-        foreground: "#e8eaed"
-        accent: "#6366f1"
-        alternate: "#38bdf8"
-        warning: "#d29922"
-        danger: "#f85149"
-        textPrimary: "#e8eaed"
-        textSecondary: "#8b8c90"
-        textTertiary: "#515256"
-      protocol:
-        ipv4: accent
-        ipv6: alternate
-    icons:
-      website: ph-globe
+services:
+  - name: Website
+    url: https://example.com
 ```
 
-See [CONFIGURATION.md](CONFIGURATION.md) for every monitoring, deployment,
-theme, chart, layout, analytics, SEO, and migration option.
+The default check sends `GET`, follows up to five redirects, waits at most ten
+seconds, and considers only a final HTTP `200` healthy. Velvet ignores the
+response body unless an explicit JSON assertion is configured.
 
-### Local theme configurator
+```yaml
+services:
+  - name: API
+    checks:
+      - name: Application health
+        url: https://api.example.com/health
+        expectedStatusCodes: [200]
+        jsonAssertions:
+          - path: /status
+            equals: ok
+```
 
-The configurator opens and saves YAML locally. Opened files are never uploaded:
+JSON assertions use RFC 6901 JSON Pointers and compare the selected value with
+one configured string, number, boolean, or `null`. They are for dedicated
+health endpoints, not a requirement for normal websites.
+
+See [CONFIGURATION.md](CONFIGURATION.md) for every service, page, theme,
+incident, retention, permission, secret, recovery, and custom-domain option.
+
+## Monitoring rules
+
+- Each check gets one initial request and at most one immediate retry.
+- Two consecutive failed measurements confirm an outage by default. Two
+  consecutive successful measurements confirm recovery.
+- A pending failure or recovery appears as degraded. Invalid configuration or
+  an internal error does not count as endpoint downtime.
+- Status runs update availability and incidents. Response-only runs add samples
+  without changing the confirmed service state.
+- Planned maintenance never changes measured availability. It is displayed as a
+  neutral event and retained in history.
+- The default retention period is 365 days, which is also the maximum. Closed
+  GitHub Issues are never deleted.
+
+The monitor uses the repository-scoped `GITHUB_TOKEN`. Public checks need no
+user-managed secret. A private endpoint may reference one repository secret by
+environment-variable name; only that named secret is mapped into the monitor
+workflow, and its value never belongs in `velvet.yml`.
+
+## IPv4 and IPv6
+
+Velvet v2 performs direct IPv4 checks from GitHub-hosted runners and has no
+remote probe dependency. IPv6 monitoring is deferred until GitHub-hosted
+runners provide documented native IPv6 connectivity. A configured service is
+therefore monitored over IPv4 only.
+
+## Data ownership and recovery
+
+The monitor owns exactly these generated files on `velvet-data`:
+
+- `.velvet/monitor-state.json`
+- `velvet-data/v1/status.json`
+- `velvet-data/v1/response-times.json`
+- `velvet-data/v1/incidents.json`
+
+Every successful run commits a complete validated snapshot. The default branch,
+`velvet.yml`, workflows, and all other user-controlled files remain separate.
+Rerun the failed workflow after correcting configuration, permissions, secrets,
+or a temporary GitHub failure. There is no need to assemble or repair a partial
+snapshot manually.
+
+## Configurator
+
+The Configurator edits the same `velvet.yml` format and previews the real status
+page. Its current local distribution opens and saves YAML only on the computer:
 
 ```bash
 ./config start
@@ -188,12 +173,44 @@ The configurator opens and saves YAML locally. Opened files are never uploaded:
 ./config help
 ```
 
-It is available at `http://127.0.0.1:2342` while running. The distributable
-HTML, CSS, JavaScript, and font assets live under [`configurator/`](configurator/).
+It is available at `http://127.0.0.1:2342` while running. Template updates from
+the Configurator are planned separately and do not change the v2 monitoring
+contract documented here.
+
+## Migrate from Velvet v1.8
+
+Velvet v1.8 used Upptime as its temporary monitor and could route IPv6 checks
+through Globalping. Velvet v2 replaces both with the native IPv4 monitor.
+
+Use [`vum`](packages/upptime-adapter) for a non-destructive conversion. It runs
+as a dry run by default, pins the source revision, validates the complete
+result, and reports anything that cannot be migrated safely:
+
+```bash
+vum --repository owner/status
+vum --repository owner/status --write --destination ./velvet-migration
+```
+
+Resolve every open legacy incident before writing the migration bundle. Review
+the generated provenance report, preserve applicable data-license notices, and
+switch the repository to the native workflows only after the imported status,
+history, incidents, maintenance, and custom-domain settings match the report.
+Unsupported IPv6 and Globalping checks are listed in the report and are not
+silently converted into IPv4 checks.
+
+For rollback, keep the pre-migration commit or tag and the previous deployment
+until the native status, response, incident, maintenance, and Pages workflows
+are verified. If cutover fails, disable the native schedules and revert the
+reviewed cutover commit as one unit. Do not run both monitor stacks against the
+same repository. Generated data and historical Issues remain recoverable from
+Git history; source license notices must not be deleted.
+
+The compatibility packages remain in this repository solely for migration and
+provenance. They are not part of a new Velvet installation.
 
 ## Develop
 
-Velvet pins Bun 1.3.14 as its package manager and JavaScript runtime.
+Velvet pins Bun 1.3.14 as its package manager and runtime.
 
 | Environment | Supported path |
 | --- | --- |
@@ -204,25 +221,16 @@ Velvet pins Bun 1.3.14 as its package manager and JavaScript runtime.
 
 ```bash
 bun install --frozen-lockfile
-bun run build
-bun run test
+bun run lint
 bun run typecheck
+bun run test
+bun run build
 ```
 
-The site, social card, SEO generator, compatibility adapter, and sync Action all
-consume the same generated contract types and validators.
+## Releases and licensing
 
-## Releases
+See [CHANGELOG.md](CHANGELOG.md) for release notes,
+[RELEASING.md](RELEASING.md) for the release process, and
+[LICENSING.md](LICENSING.md) for source-data and third-party license boundaries.
 
-See [CHANGELOG.md](CHANGELOG.md) for user-facing release notes and
-[RELEASING.md](RELEASING.md) for the release checklist.
-
-## Licensing and provenance
-
-Monitoring data, imported datasets, and third-party materials retain their own
-rights and licenses. See [LICENSING.md](LICENSING.md) and
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the exact boundaries.
-
-## License
-
-This repository has been published under the [MIT](https://layered.mit-license.org) license.
+Velvet is published under the [MIT license](https://layered.mit-license.org).

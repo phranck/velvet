@@ -1,18 +1,18 @@
 name: "Velvet status page"
-description: "Build a Velvet status page exclusively from validated Velvet v1 data."
+description: "Build a GitHub-native Velvet status page from validated configuration and data."
 author: "phranck"
 branding:
   icon: "activity"
   color: "purple"
 inputs:
   config:
-    description: "Path to the status-page configuration in the consumer repo."
+    description: "Path to the native Velvet configuration in the consumer repository."
     required: false
-    default: ".upptimerc.yml"
+    default: "velvet.yml"
   data:
-    description: "Repository-relative directory containing the Velvet v1 documents."
+    description: "Path to the checked-out Velvet v1 data documents."
     required: false
-    default: "velvet-data/v1"
+    default: ".velvet-data/velvet-data/v1"
   output:
     description: "Directory (in the consumer workspace) to write the built site into."
     required: false

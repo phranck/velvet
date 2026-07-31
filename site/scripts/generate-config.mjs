@@ -7,8 +7,8 @@ import { parseVelvetConfiguration } from "@velvet/contracts";
 import { resolveTheme } from "../src/lib/theme.js";
 
 /**
- * Generate Velvet's runtime `config.json` from native `velvet.yml` or a
- * compatibility Upptime `.upptimerc.yml`.
+ * Generate Velvet's runtime `config.json` from native `velvet.yml` or an
+ * explicitly selected legacy compatibility configuration.
  *
  * Native input is validated through `@velvet/contracts` and reads public data
  * from the dedicated `velvet-data` branch. Compatibility input keeps the legacy
@@ -19,7 +19,7 @@ import { resolveTheme } from "../src/lib/theme.js";
 const [
   ,
   ,
-  inputPath = ".upptimerc.yml",
+  inputPath = "velvet.yml",
   outputPath = "public/config.json",
   repositoryDataPath = "velvet-data/v1",
 ] = process.argv;
@@ -40,7 +40,11 @@ const native = nativeResult?.success ? nativeResult.data : null;
 const owner = native?.repository.owner ?? rc.owner;
 const repo = native?.repository.name ?? rc.repo;
 if (!owner || !repo) {
-  throw new Error("`.upptimerc.yml` must set `owner` and `repo`");
+  throw new Error(
+    nativeResult === null
+      ? "Legacy compatibility configuration must set `owner` and `repo`"
+      : "`velvet.yml` must set `repository.owner` and `repository.name`",
+  );
 }
 
 const nativeTheme = (theme) => {

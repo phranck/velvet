@@ -2,7 +2,7 @@
  * Regenerate the README screenshot from a demo status page.
  *
  * This drives the REAL Velvet pipeline end to end, so it doubles as a smoke test:
- *   1. run `generate-config.mjs` on `demo/.upptimerc.yml` (the same step the
+ *   1. run `generate-config.mjs` on `demo/velvet.yml` (the same step the
  *      template's velvet.yml runs) → `dist/config.json`,
  *   2. serve the built `dist/`,
  *   3. render it in headless Chromium with contract-valid demo data
@@ -85,8 +85,8 @@ async function serveDist() {
 const json = (data) => ({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
 
 async function main() {
-  // 1. Real config pipeline (also the smoke test): demo .upptimerc.yml → dist/config.json.
-  execFileSync(process.execPath, ["scripts/generate-config.mjs", "demo/.upptimerc.yml", "dist/config.json"], {
+  // 1. Real config pipeline (also the smoke test): demo velvet.yml → dist/config.json.
+  execFileSync(process.execPath, ["scripts/generate-config.mjs", "demo/velvet.yml", "dist/config.json"], {
     cwd: SITE,
     stdio: "inherit",
   });
@@ -126,9 +126,9 @@ async function main() {
     await page.waitForTimeout(500); // let the icon font + bars settle
 
     assert.deepEqual(requestedDataUrls.sort(), [
-      "https://raw.githubusercontent.com/velvet-underground/status/main/velvet-data/v1/incidents.json",
-      "https://raw.githubusercontent.com/velvet-underground/status/main/velvet-data/v1/response-times.json",
-      "https://raw.githubusercontent.com/velvet-underground/status/main/velvet-data/v1/status.json",
+      "https://raw.githubusercontent.com/velvet-underground/status/velvet-data/velvet-data/v1/incidents.json",
+      "https://raw.githubusercontent.com/velvet-underground/status/velvet-data/velvet-data/v1/response-times.json",
+      "https://raw.githubusercontent.com/velvet-underground/status/velvet-data/velvet-data/v1/status.json",
     ]);
 
     const firstSummary = page.locator("button.summary").first();
@@ -161,30 +161,18 @@ async function main() {
           return { x: rect.x, y: rect.y };
         }),
     );
-    assert.equal(desktopProtocols.length, 2);
-    assert.ok(desktopProtocols[1].x > desktopProtocols[0].x, "protocol statuses should be side by side");
-    assert.ok(
-      Math.abs(desktopProtocols[1].y - desktopProtocols[0].y) < 1,
-      "protocol statuses should share one desktop row",
-    );
+    assert.equal(desktopProtocols.length, 1);
     assert.equal(await page.locator('.detail a[href^="http"]').count(), 0);
     assert.doesNotMatch(await page.locator(".detail").first().innerText(), /https?:\/\//);
 
     const firstChart = page.locator(".response-chart").first();
     assert.ok(await firstChart.locator('.series-line[data-protocol="ipv4"]').count());
-    assert.ok(await firstChart.locator('.series-line[data-protocol="ipv6"]').count());
     assert.equal(
       await firstChart.locator('[data-protocol="ipv4"][data-line-style="solid"]').count() > 0,
       true,
     );
-    assert.equal(
-      await firstChart.locator('[data-protocol="ipv6"][data-line-style="dashed"]').count() > 0,
-      true,
-    );
-    assert.deepEqual(await firstChart.locator(".legend-item strong").allInnerTexts(), [
-      "88 ms",
-      "91 ms",
-    ]);
+    assert.equal(await firstChart.locator('.series-line[data-protocol="ipv6"]').count(), 0);
+    assert.deepEqual(await firstChart.locator(".legend-item strong").allInnerTexts(), ["88 ms"]);
     const chartLink = firstChart.locator(".plot-link");
     await chartLink.focus();
     assert.equal(await chartLink.evaluate((link) => link === document.activeElement), true);
@@ -225,18 +213,10 @@ async function main() {
           return { x: rect.x, y: rect.y };
         }),
     );
-    assert.equal(narrowProtocols.length, 2);
-    assert.ok(
-      narrowProtocols[1].x > narrowProtocols[0].x,
-      "protocol statuses should remain side by side on narrow screens",
-    );
-    assert.ok(
-      Math.abs(narrowProtocols[1].y - narrowProtocols[0].y) < 1,
-      "protocol statuses should share one narrow row",
-    );
+    assert.equal(narrowProtocols.length, 1);
     assert.equal(
       await page.locator(".protocol-grid").first().locator(".protocol-separator").count(),
-      1,
+      0,
     );
     const narrowChartWidth = await firstChart.locator("svg").evaluate((chart) => chart.getBoundingClientRect().width);
     assert.ok(narrowChartWidth <= narrowLayout.viewportWidth);
