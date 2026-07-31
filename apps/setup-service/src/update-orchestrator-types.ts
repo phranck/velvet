@@ -1,4 +1,8 @@
-import type { VelvetReleaseManifest } from "@velvet/contracts";
+import type {
+  ManagedUpdateReason,
+  ManagedUpdateState,
+  VelvetReleaseManifest,
+} from "@velvet/contracts";
 
 import type { GitHubUpdateClient, GitHubUpdatePullRequest } from "./update-github-types.js";
 
@@ -34,31 +38,10 @@ export interface ManagedUpdateReleaseProvider {
   get(version: string): Promise<ManagedUpdateRelease>;
 }
 
-export type ManagedUpdateState =
-  | "waiting_for_checks"
-  | "waiting_for_publication"
-  | "restoring"
-  | "waiting_for_recovery"
-  | "succeeded"
-  | "restored"
-  | "skipped"
-  | "failed";
-
-export type ManagedUpdateReason =
-  | "automatic_security_disabled"
-  | "release_not_automatic"
-  | "already_installed"
-  | "newer_version_installed"
-  | "incompatible_release"
-  | "migration_required"
-  | "checks_failed"
-  | "merge_rejected"
-  | "update_closed"
-  | "repository_changed"
-  | "protected_branch_target"
-  | "protected_files_changed"
-  | "data_branch_changed"
-  | "recovery_failed";
+export type {
+  ManagedUpdateReason,
+  ManagedUpdateState,
+} from "@velvet/contracts";
 
 export interface ManagedUpdateResult {
   operationId: string;
