@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import {
   SEMANTIC_VERSION_PATTERN,
   compareVelvetSemanticVersions,
@@ -15,6 +17,7 @@ import type {
   GitHubUpdateWorkflowRun,
 } from "./update-github-types.js";
 import type {
+  ManagedUpdateLogEntry,
   ManagedUpdateOrchestrator,
   ManagedUpdateOrchestratorOptions,
   ManagedUpdateReason,
@@ -22,6 +25,10 @@ import type {
   ManagedUpdateResult,
   ManagedUpdateState,
 } from "./update-orchestrator-types.js";
+import {
+  ManagedUpdateError,
+  managedUpdateErrorCode,
+} from "./update-error.js";
 import { positiveInteger } from "./update-github-validation.js";
 import {
   isProtectedBranch,
@@ -43,11 +50,31 @@ export type {
 const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
 const MAX_READ_ATTEMPTS = 5;
 
-class ManagedUpdateError extends Error {
-  constructor(message: string, options: { cause?: unknown } = {}) {
-    super(message, options);
-    this.name = "ManagedUpdateError";
-  }
+/**
+ * Wraps whatever a reconcile attempt threw into the public boundary shape.
+ *
+ * Internal failures stay internal. Only a stable code, the fixed safe message
+ * for it, and a unique error ID leave this function, and the original cause is
+ * handed to the log sink instead of to the caller.
+ */
+function boundaryError(
+  request: ManagedUpdateRequest,
+  cause: unknown,
+  runtime: { log: (entry: ManagedUpdateLogEntry) => void; errorId: () => string },
+): ManagedUpdateError {
+  if (cause instanceof ManagedUpdateError && cause.errorId !== "") return cause;
+  const code = managedUpdateErrorCode(cause);
+  const errorId = runtime.errorId();
+  runtime.log({
+    code,
+    errorId,
+    repositoryId: request.repositoryId,
+    version: request.version,
+    trigger: request.trigger,
+    outcome: "failed",
+    cause,
+  });
+  return new ManagedUpdateError(code, { errorId, cause });
 }
 
 interface ReconcileContext {
@@ -71,6 +98,8 @@ export function createManagedUpdateOrchestrator(
     throw new TypeError(`maxReadAttempts must be between 1 and ${MAX_READ_ATTEMPTS}.`);
   }
   const sleep = options.sleep ?? ((milliseconds) => Bun.sleep(milliseconds));
+  const log = options.log ?? (() => undefined);
+  const errorId = options.errorId ?? (() => randomUUID().replaceAll("-", ""));
   const queues = new Map<number, Promise<void>>();
 
   return {
@@ -83,7 +112,12 @@ export function createManagedUpdateOrchestrator(
           maxReadAttempts,
           requiredCheckNames,
           sleep,
-        }));
+        }))
+        // Every failure leaves through here, so nothing internal can escape
+        // the boundary uncoded, unlogged, or without an identifier to quote.
+        .catch((cause: unknown) => {
+          throw boundaryError(request, cause, { log, errorId });
+        });
       const tail = operation.then(
         () => undefined,
         () => undefined,
@@ -122,7 +156,7 @@ async function reconcileManagedUpdate(
   ]);
   const validation = validateVelvetReleaseManifest(release.manifest);
   if (!validation.success || validation.data.version !== request.version) {
-    throw new ManagedUpdateError("The selected Velvet release is invalid.");
+    throw new ManagedUpdateError("UPDATE_RELEASE_INVALID", { errorId: "" });
   }
   if (isProtectedBranch(repository.repository.defaultBranch)) {
     return result(request, "failed", "protected_branch_target");
@@ -134,7 +168,7 @@ async function reconcileManagedUpdate(
   ]);
   const parsedConfiguration = parseVelvetConfiguration(configurationFile.source);
   if (!parsedConfiguration.success) {
-    throw new ManagedUpdateError("The installed Velvet configuration is invalid.");
+    throw new ManagedUpdateError("UPDATE_INSTALLATION_INVALID", { errorId: "" });
   }
   const configuration = parsedConfiguration.data;
   if (
@@ -142,7 +176,7 @@ async function reconcileManagedUpdate(
       repository.repository.owner.toLowerCase() ||
     configuration.repository.name !== repository.repository.name
   ) {
-    throw new ManagedUpdateError("The Velvet configuration does not match the repository.");
+    throw new ManagedUpdateError("UPDATE_INSTALLATION_INVALID", { errorId: "" });
   }
 
   if (
@@ -193,7 +227,7 @@ async function reconcileManagedUpdate(
     sources: release.sources,
   });
   if (!materialized.success) {
-    throw new ManagedUpdateError("The Velvet release files could not be prepared.");
+    throw new ManagedUpdateError("UPDATE_RELEASE_INVALID", { errorId: "" });
   }
   const files = materialized.data.files.map(({ path, content }) => ({
     path,

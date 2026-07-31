@@ -69,12 +69,35 @@ export interface ManagedUpdateResult {
   pullRequest?: Pick<GitHubUpdatePullRequest, "number" | "htmlUrl">;
 }
 
+/**
+ * Structured record of one failed update, safe to write to a shared log.
+ *
+ * It identifies the operation well enough to diagnose it and carries no
+ * configuration, no repository content, no credentials, and no upstream
+ * response body.
+ *
+ * @property cause - Redact before writing. It may be any thrown value.
+ */
+export interface ManagedUpdateLogEntry {
+  code: string;
+  errorId: string;
+  repositoryId: number;
+  version: string;
+  trigger: ManagedUpdateTrigger;
+  outcome: "failed";
+  cause: unknown;
+}
+
 export interface ManagedUpdateOrchestratorOptions {
   github: GitHubUpdateClient;
   releases: ManagedUpdateReleaseProvider;
   requiredCheckNames: readonly string[];
   maxReadAttempts?: number;
   sleep?: (milliseconds: number) => Promise<void>;
+  /** Receives one entry per failure. Redaction is the sink's responsibility. */
+  log?: (entry: ManagedUpdateLogEntry) => void;
+  /** Supplies the unique identifier a user can quote back. */
+  errorId?: () => string;
 }
 
 export interface ManagedUpdateOrchestrator {

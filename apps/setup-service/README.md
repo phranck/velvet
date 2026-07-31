@@ -85,6 +85,33 @@ a repository mutation. Until the Configurator update endpoint exists, no runtime
 path reaches the provider, so the bundler legitimately omits the artefact from
 `dist/`.
 
+## Update failures
+
+Every failure leaving the managed-update boundary carries a stable code, a safe
+message chosen from a fixed table by that code, and a unique error ID. The
+message is never supplied by the code that failed, so an internal detail, a
+configuration value, or an upstream response body cannot reach a user through
+it. The original cause is handed to the log sink instead of to the caller.
+
+| Code | Meaning |
+| --- | --- |
+| `UPDATE_RELEASE_INVALID` | The selected release is not a valid, complete Velvet release |
+| `UPDATE_INSTALLATION_INVALID` | The installation's own configuration or version lock cannot be used |
+| `UPDATE_REPOSITORY_CHANGED` | The repository moved underneath the operation and must be re-read |
+| `UPDATE_GITHUB_UNAVAILABLE` | GitHub was temporarily unavailable, so the same request may be retried |
+| `UPDATE_GITHUB_REJECTED` | GitHub refused the request, so retrying it unchanged will fail again |
+| `UPDATE_FAILED` | Anything else, deliberately opaque |
+
+These codes are an interface. A consumer may branch on them and a user may quote
+them, so a code keeps its meaning once published. An unrecognized error becomes
+`UPDATE_FAILED` rather than being guessed into a more specific code, because a
+specific code the evidence does not support is worse than an opaque one.
+
+One structured entry is logged per failure, carrying the code, the error ID, the
+repository ID, the version, the trigger, and a redacted cause. It contains no
+configuration, no repository content, no credentials, and no upstream response
+body.
+
 ## GitHub App registration
 
 Register a GitHub App owned by the Velvet maintainer with these settings:

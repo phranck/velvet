@@ -23,6 +23,11 @@ import type {
   GitHubUpdatePullRequest,
   GitHubUpdateWorkflowRun,
 } from "../src/update-github.js";
+import {
+  ManagedUpdateError,
+  publicManagedUpdateError,
+} from "../src/update-error.js";
+import type { ManagedUpdateLogEntry } from "../src/update-orchestrator-types.js";
 import { VELVET_DATA_BRANCH } from "../src/update-ownership.js";
 
 const baseSha = "1".repeat(40);
@@ -615,11 +620,12 @@ test("does not retry a failed mutation and resumes from its committed branch", a
 
   await assert.rejects(
     () => updates.reconcile(manualRequest),
-    /GitHub API request failed/u,
+    /GitHub was temporarily unavailable/u,
   );
   assert.equal(
     repository.mutations.filter((mutation) => mutation === "create-pr").length,
     1,
+    "a failed mutation is never retried automatically",
   );
 
   const resumed = await updates.reconcile(manualRequest);
@@ -650,9 +656,78 @@ test("stops retrying a safe read after the configured attempt limit", async () =
 
   await assert.rejects(
     () => updates.reconcile(manualRequest),
-    /GitHub API request failed/u,
+    /GitHub was temporarily unavailable/u,
   );
   assert.equal(repository.defaultHeadCalls, 3);
   assert.deepEqual(delays, [250, 500]);
   assert.deepEqual(repository.mutations, []);
+});
+
+test("reports a stable code, a safe message, and an error id at the boundary", async () => {
+  const repository = new FakeRepository();
+  repository.defaultHeadFailures = 9;
+  const entries: ManagedUpdateLogEntry[] = [];
+  const github: GitHubUpdateClient = {
+    async forRepository() {
+      return repository;
+    },
+  };
+  const updates = createManagedUpdateOrchestrator({
+    github,
+    releases: {
+      latest: () => "2.1.0",
+      async get() {
+        return release();
+      },
+    },
+    requiredCheckNames: ["Validate managed update"],
+    maxReadAttempts: 1,
+    sleep: async () => {},
+    log: (entry) => entries.push(entry),
+    errorId: () => "E".repeat(32),
+  });
+
+  const failure = await updates.reconcile(manualRequest).then(
+    () => null,
+    (error: unknown) => error,
+  );
+
+  assert.equal(failure instanceof ManagedUpdateError, true);
+  const error = failure as ManagedUpdateError;
+  assert.equal(error.code, "UPDATE_GITHUB_UNAVAILABLE");
+  assert.equal(error.errorId, "E".repeat(32));
+  assert.equal(error.retryable, true);
+  assert.deepEqual(publicManagedUpdateError(error), {
+    code: "UPDATE_GITHUB_UNAVAILABLE",
+    message: "GitHub was temporarily unavailable. Try again shortly.",
+    errorId: "E".repeat(32),
+  });
+
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0]?.code, "UPDATE_GITHUB_UNAVAILABLE");
+  assert.equal(entries[0]?.repositoryId, 99);
+  assert.equal(entries[0]?.outcome, "failed");
+});
+
+test("keeps the public error free of anything the caller must not see", async () => {
+  const repository = new FakeRepository();
+  repository.configurationSource = "not: [valid";
+  const updates = orchestrator(repository);
+
+  const failure = await updates.reconcile(manualRequest).then(
+    () => null,
+    (error: unknown) => error,
+  );
+
+  const error = failure as ManagedUpdateError;
+  assert.equal(error.code, "UPDATE_INSTALLATION_INVALID");
+  const published = JSON.stringify(publicManagedUpdateError(error));
+  for (const secret of ["not: [valid", "example", "status", "installation-token"]) {
+    assert.equal(
+      published.includes(secret),
+      false,
+      `the public error must not carry ${secret}`,
+    );
+  }
+  assert.equal(error.errorId.length > 0, true);
 });
