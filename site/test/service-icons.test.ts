@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "bun:test";
 
 import {
+  AUTOMATIC_SERVICE_ICON,
   CURATED_SERVICE_ICONS,
   DEFAULT_SERVICE_ICON,
   iconFor,
@@ -9,6 +10,7 @@ import {
 } from "../src/lib/icons.js";
 
 test("offers 21 curated icons for a 22-option picker with Automatic", () => {
+  assert.equal(AUTOMATIC_SERVICE_ICON, "ph-robot");
   assert.equal(CURATED_SERVICE_ICONS.length, 21);
   assert.equal(
     new Set(CURATED_SERVICE_ICONS.map(({ icon }) => icon)).size,

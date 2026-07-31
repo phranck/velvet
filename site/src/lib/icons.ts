@@ -3,6 +3,9 @@ export interface CuratedServiceIcon {
   label: string;
 }
 
+/** Semantic picker icon for delegating the choice to Velvet. */
+export const AUTOMATIC_SERVICE_ICON = "ph-robot";
+
 /** Icons that setup and the Configurator may persist in `statusPage.icons`. */
 export const CURATED_SERVICE_ICONS: readonly CuratedServiceIcon[] = [
   { icon: "ph-globe", label: "Website" },

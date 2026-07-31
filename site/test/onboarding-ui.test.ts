@@ -205,6 +205,9 @@ test("uses the shared theme and icon components in onboarding and configurator",
   assert.match(iconPicker, /tabIndex=\{option\.value === value \? 0 : -1\}/);
   assert.match(iconPicker, /handleOptionKeydown/);
   assert.match(iconPicker, /import ServiceIconOption from "\.\/ServiceIconOption\.svelte"/);
+  assert.match(iconPicker, /AUTOMATIC_SERVICE_ICON/);
+  assert.match(iconPicker, /icon:\s*AUTOMATIC_SERVICE_ICON/);
+  assert.doesNotMatch(iconPicker, /automaticIcon/);
   assert.match(iconPicker, /<ServiceIconOption/);
   assert.match(onboarding, /--picker-icon-size:\s*1\.875rem/);
   assert.match(

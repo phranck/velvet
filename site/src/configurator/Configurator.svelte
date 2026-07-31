@@ -17,10 +17,7 @@
     resolveTheme,
   } from "../lib/theme.js";
   import type { RangeKey } from "../lib/types";
-  import {
-    CURATED_SERVICE_ICONS,
-    iconFor,
-  } from "../lib/icons.js";
+  import { CURATED_SERVICE_ICONS } from "../lib/icons.js";
   import { SYSTEM_THEMES } from "../onboarding/system-themes.js";
   import ColorControl from "./ColorControl.svelte";
   import ColorSourceControl from "./ColorSourceControl.svelte";
@@ -804,7 +801,6 @@
                 id={`configurator-${service.id}-icon`}
                 legend={service.name}
                 value={icons[service.id] ?? null}
-                automaticIcon={iconFor(service.id)}
                 options={CURATED_SERVICE_ICONS}
                 onChange={(value) => selectServiceIcon(service.id, value)}
               />
