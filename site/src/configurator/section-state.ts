@@ -20,10 +20,17 @@ export function setAllSectionState(open: boolean): ConfiguratorSectionState {
   ) as ConfiguratorSectionState;
 }
 
+/**
+ * Restores the saved section state, or the first-visit default.
+ *
+ * A first visit starts with every section collapsed, so the sidebar opens as a
+ * short, scannable list of what can be configured rather than as one long
+ * scroll the reader has to close before finding anything.
+ */
 export function parseSectionState(
   serialized: string | null,
 ): ConfiguratorSectionState {
-  const defaults = setAllSectionState(true);
+  const defaults = setAllSectionState(false);
   if (!serialized) return defaults;
 
   try {

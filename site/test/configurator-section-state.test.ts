@@ -8,20 +8,22 @@ import {
   setAllSectionState,
 } from "../src/configurator/section-state.js";
 
-test("defaults every configurator section to open", () => {
+test("starts a first visit with every section collapsed", () => {
+  // A first visit should open as a short list of what can be configured,
+  // rather than as one long scroll the reader has to close first.
   assert.deepEqual(parseSectionState(null),
-    Object.fromEntries(CONFIGURATOR_SECTION_IDS.map((id) => [id, true])),
+    Object.fromEntries(CONFIGURATOR_SECTION_IDS.map((id) => [id, false])),
   );
 });
 
-test("restores known collapsed sections and ignores malformed storage", () => {
+test("restores known expanded sections and ignores malformed storage", () => {
   const restored = parseSectionState(
-    JSON.stringify({ layout: false, chart: false, unknown: false }),
+    JSON.stringify({ layout: true, chart: true, unknown: true }),
   );
 
-  assert.equal(restored.layout, false);
-  assert.equal(restored.chart, false);
-  assert.equal(restored.palette, true);
+  assert.equal(restored.layout, true);
+  assert.equal(restored.chart, true);
+  assert.equal(restored.palette, false);
   assert.deepEqual(parseSectionState("not json"), parseSectionState(null));
   assert.deepEqual(
     parseSectionState(JSON.stringify({ layout: "closed" })),
@@ -33,19 +35,19 @@ test("serializes only the stable section identifiers", () => {
   assert.equal(
     serializeSectionState({
       ...parseSectionState(null),
-      cards: false,
-      ignored: false,
+      cards: true,
+      ignored: true,
     }),
     JSON.stringify({
-      updates: true,
-      themes: true,
-      icons: true,
-      palette: true,
-      layout: true,
-      chart: true,
-      background: true,
-      cards: false,
-      advanced: true,
+      updates: false,
+      themes: false,
+      icons: false,
+      palette: false,
+      layout: false,
+      chart: false,
+      background: false,
+      cards: true,
+      advanced: false,
     }),
   );
 });

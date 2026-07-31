@@ -1258,7 +1258,7 @@
     margin-bottom: 12px;
     color: var(--tool-muted);
     font-family: var(--tool-mono);
-    font-size: 12px;
+    font-size: 15px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -1304,12 +1304,12 @@
     border-radius: 8px;
     cursor: pointer;
     font: inherit;
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 600;
     text-align: center;
   }
   .button i {
-    font-size: 16px;
+    font-size: 17px;
   }
   .button.secondary {
     background: var(--tool-panel-raised);
@@ -1336,13 +1336,13 @@
     gap: 8px;
     padding: 7px 22px 3px;
     color: var(--tool-text);
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 650;
     text-align: center;
   }
   .theme-status strong {
     color: var(--tool-accent);
-    font-size: 12px;
+    font-size: 15px;
     letter-spacing: 0.03em;
     text-transform: uppercase;
   }
@@ -1365,7 +1365,7 @@
   .message p {
     margin: 0;
     color: var(--tool-muted);
-    font-size: 13px;
+    font-size: 16px;
     line-height: 1.45;
   }
   .message .error {
@@ -1389,7 +1389,7 @@
     color: var(--tool-muted);
     cursor: pointer;
     font: inherit;
-    font-size: 13px;
+    font-size: 16px;
   }
   .section-toolbar button:hover {
     color: var(--tool-text);
@@ -1418,7 +1418,7 @@
   .section-help {
     margin: 5px 0 13px;
     color: var(--tool-muted);
-    font-size: 13px;
+    font-size: 16px;
     line-height: 1.4;
   }
   .color-list {
@@ -1438,7 +1438,7 @@
     margin: 0;
     padding: 0 0.25rem;
     color: var(--tool-muted);
-    font-size: 12px;
+    font-size: 15px;
     line-height: 1.4;
   }
   .text-control {
@@ -1446,7 +1446,7 @@
     gap: 7px;
     margin-top: 14px;
     color: var(--tool-text);
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 550;
   }
   .text-control input {
@@ -1458,7 +1458,7 @@
     background: var(--tool-input);
     color: var(--tool-text);
     font: inherit;
-    font-size: 14px;
+    font-size: 17px;
   }
   .text-control input:focus-visible {
     border-color: var(--tool-accent);
@@ -1480,7 +1480,7 @@
     border-bottom: 1px solid var(--tool-line);
     color: var(--tool-muted);
     font-family: var(--tool-mono);
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1506,7 +1506,7 @@
     padding: 7px 8px;
     border-radius: 6px;
     color: var(--tool-muted);
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 600;
     text-align: center;
   }
@@ -1522,7 +1522,7 @@
     display: block;
     margin-bottom: 7px;
     color: var(--tool-muted);
-    font-size: 13px;
+    font-size: 16px;
   }
   .line-styles {
     grid-template-columns: repeat(3, 1fr);
@@ -1547,12 +1547,12 @@
   }
   .switch-row strong {
     color: var(--tool-text);
-    font-size: 14px;
+    font-size: 17px;
   }
   .switch-row div > span {
     margin-top: 2px;
     color: var(--tool-muted);
-    font-size: 12px;
+    font-size: 15px;
   }
   .switch {
     position: relative;
@@ -1620,7 +1620,7 @@
     color: var(--tool-text);
     cursor: pointer;
     font: inherit;
-    font-size: 13px;
+    font-size: 16px;
   }
   .sidebar-footer {
     display: flex;
@@ -1660,21 +1660,21 @@
   }
   .preview-header div > span {
     font-family: var(--tool-mono);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .preview-header strong {
     margin-top: 3px;
     color: var(--tool-text);
-    font-size: 12px;
+    font-size: 15px;
   }
   .preview-size {
     padding: 5px 8px;
     border: 1px solid var(--tool-line);
     border-radius: 6px;
     font-family: var(--tool-mono);
-    font-size: 10px;
+    font-size: 12px;
   }
   .preview-surface {
     min-width: 720px;

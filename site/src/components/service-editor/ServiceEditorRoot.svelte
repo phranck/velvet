@@ -316,6 +316,10 @@
   .form-grid {
     display: grid;
     gap: 1rem;
+    /* Label, control, and error each get their own row so the fields in a row
+       line up even when one label wraps onto a second line. */
+    grid-template-rows: auto auto auto;
+    align-items: start;
   }
   .two-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -330,6 +334,12 @@
     min-width: 0;
     display: grid;
     gap: 0.42rem;
+  }
+  /* Share the parent's rows rather than creating a private one, which is what
+     made a wrapped label push its own control below its neighbours. */
+  .form-grid > label {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
   }
   label > span {
     margin-inline: var(--service-editor-text-inset, 0);

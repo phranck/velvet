@@ -20,7 +20,15 @@
     onKeydown: (event: KeyboardEvent) => void;
   } = $props();
 
+  /**
+   * Below this width the two concentric selection rings stop reading as two
+   * rings and just thicken into a blur, so a single outline is clearer.
+   * The Configurator sidebar renders these at 28 pixels.
+   */
+  const COMPACT_WIDTH = 40;
+
   let size = $state(0);
+  const compact = $derived(size > 0 && size < COMPACT_WIDTH);
   const outerPath = $derived(createSquirclePath(size, OUTER_PATH_INSET));
   const innerPath = $derived(createSquirclePath(size, INNER_PATH_INSET));
   const focusPath = $derived(createSquirclePath(size, 3));
@@ -37,6 +45,7 @@
   onclick={onSelect}
   onkeydown={onKeydown}
   bind:clientWidth={size}
+  data-compact={compact}
 >
   <svg
     class="service-icon-option-shape"
@@ -98,6 +107,12 @@
     );
     opacity: 0;
     transition: none;
+  }
+  .service-icon-option[data-compact="true"] .selection-outline.inner {
+    display: none;
+  }
+  .service-icon-option[data-compact="true"] .selection-outline.outer {
+    stroke-width: 2;
   }
   .service-icon-option .selection-outline {
     color: var(--picker-accent, #6366f1);

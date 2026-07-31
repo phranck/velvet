@@ -83,7 +83,7 @@
     color: var(--tool-text);
     cursor: pointer;
     list-style: none;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 650;
   }
   summary::-webkit-details-marker {
