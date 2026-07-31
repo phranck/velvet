@@ -715,3 +715,49 @@ test("serves only allowlisted onboarding assets", async () => {
   assert.equal(missing.status, 404);
   assert.equal((await missing.json()).error.code, "NOT_FOUND");
 });
+
+test("offers the installable release only to an authenticated session", async () => {
+  const { handler, sessions } = harness(githubClient());
+
+  const anonymous = await handler(new Request(`${origin}/api/updates`));
+  assert.equal(anonymous.status, 401);
+  const denied = await anonymous.json();
+  assert.equal("releaseNotes" in denied, false, "nothing leaks before sign-in");
+
+  const browser = await authenticate(handler, sessions);
+  const response = await handler(
+    new Request(`${origin}/api/updates`, {
+      headers: { Cookie: `__Host-velvet_session=${browser.cookie}` },
+    }),
+  );
+
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as {
+    availableVersion: string;
+    releaseType: string;
+    automaticInstallEligible: boolean;
+    releaseNotes: string;
+  };
+  assert.match(body.availableVersion, /^\d+\.\d+\.\d+/u);
+  assert.equal(["security", "fix", "feature"].includes(body.releaseType), true);
+  assert.equal(typeof body.automaticInstallEligible, "boolean");
+  assert.equal(body.releaseNotes.length > 0, true);
+});
+
+test("rejects a write method on the update endpoint", async () => {
+  const { handler, sessions } = harness(githubClient());
+  const browser = await authenticate(handler, sessions);
+
+  const response = await handler(
+    new Request(`${origin}/api/updates`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+    }),
+  );
+
+  assert.equal(response.status, 405);
+});

@@ -32,6 +32,8 @@ import {
   type SetupServerSession,
 } from "./session.js";
 import { publicSetupError, SetupServiceError } from "./setup-error.js";
+import { embeddedVelvetReleases } from "./update-releases.js";
+import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.js";
 
 const SESSION_MAX_AGE_SECONDS = 30 * 60;
 const MAX_REQUEST_BYTES = 256 * 1_024;
@@ -45,6 +47,7 @@ interface SetupHandlerOptions {
   github: GitHubSetupClient;
   logger: AuditLogger;
   provision?: ProvisionFunction;
+  releases?: ManagedUpdateReleaseProvider;
   staticAsset?: StaticAssetProvider;
   setupRateLimiter?: RateLimiter;
   authRateLimiter?: RateLimiter;
@@ -57,6 +60,7 @@ export function createSetupHandler(
   options: SetupHandlerOptions,
 ): (request: Request) => Promise<Response> {
   const provision = options.provision ?? provisionVelvet;
+  const releases = options.releases ?? embeddedVelvetReleases();
   const setupRateLimiter =
     options.setupRateLimiter ??
     createRateLimiter({ limit: 10, windowMs: 60_000, maxEntries: 2_000 });
@@ -338,6 +342,26 @@ export function createSetupHandler(
           return reject(internalContractError(), "setup-status");
         }
         return finish(jsonResponse(session.operation));
+      }
+
+      if (route === "/api/updates") {
+        if (request.method !== "GET") return reject(methodError(), "updates");
+        if (!authenticated(session)) {
+          return reject(authenticationRequired(), "updates");
+        }
+        // Authenticated because the release notes describe a version a user is
+        // being offered, and offering it is part of managing their
+        // installation rather than public information about the product.
+        const version = releases.latest();
+        const release = await releases.get(version);
+        return finish(
+          jsonResponse({
+            availableVersion: version,
+            releaseType: release.manifest.releaseType,
+            automaticInstallEligible: release.manifest.automaticInstallEligible,
+            releaseNotes: release.manifest.releaseNotes,
+          }),
+        );
       }
 
       if (route === "/api/logout") {
