@@ -139,7 +139,9 @@
             "required": [
               "path",
               "strategy",
-              "generator"
+              "generator",
+              "sourcePath",
+              "sha256"
             ],
             "properties": {
               "path": {
@@ -172,12 +174,40 @@
                   {
                     "const": "status-workflow-v1",
                     "type": "string"
-                  },
-                  {
-                    "const": "version-lock-v1",
-                    "type": "string"
                   }
                 ]
+              },
+              "sourcePath": {
+                "minLength": 1,
+                "maxLength": 256,
+                "type": "string"
+              },
+              "sha256": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "path",
+              "strategy",
+              "generator"
+            ],
+            "properties": {
+              "path": {
+                "const": "velvet.lock.json",
+                "type": "string"
+              },
+              "strategy": {
+                "const": "generate",
+                "type": "string"
+              },
+              "generator": {
+                "const": "version-lock-v1",
+                "type": "string"
               }
             }
           }

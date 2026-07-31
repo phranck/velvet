@@ -204,7 +204,9 @@ function inspectManagedFiles(
     if (expectedGenerator !== undefined) {
       if (
         file.strategy !== "generate" ||
-        file.generator !== expectedGenerator
+        file.generator !== expectedGenerator ||
+        (file.path !== "velvet.lock.json" &&
+          (!("sourcePath" in file) || file.sourcePath !== file.path))
       ) {
         return [
           updateError(

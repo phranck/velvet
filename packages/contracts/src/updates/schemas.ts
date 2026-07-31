@@ -56,24 +56,39 @@ const ReplacedFileSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export const TEMPLATE_GENERATORS = [
+export const SOURCE_TEMPLATE_GENERATORS = [
   "maintenance-issue-template-v1",
   "maintenance-workflow-v1",
   "pages-workflow-v1",
   "response-times-workflow-v1",
   "status-workflow-v1",
+] as const;
+
+export const TEMPLATE_GENERATORS = [
+  ...SOURCE_TEMPLATE_GENERATORS,
   "version-lock-v1",
 ] as const;
 
-const GeneratorSchema = Type.Union(
-  TEMPLATE_GENERATORS.map((generator) => Type.Literal(generator)),
+const SourceGeneratorSchema = Type.Union(
+  SOURCE_TEMPLATE_GENERATORS.map((generator) => Type.Literal(generator)),
 );
 
-const GeneratedFileSchema = Type.Object(
+const SourceGeneratedFileSchema = Type.Object(
   {
     path: ManagedPathSchema,
     strategy: Type.Literal("generate"),
-    generator: GeneratorSchema,
+    generator: SourceGeneratorSchema,
+    sourcePath: ManagedPathSchema,
+    sha256: Type.String({ pattern: "^[a-f0-9]{64}$" }),
+  },
+  { additionalProperties: false },
+);
+
+const VersionLockFileSchema = Type.Object(
+  {
+    path: Type.Literal("velvet.lock.json"),
+    strategy: Type.Literal("generate"),
+    generator: Type.Literal("version-lock-v1"),
   },
   { additionalProperties: false },
 );
@@ -100,7 +115,11 @@ export const VelvetReleaseManifestSchema = Type.Object(
       { additionalProperties: false },
     ),
     managedFiles: Type.Array(
-      Type.Union([ReplacedFileSchema, GeneratedFileSchema]),
+      Type.Union([
+        ReplacedFileSchema,
+        SourceGeneratedFileSchema,
+        VersionLockFileSchema,
+      ]),
       { minItems: 1, maxItems: 32 },
     ),
     releaseNotes: Type.String({ minLength: 1, maxLength: 65_536 }),

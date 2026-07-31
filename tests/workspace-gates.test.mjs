@@ -113,6 +113,35 @@ test("runs the monitor action gates after all runtime dependencies", async () =>
   }
 });
 
+test("runs managed template-file gates after their contracts dependency", async () => {
+  const packageDocument = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  const templatePackage = JSON.parse(
+    await readFile(
+      new URL("../packages/template-files/package.json", import.meta.url),
+      "utf8",
+    ),
+  );
+
+  assert.equal(
+    templatePackage.scripts.pretest,
+    "bun run --filter @velvet/contracts build",
+  );
+  for (const gate of ["build", "test", "typecheck"]) {
+    const script = packageDocument.scripts[gate];
+    const contractsCommand = `bun run --filter @velvet/contracts ${gate}`;
+    const templateCommand = `bun run --filter @velvet/template-files ${gate}`;
+
+    assert.equal(typeof script, "string");
+    assert.notEqual(script.indexOf(templateCommand), -1);
+    assert.equal(
+      script.indexOf(contractsCommand) < script.indexOf(templateCommand),
+      true,
+    );
+  }
+});
+
 test("runs setup service gates from the root workspace", async () => {
   const packageDocument = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),
