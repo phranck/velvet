@@ -28,10 +28,10 @@ function dailyAvailability(outages = []) {
   });
 }
 
-function check(id, protocol, responseTimeMs, status = "operational") {
+function check(id, responseTimeMs, status = "operational") {
   return {
     id,
-    protocol,
+    protocol: "ipv4",
     status,
     checkedAt: STATUS_GENERATED_AT,
     responseTimeMs,
@@ -68,22 +68,14 @@ function service({
   id,
   name,
   responseTimeMs,
-  ipv6ResponseTimeMs = null,
   status = "operational",
-  ipv4Status = status,
-  ipv6Status = "operational",
   outages = [],
 }) {
   return {
     id,
     name,
     status,
-    checks: [
-      check(`${id}-ipv4`, "ipv4", responseTimeMs, ipv4Status),
-      ...(ipv6ResponseTimeMs === null
-        ? []
-        : [check(`${id}-ipv6`, "ipv6", ipv6ResponseTimeMs, ipv6Status)]),
-    ],
+    checks: [check(id, responseTimeMs, status)],
     dailyAvailability: dailyAvailability(outages),
   };
 }
@@ -97,13 +89,11 @@ export const demoStatus = {
       id: "website",
       name: "Website",
       responseTimeMs: 88,
-      ipv6ResponseTimeMs: 91,
     }),
     service({
       id: "api",
       name: "API",
       responseTimeMs: 142,
-      ipv6ResponseTimeMs: 150,
       outages: [{ daysAgo: 19, minutes: 18 }],
     }),
     service({
@@ -115,15 +105,12 @@ export const demoStatus = {
       id: "cdn",
       name: "CDN",
       responseTimeMs: 22,
-      ipv6ResponseTimeMs: 25,
     }),
     service({
       id: "auth",
       name: "Auth",
       responseTimeMs: 612,
-      ipv6ResponseTimeMs: 280,
       status: "degraded",
-      ipv4Status: "degraded",
       outages: [
         { daysAgo: 0, minutes: 86 },
         { daysAgo: 1, minutes: 64 },
@@ -143,13 +130,13 @@ export const demoResponseTimes = {
   generatedAt: FIXED_NOW,
   monitoringStartedAt: demoStatus.monitoringStartedAt,
   series: demoStatus.services.flatMap((serviceEntry, serviceIndex) =>
-    serviceEntry.checks.map((checkEntry, checkIndex) => ({
+    serviceEntry.checks.map((checkEntry) => ({
       serviceId: serviceEntry.id,
       checkId: checkEntry.id,
       protocol: checkEntry.protocol,
       samples: responseSamples(
         checkEntry.responseTimeMs,
-        serviceIndex * 2 + checkIndex + 1,
+        serviceIndex + 1,
       ),
     })),
   ),
