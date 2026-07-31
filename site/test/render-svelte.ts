@@ -19,6 +19,11 @@ export async function createSvelteRenderer(): Promise<SvelteRenderer> {
     appType: "custom",
     plugins: [svelte({ compilerOptions: { dev: false } })],
     server: { middlewareMode: true },
+    // Server rendering never loads a browser bundle, so the dependency
+    // optimiser has nothing to contribute here. Leaving it on made it race the
+    // shutdown of its own cache directory, which surfaced as an intermittent
+    // ENOENT on a temporary source map rather than as a test failure.
+    optimizeDeps: { noDiscovery: true, include: [] },
   });
   const { render: renderOnServer } = (await server.ssrLoadModule(
     "svelte/server",
