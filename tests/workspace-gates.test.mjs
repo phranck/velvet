@@ -155,7 +155,7 @@ test("runs setup service gates from the root workspace", async () => {
 
   assert.equal(
     setupPackage.scripts.prebuild,
-    "bun run --filter @velvet/contracts build && bun run --filter @velvet/site onboarding:build",
+    "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run --filter @velvet/site onboarding:build",
   );
   for (const gate of ["build", "test", "typecheck"]) {
     assert.match(
