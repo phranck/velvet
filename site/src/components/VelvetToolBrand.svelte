@@ -33,18 +33,16 @@
 
 <style>
   .velvet-tool-brand {
+    --velvet-wordmark-display: block;
     --velvet-wordmark-size: var(--tool-brand-wordmark-size, 1em);
+    --velvet-wordmark-text-align: center;
+    --velvet-wordmark-width: 100%;
 
     width: var(--tool-brand-width, 100%);
     display: grid;
     justify-items: stretch;
     margin: 0;
     color: var(--tool-brand-accent, currentColor);
-  }
-  .velvet-tool-brand :global(.velvet-wordmark) {
-    width: 100%;
-    display: block;
-    text-align: center;
   }
   .velvet-tool-palette,
   .velvet-tool-subtitle {

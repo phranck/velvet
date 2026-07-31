@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "screenshot": "bun scripts/screenshot.mjs",
     "pretest": "bun run --filter @velvet/contracts build",
-    "test": "bun test test/*.test.ts",
+    "test": "bun test --max-concurrency 1 test/*.test.ts",
     "pretypecheck": "bun run --filter @velvet/contracts build",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
