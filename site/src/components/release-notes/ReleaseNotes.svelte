@@ -1,0 +1,129 @@
+<script lang="ts">
+  import {
+    parseReleaseNotes,
+    type ReleaseNotesInline,
+  } from "../../lib/release-notes.js";
+
+  let { source }: { source: string } = $props();
+
+  const blocks = $derived(parseReleaseNotes(source));
+</script>
+
+<!--
+  Every part is rendered through a normal element. There is deliberately no
+  `{@html}` in this component, so markup embedded in a release note has no
+  route to the DOM at all.
+-->
+{#snippet inline(parts: ReleaseNotesInline[])}
+  {#each parts as part, index (index)}
+    {#if part.kind === "strong"}
+      <strong>{part.value}</strong>
+    {:else if part.kind === "emphasis"}
+      <em>{part.value}</em>
+    {:else if part.kind === "code"}
+      <code>{part.value}</code>
+    {:else if part.kind === "link"}
+      <a href={part.href} target="_blank" rel="noreferrer noopener">{part.value}</a>
+    {:else}
+      {part.value}
+    {/if}
+  {/each}
+{/snippet}
+
+<div class="notes">
+  {#each blocks as block, index (index)}
+    {#if block.kind === "heading" && block.level === 2}
+      <h2>{@render inline(block.content)}</h2>
+    {:else if block.kind === "heading"}
+      <h3>{@render inline(block.content)}</h3>
+    {:else if block.kind === "paragraph"}
+      <p>{@render inline(block.content)}</p>
+    {:else if block.kind === "code"}
+      <pre><code>{block.value}</code></pre>
+    {:else if block.ordered}
+      <ol>
+        {#each block.items as item, itemIndex (itemIndex)}
+          <li>{@render inline(item)}</li>
+        {/each}
+      </ol>
+    {:else}
+      <ul>
+        {#each block.items as item, itemIndex (itemIndex)}
+          <li>{@render inline(item)}</li>
+        {/each}
+      </ul>
+    {/if}
+  {/each}
+</div>
+
+<style>
+  .notes {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    color: var(--velvet-text, inherit);
+    line-height: 1.6;
+    overflow-wrap: break-word;
+  }
+
+  h2,
+  h3 {
+    margin: 0;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 640;
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 620;
+  }
+
+  h2:not(:first-child),
+  h3:not(:first-child) {
+    margin-top: 0.5rem;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  ul,
+  ol {
+    margin: 0;
+    padding-inline-start: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    padding: 0.125em 0.375em;
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+
+  pre {
+    margin: 0;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  pre code {
+    padding: 0;
+    background: none;
+  }
+
+  a {
+    color: inherit;
+    text-underline-offset: 0.2em;
+  }
+</style>
