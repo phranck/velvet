@@ -20,11 +20,27 @@ export interface GitHubUpdatePullRequest {
   headSha: string;
   baseRef: string;
   baseSha: string;
+  mergedAt: string | null;
+  mergeCommitSha: string | null;
 }
 
 export interface GitHubUpdateCheckRun {
   id: number;
   name: string;
+  status:
+    | "requested"
+    | "waiting"
+    | "pending"
+    | "queued"
+    | "in_progress"
+    | "completed";
+  conclusion: string | null;
+  htmlUrl: string;
+  headSha: string;
+}
+
+export interface GitHubUpdateWorkflowRun {
+  id: number;
   status:
     | "requested"
     | "waiting"
@@ -48,6 +64,7 @@ export interface GitHubRepositoryUpdateClient {
   readConfiguration(): Promise<{ source: string; blobSha: string }>;
   readVersionLock(): Promise<{ lock: VelvetVersionLock; blobSha: string }>;
   readManagedFiles(ref: string): Promise<GitHubManagedFile[]>;
+  updateBranchHead(version: string): Promise<string | null>;
   createUpdateBranch(version: string, baseSha: string): Promise<void>;
   commitUpdate(
     version: string,
@@ -61,6 +78,8 @@ export interface GitHubRepositoryUpdateClient {
   ): Promise<GitHubUpdatePullRequest>;
   pullRequests(version: string): Promise<GitHubUpdatePullRequest[]>;
   checkRuns(headSha: string): Promise<GitHubUpdateCheckRun[]>;
+  pagesWorkflowRuns(headSha: string): Promise<GitHubUpdateWorkflowRun[]>;
+  dispatchPagesWorkflow(expectedHeadSha: string): Promise<void>;
   mergePullRequest(
     pullRequestNumber: number,
     version: string,

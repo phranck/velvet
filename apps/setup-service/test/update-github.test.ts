@@ -86,7 +86,7 @@ test("mints the minimum repository-restricted update token", async () => {
   assert.deepEqual(await requests[0]!.json(), {
     repository_ids: [99],
     permissions: {
-      actions: "read",
+      actions: "write",
       checks: "read",
       contents: "write",
       pull_requests: "write",
@@ -199,6 +199,8 @@ test("performs the closed update branch, pull request, check, merge, cleanup, an
         number: 12,
         state: "open",
         html_url: "https://github.com/example/status/pull/12",
+        merged_at: null,
+        merge_commit_sha: null,
         head: { ref: "velvet/update/2.1.0", sha: updateSha },
         base: { ref: "main", sha: baseSha },
       });
@@ -209,6 +211,8 @@ test("performs the closed update branch, pull request, check, merge, cleanup, an
           number: 12,
           state: "open",
           html_url: "https://github.com/example/status/pull/12",
+          merged_at: null,
+          merge_commit_sha: null,
           head: { ref: "velvet/update/2.1.0", sha: updateSha },
           base: { ref: "main", sha: baseSha },
         },
@@ -219,6 +223,8 @@ test("performs the closed update branch, pull request, check, merge, cleanup, an
         number: 12,
         state: "open",
         html_url: "https://github.com/example/status/pull/12",
+        merged_at: null,
+        merge_commit_sha: null,
         head: { ref: "velvet/update/2.1.0", sha: updateSha },
         base: { ref: "main", sha: baseSha },
       });
@@ -283,6 +289,8 @@ test("performs the closed update branch, pull request, check, merge, cleanup, an
     headSha: updateSha,
     baseRef: "main",
     baseSha,
+    mergedAt: null,
+    mergeCommitSha: null,
   });
   assert.equal((await repository.pullRequests("2.1.0")).length, 1);
   assert.deepEqual(await repository.checkRuns(updateSha), [
@@ -432,4 +440,122 @@ test("does not delete an update branch after its head changed", async () => {
     /branch changed before Velvet could delete/u,
   );
   assert.equal(requests.some((request) => request.method === "DELETE"), false);
+});
+
+test("finds update branches and dispatches one Pages workflow for the expected default head", async () => {
+  const requests: Request[] = [];
+  const client = app(async (request) => {
+    requests.push(request);
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    if (
+      request.method === "GET" &&
+      url.pathname.endsWith("/git/ref/heads/velvet/update/2.1.0")
+    ) {
+      return Response.json({
+        ref: "refs/heads/velvet/update/2.1.0",
+        object: { type: "commit", sha: updateSha },
+      });
+    }
+    if (
+      request.method === "GET" &&
+      url.pathname.endsWith("/actions/workflows/velvet.yml/runs")
+    ) {
+      assert.equal(url.searchParams.get("event"), "workflow_dispatch");
+      assert.equal(url.searchParams.get("head_sha"), mergeSha);
+      return Response.json({
+        total_count: 1,
+        workflow_runs: [
+          {
+            id: 501,
+            event: "workflow_dispatch",
+            head_sha: mergeSha,
+            status: "in_progress",
+            conclusion: null,
+            html_url: "https://github.com/example/status/actions/runs/501",
+          },
+        ],
+      });
+    }
+    if (
+      request.method === "GET" &&
+      url.pathname.endsWith("/git/ref/heads/main")
+    ) {
+      return Response.json({
+        ref: "refs/heads/main",
+        object: { type: "commit", sha: mergeSha },
+      });
+    }
+    if (
+      request.method === "POST" &&
+      url.pathname.endsWith("/actions/workflows/velvet.yml/dispatches")
+    ) {
+      return new Response(null, { status: 204 });
+    }
+    throw new Error(`Unexpected request: ${request.method} ${request.url}`);
+  });
+  const repository = await client.forRepository(7, 99);
+
+  assert.equal(await repository.updateBranchHead("2.1.0"), updateSha);
+  assert.deepEqual(await repository.pagesWorkflowRuns(mergeSha), [
+    {
+      id: 501,
+      status: "in_progress",
+      conclusion: null,
+      htmlUrl: "https://github.com/example/status/actions/runs/501",
+      headSha: mergeSha,
+    },
+  ]);
+  await repository.dispatchPagesWorkflow(mergeSha);
+
+  const dispatch = requests.find(
+    (request) => request.method === "POST" && request.url.endsWith("/dispatches"),
+  );
+  assert.deepEqual(await dispatch!.json(), { ref: "main" });
+});
+
+test("keeps the merge commit needed to reconcile a completed update", async () => {
+  const client = app(async (request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    if (request.method === "GET" && url.pathname.endsWith("/pulls")) {
+      return Response.json([
+        {
+          number: 12,
+          state: "closed",
+          html_url: "https://github.com/example/status/pull/12",
+          merged_at: "2026-07-31T12:00:00Z",
+          merge_commit_sha: mergeSha,
+          head: { ref: "velvet/update/2.1.0", sha: updateSha },
+          base: { ref: "main", sha: baseSha },
+        },
+      ]);
+    }
+    throw new Error(`Unexpected request: ${request.method} ${request.url}`);
+  });
+  const repository = await client.forRepository(7, 99);
+
+  assert.deepEqual(await repository.pullRequests("2.1.0"), [
+    {
+      number: 12,
+      state: "closed",
+      htmlUrl: "https://github.com/example/status/pull/12",
+      headRef: "velvet/update/2.1.0",
+      headSha: updateSha,
+      baseRef: "main",
+      baseSha,
+      mergedAt: "2026-07-31T12:00:00Z",
+      mergeCommitSha: mergeSha,
+    },
+  ]);
 });

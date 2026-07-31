@@ -1,0 +1,65 @@
+import type { VelvetReleaseManifest } from "@velvet/contracts";
+
+import type { GitHubUpdateClient, GitHubUpdatePullRequest } from "./update-github-types.js";
+
+export type ManagedUpdateTrigger = "manual" | "automatic-security";
+
+export interface ManagedUpdateRequest {
+  installationId: number;
+  repositoryId: number;
+  version: string;
+  trigger: ManagedUpdateTrigger;
+}
+
+export interface ManagedUpdateRelease {
+  manifest: VelvetReleaseManifest;
+  sources: Readonly<Record<string, string>>;
+}
+
+export interface ManagedUpdateReleaseProvider {
+  get(version: string): Promise<ManagedUpdateRelease>;
+}
+
+export type ManagedUpdateState =
+  | "waiting_for_checks"
+  | "waiting_for_publication"
+  | "restoring"
+  | "waiting_for_recovery"
+  | "succeeded"
+  | "restored"
+  | "skipped"
+  | "failed";
+
+export type ManagedUpdateReason =
+  | "automatic_security_disabled"
+  | "release_not_automatic"
+  | "already_installed"
+  | "newer_version_installed"
+  | "incompatible_release"
+  | "migration_required"
+  | "checks_failed"
+  | "merge_rejected"
+  | "update_closed"
+  | "repository_changed"
+  | "recovery_failed";
+
+export interface ManagedUpdateResult {
+  operationId: string;
+  version: string;
+  trigger: ManagedUpdateTrigger;
+  state: ManagedUpdateState;
+  reason?: ManagedUpdateReason;
+  pullRequest?: Pick<GitHubUpdatePullRequest, "number" | "htmlUrl">;
+}
+
+export interface ManagedUpdateOrchestratorOptions {
+  github: GitHubUpdateClient;
+  releases: ManagedUpdateReleaseProvider;
+  requiredCheckNames: readonly string[];
+  maxReadAttempts?: number;
+  sleep?: (milliseconds: number) => Promise<void>;
+}
+
+export interface ManagedUpdateOrchestrator {
+  reconcile(request: ManagedUpdateRequest): Promise<ManagedUpdateResult>;
+}

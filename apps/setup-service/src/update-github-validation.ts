@@ -5,6 +5,7 @@ import type {
   GitHubUpdateCheckRun,
   GitHubUpdatePullRequest,
   GitHubUpdateRepository,
+  GitHubUpdateWorkflowRun,
 } from "./update-github-types.js";
 
 export const MAX_MANAGED_FILE_BYTES = 524_288;
@@ -76,6 +77,14 @@ export function parseShaObject(value: unknown, message: string): string {
 }
 
 export function parsePullRequest(value: unknown): GitHubUpdatePullRequest {
+  const mergedAt = isRecord(value) ? value.merged_at : undefined;
+  const mergeCommitSha = isRecord(value) ? value.merge_commit_sha : undefined;
+  const validMerge =
+    (mergedAt === null && mergeCommitSha === null) ||
+    (typeof mergedAt === "string" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u.test(mergedAt) &&
+      typeof mergeCommitSha === "string" &&
+      COMMIT_SHA.test(mergeCommitSha));
   if (
     !isRecord(value) ||
     !positiveInteger(value.number) ||
@@ -89,7 +98,9 @@ export function parsePullRequest(value: unknown): GitHubUpdatePullRequest {
     !isRecord(value.base) ||
     typeof value.base.ref !== "string" ||
     typeof value.base.sha !== "string" ||
-    !COMMIT_SHA.test(value.base.sha)
+    !COMMIT_SHA.test(value.base.sha) ||
+    !validMerge ||
+    (value.state === "open" && mergedAt !== null)
   ) {
     throw new Error("GitHub pull request response was invalid.");
   }
@@ -101,6 +112,8 @@ export function parsePullRequest(value: unknown): GitHubUpdatePullRequest {
     headSha: value.head.sha,
     baseRef: value.base.ref,
     baseSha: value.base.sha,
+    mergedAt: mergedAt as string | null,
+    mergeCommitSha: mergeCommitSha as string | null,
   };
 }
 
@@ -125,6 +138,31 @@ export function parseCheckRun(
   return {
     id: value.id,
     name: value.name,
+    status: value.status,
+    conclusion: value.conclusion,
+    htmlUrl: value.html_url,
+    headSha: expectedHeadSha,
+  };
+}
+
+export function parseWorkflowRun(
+  value: unknown,
+  expectedHeadSha: string,
+): GitHubUpdateWorkflowRun {
+  if (
+    !isRecord(value) ||
+    !positiveInteger(value.id) ||
+    value.event !== "workflow_dispatch" ||
+    !checkStatus(value.status) ||
+    (value.conclusion !== null && typeof value.conclusion !== "string") ||
+    typeof value.html_url !== "string" ||
+    !safeGitHubUrl(value.html_url) ||
+    value.head_sha !== expectedHeadSha
+  ) {
+    throw new Error("GitHub workflow-run response was invalid.");
+  }
+  return {
+    id: value.id,
     status: value.status,
     conclusion: value.conclusion,
     htmlUrl: value.html_url,

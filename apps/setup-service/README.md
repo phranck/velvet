@@ -17,7 +17,11 @@ Managed updates use a separate repository client and token scope inside the
 control plane. That client starts from a repository ID, verifies GitHub's
 returned repository identity, and exposes no operation for a different owner
 or repository. It reads `velvet.yml` and the current managed files only for the
-active operation and does not persist their contents.
+active operation and does not persist their contents. The repository branch,
+technical pull request, checks, version lock, and Pages workflow run remain the
+durable operation state. The orchestrator can therefore resume after a process
+restart without storing user configuration or status data. Only safe reads use
+bounded retries; repository mutations are reconciled before another attempt.
 
 An update replaces the complete closed Velvet-owned file set in one commit on
 `velvet/update/<version>`, opens a technical pull request, reads its checks,
@@ -64,9 +68,9 @@ Set only these repository permissions:
 
 Setup and managed updates mint separate installation tokens. The setup token
 keeps only the original setup permissions. The update token is restricted to
-one repository ID and requests Actions read, Checks read, Contents write, Pull
-requests write, and Workflows write. It has no Administration, Pages, Issues,
-Secrets, organization, or account permission.
+one repository ID and requests Actions read and write, Checks read, Contents
+write, Pull requests write, and Workflows write. It has no Administration,
+Pages, Issues, Secrets, organization, or account permission.
 
 Set **No organization permissions** and **No account permissions**. Do not
 subscribe the app to repository, organization, or account events.
