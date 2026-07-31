@@ -32,6 +32,18 @@ async function bun(arguments_: string[], cwd = siteRoot) {
   });
 }
 
+/**
+ * Creates a throwaway output directory for one build.
+ *
+ * These tests verify what a build produces, not where the repository keeps it.
+ * Building into the versioned artefact directories left a dirty tree after
+ * every test run, with output that differed from what the build scripts
+ * produce, so a contributor could commit a bundle no build step made.
+ */
+async function buildDirectory(): Promise<string> {
+  return mkdtemp(resolve(tmpdir(), "velvet-tool-build-"));
+}
+
 async function fixture(path: string): Promise<string> {
   return readFile(
     resolve(repositoryRoot, "packages/contracts/fixtures/valid", path),
@@ -40,12 +52,14 @@ async function fixture(path: string): Promise<string> {
 }
 
 test("builds the standalone configurator at the repository root", async () => {
-  await bun(["run", "--bun", "vite", "build", "--config", "vite.configurator.ts"]);
+  const outDir = await buildDirectory();
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--config", "vite.configurator.ts",
+    "--outDir", outDir,
+  ]);
 
-  const html = await readFile(
-    resolve(repositoryRoot, "configurator/index.html"),
-    "utf8",
-  );
+  const html = await readFile(resolve(outDir, "index.html"), "utf8");
   assert.match(html, /<title>Velvet Configurator<\/title>/);
   assert.match(html, /Velvet Configurator/);
   assert.match(html, /<script[^>]+src="\.\/assets\/[^"]+\.js"/);
@@ -54,12 +68,14 @@ test("builds the standalone configurator at the repository root", async () => {
 }, BUILD_TIMEOUT_MS);
 
 test("builds the standalone onboarding at the repository root", async () => {
-  await bun(["run", "--bun", "vite", "build", "--config", "vite.onboarding.ts"]);
+  const outDir = await buildDirectory();
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--config", "vite.onboarding.ts",
+    "--outDir", outDir,
+  ]);
 
-  const html = await readFile(
-    resolve(repositoryRoot, "onboarding/index.html"),
-    "utf8",
-  );
+  const html = await readFile(resolve(outDir, "index.html"), "utf8");
   assert.match(html, /<title>Set up Velvet<\/title>/);
   assert.match(html, /Set up Velvet/);
   assert.match(html, /<script[^>]+src="\.\/assets\/[^"]+\.js"/);
@@ -68,9 +84,10 @@ test("builds the standalone onboarding at the repository root", async () => {
 }, BUILD_TIMEOUT_MS);
 
 test("builds status-page assets relative to the deployed Pages path", async () => {
-  await bun(["run", "--bun", "vite", "build"]);
+  const outDir = await buildDirectory();
+  await bun(["run", "--bun", "vite", "build", "--outDir", outDir]);
 
-  const html = await readFile(resolve(siteRoot, "dist/index.html"), "utf8");
+  const html = await readFile(resolve(outDir, "index.html"), "utf8");
   assert.match(html, /src="\.\/assets\//);
   assert.match(html, /href="\.\/assets\//);
   assert.doesNotMatch(html, /(?:src|href)="\/(?:assets\/|favicon\.ico)/);

@@ -14,9 +14,23 @@ export const phosphorWoff2Only: Plugin = {
   },
 };
 
-export function renameHtmlEntry(outDir: string, filename: string): Plugin {
+/**
+ * Renames a tool's HTML entry to `index.html` after the bundle is written.
+ *
+ * The output directory is taken from the resolved Vite config rather than
+ * supplied, so the plugin follows an `--outDir` override instead of writing to
+ * a path the build is no longer using. That is what lets a test build into a
+ * temporary directory without touching the versioned artefacts.
+ *
+ * @param filename - Entry HTML file to rename, as named in `rollupOptions`.
+ */
+export function renameHtmlEntry(filename: string): Plugin {
+  let outDir = "";
   return {
     name: `velvet-${filename.replace(".html", "")}-index-filename`,
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
     async closeBundle() {
       await rename(resolve(outDir, filename), resolve(outDir, "index.html"));
     },
