@@ -17,8 +17,19 @@ const BUILD_TIMEOUT_MS = 120_000;
 const repositoryRoot = resolve(import.meta.dirname, "../..");
 const siteRoot = resolve(repositoryRoot, "site");
 
+/**
+ * Runs a build and captures all of its output.
+ *
+ * The buffer is raised well above Node's one megabyte default because a build
+ * writes one line per chunk when it has no terminal attached, as on CI, and a
+ * full buffer stalls the child process instead of failing it. That presents as
+ * a test which hangs until its timeout rather than one that reports an error.
+ */
 async function bun(arguments_: string[], cwd = siteRoot) {
-  return execFileAsync(process.execPath, arguments_, { cwd });
+  return execFileAsync(process.execPath, arguments_, {
+    cwd,
+    maxBuffer: 64 * 1024 * 1024,
+  });
 }
 
 async function fixture(path: string): Promise<string> {
