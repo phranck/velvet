@@ -89,11 +89,11 @@ release produces the same lock.
 Each release publishes a separate validated manifest with its release type,
 automatic-install eligibility, compatibility boundary, immutable template
 revision, Markdown release notes, and every Velvet-owned file it may change.
-The allowed destination set is closed. Configuration-dependent workflows and
-the maintenance Issue Form must use a registered deterministic generator;
-static files must come from the identical path at the pinned template commit
-and match their SHA-256 digest. Every release also generates the new version
-lock.
+The allowed destination set is closed. Every source must come from the
+identical path at the pinned template commit and match its SHA-256 digest.
+Configuration-dependent workflows and the maintenance Issue Form then use a
+registered deterministic generator; static files remain byte-identical. Every
+release also generates the new version lock.
 
 Automatic eligibility is valid only for a security release without a
 configuration or data migration. The updater must additionally compare the
@@ -119,6 +119,7 @@ GitHub, the monitor, setup infrastructure, or Svelte.
 | Boundary | Input | Output | Allowed dependencies |
 | --- | --- | --- | --- |
 | Contracts and configuration | `velvet.yml` text, unknown configuration values, and public document values | Normalized private monitor configuration, public data types, JSON Schemas, and stable validation errors | TypeBox and the YAML parser only |
+| Managed template materialization | Validated release metadata, normalized configuration, and hash-verified files from one immutable template commit | Complete deterministic Velvet-owned file set and installed-version lock | Contracts, hashing, and YAML parsing only; no GitHub or presentation imports |
 | Direct HTTP execution | One normalized HTTP check plus an injected secret resolver and clock | Redacted observation containing availability, final status, latency, and assertion outcome | Contracts and runtime HTTP primitives; no GitHub or presentation imports |
 | Monitor orchestration and state | Normalized services, observations, previous state, incident policy, and history policy | State transitions and new append-only measurements | Contracts and direct HTTP execution; no Svelte imports |
 | GitHub persistence and incidents | State transitions, measurements, and sanitized incident commands | Repository commits and GitHub Issue operations | Contracts, monitor orchestration, and an injected GitHub client |

@@ -52,6 +52,8 @@ const validManifest = {
       path: ".github/ISSUE_TEMPLATE/maintenance.yml",
       strategy: "generate",
       generator: "maintenance-issue-template-v1",
+      sourcePath: ".github/ISSUE_TEMPLATE/maintenance.yml",
+      sha256: contentHash,
     },
     {
       path: "velvet.lock.json",
@@ -226,6 +228,8 @@ test("rejects mismatched file sources and deterministic generators", () => {
       path: ".github/ISSUE_TEMPLATE/maintenance.yml",
       strategy: "generate",
       generator: "status-workflow-v1",
+      sourcePath: ".github/ISSUE_TEMPLATE/maintenance.yml",
+      sha256: contentHash,
     },
   ]) {
     const result = validateVelvetReleaseManifest({
@@ -240,6 +244,36 @@ test("rejects mismatched file sources and deterministic generators", () => {
       ),
       true,
     );
+  }
+});
+
+test("requires an immutable source and digest for source-based generators", () => {
+  const generated = validManifest.managedFiles[1];
+  assert.equal(generated?.strategy, "generate");
+  if (!generated || generated.strategy !== "generate") return;
+
+  for (const file of [
+    {
+      path: generated.path,
+      strategy: generated.strategy,
+      generator: generated.generator,
+      sha256: generated.sha256,
+    },
+    {
+      path: generated.path,
+      strategy: generated.strategy,
+      generator: generated.generator,
+      sourcePath: generated.sourcePath,
+    },
+  ]) {
+    const result = validateVelvetReleaseManifest({
+      ...validManifest,
+      managedFiles: [file, validManifest.managedFiles[2]],
+    });
+    assert.equal(result.success, false);
+    if (result.success) continue;
+    assert.equal(result.errors[0]?.code, "INVALID_RELEASE_MANIFEST");
+    assert.equal(result.errors[0]?.path.startsWith("/managedFiles/0"), true);
   }
 });
 

@@ -47,6 +47,7 @@ test("package boundary documentation defines input, output, and dependencies", (
   const readme = readFileSync(new URL("README.md", packageRoot), "utf8");
   for (const heading of [
     "Contracts and configuration",
+    "Managed template materialization",
     "Direct HTTP execution",
     "Monitor orchestration and state",
     "GitHub persistence and incidents",
