@@ -7,6 +7,7 @@ import {
 import {
   createGitHubRequest,
   createRepositoryInstallationToken,
+  GitHubApiError,
   type GitHubAppApiOptions,
 } from "./github-api.js";
 import type {
@@ -29,6 +30,7 @@ import {
   parseReference,
   parseRepository,
   parseShaObject,
+  parseWorkflowRun,
   positiveInteger,
   validateManagedFiles,
 } from "./update-github-validation.js";
@@ -41,10 +43,12 @@ export type {
   GitHubUpdateMerge,
   GitHubUpdatePullRequest,
   GitHubUpdateRepository,
+  GitHubUpdateWorkflowRun,
 } from "./update-github-types.js";
 
 const UPDATE_USER_AGENT = "velvet-update-service";
 const MAX_CHECK_RUN_PAGES = 10;
+const PAGES_WORKFLOW_FILE = "velvet.yml";
 const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
 
 export function updateBranchName(version: string): string {
@@ -73,7 +77,7 @@ export function createGitHubUpdateClient(
         installationId,
         repositoryId,
         {
-          actions: "read",
+          actions: "write",
           checks: "read",
           contents: "write",
           pull_requests: "write",
@@ -262,6 +266,15 @@ function repositoryClient(
       return files;
     },
 
+    async updateBranchHead(version) {
+      try {
+        return await reference(updateBranchName(version));
+      } catch (error) {
+        if (error instanceof GitHubApiError && error.status === 404) return null;
+        throw error;
+      }
+    },
+
     async createUpdateBranch(version, baseSha) {
       const branch = updateBranchName(version);
       assertCommitSha(baseSha);
@@ -365,6 +378,44 @@ function repositoryClient(
         }
       }
       throw new Error("GitHub returned too many check runs for one update.");
+    },
+
+    async pagesWorkflowRuns(headSha) {
+      assertCommitSha(headSha);
+      const query = new URLSearchParams({
+        event: "workflow_dispatch",
+        head_sha: headSha,
+        per_page: "100",
+      });
+      const body = await githubRequest<unknown>(
+        `${root}/actions/workflows/velvet.yml/runs?${query.toString()}`,
+        token,
+      );
+      if (
+        !isRecord(body) ||
+        !nonNegativeInteger(body.total_count) ||
+        !Array.isArray(body.workflow_runs) ||
+        body.total_count !== body.workflow_runs.length
+      ) {
+        throw new Error("GitHub workflow-runs response was invalid.");
+      }
+      return body.workflow_runs.map((entry) => parseWorkflowRun(entry, headSha));
+    },
+
+    async dispatchPagesWorkflow(expectedHeadSha) {
+      assertCommitSha(expectedHeadSha);
+      const currentHead = await reference(repository.defaultBranch);
+      if (currentHead !== expectedHeadSha) {
+        throw new Error("The default branch changed before Velvet could publish the update.");
+      }
+      await githubRequest<void>(
+        `${root}/actions/workflows/${encodeURIComponent(PAGES_WORKFLOW_FILE)}/dispatches`,
+        token,
+        {
+          method: "POST",
+          body: JSON.stringify({ ref: repository.defaultBranch }),
+        },
+      );
     },
 
     async mergePullRequest(pullRequestNumber, version, expectedHeadSha) {
