@@ -13,6 +13,21 @@ workflow and Pages deployment are complete.
 Generated status pages do not call this service after setup. They keep running
 when the service is unavailable or when the GitHub App is later uninstalled.
 
+Managed updates use a separate repository client and token scope inside the
+control plane. That client starts from a repository ID, verifies GitHub's
+returned repository identity, and exposes no operation for a different owner
+or repository. It reads `velvet.yml` and the current managed files only for the
+active operation and does not persist their contents.
+
+An update replaces the complete closed Velvet-owned file set in one commit on
+`velvet/update/<version>`, opens a technical pull request, reads its checks,
+merges only the expected head commit, and deletes only that deterministic
+branch while it still points to the expected commit. Repository tree updates
+use the current tree as their base, so every file outside the closed set stays
+untouched. Recovery writes the captured previous managed files as a normal new
+commit on the default branch with `force: false`; it never rewrites repository
+history.
+
 ## GitHub App registration
 
 Register a GitHub App owned by the Velvet maintainer with these settings:
@@ -41,8 +56,17 @@ Set only these repository permissions:
 - Administration: Read and write
 - Contents: Read and write
 - Actions: Read and write
+- Checks: Read-only
 - Pages: Read and write
+- Pull requests: Read and write
+- Workflows: Read and write
 - Metadata: Read-only, added automatically by GitHub
+
+Setup and managed updates mint separate installation tokens. The setup token
+keeps only the original setup permissions. The update token is restricted to
+one repository ID and requests Actions read, Checks read, Contents write, Pull
+requests write, and Workflows write. It has no Administration, Pages, Issues,
+Secrets, organization, or account permission.
 
 Set **No organization permissions** and **No account permissions**. Do not
 subscribe the app to repository, organization, or account events.
