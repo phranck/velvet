@@ -7,6 +7,13 @@ import { promisify } from "node:util";
 import { test } from "bun:test";
 
 const execFileAsync = promisify(execFile);
+/**
+ * A production Vite build legitimately takes several seconds, and longer on a
+ * shared runner. Bun's default of five seconds left no margin at all: the same
+ * build measured 4.26s locally, so any slower machine failed the test for
+ * being slow rather than for being wrong.
+ */
+const BUILD_TIMEOUT_MS = 120_000;
 const repositoryRoot = resolve(import.meta.dirname, "../..");
 const siteRoot = resolve(repositoryRoot, "site");
 
@@ -33,7 +40,7 @@ test("builds the standalone configurator at the repository root", async () => {
   assert.match(html, /<script[^>]+src="\.\/assets\/[^"]+\.js"/);
   assert.match(html, /<link[^>]+href="\.\/assets\/[^"]+\.css"/);
   assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
-});
+}, BUILD_TIMEOUT_MS);
 
 test("builds the standalone onboarding at the repository root", async () => {
   await bun(["run", "--bun", "vite", "build", "--config", "vite.onboarding.ts"]);
@@ -47,7 +54,7 @@ test("builds the standalone onboarding at the repository root", async () => {
   assert.match(html, /<script[^>]+src="\.\/assets\/[^"]+\.js"/);
   assert.match(html, /<link[^>]+href="\.\/assets\/[^"]+\.css"/);
   assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
-});
+}, BUILD_TIMEOUT_MS);
 
 test("builds status-page assets relative to the deployed Pages path", async () => {
   await bun(["run", "--bun", "vite", "build"]);
@@ -56,7 +63,7 @@ test("builds status-page assets relative to the deployed Pages path", async () =
   assert.match(html, /src="\.\/assets\//);
   assert.match(html, /href="\.\/assets\//);
   assert.doesNotMatch(html, /(?:src|href)="\/(?:assets\/|favicon\.ico)/);
-});
+}, BUILD_TIMEOUT_MS);
 
 test("pins the deterministic screenshot browser to UTC", async () => {
   const screenshot = await readFile(
