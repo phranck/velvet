@@ -2,8 +2,7 @@
   import { configurationIdentifierFromName } from "@velvet/contracts";
   import { onMount } from "svelte";
   import StatusPage from "../components/StatusPage.svelte";
-  import RainbowScale from "../components/RainbowScale.svelte";
-  import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
   import * as ServiceEditor from "../components/service-editor";
   import ServiceIconPicker from "../components/service-icon-picker/ServiceIconPicker.svelte";
   import * as ThemeCard from "../components/theme-card";
@@ -650,12 +649,8 @@
         <i class="ph-duotone ph-caret-circle-double-left" aria-hidden="true"></i>
       </button>
       <div class="local-label"><span></span>Local only</div>
-      <h1>
-        <VelvetWordmark />
-        <span class="tool-subtitle">configurator</span>
-      </h1>
-      <div class="live-swatches" aria-hidden="true">
-        <RainbowScale />
+      <div class="configurator-brand">
+        <VelvetToolBrand subtitle="CONFIGURATOR" />
       </div>
       </header>
 
@@ -779,22 +774,24 @@
           </p>
           <ServiceEditor.List onAdd={addService}>
             {#each services as service, serviceIndex (service.id)}
-              <div class="configurator-service">
-                <ServiceEditor.Root
-                  {service}
-                  index={serviceIndex}
-                  errors={serviceErrors}
-                  canRemove={services.length > 1}
-                  onRemove={() => removeService(serviceIndex)}
-                />
-                {#if service.additionalChecks.length > 0}
-                  <p class="preserved-checks">
-                    {service.additionalChecks.length}
-                    {service.additionalChecks.length === 1 ? "additional check is" : "additional checks are"}
-                    kept unchanged when saving.
-                  </p>
-                {/if}
-              </div>
+              <ServiceEditor.Item id={service.id}>
+                <div class="configurator-service">
+                  <ServiceEditor.Root
+                    {service}
+                    index={serviceIndex}
+                    errors={serviceErrors}
+                    canRemove={services.length > 1}
+                    onRemove={() => removeService(serviceIndex)}
+                  />
+                  {#if service.additionalChecks.length > 0}
+                    <p class="preserved-checks">
+                      {service.additionalChecks.length}
+                      {service.additionalChecks.length === 1 ? "additional check is" : "additional checks are"}
+                      kept unchanged when saving.
+                    </p>
+                  {/if}
+                </div>
+              </ServiceEditor.Item>
             {/each}
           </ServiceEditor.List>
         {:else}
@@ -1111,6 +1108,7 @@
     --tool-accent: #8ca5ff;
     --tool-error: #ff7e8c;
     --picker-accent: var(--tool-accent);
+    --picker-selection-scale: 1.14;
     --picker-line: var(--tool-line);
     --picker-muted: var(--tool-muted);
     --picker-popover: var(--tool-panel-raised);
@@ -1243,35 +1241,17 @@
     background: #75d8b2;
     box-shadow: 0 0 0 4px rgba(117, 216, 178, 0.1);
   }
-  h1 {
-    --velvet-wordmark-size: 34px;
-
+  .configurator-brand {
     width: max-content;
     display: grid;
-    justify-items: center;
-    gap: 5px;
     margin: 0 auto;
-    color: var(--tool-accent);
-  }
-  .tool-subtitle {
-    width: 96%;
-    color: var(--tool-text);
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    line-height: 1;
-    text-align: justify;
-    text-align-last: justify;
-    text-justify: inter-character;
-    text-transform: uppercase;
-  }
-  .live-swatches {
-    width: min(100%, 270px);
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    gap: 3px;
-    height: 5px;
-    margin: 20px auto 0;
+    --tool-brand-width: max-content;
+    --tool-brand-wordmark-size: 34px;
+    --tool-brand-accent: var(--tool-accent);
+    --tool-brand-text: var(--tool-text);
+    --tool-brand-subtitle-size: 14px;
+    --tool-brand-scale-gap: 8px;
+    --tool-brand-subtitle-gap: 8px;
   }
   .file-actions {
     display: grid;

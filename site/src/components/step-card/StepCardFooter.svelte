@@ -15,7 +15,8 @@
     align-items: center;
     justify-content: flex-end;
     gap: 1rem;
-    padding: 0.55rem clamp(1.25rem, 4vw, 2.4rem);
+    padding: 0 var(--step-card-content-inset, 20px)
+      var(--step-card-content-inset, 20px);
     box-sizing: border-box;
   }
 </style>

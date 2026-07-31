@@ -100,6 +100,7 @@
     color: var(--setup-muted);
     cursor: pointer;
     font: inherit;
+    font-family: var(--setup-heading-font);
     font-size: var(--setup-text-body);
     font-weight: 650;
     transition:
