@@ -386,6 +386,9 @@ function orchestrator(
   return createManagedUpdateOrchestrator({
     github,
     releases: {
+      latest() {
+        return selectedRelease.manifest.version;
+      },
       async get(version) {
         assert.equal(version, selectedRelease.manifest.version);
         return selectedRelease;

@@ -29,3 +29,9 @@
 - [ ] Update the template from its immutable pilot revision to `@v1`, rerun its
   focused pipeline and fresh-install walkthrough, and integrate that change
   through its own pull request.
+- [ ] After the template is final, write the release notes to
+  `apps/setup-service/scripts/release-notes.md` and regenerate the embedded
+  release source with `bun run scripts/build-release.ts --version <semver>
+  --type <security|fix|feature> --notes scripts/release-notes.md`. Commit the
+  regenerated `src/velvet-release.generated.ts` so installations are updated
+  from the reviewed template revision.
