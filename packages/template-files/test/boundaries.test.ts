@@ -13,9 +13,8 @@ test("template generation stays independent from GitHub and presentation code", 
     "@velvet/contracts",
     "js-yaml",
   ]);
-  const source = readFileSync(
-    new URL("src/materialize.ts", packageRoot),
-    "utf8",
-  );
-  assert.doesNotMatch(source, /@octokit|svelte|api\.github\.com/u);
+  for (const path of ["src/materialize.ts", "src/publication.ts"]) {
+    const source = readFileSync(new URL(path, packageRoot), "utf8");
+    assert.doesNotMatch(source, /@octokit|svelte|api\.github\.com/u);
+  }
 });

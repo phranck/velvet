@@ -95,6 +95,12 @@ Configuration-dependent workflows and the maintenance Issue Form then use a
 registered deterministic generator; static files remain byte-identical. Every
 release also generates the new version lock.
 
+The publication boundary additionally requires a complete snapshot of the
+closed managed-file set. It compares the candidate with the previous published
+manifest so versions only move forward, the previous release remains eligible
+to update, schema migrations are declared exactly when schema versions change,
+and semantic version changes match the release classification.
+
 Automatic eligibility is valid only for a security release without a
 configuration or data migration. The updater must additionally compare the
 manifest's schema versions and minimum version with the installed lock before

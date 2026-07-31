@@ -14,6 +14,7 @@ export type {
   VelvetVersionLock,
 } from "./schemas.js";
 export {
+  compareVelvetSemanticVersions,
   MANAGED_TEMPLATE_PATHS,
   VELVET_TEMPLATE_REPOSITORY,
   parseVelvetReleaseManifest,

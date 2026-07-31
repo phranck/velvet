@@ -148,7 +148,10 @@ function comparePrerelease(
   return 0;
 }
 
-function compareSemanticVersions(left: string, right: string): number {
+export function compareVelvetSemanticVersions(
+  left: string,
+  right: string,
+): number {
   const leftVersion = parseSemanticVersion(left);
   const rightVersion = parseSemanticVersion(right);
   for (let index = 0; index < 3; index += 1) {
@@ -310,7 +313,7 @@ export function validateVelvetReleaseManifest(
   }
 
   if (
-    compareSemanticVersions(
+    compareVelvetSemanticVersions(
       manifest.version,
       manifest.compatibility.minimumInstalledVersion,
     ) < 0
