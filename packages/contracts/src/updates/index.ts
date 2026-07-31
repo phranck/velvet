@@ -24,6 +24,14 @@ export {
   validateVelvetVersionLock,
 } from "./validation.js";
 export type { ManagedTemplatePath } from "./validation.js";
+export {
+  MANAGED_UPDATE_REASONS,
+  MANAGED_UPDATE_STATES,
+} from "./operations.js";
+export type {
+  ManagedUpdateReason,
+  ManagedUpdateState,
+} from "./operations.js";
 export type {
   ReleaseManifestValidationResult,
   UpdateValidationError,
