@@ -1,0 +1,29 @@
+export {
+  RELEASE_MANIFEST_SCHEMA_VERSION,
+  SEMANTIC_VERSION_PATTERN,
+  TEMPLATE_GENERATORS,
+  UPDATE_LOCK_SCHEMA_VERSION,
+  VelvetReleaseManifestSchema,
+  VelvetVersionLockSchema,
+} from "./schemas.js";
+export type {
+  VelvetManagedFile,
+  VelvetReleaseManifest,
+  VelvetTemplateGenerator,
+  VelvetVersionLock,
+} from "./schemas.js";
+export {
+  MANAGED_TEMPLATE_PATHS,
+  VELVET_TEMPLATE_REPOSITORY,
+  parseVelvetReleaseManifest,
+  parseVelvetVersionLock,
+  validateVelvetReleaseManifest,
+  validateVelvetVersionLock,
+} from "./validation.js";
+export type {
+  ReleaseManifestValidationResult,
+  UpdateValidationError,
+  UpdateValidationErrorCode,
+  UpdateValidationResult,
+  VersionLockValidationResult,
+} from "./types.js";

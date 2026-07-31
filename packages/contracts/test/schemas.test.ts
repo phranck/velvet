@@ -6,9 +6,13 @@ import {
   CONFIGURATION_SCHEMA_VERSION,
   CONTRACT_SCHEMA_VERSION,
   IncidentsDocumentSchema,
+  RELEASE_MANIFEST_SCHEMA_VERSION,
   ResponseTimesDocumentSchema,
   StatusDocumentSchema,
+  UPDATE_LOCK_SCHEMA_VERSION,
   VelvetConfigurationSchema,
+  VelvetReleaseManifestSchema,
+  VelvetVersionLockSchema,
 } from "../src/index.js";
 
 test("all public documents require the same explicit schema version", () => {
@@ -74,4 +78,24 @@ test("published configuration schema matches the TypeScript schema source", () =
     publishedSchema,
     JSON.parse(JSON.stringify(VelvetConfigurationSchema)),
   );
+});
+
+test("published update schemas match their TypeScript schema sources", () => {
+  assert.equal(UPDATE_LOCK_SCHEMA_VERSION, 1);
+  assert.equal(RELEASE_MANIFEST_SCHEMA_VERSION, 1);
+
+  for (const [fileName, schema] of Object.entries({
+    "lock.schema.json": VelvetVersionLockSchema,
+    "release-manifest.schema.json": VelvetReleaseManifestSchema,
+  })) {
+    const schemaUrl = new URL(
+      `../schemas/velvet-update/v1/${fileName}`,
+      import.meta.url,
+    );
+    assert.equal(existsSync(schemaUrl), true, `${fileName} must exist`);
+    assert.deepEqual(
+      JSON.parse(readFileSync(schemaUrl, "utf8")),
+      JSON.parse(JSON.stringify(schema)),
+    );
+  }
 });

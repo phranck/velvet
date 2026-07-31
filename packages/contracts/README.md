@@ -79,6 +79,37 @@ current lmaa.space services under
 under [`fixtures/invalid/configuration`](fixtures/invalid/configuration) pin the
 stable error code and JSON Pointer for every rejected class.
 
+## Managed update contracts
+
+`velvet.lock.json` records the installed semantic version, official template
+repository and immutable 40-character commit, plus the configuration and data
+schema versions. It contains no timestamps or user data, so the same installed
+release produces the same lock.
+
+Each release publishes a separate validated manifest with its release type,
+automatic-install eligibility, compatibility boundary, immutable template
+revision, Markdown release notes, and every Velvet-owned file it may change.
+The allowed destination set is closed. Configuration-dependent workflows and
+the maintenance Issue Form must use a registered deterministic generator;
+static files must come from the identical path at the pinned template commit
+and match their SHA-256 digest. Every release also generates the new version
+lock.
+
+Automatic eligibility is valid only for a security release without a
+configuration or data migration. The updater must additionally compare the
+manifest's schema versions and minimum version with the installed lock before
+opening an update pull request.
+
+```ts
+import {
+  parseVelvetReleaseManifest,
+  parseVelvetVersionLock,
+} from "@velvet/contracts";
+
+const lock = parseVelvetVersionLock(lockSource);
+const release = parseVelvetReleaseManifest(manifestSource);
+```
+
 ## Package boundaries
 
 Each runtime layer consumes the narrowest stable output below. Dependencies
@@ -116,12 +147,14 @@ the repository [licensing and provenance policy](../../LICENSING.md).
 
 [`src/schemas.ts`](src/schemas.ts) is the single editable public-data schema
 source. [`src/configuration/schemas.ts`](src/configuration/schemas.ts) owns the
-private `velvet.yml` schema. Exported TypeScript input types are derived from
-these TypeBox schemas, and the validated configuration API returns the explicit
-`NormalizedVelvetConfiguration` type.
+private `velvet.yml` schema. [`src/updates/schemas.ts`](src/updates/schemas.ts)
+owns the installed-version lock and release-manifest schemas. Exported
+TypeScript input types are derived from these TypeBox schemas, and the validated
+configuration API returns the explicit `NormalizedVelvetConfiguration` type.
 
-The standalone files under `schemas/velvet-data/v1` and
-`schemas/velvet-config/v1` are generated from the same sources:
+The standalone files under `schemas/velvet-data/v1`,
+`schemas/velvet-config/v1`, and `schemas/velvet-update/v1` are generated from
+the same sources:
 
 ```bash
 bun run --filter @velvet/contracts schemas
@@ -174,6 +207,11 @@ Configuration validation has its own stable codes:
 - `UNSUPPORTED_CONFIGURATION_METHOD`
 - `UNSUPPORTED_CONFIGURATION_STATUS_CODE`
 - `UNSUPPORTED_CONFIGURATION_VERSION`
+
+Managed-update validation has stable codes for malformed or unsupported locks
+and manifests, untrusted template sources, unsafe automatic eligibility,
+incompatible versions, duplicate or unknown file targets, mismatched static
+sources and generators, and a missing generated version lock.
 
 Codes and paths are suitable for programmatic handling. Messages are human-readable context and may be clarified without a schema-version change.
 
