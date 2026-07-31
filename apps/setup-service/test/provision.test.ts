@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 
-import { validateSetupRequest, type SetupEvent } from "@velvet/contracts";
+import {
+  parseVelvetVersionLock,
+  validateSetupRequest,
+  type SetupEvent,
+} from "@velvet/contracts";
 
 import { GitHubApiError, type GitHubSetupClient } from "../src/github.js";
 import { provisionVelvet } from "../src/provision.js";
@@ -88,6 +92,9 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
       calls.push("write-configuration");
       assert.match(source, /^schemaVersion: 1\n/);
     },
+    async writeVersionLock() {
+      calls.push("write-version-lock");
+    },
     async enablePages() {
       calls.push("enable-pages");
       return { htmlUrl: "https://example.github.io/status/", status: "building" };
@@ -149,6 +156,7 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
     "create-installation-token",
     "get-configuration",
     "write-configuration",
+    "write-version-lock",
     "enable-pages",
     "dispatch-workflow",
     "workflow-jobs",
@@ -418,4 +426,76 @@ test("does not recreate Pages when GitHub confirms it is already enabled", async
 
   assert.equal(result.type, "success");
   assert.equal(calls.filter((call) => call === "pages").length, 2);
+});
+
+test("writes a version lock recording the release the installation starts on", async () => {
+  const session = authenticatedSession();
+  const sources: string[] = [];
+  const { client, calls } = successfulGitHub({
+    async writeVersionLock(_token, _owner, _repository, source) {
+      calls.push("write-version-lock");
+      sources.push(source);
+    },
+  });
+
+  const result = await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(result.type, "success");
+  assert.equal(sources.length, 1);
+  const parsed = parseVelvetVersionLock(sources[0]!);
+  assert.equal(parsed.success, true);
+  if (!parsed.success) return;
+  assert.equal(parsed.data.template.repository, "phranck/velvet-template");
+  assert.match(parsed.data.template.commit, /^[a-f0-9]{40}$/u);
+  assert.equal(parsed.data.schemaVersion, 1);
+  assert.equal(
+    calls.indexOf("write-version-lock") > calls.indexOf("write-configuration"),
+    true,
+    "the lock is written after the configuration it describes",
+  );
+  assert.equal(
+    calls.indexOf("write-version-lock") < calls.indexOf("dispatch-workflow"),
+    true,
+    "the lock exists before the first monitoring run",
+  );
+});
+
+test("does not rewrite the version lock when a partial setup is retried", async () => {
+  const session = authenticatedSession();
+  const { client, calls } = successfulGitHub({
+    async dispatchWorkflow() {
+      calls.push("dispatch-workflow");
+      throw new GitHubApiError(new Response(null, { status: 500 }));
+    },
+  });
+
+  await assert.rejects(() =>
+    provisionVelvet({
+      session,
+      request: normalizedRequest,
+      github: client,
+      onEvent: () => {},
+      sleep: async () => {},
+    }),
+  );
+  const retry = successfulGitHub();
+  await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: retry.client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(calls.filter((call) => call === "write-version-lock").length, 1);
+  assert.equal(
+    retry.calls.filter((call) => call === "write-version-lock").length,
+    0,
+  );
 });
