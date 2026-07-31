@@ -107,9 +107,13 @@
     display: grid;
     place-items: center;
     padding: clamp(1rem, 5vw, 3rem);
-    background: rgb(0 0 0 / 0.55);
+    background: rgb(0 0 0 / 0.5);
     backdrop-filter: blur(6px);
     animation: overlay-fade var(--overlay-motion) ease-in-out;
+  }
+
+  .dialog:focus {
+    outline: none;
   }
 
   .dialog {
@@ -120,9 +124,9 @@
        header and footer fixed whilst only the body scrolls. */
     max-height: min(44rem, 100%);
     overflow: clip;
-    border-radius: 0.875rem;
-    background: var(--setup-panel, #1c1c1b);
-    box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 0.45);
+    border-radius: 12px;
+    background: var(--tool-panel);
+    box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 0.3);
     animation: overlay-rise var(--overlay-motion) ease-in-out;
   }
 

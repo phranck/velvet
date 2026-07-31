@@ -54,13 +54,13 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /ph-folder-open/);
   assert.match(html, /ph-copy/);
   assert.match(html, /ph-download-simple/);
-  assert.equal(html.match(/data-configurator-section/g)?.length, 8);
-  assert.equal(html.match(/<details[^>]+open/g)?.length, 10);
+  assert.equal(html.match(/data-configurator-section/g)?.length, 9);
+  assert.equal(html.match(/<details[^>]+open/g)?.length, 11);
   assert.equal(html.match(/data-slider-tick/g)?.length, 9);
   assert.match(html, /data-toggle-all-sections/);
   assert.match(html, /Collapse all sections/);
   assert.match(html, /ph-caret-circle-double-down/);
-  assert.equal(html.match(/ph-caret-circle-down/g)?.length, 12);
+  assert.equal(html.match(/ph-caret-circle-down/g)?.length, 13);
   assert.match(html, /data-sidebar-collapse-toggle/);
   assert.match(html, /ph-caret-circle-double-left/);
   assert.match(html, /aria-controls="velvet-configurator-sidebar-content"/);

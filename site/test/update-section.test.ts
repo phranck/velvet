@@ -41,7 +41,8 @@ test("offers the update with both entry points when one is available", async () 
   const html = elements(await renderer.render(COMPONENT, props()));
 
   assert.match(html, /Installed 2\.0\.0/);
-  assert.match(html, /2\.1\.0 available/);
+  assert.match(html, /2\.1\.0/);
+  assert.match(html, /Feature/);
   assert.match(html, /Release notes/);
   assert.match(html, /Install update/);
 });
@@ -91,6 +92,71 @@ test("prevents a second install whilst one is still running", async () => {
   assert.match(html, /disabled/);
 });
 
+test("still offers a manual install for a normal release, automatic or not", async () => {
+  // The preference only ever covers eligible security releases, so a feature
+  // or a fix always needs the reader to act, whatever the setting says.
+  for (const automaticSecurityUpdates of [true, false]) {
+    const html = elements(
+      await renderer.render(COMPONENT, props({ automaticSecurityUpdates })),
+    );
+    assert.match(html, /Install update/, `automatic=${automaticSecurityUpdates}`);
+    assert.equal(
+      html.includes("installs this one for you"),
+      false,
+      `automatic=${automaticSecurityUpdates}`,
+    );
+  }
+});
+
+test("labels the release type, because the automatic setting depends on it", async () => {
+  const feature = elements(await renderer.render(COMPONENT, props()));
+  assert.match(feature, /Feature/);
+  assert.equal(feature.includes("Security update"), false);
+  assert.equal(feature.includes("installs this one for you"), false);
+
+  const security = elements(
+    await renderer.render(
+      COMPONENT,
+      props({
+        release: {
+          availableVersion: "2.0.1",
+          releaseType: "security",
+          automaticInstallEligible: true,
+          releaseNotes: "# Velvet 2.0.1\n",
+        },
+      }),
+    ),
+  );
+  assert.match(security, /Security update/);
+  assert.match(security, /data-tone="security"/);
+  assert.match(security, /installs this one for you/);
+  // Offering a manual install for something that installs itself asks the
+  // reader to trigger what is already happening.
+  assert.equal(security.includes("Install update"), false);
+});
+
+test("does not promise an unattended install the preference has turned off", async () => {
+  const html = elements(
+    await renderer.render(
+      COMPONENT,
+      props({
+        automaticSecurityUpdates: false,
+        release: {
+          availableVersion: "2.0.1",
+          releaseType: "security",
+          automaticInstallEligible: true,
+          releaseNotes: "# Velvet 2.0.1\n",
+        },
+      }),
+    ),
+  );
+
+  assert.match(html, /Security update/);
+  assert.equal(html.includes("installs this one for you"), false);
+  // With the preference off, the reader has to act, so the action is offered.
+  assert.match(html, /Install update/);
+});
+
 test("reflects the automatic-security preference and explains its limits", async () => {
   const enabled = elements(await renderer.render(COMPONENT, props()));
   assert.match(enabled, /<input[^>]+type="checkbox"[^>]*checked/);
@@ -102,13 +168,15 @@ test("reflects the automatic-security preference and explains its limits", async
   assert.doesNotMatch(disabled, /<input[^>]+type="checkbox"[^>]*checked/);
 });
 
-test("labels the section for assistive technology", async () => {
+test("leaves the heading to its container and hides decorative icons", async () => {
   const html = elements(await renderer.render(COMPONENT, props()));
 
-  assert.match(html, /aria-labelledby="velvet-update-heading"/);
-  assert.match(html, /id="velvet-update-heading"/);
-  // No live region while there is nothing to announce, so assistive technology
-  // is not handed an empty status container to read.
+  // The Configurator section around this already provides the title and icon,
+  // so a second heading here would duplicate it in the document outline.
+  assert.equal(/<h[1-6]/u.test(html), false);
+  for (const icon of html.match(/<i class="ph-duotone[^>]*>/gu) ?? []) {
+    assert.match(icon, /aria-hidden="true"/, icon);
+  }
   assert.equal(html.includes('role="status"'), false);
 
   const announced = elements(
