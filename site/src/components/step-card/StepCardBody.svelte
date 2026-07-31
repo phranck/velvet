@@ -25,7 +25,7 @@
 <style>
   .body {
     min-height: 27rem;
-    padding: clamp(1.25rem, 4vw, 2.4rem);
+    padding: var(--step-card-content-inset, 20px);
     box-sizing: border-box;
   }
   .body[hidden] {

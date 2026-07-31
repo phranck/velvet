@@ -14,8 +14,8 @@
   } = $props();
 </script>
 
-<fieldset class:compact data-theme-card-group>
-  <legend>{legend}</legend>
+<fieldset class:compact data-theme-card-group aria-label={legend}>
+  <h3>{legend}</h3>
   {#if description}<p>{description}</p>{/if}
   <div class="options">
     {@render children()}
@@ -29,11 +29,12 @@
     padding: 0;
     border: 0;
   }
-  legend {
+  h3 {
     padding: 0;
-    margin-inline: var(--theme-card-text-inset, 0);
+    margin: 0 var(--theme-card-text-inset, 0);
     color: var(--picker-text, currentColor);
-    font-size: var(--theme-card-font-size, 1rem);
+    font-family: var(--theme-card-heading-font, inherit);
+    font-size: var(--theme-card-heading-font-size, 1.25rem);
     font-weight: 700;
   }
   p {
@@ -44,8 +45,11 @@
   }
   .options {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: var(
+      --theme-card-columns,
+      repeat(2, minmax(0, 1fr))
+    );
+    gap: var(--theme-card-gap, 0.8rem);
   }
   .compact .options {
     gap: 0.55rem;

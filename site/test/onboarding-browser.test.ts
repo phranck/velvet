@@ -134,6 +134,17 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       true,
     );
+    assert.deepEqual(
+      await page.locator(".intro > p").evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          fontSize: style.fontSize,
+          marginTop: style.marginTop,
+          sectionMarginBottom: getComputedStyle(element.parentElement!).marginBottom,
+        };
+      }),
+      { fontSize: "32px", marginTop: "56px", sectionMarginBottom: "72px" },
+    );
     assert.match(
       await page.locator(".onboarding-shell").evaluate((element) =>
         getComputedStyle(element).fontFamily,
@@ -148,6 +159,22 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     );
     const stepCard = page.locator("[data-step-card]");
     assert.equal(await stepCard.count(), 1);
+    assert.equal(await page.locator("[data-squircle-surface]").count(), 0);
+    assert.deepEqual(
+      await stepCard.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          borderRadius: style.borderTopLeftRadius,
+          overflow: style.overflow,
+          boxShadow: style.boxShadow,
+        };
+      }),
+      {
+        borderRadius: "32px",
+        overflow: "clip",
+        boxShadow: "rgba(0, 0, 0, 0.3) 0px 24px 80px 0px",
+      },
+    );
     assert.equal(await stepCard.locator("[data-step-card-body]").count(), 4);
     assert.equal(await stepCard.locator("[data-step-card-footer]").count(), 1);
     assert.equal(
@@ -155,6 +182,20 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         getComputedStyle(element).borderTopWidth,
       ),
       "0px",
+    );
+    assert.deepEqual(
+      await stepCard.locator("[data-step-card-body]").first().evaluate((element) => {
+        const style = getComputedStyle(element);
+        return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
+      }),
+      ["20px", "20px", "20px", "20px"],
+    );
+    assert.deepEqual(
+      await stepCard.locator("[data-step-card-footer]").evaluate((element) => {
+        const style = getComputedStyle(element);
+        return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
+      }),
+      ["0px", "20px", "20px", "20px"],
     );
     const ownerInput = page.getByLabel("Your GitHub name");
     assert.equal(
@@ -171,17 +212,36 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         getComputedStyle(element).backgroundColor,
       ),
     );
+    await page.setViewportSize({ width: 1280, height: 800 });
+    assert.deepEqual(
+      await page.locator(".form-grid.two-columns").first().evaluate((grid) => {
+        const statusPageName = grid.querySelector<HTMLInputElement>(
+          'input[aria-describedby="status-page-name-help"]',
+        )?.getBoundingClientRect();
+        const customDomain = grid.querySelector<HTMLInputElement>(
+          'input[aria-describedby="custom-domain-help"]',
+        )?.getBoundingClientRect();
+        return {
+          sameRow: statusPageName?.top === customDomain?.top,
+          separated: Boolean(
+            statusPageName && customDomain && statusPageName.right < customDomain.left,
+          ),
+        };
+      }),
+      { sameRow: true, separated: true },
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
     assert.deepEqual(
       await Promise.all([
         ownerInput.evaluate((element) => element.getBoundingClientRect().height),
-        page.getByRole("button", { name: "Continue" }).evaluate((element) =>
+        page.getByRole("button", { name: "Services", exact: true }).evaluate((element) =>
           element.getBoundingClientRect().height,
         ),
       ]),
       [40, 40],
     );
     assert.equal(
-      await page.getByRole("button", { name: "Continue" }).evaluate((element) =>
+      await page.getByRole("button", { name: "Services", exact: true }).evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
       "16px",
@@ -191,6 +251,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         getComputedStyle(element).fontSize,
       ),
       "16px",
+    );
+    assert.match(
+      await page.locator(".steps button").first().evaluate((element) =>
+        getComputedStyle(element).fontFamily,
+      ),
+      /Barlow Condensed/,
     );
     assert.equal(
       await page.locator(".steps button").first().evaluate((element) =>
@@ -211,7 +277,10 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       };
     });
     assert.ok(Math.abs(mobileStepGeometry.width - mobileStepGeometry.height) < 0.1);
-    assert.ok(mobileStepGeometry.occupiedWidth < mobileStepGeometry.containerWidth);
+    assert.ok(
+      mobileStepGeometry.occupiedWidth < mobileStepGeometry.containerWidth,
+      JSON.stringify(mobileStepGeometry),
+    );
     assert.equal(
       await page.locator("[data-squircle-step-number]").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
@@ -250,29 +319,27 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator(".field-hint").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
-      "15px",
+      "13px",
     );
     assert.equal(
       await page.locator(".section-heading p").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
-      "15px",
+      "20px",
     );
     assert.deepEqual(
       await page.locator(".onboarding-brand-block").evaluate((element) => {
         const widths = [
           element.querySelector<HTMLElement>(".velvet-wordmark"),
-          element.querySelector<HTMLElement>(
-            '.onboarding-brand > span[aria-label="ONBOARDING"]',
-          ),
-          element.querySelector<HTMLElement>(".onboarding-palette"),
+          element.querySelector<HTMLElement>("[data-velvet-tool-palette]"),
+          element.querySelector<HTMLElement>("[data-velvet-tool-subtitle]"),
         ].map((child) => Math.round(child?.getBoundingClientRect().width ?? 0));
         return widths;
       }),
       [270, 254, 254],
     );
     assert.equal(
-      await page.locator(".onboarding-brand .velvet-wordmark").evaluate(
+      await page.locator("[data-velvet-tool-brand] .velvet-wordmark").evaluate(
         (element) => getComputedStyle(element).textAlign,
       ),
       "center",
@@ -282,7 +349,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByLabel("Status page name").fill("My Status");
     const customDomainInput = page.getByLabel("Custom domain (optional)");
     await customDomainInput.fill("https://status.example.com/path");
-    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Services", exact: true }).click();
     await page.getByText(
       "Enter a hostname without https://, a path, port, credentials, or wildcard.",
     ).waitFor();
@@ -308,9 +375,15 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator(".dns-guidance").evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
-      "15px",
+      "18px",
     );
-    await page.getByRole("button", { name: "Continue" }).click();
+    assert.equal(
+      await page.locator(".dns-guidance p").evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "20px",
+    );
+    await page.getByRole("button", { name: "Services", exact: true }).click();
 
     await page.getByLabel("Service name").fill("Website");
     await page.getByLabel("URL to monitor").fill("https://example.com");
@@ -321,25 +394,85 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "1px",
     );
     const setupIconPicker = page.locator("[data-service-icon-picker]").first();
-    const setupIconTrigger = setupIconPicker.getByRole("button", {
-      name: "Service icon: Automatic",
-    });
-    assert.equal(await setupIconTrigger.getAttribute("aria-expanded"), "false");
-    assert.equal(
-      await setupIconTrigger.evaluate((element) => element.getBoundingClientRect().height),
-      40,
-    );
-    await setupIconTrigger.click();
     const setupIconOptions = setupIconPicker.getByRole("option");
     assert.equal(await setupIconOptions.count(), 22);
-    assert.equal(await setupIconOptions.locator("i:first-child").count(), 22);
-    assert.equal(await setupIconOptions.locator("span").count(), 0);
-    assert.equal(await setupIconOptions.first().getAttribute("aria-label"), "Automatic");
+    assert.equal(await setupIconOptions.locator(":scope > i").count(), 22);
     assert.equal(
-      await setupIconPicker.getByRole("listbox").evaluate((element) =>
-        getComputedStyle(element).position,
+      await setupIconOptions.locator("[data-service-icon-squircle]").count(),
+      22,
+    );
+    assert.equal(
+      await setupIconOptions.locator(
+        ":scope > span:not([data-squircle-surface])",
+      ).count(),
+      0,
+    );
+    assert.equal(await setupIconOptions.first().getAttribute("aria-label"), "Automatic");
+    assert.deepEqual(
+      await setupIconOptions.first().evaluate((element) => {
+        const icon = element.querySelector("i");
+        return {
+          iconSize: icon ? getComputedStyle(icon).fontSize : null,
+          iconColor: icon ? getComputedStyle(icon).color : null,
+          selectionDot: getComputedStyle(element, "::after").content,
+          selectionBorders: [
+            element.querySelector(".selection-outline.outer")?.getAttribute("stroke-width"),
+            element.querySelector(".selection-outline.inner")?.getAttribute("stroke-width"),
+          ],
+          selectionOpacity: [...element.querySelectorAll(".selection-outline")].map(
+            (path) => getComputedStyle(path).opacity,
+          ),
+        };
+      }),
+      {
+        iconSize: "30px",
+        iconColor: "rgb(255, 255, 255)",
+        selectionDot: "none",
+        selectionBorders: ["1", "4"],
+        selectionOpacity: ["1", "1"],
+      },
+    );
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector(
+            '[data-step-card-body]:not([hidden]) [data-service-icon-picker] [role="option"] .selection-outline.outer',
+          )
+          ?.getAttribute("d")
+          ?.startsWith("M") === true,
+    );
+    assert.equal(
+      await setupIconOptions.first().locator("[data-service-icon-squircle]").evaluate(
+        (element) => {
+          const path = element.querySelector("path")?.getAttribute("d") ?? "";
+          const rect = element.getBoundingClientRect();
+          return path.startsWith("M") && Math.round(rect.width) === Math.round(rect.height);
+        },
       ),
-      "absolute",
+      true,
+    );
+    assert.deepEqual(
+      await setupIconPicker.getByRole("listbox").evaluate((element) => {
+        const picker = element.closest<HTMLElement>("[data-service-icon-picker]");
+        const description = picker?.querySelector("p");
+        const pickerRect = picker?.getBoundingClientRect();
+        const listboxRect = element.getBoundingClientRect();
+        return {
+          position: getComputedStyle(element).position,
+          shadow: getComputedStyle(element).boxShadow,
+          fillsColumn: Math.round(listboxRect.width) === Math.round(pickerRect?.width ?? 0),
+          descriptionAbove: Boolean(
+            description &&
+              description.getBoundingClientRect().bottom <= listboxRect.top,
+          ),
+        };
+      }),
+      {
+        position: "static",
+        shadow: "none",
+        fillsColumn: true,
+        descriptionAbove: true,
+      },
     );
     assert.equal(
       await setupIconPicker.getByRole("listbox").evaluate((element) =>
@@ -349,13 +482,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     );
     await setupIconPicker.getByRole("option", { name: "Storage" }).click();
     assert.equal(
-      await setupIconPicker.getByRole("button", { name: "Service icon: Storage" })
-        .getAttribute("aria-expanded"),
-      "false",
+      await setupIconPicker.getByRole("option", { name: "Storage" })
+        .getAttribute("aria-selected"),
+      "true",
     );
     assert.equal(
-      await setupIconPicker.getByRole("button", { name: "Service icon: Storage" })
-        .locator(".ph-hard-drives").count(),
+      await page.locator(".service-title .ph-hard-drives").count(),
       1,
     );
     assert.equal(
@@ -365,16 +497,40 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "0px",
     );
     assert.equal(
+      await page.locator(".service-editor").evaluate((element) =>
+        getComputedStyle(element).borderTopLeftRadius,
+      ),
+      "12px",
+    );
+    assert.equal(
       await page.locator(".service-editor label > span").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
       "16px",
+    );
+    assert.deepEqual(
+      await Promise.all([
+        page.locator(".service-editor .field-hint").first().evaluate((element) =>
+          getComputedStyle(element).fontSize,
+        ),
+        setupIconPicker.locator(":scope > p").evaluate((element) =>
+          getComputedStyle(element).fontSize,
+        ),
+      ]),
+      ["13px", "20px"],
     );
     assert.equal(
       await page.locator("details").evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
       ),
       "0px",
+    );
+    await page.locator("details summary").click();
+    assert.equal(
+      await page.locator(".advanced-content > p").evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "20px",
     );
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.waitForFunction(
@@ -385,30 +541,112 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         const { width, height } = element.getBoundingClientRect();
         return [Math.round(width), Math.round(height)];
       }),
-      [84, 84],
+      [88, 88],
     );
     assert.equal(
       await page.locator(".steps").evaluate((element) =>
         getComputedStyle(element).columnGap,
       ),
-      "36px",
+      "42px",
+    );
+    assert.deepEqual(
+      await page.locator(".steps li").first().evaluate((element) => {
+        const button = element.querySelector("button")?.getBoundingClientRect();
+        const connector = element.querySelector("[data-step-connector]")?.getBoundingClientRect();
+        const nextButton = element.nextElementSibling?.querySelector("button")?.getBoundingClientRect();
+        return {
+          before: button && connector ? Math.round(connector.left - button.right) : null,
+          after: connector && nextButton ? Math.round(nextButton.left - connector.right) : null,
+        };
+      }),
+      { before: 5, after: 5 },
+    );
+    assert.deepEqual(
+      await page.locator(".advanced-content > .form-grid").first().evaluate((grid) => ({
+        columns: getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+        rows: new Set(
+          [...grid.querySelectorAll("label")].map((label) =>
+            Math.round(label.getBoundingClientRect().top),
+          ),
+        ).size,
+      })),
+      { columns: 4, rows: 1 },
     );
     assert.deepEqual(
       await Promise.all([
         page.getByRole("button", { name: "Add another service" }).evaluate((element) =>
           element.getBoundingClientRect().height,
         ),
-        page.getByRole("button", { name: "Back" }).evaluate((element) =>
+        page.getByRole("button", { name: "Basics", exact: true }).evaluate((element) =>
           element.getBoundingClientRect().height,
         ),
-        page.getByRole("button", { name: "Continue" }).evaluate((element) =>
+        page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) =>
           element.getBoundingClientRect().height,
         ),
       ]),
       [40, 40, 40],
     );
+    assert.deepEqual(
+      await page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          borderRadius: style.borderTopLeftRadius,
+          minWidth: style.minWidth,
+          paddingInline: [style.paddingLeft, style.paddingRight],
+        };
+      }),
+      { borderRadius: "12px", minWidth: "112px", paddingInline: ["12px", "12px"] },
+    );
+    assert.ok(
+      await page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) => {
+        const button = element.getBoundingClientRect();
+        const label = element.querySelector("[data-step-card-button-label]")
+          ?.getBoundingClientRect();
+        if (!label) return false;
+        return Math.abs((button.top + button.bottom - label.top - label.bottom) / 2) < 0.5;
+      }),
+    );
+    assert.deepEqual(
+      await page.getByRole("button", { name: "Add another service" }).evaluate((element) => {
+        const style = getComputedStyle(element);
+        return [style.paddingLeft, style.paddingRight];
+      }),
+      ["8px", "8px"],
+    );
+    assert.ok(
+      await page.locator("[data-service-editor-actions]").evaluate((actions) => {
+        const button = actions.querySelector("button")?.getBoundingClientRect();
+        const container = actions.getBoundingClientRect();
+        return Boolean(button && Math.abs(button.right - container.right) < 0.5);
+      }),
+    );
+    assert.equal(
+      await page.locator("[data-service-editor-actions]").evaluate((actions) => {
+        const service = actions.previousElementSibling
+          ?.querySelector("[data-service-editor]:last-of-type")
+          ?.getBoundingClientRect();
+        const button = actions.querySelector("button")?.getBoundingClientRect();
+        return service && button ? Math.round(button.top - service.bottom) : null;
+      }),
+      16,
+    );
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    assert.equal(
+      await page.locator("[data-theme-card-group] .options").evaluate((element) =>
+        getComputedStyle(element).gridTemplateColumns.split(" ").length,
+      ),
+      3,
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(
+      await page.locator("[data-theme-card-group] .options").evaluate((element) =>
+        getComputedStyle(element).gridTemplateColumns.split(" ").length,
+      ),
+      1,
+    );
 
     if (process.env.VELVET_ONBOARDING_SCREENSHOT) {
       await page.screenshot({
@@ -420,7 +658,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(await themeRadios.count(), 4);
     assert.deepEqual(
       await Promise.all([
-        page.locator("[data-theme-card-group] legend").evaluate((element) =>
+        page.locator("[data-theme-card-group] h3").evaluate((element) =>
           getComputedStyle(element).fontSize,
         ),
         page.locator("[data-theme-card-group] > p").evaluate((element) =>
@@ -430,7 +668,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           getComputedStyle(element).fontSize,
         ),
       ]),
-      ["16px", "15px", "16px"],
+      ["20px", "20px", "16px"],
     );
     assert.equal(
       await page.locator("[data-theme-card-option]").first().evaluate((element) =>
@@ -438,37 +676,144 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
+    assert.equal(
+      await page.locator("[data-theme-card-option]").first().evaluate((element) =>
+        getComputedStyle(element).borderTopLeftRadius,
+      ),
+      "12px",
+    );
     await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");
     assert.equal(await themeRadios.nth(1).isChecked(), true);
-    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    const reviewItems = page.locator("[data-review-item]");
+    assert.equal(await reviewItems.count(), 5);
+    assert.deepEqual(
+      await reviewItems.locator("dt").allTextContents(),
+      ["Repository", "Status page", "Service", "Theme", "Custom domain"],
+    );
+    assert.equal(await reviewItems.getByText("status.example.com").count(), 1);
     assert.equal(
-      await page.locator(".review-grid").getByText("status.example.com").count(),
+      await reviewItems.evaluateAll((items) =>
+        new Set(items.map((item) => Math.round(item.getBoundingClientRect().top))).size,
+      ),
+      5,
+    );
+    assert.deepEqual(
+      await page.locator("[data-review-squircle]").first().evaluate((element) => {
+        const { width, height } = element.getBoundingClientRect();
+        return [Math.round(width), Math.round(height)];
+      }),
+      [60, 60],
+    );
+    assert.deepEqual(
+      await page.locator("[data-review-squircle]").first().locator("path")
+        .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke-width"))),
+      ["1", "4"],
+    );
+    assert.deepEqual(
+      await page.locator("[data-review-squircle]").first().locator("path")
+        .evaluateAll((paths) => paths.map((path) => getComputedStyle(path).opacity)),
+      ["0.32", "0.78"],
+    );
+    assert.equal(await reviewItems.locator("i.ph-duotone").count(), 5);
+    const reviewCards = page.locator("[data-review-card]");
+    assert.equal(await reviewCards.count(), 5);
+    assert.equal(
+      await reviewCards.first().evaluate((element) =>
+        getComputedStyle(element).borderTopLeftRadius,
+      ),
+      "12px",
+    );
+    assert.equal(
+      await reviewItems.first().evaluate((item) => {
+        const squircle = item.querySelector("[data-review-squircle]");
+        const card = item.querySelector("[data-review-card]");
+        return Boolean(
+          squircle &&
+          card &&
+          !card.contains(squircle) &&
+          squircle.getBoundingClientRect().right < card.getBoundingClientRect().left
+        );
+      }),
+      true,
+    );
+    assert.equal(
+      await page.locator("[data-review-squircle]").evaluateAll((elements) =>
+        new Set(elements.map((element) => getComputedStyle(element).color)).size,
+      ),
       1,
     );
+    assert.equal(
+      await reviewCards.evaluateAll((elements) =>
+        new Set(elements.map((element) => getComputedStyle(element).backgroundColor)).size,
+      ),
+      1,
+    );
+    assert.match(
+      await reviewCards.first().evaluate((element) =>
+        getComputedStyle(element, "::before").maskImage,
+      ),
+      /linear-gradient\([\s\S]*80%[\s\S]*rgba\(0, 0, 0, 0\) 100%/,
+    );
+    assert.equal(
+      await reviewCards.first().locator("dd").evaluate((element) =>
+        getComputedStyle(element).opacity,
+      ),
+      "1",
+    );
+    await page.setViewportSize({ width: 1280, height: 800 });
+    assert.deepEqual(
+      await page.locator("[data-review-list]").evaluate((list) => {
+        const listRect = list.getBoundingClientRect();
+        const bodyRect = list.closest("[data-step-card-body]")?.getBoundingClientRect();
+        return {
+          width: Math.round(listRect.width),
+          centered: bodyRect
+            ? Math.abs((listRect.left - bodyRect.left) - (bodyRect.right - listRect.right)) < 1
+            : false,
+        };
+      }),
+      { width: 704, centered: true },
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
     assert.match(
       await page.getByText(/DNS changes happen outside Velvet/).textContent() ?? "",
       /may take time to propagate/,
     );
     assert.equal(
-      await page.locator(".review-grid > div").first().evaluate((element) =>
+      await reviewCards.first().evaluate((element) =>
         getComputedStyle(element).borderTopWidth,
       ),
       "0px",
     );
     assert.deepEqual(
       await Promise.all([
-        page.locator(".review-grid span").first().evaluate((element) =>
+        reviewItems.locator("dt").first().evaluate((element) =>
           getComputedStyle(element).fontSize,
         ),
-        page.locator(".review-grid strong").first().evaluate((element) =>
+        reviewItems.locator("dd").first().evaluate((element) =>
           getComputedStyle(element).fontSize,
         ),
         page.locator(".github-permission-note").evaluate((element) =>
           getComputedStyle(element).fontSize,
         ),
       ]),
-      ["15px", "16px", "15px"],
+      ["15px", "20px", "20px"],
+    );
+    await page.locator(".steps button").nth(1).click();
+    await page.getByRole("button", { name: "Add another service" }).click();
+    const secondService = page.locator("[data-service-editor-item]").nth(1);
+    await secondService.getByLabel("Service name").fill("API");
+    await secondService.getByLabel("URL to monitor").fill("https://api.example.com");
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
+    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    assert.deepEqual(
+      await page.locator("[data-review-item]").nth(2).evaluate((item) => ({
+        label: item.querySelector("dt")?.textContent,
+        value: item.querySelector("dd")?.textContent,
+      })),
+      { label: "Services", value: "2" },
     );
     await page.goto(
       `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
@@ -487,7 +832,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator(".deployment-progress li").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
-      "16px",
+      "18px",
     );
     assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);
@@ -522,22 +867,132 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       440,
     );
+    assert.deepEqual(
+      await page.locator(".configurator-brand").evaluate((element) => {
+        const brand = element.querySelector<HTMLElement>("[data-velvet-tool-brand]");
+        const wordmark = element.querySelector<HTMLElement>(".velvet-wordmark");
+        const palette = element.querySelector<HTMLElement>("[data-velvet-tool-palette]");
+        const rainbow = element.querySelector<HTMLElement>("[data-rainbow-scale]");
+        const subtitle = element.querySelector<HTMLElement>("[data-velvet-tool-subtitle]");
+        const subtitleLetters = subtitle
+          ? [...subtitle.querySelectorAll<HTMLElement>("span")]
+          : [];
+        const elements = [wordmark, palette, subtitle];
+        const widths = elements.map((child) =>
+          Math.round(child?.getBoundingClientRect().width ?? 0),
+        );
+        const rainbowWidth = Math.round(
+          rainbow?.getBoundingClientRect().width ?? 0,
+        );
+        const stacked =
+          wordmark && palette && subtitle
+            ? wordmark.getBoundingClientRect().bottom <=
+                palette.getBoundingClientRect().top &&
+              palette.getBoundingClientRect().bottom <=
+                subtitle.getBoundingClientRect().top
+            : false;
+        return {
+          order: [...(brand?.children ?? [])].map((child) => {
+            if (child.classList.contains("velvet-wordmark")) return "velvet-wordmark";
+            if (child.hasAttribute("data-velvet-tool-palette")) return "palette";
+            if (child.hasAttribute("data-velvet-tool-subtitle")) return "subtitle";
+            return "unknown";
+          }),
+          widthsArePositive: widths.every((width) => width > 0),
+          innerWidthsMatch: Math.abs(widths[1] - widths[2]) <= 1,
+          rainbowMatchesPalette: Math.abs(rainbowWidth - widths[1]) <= 1,
+          innerWidthRatio:
+            widths[0] > 0 ? Number((widths[1] / widths[0]).toFixed(2)) : 0,
+          subtitleText: subtitle?.getAttribute("aria-label"),
+          subtitleEdges:
+            subtitle && subtitleLetters.length > 1
+              ? [
+                  Math.round(
+                    subtitleLetters[0].getBoundingClientRect().left -
+                      subtitle.getBoundingClientRect().left,
+                  ),
+                  Math.round(
+                    subtitle.getBoundingClientRect().right -
+                      subtitleLetters.at(-1)!.getBoundingClientRect().right,
+                  ),
+                ]
+              : null,
+          stacked,
+        };
+      }),
+      {
+        order: ["velvet-wordmark", "palette", "subtitle"],
+        widthsArePositive: true,
+        innerWidthsMatch: true,
+        rainbowMatchesPalette: true,
+        innerWidthRatio: 0.94,
+        subtitleText: "CONFIGURATOR",
+        subtitleEdges: [0, 0],
+        stacked: true,
+      },
+    );
+    assert.deepEqual(
+      await page.locator("[data-rainbow-scale]").first().evaluate((element) => {
+        const first = getComputedStyle(element.firstElementChild!);
+        const last = getComputedStyle(element.lastElementChild!);
+        return {
+          first: [
+            first.borderTopLeftRadius,
+            first.borderTopRightRadius,
+            first.borderBottomRightRadius,
+            first.borderBottomLeftRadius,
+          ],
+          last: [
+            last.borderTopLeftRadius,
+            last.borderTopRightRadius,
+            last.borderBottomRightRadius,
+            last.borderBottomLeftRadius,
+          ],
+        };
+      }),
+      {
+        first: ["999px", "0px", "0px", "999px"],
+        last: ["0px", "999px", "999px", "0px"],
+      },
+    );
     const cloudyAutumn = page.locator(
       '[data-theme-card-option="cloudy-autumn"]',
     );
     await cloudyAutumn.click();
     assert.equal(await cloudyAutumn.locator("input").isChecked(), true);
     const websiteIcons = page.locator("[data-service-icon-picker]").first();
-    await websiteIcons.getByRole("button", { name: "Service icon: Automatic" }).click();
+    assert.equal(
+      await websiteIcons.getByRole("option").first().locator("i").evaluate((element) =>
+        getComputedStyle(element).fontSize,
+      ),
+      "22.4px",
+    );
+    assert.deepEqual(
+      await websiteIcons.getByRole("option").first().evaluate((element) => ({
+        selectionTransform: getComputedStyle(
+          element.querySelector(".selection-outline.outer")!,
+        ).transform,
+        selectedIconColor: getComputedStyle(element.querySelector("i")!).color,
+      })),
+      {
+        selectionTransform: "matrix(1.14, 0, 0, 1.14, 0, 0)",
+        selectedIconColor: "rgb(255, 255, 255)",
+      },
+    );
     assert.deepEqual(
       await websiteIcons.getByRole("listbox").evaluate((element) => {
         const style = getComputedStyle(element);
+        const picker = element.closest<HTMLElement>("[data-service-icon-picker]");
         return {
           columns: style.gridTemplateColumns.split(" ").length,
           rows: style.gridTemplateRows.split(" ").length,
+          shadow: style.boxShadow,
+          fillsColumn:
+            Math.round(element.getBoundingClientRect().width) ===
+            Math.round(picker?.getBoundingClientRect().width ?? 0),
         };
       }),
-      { columns: 11, rows: 2 },
+      { columns: 11, rows: 2, shadow: "none", fillsColumn: true },
     );
     await websiteIcons.getByRole("option", { name: "Storage" }).click();
     assert.equal(
@@ -627,7 +1082,6 @@ history:
     await addedService.getByLabel("Service name").fill("Storage");
     await addedService.getByLabel("Website URL").fill("https://storage.example.com");
     const addedIconPicker = addedService.locator("[data-service-icon-picker]");
-    await addedIconPicker.getByRole("button", { name: "Service icon: Automatic" }).click();
     await addedIconPicker.getByRole("option", { name: "Storage" }).click();
     assert.deepEqual(
       await page.locator("button.summary .name").allTextContents(),
@@ -712,8 +1166,34 @@ history:
                 pseudo: effect.pseudoElement,
                 duration: effect.getTiming().duration,
                 keyframeEasing: effect.getKeyframes().map(({ easing }) => easing),
+                keyframeTransforms: effect.getKeyframes().map(({ transform }) => transform),
+                keyframeHeights: effect.getKeyframes().map(({ height }) => height),
               };
             });
+          (globalThis as typeof globalThis & { __onboardingTransitionOverflow?: unknown })
+            .__onboardingTransitionOverflow = {
+              group: getComputedStyle(
+                document.documentElement,
+                "::view-transition-group(onboarding-step-card)",
+              ).overflow,
+              pair: getComputedStyle(
+                document.documentElement,
+                "::view-transition-image-pair(onboarding-step-card)",
+              ).overflow,
+              maskImage: getComputedStyle(
+                document.documentElement,
+                "::view-transition-image-pair(onboarding-step-card)",
+              ).maskImage,
+              contentInset: getComputedStyle(document.documentElement)
+                .getPropertyValue("--step-card-content-inset")
+                .trim(),
+              bodyPadding: getComputedStyle(
+                document.querySelector("[data-step-card-body]:not([hidden])")!,
+              ).padding,
+              footerPadding: getComputedStyle(
+                document.querySelector("[data-step-card-footer]")!,
+              ).padding,
+            };
         });
         return transition;
       };
@@ -721,7 +1201,10 @@ history:
     await motionPage.getByLabel("Your GitHub name").fill("velvet-user");
     await motionPage.getByLabel("Repository name").fill("status");
     await motionPage.getByLabel("Status page name").fill("My Status");
-    await motionPage.getByRole("button", { name: "Continue" }).click();
+    await motionPage.evaluate(() => {
+      document.documentElement.style.setProperty("--step-card-content-inset", "28px");
+    });
+    await motionPage.getByRole("button", { name: "Services", exact: true }).click();
     await motionPage.waitForFunction(
       () =>
         [...document.querySelectorAll("[data-step-active-highlight]")]
@@ -757,11 +1240,13 @@ history:
           pseudo: string | null | undefined;
           duration: number | CSSNumericValue | string;
           keyframeEasing: Array<string | undefined>;
+          keyframeTransforms: Array<string | undefined>;
+          keyframeHeights: Array<string | undefined>;
         }>;
       }).__onboardingTransitionAnimations,
     );
     const stepAnimations = transitionAnimations.filter(({ pseudo }) =>
-      pseudo?.includes("onboarding-step-card"),
+      pseudo?.includes("(onboarding-step-card)"),
     );
     assert.ok(stepAnimations.some(({ name }) => name.includes("onboarding-slide-in-forward")));
     assert.ok(stepAnimations.some(({ name }) => name.includes("onboarding-slide-out-forward")));
@@ -769,6 +1254,58 @@ history:
     assert.ok(stepAnimations.every(({ keyframeEasing }) =>
       keyframeEasing.every((easing) => easing === "ease-in-out"),
     ));
+    assert.ok(stepAnimations.some(({ name, keyframeTransforms }) =>
+      name.includes("onboarding-slide-in-forward") &&
+      keyframeTransforms.includes("translateX(100%)"),
+    ));
+    assert.ok(stepAnimations.some(({ name, keyframeTransforms }) =>
+      name.includes("onboarding-slide-out-forward") &&
+      keyframeTransforms.includes("translateX(-100%)"),
+    ));
+    const shellGroupAnimation = transitionAnimations.find(
+      ({ pseudo }) =>
+        pseudo === "::view-transition-group(onboarding-step-card-shell)",
+    );
+    assert.ok(shellGroupAnimation);
+    assert.equal(shellGroupAnimation.duration, 350);
+    assert.ok(
+      new Set(shellGroupAnimation.keyframeHeights.filter(Boolean)).size > 1,
+    );
+    const transitionEffects = await motionPage.evaluate(() =>
+      (globalThis as typeof globalThis & {
+        __onboardingTransitionOverflow: {
+          group: string;
+          pair: string;
+          maskImage: string;
+          contentInset: string;
+          bodyPadding: string;
+          footerPadding: string;
+        };
+      }).__onboardingTransitionOverflow,
+    );
+    assert.deepEqual(
+      {
+        group: transitionEffects.group,
+        pair: transitionEffects.pair,
+        contentInset: transitionEffects.contentInset,
+        bodyPadding: transitionEffects.bodyPadding,
+        footerPadding: transitionEffects.footerPadding,
+      },
+      {
+        group: "clip",
+        pair: "clip",
+        contentInset: "28px",
+        bodyPadding: "28px",
+        footerPadding: "0px 28px 28px",
+      },
+    );
+    assert.match(
+      transitionEffects.maskImage,
+      /28px[\s\S]*calc\(100% - 28px\)/,
+    );
+    await motionPage.evaluate(() => {
+      document.documentElement.style.setProperty("--step-card-content-inset", "20px");
+    });
     assert.equal(
       transitionAnimations.some(({ pseudo }) => pseudo === "::view-transition-group(root)"),
       false,
@@ -788,18 +1325,47 @@ history:
     );
     const motionIconPicker = motionPage.locator("[data-service-icon-picker]").first();
     const motionIconListbox = motionIconPicker.getByRole("listbox");
-    await motionIconPicker.getByRole("button", { name: "Service icon: Automatic" }).click();
-    assert.match(
+    assert.equal(
       await motionIconListbox.evaluate((element) =>
         getComputedStyle(element).transitionDuration,
       ),
-      /0\.2s/,
+      "0s",
     );
-    await motionPage.keyboard.press("Escape");
-    const motionIconTrigger = motionIconPicker.getByRole("button", {
-      name: "Service icon: Automatic",
-    });
-    await motionIconTrigger.focus();
+    const hoverIcon = motionIconPicker.getByRole("option", { name: "Storage" });
+    await hoverIcon.hover();
+    const hoverStyles = await hoverIcon.evaluate((element) => {
+        const icon = element.querySelector("i");
+        const background = element.querySelector(".option-background");
+        const listbox = element.closest("[role='listbox']");
+        const iconStyle = icon ? getComputedStyle(icon) : null;
+        const backgroundStyle = background ? getComputedStyle(background) : null;
+        const listboxStyle = listbox ? getComputedStyle(listbox) : null;
+        const colorChannels = (color: string): number[] => {
+          const values = color.match(/[\d.]+/g)?.map(Number) ?? [];
+          return color.startsWith("color(srgb")
+            ? values.slice(0, 3).map((value) => value * 255)
+            : values.slice(0, 3);
+        };
+        const hoverChannels = colorChannels(backgroundStyle?.fill ?? "");
+        const idleChannels = colorChannels(listboxStyle?.backgroundColor ?? "");
+        return {
+          duration: iconStyle?.transitionDuration,
+          transform: iconStyle?.transform,
+          hoverOpacity: backgroundStyle?.opacity,
+          maximumChannelDelta: Math.round(
+            Math.max(
+              ...hoverChannels.map(
+                (channel, index) => Math.abs(channel - (idleChannels[index] ?? channel)),
+              ),
+            ),
+          ),
+        };
+      });
+    assert.equal(hoverStyles.duration, "0s");
+    assert.equal(hoverStyles.hoverOpacity, "1");
+    assert.equal(hoverStyles.transform, "matrix(1.1, 0, 0, 1.1, 0, 0)");
+    assert.ok(hoverStyles.maximumChannelDelta >= 30);
+    await motionIconPicker.getByRole("option", { name: "Automatic" }).focus();
     await motionPage.keyboard.press("End");
     assert.equal(
       await motionIconPicker.getByRole("option", { name: "Calendar" }).evaluate(
@@ -823,10 +1389,56 @@ history:
     );
     await motionPage.keyboard.press("Enter");
     assert.equal(
-      await motionIconPicker.getByRole("button", { name: "Service icon: Calendar" })
-        .getAttribute("aria-expanded"),
-      "false",
+      await motionIconPicker.getByRole("option", { name: "Calendar" })
+        .getAttribute("aria-selected"),
+      "true",
     );
+
+    await motionPage.getByRole("button", { name: "Add another service" }).click();
+    await motionPage.getByRole("button", { name: "Add another service" }).click();
+    const serviceItems = motionPage.locator("[data-service-editor-item]");
+    assert.equal(await serviceItems.count(), 3);
+    const removedItemId = await serviceItems.first().getAttribute(
+      "data-service-editor-item",
+    );
+    const nextItemId = await serviceItems.nth(1).getAttribute(
+      "data-service-editor-item",
+    );
+    assert.ok(removedItemId);
+    assert.ok(nextItemId);
+    const removedItem = motionPage.locator(
+      `[data-service-editor-item="${removedItemId}"]`,
+    );
+    const nextItem = motionPage.locator(
+      `[data-service-editor-item="${nextItemId}"]`,
+    );
+    const initialRemovedHeight = await removedItem.evaluate(
+      (element) => element.getBoundingClientRect().height,
+    );
+    const initialNextTop = await nextItem.evaluate(
+      (element) => element.getBoundingClientRect().top + scrollY,
+    );
+    await removedItem.getByRole("button", { name: "Remove service 1" }).click();
+    await motionPage.waitForFunction(
+      (itemId) =>
+        (document
+          .querySelector(`[data-service-editor-item="${itemId}"]`)
+          ?.getAnimations().length ?? 0) > 0,
+      removedItemId,
+      { polling: "raf", timeout: 1_000 },
+    );
+    await motionPage.waitForTimeout(150);
+    const midpoint = await Promise.all([
+      removedItem.evaluate((element) => element.getBoundingClientRect().height),
+      nextItem.evaluate((element) => element.getBoundingClientRect().top + scrollY),
+    ]);
+    await removedItem.waitFor({ state: "detached" });
+    const finalNextTop = await nextItem.evaluate(
+      (element) => element.getBoundingClientRect().top + scrollY,
+    );
+    assert.ok(midpoint[0] > 0 && midpoint[0] < initialRemovedHeight);
+    assert.ok(midpoint[1] < initialNextTop && midpoint[1] > finalNextTop);
+    assert.equal(await serviceItems.count(), 2);
     await motionContext.close();
   } finally {
     await browser.close();

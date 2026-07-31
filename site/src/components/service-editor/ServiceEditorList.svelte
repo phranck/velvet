@@ -15,23 +15,28 @@
 <div class="service-list" data-service-editor-list>
   {@render children()}
 </div>
-<button class="add-service" type="button" onclick={onAdd}>
-  <i class="ph-duotone ph-plus-circle" aria-hidden="true"></i>
-  {addLabel}
-</button>
+<div class="service-actions" data-service-editor-actions>
+  <button class="add-service" type="button" onclick={onAdd}>
+    <i class="ph-duotone ph-plus-circle" aria-hidden="true"></i>
+    {addLabel}
+  </button>
+</div>
 
 <style>
   .service-list {
-    display: grid;
-    gap: 1rem;
+    display: flow-root;
+  }
+  .service-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0;
   }
   .add-service {
     min-height: var(--service-editor-control-height, 2.5rem);
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 1rem;
-    padding: 0 0.8rem;
+    padding: 0 var(--service-editor-button-padding-inline, 0.8rem);
     border: 0;
     border-radius: var(--service-editor-control-radius, 0.55rem);
     outline: none;

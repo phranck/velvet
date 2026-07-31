@@ -1,9 +1,13 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import RainbowScale from "../components/RainbowScale.svelte";
-  import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
+  import * as ReviewList from "../components/review-list";
   import * as ServiceEditor from "../components/service-editor";
   import * as StepCard from "../components/step-card";
+  import {
+    STEP_CARD_CONTENT_INSET,
+    STEP_CARD_INNER_RADIUS,
+  } from "../components/step-card/geometry.js";
   import * as ThemeCard from "../components/theme-card";
   import {
     createViewTransitionController,
@@ -27,6 +31,7 @@
   import { SYSTEM_THEMES, systemThemeById } from "./system-themes.js";
 
   const STEPS = ["Basics", "Services", "Theme", "Publish"] as const;
+  const CURRENT_YEAR = new Date().getFullYear();
   const SESSION_STORAGE = browserSessionStorage();
   const GITHUB_RETURN = githubReturnState();
   const PROGRESS_LABELS: Record<SetupProgressStage, string> = {
@@ -58,6 +63,10 @@
   let submissionState = $state<"idle" | "permission-required" | "failed" | "success">("idle");
   let stepTransitionController: ViewTransitionController | null = null;
   const selectedTheme = $derived(systemThemeById(draft.themeId));
+  const previousStepLabel = $derived(step > 0 ? STEPS[step - 1] : "");
+  const nextStepLabel = $derived(
+    step < STEPS.length - 1 ? STEPS[step + 1] : "",
+  );
   const customDomain = $derived(draft.customDomain.trim().toLowerCase());
   const pagesDnsTarget = $derived(
     `${draft.repositoryOwner.trim() || "your-github-name"}.github.io`,
@@ -68,6 +77,14 @@
   });
 
   onMount(() => {
+    const contentInsetProperty = "--step-card-content-inset";
+    const previousContentInset = document.documentElement.style.getPropertyValue(
+      contentInsetProperty,
+    );
+    document.documentElement.style.setProperty(
+      contentInsetProperty,
+      `${STEP_CARD_CONTENT_INSET}px`,
+    );
     stepTransitionController = createViewTransitionController(document);
     if (GITHUB_RETURN) {
       clearGitHubReturnParameter();
@@ -81,6 +98,14 @@
     return () => {
       stepTransitionController?.destroy();
       stepTransitionController = null;
+      if (previousContentInset) {
+        document.documentElement.style.setProperty(
+          contentInsetProperty,
+          previousContentInset,
+        );
+      } else {
+        document.documentElement.style.removeProperty(contentInsetProperty);
+      }
       delete document.documentElement.dataset.onboardingDirection;
     };
   });
@@ -212,24 +237,18 @@
   <link rel="license" href={fontLicensesUrl} />
 </svelte:head>
 
-<div class="onboarding-shell">
+<div
+  class="onboarding-shell"
+  style={`--step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px`}
+>
   <main>
     <section class="intro">
       <div class="onboarding-brand-block">
-        <h1 class="onboarding-brand">
-          <VelvetWordmark />
-          <span aria-label="ONBOARDING">
-            {#each "ONBOARDING".split("") as letter, index (index)}
-              <span aria-hidden="true">{letter}</span>
-            {/each}
-          </span>
-        </h1>
-        <div class="onboarding-palette" data-onboarding-palette aria-hidden="true">
-          <RainbowScale />
-        </div>
+        <VelvetToolBrand subtitle="ONBOARDING" />
       </div>
       <p>
-        Tell Velvet what to watch, choose a theme, and publish through your GitHub account.
+        Tell Velvet what to watch, choose a theme,<br />
+        and publish through your GitHub account.
       </p>
     </section>
 
@@ -260,6 +279,7 @@
         <div class="section-heading">
           <div class="section-title">
             <span>01</span>
+            <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="identity-title">Name your status page</h2>
           </div>
           <p>Choose the GitHub account, repository, public name, and optional domain for your status page.</p>
@@ -291,7 +311,7 @@
             </small>
             {#if errors.repositoryName}<small class="field-error">{errors.repositoryName}</small>{/if}
           </label>
-          <label class="full-width">
+          <label>
             <span>Status page name</span>
             <input
               autocomplete="organization"
@@ -304,7 +324,7 @@
             </small>
             {#if errors.statusPageName}<small class="field-error">{errors.statusPageName}</small>{/if}
           </label>
-          <label class="full-width">
+          <label>
             <span>Custom domain (optional)</span>
             <input
               autocomplete="url"
@@ -322,7 +342,10 @@
             {#if errors.customDomain}<small class="field-error">{errors.customDomain}</small>{/if}
           </label>
           {#if draft.customDomain.trim()}
-            <aside class="dns-guidance full-width" aria-label="Required DNS change">
+            <aside
+              class="dns-guidance full-width"
+              aria-label="Required DNS change"
+            >
               <strong>DNS change required</strong>
               <p>
                 DNS changes happen outside Velvet and may take time to propagate. After publishing,
@@ -345,6 +368,7 @@
         <div class="section-heading">
           <div class="section-title">
             <span>02</span>
+            <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="services-title">Add services</h2>
           </div>
           <p>Add every website, API, or endpoint you want to show. A name and URL are enough; Velvet considers a final HTTP 200 response healthy.</p>
@@ -352,16 +376,18 @@
 
         <ServiceEditor.List onAdd={addService}>
           {#each draft.services as service, serviceIndex (service.id)}
-            <ServiceEditor.Root
-              {service}
-              index={serviceIndex}
-              {errors}
-              canRemove={draft.services.length > 1}
-              onRemove={() => removeService(serviceIndex)}
-              serviceNameDescription="Shown publicly on your status page. For example: Website, API, or Storage."
-              urlLabel="URL to monitor"
-              urlDescription="The address Velvet checks. Use a normal website URL or a dedicated health endpoint."
-            />
+            <ServiceEditor.Item id={service.id}>
+              <ServiceEditor.Root
+                {service}
+                index={serviceIndex}
+                {errors}
+                canRemove={draft.services.length > 1}
+                onRemove={() => removeService(serviceIndex)}
+                serviceNameDescription="Shown publicly on your status page. For example: Website, API, or Storage."
+                urlLabel="URL to monitor"
+                urlDescription="The address Velvet checks. Use a normal website URL or a dedicated health endpoint."
+              />
+            </ServiceEditor.Item>
           {/each}
         </ServiceEditor.List>
       </StepCard.Body>
@@ -370,6 +396,7 @@
         <div class="section-heading">
           <div class="section-title">
             <span>03</span>
+            <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="theme-title">Choose a starting theme</h2>
           </div>
           <p>Choose how your status page looks when it first goes live. You can change every visual detail later in the Configurator.</p>
@@ -396,25 +423,49 @@
         <div class="section-heading">
           <div class="section-title">
             <span>04</span>
+            <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="publish-title">Review and publish</h2>
           </div>
           <p>Review your choices. Velvet then creates the repository, starts monitoring, and publishes the status page with GitHub Pages.</p>
         </div>
-        <div class="review-grid">
-          <div><span>Repository</span><strong>{draft.repositoryOwner}/{draft.repositoryName}</strong></div>
-          <div><span>Status page</span><strong>{draft.statusPageName}</strong></div>
-          <div><span>Services</span><strong>{draft.services.length}</strong></div>
-          <div><span>Theme</span><strong>{selectedTheme?.name ?? "Choose a theme"}</strong></div>
+        <ReviewList.Root>
+          <ReviewList.Item
+            label="Repository"
+            value={`${draft.repositoryOwner}/${draft.repositoryName}`}
+            icon="ph-git-branch"
+          />
+          <ReviewList.Item
+            label="Status page"
+            value={draft.statusPageName}
+            icon="ph-monitor"
+          />
+          <ReviewList.Item
+            label={draft.services.length === 1 ? "Service" : "Services"}
+            value={draft.services.length}
+            icon="ph-stack"
+          />
+          <ReviewList.Item
+            label="Theme"
+            value={selectedTheme?.name ?? "Choose a theme"}
+            icon="ph-palette"
+          />
           {#if customDomain}
-            <div class="review-wide"><span>Custom domain</span><strong>{customDomain}</strong></div>
+            <ReviewList.Item
+              label="Custom domain"
+              value={customDomain}
+              icon="ph-globe"
+            />
           {/if}
-        </div>
+        </ReviewList.Root>
         <p class="github-permission-note">
           GitHub asks for two approvals during the first setup. The first lets Velvet create the repository and is removed immediately. The second gives Velvet access only to that new repository.
         </p>
 
         {#if submitting || progress.length > 0}
-          <ol class="deployment-progress" aria-label="Deployment progress">
+          <ol
+            class="deployment-progress"
+            aria-label="Deployment progress"
+          >
             {#each Object.entries(PROGRESS_LABELS) as [stage, label] (stage)}
               <li class:complete={progress.includes(stage as SetupProgressStage)}>
                 <i class={`ph-duotone ${progress.includes(stage as SetupProgressStage) ? "ph-check-circle" : "ph-circle"}`} aria-hidden="true"></i>
@@ -440,23 +491,29 @@
 
       <StepCard.Footer>
         {#if step > 0 && !submitting}
-          <button class="secondary-button" type="button" onclick={previousStep}>Back</button>
+          <button class="secondary-button" type="button" onclick={previousStep}>
+            <span data-step-card-button-label>{previousStepLabel}</span>
+          </button>
         {/if}
         {#if step < STEPS.length - 1}
-          <button class="primary-button" type="button" onclick={nextStep}>Continue</button>
+          <button class="primary-button" type="button" onclick={nextStep}>
+            <span data-step-card-button-label>{nextStepLabel}</span>
+          </button>
         {:else}
           <button class="primary-button" type="submit" disabled={submitting}>
-            {submitting
-              ? "Setting up Velvet…"
-              : submissionState === "success"
-                ? "Set up again"
-                : submissionState === "permission-required"
-                  ? "Continue with GitHub"
-                  : submissionState === "failed"
-                    ? retryAvailable
-                      ? "Retry setup"
-                      : "Try setup again"
-                    : "Create status page"}
+            <span data-step-card-button-label>
+              {submitting
+                ? "Setting up Velvet…"
+                : submissionState === "success"
+                  ? "Set up again"
+                  : submissionState === "permission-required"
+                    ? "Continue with GitHub"
+                    : submissionState === "failed"
+                      ? retryAvailable
+                        ? "Retry setup"
+                        : "Try setup again"
+                      : "Create status page"}
+            </span>
           </button>
         {/if}
       </StepCard.Footer>
@@ -464,7 +521,7 @@
     </form>
   </main>
   <footer class="page-footer">
-    <span>© by </span>
+    <span>© {CURRENT_YEAR} by </span>
     <a href="https://layered.work" target="_blank" rel="noopener noreferrer">LAYERED</a>
   </footer>
 </div>
@@ -476,6 +533,8 @@
     --setup-panel-raised: #272a36;
     --setup-card: #222530;
     --setup-input: #11131a;
+    --setup-input-border: 1px solid
+      color-mix(in srgb, var(--setup-text) 14%, transparent);
     --setup-text: #efedf5;
     --setup-muted: #979aa8;
     --setup-error: #ff8d9a;
@@ -484,37 +543,52 @@
     --setup-text-small: 0.9375rem;
     --setup-text-body: 1rem;
     --setup-text-lead: 1.125rem;
+    --setup-text-caption: 0.8125rem;
+    --setup-text-intro: 2rem;
+    --setup-text-copy: 1.25rem;
+    --setup-card-copy: var(--setup-text-copy);
     --setup-button-font-size: var(--setup-text-body);
     --setup-font: "Barlow", "Segoe UI", sans-serif;
     --setup-heading-font: "Barlow Condensed", "Arial Narrow", sans-serif;
     --picker-accent: var(--setup-accent);
-    --picker-description-font-size: var(--setup-text-small);
+    --picker-description-font-size: var(--setup-card-copy);
+    --picker-icon-size: 1.875rem;
     --picker-label-font-size: var(--setup-text-body);
     --picker-muted: var(--setup-muted);
     --picker-popover: var(--setup-panel-raised);
+    --picker-popover-radius: var(--step-card-inner-radius);
     --picker-surface: var(--setup-card);
     --picker-text: var(--setup-text);
     --picker-text-inset: var(--setup-control-radius);
     --service-editor-accent: var(--setup-accent);
     --service-editor-card: var(--setup-card);
-    --service-editor-card-radius: 0.85rem;
+    --service-editor-card-radius: var(--step-card-inner-radius);
     --service-editor-card-text-inset: var(--service-editor-card-radius);
+    --service-editor-button-padding-inline: 0.5rem;
     --service-editor-control-height: var(--setup-control-height);
-    --service-editor-control-radius: var(--setup-control-radius);
+    --service-editor-control-radius: var(--step-card-inner-radius);
     --service-editor-error: var(--setup-error);
     --service-editor-font-size: var(--setup-text-body);
+    --service-editor-health-grid-columns: repeat(4, minmax(0, 1fr));
     --service-editor-input: var(--setup-input);
-    --service-editor-input-border: 1px solid
-      color-mix(in srgb, var(--setup-text) 8%, transparent);
+    --service-editor-input-border: var(--setup-input-border);
     --service-editor-muted: var(--setup-muted);
     --service-editor-raised: var(--setup-panel-raised);
+    --service-editor-caption-font-size: var(--setup-text-caption);
+    --service-editor-copy-font-size: var(--setup-card-copy);
     --service-editor-small-font-size: var(--setup-text-small);
     --service-editor-text: var(--setup-text);
     --service-editor-text-inset: var(--setup-control-radius);
-    --theme-card-description-font-size: var(--setup-text-small);
+    --theme-card-description-font-size: var(--setup-card-copy);
     --theme-card-font-size: var(--setup-text-body);
+    --theme-card-heading-font: var(--setup-heading-font);
+    --theme-card-heading-font-size: 1.25rem;
+    --theme-card-columns: repeat(3, minmax(0, 1fr));
+    --theme-card-gap: 0.7rem;
+    --theme-card-option-radius: var(--step-card-inner-radius);
     --theme-card-option-text-inset: 0.52rem;
     --theme-card-text-inset: 0.75rem;
+    --review-card-radius: var(--step-card-inner-radius);
     min-height: 100vh;
     font-family: var(--setup-font);
     font-size: var(--setup-text-body);
@@ -534,58 +608,31 @@
     width: 100%;
     display: grid;
     justify-items: center;
-    margin-bottom: 3.5rem;
+    margin-bottom: 4.5rem;
     text-align: center;
   }
   .onboarding-brand-block {
     width: min(100%, 270px);
-    display: grid;
-    justify-items: stretch;
-  }
-  .onboarding-brand {
-    --velvet-wordmark-size: clamp(3.5rem, 16vw, 4rem);
-
-    width: 100%;
-    display: grid;
-    justify-items: stretch;
-    gap: 0.4rem;
-    margin: 0;
-    color: var(--setup-accent);
-  }
-  .onboarding-brand :global(.velvet-wordmark) {
-    width: 100%;
-    display: block;
-    text-align: center;
-  }
-  .onboarding-brand > span {
-    width: 94%;
-    display: flex;
-    justify-self: center;
-    justify-content: space-between;
-    color: var(--setup-text);
-    font-family: var(--setup-heading-font);
-    font-size: clamp(0.95rem, 2.5vw, 1.2rem);
-    font-weight: 600;
-    letter-spacing: 0;
-    line-height: 1;
-  }
-  .onboarding-palette {
-    width: 94%;
-    height: 5px;
-    justify-self: center;
-    margin-top: 1.25rem;
+    --tool-brand-width: 100%;
+    --tool-brand-wordmark-size: clamp(3.5rem, 16vw, 4rem);
+    --tool-brand-accent: var(--setup-accent);
+    --tool-brand-text: var(--setup-text);
+    --tool-brand-heading-font: var(--setup-heading-font);
+    --tool-brand-subtitle-size: clamp(0.95rem, 2.5vw, 1.2rem);
+    --tool-brand-scale-gap: 0.625rem;
+    --tool-brand-subtitle-gap: 0.9rem;
   }
   .intro > p:last-child {
     width: 100%;
     max-width: none;
-    margin: 1.25rem 0 0;
-    color: var(--setup-muted);
-    font-size: var(--setup-text-lead);
+    margin: 3.5rem 0 0;
+    color: color-mix(in srgb, var(--setup-muted) 78%, var(--setup-text));
+    font-size: var(--setup-text-intro);
     line-height: 1.6;
   }
   .steps {
-    --step-size: clamp(4.25rem, 18vw, 5.25rem);
-    --step-gap: clamp(0.8rem, 4vw, 2.25rem);
+    --step-size: clamp(4.5rem, 18vw, 5.5rem);
+    --step-gap: clamp(0.9rem, 4vw, 2.625rem);
 
     display: grid;
     grid-template-columns: repeat(4, var(--step-size));
@@ -604,8 +651,8 @@
   .step-connector {
     position: absolute;
     top: 50%;
-    left: calc(100% + 3px);
-    width: calc(var(--step-gap) - 6px);
+    left: calc(100% + 5px);
+    width: calc(var(--step-gap) - 10px);
     height: 2px;
     transform: translateY(-50%);
     border-radius: 999px;
@@ -644,6 +691,10 @@
     letter-spacing: 0.08em;
     line-height: 1.1;
   }
+  .section-title .separator {
+    color: var(--setup-accent);
+    letter-spacing: 0;
+  }
   h2 {
     margin: 0;
     color: var(--setup-text);
@@ -655,7 +706,7 @@
   .section-heading p {
     margin: 0;
     color: var(--setup-muted);
-    font-size: var(--setup-text-small);
+    font-size: var(--setup-card-copy);
     line-height: 1.5;
   }
   .form-grid {
@@ -671,6 +722,7 @@
   label {
     min-width: 0;
     display: grid;
+    align-content: start;
     gap: 0.42rem;
   }
   label > span {
@@ -684,7 +736,7 @@
     height: var(--setup-control-height);
     min-width: 0;
     padding: 0 0.75rem;
-    border: 1px solid color-mix(in srgb, var(--setup-text) 8%, transparent);
+    border: var(--setup-input-border);
     border-radius: var(--setup-control-radius);
     outline: none;
     background: var(--setup-input);
@@ -715,15 +767,15 @@
   }
   .field-hint {
     color: var(--setup-muted);
-    font-size: var(--setup-text-small);
+    font-size: var(--setup-text-caption);
     line-height: 1.45;
   }
   .dns-guidance {
     padding: 0.9rem 1rem;
-    border-radius: 0.7rem;
+    border-radius: var(--step-card-inner-radius);
     background: var(--setup-card);
     color: var(--setup-muted);
-    font-size: var(--setup-text-small);
+    font-size: var(--setup-text-lead);
     line-height: 1.5;
   }
   .dns-guidance > strong,
@@ -739,6 +791,7 @@
   .dns-guidance p {
     margin-top: 0.3rem;
     margin-bottom: 0;
+    font-size: var(--setup-card-copy);
   }
   .dns-guidance ul {
     display: grid;
@@ -753,41 +806,18 @@
   }
   .primary-button,
   .secondary-button {
-    border-radius: var(--setup-control-radius);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--step-card-inner-radius);
     cursor: pointer;
     font-weight: 650;
-  }
-  .review-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-  .review-grid > div {
-    display: grid;
-    gap: 0.3rem;
-    padding: 1rem;
-    border-radius: 0.7rem;
-    background: var(--setup-card);
-  }
-  .review-grid span {
-    color: var(--setup-muted);
-    font-size: var(--setup-text-small);
-    text-transform: uppercase;
-  }
-  .review-grid span,
-  .review-grid strong {
-    margin-inline: 0.7rem;
-  }
-  .review-grid strong {
-    overflow-wrap: anywhere;
-  }
-  .review-grid .review-wide {
-    grid-column: 1 / -1;
+    line-height: 1;
   }
   .github-permission-note {
     margin: 1rem 1rem 0;
     color: var(--setup-muted);
-    font-size: var(--setup-text-small);
+    font-size: var(--setup-card-copy);
     line-height: 1.5;
   }
   .deployment-progress {
@@ -795,7 +825,7 @@
     gap: 0.6rem;
     margin: 1.4rem 0 0;
     padding: 1rem;
-    border-radius: 0.7rem;
+    border-radius: var(--step-card-inner-radius);
     background: var(--setup-card);
     list-style: none;
   }
@@ -804,7 +834,7 @@
     align-items: center;
     gap: 0.55rem;
     color: var(--setup-muted);
-    font-size: var(--setup-text-body);
+    font-size: var(--setup-text-lead);
   }
   .deployment-progress li.complete {
     color: var(--setup-text);
@@ -817,6 +847,7 @@
     min-height: 2rem;
     margin: 1rem 1rem 0;
     color: var(--setup-text);
+    font-size: var(--setup-card-copy);
   }
   .result p {
     margin: 0;
@@ -844,8 +875,8 @@
   }
   .primary-button,
   .secondary-button {
-    min-width: 7.5rem;
-    padding: 0 0.9rem;
+    min-width: 7rem;
+    padding: 0 0.75rem;
   }
   .primary-button {
     background: var(--setup-accent);
@@ -860,7 +891,10 @@
     background: var(--setup-panel-raised);
     color: var(--setup-text);
   }
-  button:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--setup-accent);
+    outline-offset: 3px;
+  }
   a:focus-visible {
     outline: 2px solid var(--setup-accent);
     outline-offset: 3px;
@@ -895,12 +929,35 @@
     mix-blend-mode: normal;
   }
   :global(::view-transition-group(onboarding-step-card)),
+  :global(::view-transition-group(onboarding-step-card-shell)),
   :global(::view-transition-old(onboarding-step-card)),
-  :global(::view-transition-new(onboarding-step-card)) {
+  :global(::view-transition-new(onboarding-step-card)),
+  :global(::view-transition-old(onboarding-step-card-shell)),
+  :global(::view-transition-new(onboarding-step-card-shell)) {
     animation-duration: 350ms;
     animation-timing-function: ease-in-out;
     animation-fill-mode: both;
     mix-blend-mode: normal;
+  }
+  :global(::view-transition-group(onboarding-step-card)),
+  :global(::view-transition-image-pair(onboarding-step-card)) {
+    overflow: clip;
+  }
+  :global(::view-transition-image-pair(onboarding-step-card)) {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--step-card-content-inset),
+      #000 calc(100% - var(--step-card-content-inset)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--step-card-content-inset),
+      #000 calc(100% - var(--step-card-content-inset)),
+      transparent 100%
+    );
   }
   :global(html[data-onboarding-direction="forward"]::view-transition-old(onboarding-step-card)) {
     animation-name: onboarding-slide-out-forward;
@@ -917,30 +974,29 @@
   @keyframes onboarding-slide-out-forward {
     to {
       opacity: 0;
-      transform: translateX(-10%);
+      transform: translateX(-100%);
     }
   }
   @keyframes onboarding-slide-in-forward {
     from {
       opacity: 0;
-      transform: translateX(10%);
+      transform: translateX(100%);
     }
   }
   @keyframes onboarding-slide-out-backward {
     to {
       opacity: 0;
-      transform: translateX(10%);
+      transform: translateX(100%);
     }
   }
   @keyframes onboarding-slide-in-backward {
     from {
       opacity: 0;
-      transform: translateX(-10%);
+      transform: translateX(-100%);
     }
   }
   @media (max-width: 720px) {
-    .two-columns,
-    .review-grid {
+    .two-columns {
       grid-template-columns: 1fr;
     }
   }
@@ -966,8 +1022,11 @@
     :global(::view-transition-old(root)),
     :global(::view-transition-new(root)),
     :global(::view-transition-group(onboarding-step-card)),
+    :global(::view-transition-group(onboarding-step-card-shell)),
     :global(::view-transition-old(onboarding-step-card)),
-    :global(::view-transition-new(onboarding-step-card)) {
+    :global(::view-transition-new(onboarding-step-card)),
+    :global(::view-transition-old(onboarding-step-card-shell)),
+    :global(::view-transition-new(onboarding-step-card-shell)) {
       animation: none !important;
     }
   }

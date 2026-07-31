@@ -1,4 +1,5 @@
 export { default as List } from "./ServiceEditorList.svelte";
+export { default as Item } from "./ServiceEditorItem.svelte";
 export { default as Root } from "./ServiceEditorRoot.svelte";
 export {
   createHeaderDraft,

@@ -1,0 +1,69 @@
+<script lang="ts">
+  import RainbowScale from "./RainbowScale.svelte";
+  import VelvetWordmark from "./VelvetWordmark.svelte";
+
+  let { subtitle }: { subtitle: string } = $props();
+
+  const subtitleLetters = $derived(subtitle.toUpperCase().split(""));
+</script>
+
+<h1
+  class="velvet-tool-brand"
+  data-velvet-tool-brand
+  aria-label={`Velvet ${subtitle}`}
+>
+  <VelvetWordmark />
+  <div
+    class="velvet-tool-palette"
+    data-velvet-tool-palette
+    aria-hidden="true"
+  >
+    <RainbowScale />
+  </div>
+  <span
+    class="velvet-tool-subtitle"
+    data-velvet-tool-subtitle
+    aria-label={subtitle.toUpperCase()}
+  >
+    {#each subtitleLetters as letter, index (index)}
+      <span aria-hidden="true">{letter}</span>
+    {/each}
+  </span>
+</h1>
+
+<style>
+  .velvet-tool-brand {
+    --velvet-wordmark-size: var(--tool-brand-wordmark-size, 1em);
+
+    width: var(--tool-brand-width, 100%);
+    display: grid;
+    justify-items: stretch;
+    margin: 0;
+    color: var(--tool-brand-accent, currentColor);
+  }
+  .velvet-tool-brand :global(.velvet-wordmark) {
+    width: 100%;
+    display: block;
+    text-align: center;
+  }
+  .velvet-tool-palette,
+  .velvet-tool-subtitle {
+    width: var(--tool-brand-inner-width, 94%);
+    justify-self: center;
+  }
+  .velvet-tool-palette {
+    height: var(--tool-brand-scale-height, 5px);
+    margin-top: var(--tool-brand-scale-gap, 0.625rem);
+  }
+  .velvet-tool-subtitle {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--tool-brand-subtitle-gap, 0.9rem);
+    color: var(--tool-brand-text, currentColor);
+    font-family: var(--tool-brand-heading-font, inherit);
+    font-size: var(--tool-brand-subtitle-size, 1rem);
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+</style>

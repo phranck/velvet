@@ -25,7 +25,9 @@ test("renders the local controls in a right sidebar and two real services", asyn
   );
 
   assert.match(html, /class="velvet-wordmark(?:\s|")/);
-  assert.match(html, /class="tool-subtitle(?:\s|")[^>]*>configurator<\/span>/);
+  assert.match(html, /data-velvet-tool-brand/);
+  assert.match(html, /data-velvet-tool-subtitle/);
+  assert.match(html, /aria-label="CONFIGURATOR"/);
   assert.match(html, /Local only/);
   assert.ok((html.match(/type="color"/g)?.length ?? 0) >= 6);
   assert.ok((html.match(/data-color-value/g)?.length ?? 0) >= 6);
@@ -109,12 +111,19 @@ test("renders the local controls in a right sidebar and two real services", asyn
     resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
     "utf8",
   );
+  const rainbowScale = await readFile(
+    resolve(import.meta.dirname, "../src/components/RainbowScale.svelte"),
+    "utf8",
+  );
   assert.match(
     source,
     /<ConfiguratorSection\s+id="themes"[\s\S]*?icon="ph-sparkle"/,
   );
   assert.match(source, /<StatusPage[\s\S]*?showNavigation=\{false\}/);
-  assert.match(source, /\.live-swatches\s*\{[^}]*grid-template-columns:\s*repeat\(9,\s*1fr\)/s);
+  assert.match(
+    rainbowScale,
+    /\.rainbow-scale\s*\{[^}]*grid-template-columns:\s*repeat\(9,\s*minmax\(0,\s*1fr\)\)/s,
+  );
   assert.match(
     source,
     /const directFileSavesAvailable =\s*typeof window !== "undefined" &&\s*supportsFileSystemAccess\(window\);/,
@@ -516,6 +525,10 @@ test("centers the compact configurator header without intro copy or a separator"
     resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
     "utf8",
   );
+  const brand = await readFile(
+    resolve(import.meta.dirname, "../src/components/VelvetToolBrand.svelte"),
+    "utf8",
+  );
 
   assert.doesNotMatch(
     configurator,
@@ -523,21 +536,27 @@ test("centers the compact configurator header without intro copy or a separator"
   );
   assert.match(
     configurator,
-    /<h1>\s*<VelvetWordmark\s*\/>\s*<span class="tool-subtitle">configurator<\/span>\s*<\/h1>/,
-  );
-  assert.match(configurator, /h1\s*\{[^}]*color:\s*var\(--tool-accent\)/s);
-  assert.match(configurator, /\.tool-subtitle\s*\{[^}]*width:\s*96%/s);
-  assert.match(
-    configurator,
-    /\.tool-subtitle\s*\{[^}]*text-align-last:\s*justify/s,
+    /import VelvetToolBrand from "\.\.\/components\/VelvetToolBrand\.svelte"/,
   );
   assert.match(
     configurator,
-    /\.tool-subtitle\s*\{[^}]*text-transform:\s*uppercase/s,
+    /<VelvetToolBrand subtitle="CONFIGURATOR"\s*\/>/,
+  );
+  assert.match(
+    brand,
+    /\.velvet-tool-palette,\s*\.velvet-tool-subtitle\s*\{[^}]*width:\s*var\(--tool-brand-inner-width,\s*94%\)/s,
+  );
+  assert.match(
+    brand,
+    /\.velvet-tool-subtitle\s*\{[^}]*display:\s*flex[^}]*justify-content:\s*space-between/s,
+  );
+  assert.match(brand, /subtitle\.toUpperCase\(\)\.split\(""\)/);
+  assert.match(
+    configurator,
+    /\.configurator-brand\s*\{[^}]*margin:\s*0 auto[^}]*--tool-brand-accent:\s*var\(--tool-accent\)/s,
   );
   assert.match(configurator, /\.tool-header\s*\{[^}]*text-align:\s*center/s);
   assert.doesNotMatch(configurator, /\.tool-header\s*\{[^}]*border-bottom:/s);
-  assert.match(configurator, /\.live-swatches\s*\{[^}]*margin:\s*20px auto 0/s);
 });
 
 test("replaces browser focus outlines with Velvet focus states", async () => {

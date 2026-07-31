@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 
-import { createSquirclePath } from "../src/lib/squircle.js";
+import {
+  createSquirclePath,
+} from "../src/lib/squircle.js";
 
 test("creates a square superellipse with equal horizontal and vertical bounds", () => {
   const path = createSquirclePath(84, 1, 16);

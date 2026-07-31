@@ -323,7 +323,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .three-columns {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: var(
+      --service-editor-health-grid-columns,
+      repeat(3, minmax(0, 1fr))
+    );
   }
   label {
     min-width: 0;
@@ -376,13 +379,14 @@
   .field-error,
   .field-hint {
     margin-inline: var(--service-editor-text-inset, 0);
-    font-size: var(--service-editor-small-font-size, 0.75rem);
   }
   .field-error {
     color: var(--service-editor-error, #ff8d9a);
+    font-size: var(--service-editor-small-font-size, 0.75rem);
   }
   .field-hint {
     color: var(--service-editor-muted, #979aa8);
+    font-size: var(--service-editor-caption-font-size, 0.75rem);
     line-height: 1.45;
   }
   button {
@@ -448,7 +452,7 @@
   .advanced-content > p {
     margin: 0.45rem var(--service-editor-text-inset, 0) 0;
     color: var(--service-editor-muted, #979aa8);
-    font-size: var(--service-editor-small-font-size, 0.9rem);
+    font-size: var(--service-editor-copy-font-size, 0.9rem);
     line-height: 1.5;
   }
   .advanced-group {
@@ -470,12 +474,15 @@
   }
   .small-button {
     flex: none;
-    padding: 0 0.65rem;
+    padding: 0 var(--service-editor-button-padding-inline, 0.65rem);
     background: var(--service-editor-raised, #272a36);
     color: var(--service-editor-text, #efedf5);
     font-size: var(--service-editor-font-size, 0.75rem);
   }
-  button:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--service-editor-accent, #8ca5ff);
+    outline-offset: 3px;
+  }
   summary:focus-visible {
     outline: 2px solid var(--service-editor-accent, #8ca5ff);
     outline-offset: 3px;

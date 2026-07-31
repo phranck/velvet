@@ -20,10 +20,16 @@ afterAll(async () => {
 
 test("renders the focused onboarding flow with progressive advanced checks", async () => {
   const html = await renderer.render("/src/onboarding/Onboarding.svelte", {});
+  const currentYear = new Date().getFullYear();
 
   assert.match(html, /Velvet/);
   assert.match(html, /ONBOARDING/);
   assert.match(html, /data-rainbow-scale/);
+  assert.ok(
+    html.indexOf("data-velvet-tool-palette") <
+      html.indexOf("data-velvet-tool-subtitle"),
+    "the rainbow scale should render above the onboarding subtitle",
+  );
   assert.equal(html.match(/data-rainbow-color/g)?.length, 9);
   assert.doesNotMatch(html, /Set up Velvet/);
   assert.doesNotMatch(html, /Your status page, without local setup/);
@@ -53,8 +59,13 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.match(html, /data-step-card-viewport/);
   assert.match(html, /data-step-card-body/);
   assert.match(html, /data-step-card-footer/);
+  assert.match(html, /data-review-list/);
+  assert.equal(html.match(/data-review-item/g)?.length, 4);
+  assert.equal(html.match(/data-review-squircle/g)?.length, 4);
+  assert.equal(html.match(/data-step-title-separator/g)?.length, 4);
+  assert.equal(html.match(/>\/\/</g)?.length, 4);
   assert.doesNotMatch(html, /data-form-actions-card/);
-  assert.match(html, /© by/);
+  assert.match(html, new RegExp(`© ${currentYear} by`));
   assert.match(html, /href="https:\/\/layered\.work"/);
   assert.match(html, /target="_blank"/);
 });
@@ -76,8 +87,39 @@ test("uses the local Barlow family for onboarding typography", async () => {
   assert.match(onboarding, /--setup-text-small:\s*0\.9375rem/);
   assert.match(onboarding, /--setup-text-body:\s*1rem/);
   assert.match(onboarding, /--setup-text-lead:\s*1\.125rem/);
+  assert.match(onboarding, /--setup-text-caption:\s*0\.8125rem/);
+  assert.match(onboarding, /--setup-text-intro:\s*2rem/);
+  assert.match(onboarding, /--setup-text-copy:\s*1\.25rem/);
+  assert.match(onboarding, /--setup-card-copy:\s*var\(--setup-text-copy\)/);
+  assert.match(
+    onboarding,
+    /Tell Velvet what to watch, choose a theme,<br \/>[\s\S]*and publish through your GitHub account\./,
+  );
+  assert.match(
+    onboarding,
+    /\.intro\s*\{[^}]*margin-bottom:\s*4\.5rem[^}]*\}[\s\S]*\.intro > p:last-child\s*\{[^}]*margin:\s*3\.5rem 0 0[^}]*color:\s*color-mix\(in srgb, var\(--setup-muted\) 78%, var\(--setup-text\)\)[^}]*font-size:\s*var\(--setup-text-intro\)/s,
+  );
+  assert.match(
+    onboarding,
+    /\.section-heading p\s*\{[^}]*font-size:\s*var\(--setup-card-copy\)/s,
+  );
   assert.match(onboarding, /--service-editor-small-font-size:\s*var\(--setup-text-small\)/);
+  assert.match(onboarding, /--service-editor-caption-font-size:\s*var\(--setup-text-caption\)/);
+  assert.match(onboarding, /--service-editor-copy-font-size:\s*var\(--setup-card-copy\)/);
   assert.match(onboarding, /--theme-card-font-size:\s*var\(--setup-text-body\)/);
+  assert.match(onboarding, /--theme-card-description-font-size:\s*var\(--setup-card-copy\)/);
+  assert.match(
+    onboarding,
+    /--tool-brand-scale-gap:\s*0\.625rem/,
+  );
+  assert.match(
+    onboarding,
+    /\.field-error\s*\{[^}]*font-size:\s*var\(--setup-text-small\)/s,
+  );
+  assert.match(
+    onboarding,
+    /\.field-hint\s*\{[^}]*font-size:\s*var\(--setup-text-caption\)/s,
+  );
 });
 
 test("uses the shared theme and icon components in onboarding and configurator", async () => {
@@ -96,16 +138,152 @@ test("uses the shared theme and icon components in onboarding and configurator",
     ),
     "utf8",
   );
+  const serviceItem = await readFile(
+    resolve(
+      import.meta.dirname,
+      "../src/components/service-editor/ServiceEditorItem.svelte",
+    ),
+    "utf8",
+  );
+  const serviceEditorIndex = await readFile(
+    resolve(
+      import.meta.dirname,
+      "../src/components/service-editor/index.ts",
+    ),
+    "utf8",
+  );
+  const iconPicker = await readFile(
+    resolve(
+      import.meta.dirname,
+      "../src/components/service-icon-picker/ServiceIconPicker.svelte",
+    ),
+    "utf8",
+  );
+  const iconOption = await readFile(
+    resolve(
+      import.meta.dirname,
+      "../src/components/service-icon-picker/ServiceIconOption.svelte",
+    ),
+    "utf8",
+  );
+  const toolBrand = await readFile(
+    resolve(
+      import.meta.dirname,
+      "../src/components/VelvetToolBrand.svelte",
+    ),
+    "utf8",
+  ).catch(() => "");
+  const themeCardRoot = await readFile(
+    resolve(
+      import.meta.dirname,
+      "../src/components/theme-card/ThemeCardRoot.svelte",
+    ),
+    "utf8",
+  );
 
   assert.match(onboarding, /import \* as ThemeCard from "\.\.\/components\/theme-card"/);
   assert.match(onboarding, /import \* as ServiceEditor from "\.\.\/components\/service-editor"/);
-  assert.match(onboarding, /<ServiceEditor\.List[\s\S]*<ServiceEditor\.Root/);
+  assert.match(
+    onboarding,
+    /<ServiceEditor\.List[\s\S]*<ServiceEditor\.Item[\s\S]*<ServiceEditor\.Root/,
+  );
+  assert.match(
+    configurator,
+    /<ServiceEditor\.List[\s\S]*<ServiceEditor\.Item[\s\S]*<ServiceEditor\.Root/,
+  );
   assert.doesNotMatch(onboarding, /<article class="service-editor"/);
+  assert.match(serviceEditorIndex, /default as Item/);
+  assert.match(serviceItem, /out:collapseServiceItem\|global/);
+  assert.match(serviceItem, /duration:\s*reducedMotion \? 0 : 350/);
+  assert.match(serviceItem, /height:\s*\$\{t \* height\}px/);
+  assert.match(serviceItem, /margin-bottom:\s*\$\{t \* marginBottom\}px/);
+  assert.match(serviceItem, /opacity:\s*\$\{t\}/);
   assert.match(serviceEditor, /import ServiceIconPicker from "\.\.\/service-icon-picker\/ServiceIconPicker\.svelte"/);
+  assert.doesNotMatch(iconPicker, /resolveListboxPlacement|aria-haspopup|aria-expanded/);
+  assert.doesNotMatch(iconPicker, /class="trigger"|class:open|inert=/);
+  assert.match(iconPicker, /role="listbox"/);
+  assert.match(iconPicker, /tabIndex=\{option\.value === value \? 0 : -1\}/);
+  assert.match(iconPicker, /handleOptionKeydown/);
+  assert.match(iconPicker, /import ServiceIconOption from "\.\/ServiceIconOption\.svelte"/);
+  assert.match(iconPicker, /<ServiceIconOption/);
+  assert.match(onboarding, /--picker-icon-size:\s*1\.875rem/);
+  assert.match(
+    iconPicker,
+    /<legend>\{legend\}<\/legend>[\s\S]*\{#if description\}<p>\{description\}<\/p>\{\/if\}[\s\S]*class="options"/,
+  );
+  assert.match(iconPicker, /\.options\s*\{[^}]*width:\s*100%/s);
+  assert.match(iconPicker, /\.options\s*\{[^}]*box-shadow:\s*none/s);
+  assert.match(
+    iconOption,
+    /import \{ createSquirclePath \} from "\.\.\/\.\.\/lib\/squircle\.js"/,
+  );
+  assert.match(iconOption, /data-service-icon-squircle/);
+  assert.match(iconOption, /class="selection-outline outer"[^>]*d=\{outerPath\}/);
+  assert.match(iconOption, /class="selection-outline inner"[^>]*d=\{innerPath\}/);
+  assert.match(iconOption, /stroke-width="1"/);
+  assert.match(iconOption, /stroke-width="4"/);
+  assert.match(iconOption, /font-size:\s*var\(--picker-icon-size,\s*1\.4rem\)/);
+  assert.match(
+    iconOption,
+    /\.selection-outline\s*\{[^}]*transform:\s*scale\(var\(--picker-selection-scale,\s*1\)\)[^}]*transform-box:\s*fill-box[^}]*transform-origin:\s*center[^}]*vector-effect:\s*non-scaling-stroke/s,
+  );
+  assert.match(
+    iconOption,
+    /button\[aria-selected="true"\] i\s*\{[^}]*color:\s*var\(--picker-selected-icon,\s*#fff\)/s,
+  );
+  assert.doesNotMatch(iconOption, /button\[aria-selected="true"\]::after/);
+  assert.match(
+    iconOption,
+    /\.option-background\s*\{[^}]*transition:\s*none/s,
+  );
+  assert.match(iconOption, /\.selection-outline\s*\{[^}]*transition:\s*opacity 200ms ease-in-out/s);
+  assert.match(iconOption, /i\s*\{[^}]*transition:\s*none/s);
+  assert.match(
+    iconOption,
+    /var\(--picker-accent,\s*#6366f1\) 28%,\s*var\(--picker-popover,/s,
+  );
+  assert.match(
+    iconOption,
+    /button:hover i,\s*button:focus-visible i\s*\{[^}]*transform:\s*scale\(1\.1\)/s,
+  );
+  assert.match(
+    configurator,
+    /import VelvetToolBrand from "\.\.\/components\/VelvetToolBrand\.svelte"/,
+  );
+  assert.match(
+    onboarding,
+    /import VelvetToolBrand from "\.\.\/components\/VelvetToolBrand\.svelte"/,
+  );
+  assert.match(
+    configurator,
+    /<div class="configurator-brand">\s*<VelvetToolBrand subtitle="CONFIGURATOR" \/>\s*<\/div>/,
+  );
+  assert.match(
+    onboarding,
+    /<div class="onboarding-brand-block">\s*<VelvetToolBrand subtitle="ONBOARDING" \/>\s*<\/div>/,
+  );
+  assert.match(toolBrand, /import RainbowScale from "\.\/RainbowScale\.svelte"/);
+  assert.match(toolBrand, /import VelvetWordmark from "\.\/VelvetWordmark\.svelte"/);
+  assert.match(toolBrand, /data-velvet-tool-brand/);
+  assert.match(toolBrand, /data-velvet-tool-palette/);
+  assert.match(toolBrand, /data-velvet-tool-subtitle/);
+  assert.match(toolBrand, /subtitle\.toUpperCase\(\)\.split\(""\)/);
+  assert.match(toolBrand, /width:\s*var\(--tool-brand-inner-width,\s*94%\)/);
+  assert.match(toolBrand, /justify-content:\s*space-between/);
+  assert.match(configurator, /--picker-selection-scale:\s*1\.14/);
   assert.match(configurator, /import \* as ThemeCard from "\.\.\/components\/theme-card"/);
   assert.match(configurator, /import ServiceIconPicker from "\.\.\/components\/service-icon-picker\/ServiceIconPicker\.svelte"/);
-  assert.match(onboarding, /import RainbowScale from "\.\.\/components\/RainbowScale\.svelte"/);
-  assert.match(configurator, /import RainbowScale from "\.\.\/components\/RainbowScale\.svelte"/);
+  assert.doesNotMatch(onboarding, /import RainbowScale|import VelvetWordmark/);
+  assert.doesNotMatch(configurator, /import RainbowScale|import VelvetWordmark/);
+  assert.match(
+    onboarding,
+    /--theme-card-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    themeCardRoot,
+    /grid-template-columns:\s*var\(\s*--theme-card-columns,\s*repeat\(2, minmax\(0, 1fr\)\)\s*\)/,
+  );
+  assert.match(themeCardRoot, /<h3>\{legend\}<\/h3>/);
 });
 
 test("uses a shared rainbow scale with clearly different edge hues", async () => {
@@ -121,6 +299,14 @@ test("uses a shared rainbow scale with clearly different edge hues", async () =>
   );
   assert.match(rainbowScale, /"#bf5af2",\s*\n\s*\] as const/);
   assert.doesNotMatch(rainbowScale, /"#ff375f"/);
+  assert.match(
+    rainbowScale,
+    /span:first-child\s*\{[^}]*border-radius:\s*999px 0 0 999px/s,
+  );
+  assert.match(
+    rainbowScale,
+    /span:last-child\s*\{[^}]*border-radius:\s*0 999px 999px 0/s,
+  );
 });
 
 test("uses reusable squircle steps and directional card motion", async () => {
@@ -145,9 +331,28 @@ test("uses reusable squircle steps and directional card motion", async () => {
   assert.match(onboarding, /onboarding-slide-in-backward/);
   assert.match(onboarding, /animation-duration:\s*350ms/);
   assert.match(onboarding, /animation-timing-function:\s*ease-in-out/);
+  assert.match(
+    onboarding,
+    /::view-transition-image-pair\(onboarding-step-card\)[\s\S]*overflow:\s*clip/,
+  );
+  assert.match(
+    onboarding,
+    /mask-image:\s*linear-gradient\([\s\S]*var\(--step-card-content-inset\)[\s\S]*calc\(100% - var\(--step-card-content-inset\)\)/,
+  );
+  assert.match(
+    onboarding,
+    /::view-transition-group\(onboarding-step-card-shell\)[\s\S]*animation-duration:\s*350ms/,
+  );
+  assert.match(onboarding, /transform:\s*translateX\(-100%\)/);
+  assert.match(onboarding, /transform:\s*translateX\(100%\)/);
+  assert.doesNotMatch(onboarding, /transform:\s*translateX\(-?10%\)/);
   assert.match(squircleStep, /data-squircle-step/);
   assert.match(squircleStep, /data-step-active-highlight/);
   assert.match(squircleStep, /transition:\s*opacity 350ms ease-in-out/);
+  assert.match(
+    squircleStep,
+    /button\s*\{[^}]*font-family:\s*var\(--setup-heading-font\)/s,
+  );
   assert.match(squircleStep, /createSquirclePath/);
   assert.match(squircleStep, /bind:clientWidth/);
   assert.match(squircleStep, /aspect-ratio:\s*1/);
@@ -156,11 +361,22 @@ test("uses reusable squircle steps and directional card motion", async () => {
   assert.match(squircleStep, /stroke-width="1"/);
   assert.match(squircleStep, /stroke-width="4"/);
   assert.match(onboarding, /grid-template-columns:\s*repeat\(4, var\(--step-size\)\)/);
-  assert.match(onboarding, /--step-gap:\s*clamp\(0\.8rem, 4vw, 2\.25rem\)/);
+  assert.match(onboarding, /--step-size:\s*clamp\(4\.5rem, 18vw, 5\.5rem\)/);
+  assert.match(onboarding, /--step-gap:\s*clamp\(0\.9rem, 4vw, 2\.625rem\)/);
+  assert.match(onboarding, /left:\s*calc\(100% \+ 5px\)/);
+  assert.match(onboarding, /width:\s*calc\(var\(--step-gap\) - 10px\)/);
+  assert.match(
+    onboarding,
+    /\.section-title \.separator\s*\{[^}]*color:\s*var\(--setup-accent\)/s,
+  );
   assert.doesNotMatch(onboarding, /\.steps li\s*\{[^}]*flex:\s*1 1 0/s);
 });
 
 test("exposes the reusable StepCard compound component", async () => {
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
   const index = await readFile(
     resolve(import.meta.dirname, "../src/components/step-card/index.ts"),
     "utf8",
@@ -177,13 +393,182 @@ test("exposes the reusable StepCard compound component", async () => {
     resolve(import.meta.dirname, "../src/components/step-card/StepCardFooter.svelte"),
     "utf8",
   );
-
+  const geometry = await readFile(
+    resolve(import.meta.dirname, "../src/components/step-card/geometry.ts"),
+    "utf8",
+  );
   assert.match(index, /Root/);
   assert.match(index, /Body/);
   assert.match(index, /Footer/);
   assert.match(root, /data-step-card/);
   assert.match(body, /data-step-card-body/);
+  assert.match(body, /padding:\s*var\(--step-card-content-inset, 20px\)/);
   assert.match(footer, /data-step-card-footer/);
+  assert.match(geometry, /STEP_CARD_RADIUS\s*=\s*32/);
+  assert.match(geometry, /STEP_CARD_CONTENT_INSET\s*=\s*20/);
+  assert.match(
+    geometry,
+    /STEP_CARD_FOOTER_INSET\s*=\s*STEP_CARD_CONTENT_INSET/,
+  );
+  assert.match(
+    geometry,
+    /STEP_CARD_INNER_RADIUS\s*=\s*deriveNestedCornerRadius\(\s*STEP_CARD_RADIUS,\s*STEP_CARD_CONTENT_INSET,\s*\)/,
+  );
+  assert.match(
+    geometry,
+    /STEP_CARD_BUTTON_RADIUS\s*=\s*STEP_CARD_INNER_RADIUS/,
+  );
+  assert.match(root, /STEP_CARD_RADIUS/);
+  assert.match(root, /STEP_CARD_INNER_RADIUS/);
+  assert.match(root, /STEP_CARD_BUTTON_RADIUS/);
+  assert.match(root, /overflow:\s*clip/);
+  assert.match(root, /border-radius:\s*var\(--step-card-radius\)/);
+  assert.match(root, /background:\s*var\(--setup-panel\)/);
+  assert.match(root, /box-shadow:/);
+  assert.match(root, /view-transition-name:\s*onboarding-step-card-shell/);
+  assert.match(
+    footer,
+    /padding:\s*0 var\(--step-card-content-inset, 20px\)\s+var\(--step-card-content-inset, 20px\)/,
+  );
+  assert.match(
+    onboarding,
+    /--step-card-inner-radius:\s*\$\{STEP_CARD_INNER_RADIUS\}px/,
+  );
+  assert.match(
+    onboarding,
+    /\.(?:primary-button|secondary-button)[^{]*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s,
+  );
+  assert.doesNotMatch(onboarding, /import SquircleSurface/);
+  assert.doesNotMatch(onboarding, /<SquircleSurface/);
+  assert.match(onboarding, /data-step-card-button-label/);
+});
+
+test("derives normal onboarding card and button radii from the StepCard geometry", async () => {
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
+  const serviceEditor = await readFile(
+    resolve(import.meta.dirname, "../src/components/service-editor/ServiceEditorRoot.svelte"),
+    "utf8",
+  );
+  const serviceList = await readFile(
+    resolve(import.meta.dirname, "../src/components/service-editor/ServiceEditorList.svelte"),
+    "utf8",
+  );
+  const iconPicker = await readFile(
+    resolve(import.meta.dirname, "../src/components/service-icon-picker/ServiceIconPicker.svelte"),
+    "utf8",
+  );
+  const iconOption = await readFile(
+    resolve(import.meta.dirname, "../src/components/service-icon-picker/ServiceIconOption.svelte"),
+    "utf8",
+  );
+  const themeOption = await readFile(
+    resolve(import.meta.dirname, "../src/components/theme-card/ThemeCardOption.svelte"),
+    "utf8",
+  );
+  const reviewItem = await readFile(
+    resolve(import.meta.dirname, "../src/components/review-list/ReviewListItem.svelte"),
+    "utf8",
+  );
+
+  assert.match(onboarding, /--service-editor-card-radius:\s*var\(--step-card-inner-radius\)/);
+  assert.match(onboarding, /--service-editor-control-radius:\s*var\(--step-card-inner-radius\)/);
+  assert.match(onboarding, /--picker-popover-radius:\s*var\(--step-card-inner-radius\)/);
+  assert.doesNotMatch(onboarding, /--picker-option-radius/);
+  assert.match(onboarding, /--theme-card-option-radius:\s*var\(--step-card-inner-radius\)/);
+  assert.match(onboarding, /--review-card-radius:\s*var\(--step-card-inner-radius\)/);
+  assert.match(onboarding, /\.dns-guidance\s*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s);
+  assert.match(onboarding, /\.deployment-progress\s*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s);
+
+  assert.match(serviceEditor, /\.service-editor\s*\{[^}]*border-radius:\s*var\(--service-editor-card-radius/s);
+  assert.match(serviceEditor, /\.(?:icon-button|small-button)[^{]*\{[^}]*border-radius:\s*var\(--service-editor-control-radius/s);
+  assert.match(serviceList, /\.add-service\s*\{[^}]*border-radius:\s*var\(--service-editor-control-radius/s);
+  assert.match(iconPicker, /\.options\s*\{[^}]*border-radius:\s*var\(--picker-popover-radius/s);
+  assert.match(iconOption, /createSquirclePath/);
+  assert.doesNotMatch(iconOption, /button\s*\{[^}]*border-radius/s);
+  assert.match(themeOption, /label\s*\{[^}]*border-radius:\s*var\(--theme-card-option-radius/s);
+  assert.match(reviewItem, /\.review-card\s*\{[^}]*border-radius:\s*var\(--review-card-radius/s);
+  assert.doesNotMatch(serviceEditor, /<SquircleSurface/);
+  assert.doesNotMatch(serviceList, /<SquircleSurface/);
+  assert.doesNotMatch(iconPicker, /<SquircleSurface/);
+  assert.doesNotMatch(themeOption, /<SquircleSurface/);
+  assert.doesNotMatch(reviewItem, /<SquircleSurface/);
+  assert.match(themeOption, /--theme-card-option-radius/);
+  assert.match(reviewItem, /--review-card-radius/);
+  assert.match(iconPicker, /--picker-popover-radius/);
+});
+
+test("uses the reusable ReviewList compound component for the publish summary", async () => {
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
+  const root = await readFile(
+    resolve(import.meta.dirname, "../src/components/review-list/ReviewListRoot.svelte"),
+    "utf8",
+  );
+  const item = await readFile(
+    resolve(import.meta.dirname, "../src/components/review-list/ReviewListItem.svelte"),
+    "utf8",
+  );
+
+  assert.match(onboarding, /import \* as ReviewList from "\.\.\/components\/review-list"/);
+  assert.match(
+    onboarding,
+    /<ReviewList\.Root>[\s\S]*<ReviewList\.Item[\s\S]*<\/ReviewList\.Root>/,
+  );
+  assert.match(
+    onboarding,
+    /label=\{draft\.services\.length === 1 \? "Service" : "Services"\}/,
+  );
+  assert.doesNotMatch(onboarding, /class="review-grid"/);
+  assert.doesNotMatch(onboarding, /accent=/);
+  assert.match(root, /width:\s*min\(100%, 44rem\)/);
+  assert.match(root, /margin:\s*0 auto/);
+  assert.match(item, /data-review-card/);
+  assert.doesNotMatch(item, /--review-accent/);
+  assert.doesNotMatch(item, /<SquircleSurface/);
+  assert.match(item, /\.review-card::before\s*\{[\s\S]*mask-image:\s*linear-gradient\([\s\S]*#000 80%[\s\S]*transparent 100%/);
+  assert.match(item, /grid-template-columns:\s*3\.75rem minmax\(0, 1fr\)/);
+  assert.match(item, /width:\s*3\.75rem/);
+  assert.doesNotMatch(onboarding, />Back<|>Continue</);
+});
+
+test("uses visible onboarding input borders and compact text buttons", async () => {
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
+  const serviceEditor = await readFile(
+    resolve(import.meta.dirname, "../src/components/service-editor/ServiceEditorRoot.svelte"),
+    "utf8",
+  );
+  const serviceList = await readFile(
+    resolve(import.meta.dirname, "../src/components/service-editor/ServiceEditorList.svelte"),
+    "utf8",
+  );
+
+  assert.match(
+    onboarding,
+    /--setup-input-border:\s*1px solid\s+color-mix\(in srgb, var\(--setup-text\) 14%, transparent\)/,
+  );
+  assert.match(onboarding, /--service-editor-input-border:\s*var\(--setup-input-border\)/);
+  assert.match(onboarding, /border:\s*var\(--setup-input-border\)/);
+  assert.match(onboarding, /--service-editor-button-padding-inline:\s*0\.5rem/);
+  assert.match(onboarding, /min-width:\s*7rem/);
+  assert.match(onboarding, /padding:\s*0 0\.75rem/);
+  assert.match(
+    serviceEditor,
+    /padding:\s*0 var\(--service-editor-button-padding-inline, 0\.65rem\)/,
+  );
+  assert.match(
+    serviceList,
+    /padding:\s*0 var\(--service-editor-button-padding-inline, 0\.8rem\)/,
+  );
+  assert.match(serviceList, /data-service-editor-actions/);
+  assert.match(serviceList, /justify-content:\s*flex-end/);
 });
 
 test("standalone onboarding uses its own build entry", async () => {

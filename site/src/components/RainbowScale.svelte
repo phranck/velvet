@@ -26,4 +26,10 @@
     grid-template-columns: repeat(9, minmax(0, 1fr));
     gap: 3px;
   }
+  span:first-child {
+    border-radius: 999px 0 0 999px;
+  }
+  span:last-child {
+    border-radius: 0 999px 999px 0;
+  }
 </style>

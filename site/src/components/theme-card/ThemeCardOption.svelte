@@ -40,7 +40,7 @@
     gap: 0.55rem;
     padding: 0.38rem;
     border: 0;
-    border-radius: 0.75rem;
+    border-radius: var(--theme-card-option-radius, 0.75rem);
     background: var(--picker-surface, #ffffff);
     color: var(--picker-text, #171922);
     cursor: pointer;
