@@ -41,6 +41,9 @@ export type ManagedUpdateReason =
   | "merge_rejected"
   | "update_closed"
   | "repository_changed"
+  | "protected_branch_target"
+  | "protected_files_changed"
+  | "data_branch_changed"
   | "recovery_failed";
 
 export interface ManagedUpdateResult {

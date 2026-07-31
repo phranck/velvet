@@ -10,6 +10,7 @@ import type {
 
 export const MAX_MANAGED_FILE_BYTES = 524_288;
 const MAX_MANAGED_FILES_BYTES = 4_194_304;
+const MAX_CHANGED_PATH_LENGTH = 256;
 export const COMMIT_SHA = /^[a-f0-9]{40}$/u;
 const MANAGED_PATHS = new Set<string>(MANAGED_TEMPLATE_PATHS);
 
@@ -168,6 +169,44 @@ export function parseWorkflowRun(
     htmlUrl: value.html_url,
     headSha: expectedHeadSha,
   };
+}
+
+/**
+ * Collects every repository path a changed-file response names.
+ *
+ * A rename reports its destination in `filename` and its origin in
+ * `previous_filename`. Both sides are returned because renaming a protected
+ * file onto a Velvet-owned path would otherwise pass an ownership check while
+ * still deleting user content.
+ *
+ * @param value - Parsed body of the GitHub pull-request files endpoint.
+ * @returns Every named path, destinations first, in response order.
+ * @throws When the response is not a list of entries that all name a path.
+ */
+export function parseChangedPaths(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    throw new Error("GitHub changed-files response was invalid.");
+  }
+  return value.flatMap((entry) => {
+    if (!isRecord(entry)) {
+      throw new Error("GitHub changed-files response was invalid.");
+    }
+    const current = entry.filename;
+    const previous = entry.previous_filename;
+    if (
+      !changedPath(current) ||
+      (previous !== undefined && !changedPath(previous))
+    ) {
+      throw new Error("GitHub changed-files response was invalid.");
+    }
+    return previous === undefined ? [current] : [current, previous];
+  });
+}
+
+function changedPath(value: unknown): value is string {
+  return typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= MAX_CHANGED_PATH_LENGTH;
 }
 
 export function validateManagedFiles(

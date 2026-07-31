@@ -519,6 +519,103 @@ test("finds update branches and dispatches one Pages workflow for the expected d
   assert.deepEqual(await dispatch!.json(), { ref: "main" });
 });
 
+test("reads both sides of every path a managed update pull request changes", async () => {
+  const requests: Request[] = [];
+  const client = app(async (request) => {
+    requests.push(request);
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    if (request.method === "GET" && url.pathname.endsWith("/pulls/12/files")) {
+      return Response.json([
+        { filename: ".github/workflows/velvet.yml", status: "modified" },
+        { filename: "velvet.lock.json", status: "modified" },
+        {
+          filename: ".github/workflows/velvet-status.yml",
+          status: "renamed",
+          previous_filename: "velvet.yml",
+        },
+      ]);
+    }
+    throw new Error(`Unexpected request: ${request.method} ${request.url}`);
+  });
+  const repository = await client.forRepository(7, 99);
+
+  assert.deepEqual(await repository.changedPaths(12), [
+    ".github/workflows/velvet.yml",
+    "velvet.lock.json",
+    ".github/workflows/velvet-status.yml",
+    "velvet.yml",
+  ]);
+  const files = requests.find((request) => request.url.includes("/pulls/12/files"));
+  assert.equal(
+    new URL(files!.url).searchParams.get("per_page"),
+    "10",
+    "a Velvet update owns eight paths, so a larger page cannot hide a protected change",
+  );
+});
+
+test("rejects a changed-file response that does not name every path", async () => {
+  const client = app(async (request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    return Response.json([{ status: "modified", previous_filename: 7 }]);
+  });
+  const repository = await client.forRepository(7, 99);
+
+  await assert.rejects(
+    () => repository.changedPaths(12),
+    /changed-files response was invalid/u,
+  );
+});
+
+test("reports the generated data branch head and its absence", async () => {
+  const present = app(async (request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    if (url.pathname.endsWith("/git/ref/heads/velvet-data")) {
+      return Response.json({
+        ref: "refs/heads/velvet-data",
+        object: { type: "commit", sha: mergeSha },
+      });
+    }
+    throw new Error(`Unexpected request: ${request.method} ${request.url}`);
+  });
+  assert.equal(
+    await (await present.forRepository(7, 99)).dataBranchHead(),
+    mergeSha,
+  );
+
+  const absent = app(async (request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    return new Response(null, { status: 404 });
+  });
+  assert.equal(
+    await (await absent.forRepository(7, 99)).dataBranchHead(),
+    null,
+  );
+});
+
 test("keeps the merge commit needed to reconcile a completed update", async () => {
   const client = app(async (request) => {
     const url = new URL(request.url);

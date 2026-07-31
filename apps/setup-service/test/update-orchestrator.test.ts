@@ -23,11 +23,14 @@ import type {
   GitHubUpdatePullRequest,
   GitHubUpdateWorkflowRun,
 } from "../src/update-github.js";
+import { VELVET_DATA_BRANCH } from "../src/update-ownership.js";
 
 const baseSha = "1".repeat(40);
 const updateSha = "2".repeat(40);
 const mergeSha = "3".repeat(40);
 const revertSha = "4".repeat(40);
+const dataSha = "5".repeat(40);
+const rewrittenDataSha = "6".repeat(40);
 const templateCommit = "a".repeat(40);
 
 const configuration = (automaticSecurityUpdates = true) => `
@@ -191,6 +194,9 @@ class FakeRepository implements GitHubRepositoryUpdateClient {
   defaultHeadFailures = 0;
   defaultHeadCalls = 0;
   createPullRequestFailures = 0;
+  changedPathsResult: string[] = [...MANAGED_TEMPLATE_PATHS];
+  dataBranchSha: string | null = dataSha;
+  dataBranchAfterMerge: string | null | undefined = undefined;
 
   async defaultBranchHead(): Promise<string> {
     this.defaultHeadCalls += 1;
@@ -216,6 +222,15 @@ class FakeRepository implements GitHubRepositoryUpdateClient {
     }
     if (ref === this.defaultHead) return structuredClone(this.currentFiles);
     throw new Error(`Unexpected managed-files ref ${ref}`);
+  }
+
+  async changedPaths(pullRequestNumber: number): Promise<string[]> {
+    assert.equal(pullRequestNumber, this.pullRequest?.number);
+    return [...this.changedPathsResult];
+  }
+
+  async dataBranchHead(): Promise<string | null> {
+    return this.dataBranchSha;
   }
 
   async updateBranchHead(): Promise<string | null> {
@@ -297,6 +312,9 @@ class FakeRepository implements GitHubRepositoryUpdateClient {
     this.defaultHead = mergeSha;
     this.currentFiles = structuredClone(this.updateFiles);
     this.lock = lockFrom(this.currentFiles);
+    if (this.dataBranchAfterMerge !== undefined) {
+      this.dataBranchSha = this.dataBranchAfterMerge;
+    }
     return { merged: true, sha: mergeSha };
   }
 
@@ -505,6 +523,71 @@ test("restores and republishes the previous managed version after publication fa
   assert.equal((await updates.reconcile(manualRequest)).state, "restored");
   assert.equal((await updates.reconcile(manualRequest)).state, "restored");
   assert.equal(repository.mutations.filter((entry) => entry === "revert").length, 1);
+});
+
+test("refuses a repository whose default branch stores the generated history", async () => {
+  const repository = new FakeRepository();
+  repository.repository.defaultBranch = VELVET_DATA_BRANCH;
+
+  const outcome = await orchestrator(repository).reconcile(manualRequest);
+
+  assert.equal(outcome.state, "failed");
+  assert.equal(outcome.reason, "protected_branch_target");
+  assert.deepEqual(repository.mutations, []);
+});
+
+test("stops an update before merging a pull request that changes protected files", async () => {
+  const repository = new FakeRepository();
+  const updates = orchestrator(repository);
+  assert.equal((await updates.reconcile(manualRequest)).state, "waiting_for_checks");
+  repository.checkRunsBySha.set(updateSha, [checkRun("success")]);
+  repository.changedPathsResult = [
+    ".github/workflows/velvet.yml",
+    "velvet.lock.json",
+    "velvet.yml",
+  ];
+
+  const blocked = await updates.reconcile(manualRequest);
+
+  assert.equal(blocked.state, "failed");
+  assert.equal(blocked.reason, "protected_files_changed");
+  assert.equal(repository.mutations.includes("merge"), false);
+  assert.deepEqual(repository.currentFiles, previousFiles);
+  assert.equal(repository.defaultHead, baseSha);
+});
+
+test("stops an update that removed the generated data branch whilst merging", async () => {
+  const repository = new FakeRepository();
+  repository.dataBranchAfterMerge = null;
+  const updates = orchestrator(repository);
+  await updates.reconcile(manualRequest);
+  repository.checkRunsBySha.set(updateSha, [checkRun("success")]);
+
+  const outcome = await updates.reconcile(manualRequest);
+
+  assert.equal(outcome.state, "failed");
+  assert.equal(outcome.reason, "data_branch_changed");
+  assert.equal(
+    repository.mutations.some((mutation) => mutation.startsWith("dispatch:")),
+    false,
+  );
+  assert.equal(repository.mutations.includes("delete-branch"), false);
+});
+
+test("accepts a data branch that the monitor rewrote whilst the update merged", async () => {
+  const repository = new FakeRepository();
+  repository.dataBranchAfterMerge = rewrittenDataSha;
+  const updates = orchestrator(repository);
+  await updates.reconcile(manualRequest);
+  repository.checkRunsBySha.set(updateSha, [checkRun("success")]);
+
+  const outcome = await updates.reconcile(manualRequest);
+
+  assert.equal(outcome.state, "waiting_for_publication");
+  assert.deepEqual(repository.mutations.slice(-2), [
+    "merge",
+    `dispatch:${mergeSha}`,
+  ]);
 });
 
 test("retries safe GitHub reads only up to the configured bound", async () => {

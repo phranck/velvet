@@ -64,6 +64,8 @@ export interface GitHubRepositoryUpdateClient {
   readConfiguration(): Promise<{ source: string; blobSha: string }>;
   readVersionLock(): Promise<{ lock: VelvetVersionLock; blobSha: string }>;
   readManagedFiles(ref: string): Promise<GitHubManagedFile[]>;
+  changedPaths(pullRequestNumber: number): Promise<string[]>;
+  dataBranchHead(): Promise<string | null>;
   updateBranchHead(version: string): Promise<string | null>;
   createUpdateBranch(version: string, baseSha: string): Promise<void>;
   commitUpdate(
