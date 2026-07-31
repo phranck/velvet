@@ -13,9 +13,11 @@
     "preview": "vite preview",
     "screenshot": "bun scripts/screenshot.mjs",
     "pretest": "bun run --filter @velvet/contracts build",
-    "test": "bun test --max-concurrency 1 test/*.test.ts",
+    "test": "bun run test:units && bun run test:builds",
     "pretypecheck": "bun run --filter @velvet/contracts build",
-    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "test:units": "bun test --max-concurrency 1 $(ls test/*.test.ts | grep -v build-scripts.slow)",
+    "test:builds": "bun test ./test/build-scripts.slow.test.ts"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",
