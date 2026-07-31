@@ -118,7 +118,10 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     },
   });
 
-  assert.equal(await client.createInstallationToken(7, 99), "installation-token");
+  assert.deepEqual(await client.createInstallationToken(7, 99), {
+    token: "installation-token",
+    canWriteWorkflows: true,
+  });
   const repository = await client.createRepositoryFromTemplate(
     "user-token",
     "example",
@@ -159,6 +162,7 @@ test("restricts installation tokens and repository changes to the Velvet setup f
       administration: "write",
       contents: "write",
       pages: "write",
+      workflows: "write",
     },
   });
   assert.equal(

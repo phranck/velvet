@@ -146,6 +146,14 @@ Set only these repository permissions:
 - Workflows: Read and write
 - Metadata: Read-only, added automatically by GitHub
 
+Setup needs Workflows because it tailors the monitor workflows to the
+configuration. A check using a header secret only works when the workflow maps
+that secret name, and the template ships a commented-out placeholder there. If
+an installation was granted access before that permission existed, GitHub
+refuses the wider token and setup falls back to writing only the version lock,
+so it still completes whilst leaving the workflows untailored. Re-approving the
+app restores the full behaviour.
+
 Setup and managed updates mint separate installation tokens. The setup token
 keeps only the original setup permissions. The update token is restricted to
 one repository ID and requests Actions read and write, Checks read, Contents

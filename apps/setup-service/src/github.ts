@@ -2,6 +2,7 @@ import {
   GITHUB_API_VERSION,
   GITHUB_API_ORIGIN,
   GitHubApiError,
+  type GitHubInstallationPermissions,
   createGitHubAppJwt,
   createGitHubRequest,
   createRepositoryInstallationToken,
@@ -17,6 +18,30 @@ export const TEMPLATE_REPOSITORY = "phranck/velvet-template";
 export const SETUP_WORKFLOW = "velvet.yml";
 export const CONFIGURATION_PATH = "velvet.yml";
 export const VERSION_LOCK_PATH = "velvet.lock.json";
+
+/**
+ * Access setup needs to produce a complete, working installation.
+ *
+ * `workflows` is required to write the monitor workflows, which must be
+ * tailored to the configuration so that a check using a header secret receives
+ * it. Without that permission the workflows keep the template's placeholder and
+ * such a check silently runs without its header.
+ */
+const SETUP_PERMISSIONS: GitHubInstallationPermissions = {
+  actions: "write",
+  administration: "write",
+  contents: "write",
+  pages: "write",
+  workflows: "write",
+};
+
+/** The set granted before workflow tailoring existed. */
+const LEGACY_SETUP_PERMISSIONS: GitHubInstallationPermissions = {
+  actions: "write",
+  administration: "write",
+  contents: "write",
+  pages: "write",
+};
 
 export interface GitHubViewer {
   login: string;
@@ -58,6 +83,24 @@ export interface GitHubWorkflowJob {
   conclusion: string | null;
 }
 
+/**
+ * A setup token plus what it is actually permitted to do.
+ *
+ * `canWriteWorkflows` is false when the app installation predates the workflow
+ * permission, so callers can degrade deliberately instead of failing a write
+ * they cannot perform.
+ */
+/** One file written during setup, addressed by its repository path. */
+export interface GitHubManagedSetupFile {
+  path: string;
+  content: string;
+}
+
+export interface GitHubSetupToken {
+  token: string;
+  canWriteWorkflows: boolean;
+}
+
 export interface GitHubPagesSite {
   htmlUrl: string;
   status: string | null;
@@ -73,7 +116,10 @@ export interface GitHubSetupClient {
     owner: string,
     name: string,
   ): Promise<GitHubRepository>;
-  createInstallationToken(installationId: number, repositoryId: number): Promise<string>;
+  createInstallationToken(
+    installationId: number,
+    repositoryId: number,
+  ): Promise<GitHubSetupToken>;
   deleteInstallation(installationId: number): Promise<void>;
   getConfigurationSha(
     installationToken: string,
@@ -87,11 +133,11 @@ export interface GitHubSetupClient {
     source: string,
     sha: string,
   ): Promise<void>;
-  writeVersionLock(
+  writeManagedFiles(
     installationToken: string,
     owner: string,
     repository: string,
-    source: string,
+    files: readonly GitHubManagedSetupFile[],
   ): Promise<void>;
   enablePages(
     installationToken: string,
@@ -226,18 +272,27 @@ export function createGitHubSetupClient(
     },
 
     async createInstallationToken(installationId, repositoryId) {
-      return createRepositoryInstallationToken(
-        { ...options, fetch: fetchImplementation, nowSeconds },
-        installationId,
-        repositoryId,
-        {
-          actions: "write",
-          administration: "write",
-          contents: "write",
-          pages: "write",
-        },
-        "velvet-setup-service",
-      );
+      const mint = (permissions: GitHubInstallationPermissions) =>
+        createRepositoryInstallationToken(
+          { ...options, fetch: fetchImplementation, nowSeconds },
+          installationId,
+          repositoryId,
+          permissions,
+          "velvet-setup-service",
+        );
+      try {
+        return { token: await mint(SETUP_PERMISSIONS), canWriteWorkflows: true };
+      } catch (error) {
+        // GitHub refuses a token requesting more than the app was granted. The
+        // workflow permission is newer than some installations, so falling back
+        // keeps setup working on those whilst reporting that the generated
+        // workflows cannot be tailored to the configuration.
+        if (!(error instanceof GitHubApiError) || error.status !== 422) throw error;
+        return {
+          token: await mint(LEGACY_SETUP_PERMISSIONS),
+          canWriteWorkflows: false,
+        };
+      }
     },
 
     async deleteInstallation(installationId) {
@@ -286,20 +341,70 @@ export function createGitHubSetupClient(
       );
     },
 
-    async writeVersionLock(installationToken, owner, repository, source) {
-      // The lock does not exist in the template, so this creates it and
-      // deliberately sends no blob SHA. GitHub rejects the write if the path
-      // already exists, which stops a retry from overwriting a newer lock.
-      await githubRequest<unknown>(
-        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/contents/${VERSION_LOCK_PATH}`,
+    async writeManagedFiles(installationToken, owner, repository, files) {
+      if (files.length === 0) return;
+      const root = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}`;
+      // One commit for the whole set, so an installation is never left with
+      // some managed files updated and others still holding template defaults.
+      const reference = await githubRequest<unknown>(
+        `${root}/git/ref/heads/main`,
+        installationToken,
+      );
+      if (
+        !isRecord(reference) ||
+        !isRecord(reference.object) ||
+        typeof reference.object.sha !== "string"
+      ) {
+        throw new Error("GitHub reference response was invalid.");
+      }
+      const head = reference.object.sha;
+      const parent = await githubRequest<unknown>(
+        `${root}/git/commits/${head}`,
+        installationToken,
+      );
+      if (
+        !isRecord(parent) ||
+        !isRecord(parent.tree) ||
+        typeof parent.tree.sha !== "string"
+      ) {
+        throw new Error("GitHub commit response was invalid.");
+      }
+      const tree = await githubRequest<unknown>(`${root}/git/trees`, installationToken, {
+        method: "POST",
+        body: JSON.stringify({
+          base_tree: parent.tree.sha,
+          tree: files.map((file) => ({
+            path: file.path,
+            mode: "100644",
+            type: "blob",
+            content: file.content,
+          })),
+        }),
+      });
+      if (!isRecord(tree) || typeof tree.sha !== "string") {
+        throw new Error("GitHub tree response was invalid.");
+      }
+      const commit = await githubRequest<unknown>(
+        `${root}/git/commits`,
         installationToken,
         {
-          method: "PUT",
+          method: "POST",
           body: JSON.stringify({
-            message: "Record the installed Velvet version [skip ci]",
-            content: Buffer.from(source).toString("base64"),
-            branch: "main",
+            message: "Configure Velvet [skip ci]",
+            tree: tree.sha,
+            parents: [head],
           }),
+        },
+      );
+      if (!isRecord(commit) || typeof commit.sha !== "string") {
+        throw new Error("GitHub commit response was invalid.");
+      }
+      await githubRequest<unknown>(
+        `${root}/git/refs/heads/main`,
+        installationToken,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ sha: commit.sha, force: false }),
         },
       );
     },

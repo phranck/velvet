@@ -59,7 +59,7 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
     async deleteInstallation() { throw new Error("unused"); },
     async getConfigurationSha() { throw new Error("unused"); },
     async writeConfiguration() { throw new Error("unused"); },
-    async writeVersionLock() { throw new Error("unused"); },
+    async writeManagedFiles() { throw new Error("unused"); },
     async enablePages() { throw new Error("unused"); },
     async configurePagesCustomDomain() { throw new Error("unused"); },
     async dispatchWorkflow() { throw new Error("unused"); },

@@ -172,10 +172,11 @@ export async function provisionVelvet(
       delete input.session.installation;
       throw installationRequired(true);
     }
-    const installationToken = await input.github.createInstallationToken(
+    const setupToken = await input.github.createInstallationToken(
       installation.id,
       state.repository.id,
     );
+    const installationToken = setupToken.token;
 
     if (!state.configurationCommitted) {
       progress("writing-configuration");
@@ -198,13 +199,14 @@ export async function provisionVelvet(
     }
 
     if (!state.versionLockCommitted) {
-      await input.github.writeVersionLock(
+      await input.github.writeManagedFiles(
         installationToken,
         state.repository.owner,
         state.repository.name,
-        await versionLockSource(
+        await managedSetupFiles(
           input.releases ?? embeddedVelvetReleases(),
           input.request.configuration,
+          setupToken.canWriteWorkflows,
         ),
       );
       state.versionLockCommitted = true;
@@ -335,33 +337,46 @@ export async function provisionVelvet(
 }
 
 /**
- * Renders the version lock that records which Velvet release an installation
- * starts on.
+ * Builds the Velvet-owned files a new installation starts with.
  *
- * The lock is produced by the same generator a managed update uses, so a fresh
- * installation records exactly what an update would write for that release.
- * Without it an installation has no version to compare against and can never
- * be updated.
+ * They come from the same generator a managed update uses, so a fresh
+ * installation is byte-identical to what an update would produce for that
+ * configuration. This is what makes a check with a header secret work at all:
+ * the template ships a commented-out placeholder where the secret mapping
+ * belongs, and only this generator fills it in.
  *
  * @param releases - Source describing the release being installed.
  * @param configuration - Validated configuration for the new repository.
- * @returns The serialized `velvet.lock.json` content.
- * @throws When the release cannot produce a lock, which means the compiled-in
- *   release artefact is broken and setup must not continue.
+ * @param canWriteWorkflows - Whether the token may write workflow files. When
+ *   it may not, only the version lock is written, so setup still completes on
+ *   an installation whose app grant predates that permission.
+ * @returns The files to commit, always including the version lock.
+ * @throws When the release cannot produce them, because an installation
+ *   without a lock could never be updated.
  */
-async function versionLockSource(
+async function managedSetupFiles(
   releases: ManagedUpdateReleaseProvider,
   configuration: NormalizedVelvetConfiguration,
-): Promise<string> {
+  canWriteWorkflows: boolean,
+): Promise<{ path: string; content: string }[]> {
   const release = await releases.get(releases.latest());
   const materialized = materializeManagedTemplateFiles({
     manifest: release.manifest,
     configuration,
     sources: release.sources,
   });
-  const lock = materialized.success
-    ? materialized.data.files.find((file) => file.path === VERSION_LOCK_PATH)
-    : undefined;
+  if (!materialized.success) {
+    throw new SetupServiceError(
+      "CONFIGURATION_COMMIT_FAILED",
+      "The repository was created, but its Velvet version could not be recorded.",
+      { recoverable: true },
+    );
+  }
+  const files = materialized.data.files.map(({ path, content }) => ({
+    path,
+    content,
+  }));
+  const lock = files.find((file) => file.path === VERSION_LOCK_PATH);
   if (!lock) {
     throw new SetupServiceError(
       "CONFIGURATION_COMMIT_FAILED",
@@ -369,7 +384,7 @@ async function versionLockSource(
       { recoverable: true },
     );
   }
-  return lock.content;
+  return canWriteWorkflows ? files : [lock];
 }
 
 function deploymentStageForJobs(
