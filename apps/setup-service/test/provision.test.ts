@@ -81,7 +81,7 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
     },
     async createInstallationToken() {
       calls.push("create-installation-token");
-      return "installation-token";
+      return { token: "installation-token", canWriteWorkflows: true };
     },
     async deleteInstallation() { calls.push("delete-installation"); },
     async getConfigurationSha() {
@@ -92,8 +92,8 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
       calls.push("write-configuration");
       assert.match(source, /^schemaVersion: 1\n/);
     },
-    async writeVersionLock() {
-      calls.push("write-version-lock");
+    async writeManagedFiles() {
+      calls.push("write-managed-files");
     },
     async enablePages() {
       calls.push("enable-pages");
@@ -156,7 +156,7 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
     "create-installation-token",
     "get-configuration",
     "write-configuration",
-    "write-version-lock",
+    "write-managed-files",
     "enable-pages",
     "dispatch-workflow",
     "workflow-jobs",
@@ -430,11 +430,11 @@ test("does not recreate Pages when GitHub confirms it is already enabled", async
 
 test("writes a version lock recording the release the installation starts on", async () => {
   const session = authenticatedSession();
-  const sources: string[] = [];
+  const written: { path: string; content: string }[] = [];
   const { client, calls } = successfulGitHub({
-    async writeVersionLock(_token, _owner, _repository, source) {
-      calls.push("write-version-lock");
-      sources.push(source);
+    async writeManagedFiles(_token, _owner, _repository, files) {
+      calls.push("write-managed-files");
+      written.push(...files);
     },
   });
 
@@ -447,20 +447,26 @@ test("writes a version lock recording the release the installation starts on", a
   });
 
   assert.equal(result.type, "success");
-  assert.equal(sources.length, 1);
-  const parsed = parseVelvetVersionLock(sources[0]!);
+  assert.equal(
+    written.some((file) => file.path === ".github/workflows/velvet-status.yml"),
+    true,
+    "the monitor workflow is tailored to the configuration, not left as the template placeholder",
+  );
+  const lock = written.find((file) => file.path === "velvet.lock.json");
+  assert.ok(lock, "the version lock is part of the written set");
+  const parsed = parseVelvetVersionLock(lock.content);
   assert.equal(parsed.success, true);
   if (!parsed.success) return;
   assert.equal(parsed.data.template.repository, "phranck/velvet-template");
   assert.match(parsed.data.template.commit, /^[a-f0-9]{40}$/u);
   assert.equal(parsed.data.schemaVersion, 1);
   assert.equal(
-    calls.indexOf("write-version-lock") > calls.indexOf("write-configuration"),
+    calls.indexOf("write-managed-files") > calls.indexOf("write-configuration"),
     true,
     "the lock is written after the configuration it describes",
   );
   assert.equal(
-    calls.indexOf("write-version-lock") < calls.indexOf("dispatch-workflow"),
+    calls.indexOf("write-managed-files") < calls.indexOf("dispatch-workflow"),
     true,
     "the lock exists before the first monitoring run",
   );
@@ -493,9 +499,39 @@ test("does not rewrite the version lock when a partial setup is retried", async 
     sleep: async () => {},
   });
 
-  assert.equal(calls.filter((call) => call === "write-version-lock").length, 1);
+  assert.equal(calls.filter((call) => call === "write-managed-files").length, 1);
   assert.equal(
-    retry.calls.filter((call) => call === "write-version-lock").length,
+    retry.calls.filter((call) => call === "write-managed-files").length,
     0,
+  );
+});
+
+test("still completes setup when the app cannot write workflow files", async () => {
+  const session = authenticatedSession();
+  const written: { path: string; content: string }[] = [];
+  const { client, calls } = successfulGitHub({
+    async createInstallationToken() {
+      calls.push("create-installation-token");
+      return { token: "installation-token", canWriteWorkflows: false };
+    },
+    async writeManagedFiles(_token, _owner, _repository, files) {
+      calls.push("write-managed-files");
+      written.push(...files);
+    },
+  });
+
+  const result = await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(result.type, "success");
+  assert.deepEqual(
+    written.map((file) => file.path),
+    ["velvet.lock.json"],
+    "only the lock is written, because a workflow write would be refused",
   );
 });
