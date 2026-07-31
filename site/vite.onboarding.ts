@@ -15,7 +15,7 @@ export default defineConfig({
   plugins: [
     phosphorWoff2Only,
     svelte(),
-    renameHtmlEntry(onboardingOutDir, "onboarding.html"),
+    renameHtmlEntry("onboarding.html"),
   ],
   build: {
     outDir: onboardingOutDir,

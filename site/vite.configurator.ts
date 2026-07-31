@@ -15,7 +15,7 @@ export default defineConfig({
   plugins: [
     phosphorWoff2Only,
     svelte(),
-    renameHtmlEntry(configuratorOutDir, "configurator.html"),
+    renameHtmlEntry("configurator.html"),
   ],
   build: {
     outDir: configuratorOutDir,
