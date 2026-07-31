@@ -70,6 +70,43 @@ export interface ValidateReleasePublicationInput {
   source: ReleaseTemplateSource;
 }
 
+/**
+ * Everything a release needs beyond the template revision it is cut from.
+ *
+ * The managed file list is deliberately absent because it is derived from the
+ * source rather than supplied. Hand-written file lists were how a generated
+ * file could be published as a static copy, which would freeze one
+ * installation's configuration into every other installation.
+ *
+ * @property version - Semantic version this release publishes.
+ * @property releaseType - Classification that must match the version step, so a
+ *   feature changes the major or minor part whilst a fix or security release
+ *   changes only the patch part.
+ * @property automaticInstallEligible - Whether unattended installation is
+ *   allowed, which validation restricts to migration-free security releases.
+ * @property source - Immutable template revision and the file contents read
+ *   from it.
+ * @property releaseNotes - Markdown shown in the Configurator, never rendered
+ *   as raw HTML.
+ * @property previousManifest - Immediately preceding release, omitted for a
+ *   first publication.
+ */
+export interface BuildReleaseManifestInput {
+  version: string;
+  releaseType: "security" | "fix" | "feature";
+  automaticInstallEligible: boolean;
+  compatibility: {
+    minimumInstalledVersion: string;
+    configurationSchemaVersion: number;
+    dataSchemaVersion: number;
+    configurationMigrationRequired: boolean;
+    dataMigrationRequired: boolean;
+  };
+  source: ReleaseTemplateSource;
+  releaseNotes: string;
+  previousManifest?: unknown;
+}
+
 export type ReleasePublicationResult =
   | { success: true; data: VelvetReleaseManifest }
   | { success: false; errors: ReleasePublicationError[] };

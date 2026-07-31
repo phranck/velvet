@@ -1,6 +1,8 @@
 export { materializeManagedTemplateFiles } from "./materialize.js";
 export { validateReleasePublication } from "./publication.js";
+export { buildReleaseManifest } from "./release.js";
 export type {
+  BuildReleaseManifestInput,
   ManagedTemplateFilesResult,
   MaterializeManagedTemplateFilesInput,
   MaterializedTemplateFile,

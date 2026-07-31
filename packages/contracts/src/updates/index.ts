@@ -15,6 +15,7 @@ export type {
 } from "./schemas.js";
 export {
   compareVelvetSemanticVersions,
+  MANAGED_TEMPLATE_GENERATORS,
   MANAGED_TEMPLATE_PATHS,
   VELVET_TEMPLATE_REPOSITORY,
   parseVelvetReleaseManifest,
@@ -22,6 +23,7 @@ export {
   validateVelvetReleaseManifest,
   validateVelvetVersionLock,
 } from "./validation.js";
+export type { ManagedTemplatePath } from "./validation.js";
 export type {
   ReleaseManifestValidationResult,
   UpdateValidationError,

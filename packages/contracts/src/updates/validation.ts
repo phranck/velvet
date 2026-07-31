@@ -32,11 +32,20 @@ export const MANAGED_TEMPLATE_PATHS = [
   "velvet.lock.json",
 ] as const;
 
-type ManagedTemplatePath = (typeof MANAGED_TEMPLATE_PATHS)[number];
+export type ManagedTemplatePath = (typeof MANAGED_TEMPLATE_PATHS)[number];
 
 const MANAGED_TEMPLATE_PATH_SET = new Set<string>(MANAGED_TEMPLATE_PATHS);
-const GENERATED_TEMPLATE_FILES: Partial<
-  Record<ManagedTemplatePath, VelvetTemplateGenerator>
+
+/**
+ * Deterministic generator that owns each configuration-dependent managed file.
+ *
+ * A path absent from this map is copied verbatim from the immutable template
+ * revision. Release publication and release validation share this single
+ * mapping so that a generated file can never be published as a static copy,
+ * which would freeze one installation's configuration into every other.
+ */
+export const MANAGED_TEMPLATE_GENERATORS: Readonly<
+  Partial<Record<ManagedTemplatePath, VelvetTemplateGenerator>>
 > = {
   ".github/ISSUE_TEMPLATE/maintenance.yml":
     "maintenance-issue-template-v1",
@@ -203,7 +212,7 @@ function inspectManagedFiles(
     }
 
     const expectedGenerator =
-      GENERATED_TEMPLATE_FILES[file.path as ManagedTemplatePath];
+      MANAGED_TEMPLATE_GENERATORS[file.path as ManagedTemplatePath];
     if (expectedGenerator !== undefined) {
       if (
         file.strategy !== "generate" ||
