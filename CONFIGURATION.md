@@ -36,6 +36,7 @@ workflow runs. A mismatch stops before any check or repository mutation.
 | `services` | yes | none | At least one public service with one or more HTTP checks. |
 | `incidents` | no | see below | Confirmation thresholds and GitHub Issue labels. |
 | `history` | no | see below | Retention policy for generated history. |
+| `updates` | no | see below | Preference for compatible managed security updates. |
 
 Stable service and check IDs are derived from their names as lowercase
 kebab-case. Set an explicit `id` before renaming a service or check when its
@@ -367,6 +368,24 @@ or failed partial result never replaces the latest valid snapshot. When retained
 Git history exceeds the configured period, the current complete snapshot
 becomes a new root using an exact lease against the previously read branch head.
 The default branch is never force-pushed.
+
+## Managed updates
+
+```yaml
+updates:
+  automaticSecurityUpdates: true
+```
+
+`automaticSecurityUpdates` defaults to `true`. The preference applies only to
+releases explicitly classified as security updates that require neither a
+configuration migration nor a data migration. Feature releases, fixes without
+that classification, incompatible schema changes, and adoption of an existing
+installation always require confirmation in the Configurator.
+
+The update contract uses an immutable template commit and a closed list of
+Velvet-owned workflow and Issue-template files. It never makes `velvet.yml`,
+the `velvet-data` branch, incidents, maintenance history, repository secrets,
+Pages or domain settings, `README.md`, or `LICENSE` update targets.
 
 ## GitHub workflows and permissions
 

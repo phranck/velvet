@@ -1568,6 +1568,16 @@
           "type": "integer"
         }
       }
+    },
+    "updates": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "automaticSecurityUpdates": {
+          "description": "Install compatible security-only releases automatically after their update pull request passes all checks.",
+          "type": "boolean"
+        }
+      }
     }
   }
 }

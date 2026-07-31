@@ -85,4 +85,5 @@ export interface NormalizedVelvetConfiguration {
     maintenanceLabel: string;
   };
   history: { retentionDays: number };
+  updates: { automaticSecurityUpdates: boolean };
 }

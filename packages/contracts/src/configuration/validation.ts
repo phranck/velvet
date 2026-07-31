@@ -525,6 +525,10 @@ function normalizeConfiguration(
         maintenanceLabel: value.incidents?.maintenanceLabel ?? "maintenance",
       },
       history: { retentionDays: value.history?.retentionDays ?? 365 },
+      updates: {
+        automaticSecurityUpdates:
+          value.updates?.automaticSecurityUpdates ?? true,
+      },
     },
   };
 }

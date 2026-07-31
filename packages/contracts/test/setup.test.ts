@@ -96,6 +96,7 @@ test("serializes a validated configuration as canonical YAML", () => {
   assert.match(source, /^schemaVersion: 1\n/);
   assert.match(source, /repository:\n {2}owner: example\n {2}name: status\n/);
   assert.match(source, /expectedStatusCodes:\n {10}- 200\n/);
+  assert.match(source, /updates:\n {2}automaticSecurityUpdates: true\n/);
   assert.doesNotMatch(source, /\.github|!!js|\$\{/);
   assert.equal(source.endsWith("\n"), true);
 });

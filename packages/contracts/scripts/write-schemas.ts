@@ -6,6 +6,10 @@ import {
   StatusDocumentSchema,
 } from "../src/schemas.js";
 import { VelvetConfigurationSchema } from "../src/configuration/schemas.js";
+import {
+  VelvetReleaseManifestSchema,
+  VelvetVersionLockSchema,
+} from "../src/updates/schemas.js";
 
 const dataOutputDirectory = new URL(
   "../schemas/velvet-data/v1/",
@@ -15,10 +19,15 @@ const configurationOutputDirectory = new URL(
   "../schemas/velvet-config/v1/",
   import.meta.url,
 );
+const updateOutputDirectory = new URL(
+  "../schemas/velvet-update/v1/",
+  import.meta.url,
+);
 
 await Promise.all([
   mkdir(dataOutputDirectory, { recursive: true }),
   mkdir(configurationOutputDirectory, { recursive: true }),
+  mkdir(updateOutputDirectory, { recursive: true }),
 ]);
 
 const schemas = {
@@ -29,6 +38,10 @@ const schemas = {
   },
   configuration: {
     "config.schema.json": VelvetConfigurationSchema,
+  },
+  update: {
+    "lock.schema.json": VelvetVersionLockSchema,
+    "release-manifest.schema.json": VelvetReleaseManifestSchema,
   },
 };
 
@@ -44,6 +57,13 @@ await Promise.all(
     ...Object.entries(schemas.configuration).map(([fileName, schema]) =>
       writeFile(
         new URL(fileName, configurationOutputDirectory),
+        `${JSON.stringify(schema, null, 2)}\n`,
+        "utf8",
+      ),
+    ),
+    ...Object.entries(schemas.update).map(([fileName, schema]) =>
+      writeFile(
+        new URL(fileName, updateOutputDirectory),
         `${JSON.stringify(schema, null, 2)}\n`,
         "utf8",
       ),

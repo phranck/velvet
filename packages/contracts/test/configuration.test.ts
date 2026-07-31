@@ -99,6 +99,24 @@ services:
       maintenanceLabel: "maintenance",
     },
     history: { retentionDays: 365 },
+    updates: { automaticSecurityUpdates: true },
+  });
+});
+
+test("lets users opt out of automatic security updates", () => {
+  const result = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - { name: Website, url: https://example.com }
+updates: { automaticSecurityUpdates: false }
+`);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.deepEqual(result.data.updates, {
+    automaticSecurityUpdates: false,
   });
 });
 

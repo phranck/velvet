@@ -387,6 +387,19 @@ export const VelvetConfigurationSchema = Type.Object(
         { additionalProperties: false },
       ),
     ),
+    updates: Type.Optional(
+      Type.Object(
+        {
+          automaticSecurityUpdates: Type.Optional(
+            Type.Boolean({
+              description:
+                "Install compatible security-only releases automatically after their update pull request passes all checks.",
+            }),
+          ),
+        },
+        { additionalProperties: false },
+      ),
+    ),
   },
   configurationSchemaOptions,
 );
