@@ -4,7 +4,6 @@
   import { disclosureMotion } from "../../lib/disclosure-motion.js";
   import {
     CURATED_SERVICE_ICONS,
-    DEFAULT_SERVICE_ICON,
     iconFor,
   } from "../../lib/icons.js";
   import ServiceIconPicker from "../service-icon-picker/ServiceIconPicker.svelte";
@@ -116,7 +115,6 @@
     legend="Service icon"
     description="Optional. Automatic keeps the configuration small and chooses a matching fallback."
     value={service.icon}
-    automaticIcon={service.name ? automaticServiceIcon(service.name) : DEFAULT_SERVICE_ICON}
     options={CURATED_SERVICE_ICONS}
     onChange={(value) => (service.icon = value)}
   />

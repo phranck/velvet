@@ -1,5 +1,8 @@
 <script lang="ts">
-  import type { CuratedServiceIcon } from "../../lib/icons.js";
+  import {
+    AUTOMATIC_SERVICE_ICON,
+    type CuratedServiceIcon,
+  } from "../../lib/icons.js";
   import ServiceIconOption from "./ServiceIconOption.svelte";
 
   let {
@@ -7,7 +10,6 @@
     legend,
     description,
     value,
-    automaticIcon,
     options,
     onChange,
   }: {
@@ -15,7 +17,6 @@
     legend: string;
     description?: string;
     value: string | null;
-    automaticIcon: string;
     options: readonly CuratedServiceIcon[];
     onChange: (value: string | null) => void;
   } = $props();
@@ -23,7 +24,7 @@
   let optionsElement = $state<HTMLElement>();
   const DESKTOP_COLUMN_COUNT = 11;
   const availableOptions = $derived([
-    { label: "Automatic", icon: automaticIcon, value: null },
+    { label: "Automatic", icon: AUTOMATIC_SERVICE_ICON, value: null },
     ...options.map((option) => ({ ...option, value: option.icon })),
   ]);
 
