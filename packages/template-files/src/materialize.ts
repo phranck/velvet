@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 import {
   validateVelvetReleaseManifest,
   validateVelvetVersionLock,
@@ -16,10 +14,10 @@ import type {
   TemplateFilesError,
   TemplateFilesErrorCode,
 } from "./types.js";
+import { sha256, verifyTemplateSource } from "./source.js";
 
 type UnknownRecord = Record<string, unknown>;
 
-const MAX_TEMPLATE_SOURCE_BYTES = 1_048_576;
 const YAML_OPTIONS = {
   forceQuotes: false,
   lineWidth: 120,
@@ -35,54 +33,6 @@ const templateError = (
 
 const isRecord = (value: unknown): value is UnknownRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
-
-function sha256(source: string): string {
-  return createHash("sha256").update(source).digest("hex");
-}
-
-function verifiedSource(
-  file: VelvetManagedFile,
-  sources: Readonly<Record<string, string>>,
-): { source: string } | { error: TemplateFilesError } {
-  if (!("sourcePath" in file)) {
-    return {
-      error: templateError(
-        "MISSING_TEMPLATE_SOURCE",
-        file.path,
-        "The managed template file has no immutable source path.",
-      ),
-    };
-  }
-  const source = sources[file.sourcePath];
-  if (source === undefined) {
-    return {
-      error: templateError(
-        "MISSING_TEMPLATE_SOURCE",
-        file.path,
-        "The release source does not contain the required managed template file.",
-      ),
-    };
-  }
-  if (Buffer.byteLength(source, "utf8") > MAX_TEMPLATE_SOURCE_BYTES) {
-    return {
-      error: templateError(
-        "INVALID_TEMPLATE_SOURCE",
-        file.path,
-        "The managed template source exceeds the supported size.",
-      ),
-    };
-  }
-  if (sha256(source) !== file.sha256) {
-    return {
-      error: templateError(
-        "TEMPLATE_SOURCE_HASH_MISMATCH",
-        file.path,
-        "The managed template source does not match the release manifest.",
-      ),
-    };
-  }
-  return { source };
-}
 
 function parseYamlRecord(
   source: string,
@@ -288,7 +238,7 @@ export function materializeManagedTemplateFiles(
     ) {
       continue;
     }
-    const verified = verifiedSource(file, input.sources);
+    const verified = verifyTemplateSource(file, input.sources);
     if ("error" in verified) {
       return { success: false, errors: [verified.error] };
     }
