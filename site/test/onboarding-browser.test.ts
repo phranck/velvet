@@ -6,6 +6,8 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
+import { SetupProgressStageSchema } from "@velvet/contracts";
+
 import { parseConfiguratorYaml } from "../src/configurator/configuration.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
@@ -865,6 +867,33 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         getComputedStyle(element).fontSize,
       ),
       "18px",
+    );
+    // The stream above reported only the first and the last stage, which is
+    // what a real run looks like after its second approval, since the server
+    // never re-announces a stage it has already finished. Every entry must
+    // still read as complete, because the furthest stage reached was the last
+    // one. Deriving this per stage left a finished step showing as pending.
+    const progressEntries = page.locator(".deployment-progress li");
+    const entryCount = await progressEntries.count();
+    assert.equal(entryCount, SetupProgressStageSchema.anyOf.length);
+    assert.equal(
+      await page.locator(".deployment-progress li.complete").count(),
+      entryCount,
+    );
+    assert.equal(
+      await page.locator(".deployment-progress li i.ph-circle").count(),
+      0,
+      "a reached stage must not render the pending icon",
+    );
+    assert.equal(
+      await page.locator(".deployment-progress li.complete i").first()
+        .evaluate((element) => getComputedStyle(element).color),
+      "rgb(127, 221, 162)",
+    );
+    assert.equal(
+      await page.locator(".deployment-progress li i").first()
+        .evaluate((element) => getComputedStyle(element).fontSize),
+      "22px",
     );
     assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);

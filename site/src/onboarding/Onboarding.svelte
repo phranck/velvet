@@ -46,6 +46,11 @@
     "deploying-page": "Publishing your status page",
     "waiting-for-deployment": "Waiting for the status page",
   };
+  /**
+   * The stages in the order they occur, read from the labels above so the
+   * order and the wording stay a single list.
+   */
+  const PROGRESS_ORDER = Object.keys(PROGRESS_LABELS) as SetupProgressStage[];
 
   let step = $state(GITHUB_RETURN ? STEPS.length - 1 : 0);
   let draft = $state(
@@ -62,6 +67,24 @@
   let retryAvailable = $state(false);
   let submissionState = $state<"idle" | "permission-required" | "failed" | "success">("idle");
   let stepTransitionController: ViewTransitionController | null = null;
+  /**
+   * How far setup has got, as an index into `PROGRESS_ORDER`, or `-1` before
+   * anything is reported.
+   *
+   * Completion is ordinal rather than a test for a stage's own event, because
+   * a stage the server has already finished is never announced again. Setup
+   * submits three times across the two GitHub approvals, `progress` is cleared
+   * on each submit, and the final pass skips `creating-repository` since the
+   * repository exists by then. Treating everything up to the furthest stage as
+   * done keeps the list honest through that, and through any stage the server
+   * skips for its own reasons.
+   */
+  const reachedIndex = $derived(
+    progress.reduce(
+      (furthest, stage) => Math.max(furthest, PROGRESS_ORDER.indexOf(stage)),
+      -1,
+    ),
+  );
   const selectedTheme = $derived(systemThemeById(draft.themeId));
   const previousStepLabel = $derived(step > 0 ? STEPS[step - 1] : "");
   const nextStepLabel = $derived(
@@ -466,9 +489,9 @@
             class="deployment-progress"
             aria-label="Deployment progress"
           >
-            {#each Object.entries(PROGRESS_LABELS) as [stage, label] (stage)}
-              <li class:complete={progress.includes(stage as SetupProgressStage)}>
-                <i class={`ph-duotone ${progress.includes(stage as SetupProgressStage) ? "ph-check-circle" : "ph-circle"}`} aria-hidden="true"></i>
+            {#each Object.entries(PROGRESS_LABELS) as [stage, label], index (stage)}
+              <li class:complete={index <= reachedIndex}>
+                <i class={`ph-duotone ${index <= reachedIndex ? "ph-check-circle" : "ph-circle"}`} aria-hidden="true"></i>
                 {label}
               </li>
             {/each}
@@ -542,6 +565,7 @@
     --setup-text: #efedf5;
     --setup-muted: #979aa8;
     --setup-error: #ff8d9a;
+    --setup-success: #7fdda2;
     --setup-control-height: 2.5rem;
     --setup-control-radius: 0.55rem;
     --setup-text-small: 0.9375rem;
@@ -844,8 +868,12 @@
     color: var(--setup-text);
   }
   .deployment-progress i {
+    flex: none;
     color: var(--setup-accent);
-    font-size: 1rem;
+    font-size: 1.375rem;
+  }
+  .deployment-progress li.complete i {
+    color: var(--setup-success);
   }
   .result {
     min-height: 2rem;
