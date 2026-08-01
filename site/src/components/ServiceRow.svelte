@@ -22,6 +22,7 @@
     open,
     onToggle,
     chart,
+    transitionName,
   }: {
     service: Service;
     days: DayStatus[];
@@ -34,12 +35,24 @@
     open: boolean;
     onToggle: () => void;
     chart: VelvetTheme["chart"];
+    /**
+     * Names this row as its own view-transition area.
+     *
+     * A named element is lifted out of its ancestor's snapshot, so the browser
+     * moves the row instead of stretching one image of everything around it.
+     * Left unset where an ancestor already owns the transition, which is the
+     * case when each service has a card to itself.
+     */
+    transitionName?: string;
   } = $props();
 
   const detailsId = $derived(`service-${service.id}-details`);
 </script>
 
-<div class="row">
+<div
+  class="row"
+  style={transitionName ? `view-transition-name: ${transitionName}` : undefined}
+>
   <ServiceSummary
     {service}
     {icon}

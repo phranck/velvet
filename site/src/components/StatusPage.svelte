@@ -140,9 +140,13 @@
     </button>
   {/snippet}
 
-  {#snippet serviceRow(service: StatusDocument["services"][number])}
+  {#snippet serviceRow(
+    service: StatusDocument["services"][number],
+    transitionName?: string,
+  )}
     <ServiceRow
       {service}
+      {transitionName}
       icon={iconFor(service.id, config.icons)}
       days={barsForRange(
         service,
@@ -184,14 +188,18 @@
       </section>
     {/each}
   {:else}
+    <!-- Every part that keeps its own shape is named separately, so the browser
+         moves each one whilst only the card behind them is stretched. Naming
+         the card alone made one image of the whole group stretch, which is
+         what the grouped layout looked wrong doing. -->
     <section class="card" style="view-transition-name: service-group">
-      <div class="group-head">
+      <div class="group-head" style="view-transition-name: service-group-head">
         <span class="group-name">{config.name.toUpperCase()}</span>
         {@render rangeButtons()}
         {@render toggleAllButton()}
       </div>
       {#each services as service (service.id)}
-        {@render serviceRow(service)}
+        {@render serviceRow(service, `service-${service.id}`)}
       {/each}
     </section>
   {/if}

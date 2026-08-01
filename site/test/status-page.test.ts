@@ -200,6 +200,37 @@ test("gives all five cards stable browser transition identities", async () => {
   assert.equal(html.match(/view-transition-name: service-/g)?.length, 5);
 });
 
+test("gives every part of the grouped layout its own transition identity", async () => {
+  // One name for the whole group meant the browser had a single image of every
+  // service to stretch, which is what made expanding all of them look wrong
+  // whilst the same action in separate cards looked right. Naming the rows and
+  // the header lifts them out of that image, so each one moves on its own.
+  const serviceIds = ["backend", "website"];
+  const twoServices: StatusDocument = {
+    ...statusDocument,
+    services: serviceIds.map((id) => ({
+      ...statusDocument.services[0]!,
+      id,
+      name: id,
+      checks: [{ ...statusDocument.services[0]!.checks[0]!, id }],
+    })),
+  };
+
+  const html = await renderStatusPage(
+    "grouped",
+    false,
+    incidentsDocument,
+    twoServices,
+  );
+
+  assert.deepEqual(
+    [...html.matchAll(/view-transition-name: ([a-z-]+)/g)]
+      .map((match) => match[1])
+      .sort(),
+    ["service-backend", "service-group", "service-group-head", "service-website"],
+  );
+});
+
 test("renders completed maintenance in the affected service history", async () => {
   const html = await renderStatusPage("cards", true, {
     schemaVersion: 1,
