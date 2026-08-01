@@ -184,7 +184,15 @@ test("creates only a signed session cookie and applies security headers", async 
   assert.equal(typeof body.csrfToken, "string");
   assert.doesNotMatch(JSON.stringify(body), /client-secret|user-token|PRIVATE KEY/);
   assert.match(response.headers.get("Set-Cookie")!, /HttpOnly; SameSite=Lax; Secure$/);
-  assert.match(response.headers.get("Content-Security-Policy")!, /default-src 'self'/);
+  const policy = response.headers.get("Content-Security-Policy")!;
+  assert.match(policy, /default-src 'self'/);
+  assert.match(policy, /script-src 'self'/);
+  // Style attributes are allowed because a themed preview carries per-element
+  // custom properties. Stylesheets are not, which is the part that matters.
+  assert.match(policy, /style-src 'self'/);
+  assert.match(policy, /style-src-attr 'unsafe-inline'/);
+  assert.equal(policy.includes("style-src 'self' 'unsafe-inline'"), false);
+  assert.equal(policy.includes("script-src 'self' 'unsafe-inline'"), false);
   assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
 });

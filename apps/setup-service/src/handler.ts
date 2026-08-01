@@ -736,10 +736,19 @@ function secureResponse(
   headers.set("X-Request-Id", requestId);
   headers.set(
     "Content-Security-Policy",
-    // The Configurator reads the community theme registry, which Velvet
-    // publishes on GitHub Pages. It is the one origin either application talks
-    // to besides this one, and the registry is validated before it is used.
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+    // Two deliberate grants beyond the default.
+    //
+    // `connect-src` names GitHub Pages because the Configurator reads the
+    // community theme registry Velvet publishes there, and validates it before
+    // using it. It is the only origin either application talks to besides this
+    // one.
+    //
+    // `style-src-attr` allows style attributes, which is how a themed preview
+    // carries per-element custom properties. Stylesheets and `<style>`
+    // elements stay restricted to this origin through `style-src`, so this
+    // grants declarations on elements the application already renders and
+    // nothing that could introduce a stylesheet.
+    "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Cross-Origin-Resource-Policy", "same-origin");

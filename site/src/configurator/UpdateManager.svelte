@@ -42,6 +42,8 @@
     | { state: "loading" }
     /** No Velvet service answered, which is the normal local case. */
     | { state: "offline" }
+    /** A service answered but does not know who this is. */
+    | { state: "signed-out" }
     /** Signed in, but nothing this account administers carries a version lock. */
     | { state: "none"; inspected: number; truncated: boolean }
     | { state: "ready" }
@@ -70,7 +72,7 @@
     return `${entry.installationId}:${entry.repositoryId}`;
   }
 
-  /** Records a refusal the service reported, and leaves everything else alone. */
+  /** Records whatever a call reported, other than success. */
   function report(result: UpdateResult<unknown>): void {
     if (result.status === "error") {
       connection = {
@@ -78,16 +80,18 @@
         message: result.message,
         errorId: result.errorId,
       };
+      return;
     }
+    if (result.status === "unauthenticated") {
+      connection = { state: "signed-out" };
+      return;
+    }
+    if (result.status === "unavailable") connection = { state: "offline" };
   }
 
   async function load(): Promise<void> {
     const listed = await client.listInstallations();
-    if (listed.status === "unavailable") {
-      connection = { state: "offline" };
-      return;
-    }
-    if (listed.status === "error") {
+    if (listed.status !== "ok") {
       report(listed);
       return;
     }
@@ -119,7 +123,6 @@
       return;
     }
     installation = null;
-    if (result.status === "unavailable") connection = { state: "offline" };
     report(result);
   }
 
@@ -142,7 +145,6 @@
     const result = await client.start(target, installation.availableVersion);
     if (result.status !== "ok") {
       report(result);
-      if (result.status === "unavailable") connection = { state: "offline" };
       return;
     }
     operation = result.data;
@@ -204,6 +206,16 @@
     <a href="https://setup.velvet.li/configurator/">setup.velvet.li</a>
     and sign in with GitHub to install updates.
   </p>
+{:else if connection.state === "signed-out"}
+  <p class="update-note">
+    Sign in with GitHub to see which of your status pages Velvet can update.
+  </p>
+  <!-- A full page load, because signing in leaves this origin for GitHub and
+       comes back to it. -->
+  <a class="button primary" href="/api/auth/start">
+    <i class="ph-duotone ph-github-logo" aria-hidden="true"></i>
+    Sign in with GitHub
+  </a>
 {:else if connection.state === "none"}
   <p class="update-note">
     None of the {connection.inspected} repositories Velvet can see carries a
@@ -278,5 +290,37 @@
 
   .choice {
     margin-bottom: 12px;
+  }
+
+  /* Matches the actions inside the update section, so signing in looks like
+     part of the same control rather than a different kind of thing. */
+  .button {
+    min-height: 36px;
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 11px;
+    border: 1px solid color-mix(in srgb, var(--tool-accent) 60%, var(--tool-line));
+    border-radius: 8px;
+    background: var(--tool-accent);
+    color: #10131c;
+    font-size: 17px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .button:hover {
+    filter: brightness(1.08);
+  }
+
+  .button:focus-visible {
+    outline: 2px solid var(--tool-accent);
+    outline-offset: 2px;
+  }
+
+  .button i {
+    font-size: 17px;
   }
 </style>

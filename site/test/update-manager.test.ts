@@ -142,3 +142,20 @@ test("corrects the preference to whatever the service settled on", async () => {
     data: true,
   });
 });
+
+test("keeps a signed-out visitor apart from a Configurator with no service", async () => {
+  // A visitor at the hosted Configurator is one sign-in away from managing
+  // their page. Telling them to open the page they are already on would be
+  // both wrong and impossible to act on.
+  const { client: signedOut } = client({
+    "/api/installations": [new Response("{}", { status: 401 })],
+  });
+  assert.deepEqual(await signedOut.listInstallations(), {
+    status: "unauthenticated",
+  });
+
+  const local = createUpdateClient(async () => {
+    throw new TypeError("Failed to fetch");
+  });
+  assert.deepEqual(await local.listInstallations(), { status: "unavailable" });
+});
