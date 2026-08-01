@@ -52,9 +52,12 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.match(html, /data-theme-card-group/);
   assert.equal(html.match(/data-theme-card-option/g)?.length, 4);
   assert.match(html, /aria-live="polite"/);
-  assert.equal(html.match(/data-squircle-step=""/g)?.length, 4);
-  assert.equal(html.match(/data-step-connector/g)?.length, 3);
+  // Five steps: the four the visitor fills in, plus Install, which reports the
+  // setup rather than collecting anything.
+  assert.equal(html.match(/data-squircle-step=""/g)?.length, 5);
+  assert.equal(html.match(/data-step-connector/g)?.length, 4);
   assert.match(html, />Basics</);
+  assert.match(html, />Install</);
   assert.match(html, /data-step-card=""/);
   assert.match(html, /data-step-card-viewport/);
   assert.match(html, /data-step-card-body/);
@@ -62,8 +65,9 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.match(html, /data-review-list/);
   assert.equal(html.match(/data-review-item/g)?.length, 4);
   assert.equal(html.match(/data-review-squircle/g)?.length, 4);
-  assert.equal(html.match(/data-step-title-separator/g)?.length, 4);
-  assert.equal(html.match(/>\/\/</g)?.length, 4);
+  // One heading per step, Install included.
+  assert.equal(html.match(/data-step-title-separator/g)?.length, 5);
+  assert.equal(html.match(/>\/\/</g)?.length, 5);
   assert.doesNotMatch(html, /data-form-actions-card/);
   assert.match(html, new RegExp(`© ${currentYear} by`));
   assert.match(html, /href="https:\/\/layered\.work"/);

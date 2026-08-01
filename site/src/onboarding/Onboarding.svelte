@@ -30,7 +30,10 @@
   import SquircleStep from "./SquircleStep.svelte";
   import { SYSTEM_THEMES, systemThemeById } from "./system-themes.js";
 
-  const STEPS = ["Basics", "Services", "Theme", "Publish"] as const;
+  const STEPS = ["Basics", "Services", "Theme", "Publish", "Install"] as const;
+  /** Installing is its own step, and the last one. */
+  const INSTALL_STEP = STEPS.length - 1;
+  const REVIEW_STEP = INSTALL_STEP - 1;
   const CURRENT_YEAR = new Date().getFullYear();
   const SESSION_STORAGE = browserSessionStorage();
   const GITHUB_RETURN = githubReturnState();
@@ -52,7 +55,7 @@
    */
   const PROGRESS_ORDER = Object.keys(PROGRESS_LABELS) as SetupProgressStage[];
 
-  let step = $state(GITHUB_RETURN ? STEPS.length - 1 : 0);
+  let step = $state(GITHUB_RETURN ? INSTALL_STEP : 0);
   let draft = $state(
     loadOnboardingDraft(SESSION_STORAGE) ?? createOnboardingDraft(),
   );
@@ -248,6 +251,7 @@
   }
 
   async function publish(): Promise<void> {
+    if (step !== INSTALL_STEP) changeStep(INSTALL_STEP);
     submitting = true;
     progress = [];
     resultMessage = "";
@@ -323,7 +327,7 @@
               {label}
               active={index === step}
               complete={index < step}
-              disabled={index > step}
+              disabled={index > step || submitting || (index === INSTALL_STEP && step < INSTALL_STEP)}
               onSelect={() => changeStep(index)}
             />
             {#if index < STEPS.length - 1}
@@ -522,7 +526,17 @@
         <p class="github-permission-note">
           GitHub asks for two approvals during the first setup. The first lets Velvet create the repository and is removed immediately. The second gives Velvet access only to that new repository.
         </p>
+      </StepCard.Body>
 
+      <StepCard.Body active={step === INSTALL_STEP} labelledBy="install-title">
+        <div class="section-heading">
+          <div class="section-title">
+            <span>05</span>
+            <span class="separator" data-step-title-separator aria-hidden="true">//</span>
+            <h2 id="install-title">Install</h2>
+          </div>
+          <p>Velvet creates the repository, runs the first check, and publishes your status page. This takes a couple of minutes.</p>
+        </div>
         {#if submitting || progress.length > 0}
           <ol
             class="deployment-progress"
@@ -556,21 +570,28 @@
       </div>
 
       <StepCard.Footer>
-        {#if step > 0 && !submitting}
+        {#if step > 0 && !submitting && step !== INSTALL_STEP}
           <button class="secondary-button" type="button" onclick={previousStep}>
             <span data-step-card-button-label>{previousStepLabel}</span>
           </button>
         {/if}
-        {#if step < STEPS.length - 1}
+        {#if step === INSTALL_STEP && submissionState === "failed" && !submitting}
+          <!-- A failed install is usually a wrong answer earlier, so the way
+               back to the review is the useful offer. -->
+          <button
+            class="secondary-button"
+            type="button"
+            onclick={() => changeStep(REVIEW_STEP)}
+            data-back-to-review
+          >
+            <span data-step-card-button-label>Publish</span>
+          </button>
+        {/if}
+        {#if step < REVIEW_STEP}
           <button class="primary-button" type="button" onclick={nextStep}>
             <span data-step-card-button-label>{nextStepLabel}</span>
           </button>
-        {:else if submissionState === "success" && installationUrl}
-          <!--
-            Once the page exists, going there is the only thing left to do.
-            Offering to set up again invited a second repository from somebody
-            who had just finished making one.
-          -->
+        {:else if step === INSTALL_STEP && submissionState === "success" && installationUrl}
           <a class="primary-button" href={installationUrl} data-open-status-page>
             <i class="ph-duotone ph-chart-line-up" aria-hidden="true"></i>
             <span data-step-card-button-label>Open Status Page</span>
