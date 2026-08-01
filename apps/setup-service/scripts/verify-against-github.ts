@@ -66,7 +66,30 @@ const githubFetch = async (request: Request): Promise<Response> => {
   if (request.url.includes("/access_tokens")) {
     return Response.json({ token: token! });
   }
-  return fetch(request);
+  const response = await fetch(request);
+  if (process.env.VELVET_TRACE && request.url.includes("/pulls")) {
+    const clone = response.clone();
+    const body = await clone.text();
+    console.log(`· ${request.method} ${new URL(request.url).pathname} -> ${response.status}`);
+    try {
+      const parsed = JSON.parse(body) as Record<string, unknown>;
+      const one = Array.isArray(parsed) ? parsed[0] : parsed;
+      console.log("·", JSON.stringify(one && {
+        number: (one as Record<string, unknown>).number,
+        state: (one as Record<string, unknown>).state,
+        html_url: (one as Record<string, unknown>).html_url,
+        merged_at: (one as Record<string, unknown>).merged_at,
+        merge_commit_sha: (one as Record<string, unknown>).merge_commit_sha,
+        head: (one as { head?: { ref?: string; sha?: string } }).head,
+        base: (one as { base?: { ref?: string; sha?: string } }).base,
+      }, (key, value) => (key === "head" || key === "base")
+        ? { ref: (value as { ref?: string })?.ref, sha: (value as { sha?: string })?.sha }
+        : value));
+    } catch {
+      console.log("·", body.slice(0, 400));
+    }
+  }
+  return response;
 };
 
 const api = async <T>(path: string): Promise<T> => {

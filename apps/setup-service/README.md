@@ -121,10 +121,22 @@ leaves protected content exactly as setup wrote it. It asserts the user's own
 files are byte-identical afterwards and that the configured header secret
 still reaches the workflow.
 
-What it cannot cover is GitHub itself. Before the first standalone release,
-run the same flow against a disposable repository with real App credentials
-and confirm the branch, pull request, checks, merge, Pages deployment, and
-cleanup behave as the double assumes.
+What it cannot cover is GitHub itself. `scripts/verify-against-github.ts`
+closes that gap by driving the production client against a real repository:
+
+```sh
+GITHUB_TOKEN=$(gh auth token) bun run scripts/verify-against-github.ts --owner <login>
+```
+
+It creates a disposable repository from the template, runs the update through
+branch, pull request, merge, and cleanup, then deletes the repository. Only the
+installation-token exchange is substituted, with a token carrying the same
+repository and workflow access, so every other request is what an installation
+performs.
+
+Running it found three defects no double produced, because a double returns
+the shape its author assumed rather than the shape GitHub sends. Add a check
+here whenever a new call is introduced.
 
 ## GitHub App registration
 
