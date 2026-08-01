@@ -28,6 +28,7 @@ export const MANAGED_TEMPLATE_PATHS = [
   ".github/workflows/maintenance-switch.yml",
   ".github/workflows/velvet-response-times.yml",
   ".github/workflows/velvet-status.yml",
+  ".github/workflows/velvet-update-check.yml",
   ".github/workflows/velvet.yml",
   "velvet.lock.json",
 ] as const;

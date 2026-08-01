@@ -553,9 +553,9 @@ test("reads both sides of every path a managed update pull request changes", asy
   ]);
   const files = requests.find((request) => request.url.includes("/pulls/12/files"));
   assert.equal(
-    new URL(files!.url).searchParams.get("per_page"),
-    "10",
-    "a Velvet update owns eight paths, so a larger page cannot hide a protected change",
+    Number(new URL(files!.url).searchParams.get("per_page")),
+    MANAGED_TEMPLATE_PATHS.length + 2,
+    "a change set larger than the owned set must show a violation on the first page",
   );
 });
 

@@ -74,6 +74,7 @@ test("exports explicit update contract versions and a closed managed-file set", 
     ".github/workflows/maintenance-switch.yml",
     ".github/workflows/velvet-response-times.yml",
     ".github/workflows/velvet-status.yml",
+    ".github/workflows/velvet-update-check.yml",
     ".github/workflows/velvet.yml",
     "velvet.lock.json",
   ]);

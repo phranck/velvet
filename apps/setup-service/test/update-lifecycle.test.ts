@@ -58,6 +58,7 @@ jobs: {}
 `,
   ".github/workflows/velvet-response-times.yml": monitorWorkflow(),
   ".github/workflows/velvet-status.yml": monitorWorkflow(),
+  ".github/workflows/velvet-update-check.yml": "name: Velvet update check\n",
   ".github/workflows/velvet.yml": monitorWorkflow(),
 };
 

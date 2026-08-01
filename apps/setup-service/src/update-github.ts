@@ -52,12 +52,15 @@ const UPDATE_USER_AGENT = "velvet-update-service";
 const MAX_CHECK_RUN_PAGES = 10;
 const PAGES_WORKFLOW_FILE = "velvet.yml";
 /**
- * A managed update owns eight paths, so any page larger than nine entries can
- * only be reached by a change set that already contains protected files. Ten
- * entries therefore always expose a violation whilst keeping the response,
- * which carries a diff per file, comfortably inside the size limit.
+ * Enough entries that a violation is always on the first page.
+ *
+ * A change set larger than the owned set must contain at least one path Velvet
+ * does not own, so reading one more entry than there are owned paths always
+ * exposes it. Deriving it from the owned set keeps that true as the set grows,
+ * whilst the response, which carries a diff per file, stays well inside the
+ * size limit.
  */
-const CHANGED_FILES_PAGE_SIZE = 10;
+const CHANGED_FILES_PAGE_SIZE = MANAGED_TEMPLATE_PATHS.length + 2;
 const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
 
 export function updateBranchName(version: string): string {
