@@ -36,15 +36,26 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function contentsResponse(issued: number, sha: string): Response {
+function contentsResponse(
+  issued: number,
+  sha: string,
+  installations: unknown[] = [],
+): Response {
   return jsonResponse({
     sha,
     content: Buffer.from(
-      `${JSON.stringify({ schemaVersion: 1, issued }, null, 2)}\n`,
+      `${JSON.stringify({ schemaVersion: 1, issued, installations }, null, 2)}\n`,
       "utf8",
     ).toString("base64"),
   });
 }
+
+/** What onboarding hands over when it claims a serial. */
+const INSTALLATION = {
+  repository: "example/status",
+  statusPageName: "Example Status",
+  url: "https://example.github.io/status/",
+};
 
 interface Recorded {
   method: string;
@@ -75,46 +86,107 @@ test("the repository reference must name exactly one owner and repository", () =
   }
 });
 
-test("peek reports the next number without spending a token", async () => {
-  const seen: string[] = [];
+test("peek reports the next number, authenticated because the counter is private", async () => {
+  const seen: { url: string; auth: boolean }[] = [];
   const counter = createInstallationSerialCounter({
     ...OPTIONS,
     fetch: async (request) => {
-      seen.push(request.url);
-      assert.equal(request.headers.get("Authorization"), null);
-      return jsonResponse({ schemaVersion: 1, issued: 41 });
+      seen.push({
+        url: request.url,
+        auth: request.headers.get("Authorization") !== null,
+      });
+      const identity = identityResponse(request.url);
+      if (identity) return identity;
+      return contentsResponse(41, "blob-sha");
     },
   });
 
   assert.equal(await counter.peek(), 42);
-  assert.equal(seen.length, 1);
-  assert.match(seen[0]!, /^https:\/\/raw\.githubusercontent\.com\/phranck\/velvet-serials\/HEAD\/serials\.json$/u);
+  const read = seen.at(-1)!;
+  assert.match(read.url, /\/contents\/serials\.json$/u);
+  assert.equal(read.auth, true, "a private repository cannot be read anonymously");
+  assert.equal(
+    seen.some((entry) => entry.url.includes("raw.githubusercontent.com")),
+    false,
+    "nothing reaches the anonymous raw endpoint any more",
+  );
 });
 
 test("peek treats a counter that does not exist yet as the first number", async () => {
   const counter = createInstallationSerialCounter({
     ...OPTIONS,
-    fetch: async () => new Response("", { status: 404 }),
+    fetch: async (request) => {
+      const identity = identityResponse(request.url);
+      if (identity) return identity;
+      return new Response("", { status: 404 });
+    },
   });
   assert.equal(await counter.peek(), 1);
 });
 
 test("peek reports nothing rather than a wrong number when the counter is unreadable", async () => {
-  for (const response of [
+  const unreadable = [
     () => new Response("", { status: 500 }),
-    () => jsonResponse({ schemaVersion: 1, issued: "many" }),
-    () => jsonResponse({ schemaVersion: 1 }),
-    () => jsonResponse({ schemaVersion: 1, issued: -3 }),
-  ]) {
-    const counter = createInstallationSerialCounter({ ...OPTIONS, fetch: async () => response() });
+    () => jsonResponse({ sha: "blob-sha", content: Buffer.from('{"issued":"many"}').toString("base64") }),
+    () => jsonResponse({ sha: "blob-sha", content: Buffer.from("{}").toString("base64") }),
+    () => jsonResponse({ sha: "blob-sha", content: Buffer.from('{"issued":-3}').toString("base64") }),
+    () => jsonResponse({ sha: "blob-sha" }),
+  ];
+  for (const response of unreadable) {
+    const counter = createInstallationSerialCounter({
+      ...OPTIONS,
+      fetch: async (request) => identityResponse(request.url) ?? response(),
+    });
     assert.equal(await counter.peek(), null);
   }
+});
+
+test("peek reports nothing when Velvet is not installed on the counter repository", async () => {
+  const counter = createInstallationSerialCounter({
+    ...OPTIONS,
+    fetch: async (request) =>
+      request.url.endsWith("/installation")
+        ? new Response("", { status: 404 })
+        : jsonResponse({ token: "installation-token" }),
+  });
+  assert.equal(await counter.peek(), null);
+});
+
+test("the token is minted once and reused until it nears expiry", async () => {
+  let mints = 0;
+  let seconds = 1_000;
+  const counter = createInstallationSerialCounter({
+    ...OPTIONS,
+    nowSeconds: () => seconds,
+    fetch: async (request) => {
+      if (request.url.endsWith("/installation")) return jsonResponse({ id: 55 });
+      if (request.url.endsWith("/access_tokens")) {
+        mints += 1;
+        return jsonResponse({ token: `token-${mints}` });
+      }
+      if (request.url.endsWith("/repos/phranck/velvet-serials")) {
+        return jsonResponse({ id: 909 });
+      }
+      return contentsResponse(41, "blob-sha");
+    },
+  });
+
+  await counter.peek();
+  await counter.peek();
+  // Two mints so far: the broad one that resolves the repository id, and the
+  // scoped one that is then cached.
+  assert.equal(mints, 2, "the second read reuses the cached token");
+
+  seconds += 3_500;
+  await counter.peek();
+  assert.equal(mints, 3, "a token close to expiry is replaced");
 });
 
 test("claim increments the counter and writes it back against its own SHA", async () => {
   const recorded: Recorded[] = [];
   const counter = createInstallationSerialCounter({
     ...OPTIONS,
+    nowSeconds: () => 1_000,
     fetch: async (request) => {
       recorded.push({
         method: request.method,
@@ -128,7 +200,7 @@ test("claim increments the counter and writes it back against its own SHA", asyn
     },
   });
 
-  assert.equal(await counter.claim(), 42);
+  assert.equal(await counter.claim(INSTALLATION), 42);
 
   const write = recorded.find((entry) => entry.method === "PUT");
   assert.ok(write, "the claim writes the counter back");
@@ -138,10 +210,58 @@ test("claim increments the counter and writes it back against its own SHA", asyn
     message: string;
   };
   assert.equal(payload.sha, "blob-sha", "the write is conditional on the SHA it read");
-  assert.match(payload.message, /serial 42/u);
+  assert.match(payload.message, /serial 42 to example\/status/u);
+  const written = JSON.parse(
+    Buffer.from(payload.content, "base64").toString("utf8"),
+  ) as { issued: number; installations: Record<string, unknown>[] };
+  assert.equal(written.issued, 42);
+  assert.equal(written.installations.length, 1);
+  assert.deepEqual(written.installations[0], {
+    serial: 42,
+    repository: "example/status",
+    statusPageName: "Example Status",
+    url: "https://example.github.io/status/",
+    issuedAt: new Date(1_000 * 1_000).toISOString(),
+  });
+  assert.equal(
+    "customDomain" in written.installations[0]!,
+    false,
+    "an absent custom domain is left out rather than written as empty",
+  );
+});
+
+test("claim keeps the records already there and appends to them", async () => {
+  let written: { issued: number; installations: { serial: number }[] } | null = null;
+  const existing = [
+    {
+      serial: 1,
+      repository: "someone/status",
+      statusPageName: "Someone",
+      url: "https://someone.github.io/status/",
+      issuedAt: "2026-07-01T00:00:00.000Z",
+    },
+  ];
+  const counter = createInstallationSerialCounter({
+    ...OPTIONS,
+    nowSeconds: () => 1_000,
+    fetch: async (request) => {
+      const identity = identityResponse(request.url);
+      if (identity) return identity;
+      if (request.method === "GET") return contentsResponse(1, "blob-sha", existing);
+      const payload = JSON.parse(await request.text()) as { content: string };
+      written = JSON.parse(Buffer.from(payload.content, "base64").toString("utf8"));
+      return jsonResponse({ commit: { sha: "commit-sha" } });
+    },
+  });
+
+  assert.equal(await counter.claim({ ...INSTALLATION, customDomain: "status.example.com" }), 2);
   assert.deepEqual(
-    JSON.parse(Buffer.from(payload.content, "base64").toString("utf8")),
-    { schemaVersion: 1, issued: 42 },
+    written!.installations.map((entry) => entry.serial),
+    [1, 2],
+  );
+  assert.equal(
+    (written!.installations[1] as { customDomain?: string }).customDomain,
+    "status.example.com",
   );
 });
 
@@ -158,12 +278,13 @@ test("claim creates the counter without a SHA when the file is absent", async ()
     },
   });
 
-  assert.equal(await counter.claim(), 1);
+  assert.equal(await counter.claim(INSTALLATION), 1);
   assert.equal(payload!.sha, undefined, "a create carries no precondition");
-  assert.deepEqual(
-    JSON.parse(Buffer.from(payload!.content, "base64").toString("utf8")),
-    { schemaVersion: 1, issued: 1 },
-  );
+  const created = JSON.parse(
+    Buffer.from(payload!.content, "base64").toString("utf8"),
+  ) as { issued: number; installations: { serial: number }[] };
+  assert.equal(created.issued, 1);
+  assert.deepEqual(created.installations.map((entry) => entry.serial), [1]);
 });
 
 test("a rejected write is retried against the value the winner left behind", async () => {
@@ -188,7 +309,7 @@ test("a rejected write is retried against the value the winner left behind", asy
     },
   });
 
-  assert.equal(await counter.claim(), 43);
+  assert.equal(await counter.claim(INSTALLATION), 43);
   assert.equal(writes, 2);
 });
 
@@ -206,7 +327,7 @@ test("claim gives up rather than duplicate a number under sustained contention",
     },
   });
 
-  await assert.rejects(() => counter.claim(), /after 3 attempts/u);
+  await assert.rejects(() => counter.claim(INSTALLATION), /after 3 attempts/u);
   assert.equal(writes, 3);
 });
 
@@ -223,7 +344,7 @@ test("a failure other than contention is not retried", async () => {
     },
   });
 
-  await assert.rejects(() => counter.claim());
+  await assert.rejects(() => counter.claim(INSTALLATION));
   assert.equal(writes, 1, "a permission failure is not contention");
 });
 
@@ -249,7 +370,7 @@ test("the write token is scoped to the counter repository alone", async () => {
     },
   });
 
-  await counter.claim();
+  await counter.claim(INSTALLATION);
   assert.deepEqual(scopedRequest!.repository_ids, [909]);
   assert.deepEqual(scopedRequest!.permissions, { contents: "write" });
 });
@@ -276,7 +397,7 @@ test("the repository identity is resolved once and reused across claims", async 
     },
   });
 
-  assert.equal(await counter.claim(), 1);
-  assert.equal(await counter.claim(), 2);
+  assert.equal(await counter.claim(INSTALLATION), 1);
+  assert.equal(await counter.claim(INSTALLATION), 2);
   assert.equal(identityLookups, 1);
 });

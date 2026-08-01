@@ -4,7 +4,6 @@ import {
   createInstallationToken,
   createRepositoryInstallationToken,
   GitHubApiError,
-  readBoundedJson,
   type GitHubAppApiOptions,
 } from "./github-api.js";
 
@@ -18,15 +17,65 @@ import {
  * the same moment cannot both claim the same number, since the second write is
  * rejected and retried against the value the first one left behind.
  *
- * The tally is also plainly auditable this way, because every increment is a
+ * Two consequences of where it lives are worth stating, because both shaped this
+ * code:
+ *
+ * The repository is **private**, so reading needs a token exactly as writing
+ * does. Once the file grows past a bare count, as the gallery in issue 156
+ * intends, it lists installations that never agreed to be named, and a tally of
+ * every installation is not something to leave open either.
+ *
+ * It is **not** `phranck/velvet`. That repository ships the Actions every
+ * installation runs, so it has to stay public, and a push to its default branch
+ * starts the whole CI suite. Writing a counter there would also hand the service
+ * write access to the product's own source.
+ *
+ * The tally stays plainly auditable regardless, because every increment is a
  * commit.
  */
 
-/** The shape stored in the counter file. */
+/**
+ * One installation, as recorded when its serial was issued.
+ *
+ * These are the answers from onboarding's first step, which is what identifies
+ * an installation to a human reading the file. They are personal data, since a
+ * GitHub account names a person, which is why the counter repository is private
+ * and why appearing in a public gallery is a separate decision the owner makes.
+ */
+export interface SerialInstallationRecord {
+  /** The number this installation received. */
+  serial: number;
+  /** The repository created for it, as `owner/name`. */
+  repository: string;
+  /** The public name shown on the status page. */
+  statusPageName: string;
+  /** Where the status page is published. */
+  url: string;
+  /** Present only when the owner supplied one. */
+  customDomain?: string;
+  /** When the serial was issued, as an ISO 8601 instant. */
+  issuedAt: string;
+}
+
+/** What onboarding knows about an installation when it claims a serial. */
+export type SerialInstallationDetails = Omit<
+  SerialInstallationRecord,
+  "serial" | "issuedAt"
+>;
+
+/**
+ * The shape stored in the counter file.
+ *
+ * `issued` is kept alongside the list rather than derived from its length,
+ * because a record removed later, whether at the owner's request or because the
+ * repository is gone, must not hand its number to somebody else.
+ */
 export interface SerialCounterState {
   schemaVersion: 1;
   /** How many serials have been handed out. The next one is this plus one. */
   issued: number;
+  /** Every installation that has received one, oldest first. */
+  installations: SerialInstallationRecord[];
 }
 
 export interface SerialCounterOptions extends GitHubAppApiOptions {
@@ -58,14 +107,15 @@ export interface InstallationSerialCounter {
   peek(): Promise<number | null>;
 
   /**
-   * Claims the next number and records it.
+   * Claims the next number and records the installation against it.
    *
+   * @param installation - What onboarding knows about it, from the first step.
    * @returns The claimed number.
    * @throws When the counter cannot be written within the permitted retries, so
    *   the caller decides whether an installation without a serial is acceptable
    *   rather than having that decided here.
    */
-  claim(): Promise<number>;
+  claim(installation: SerialInstallationDetails): Promise<number>;
 }
 
 interface RepositoryReference {
@@ -75,6 +125,12 @@ interface RepositoryReference {
 
 /** Contents alone, which is all an increment needs. */
 const COUNTER_PERMISSIONS = { contents: "write" } as const;
+
+/** GitHub issues installation tokens for an hour. */
+const TOKEN_LIFETIME_SECONDS = 3_540;
+
+/** Retired this far ahead of expiry, so no request starts on a dying token. */
+const TOKEN_MARGIN_SECONDS = 120;
 
 const REPOSITORY_REFERENCE =
   /^([A-Za-z0-9][A-Za-z0-9-]*)\/([A-Za-z0-9._-]+)$/u;
@@ -113,10 +169,11 @@ function isConflict(error: unknown): boolean {
 }
 
 function parseState(value: unknown): SerialCounterState {
-  const issued =
+  const record =
     typeof value === "object" && value !== null
-      ? (value as { issued?: unknown }).issued
-      : undefined;
+      ? (value as { issued?: unknown; installations?: unknown })
+      : {};
+  const issued = record.issued;
   if (
     typeof issued !== "number" ||
     !Number.isSafeInteger(issued) ||
@@ -124,7 +181,15 @@ function parseState(value: unknown): SerialCounterState {
   ) {
     throw new Error("The serial counter file is not a valid counter.");
   }
-  return { schemaVersion: 1, issued };
+  // A file written before the list existed still counts, so an absent list is
+  // read as an empty one rather than rejected.
+  const installations = Array.isArray(record.installations)
+    ? (record.installations as SerialInstallationRecord[])
+    : [];
+  if (installations.some((entry) => typeof entry?.serial !== "number")) {
+    throw new Error("The serial counter file holds an invalid installation.");
+  }
+  return { schemaVersion: 1, issued, installations };
 }
 
 function serializeState(state: SerialCounterState): string {
@@ -154,6 +219,7 @@ export function createInstallationSerialCounter(
   const repository = parseSerialRepository(options.repository);
   const fetchImplementation = options.fetch ?? ((request) => fetch(request));
   const githubRequest = createGitHubRequest(fetchImplementation, options.userAgent);
+  const nowSeconds = options.nowSeconds ?? (() => Math.floor(Date.now() / 1_000));
   const maxAttempts = options.maxAttempts ?? 4;
   const repositoryPath = `/repos/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}`;
   const contentsPath = `${repositoryPath}/contents/${options.path
@@ -197,7 +263,21 @@ export function createInstallationSerialCounter(
     return { installationId, repositoryId };
   };
 
-  const writeToken = async (): Promise<string> => {
+  /**
+   * A cached token, with the moment it stops being usable.
+   *
+   * GitHub issues installation tokens for an hour. The counter repository is
+   * private, so reading it needs one too, and onboarding reads it on every
+   * visit. Minting a token per visit would cost three round trips each time for
+   * no benefit. The margin expires the cache early rather than risk handing out
+   * a token that dies mid-request.
+   */
+  let cachedToken: { value: string; expiresAtSeconds: number } | null = null;
+
+  const repositoryToken = async (): Promise<string> => {
+    const now = nowSeconds();
+    if (cachedToken && cachedToken.expiresAtSeconds > now) return cachedToken.value;
+
     cachedTarget ??= resolveTarget();
     let target: { installationId: number; repositoryId: number };
     try {
@@ -207,49 +287,28 @@ export function createInstallationSerialCounter(
       cachedTarget = null;
       throw error;
     }
-    return createRepositoryInstallationToken(
+    const value = await createRepositoryInstallationToken(
       { ...options },
       target.installationId,
       target.repositoryId,
       COUNTER_PERMISSIONS,
       options.userAgent,
     );
+    cachedToken = {
+      value,
+      expiresAtSeconds: now + TOKEN_LIFETIME_SECONDS - TOKEN_MARGIN_SECONDS,
+    };
+    return value;
   };
 
   /**
-   * Reads the counter without a token.
+   * Reads the counter through the API, which also yields the blob SHA the write
+   * needs as its precondition.
    *
-   * The counter repository is public, so the raw endpoint serves it to an
-   * anonymous request. Reading this way keeps the onboarding view off the App's
-   * token budget, since it is read on every visit whilst a claim happens once
-   * per installation.
+   * A counter file that does not exist yet has issued nothing, which is the
+   * state a first claim increments from.
    */
-  const readPublicState = async (): Promise<SerialCounterState | null> => {
-    const response = await fetchImplementation(
-      new Request(
-        `https://raw.githubusercontent.com/${repository.owner}/${repository.name}/HEAD/${options.path}`,
-        {
-          headers: {
-            Accept: "application/json",
-            "User-Agent": options.userAgent,
-          },
-        },
-      ),
-    );
-    if (!response.ok) {
-      await response.body?.cancel();
-      // A counter that has never been written has issued nothing.
-      return response.status === 404 ? { schemaVersion: 1, issued: 0 } : null;
-    }
-    try {
-      return parseState(await readBoundedJson<unknown>(response));
-    } catch {
-      return null;
-    }
-  };
-
-  /** Reads the counter through the API, which also yields the blob SHA. */
-  const readForWrite = async (
+  const readState = async (
     token: string,
   ): Promise<{ state: SerialCounterState; sha: string | null }> => {
     try {
@@ -265,40 +324,56 @@ export function createInstallationSerialCounter(
       return { state: parseState(JSON.parse(decoded)), sha: record.sha };
     } catch (error) {
       if (!isMissing(error)) throw error;
-      // First ever claim: the file does not exist, and a create carries no SHA.
-      return { state: { schemaVersion: 1, issued: 0 }, sha: null };
+      // A create carries no precondition, since there is no blob to match.
+      return { state: { schemaVersion: 1, issued: 0, installations: [] }, sha: null };
     }
   };
 
   return {
     async peek() {
       try {
-        const state = await readPublicState();
-        return state ? state.issued + 1 : null;
+        const { state } = await readState(await repositoryToken());
+        return state.issued + 1;
       } catch {
+        // A backdrop with no number is better than one with a wrong number, so
+        // an unreadable counter is reported as absent rather than as zero.
         return null;
       }
     },
 
-    async claim() {
+    async claim(installation) {
       let lastConflict: unknown;
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const token = await writeToken();
-        const { state, sha } = await readForWrite(token);
+        const token = await repositoryToken();
+        const { state, sha } = await readState(token);
+        const serial = state.issued + 1;
         const next: SerialCounterState = {
           schemaVersion: 1,
-          issued: state.issued + 1,
+          issued: serial,
+          installations: [
+            ...state.installations,
+            {
+              serial,
+              repository: installation.repository,
+              statusPageName: installation.statusPageName,
+              url: installation.url,
+              ...(installation.customDomain
+                ? { customDomain: installation.customDomain }
+                : {}),
+              issuedAt: new Date(nowSeconds() * 1_000).toISOString(),
+            },
+          ],
         };
         try {
           await githubRequest<unknown>(contentsPath, token, {
             method: "PUT",
             body: JSON.stringify({
-              message: `Chore: issue installation serial ${next.issued}`,
+              message: `Chore: issue serial ${serial} to ${installation.repository}`,
               content: Buffer.from(serializeState(next), "utf8").toString("base64"),
               ...(sha ? { sha } : {}),
             }),
           });
-          return next.issued;
+          return serial;
         } catch (error) {
           if (!isConflict(error)) throw error;
           lastConflict = error;
