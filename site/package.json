@@ -16,9 +16,10 @@
     "test": "bun run test:units && bun run test:browser && bun run test:builds",
     "pretypecheck": "bun run --filter @velvet/contracts build",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
-    "test:units": "bun test --max-concurrency 1 $(ls test/*.test.ts | grep -vE 'build-scripts.slow|browser')",
+    "test:units": "bun test --max-concurrency 1 $(ls test/*.test.ts | grep -vE 'build-scripts.slow|browser|safari')",
     "test:browser": "for file in test/*browser*.test.ts; do bun test \"$file\" || exit 1; done",
-    "test:builds": "bun test ./test/build-scripts.slow.test.ts"
+    "test:builds": "bun test ./test/build-scripts.slow.test.ts",
+    "test:safari": "bun test ./test/status-page-safari.test.ts"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",
