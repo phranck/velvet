@@ -29,7 +29,7 @@ workflow runs. A mismatch stops before any check or repository mutation.
 
 | Field | Required | Default | Description |
 | --- | --- | --- | --- |
-| `schemaVersion` | yes | none | Configuration contract version. Velvet v2 uses `1`. |
+| `schemaVersion` | yes | none | Configuration contract version, currently `1`. |
 | `repository.owner` | yes | none | GitHub user or organization that owns the status repository. |
 | `repository.name` | yes | none | Status repository name. |
 | `statusPage` | yes | none | Public identity, presentation, navigation, analytics, and SEO. |
@@ -503,7 +503,7 @@ a partial replacement.
 
 ## IPv4 and IPv6
 
-Velvet v2 performs direct HTTP(S) checks over IPv4 because GitHub-hosted runners
+Velvet performs direct HTTP(S) checks over IPv4 because GitHub-hosted runners
 do not provide documented native IPv6 connectivity. The configuration contains
 no external-probe option. IPv6 monitoring will be added only after those runners
 offer documented native support that works for every installation.
@@ -529,9 +529,9 @@ branch at `.velvet-data` first. The Action validates the configuration and data,
 builds the static site, generates SEO and social assets, and copies license
 notices into the output directory.
 
-## Migrate from Velvet v1.8
+## Migrate from an Upptime status page
 
-Velvet v1.8 used an Upptime repository as the source and could include
+An earlier prototype used an Upptime repository as the source and could include
 Globalping-backed IPv6 checks. This is a migration-only boundary in v2.
 
 Run [`vum`](packages/upptime-adapter) without `--write` first:

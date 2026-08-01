@@ -11,7 +11,7 @@ async function read(path: string): Promise<string> {
 }
 
 function activeDocumentation(source: string): string {
-  const migrationHeading = "## Migrate from Velvet v1.8";
+  const migrationHeading = "## Migrate from an Upptime status page";
   const migrationStart = source.indexOf(migrationHeading);
   assert.notEqual(
     migrationStart,
