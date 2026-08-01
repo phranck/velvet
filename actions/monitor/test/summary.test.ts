@@ -75,3 +75,47 @@ test("writes a safe failure summary without the underlying cause", async () => {
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("a failure summary shows where the failure was located", async () => {
+  const module = (await import("../src/summary.js")) as {
+    writeActionFailureSummary: (
+      path: string | undefined,
+      summary: {
+        mode: string;
+        code: string;
+        errorId: string;
+        detail?: string;
+      },
+    ) => Promise<void>;
+  };
+  const directory = await mkdtemp(join(tmpdir(), "velvet-summary-"));
+  const path = join(directory, "summary.md");
+  try {
+    await module.writeActionFailureSummary(path, {
+      mode: "status",
+      code: "INVALID_CONFIGURATION",
+      errorId: "e13ad999",
+      detail: "/updates",
+    });
+    const written = await readFile(path, "utf8");
+    // The person reading this is the one who has to correct the file, so the
+    // location belongs here rather than only in the log.
+    assert.match(written, /\| Location \| `\/updates` \|/u);
+    assert.match(written, /\| Error \| INVALID_CONFIGURATION \|/u);
+
+    await rm(path, { force: true });
+    await module.writeActionFailureSummary(path, {
+      mode: "status",
+      code: "CONFIGURATION_UNREADABLE",
+      errorId: "e13ad999",
+    });
+    const withoutDetail = await readFile(path, "utf8");
+    assert.doesNotMatch(
+      withoutDetail,
+      /Location/u,
+      "a failure with no location leaves the row out rather than showing an empty one",
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

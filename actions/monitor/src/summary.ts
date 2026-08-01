@@ -10,6 +10,14 @@ export interface ActionFailureSummary {
   mode: MonitorActionSummary["mode"] | "unknown";
   code: string;
   errorId: string;
+  /**
+   * Where the failure was located, when it has a location.
+   *
+   * For a refused configuration this is the JSON pointer the validator
+   * rejected. Shown because the person reading this summary is the one who has
+   * to correct it, and a code alone does not say what to change.
+   */
+  detail?: string;
 }
 
 export async function writeActionSummary(
@@ -42,6 +50,7 @@ export async function writeActionFailureSummary(
     `| Mode | ${summary.mode} |\n` +
     "| Run | failed |\n" +
     `| Error | ${summary.code} |\n` +
+    (summary.detail ? `| Location | \`${summary.detail}\` |\n` : "") +
     `| Error ID | ${summary.errorId} |\n` +
     "| Data commit | failed |\n";
   await appendFile(path, source, "utf8");

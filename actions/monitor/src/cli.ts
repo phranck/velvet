@@ -101,15 +101,24 @@ export async function runMonitorCli(
   const workspace = required(environment, "VELVET_WORKSPACE");
   const repository = required(environment, "GITHUB_REPOSITORY");
   const runId = `${required(environment, "GITHUB_RUN_ID")}:${mode}`;
+  // Reading and parsing fail for unrelated reasons and are reported as
+  // separate codes. Sharing one made a diagnosis impossible: a run that could
+  // not find the file looked exactly like a run whose configuration the schema
+  // refused, which sent the investigation of issue 145 down the wrong path
+  // twice.
   const configurationSource = await readFile(
     join(workspace, "velvet.yml"),
     "utf8",
   ).catch((cause) => {
-    throw new MonitorActionError("INVALID_CONFIGURATION", { cause });
+    throw new MonitorActionError("CONFIGURATION_UNREADABLE", { cause });
   });
   const parsed = parseVelvetConfiguration(configurationSource);
   if (!parsed.success) {
-    throw new MonitorActionError("INVALID_CONFIGURATION");
+    throw new MonitorActionError("INVALID_CONFIGURATION", {
+      // The validator knows which path it rejected, and discarding it was what
+      // left "the configuration is invalid" as the whole report.
+      ...(parsed.errors[0]?.path ? { detail: parsed.errors[0].path } : {}),
+    });
   }
   if (
     `${parsed.data.repository.owner}/${parsed.data.repository.name}` !==
@@ -207,6 +216,7 @@ function safeError(error: unknown): MonitorActionError | GitHubIncidentsError {
 if (import.meta.main) {
   runMonitorCli().catch(async (cause) => {
     const error = safeError(cause);
+    const detail = error instanceof MonitorActionError ? error.detail : null;
     await writeActionFailureSummary(process.env.GITHUB_STEP_SUMMARY, {
       mode:
         process.env.VELVET_MODE === "status" ||
@@ -215,6 +225,7 @@ if (import.meta.main) {
           : "unknown",
       code: error.code,
       errorId: error.errorId,
+      ...(detail ? { detail } : {}),
     }).catch(() => undefined);
     console.error(
       JSON.stringify({
@@ -222,6 +233,7 @@ if (import.meta.main) {
         result: "failed",
         code: error.code,
         errorId: error.errorId,
+        detail,
         status:
           error instanceof GitHubIncidentsError
             ? (error.status ?? null)
