@@ -208,6 +208,12 @@ Set these non-secret runtime values separately:
 | --- | --- |
 | `PUBLIC_ORIGIN` | Exact HTTPS origin without a trailing path, query, or fragment |
 | `GITHUB_APP_SLUG` | Public slug from the GitHub App URL |
+| `AUTOMATIC_UPDATE_INTERVAL_MINUTES` | How often eligible security releases are swept for, from 0 through 1440. Defaults to 60, and 0 turns the sweep off |
+
+A sweep costs no GitHub request whilst the release the service carries is not a
+security release marked for automatic installation, which is the ordinary
+state. The interval therefore only decides how quickly one that is marked
+reaches installations, not how much work the service does the rest of the time.
 
 After changing runtime variables, restart the service so the Bun process reads
 the new values.

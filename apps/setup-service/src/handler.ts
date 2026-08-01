@@ -5,7 +5,6 @@ import {
   validateSetupRequest,
   validateSetupSession,
   validateSetupStatus,
-  VELVET_UPDATE_CHECK_NAME,
   type SetupEvent,
   type SetupRequest,
 } from "@velvet/contracts";
@@ -39,13 +38,8 @@ import {
   readBoundedJson,
   RequestTooLargeError,
 } from "./http.js";
-import { createGitHubUpdateClient } from "./update-github.js";
-import { createManagedUpdateOrchestrator } from "./update-orchestrator.js";
-import {
-  createUpdateRoutes,
-  UPDATE_ROUTES,
-  type UpdateRoutes,
-} from "./update-routes.js";
+import { createUpdateServices } from "./update-service.js";
+import { UPDATE_ROUTES, type UpdateRoutes } from "./update-routes.js";
 import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.js";
 
 const SESSION_MAX_AGE_SECONDS = 30 * 60;
@@ -679,29 +673,24 @@ function installationForOwner(
 }
 
 /**
- * Builds the managed-update routes from the service's own configuration.
+ * Builds the managed-update routes when a caller did not supply them.
  *
- * Constructing them here rather than requiring them as an argument means a
- * deployment cannot start with the update surface missing, which would present
- * as installations that never see an update rather than as a failure.
+ * A deployment cannot start with the update surface missing, which would
+ * present as installations that never see an update rather than as a failure.
+ * The service entry point supplies its own, so that the routes and the
+ * scheduled security sweep share one orchestrator and therefore one queue per
+ * repository.
  */
 function defaultUpdateRoutes(
   options: SetupHandlerOptions,
   releases: ManagedUpdateReleaseProvider,
 ): UpdateRoutes {
-  return createUpdateRoutes({
+  return createUpdateServices({
+    config: options.config,
     github: options.github,
     releases,
     logger: options.logger,
-    orchestrator: createManagedUpdateOrchestrator({
-      github: createGitHubUpdateClient({
-        appId: options.config.github.appId,
-        privateKey: options.config.github.privateKey,
-      }),
-      releases,
-      requiredCheckNames: [VELVET_UPDATE_CHECK_NAME],
-    }),
-  });
+  }).routes;
 }
 
 /**

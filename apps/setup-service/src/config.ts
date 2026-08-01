@@ -13,6 +13,13 @@ export interface SetupServiceConfig {
     privateKey: string;
   };
   sessionSecret: string;
+  /**
+   * How often eligible security releases are swept for, in milliseconds.
+   *
+   * Zero turns the sweep off entirely, which is what a development instance
+   * without real installations wants.
+   */
+  automaticUpdateIntervalMs: number;
   public: {
     publicOrigin: string;
     githubAppSlug: string;
@@ -71,6 +78,21 @@ export function loadSetupServiceConfig(
   if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
     throw new TypeError("PORT must be an integer from 1 through 65535.");
   }
+  // Hourly by default. A sweep costs nothing whilst no release may install
+  // itself, which is the ordinary state, so the interval only decides how
+  // quickly one that may reaches installations.
+  const sweepMinutes = Number(
+    environment.AUTOMATIC_UPDATE_INTERVAL_MINUTES ?? "60",
+  );
+  if (
+    !Number.isSafeInteger(sweepMinutes) ||
+    sweepMinutes < 0 ||
+    sweepMinutes > 1_440
+  ) {
+    throw new TypeError(
+      "AUTOMATIC_UPDATE_INTERVAL_MINUTES must be an integer from 0 through 1440.",
+    );
+  }
 
   return {
     environment: nodeEnvironment,
@@ -79,6 +101,7 @@ export function loadSetupServiceConfig(
     secureCookies: new URL(publicOrigin).protocol === "https:",
     github: { appId, appSlug, clientId, clientSecret, privateKey },
     sessionSecret,
+    automaticUpdateIntervalMs: sweepMinutes * 60_000,
     public: { publicOrigin, githubAppSlug: appSlug },
   };
 }

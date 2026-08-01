@@ -76,6 +76,35 @@ export function createGitHubRequest(
   };
 }
 
+/**
+ * Mints a token for every repository an installation covers.
+ *
+ * Used only where the work is to find out which repositories exist at all, so
+ * there is nothing to scope it to yet. Anything that acts on one repository
+ * uses {@link createRepositoryInstallationToken} instead, which is scoped to
+ * that repository alone.
+ *
+ * @param permissions - Kept to what the enumeration itself needs.
+ */
+export async function createInstallationToken(
+  options: GitHubAppApiOptions,
+  installationId: number,
+  permissions: GitHubInstallationPermissions,
+  userAgent: string,
+): Promise<string> {
+  const fetchImplementation = options.fetch ?? ((request) => fetch(request));
+  const githubRequest = createGitHubRequest(fetchImplementation, userAgent);
+  const body = await githubRequest<unknown>(
+    `/app/installations/${installationId}/access_tokens`,
+    createGitHubAppJwt(options.appId, options.privateKey, options.nowSeconds),
+    { method: "POST", body: JSON.stringify({ permissions }) },
+  );
+  if (!isRecord(body) || typeof body.token !== "string") {
+    throw new Error("GitHub installation token response was invalid.");
+  }
+  return body.token;
+}
+
 export async function createRepositoryInstallationToken(
   options: GitHubAppApiOptions,
   installationId: number,
