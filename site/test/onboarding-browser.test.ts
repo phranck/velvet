@@ -47,6 +47,13 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.route("https://phranck.github.io/velvet-themes/index.json", (route) =>
       route.abort(),
     );
+    await page.route("**/api/serial", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ next: 7 }),
+      });
+    });
     await page.route("**/api/session", async (route) => {
       sessionCalls += 1;
       await route.fulfill({
@@ -912,6 +919,33 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator("[data-open-status-page]").getAttribute("href"),
       "https://status.example.com/",
     );
+    // Styled as a button but rendered as an anchor, so the geometry has to come
+    // from the shared class rather than the element. It came out flat when the
+    // height hung on the button selector alone.
+    assert.deepEqual(
+      await page.locator("[data-open-status-page]").evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          display: style.display,
+          minHeight: style.minHeight,
+          decoration: style.textDecorationLine,
+        };
+      }),
+      { display: "flex", minHeight: "40px", decoration: "none" },
+    );
+    assert.equal(
+      await page.locator("[data-open-status-page] i.ph-chart-line-up").count(),
+      1,
+    );
+    // One serial on the page, in the footer, padded to five digits.
+    assert.equal(await page.locator("[data-footer-serial]").count(), 1);
+    assert.equal(
+      await page.locator("[data-footer-serial]").textContent()
+        .then((text) => text?.replace(/\s+/g, " ").trim()),
+      "Serial Nr.: 00007",
+    );
+    assert.equal(await page.locator("[data-board-serial]").count(), 0);
+    assert.equal(await page.locator("[data-card-serial]").count(), 0);
     assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);
     // The link that used to sit in the result is gone; the footer button is

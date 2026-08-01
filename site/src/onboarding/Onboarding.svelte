@@ -303,17 +303,6 @@
   class="onboarding-shell"
   style={`--step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px`}
 >
-  {#if serialLabel}
-    <!--
-      Printed onto the board rather than into it. The backdrop is a generated
-      SVG used as a CSS background, which renders in isolation and cannot carry
-      a live value, so this sits over it and matches the silkscreen by hand.
-    -->
-    <p class="board-serial" aria-live="polite" data-board-serial>
-      <span>Serial Nr.:</span>
-      <span class="board-serial-number">{serialLabel}</span>
-    </p>
-  {/if}
   <main>
     <section class="intro">
       <div class="onboarding-brand-block">
@@ -583,6 +572,7 @@
             who had just finished making one.
           -->
           <a class="primary-button" href={installationUrl} data-open-status-page>
+            <i class="ph-duotone ph-chart-line-up" aria-hidden="true"></i>
             <span data-step-card-button-label>Open Status Page</span>
           </a>
         {:else}
@@ -602,17 +592,19 @@
         {/if}
       </StepCard.Footer>
       </StepCard.Root>
-      {#if serialLabel}
-        <p class="card-serial" data-card-serial>
-          <span>Serial Nr.:</span>
-          <span class="card-serial-number">{serialLabel}</span>
-        </p>
-      {/if}
     </form>
   </main>
   <footer class="page-footer">
-    <span>© {CURRENT_YEAR} by </span>
-    <a href="https://layered.work" target="_blank" rel="noopener noreferrer">LAYERED</a>
+    <span class="page-footer-credit">
+      <span>© {CURRENT_YEAR} by </span>
+      <a href="https://layered.work" target="_blank" rel="noopener noreferrer">LAYERED</a>
+    </span>
+    {#if serialLabel}
+      <p class="footer-serial" aria-live="polite" data-footer-serial>
+        <span>Serial Nr.:</span>
+        <span class="footer-serial-number">{serialLabel}</span>
+      </p>
+    {/if}
   </footer>
 </div>
 
@@ -720,45 +712,27 @@
   /* Set to match the board's silkscreen: white, monospace, and at the size the
      identity block prints its small lines. It sits over the backdrop rather
      than in it, because that SVG is generated at build time. */
-  .board-serial,
-  .card-serial {
+  /* The unit number, kept as the page's small print rather than painted onto
+     the board. The backdrop is a generated SVG used as a CSS background, so it
+     could never have carried a live value anyway. */
+  .footer-serial {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin: 0;
-    color: color-mix(in srgb, #fff 62%, transparent);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.8125rem;
+    font-size: var(--setup-text-caption);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     user-select: none;
   }
-  .board-serial-number,
-  .card-serial-number {
-    padding: 0.1rem 0.4rem;
+  /* Inverted, the way a board prints a value meant to be read rather than
+     skimmed. */
+  .footer-serial-number {
+    padding: 0.05rem 0.35rem;
     border-radius: 0.15rem;
-    background: color-mix(in srgb, #fff 62%, transparent);
+    background: color-mix(in srgb, var(--setup-muted) 70%, transparent);
     color: var(--setup-base);
-  }
-  /* Centred under the card, where somebody reading the page is already looking.
-     The board print stays as well, since it belongs to the artwork. */
-  .card-serial {
-    justify-content: center;
-    margin-top: 1.25rem;
-  }
-  .board-serial {
-    position: fixed;
-    right: clamp(1rem, 4vw, 3rem);
-    bottom: clamp(3.5rem, 7vw, 5rem);
-    z-index: 0;
-    pointer-events: none;
-  }
-  @media (max-width: 720px) {
-    /* Only the board print goes; the one under the card is the readable copy
-       and stays on a narrow screen. */
-    .board-serial {
-      display: none;
-    }
   }
   .intro > p:last-child {
     width: 100%;
@@ -944,13 +918,20 @@
   }
   .primary-button,
   .secondary-button {
+    min-height: var(--setup-control-height);
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.45rem;
     border-radius: var(--step-card-inner-radius);
     cursor: pointer;
+    font-size: var(--setup-button-font-size);
     font-weight: 650;
     line-height: 1;
+    text-decoration: none;
+  }
+  .primary-button i {
+    font-size: 1.15em;
   }
   .github-permission-note {
     margin: 1rem 1rem 0;
@@ -1056,9 +1037,9 @@
     bottom: 0;
     left: 0;
     min-height: 3rem;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: center;
     gap: 0.2rem;
     padding: 0.5rem 1rem;
     background: color-mix(in srgb, #0d0e14 88%, transparent);
@@ -1066,6 +1047,19 @@
     box-sizing: border-box;
     font-size: var(--setup-text-small);
     backdrop-filter: blur(16px);
+  }
+  /* Middle column, so the credit stays centred on the page regardless of how
+     wide the serial beside it happens to be. */
+  .page-footer-credit {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+  .page-footer .footer-serial {
+    grid-column: 3;
+    justify-self: end;
+    color: var(--setup-muted);
   }
   .page-footer a {
     color: var(--setup-text);
