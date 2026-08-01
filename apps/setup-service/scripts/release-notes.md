@@ -1,20 +1,15 @@
-# Velvet 1.0.0
+# Velvet 1.0.1
 
-Velvet monitors your services from GitHub Actions and publishes a status page through GitHub Pages, without a server or a database.
+Fixes the first monitoring run of a newly created status page.
 
-## What it does
+## What was wrong
 
-- Direct IPv4 checks of every configured endpoint, every five minutes, with separate response-time samples four times a day.
-- Incidents and planned maintenance recorded as GitHub Issues, opened and closed automatically after confirmed failures and recoveries.
-- Up to 365 days of availability, response-time, incident, and maintenance history on a dedicated branch the monitor owns alone.
-- A themeable status page built from that history, with four system themes and detailed visual configuration.
+The workflows a new installation received pinned a Velvet monitor from before the configuration contract gained its update preference. Onboarding writes that preference, the older monitor rejected it as an unknown field, and the first run failed with an invalid-configuration error. Nothing was published, so the status page stayed empty.
 
-## Installing and updating
+## What changed
 
-Browser onboarding at [setup.velvet.li](https://setup.velvet.li/onboarding/) creates the repository, writes the configuration, enables Pages, and starts monitoring. It is the only supported way in, and the only one that records which Velvet version an installation runs.
+The monitor is pinned to the released action, so the version that writes a configuration and the version that reads it are the same one.
 
-From then on Velvet installs new versions for you. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. Your configuration, history, incidents, secrets, `README.md`, and `LICENSE` are never part of one, and a check running in your own repository refuses any update that would touch them.
+## What stays yours
 
-## Notes
-
-IPv6 monitoring is deliberately absent until GitHub-hosted runners provide documented native support. A configured service is monitored over IPv4 only.
+`velvet.yml`, the complete `velvet-data` branch, your incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `LICENSE` are never touched by an update. Velvet only replaces the workflow and issue-template files it owns, plus its own version lock.
