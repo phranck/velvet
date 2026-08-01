@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Set up a GitHub-native Velvet status page in your browser." />
     <title>Set up Velvet</title>
+    <!--
+      Umami, self-hosted, so no third party receives the traffic. It sets no
+      cookies and stores no identifier in the browser, which is why this page
+      carries no consent dialogue.
+
+      The service's Content Security Policy names this origin in both script-src
+      and connect-src. Change one without the other and the script loads whilst
+      its events are refused, which looks like working analytics that collects
+      nothing.
+    -->
+    <script
+      defer
+      src="https://umami.layered.work/script.js"
+      data-website-id="db86a44d-c6c1-4ef7-9180-56c3735cdb3a"
+    ></script>
   </head>
   <body>
     <div id="onboarding"></div>

@@ -44,6 +44,16 @@ import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.j
 
 const SESSION_MAX_AGE_SECONDS = 30 * 60;
 
+/**
+ * Where the analytics script is served from and where its events go.
+ *
+ * A self-hosted Umami instance, so it is one origin rather than a third party's
+ * network. Declared once because the Content Security Policy has to name it
+ * twice, and the two must never drift: the script would load whilst its events
+ * were blocked, which looks exactly like working analytics that records nothing.
+ */
+const ANALYTICS_ORIGIN = "https://umami.layered.work";
+
 type ProvisionFunction = typeof provisionVelvet;
 type StaticAssetProvider = (path: string) => Promise<Response | null>;
 
@@ -725,19 +735,23 @@ function secureResponse(
   headers.set("X-Request-Id", requestId);
   headers.set(
     "Content-Security-Policy",
-    // Two deliberate grants beyond the default.
+    // Three deliberate grants beyond the default.
     //
     // `connect-src` names GitHub Pages because the Configurator reads the
     // community theme registry Velvet publishes there, and validates it before
-    // using it. It is the only origin either application talks to besides this
-    // one.
+    // using it.
+    //
+    // Both `script-src` and `connect-src` name the analytics host, because the
+    // script is fetched from it and its events are posted back to it. Granting
+    // only the first loads the script and then records nothing, which looks like
+    // working analytics whilst collecting no data.
     //
     // `style-src-attr` allows style attributes, which is how a themed preview
     // carries per-element custom properties. Stylesheets and `<style>`
     // elements stay restricted to this origin through `style-src`, so this
     // grants declarations on elements the application already renders and
     // nothing that could introduce a stylesheet.
-    "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+    `default-src 'self'; script-src 'self' ${ANALYTICS_ORIGIN}; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io ${ANALYTICS_ORIGIN}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Cross-Origin-Resource-Policy", "same-origin");
