@@ -269,7 +269,14 @@ async function prepareUpdate(
   let branchHead = await read(() => repository.updateBranchHead(request.version));
   if (branchHead === null) {
     await repository.createUpdateBranch(request.version, defaultHead);
-    branchHead = defaultHead;
+    // GitHub is briefly inconsistent after creating a ref: the single-ref read
+    // that the commit performs can still answer 404 immediately afterwards.
+    // Confirming through the retrying read closes that window, which a real
+    // repository surfaced and no double could have.
+    branchHead = await read(() => repository.updateBranchHead(request.version));
+    if (branchHead === null) {
+      return result(request, "failed", "repository_changed");
+    }
   }
   if (branchHead === defaultHead) {
     branchHead = await repository.commitUpdate(
