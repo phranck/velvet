@@ -370,9 +370,15 @@ test("uses reusable squircle steps and directional card motion", async () => {
   assert.doesNotMatch(squircleStep, /preserveAspectRatio="none"/);
   assert.match(squircleStep, /stroke-width="1"/);
   assert.match(squircleStep, /stroke-width="4"/);
-  assert.match(onboarding, /grid-template-columns:\s*repeat\(4, var\(--step-size\)\)/);
-  assert.match(onboarding, /--step-size:\s*clamp\(4\.5rem, 18vw, 5\.5rem\)/);
-  assert.match(onboarding, /--step-gap:\s*clamp\(0\.9rem, 4vw, 2\.625rem\)/);
+  // The column count comes from the step list rather than a literal, so adding
+  // a step cannot wrap the row the way a fifth one did.
+  assert.match(
+    onboarding,
+    /grid-template-columns:\s*repeat\(var\(--step-count, 4\), var\(--step-size\)\)/,
+  );
+  assert.match(onboarding, /--step-count: \$\{STEPS\.length\}/);
+  assert.match(onboarding, /--step-size:\s*clamp\(3\.4rem, 15vw, 5\.5rem\)/);
+  assert.match(onboarding, /--step-gap:\s*clamp\(0\.5rem, 2\.5vw, 2\.25rem\)/);
   assert.match(onboarding, /left:\s*calc\(100% \+ 5px\)/);
   assert.match(onboarding, /width:\s*calc\(var\(--step-gap\) - 10px\)/);
   assert.match(
