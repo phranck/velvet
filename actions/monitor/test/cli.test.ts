@@ -129,3 +129,88 @@ test("reapplies the same observations once after a safe data conflict", async ()
     await rm(workspace, { recursive: true, force: true });
   }
 });
+
+test("a configuration that cannot be read is not reported as an invalid one", async () => {
+  // These two failures used to share INVALID_CONFIGURATION, which made them
+  // indistinguishable from a run's output. Diagnosing issue 145 went down the
+  // wrong path twice because of it, so the distinction is asserted here.
+  const module = (await cliModule) as Record<string, unknown>;
+  if (typeof module.runMonitorCli !== "function") {
+    assert.fail("@velvet/monitor-action must export runMonitorCli");
+  }
+  const workspace = await mkdtemp(join(tmpdir(), "velvet-cli-"));
+  try {
+    // No velvet.yml is written at all.
+    await assert.rejects(
+      () =>
+        (module.runMonitorCli as (environment: Record<string, string>) => Promise<unknown>)({
+          VELVET_MODE: "status",
+          VELVET_WORKSPACE: workspace,
+          GITHUB_REPOSITORY: "example/status",
+          GITHUB_RUN_ID: "1",
+          GITHUB_TOKEN: "token",
+        }),
+      (error: unknown) => {
+        const failure = error as { code?: string; detail?: string | null };
+        assert.equal(failure.code, "CONFIGURATION_UNREADABLE");
+        assert.equal(failure.detail, null, "an unreadable file has no location");
+        return true;
+      },
+    );
+  } finally {
+    await rm(workspace, { recursive: true, force: true });
+  }
+});
+
+test("a refused configuration names the path the validator rejected", async () => {
+  const module = (await cliModule) as Record<string, unknown>;
+  if (typeof module.runMonitorCli !== "function") {
+    assert.fail("@velvet/monitor-action must export runMonitorCli");
+  }
+  const workspace = await mkdtemp(join(tmpdir(), "velvet-cli-"));
+  try {
+    // Valid YAML, but history.retentionDays is far outside what the schema
+    // allows, so the validator refuses it and can say where.
+    await writeFile(
+      join(workspace, "velvet.yml"),
+      [
+        "schemaVersion: 1",
+        "repository:",
+        "  owner: example",
+        "  name: status",
+        "statusPage:",
+        "  name: Example",
+        "services:",
+        "  - name: Website",
+        "    url: https://example.com/",
+        "history:",
+        "  retentionDays: -5",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    await assert.rejects(
+      () =>
+        (module.runMonitorCli as (environment: Record<string, string>) => Promise<unknown>)({
+          VELVET_MODE: "status",
+          VELVET_WORKSPACE: workspace,
+          GITHUB_REPOSITORY: "example/status",
+          GITHUB_RUN_ID: "1",
+          GITHUB_TOKEN: "token",
+        }),
+      (error: unknown) => {
+        const failure = error as { code?: string; detail?: string | null };
+        assert.equal(failure.code, "INVALID_CONFIGURATION");
+        assert.equal(
+          typeof failure.detail,
+          "string",
+          "the rejected path is the one thing that says what to correct",
+        );
+        assert.match(failure.detail!, /retentionDays|history/u);
+        return true;
+      },
+    );
+  } finally {
+    await rm(workspace, { recursive: true, force: true });
+  }
+});
