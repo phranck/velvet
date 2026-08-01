@@ -1143,6 +1143,8 @@
     --picker-surface: var(--tool-input);
     --picker-text: var(--tool-text);
     --service-editor-accent: var(--tool-accent);
+    --picker-inner-ring-display: none;
+    --picker-outer-ring-width: 2;
     --service-editor-grid-rows: auto auto auto;
     --service-editor-label-row: span 3;
     --service-editor-label-rows: subgrid;
