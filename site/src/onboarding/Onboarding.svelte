@@ -764,10 +764,8 @@
     line-height: 1.3;
   }
   .steps {
-    /* Sized so the whole row fits a narrow phone. Five tiles and four gaps come
-       to roughly 300px at the lower bound, which clears a 320px viewport. */
-    --step-size: clamp(3.4rem, 15vw, 5.5rem);
-    --step-gap: clamp(0.5rem, 2.5vw, 2.25rem);
+    --step-size: clamp(4.5rem, 18vw, 5.5rem);
+    --step-gap: clamp(0.9rem, 4vw, 2.625rem);
 
     display: grid;
     /* Driven by the number of steps, so adding one does not wrap the row as it
@@ -1173,6 +1171,15 @@
        is left to wrap on its own instead. */
     .intro > p:last-child br {
       display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    /* Five tiles at the full size overflow a phone. Nothing wider needs this,
+       since the step card is wider than the row. */
+    .steps {
+      --step-size: clamp(3.2rem, 15vw, 4.5rem);
+      --step-gap: clamp(0.4rem, 2.5vw, 0.9rem);
     }
   }
 

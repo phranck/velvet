@@ -590,7 +590,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator(".steps").evaluate((element) =>
         getComputedStyle(element).columnGap,
       ),
-      "32px",
+      "42px",
     );
     // The row must stay a row. It wrapped when the grid was fixed at four
     // columns and a fifth step was added, dropping Install onto its own line.
