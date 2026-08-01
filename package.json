@@ -10,7 +10,7 @@
     "site"
   ],
   "scripts": {
-    "build": "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build && bun run --filter @velvet/monitor-action build && bun run --filter @velvet/upptime-adapter build && bun run --filter @velvet/site build && bun run --filter @velvet/setup-service build",
+    "build": "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build && bun run --filter @velvet/monitor-action build && bun run --filter @velvet/upptime-adapter build && bun run --filter @velvet/site build && bun run --filter @velvet/site configurator:build && bun run --filter @velvet/setup-service build",
     "check": "bun run lint && bun run typecheck && bun run test && bun run build",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",

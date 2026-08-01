@@ -188,7 +188,7 @@
     flex-direction: column;
     gap: 14px;
     color: var(--tool-text);
-    font-size: 14px;
+    font-size: 17px;
   }
 
   .versions {
@@ -198,7 +198,7 @@
     gap: 7px 11px;
     margin: 0;
     color: var(--tool-muted);
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .available {
@@ -226,7 +226,7 @@
   }
 
   .kind i {
-    font-size: 14px;
+    font-size: 17px;
   }
 
   .self-installing {
@@ -235,12 +235,12 @@
     gap: 7px;
     margin: 0;
     color: var(--tool-muted);
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .self-installing i {
     color: var(--tool-accent);
-    font-size: 15px;
+    font-size: 17px;
   }
 
   .outcome {
@@ -250,7 +250,7 @@
     border-radius: 8px;
     background: var(--tool-input);
     color: var(--tool-muted);
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .outcome strong {
@@ -285,14 +285,14 @@
     align-items: flex-start;
     gap: 9px;
     color: var(--tool-text);
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .automatic small {
     display: block;
     margin-top: 2px;
     color: var(--tool-muted);
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .automatic input {
@@ -311,12 +311,12 @@
     border-radius: 8px;
     cursor: pointer;
     font: inherit;
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 600;
   }
 
   .button i {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .button.secondary {

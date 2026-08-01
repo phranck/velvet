@@ -55,10 +55,14 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /ph-copy/);
   assert.match(html, /ph-download-simple/);
   assert.equal(html.match(/data-configurator-section/g)?.length, 9);
-  assert.equal(html.match(/<details[^>]+open/g)?.length, 11);
+  // A first visit collapses every Configurator section, so the only open
+  // details are the service cards themselves.
+  assert.equal(html.match(/<details[^>]+open/g)?.length, 2);
   assert.equal(html.match(/data-slider-tick/g)?.length, 9);
   assert.match(html, /data-toggle-all-sections/);
-  assert.match(html, /Collapse all sections/);
+  // With everything collapsed on a first visit, the control offers the
+  // opposite action.
+  assert.match(html, /Expand all sections/);
   assert.match(html, /ph-caret-circle-double-down/);
   assert.equal(html.match(/ph-caret-circle-down/g)?.length, 13);
   assert.match(html, /data-sidebar-collapse-toggle/);
@@ -152,9 +156,24 @@ test("uses a full-workspace theme background and readable sidebar typography", a
   assert.match(source, /<main class="preview-workspace"[^>]+bind:this=/);
   assert.doesNotMatch(source, /linear-gradient\(rgba\(255, 255, 255, 0\.018\) 1px/);
   assert.doesNotMatch(source, /onToggleService=\{\(\) => undefined\}/);
-  assert.match(source, /\.button[\s\S]*font-size:\s*14px/);
-  assert.match(source, /\.section-help[\s\S]*font-size:\s*13px/);
-  assert.match(sections, /summary[\s\S]*font-size:\s*15px/);
+  // Guard the intent rather than exact values: nothing in the tool chrome may
+  // drop below a readable size, and the section heading stays the largest.
+  // Body text carries information and must be comfortably readable. The
+  // uppercase meta labels above the preview are allowed to be smaller, since
+  // letter-spaced capitals read larger than their size suggests.
+  const MINIMUM_READABLE_PX = 15;
+  const MINIMUM_META_PX = 12;
+  for (const [, size] of source.matchAll(/font-size:\s*(\d+)px/gu)) {
+    assert.equal(
+      Number(size) >= MINIMUM_META_PX,
+      true,
+      `${size}px is unreadable anywhere in the tool`,
+    );
+  }
+  for (const [, size] of sections.matchAll(/font-size:\s*(\d+)px/gu)) {
+    assert.equal(Number(size) >= MINIMUM_READABLE_PX, true, `${size}px in a section`);
+  }
+  assert.match(sections, /summary[\s\S]*font-size:\s*17px/);
   assert.match(
     sections,
     /summary\s*\{[^}]*background:\s*var\(--tool-panel-raised\)/s,

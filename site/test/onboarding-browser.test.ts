@@ -9,6 +9,15 @@ import { createServer } from "vite";
 import { parseConfiguratorYaml } from "../src/configurator/configuration.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
+/**
+ * Starting a Vite server, optimising dependencies, launching a browser, and
+ * walking the whole onboarding takes far longer than a unit test, and the
+ * dependency step grows with the module graph. Thirty seconds no longer
+ * covered it once the update components were added, so the test began failing
+ * for being slow rather than for finding a defect.
+ */
+const ONBOARDING_TIMEOUT_MS = 180_000;
+
 test("completes onboarding with keyboard, narrow viewport, and reduced motion", async () => {
   const cache = await createViteTestCache("onboarding-browser");
   const server = await createServer({
@@ -864,6 +873,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       });
     });
     await page.goto(`http://127.0.0.1:${address.port}/configurator.html`);
+    // A first visit collapses every section, so expand them once before
+    // inspecting their contents. A reader does the same before configuring.
+    await page.locator("[data-toggle-all-sections]").click();
+    await page
+      .locator('[data-configurator-section="themes"][data-section-expanded="true"]')
+      .waitFor();
     assert.equal(
       await page.locator(".control-panel").evaluate((element) =>
         element.getBoundingClientRect().width,
@@ -1448,4 +1463,4 @@ history:
     await server.close();
     await cache.cleanup();
   }
-}, 30_000);
+}, ONBOARDING_TIMEOUT_MS);

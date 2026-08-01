@@ -316,6 +316,11 @@
   .form-grid {
     display: grid;
     gap: 1rem;
+    /* Opt-in row alignment. A consumer that wants controls to line up across a
+       row, even when one label wraps, sets these; everyone else keeps the
+       previous layout untouched. */
+    grid-template-rows: var(--service-editor-grid-rows, none);
+    align-items: var(--service-editor-grid-align, stretch);
   }
   .two-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -330,6 +335,12 @@
     min-width: 0;
     display: grid;
     gap: 0.42rem;
+  }
+  /* Sharing the parent's rows is what stops a wrapped label pushing its own
+     control below its neighbours. Off unless the consumer asks for it. */
+  .form-grid > label {
+    grid-row: var(--service-editor-label-row, auto);
+    grid-template-rows: var(--service-editor-label-rows, none);
   }
   label > span {
     margin-inline: var(--service-editor-text-inset, 0);
