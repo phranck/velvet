@@ -17,6 +17,7 @@ import {
 } from "./github.js";
 import { embeddedVelvetReleases } from "./update-releases.js";
 import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.js";
+import type { InstallationSerialCounter } from "./serial.js";
 import type { SetupServerSession } from "./session.js";
 import { publicSetupError, SetupServiceError } from "./setup-error.js";
 
@@ -41,6 +42,14 @@ interface ProvisionVelvetInput {
   github: GitHubSetupClient;
   onEvent: (event: SetupEvent) => void;
   releases?: ManagedUpdateReleaseProvider;
+  /**
+   * Issues the installation's serial, when the instance has a registry.
+   *
+   * Absent on an instance without one, and a failure to claim is swallowed
+   * rather than raised, because a repository that is already built, monitored,
+   * and published must not be reported as failed over a number.
+   */
+  serials?: InstallationSerialCounter;
   operationId?: () => string;
   errorId?: () => string;
   sleep?: (milliseconds: number) => Promise<void>;
@@ -84,6 +93,7 @@ export async function provisionVelvet(
       ...(existing.workflowRunId
         ? { workflowRunId: existing.workflowRunId }
         : {}),
+      ...(existing.serial ? { serial: existing.serial } : {}),
     };
   }
 
@@ -304,11 +314,24 @@ export async function provisionVelvet(
       ? `https://${customDomain}/`
       : pages.htmlUrl;
     state.installationUrl = installationUrl;
+    // Claimed here, at the last step, so a number is never spent on a setup
+    // that stopped earlier. A retry reuses the one already recorded on the
+    // session rather than taking a second.
+    if (state.serial === undefined) {
+      const claimed = await claimSerial(input, {
+        repository: `${state.repository.owner}/${state.repository.name}`,
+        statusPageName: input.request.configuration.statusPage.name,
+        url: installationUrl,
+        ...(customDomain ? { customDomain } : {}),
+      });
+      if (claimed !== undefined) state.serial = claimed;
+    }
     const result: SetupSuccessEvent = {
       type: "success",
       installationUrl,
       repositoryUrl: state.repository.htmlUrl,
       workflowRunId: state.workflowRunId,
+      ...(state.serial ? { serial: state.serial } : {}),
     };
     input.session.operation = {
       operationId,
@@ -333,6 +356,35 @@ export async function provisionVelvet(
       recoverable: setupError.recoverable,
     };
     throw setupError;
+  }
+}
+
+/**
+ * Claims the installation's serial, tolerating a registry that will not answer.
+ *
+ * A failure here is logged by the caller's error path and otherwise ignored. The
+ * repository exists, its monitor ran, and its page is live; refusing to report
+ * that because a counter was unreachable would turn a decorative number into a
+ * cause of failed setups.
+ *
+ * @param input - The provisioning input, for the counter and the event sink.
+ * @param installation - What to record against the number.
+ * @returns The serial, or `undefined` when none could be issued.
+ */
+async function claimSerial(
+  input: ProvisionVelvetInput,
+  installation: {
+    repository: string;
+    statusPageName: string;
+    url: string;
+    customDomain?: string;
+  },
+): Promise<number | undefined> {
+  if (!input.serials) return undefined;
+  try {
+    return await input.serials.claim(installation);
+  } catch {
+    return undefined;
   }
 }
 

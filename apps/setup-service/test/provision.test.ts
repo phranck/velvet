@@ -535,3 +535,72 @@ test("still completes setup when the app cannot write workflow files", async () 
     "only the lock is written, because a workflow write would be refused",
   );
 });
+
+test("claims a serial only once the page is published, and only once", async () => {
+  const session = authenticatedSession();
+  const { client } = successfulGitHub();
+  const claims: unknown[] = [];
+  const serials = {
+    peek: async () => 1,
+    claim: async (installation: unknown) => {
+      claims.push(installation);
+      return 42;
+    },
+  };
+
+  const result = await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    serials,
+    operationId: () => "O".repeat(26),
+    sleep: async () => {},
+  });
+
+  assert.equal(result.serial, 42);
+  assert.equal(claims.length, 1);
+  assert.deepEqual(claims[0], {
+    repository: "example/status",
+    statusPageName: "Example Status",
+    url: "https://example.github.io/status/",
+  });
+
+  // A resumed setup reports the number it already has rather than taking a
+  // second one, which would leave the first recorded against the same
+  // installation.
+  const again = await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: successfulGitHub().client,
+    onEvent: () => {},
+    serials,
+    operationId: () => "O".repeat(26),
+    sleep: async () => {},
+  });
+  assert.equal(again.serial, 42);
+  assert.equal(claims.length, 1, "a retry does not claim again");
+});
+
+test("a registry that will not answer does not fail a finished setup", async () => {
+  // The repository exists, its monitor ran, and the page is live. Reporting
+  // that as failed over a decorative number would be the wrong trade.
+  const result = await provisionVelvet({
+    session: authenticatedSession(),
+    request: normalizedRequest,
+    github: successfulGitHub().client,
+    onEvent: () => {},
+    serials: {
+      peek: async () => null,
+      claim: async () => {
+        throw new Error("registry unreachable");
+      },
+    },
+    operationId: () => "O".repeat(26),
+    sleep: async () => {},
+  });
+
+  assert.equal(result.type, "success");
+  assert.equal(result.serial, undefined);
+  assert.equal(result.installationUrl, "https://example.github.io/status/");
+});

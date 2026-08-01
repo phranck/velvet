@@ -889,3 +889,49 @@ test("reports an unsupported update method rather than forwarding it", async () 
   assert.equal(response.status, 405);
   assert.equal((await response.json()).error.code, "METHOD_NOT_ALLOWED");
 });
+
+test("reports the next serial, and nothing when no registry is configured", async () => {
+  const { handler } = harness();
+  const withoutRegistry = await handler(new Request(`${origin}/api/serial`));
+  assert.equal(withoutRegistry.status, 200);
+  assert.deepEqual(await withoutRegistry.json(), { next: null });
+
+  // The number is decoration on a backdrop, so an instance without a registry
+  // answers plainly rather than failing, and onboarding shows nothing.
+  const counting = createSetupHandler({
+    config,
+    sessions: createSessionStore({ secret: config.sessionSecret }),
+    github: githubClient(),
+    logger: () => {},
+    serials: {
+      peek: async () => 42,
+      claim: async () => 42,
+    },
+  });
+  const response = await counting(new Request(`${origin}/api/serial`));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { next: 42 });
+  assert.equal(
+    response.headers.get("Set-Cookie"),
+    null,
+    "reading the counter needs no session",
+  );
+});
+
+test("a serial the counter refuses does not fail the endpoint", async () => {
+  const handler = createSetupHandler({
+    config,
+    sessions: createSessionStore({ secret: config.sessionSecret }),
+    github: githubClient(),
+    logger: () => {},
+    serials: {
+      peek: async () => null,
+      claim: async () => {
+        throw new Error("unreachable");
+      },
+    },
+  });
+  const response = await handler(new Request(`${origin}/api/serial`));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { next: null });
+});

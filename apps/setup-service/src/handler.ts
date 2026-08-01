@@ -22,6 +22,7 @@ import {
   type GitHubSetupClient,
 } from "./github.js";
 import type { AuditLogger } from "./observability.js";
+import type { InstallationSerialCounter } from "./serial.js";
 import { provisionVelvet } from "./provision.js";
 import { createRateLimiter, type RateLimiter } from "./rate-limit.js";
 import {
@@ -63,6 +64,13 @@ interface SetupHandlerOptions {
   github: GitHubSetupClient;
   logger: AuditLogger;
   provision?: ProvisionFunction;
+  /**
+   * Issues installation serials, when the instance has a registry configured.
+   *
+   * Absent on an instance without one, in which case `/api/serial` reports no
+   * number and setups complete exactly as before.
+   */
+  serials?: InstallationSerialCounter;
   releases?: ManagedUpdateReleaseProvider;
   updates?: UpdateRoutes;
   staticAsset?: StaticAssetProvider;
@@ -128,6 +136,16 @@ export function createSetupHandler(
       if (route === "/healthz") {
         if (request.method !== "GET") return reject(methodError(), "health");
         return finish(jsonResponse({ status: "ok" }));
+      }
+
+      if (route === "/api/serial") {
+        if (request.method !== "GET") return reject(methodError(), "serial");
+        // Public and unauthenticated, because it reveals only how many
+        // installations exist, which the number printed on the page shows
+        // anyway. It is provisional: nothing is reserved, and two visitors at
+        // once are told the same number.
+        const next = (await options.serials?.peek()) ?? null;
+        return finish(jsonResponse({ next }));
       }
 
       if (route === "/api/session") {
@@ -334,6 +352,7 @@ export function createSetupHandler(
             appSlug: options.config.github.appSlug,
             randomToken,
             provision,
+            ...(options.serials ? { serials: options.serials } : {}),
             logger: options.logger,
             requestId: currentRequestId,
             errorId,
@@ -466,6 +485,7 @@ function setupStreamResponse(input: {
   appSlug: string;
   randomToken: () => string;
   provision: ProvisionFunction;
+  serials?: InstallationSerialCounter;
   logger: AuditLogger;
   requestId: string;
   errorId: () => string;
@@ -512,6 +532,7 @@ function setupStreamResponse(input: {
               request: input.request,
               github: input.github,
               onEvent: emit,
+              ...(input.serials ? { serials: input.serials } : {}),
               errorId: () => currentErrorId,
             });
           } catch (cause) {

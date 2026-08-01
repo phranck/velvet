@@ -91,7 +91,11 @@ export function createBrowserSetupClient(
           navigate(safeGitHubInstallationUrl(event.installationUrl, event.access));
           throw new Error("SETUP_REDIRECT_STARTED");
         } else if (event.type === "success") {
-          return { installationUrl: safeInstallationUrl(event.installationUrl) };
+          return {
+            installationUrl: safeInstallationUrl(event.installationUrl),
+            // Present only when the instance issues serials at all.
+            ...(typeof event.serial === "number" ? { serial: event.serial } : {}),
+          };
         } else if (event.type === "error") {
           throw setupClientError(event);
         }
@@ -107,7 +111,7 @@ export function createBrowserSetupClient(
 async function pollSetupStatus(
   fetchImplementation: SetupFetchImplementation,
   onProgress: (stage: SetupProgressStage) => void,
-): Promise<{ installationUrl: string }> {
+): Promise<{ installationUrl: string; serial?: number }> {
   for (let check = 0; check < MAX_STATUS_CHECKS; check += 1) {
     const response = await fetchImplementation("/api/setup/status", {
       method: "GET",

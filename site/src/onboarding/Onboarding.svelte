@@ -68,6 +68,15 @@
   let submissionState = $state<"idle" | "permission-required" | "failed" | "success">("idle");
   let stepTransitionController: ViewTransitionController | null = null;
   /**
+   * The serial this visitor would receive, or `null` before it is known.
+   *
+   * Provisional: nothing is reserved, so two people setting up at the same
+   * moment are shown the same number and one of them ends up with the next.
+   * Once a setup succeeds the server reports the number actually issued, and
+   * that replaces this.
+   */
+  let serial = $state<number | null>(null);
+  /**
    * How far setup has got, as an index into `PROGRESS_ORDER`, or `-1` before
    * anything is reported.
    *
@@ -90,6 +99,10 @@
   const nextStepLabel = $derived(
     step < STEPS.length - 1 ? STEPS[step + 1] : "",
   );
+  /** Padded to five digits, the way a board prints a unit number. */
+  const serialLabel = $derived(
+    serial === null ? "" : String(serial).padStart(5, "0"),
+  );
   const customDomain = $derived(draft.customDomain.trim().toLowerCase());
   const pagesDnsTarget = $derived(
     `${draft.repositoryOwner.trim() || "your-github-name"}.github.io`,
@@ -109,6 +122,9 @@
       `${STEP_CARD_CONTENT_INSET}px`,
     );
     stepTransitionController = createViewTransitionController(document);
+    void readNextSerial().then((next) => {
+      if (next !== null) serial = next;
+    });
     if (GITHUB_RETURN) {
       clearGitHubReturnParameter();
       if (GITHUB_RETURN === "approval-required") {
@@ -132,6 +148,28 @@
       delete document.documentElement.dataset.onboardingDirection;
     };
   });
+
+  /**
+   * Asks the service which number comes next.
+   *
+   * Every failure is swallowed. The number is decoration on a backdrop, so an
+   * unreachable endpoint, an instance with no registry, or a malformed answer
+   * all mean the same thing here: show nothing.
+   */
+  async function readNextSerial(): Promise<number | null> {
+    try {
+      const response = await fetch("/api/serial", {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return null;
+      const body = (await response.json()) as { next?: unknown };
+      return typeof body.next === "number" && Number.isSafeInteger(body.next)
+        ? body.next
+        : null;
+    } catch {
+      return null;
+    }
+  }
 
   function browserSessionStorage(): Storage | null {
     try {
@@ -233,6 +271,7 @@
       return;
     }
     if (result.state === "success") {
+      if (typeof result.serial === "number") serial = result.serial;
       submissionState = "success";
       clearOnboardingDraft(SESSION_STORAGE);
       installationUrl = result.installationUrl;
@@ -264,6 +303,17 @@
   class="onboarding-shell"
   style={`--step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px`}
 >
+  {#if serialLabel}
+    <!--
+      Printed onto the board rather than into it. The backdrop is a generated
+      SVG used as a CSS background, which renders in isolation and cannot carry
+      a live value, so this sits over it and matches the silkscreen by hand.
+    -->
+    <p class="board-serial" aria-live="polite" data-board-serial>
+      <span>Serial Nr.:</span>
+      <span class="board-serial-number">{serialLabel}</span>
+    </p>
+  {/if}
   <main>
     <section class="intro">
       <div class="onboarding-brand-block">
@@ -649,6 +699,39 @@
     --tool-brand-subtitle-size: clamp(0.95rem, 2.5vw, 1.2rem);
     --tool-brand-scale-gap: 0.625rem;
     --tool-brand-subtitle-gap: 0.9rem;
+  }
+  /* Set to match the board's silkscreen: white, monospace, and at the size the
+     identity block prints its small lines. It sits over the backdrop rather
+     than in it, because that SVG is generated at build time. */
+  .board-serial {
+    position: fixed;
+    right: clamp(1rem, 4vw, 3rem);
+    bottom: clamp(3.5rem, 7vw, 5rem);
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: color-mix(in srgb, #fff 62%, transparent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    user-select: none;
+  }
+  /* Inverted, the way a board prints a value meant to be read rather than
+     skimmed, which also sets it apart from the surrounding legends. */
+  .board-serial-number {
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.15rem;
+    background: color-mix(in srgb, #fff 62%, transparent);
+    color: var(--setup-base);
+  }
+  @media (max-width: 720px) {
+    .board-serial {
+      display: none;
+    }
   }
   .intro > p:last-child {
     width: 100%;

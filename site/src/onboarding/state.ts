@@ -50,7 +50,7 @@ export interface SetupClient {
   provision(
     request: SetupRequest,
     onProgress?: (stage: SetupProgressStage) => void,
-  ): Promise<{ installationUrl: string }>;
+  ): Promise<{ installationUrl: string; serial?: number }>;
 }
 
 export interface SetupFailure {
@@ -75,7 +75,7 @@ export type SetupSubmissionResult =
   | { state: "invalid"; errors: Record<string, string> }
   | { state: "permission-required"; message: string }
   | ({ state: "failed" } & SetupFailure)
-  | { state: "success"; installationUrl: string };
+  | { state: "success"; installationUrl: string; serial?: number };
 
 export function createOnboardingDraft(): OnboardingDraft {
   return {
@@ -153,7 +153,11 @@ export async function submitOnboarding(
 
   try {
     const result = await client.provision(validation.request, onProgress);
-    return { state: "success", installationUrl: result.installationUrl };
+    return {
+      state: "success",
+      installationUrl: result.installationUrl,
+      ...(typeof result.serial === "number" ? { serial: result.serial } : {}),
+    };
   } catch (error) {
     if (error instanceof SetupClientError) {
       return { state: "failed", ...error.failure };
