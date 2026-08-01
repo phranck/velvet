@@ -62,6 +62,9 @@ const PAGES_WORKFLOW_FILE = "velvet.yml";
  */
 const CHANGED_FILES_PAGE_SIZE = MANAGED_TEMPLATE_PATHS.length + 2;
 const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
+/** Reads allowed for a branch head that GitHub has not published yet. */
+const REFERENCE_ATTEMPTS = 6;
+const REFERENCE_DELAY_MS = 500;
 
 export function updateBranchName(version: string): string {
   if (!SEMANTIC_VERSION.test(version)) {
@@ -186,6 +189,29 @@ function repositoryClient(
     return parsed;
   };
 
+  /**
+   * Reads a branch head, allowing for a ref that was only just created.
+   *
+   * GitHub answers the single-ref endpoint with 404 for a short window after a
+   * ref appears, which is not the same as the branch being gone. Treating it
+   * as gone made an update fail immediately after creating its own branch.
+   */
+  const settledReference = async (branch: string): Promise<string> => {
+    for (let attempt = 1; attempt <= REFERENCE_ATTEMPTS; attempt += 1) {
+      try {
+        return await reference(branch);
+      } catch (error) {
+        const propagating =
+          error instanceof GitHubApiError &&
+          error.status === 404 &&
+          attempt < REFERENCE_ATTEMPTS;
+        if (!propagating) throw error;
+        await Bun.sleep(REFERENCE_DELAY_MS);
+      }
+    }
+    throw new Error("Unreachable repository reference state.");
+  };
+
   const commitFiles = async (
     branch: string,
     expectedHeadSha: string,
@@ -194,7 +220,7 @@ function repositoryClient(
   ): Promise<string> => {
     assertCommitSha(expectedHeadSha);
     const normalizedFiles = validateManagedFiles(files);
-    const currentHead = await reference(branch);
+    const currentHead = await settledReference(branch);
     if (currentHead !== expectedHeadSha) {
       throw new Error("The repository branch changed before Velvet could commit the update.");
     }

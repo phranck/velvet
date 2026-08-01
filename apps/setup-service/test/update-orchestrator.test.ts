@@ -731,3 +731,71 @@ test("keeps the public error free of anything the caller must not see", async ()
   }
   assert.equal(error.errorId.length > 0, true);
 });
+
+test("waits for a created branch that GitHub has not published yet", async () => {
+  // GitHub answers the single-ref read with 404 for a moment after a ref is
+  // created, and the client reports that as an absent branch rather than as a
+  // failure, so the retry around safe reads never sees it. Without waiting,
+  // an update fails with `repository_changed` whilst nothing has changed.
+  const repository = new FakeRepository();
+  let invisible = 3;
+  const branchHead = repository.updateBranchHead.bind(repository);
+  repository.updateBranchHead = async () => {
+    const head = await branchHead();
+    if (head !== null && invisible > 0) {
+      invisible -= 1;
+      return null;
+    }
+    return head;
+  };
+  const slept: number[] = [];
+  const managed = orchestrator(repository, release(), {
+    sleep: async (milliseconds) => {
+      slept.push(milliseconds);
+    },
+  });
+
+  const result = await managed.reconcile(manualRequest);
+
+  assert.equal(result.state, "waiting_for_checks");
+  assert.equal(invisible, 0, "the branch was read until it appeared");
+  assert.equal(slept.length > 0, true, "it waited rather than spinning");
+  assert.deepEqual(repository.mutations, [
+    "create-branch",
+    "commit-update",
+    "create-pr",
+  ]);
+});
+
+test("gives up on a branch that never appears", async () => {
+  const repository = new FakeRepository();
+  repository.updateBranchHead = async () => null;
+  const managed = orchestrator(repository, release(), { sleep: async () => {} });
+
+  const result = await managed.reconcile(manualRequest);
+
+  assert.equal(result.state, "failed");
+  assert.equal(result.reason, "repository_changed");
+});
+
+test("finishes an update whose merged pull request names no commit", async () => {
+  // The list endpoint omits `merge_commit_sha`, so keying the merged decision
+  // on it reported a finished update as one somebody had closed.
+  const repository = new FakeRepository();
+  repository.pullRequest = {
+    number: 12,
+    state: "closed",
+    htmlUrl: "https://github.com/example/status/pull/12",
+    headRef: "velvet/update/2.1.0",
+    headSha: updateSha,
+    baseRef: "main",
+    baseSha,
+    mergedAt: "2026-08-01T12:00:00Z",
+    mergeCommitSha: null,
+  };
+  const managed = orchestrator(repository, release(), { sleep: async () => {} });
+
+  const result = await managed.reconcile(manualRequest);
+
+  assert.notEqual(result.reason, "update_closed");
+});

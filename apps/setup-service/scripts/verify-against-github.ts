@@ -2,43 +2,54 @@ import { generateKeyPairSync } from "node:crypto";
 
 import {
   MANAGED_TEMPLATE_PATHS,
+  VELVET_TEMPLATE_REPOSITORY,
+  VELVET_UPDATE_CHECK_NAME,
   parseVelvetConfiguration,
 } from "@velvet/contracts";
-import { materializeManagedTemplateFiles } from "@velvet/template-files";
+import {
+  buildReleaseManifest,
+  materializeManagedTemplateFiles,
+} from "@velvet/template-files";
 
+import { createGitHubSetupClient } from "../src/github.js";
 import { createGitHubUpdateClient } from "../src/update-github.js";
+import { createManagedUpdateOrchestrator } from "../src/update-orchestrator.js";
 import { embeddedVelvetReleases } from "../src/update-releases.js";
 import { protectedChangedPaths } from "../src/update-ownership.js";
+import type {
+  ManagedUpdateRelease,
+  ManagedUpdateReleaseProvider,
+  ManagedUpdateResult,
+} from "../src/update-orchestrator-types.js";
 
 /**
  * Runs the managed update path against a real GitHub repository.
  *
- * The client under test is the production one. Only the installation-token
- * exchange is replaced, with a personal token carrying the same repository and
- * workflow access an installation token would, so every other request is
- * exactly what an installation performs. That is what makes this able to catch
- * a wrong API shape or a refused permission, which a double cannot.
+ * The clients under test are the production ones, and the update runs through
+ * the production orchestrator, so the check gate, the merge decision, and the
+ * ownership proofs are the real ones. Only the installation-token exchange is
+ * replaced, with a personal token carrying the same repository and workflow
+ * access an installation token would.
  *
- * By default it creates a disposable repository from the template, verifies
- * against it, and deletes it again, so every run starts from the same state a
- * real user would. Repeating a run against a repository left behind by a
- * previous one proves nothing, because the second run finds the first one's
- * branch and commit already in place.
+ * It creates a disposable repository per run and deletes it afterwards. A run
+ * against a repository a previous run left behind proves nothing, because the
+ * second run finds the first one's branch and commit already in place.
  *
  * Usage:
  *   GITHUB_TOKEN=$(gh auth token) bun run scripts/verify-against-github.ts --owner <login>
- *   GITHUB_TOKEN=... bun run scripts/verify-against-github.ts --repository <owner/name> --keep
+ *   GITHUB_TOKEN=... bun run scripts/verify-against-github.ts --owner <login> --keep
  */
 
 const token = process.env.GITHUB_TOKEN;
 if (!token) fail("Set GITHUB_TOKEN, for example with $(gh auth token).");
 
 const keep = Bun.argv.includes("--keep");
-const suppliedRepository = argument("repository");
-const login = argument("owner");
-if (!suppliedRepository && !login) {
-  fail("Pass --owner <login> to create a disposable repository, or --repository <owner/name>.");
-}
+const login = argument("owner") ?? fail("Pass --owner <login>.");
+
+/** The version a repository is seeded at, so the embedded release is a step up. */
+const SEEDED_VERSION = "2.0.0";
+const CHECK_TIMEOUT_MS = 8 * 60_000;
+const POLL_MS = 5_000;
 
 function argument(flag: string): string | undefined {
   const index = Bun.argv.indexOf(`--${flag}`);
@@ -64,109 +75,146 @@ function check(label: string, ok: boolean, detail = ""): void {
  */
 const githubFetch = async (request: Request): Promise<Response> => {
   if (request.url.includes("/access_tokens")) {
-    return Response.json({ token: token! });
+    return Response.json({ token: token!, permissions: {} });
   }
   const response = await fetch(request);
-  if (process.env.VELVET_TRACE && request.url.includes("/pulls")) {
-    const clone = response.clone();
-    const body = await clone.text();
-    console.log(`· ${request.method} ${new URL(request.url).pathname} -> ${response.status}`);
-    try {
-      const parsed = JSON.parse(body) as Record<string, unknown>;
-      const one = Array.isArray(parsed) ? parsed[0] : parsed;
-      console.log("·", JSON.stringify(one && {
-        number: (one as Record<string, unknown>).number,
-        state: (one as Record<string, unknown>).state,
-        html_url: (one as Record<string, unknown>).html_url,
-        merged_at: (one as Record<string, unknown>).merged_at,
-        merge_commit_sha: (one as Record<string, unknown>).merge_commit_sha,
-        head: (one as { head?: { ref?: string; sha?: string } }).head,
-        base: (one as { base?: { ref?: string; sha?: string } }).base,
-      }, (key, value) => (key === "head" || key === "base")
-        ? { ref: (value as { ref?: string })?.ref, sha: (value as { sha?: string })?.sha }
-        : value));
-    } catch {
-      console.log("·", body.slice(0, 400));
+  if (process.env.VELVET_TRACE) {
+    const path = new URL(request.url).pathname;
+    console.log(`· ${request.method} ${path} -> ${response.status}`);
+    // Printing the body of a pull-request response is how the defects this
+    // script exists to find were actually located. Comparing against a manual
+    // API call instead has misled every time, because the manual call asks
+    // about a different moment.
+    if (path.includes("/pulls")) {
+      const body = await response.clone().text();
+      try {
+        const parsed = JSON.parse(body) as unknown;
+        const entries = Array.isArray(parsed) ? parsed : [parsed];
+        for (const entry of entries as Record<string, unknown>[]) {
+          console.log(
+            `·   ${JSON.stringify({
+              number: entry.number,
+              state: entry.state,
+              merged: entry.merged,
+              merged_at: "merged_at" in entry ? entry.merged_at : "ABSENT",
+              merge_commit_sha:
+                "merge_commit_sha" in entry ? entry.merge_commit_sha : "ABSENT",
+            })}`,
+          );
+        }
+      } catch {
+        console.log(`·   ${body.slice(0, 300)}`);
+      }
     }
   }
   return response;
 };
 
-const api = async <T>(path: string): Promise<T> => {
+const api = async <T>(path: string, init: RequestInit = {}): Promise<T> => {
   const response = await fetch(`https://api.github.com${path}`, {
+    ...init,
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
       "User-Agent": "velvet-verification",
+      ...init.headers,
     },
   });
-  if (!response.ok) fail(`GET ${path} returned ${response.status}`);
+  if (!response.ok) fail(`${init.method ?? "GET"} ${path} returned ${response.status}`);
   return (await response.json()) as T;
 };
 
-const slug = suppliedRepository ?? (await createDisposableRepository(login!));
-const [owner, name] = slug.split("/") as [string, string];
-const repositoryId = (await api<{ id: number }>(`/repos/${owner}/${name}`)).id;
 // The client signs an app JWT before requesting a token. That request never
 // leaves the process, so any well-formed key satisfies the signing step.
 const throwawayKey = generateKeyPairSync("rsa", { modulusLength: 2_048 })
   .privateKey.export({ type: "pkcs8", format: "pem" })
   .toString();
-const client = createGitHubUpdateClient({
+
+const setup = createGitHubSetupClient({
+  appId: "0",
+  clientId: "Iv1.verification",
+  clientSecret: "verification-client-secret",
+  privateKey: throwawayKey,
+  fetch: githubFetch,
+});
+const updateClient = createGitHubUpdateClient({
   appId: "0",
   privateKey: throwawayKey,
   fetch: githubFetch,
 });
-const repository = await client.forRepository(1, repositoryId);
+
+const slug = await createDisposableRepository(login);
+const [owner, name] = slug.split("/") as [string, string];
+const repositoryId = (await api<{ id: number }>(`/repos/${owner}/${name}`)).id;
+const repository = await updateClient.forRepository(1, repositoryId);
 check("repository identity is verified against its numeric id", true, slug);
 
-const configurationFile = await repository.readConfiguration();
-const configuration = parseVelvetConfiguration(configurationFile.source);
-check("velvet.yml parses as a valid configuration", configuration.success);
-if (!configuration.success) process.exit(1);
-
-const release = await embeddedVelvetReleases().get(
-  embeddedVelvetReleases().latest(),
+// The template ships a placeholder identity, and an installation whose
+// velvet.yml does not name its own repository is one the updater refuses.
+// Writing it is the first thing onboarding does, through this same call.
+await setup.writeConfiguration(
+  token!,
+  owner,
+  name,
+  installationConfiguration(owner, name),
+  await setup.getConfigurationSha(token!, owner, name),
 );
-const materialized = materializeManagedTemplateFiles({
-  manifest: release.manifest,
-  configuration: configuration.data,
-  sources: release.sources,
-});
-check("the release materializes for this configuration", materialized.success);
-if (!materialized.success) process.exit(1);
-const files = materialized.data.files.map(({ path, content }) => ({ path, content }));
+// GitHub serves repository contents from a cache that lags a write by a
+// moment, so the file is read back until it is the one that was just written
+// rather than assumed to be there immediately.
+const configuration = await readWrittenConfiguration();
+check(
+  "the configuration onboarding writes names this repository",
+  configuration.success &&
+    configuration.data.repository.owner === owner &&
+    configuration.data.repository.name === name,
+);
+if (!configuration.success) await finish();
+
+const embedded = embeddedVelvetReleases();
+const release = await embedded.get(embedded.latest());
+const templateCommit = release.manifest.template.commit;
+
+// A repository generated from the template carries no version lock, which is
+// precisely the gap onboarding closes. Seeding one through the same write
+// onboarding performs is what makes the update below a real forward step.
+const seeded = seedRelease(templateCommit);
+const seedFiles = materialize(seeded, "seed");
+await setup.writeManagedFiles(token!, owner, name, seedFiles);
+const lockAfterSeed = await repository.readVersionLock();
+check(
+  "onboarding's own write produces a lock the updater recognises",
+  lockAfterSeed.lock.installedVersion === SEEDED_VERSION,
+  lockAfterSeed.lock.installedVersion,
+);
 
 const protectedBefore = await snapshot(["README.md", "LICENSE", "velvet.yml"]);
 const dataBranchBefore = await repository.dataBranchHead();
 
-const head = await repository.defaultBranchHead();
-const version = release.manifest.version;
-let branchHead = await repository.updateBranchHead(version);
-if (branchHead === null) {
-  await repository.createUpdateBranch(version, head);
-  // Mirrors the orchestrator: GitHub answers the single-ref read with 404 for
-  // a moment after creating a ref, so confirm it rather than assume the head.
-  const confirmed = await confirmBranch(version);
-  check("a freshly created branch becomes readable", confirmed !== null);
-  if (confirmed === null) await finish();
-  branchHead = confirmed;
-}
-if (branchHead === null) await finish();
-// `finish` never returns, but an await cannot express that, so the value is
-// narrowed once here rather than asserted at each use below.
-let updateHead = branchHead as string;
-if (updateHead === head) {
-  updateHead = await repository.commitUpdate(version, updateHead, files);
-}
-check("an update branch carries the complete managed set", true, updateHead.slice(0, 8));
+const orchestrator = createManagedUpdateOrchestrator({
+  github: updateClient,
+  releases: embedded,
+  requiredCheckNames: [VELVET_UPDATE_CHECK_NAME],
+});
+const reconcile = () =>
+  orchestrator.reconcile({
+    installationId: 1,
+    repositoryId,
+    version: release.manifest.version,
+    trigger: "manual",
+  });
 
-const existing = await repository.pullRequests(version);
-const pullRequest = existing[0]
-  ?? (await repository.createPullRequest(version, updateHead, head));
-check("a technical pull request exists", true, `#${pullRequest.number}`);
+const first = await reconcile();
+check(
+  "the first reconciliation opens a technical pull request and waits",
+  first.state === "waiting_for_checks" && first.pullRequest !== undefined,
+  `${first.state} on #${first.pullRequest?.number ?? "none"}`,
+);
+const pullRequest = first.pullRequest;
+if (pullRequest === undefined) await finish();
 
-const changed = await repository.changedPaths(pullRequest.number);
+const changed = await repository.changedPaths(pullRequest!.number);
 const violations = protectedChangedPaths(changed);
 check(
   "the pull request changes only Velvet-owned paths",
@@ -174,12 +222,28 @@ check(
   violations.length === 0 ? `${changed.length} paths` : violations.join(", "),
 );
 
-const merge = await repository.mergePullRequest(
-  pullRequest.number,
-  version,
-  pullRequest.headSha,
+// This is what could not be answered without a real repository: a workflow
+// added by the pull request itself has to run for the very update that adds
+// it, because GitHub evaluates pull-request workflows from the merge commit.
+const branchHead = await repository.updateBranchHead(release.manifest.version);
+const checkRun = await waitForCheck(branchHead!);
+check(
+  "the update check runs on the pull request that introduces it",
+  checkRun !== null,
+  checkRun ? `${checkRun.status}/${checkRun.conclusion ?? "pending"}` : "never appeared",
 );
-check("the pull request merges at the expected head", merge.merged);
+check(
+  "the update check passes",
+  checkRun?.conclusion === "success",
+  checkRun?.conclusion ?? "none",
+);
+
+const settled = await reconcileUntilSettled();
+check(
+  "the update completes once its check is green",
+  settled.state === "succeeded" || settled.state === "waiting_for_publication",
+  `${settled.state}${settled.reason ? ` (${settled.reason})` : ""}`,
+);
 
 const protectedAfter = await snapshot(["README.md", "LICENSE", "velvet.yml"]);
 check(
@@ -195,35 +259,175 @@ check(
 const lockFile = await repository.readVersionLock();
 check(
   "the version lock records the installed release",
-  lockFile.lock.installedVersion === version
-    && lockFile.lock.template.commit === release.manifest.template.commit,
+  lockFile.lock.installedVersion === release.manifest.version,
   `${lockFile.lock.installedVersion} at ${lockFile.lock.template.commit.slice(0, 8)}`,
 );
 
-const secretNames = [
-  ...new Set(
-    configuration.data.services.flatMap((service) =>
-      service.checks.flatMap((entry) => entry.headers.map((header) => header.secret)),
-    ),
-  ),
-];
-if (secretNames.length > 0) {
-  const workflow = await fileAt(
-    ".github/workflows/velvet-status.yml",
-    merge.sha ?? head,
+const pagesRuns = await repository.pagesWorkflowRuns(
+  await repository.defaultBranchHead(),
+);
+check(
+  "publication was dispatched for the merged commit",
+  pagesRuns.length > 0,
+  `${pagesRuns.length} run(s)`,
+);
+
+await verifyRefusedUpdate();
+await finish();
+
+/**
+ * Proves a failing check leaves the installation exactly as it was.
+ *
+ * The branch is given a commit that touches a file Velvet does not own, which
+ * is the condition the repository-side check exists to catch. Nothing about
+ * the default branch may move afterwards.
+ */
+async function verifyRefusedUpdate(): Promise<void> {
+  const version = "2.0.2";
+  const tampered = seedRelease(templateCommit, version);
+  const files = materialize(tampered, "refusal");
+  const provider: ManagedUpdateReleaseProvider = {
+    latest: () => version,
+    get: async () => tampered,
+  };
+  const refusing = createManagedUpdateOrchestrator({
+    github: updateClient,
+    releases: provider,
+    requiredCheckNames: [VELVET_UPDATE_CHECK_NAME],
+  });
+  const request = {
+    installationId: 1,
+    repositoryId,
+    version,
+    trigger: "manual" as const,
+  };
+
+  const opened = await refusing.reconcile(request);
+  if (opened.pullRequest === undefined) {
+    check("a refused update opens a pull request first", false, opened.state);
+    return;
+  }
+  void files;
+
+  const headBefore = await repository.defaultBranchHead();
+  const branch = `velvet/update/${version}`;
+  await addForbiddenChange(branch);
+  const tamperedHead = await api<{ object: { sha: string } }>(
+    `/repos/${owner}/${name}/git/ref/heads/${branch}`,
+  );
+  const run = await waitForCheck(tamperedHead.object.sha);
+  check(
+    "a change outside the Velvet-owned set fails the repository's own check",
+    run?.conclusion === "failure",
+    run?.conclusion ?? "never completed",
+  );
+
+  const refused = await refusing.reconcile(request);
+  check(
+    "the service refuses to merge an update whose check failed",
+    refused.state === "failed" && refused.reason === "checks_failed",
+    `${refused.state}${refused.reason ? ` (${refused.reason})` : ""}`,
   );
   check(
-    "configured header secrets are mapped in the monitor workflow",
-    secretNames.every((secret) => workflow.includes(secret)),
-    secretNames.join(", "),
+    "the default branch never moved",
+    (await repository.defaultBranchHead()) === headBefore,
+    headBefore.slice(0, 8),
   );
 }
 
-const branchAfter = await repository.updateBranchHead(version);
-if (branchAfter !== null) {
-  await repository.deleteUpdateBranch(version, branchAfter);
+/** Adds a commit to an update branch that Velvet would never make. */
+async function addForbiddenChange(branch: string): Promise<void> {
+  const reference = await api<{ object: { sha: string } }>(
+    `/repos/${owner}/${name}/git/ref/heads/${branch}`,
+  );
+  const readme = await api<{ sha: string }>(
+    `/repos/${owner}/${name}/contents/README.md?ref=${branch}`,
+  );
+  await api(`/repos/${owner}/${name}/contents/README.md`, {
+    method: "PUT",
+    body: JSON.stringify({
+      message: "Touch a file Velvet does not own",
+      content: Buffer.from("tampered\n", "utf8").toString("base64"),
+      sha: readme.sha,
+      branch,
+    }),
+  });
+  void reference;
 }
-check("the update branch is removed afterwards", true);
+
+/** Repeats reconciliation until it stops reporting progress. */
+async function reconcileUntilSettled(): Promise<ManagedUpdateResult> {
+  const deadline = Date.now() + CHECK_TIMEOUT_MS;
+  let latest = await reconcile();
+  while (
+    Date.now() < deadline &&
+    (latest.state === "waiting_for_checks" ||
+      latest.state === "waiting_for_publication")
+  ) {
+    await Bun.sleep(POLL_MS);
+    latest = await reconcile();
+    if (latest.state === "waiting_for_publication") return latest;
+  }
+  return latest;
+}
+
+/** Waits for the named check run on one commit to complete. */
+async function waitForCheck(
+  headSha: string,
+): Promise<{ status: string; conclusion: string | null } | null> {
+  const deadline = Date.now() + CHECK_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const runs = await repository.checkRuns(headSha);
+    const named = runs.find((run) => run.name === VELVET_UPDATE_CHECK_NAME);
+    if (named && named.status === "completed") {
+      return { status: named.status, conclusion: named.conclusion };
+    }
+    await Bun.sleep(POLL_MS);
+  }
+  return null;
+}
+
+/** Builds a publishable release at one version from a template revision. */
+function seedRelease(commit: string, version = SEEDED_VERSION): ManagedUpdateRelease {
+  const built = buildReleaseManifest({
+    version,
+    releaseType: "fix",
+    automaticInstallEligible: false,
+    compatibility: {
+      minimumInstalledVersion: SEEDED_VERSION,
+      configurationSchemaVersion:
+        release.manifest.compatibility.configurationSchemaVersion,
+      dataSchemaVersion: release.manifest.compatibility.dataSchemaVersion,
+      configurationMigrationRequired: false,
+      dataMigrationRequired: false,
+    },
+    releaseNotes: `# Velvet ${version}\n`,
+    source: {
+      repository: VELVET_TEMPLATE_REPOSITORY,
+      commit,
+      files: release.sources as Record<string, string>,
+    },
+  });
+  if (!built.success) {
+    fail(`Could not build the ${version} release: ${built.errors[0]?.code}`);
+  }
+  return { manifest: built.data, sources: release.sources };
+}
+
+function materialize(
+  entry: ManagedUpdateRelease,
+  label: string,
+): { path: string; content: string }[] {
+  const materialized = materializeManagedTemplateFiles({
+    manifest: entry.manifest,
+    configuration: configuration.success ? configuration.data : undefined!,
+    sources: entry.sources,
+  });
+  if (!materialized.success) {
+    fail(`Could not materialize the ${label} release.`);
+  }
+  return materialized.data.files.map(({ path, content }) => ({ path, content }));
+}
 
 /**
  * Creates a repository from the template, as browser onboarding does.
@@ -233,72 +437,68 @@ check("the update branch is removed afterwards", true);
  */
 async function createDisposableRepository(ownerLogin: string): Promise<string> {
   const created = `velvet-verify-${Date.now().toString(36)}`;
-  const response = await request(
-    "POST",
-    "/repos/phranck/velvet-template/generate",
-    { owner: ownerLogin, name: created, private: true, include_all_branches: false },
-  );
-  if (!response.ok) {
-    fail(`Could not create the disposable repository: ${response.status}`);
-  }
+  await api(`/repos/${VELVET_TEMPLATE_REPOSITORY}/generate`, {
+    method: "POST",
+    body: JSON.stringify({
+      owner: ownerLogin,
+      name: created,
+      private: false,
+      include_all_branches: false,
+    }),
+  });
   console.log(`· created ${ownerLogin}/${created} from the template`);
   // GitHub populates a generated repository asynchronously.
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const contents = await request("GET", `/repos/${ownerLogin}/${created}/contents/velvet.yml`);
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const contents = await fetch(
+      `https://api.github.com/repos/${ownerLogin}/${created}/contents/velvet.yml`,
+      { headers: { Authorization: `Bearer ${token}`, "User-Agent": "velvet-verification" } },
+    );
     if (contents.ok) return `${ownerLogin}/${created}`;
     await Bun.sleep(1_000);
   }
   fail("The generated repository never became readable.");
 }
 
-async function request(
-  method: string,
-  path: string,
-  body?: unknown,
-): Promise<Response> {
-  return fetch(`https://api.github.com${path}`, {
-    method,
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "User-Agent": "velvet-verification",
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
-}
-
-/**
- * Reads an update branch back until GitHub reports it, within a bounded wait.
- *
- * A ref is not immediately visible to the single-ref endpoint after creation.
- * This is the same window the orchestrator closes through its retrying read.
- */
-async function confirmBranch(forVersion: string): Promise<string | null> {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const found = await repository.updateBranchHead(forVersion);
-    if (found !== null) return found;
-    await Bun.sleep(500);
-  }
-  return null;
-}
-
-/** Removes the disposable repository, then reports and exits. */
-async function finish(): Promise<never> {
-  if (!suppliedRepository && !keep) {
-    const deleted = await request("DELETE", `/repos/${owner}/${name}`);
-    check(
-      "the disposable repository is removed",
-      deleted.ok,
-      deleted.ok ? slug : `needs deleting by hand: ${slug}`,
+/** Reads `velvet.yml` back until it names this repository, within a bound. */
+async function readWrittenConfiguration(): Promise<
+  ReturnType<typeof parseVelvetConfiguration>
+> {
+  let parsed = parseVelvetConfiguration(
+    (await repository.readConfiguration()).source,
+  );
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (
+      parsed.success &&
+      parsed.data.repository.owner === owner &&
+      parsed.data.repository.name === name
+    ) {
+      return parsed;
+    }
+    await Bun.sleep(1_000);
+    parsed = parseVelvetConfiguration(
+      (await repository.readConfiguration()).source,
     );
   }
-  const unmet = checks.filter((entry) => !entry.ok);
-  console.log(
-    `\n${checks.length - unmet.length}/${checks.length} checks passed against ${slug}.`,
-  );
-  console.log(`Managed paths verified: ${MANAGED_TEMPLATE_PATHS.length}.`);
-  process.exit(unmet.length === 0 ? 0 : 1);
+  return parsed;
+}
+
+/** The configuration a one-service installation of this repository has. */
+function installationConfiguration(
+  repositoryOwner: string,
+  repositoryName: string,
+): string {
+  return [
+    "schemaVersion: 1",
+    "repository:",
+    `  owner: ${repositoryOwner}`,
+    `  name: ${repositoryName}`,
+    "statusPage:",
+    "  name: Velvet Verification",
+    "services:",
+    "  - name: Website",
+    "    url: https://example.com",
+    "",
+  ].join("\n");
 }
 
 async function fileAt(path: string, ref: string): Promise<string> {
@@ -322,4 +522,26 @@ async function snapshot(paths: readonly string[]): Promise<Record<string, string
   return Object.fromEntries(entries);
 }
 
-await finish();
+/** Removes the disposable repository, then reports and exits. */
+async function finish(): Promise<never> {
+  if (!keep) {
+    const deleted = await fetch(`https://api.github.com/repos/${owner}/${name}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "User-Agent": "velvet-verification",
+      },
+    });
+    check(
+      "the disposable repository is removed",
+      deleted.ok,
+      deleted.ok ? slug : `needs deleting by hand: ${slug}`,
+    );
+  }
+  const unmet = checks.filter((entry) => !entry.ok);
+  console.log(
+    `\n${checks.length - unmet.length}/${checks.length} checks passed against ${slug}.`,
+  );
+  console.log(`Managed paths verified: ${MANAGED_TEMPLATE_PATHS.length}.`);
+  process.exit(unmet.length === 0 ? 0 : 1);
+}

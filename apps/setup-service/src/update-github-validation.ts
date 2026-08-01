@@ -96,10 +96,11 @@ export function parsePullRequest(value: unknown): GitHubUpdatePullRequest {
     mergeCommitSha === null ||
     mergeCommitSha === undefined ||
     (typeof mergeCommitSha === "string" && COMMIT_SHA.test(mergeCommitSha));
-  // A merged pull request must name the commit it produced.
-  const validMerge =
-    mergedAtValid && mergeShaValid
-      && (mergedAt === null || mergedAt === undefined || typeof mergeCommitSha === "string");
+  // A merged pull request does not have to name the commit it produced. The
+  // list endpoint returns `merged_at` for a merged pull request and omits
+  // `merge_commit_sha` altogether, so requiring the two together rejects every
+  // merged pull request Velvet reads back after merging one.
+  const validMerge = mergedAtValid && mergeShaValid;
   if (
     !isRecord(value) ||
     !positiveInteger(value.number) ||
