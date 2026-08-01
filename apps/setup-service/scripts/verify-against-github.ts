@@ -35,9 +35,13 @@ import type {
  * against a repository a previous run left behind proves nothing, because the
  * second run finds the first one's branch and commit already in place.
  *
+ * Credentials come from `.env.local` in the repository root, which Bun loads
+ * on its own and which is git-ignored. See `.env.local.example` for what to
+ * put in it. Passing `GITHUB_TOKEN` on the command line works too.
+ *
  * Usage:
- *   GITHUB_TOKEN=$(gh auth token) bun run scripts/verify-against-github.ts --owner <login>
- *   GITHUB_TOKEN=... bun run scripts/verify-against-github.ts --owner <login> --keep
+ *   bun run scripts/verify-against-github.ts --owner <login>
+ *   GITHUB_TOKEN=$(gh auth token) bun run scripts/verify-against-github.ts --owner <login> --keep
  */
 
 const token = process.env.GITHUB_TOKEN;
@@ -264,13 +268,40 @@ check(
   `${lockFile.lock.installedVersion} at ${lockFile.lock.template.commit.slice(0, 8)}`,
 );
 
-const pagesRuns = await repository.pagesWorkflowRuns(
-  await repository.defaultBranchHead(),
-);
+// The run list is empty for a moment after a dispatch, so the run is waited
+// for rather than asserted on an instantaneous read.
+const mergedHead = await repository.defaultBranchHead();
+const publication = await waitForPublication(mergedHead);
 check(
-  "publication was dispatched for the merged commit",
-  pagesRuns.length > 0,
-  `${pagesRuns.length} run(s)`,
+  "publication runs for the merged commit",
+  publication !== "timed out" && publication !== "none",
+  publication,
+);
+
+// Whether publication succeeds here is not the point, and a disposable
+// repository with no status data is a plausible way for it to fail. What
+// matters is that the outcome decides between finishing and putting the
+// previous version back, and that either path leaves the user's own files
+// exactly as they were.
+const afterPublication = await reconcileUntilSettled();
+check(
+  "the outcome of publication decides between finishing and restoring",
+  publication === "success"
+    ? afterPublication.state === "succeeded"
+    : afterPublication.state === "restoring" ||
+      afterPublication.state === "waiting_for_recovery" ||
+      afterPublication.state === "restored" ||
+      afterPublication.reason === "recovery_failed",
+  `${publication} then ${afterPublication.state}`,
+);
+const protectedAfterPublication = await snapshot([
+  "README.md",
+  "LICENSE",
+  "velvet.yml",
+]);
+check(
+  "protected files survive whichever path publication took",
+  JSON.stringify(protectedBefore) === JSON.stringify(protectedAfterPublication),
 );
 
 await verifyRefusedUpdate();
@@ -356,18 +387,25 @@ async function addForbiddenChange(branch: string): Promise<void> {
   void reference;
 }
 
+/** Waits for the publication run on one commit to finish. */
+async function waitForPublication(headSha: string): Promise<string> {
+  const deadline = Date.now() + CHECK_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const runs = await repository.pagesWorkflowRuns(headSha);
+    const completed = runs.find((run) => run.status === "completed");
+    if (completed) return completed.conclusion ?? "none";
+    await Bun.sleep(POLL_MS);
+  }
+  return "timed out";
+}
+
 /** Repeats reconciliation until it stops reporting progress. */
 async function reconcileUntilSettled(): Promise<ManagedUpdateResult> {
   const deadline = Date.now() + CHECK_TIMEOUT_MS;
   let latest = await reconcile();
-  while (
-    Date.now() < deadline &&
-    (latest.state === "waiting_for_checks" ||
-      latest.state === "waiting_for_publication")
-  ) {
+  while (Date.now() < deadline && latest.state === "waiting_for_checks") {
     await Bun.sleep(POLL_MS);
     latest = await reconcile();
-    if (latest.state === "waiting_for_publication") return latest;
   }
   return latest;
 }

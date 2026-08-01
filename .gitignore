@@ -9,3 +9,7 @@ site/public/CNAME
 .claude/
 .codex/
 .serena/
+
+# Local credentials for verification runs, never committed
+.env.local
+.env
