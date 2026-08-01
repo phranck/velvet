@@ -320,7 +320,7 @@
        row, even when one label wraps, sets these; everyone else keeps the
        previous layout untouched. */
     grid-template-rows: var(--service-editor-grid-rows, none);
-    align-items: start;
+    align-items: var(--service-editor-grid-align, stretch);
   }
   .two-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));

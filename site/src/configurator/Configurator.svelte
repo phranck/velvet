@@ -1145,6 +1145,7 @@
     --service-editor-accent: var(--tool-accent);
     --picker-inner-ring-display: none;
     --picker-outer-ring-width: 2;
+    --service-editor-grid-align: start;
     --service-editor-grid-rows: auto auto auto;
     --service-editor-label-row: span 3;
     --service-editor-label-rows: subgrid;
