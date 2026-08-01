@@ -45,6 +45,13 @@ export interface SetupServerSession {
     workflowRunId?: number;
     workflowFailed?: boolean;
     installationUrl?: string;
+    /**
+     * The serial this setup claimed, kept so a retry reports the same one.
+     *
+     * Without it a resumed setup would take a second number and leave the first
+     * recorded against an installation that also holds another.
+     */
+    serial?: number;
   };
 }
 

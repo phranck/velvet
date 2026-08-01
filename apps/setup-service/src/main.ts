@@ -4,6 +4,7 @@ import { loadSetupServiceConfig } from "./config.js";
 import { createGitHubSetupClient } from "./github.js";
 import { createSetupHandler } from "./handler.js";
 import { createAuditLogger } from "./observability.js";
+import { createInstallationSerialCounter } from "./serial.js";
 import { createSessionStore } from "./session.js";
 import { createStaticAssetProvider } from "./static.js";
 import { embeddedVelvetReleases } from "./update-releases.js";
@@ -14,6 +15,17 @@ const logger = createAuditLogger();
 const github = createGitHubSetupClient(config.github);
 const sessions = createSessionStore({ secret: config.sessionSecret });
 const releases = embeddedVelvetReleases();
+// Absent unless a registry repository is configured, in which case no serials
+// are issued and setups complete exactly as they did before.
+const serials = config.serialCounter
+  ? createInstallationSerialCounter({
+      repository: config.serialCounter.repository,
+      path: config.serialCounter.path,
+      appId: config.github.appId,
+      privateKey: config.github.privateKey,
+      userAgent: "velvet-setup-service",
+    })
+  : undefined;
 // Built once and shared, so a person pressing install and a scheduled security
 // sweep reaching the same repository queue behind each other.
 const updates = createUpdateServices({ config, github, releases, logger });
@@ -23,6 +35,7 @@ const handler = createSetupHandler({
   sessions,
   logger,
   releases,
+  ...(serials ? { serials } : {}),
   updates: updates.routes,
   staticAsset: createStaticAssetProvider(resolve(import.meta.dir, "public")),
 });
@@ -60,5 +73,6 @@ logger({
   outcome: "succeeded",
   context: {
     automaticUpdateIntervalMs: config.automaticUpdateIntervalMs,
+    serialRegistry: config.serialCounter?.repository ?? "none",
   },
 });

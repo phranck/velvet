@@ -119,6 +119,13 @@ const SetupSuccessEventSchema = Type.Object(
     installationUrl: HttpsUrlSchema,
     repositoryUrl: HttpsUrlSchema,
     workflowRunId: Type.Optional(Type.Integer({ minimum: 1 })),
+    /**
+     * The serial this installation received.
+     *
+     * Optional, because an instance with no registry configured still completes
+     * setups. A missing number means none was issued, never that one was lost.
+     */
+    serial: Type.Optional(Type.Integer({ minimum: 1 })),
   },
   { additionalProperties: false },
 );
