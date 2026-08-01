@@ -1,14 +1,14 @@
-# Velvet 1.0.1
+# Velvet 1.0.2
 
-Fixes the first monitoring run of a newly created status page.
+Completes the fix 1.0.1 attempted, so a newly created status page publishes on its first run.
 
 ## What was wrong
 
-The workflows a new installation received pinned a Velvet monitor from before the configuration contract gained its update preference. Onboarding writes that preference, the older monitor rejected it as an unknown field, and the first run failed with an invalid-configuration error. Nothing was published, so the status page stayed empty.
+A new installation receives three workflows, and each pins the Velvet action it uses independently. Version 1.0.1 raised the pin in the two workflows that run on a schedule and left the Pages workflow untouched. That workflow is the only one setup starts, so the very first run still used a Velvet from before the configuration contract gained its update preference. Onboarding writes that preference, the older action rejected it as an unknown field, and the run failed with an invalid-configuration error. Nothing was published, so the status page stayed empty.
 
 ## What changed
 
-The monitor is pinned to the released action, so the version that writes a configuration and the version that reads it are the same one.
+Every Velvet action the release ships is pinned to the same released revision. That includes the site build inside the Pages workflow, which reads the configuration through the same contract and would have failed at the next step. A guard now scans every pin in the release instead of a maintained list of workflows, because that list is what allowed one workflow to be forgotten.
 
 ## What stays yours
 
