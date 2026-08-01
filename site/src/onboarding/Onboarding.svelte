@@ -529,6 +529,10 @@
 <style>
   .onboarding-shell {
     --setup-accent: #8ca5ff;
+    /* The page's own base tone, matching the last background layer in
+       onboarding.css. Anything that has to hide the board backdrop fills with
+       this rather than inventing a shade. */
+    --setup-base: #0a0b0f;
     --setup-panel: rgba(27, 29, 38, 0.9);
     --setup-panel-raised: #272a36;
     --setup-card: #222530;

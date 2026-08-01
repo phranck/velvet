@@ -85,17 +85,32 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     });
 
     await page.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
-    assert.equal(
-      await page.locator("body").evaluate((element) =>
-        getComputedStyle(element).backgroundAttachment,
-      ),
-      "fixed, fixed, fixed",
+    // Asserted per layer rather than as one string, so adding a background
+    // layer cannot fail this for the wrong reason. What matters is that no
+    // layer scrolls and none tiles.
+    const backdrop = await page.locator("body").evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        attachment: style.backgroundAttachment.split(", "),
+        repeat: style.backgroundRepeat.split(", "),
+        size: style.backgroundSize.split(", "),
+      };
+    });
+    assert.deepEqual(
+      [...new Set(backdrop.attachment)],
+      ["fixed"],
+      "every background layer stays fixed to the viewport",
     );
-    assert.equal(
-      await page.locator("body").evaluate((element) =>
-        getComputedStyle(element).backgroundRepeat,
-      ),
-      "no-repeat, no-repeat, no-repeat",
+    assert.deepEqual(
+      [...new Set(backdrop.repeat)],
+      ["no-repeat"],
+      "no background layer tiles",
+    );
+    // The circuit-board layer covers instead of repeating, which fits it to the
+    // window and crops it rather than stretching it out of proportion.
+    assert.ok(
+      backdrop.size.includes("cover"),
+      `expected a covering layer, got ${backdrop.size.join(" | ")}`,
     );
     assert.equal(
       await page.locator("form").evaluate((element) =>
@@ -184,7 +199,10 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       {
         borderRadius: "32px",
         overflow: "clip",
-        boxShadow: "rgba(0, 0, 0, 0.3) 0px 24px 80px 0px",
+        // Two layers: a near one for the card's edge and a far one for its
+        // height. One wide shadow alone dissolved into the board backdrop.
+        boxShadow:
+          "rgba(0, 0, 0, 0.45) 0px 12px 24px 0px, rgba(0, 0, 0, 0.55) 0px 32px 80px 0px",
       },
     );
     assert.equal(await stepCard.locator("[data-step-card-body]").count(), 4);
@@ -300,8 +318,10 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "24px",
     );
     assert.equal(await page.locator("[data-step-connector]").count(), 3);
+    // Only the stroked paths, since the step also carries an unstroked path that
+    // fills its squircle so the page backdrop cannot show through it.
     assert.deepEqual(
-      await page.locator("[data-squircle-step]").first().locator("svg:not([data-step-active-highlight]) path")
+      await page.locator("[data-squircle-step]").first().locator("svg:not([data-step-active-highlight]) path[stroke-width]")
         .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke-width"))),
       ["1", "4"],
     );
