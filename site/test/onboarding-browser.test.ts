@@ -214,7 +214,9 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           "rgba(0, 0, 0, 0.45) 0px 12px 24px 0px, rgba(0, 0, 0, 0.55) 0px 32px 80px 0px",
       },
     );
-    assert.equal(await stepCard.locator("[data-step-card-body]").count(), 4);
+    // Five: the four the visitor fills in, plus Install, which reports the
+    // setup rather than collecting anything.
+    assert.equal(await stepCard.locator("[data-step-card-body]").count(), 5);
     assert.equal(await stepCard.locator("[data-step-card-footer]").count(), 1);
     assert.equal(
       await page.locator(".form-actions").evaluate((element) =>
@@ -326,7 +328,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "24px",
     );
-    assert.equal(await page.locator("[data-step-connector]").count(), 3);
+    assert.equal(await page.locator("[data-step-connector]").count(), 4);
     // Only the stroked paths, since the step also carries an unstroked path that
     // fills its squircle so the page backdrop cannot show through it.
     assert.deepEqual(
@@ -936,6 +938,21 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(
       await page.locator("[data-open-status-page] i.ph-chart-line-up").count(),
       1,
+    );
+    // Installing is its own step, and the run ends there rather than under the
+    // review items.
+    assert.equal(
+      await page.locator("[data-squircle-step]").count(),
+      5,
+    );
+    assert.equal(
+      await page.locator("[data-squircle-step][aria-current='step'] .label").textContent(),
+      "Install",
+    );
+    assert.equal(
+      await page.locator("[data-step-card-body]:not([hidden])").count(),
+      1,
+      "only the install body is shown once the run finishes",
     );
     // One serial on the page, in the footer, padded to five digits.
     assert.equal(await page.locator("[data-footer-serial]").count(), 1);
