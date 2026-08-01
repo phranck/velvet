@@ -25,6 +25,7 @@ const config = {
     privateKey: "unused-in-handler-test",
   },
   sessionSecret: "s".repeat(32),
+  automaticUpdateIntervalMs: 0,
   public: { publicOrigin: origin, githubAppSlug: "velvet-setup" },
 } satisfies SetupServiceConfig;
 

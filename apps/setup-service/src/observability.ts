@@ -1,6 +1,7 @@
 import type { SetupErrorCode } from "@velvet/contracts";
 
 import { GitHubApiError } from "./github.js";
+import type { ManagedUpdateErrorCode } from "./update-error.js";
 
 export interface AuditLogInput {
   level: "info" | "warn" | "error";
@@ -9,8 +10,15 @@ export interface AuditLogInput {
   operation: string;
   status: number;
   outcome: "succeeded" | "failed" | "rejected" | "fallback";
-  code?: SetupErrorCode;
+  /** Stable code from whichever boundary reported this. */
+  code?: SetupErrorCode | ManagedUpdateErrorCode;
   errorId?: string;
+  /**
+   * Identifiers that make one line diagnosable, such as which repository a
+   * scheduled sweep was working on. Numbers and short identifiers only:
+   * nothing here is redacted, so nothing secret belongs in it.
+   */
+  context?: Record<string, string | number>;
   cause?: unknown;
 }
 
