@@ -15,7 +15,9 @@ page Action copies it into every generated site together with Velvet's own
 | [Phosphor Web](https://github.com/phosphor-icons/web/blob/v2.1.2/LICENSE) | 2.1.2 | MIT | Icon CSS and fonts are loaded by the browser from unpkg. |
 | [Barlow](https://github.com/google/fonts/blob/main/ofl/barlow/OFL.txt) | Google Fonts v13 via `@fontsource/barlow` 5.3.0 | OFL-1.1 | Latin 400, 600, and 700 font files are bundled with browser onboarding. |
 | [Barlow Condensed](https://github.com/google/fonts/blob/main/ofl/barlowcondensed/OFL.txt) | Google Fonts v13 via `@fontsource/barlow-condensed` 5.3.0 | OFL-1.1 | The Latin 600 font files are bundled with browser onboarding. |
-| [Plaster](https://github.com/google/fonts/blob/main/ofl/plaster/OFL.txt) | `@fontsource/plaster` 5.3.0 | OFL-1.1 | Wordmark font files are bundled with Velvet browser tools. |
+| [Plaster](https://github.com/google/fonts/blob/main/ofl/plaster/OFL.txt) | `@fontsource/plaster` 5.3.0 | OFL-1.1 | Wordmark font files are bundled with Velvet browser tools. The wordmark on the onboarding backdrop is embedded as glyph outlines, recorded in `scripts/velvet-wordmark.json`. |
+| [FCC logo](https://www.fcc.gov/sites/default/files/fcc-logo-black-2020.svg) | Retrieved 2026-08-01 | Work of the United States federal government, public domain | Path data is embedded in the onboarding backdrop as one of its compliance marks, recorded in `scripts/compliance-marks.json`. |
+| [Conformité Européenne logo](https://commons.wikimedia.org/wiki/File:Conformit%C3%A9_Europ%C3%A9enne_(logo).svg) | Retrieved 2026-08-01 | Public domain | Path data is embedded in the onboarding backdrop, drawn to the geometry in Regulation 765/2008 Annex II and recorded in `scripts/compliance-marks.json`. |
 | [Inter](https://github.com/rsms/inter/blob/master/LICENSE.txt) | Google Fonts service | OFL-1.1 | Font files are loaded by the browser from Google Fonts and are not bundled by Velvet. |
 | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt) | Google Fonts service | OFL-1.1 | Font files are loaded by the browser from Google Fonts and are not bundled by Velvet. |
 
