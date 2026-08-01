@@ -378,7 +378,9 @@ function headerFootprint(random, x, y) {
  */
 function complianceMarks(x, y, height, marks) {
   const elements = [];
-  const gap = height * 0.42;
+  // Generous, because the marks are four unrelated symbols rather than a
+  // sequence. Set close together they read as one graphic.
+  const gap = height * 0.85;
   let cursor = x;
 
   /**
