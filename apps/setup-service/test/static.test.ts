@@ -4,29 +4,72 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "bun:test";
 
-import { createStaticAssetProvider } from "../src/static.js";
+import { createStaticAssetProvider, HOSTED_APPS } from "../src/static.js";
 
-test("serves only the generated onboarding document and fingerprinted assets", async () => {
+/** Lays out a public root the way the build script produces it. */
+async function publicRoot(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), "velvet-setup-static-"));
+  for (const app of HOSTED_APPS) {
+    await mkdir(join(directory, app, "assets"), { recursive: true });
+    await writeFile(
+      join(directory, app, "index.html"),
+      `<!doctype html><title>${app}</title>`,
+    );
+    await writeFile(
+      join(directory, app, "assets", "app-ABC123.js"),
+      "export {};",
+    );
+  }
+  await writeFile(join(directory, "secret.txt"), "secret");
+  return directory;
+}
+
+test("serves each hosted application's document and fingerprinted assets", async () => {
+  const directory = await publicRoot();
   try {
-    await mkdir(join(directory, "assets"));
-    await writeFile(join(directory, "index.html"), "<!doctype html><title>Setup</title>");
-    await writeFile(join(directory, "assets", "app-ABC123.js"), "export {};");
-    await writeFile(join(directory, "secret.txt"), "secret");
     const asset = createStaticAssetProvider(directory);
 
-    const document = await asset("index.html");
-    assert.equal(await document?.text(), "<!doctype html><title>Setup</title>");
-    assert.equal(document?.headers.get("Content-Type"), "text/html; charset=utf-8");
-    assert.equal(document?.headers.get("Cache-Control"), "no-store");
+    for (const app of HOSTED_APPS) {
+      const document = await asset(`${app}/index.html`);
+      assert.equal(await document?.text(), `<!doctype html><title>${app}</title>`);
+      assert.equal(
+        document?.headers.get("Content-Type"),
+        "text/html; charset=utf-8",
+      );
+      assert.equal(
+        document?.headers.get("Cache-Control"),
+        "no-store",
+        "a document names its own hashed assets, so it must not be cached",
+      );
 
-    const script = await asset("assets/app-ABC123.js");
-    assert.equal(script?.headers.get("Content-Type"), "text/javascript; charset=utf-8");
-    assert.match(script?.headers.get("Cache-Control") ?? "", /immutable/);
+      const script = await asset(`${app}/assets/app-ABC123.js`);
+      assert.equal(
+        script?.headers.get("Content-Type"),
+        "text/javascript; charset=utf-8",
+      );
+      assert.match(script?.headers.get("Cache-Control") ?? "", /immutable/u);
+    }
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
 
-    assert.equal(await asset("../secret.txt"), null);
-    assert.equal(await asset("secret.txt"), null);
-    assert.equal(await asset("assets/missing.js"), null);
+test("refuses anything outside a hosted application", async () => {
+  const directory = await publicRoot();
+  try {
+    const asset = createStaticAssetProvider(directory);
+
+    for (const path of [
+      "index.html",
+      "secret.txt",
+      "../secret.txt",
+      "onboarding/../secret.txt",
+      "onboarding/secret.txt",
+      "onboarding/assets/missing.js",
+      "admin/index.html",
+    ]) {
+      assert.equal(await asset(path), null, path);
+    }
   } finally {
     await rm(directory, { recursive: true });
   }

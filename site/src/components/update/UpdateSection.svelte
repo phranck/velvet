@@ -23,7 +23,7 @@
     onAutomaticChange,
   }: {
     installedVersion: string;
-    release: InstallationUpdate | null;
+    release: InstallationUpdate;
     automaticSecurityUpdates: boolean;
     updateState?: ManagedUpdateState;
     updateReason?: ManagedUpdateReason;
@@ -40,7 +40,7 @@
   // An update is only offered when the service reports a different version, so
   // an installation already on the newest release shows no call to action.
   const updateAvailable = $derived(
-    release !== null && release.availableVersion !== installedVersion,
+    release.availableVersion !== installedVersion,
   );
 
   /**
@@ -52,28 +52,24 @@
    * preference about a category the reader cannot see is not a real choice.
    */
   const kind = $derived(
-    release === null
-      ? null
-      : release.releaseType === "security"
-        ? { label: "Security update", icon: "ph-shield-check", tone: "security" }
-        : release.releaseType === "fix"
-          ? { label: "Fix", icon: "ph-wrench", tone: "normal" }
-          : { label: "Feature", icon: "ph-sparkle", tone: "normal" },
+    release.releaseType === "security"
+      ? { label: "Security update", icon: "ph-shield-check", tone: "security" }
+      : release.releaseType === "fix"
+        ? { label: "Fix", icon: "ph-wrench", tone: "normal" }
+        : { label: "Feature", icon: "ph-sparkle", tone: "normal" },
   );
 
   // Only a release the service marked eligible installs unattended, and only
   // while the reader leaves the preference on.
   const installsItself = $derived(
-    release !== null &&
-      release.automaticInstallEligible &&
-      automaticSecurityUpdates,
+    release.automaticInstallEligible && automaticSecurityUpdates,
   );
 </script>
 
 <div class="update">
   <p class="versions">
     <span>Installed {installedVersion}</span>
-    {#if updateAvailable && release && kind}
+    {#if updateAvailable}
       <span class="available">{release.availableVersion}</span>
       <span class="kind" data-tone={kind.tone}>
         <i class={`ph-duotone ${kind.icon}`} aria-hidden="true"></i>
@@ -97,7 +93,7 @@
     </p>
   {/if}
 
-  {#if updateAvailable && release}
+  {#if updateAvailable}
     <div class="actions" class:single={installsItself}>
       <button
         type="button"
@@ -142,45 +138,43 @@
   </label>
 </div>
 
-{#if release}
-  <OverlayRoot
-    open={notesOpen}
-    label="Release notes"
+<OverlayRoot
+  open={notesOpen}
+  label="Release notes"
+  onclose={() => (notesOpen = false)}
+>
+  <OverlayHeader
+    title={`Velvet ${release.availableVersion}`}
     onclose={() => (notesOpen = false)}
   >
-    <OverlayHeader
-      title={`Velvet ${release.availableVersion}`}
-      onclose={() => (notesOpen = false)}
+    What is new in this release
+  </OverlayHeader>
+  <OverlayBody>
+    <ReleaseNotes source={release.releaseNotes} />
+  </OverlayBody>
+  <OverlayFooter>
+    <button
+      type="button"
+      class="button secondary"
+      onclick={() => (notesOpen = false)}
     >
-      What is new in this release
-    </OverlayHeader>
-    <OverlayBody>
-      <ReleaseNotes source={release.releaseNotes} />
-    </OverlayBody>
-    <OverlayFooter>
+      Close
+    </button>
+    {#if !installsItself}
       <button
         type="button"
-        class="button secondary"
-        onclick={() => (notesOpen = false)}
+        class="button primary"
+        onclick={() => {
+          notesOpen = false;
+          onInstall();
+        }}
+        disabled={busy}
       >
-        Close
+        Install update
       </button>
-      {#if !installsItself}
-        <button
-          type="button"
-          class="button primary"
-          onclick={() => {
-            notesOpen = false;
-            onInstall();
-          }}
-          disabled={busy}
-        >
-          Install update
-        </button>
-      {/if}
-    </OverlayFooter>
-  </OverlayRoot>
-{/if}
+    {/if}
+  </OverlayFooter>
+</OverlayRoot>
 
 <style>
   .update {

@@ -56,12 +56,17 @@ test("says it is up to date rather than offering nothing", async () => {
   assert.equal(html.includes("Install update"), false);
 });
 
-test("stays quiet when the service reported nothing usable", async () => {
-  const html = elements(await renderer.render(COMPONENT, props({ release: null })));
+test("says nothing about an installation whose state is not yet known", async () => {
+  // Whether a service answered, and what it said, is the manager's business.
+  // This component is only ever handed a release it can describe, so it never
+  // has to invent a message about not knowing something.
+  const source = await Bun.file(
+    new URL("../src/configurator/UpdateManager.svelte", import.meta.url),
+  ).text();
 
-  assert.match(html, /Up to date/);
-  assert.equal(html.includes("Install update"), false);
-  assert.equal(html.includes("Release notes"), false);
+  assert.match(source, /connection\.state === "offline"/u);
+  assert.match(source, /not connected to\s*\n?\s*an installation/u);
+  assert.match(source, /\{#if installation\}/u);
 });
 
 test("explains an outcome in words rather than machine terms", async () => {

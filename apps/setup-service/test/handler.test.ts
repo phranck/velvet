@@ -695,7 +695,7 @@ test("bounds setup attempts and rejects oversized bodies before parsing", async 
   assert.equal((await oversized.json()).error.code, "INVALID_SETUP_REQUEST");
 });
 
-test("serves only allowlisted onboarding assets", async () => {
+test("serves both hosted applications and nothing else", async () => {
   const served: string[] = [];
   const { sessions } = harness();
   const handler = createSetupHandler({
@@ -709,10 +709,29 @@ test("serves only allowlisted onboarding assets", async () => {
     },
   });
 
-  assert.equal((await handler(new Request(`${origin}/onboarding/`))).status, 200);
-  assert.equal((await handler(new Request(`${origin}/onboarding/assets/app.js`))).status, 200);
-  assert.equal((await handler(new Request(`${origin}/onboarding/../secret`))).status, 404);
-  assert.deepEqual(served, ["index.html", "assets/app.js"]);
+  for (const app of ["onboarding", "configurator"]) {
+    assert.equal((await handler(new Request(`${origin}/${app}/`))).status, 200);
+    assert.equal(
+      (await handler(new Request(`${origin}/${app}/assets/app.js`))).status,
+      200,
+    );
+    assert.equal(
+      (await handler(new Request(`${origin}/${app}/../secret`))).status,
+      404,
+    );
+    // A bare path is a common way to arrive, and resolving it relatively would
+    // otherwise ask the browser for the wrong asset directory.
+    const bare = await handler(new Request(`${origin}/${app}`));
+    assert.equal(bare.status, 302);
+    assert.equal(bare.headers.get("Location"), `${origin}/${app}/`);
+  }
+
+  assert.deepEqual(served, [
+    "onboarding/index.html",
+    "onboarding/assets/app.js",
+    "configurator/index.html",
+    "configurator/assets/app.js",
+  ]);
   const missing = await handler(new Request(`${origin}/api/unknown`));
   assert.equal(missing.status, 404);
   assert.equal((await missing.json()).error.code, "NOT_FOUND");

@@ -22,8 +22,7 @@
   import ColorControl from "./ColorControl.svelte";
   import ColorSourceControl from "./ColorSourceControl.svelte";
   import ConfiguratorSection from "./ConfiguratorSection.svelte";
-  import { UpdateSection } from "../components/update/index.js";
-  import type { InstallationUpdate } from "../lib/update-client.js";
+  import UpdateManager from "./UpdateManager.svelte";
   import * as Slider from "./slider";
   import ThemeDropdown from "./ThemeDropdown.svelte";
   import {
@@ -161,12 +160,6 @@
   );
   let sectionState = $state(readStoredSectionState());
 
-  // A Configurator started with `./config start` edits a file on a computer and
-  // knows no installation, so it has nothing true to say about versions. The
-  // hosted Configurator learns both from the service; see #127.
-  const availableRelease: InstallationUpdate | null = null;
-  let automaticSecurityUpdates = $state(true);
-  const installedVelvetVersion = "2.0.0";
   let sidebarCollapsed = $state(readStoredSidebarCollapsed());
   let importedDocument = $state<ConfiguratorDocument | null>(
     RESTORED_SESSION?.importedDocument ?? null,
@@ -732,13 +725,7 @@
           Velvet installs new versions for you. Your configuration, history,
           incidents, and secrets are never part of an update.
         </p>
-        <UpdateSection
-          installedVersion={installedVelvetVersion}
-          release={availableRelease}
-          automaticSecurityUpdates={automaticSecurityUpdates}
-          onInstall={() => {}}
-          onAutomaticChange={(enabled) => (automaticSecurityUpdates = enabled)}
-        />
+        <UpdateManager />
       </ConfiguratorSection>
 
       <ConfiguratorSection
