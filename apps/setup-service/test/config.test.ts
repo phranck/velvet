@@ -57,3 +57,57 @@ test("allows explicit localhost HTTP only outside production", () => {
   });
   assert.equal(config.secureCookies, false);
 });
+
+test("the serial counter stays off until a repository is named", () => {
+  assert.equal(loadSetupServiceConfig(environment).serialCounter, null);
+  assert.equal(
+    loadSetupServiceConfig({ ...environment, SERIAL_COUNTER_REPOSITORY: "   " })
+      .serialCounter,
+    null,
+    "a blank setting is the same as an absent one",
+  );
+});
+
+test("the serial counter takes a repository and defaults its path", () => {
+  assert.deepEqual(
+    loadSetupServiceConfig({
+      ...environment,
+      SERIAL_COUNTER_REPOSITORY: "phranck/velvet-serials",
+    }).serialCounter,
+    { repository: "phranck/velvet-serials", path: "serials.json" },
+  );
+  assert.deepEqual(
+    loadSetupServiceConfig({
+      ...environment,
+      SERIAL_COUNTER_REPOSITORY: "phranck/velvet-serials",
+      SERIAL_COUNTER_PATH: "data/counter.json",
+    }).serialCounter,
+    { repository: "phranck/velvet-serials", path: "data/counter.json" },
+  );
+});
+
+test("a misconfigured serial counter fails at start-up, not at the first setup", () => {
+  for (const repository of ["velvet-serials", "a/b/c", "/name"]) {
+    assert.throws(
+      () =>
+        loadSetupServiceConfig({
+          ...environment,
+          SERIAL_COUNTER_REPOSITORY: repository,
+        }),
+      /owner\/name/,
+      repository,
+    );
+  }
+  for (const path of ["../escape.json", "counter.yaml", "/absolute.json"]) {
+    assert.throws(
+      () =>
+        loadSetupServiceConfig({
+          ...environment,
+          SERIAL_COUNTER_REPOSITORY: "phranck/velvet-serials",
+          SERIAL_COUNTER_PATH: path,
+        }),
+      /SERIAL_COUNTER_PATH/,
+      path,
+    );
+  }
+});

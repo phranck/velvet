@@ -1,5 +1,7 @@
 import { createPrivateKey } from "node:crypto";
 
+import { parseSerialRepository } from "./serial.js";
+
 export interface SetupServiceConfig {
   environment: "development" | "production" | "test";
   publicOrigin: string;
@@ -20,6 +22,20 @@ export interface SetupServiceConfig {
    * without real installations wants.
    */
   automaticUpdateIntervalMs: number;
+  /**
+   * Where the installation serial counter lives, or `null` to hand out no
+   * serials at all.
+   *
+   * Optional on purpose. A development instance has no counter repository, and
+   * an instance that cannot reach one should still complete setups rather than
+   * refuse them over a decorative number.
+   */
+  serialCounter: {
+    /** Repository holding the counter, as `owner/name`. */
+    repository: string;
+    /** Path to the counter file inside it. */
+    path: string;
+  } | null;
   public: {
     publicOrigin: string;
     githubAppSlug: string;
@@ -94,6 +110,15 @@ export function loadSetupServiceConfig(
     );
   }
 
+  const serialRepository = environment.SERIAL_COUNTER_REPOSITORY?.trim();
+  if (serialRepository) parseSerialRepository(serialRepository);
+  const serialPath = environment.SERIAL_COUNTER_PATH?.trim() || "serials.json";
+  if (serialRepository && !/^[A-Za-z0-9][A-Za-z0-9._/-]*\.json$/u.test(serialPath)) {
+    throw new TypeError(
+      "SERIAL_COUNTER_PATH must be a relative path to a .json file.",
+    );
+  }
+
   return {
     environment: nodeEnvironment,
     publicOrigin,
@@ -102,6 +127,9 @@ export function loadSetupServiceConfig(
     github: { appId, appSlug, clientId, clientSecret, privateKey },
     sessionSecret,
     automaticUpdateIntervalMs: sweepMinutes * 60_000,
+    serialCounter: serialRepository
+      ? { repository: serialRepository, path: serialPath }
+      : null,
     public: { publicOrigin, githubAppSlug: appSlug },
   };
 }

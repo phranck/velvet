@@ -26,6 +26,7 @@ const config = {
   },
   sessionSecret: "s".repeat(32),
   automaticUpdateIntervalMs: 0,
+  serialCounter: null,
   public: { publicOrigin: origin, githubAppSlug: "velvet-setup" },
 } satisfies SetupServiceConfig;
 
