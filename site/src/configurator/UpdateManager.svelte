@@ -293,11 +293,14 @@
   }
 
   /* Matches the actions inside the update section, so signing in looks like
-     part of the same control rather than a different kind of thing. */
+     part of the same control rather than a different kind of thing. It spans
+     the sidebar because it is the only action here, exactly as the paired
+     buttons below share the full width between them. */
   .button {
     min-height: 36px;
     margin-top: 12px;
-    display: inline-flex;
+    display: flex;
+    width: 100%;
     align-items: center;
     justify-content: center;
     gap: 7px;
