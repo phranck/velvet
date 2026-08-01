@@ -16,6 +16,16 @@ export {
 } from "./github-api.js";
 export const TEMPLATE_REPOSITORY = "phranck/velvet-template";
 export const SETUP_WORKFLOW = "velvet.yml";
+
+/**
+ * Attempts to push the managed file set onto a head that may still be moving.
+ *
+ * GitHub serves the previous head for a moment after a commit, so a push built
+ * on it is refused as a non-fast-forward. Six attempts half a second apart
+ * cover that window comfortably whilst still failing a genuine conflict.
+ */
+const MANAGED_WRITE_ATTEMPTS = 6;
+const MANAGED_WRITE_DELAY_MS = 500;
 export const CONFIGURATION_PATH = "velvet.yml";
 export const VERSION_LOCK_PATH = "velvet.lock.json";
 
@@ -344,69 +354,90 @@ export function createGitHubSetupClient(
     async writeManagedFiles(installationToken, owner, repository, files) {
       if (files.length === 0) return;
       const root = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}`;
-      // One commit for the whole set, so an installation is never left with
+
+      // Built and pushed as one commit, so an installation is never left with
       // some managed files updated and others still holding template defaults.
-      const reference = await githubRequest<unknown>(
-        `${root}/git/ref/heads/main`,
-        installationToken,
-      );
-      if (
-        !isRecord(reference) ||
-        !isRecord(reference.object) ||
-        typeof reference.object.sha !== "string"
-      ) {
-        throw new Error("GitHub reference response was invalid.");
-      }
-      const head = reference.object.sha;
-      const parent = await githubRequest<unknown>(
-        `${root}/git/commits/${head}`,
-        installationToken,
-      );
-      if (
-        !isRecord(parent) ||
-        !isRecord(parent.tree) ||
-        typeof parent.tree.sha !== "string"
-      ) {
-        throw new Error("GitHub commit response was invalid.");
-      }
-      const tree = await githubRequest<unknown>(`${root}/git/trees`, installationToken, {
-        method: "POST",
-        body: JSON.stringify({
-          base_tree: parent.tree.sha,
-          tree: files.map((file) => ({
-            path: file.path,
-            mode: "100644",
-            type: "blob",
-            content: file.content,
-          })),
-        }),
-      });
-      if (!isRecord(tree) || typeof tree.sha !== "string") {
-        throw new Error("GitHub tree response was invalid.");
-      }
-      const commit = await githubRequest<unknown>(
-        `${root}/git/commits`,
-        installationToken,
-        {
+      //
+      // The whole sequence repeats when the push is refused. GitHub serves the
+      // previous head for a moment after a commit, and the configuration was
+      // committed immediately before this, so the new commit can be built on a
+      // parent that is already behind. The push is then not a fast-forward and
+      // GitHub answers 422. Reading the head again is what resolves it, and a
+      // real conflict still fails once the attempts run out.
+      for (let attempt = 1; attempt <= MANAGED_WRITE_ATTEMPTS; attempt += 1) {
+        const reference = await githubRequest<unknown>(
+          `${root}/git/ref/heads/main`,
+          installationToken,
+        );
+        if (
+          !isRecord(reference) ||
+          !isRecord(reference.object) ||
+          typeof reference.object.sha !== "string"
+        ) {
+          throw new Error("GitHub reference response was invalid.");
+        }
+        const head = reference.object.sha;
+        const parent = await githubRequest<unknown>(
+          `${root}/git/commits/${head}`,
+          installationToken,
+        );
+        if (
+          !isRecord(parent) ||
+          !isRecord(parent.tree) ||
+          typeof parent.tree.sha !== "string"
+        ) {
+          throw new Error("GitHub commit response was invalid.");
+        }
+        const tree = await githubRequest<unknown>(`${root}/git/trees`, installationToken, {
           method: "POST",
           body: JSON.stringify({
-            message: "Configure Velvet [skip ci]",
-            tree: tree.sha,
-            parents: [head],
+            base_tree: parent.tree.sha,
+            tree: files.map((file) => ({
+              path: file.path,
+              mode: "100644",
+              type: "blob",
+              content: file.content,
+            })),
           }),
-        },
-      );
-      if (!isRecord(commit) || typeof commit.sha !== "string") {
-        throw new Error("GitHub commit response was invalid.");
+        });
+        if (!isRecord(tree) || typeof tree.sha !== "string") {
+          throw new Error("GitHub tree response was invalid.");
+        }
+        const commit = await githubRequest<unknown>(
+          `${root}/git/commits`,
+          installationToken,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              message: "Configure Velvet [skip ci]",
+              tree: tree.sha,
+              parents: [head],
+            }),
+          },
+        );
+        if (!isRecord(commit) || typeof commit.sha !== "string") {
+          throw new Error("GitHub commit response was invalid.");
+        }
+
+        try {
+          await githubRequest<unknown>(
+            `${root}/git/refs/heads/main`,
+            installationToken,
+            {
+              method: "PATCH",
+              body: JSON.stringify({ sha: commit.sha, force: false }),
+            },
+          );
+          return;
+        } catch (error) {
+          const behind =
+            error instanceof GitHubApiError &&
+            error.status === 422 &&
+            attempt < MANAGED_WRITE_ATTEMPTS;
+          if (!behind) throw error;
+          await Bun.sleep(MANAGED_WRITE_DELAY_MS);
+        }
       }
-      await githubRequest<unknown>(
-        `${root}/git/refs/heads/main`,
-        installationToken,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ sha: commit.sha, force: false }),
-        },
-      );
     },
 
     async enablePages(installationToken, owner, repository) {
