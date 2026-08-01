@@ -893,13 +893,32 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(
       await page.locator(".deployment-progress li i").first()
         .evaluate((element) => getComputedStyle(element).fontSize),
-      "22px",
+      "26px",
+    );
+    // The stream reported its last stage and then succeeded, so nothing is
+    // still running and no step is left turning a spinner.
+    assert.equal(
+      await page.locator(".deployment-progress li.running").count(),
+      0,
+      "a finished run leaves no step spinning",
+    );
+    assert.equal(
+      await page.locator(".deployment-progress li i.ph-spinner-ball").count(),
+      0,
+    );
+    // Once the page exists, going to it is the only thing left to offer.
+    assert.equal(await page.locator("[data-open-status-page]").count(), 1);
+    assert.equal(
+      await page.locator("[data-open-status-page]").getAttribute("href"),
+      "https://status.example.com/",
     );
     assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);
+    // The link that used to sit in the result is gone; the footer button is
+    // now the single way to the finished page, asserted above.
     assert.equal(
-      await page.getByRole("link", { name: "Open your status page" }).getAttribute("href"),
-      "https://status.example.com/",
+      await page.getByRole("link", { name: "Open your status page" }).count(),
+      0,
     );
     const dimensions = await page.evaluate(() => ({
       viewport: window.innerWidth,

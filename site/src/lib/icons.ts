@@ -24,7 +24,7 @@ export const CURATED_SERVICE_ICONS: readonly CuratedServiceIcon[] = [
   { icon: "ph-device-mobile", label: "Mobile app" },
   { icon: "ph-credit-card", label: "Payments" },
   { icon: "ph-chat-circle", label: "Chat" },
-  { icon: "ph-phone", label: "Phone" },
+  { icon: "ph-chart-line-up", label: "Analytics" },
   { icon: "ph-play-circle", label: "Media" },
   { icon: "ph-key", label: "Authentication" },
   { icon: "ph-map-pin", label: "Location" },
