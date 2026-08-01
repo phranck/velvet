@@ -55,31 +55,19 @@ snapshot untouched.
 
 ## Get started
 
-### Browser setup
-
 Open [setup.velvet.li](https://setup.velvet.li/onboarding/). The onboarding asks
 for the repository and page name, services, an optional custom domain, and one
 of the four system themes. After GitHub approval it creates the repository,
 enables Pages, starts monitoring, and waits for the first deployment.
 
-The setup service is used only while installing. The generated repository and
-status page do not depend on it afterward.
+This is the only supported way to install Velvet. It is also the only one that
+writes `velvet.lock.json`, the machine-managed record of which release an
+installation runs. Without that record Velvet has no version to compare against
+and can never update the installation, so a repository created by copying the
+template directly is one nobody can maintain for you.
 
-### Direct template setup
-
-The [Velvet template](https://github.com/phranck/velvet-template) is the direct
-template path and requires no local build:
-
-1. Choose **Use this template**, then create a repository.
-2. Edit `velvet.yml`: replace the repository identity, set the public page name,
-   and list the services.
-3. Enable **Issues** under **Settings > General > Features**.
-4. Set **Settings > Pages > Source** to **GitHub Actions**.
-5. Commit the configuration. The first status run creates `velvet-data`, then
-   the Pages workflow publishes the site.
-
-Both setup paths create the same repository structure and use the same
-validated configuration contract.
+The setup service is used only while installing and while updating. A generated
+status page keeps monitoring and publishing when the service is unavailable.
 
 ## Configure monitoring
 
@@ -164,7 +152,14 @@ snapshot manually.
 ## Configurator
 
 The Configurator edits the same `velvet.yml` format and previews the real status
-page. Its current local distribution opens and saves YAML only on the computer:
+page. It runs in two places.
+
+[setup.velvet.li/configurator](https://setup.velvet.li/configurator/) is the
+hosted one. Signed in with GitHub, it finds the installations you administer,
+shows which Velvet version each one runs, and installs a new one for you. You
+never open the repository, approve a pull request, or merge anything.
+
+The local one edits a file on your computer and never talks to a network:
 
 ```bash
 ./config start
@@ -173,9 +168,25 @@ page. Its current local distribution opens and saves YAML only on the computer:
 ./config help
 ```
 
-It is available at `http://127.0.0.1:2342` while running. Template updates from
-the Configurator are planned separately and do not change the v2 monitoring
-contract documented here.
+It is available at `http://127.0.0.1:2342` while running. Because it knows no
+installation, it says so rather than reporting a version it cannot check.
+
+## Updates
+
+Velvet installs new versions for you. An update replaces only the workflow and
+Issue-template files Velvet owns, plus its own version lock. Your `velvet.yml`,
+the whole `velvet-data` branch, your incidents, maintenance records, repository
+secrets, Pages and domain settings, `README.md`, and `LICENSE` are never part of
+one.
+
+That promise is checked twice. The service proves it from GitHub's own view of
+the change before merging, and a workflow in your repository proves it again
+against the merge GitHub actually built. An update that touched anything else
+would fail its check and never reach your default branch.
+
+Security releases that need no migration can install themselves, which is on by
+default and can be turned off in the Configurator. Everything else waits for
+you.
 
 ## Migrate from Velvet v1.8
 

@@ -36,8 +36,13 @@ test("public documentation presents the standalone native product first", async 
     assert.match(source, /velvet\.yml/u);
   }
 
-  assert.match(readme, /browser setup/iu);
-  assert.match(readme, /direct template/iu);
+  assert.match(readme, /setup\.velvet\.li\/onboarding/u);
+  // Copying the template creates a repository with no version lock, which
+  // nobody can update afterwards. Documenting it as a second way in would
+  // promise support that cannot be given.
+  assert.doesNotMatch(readme, /use this template/iu);
+  assert.doesNotMatch(readme, /direct template/iu);
+  assert.match(readme, /only supported way/iu);
   assert.match(readme, /GitHub Issues/iu);
   assert.match(readme, /GitHub Pages/iu);
   assert.match(readme, /365 days/iu);
