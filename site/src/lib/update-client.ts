@@ -67,15 +67,18 @@ export interface UpdateOperation {
 }
 
 /**
- * The three things that can come back from the service.
+ * What can come back from the service.
  *
- * `unavailable` is its own case rather than an error because it is the normal
- * state of a Configurator opened without a service, and telling somebody their
- * update failed when nothing was ever asked would be wrong.
+ * `unavailable` and `unauthenticated` are separate cases rather than errors,
+ * and separate from each other. No service at all is the normal state of a
+ * Configurator opened from a computer, whilst a service that answers but does
+ * not know who you are is one sign-in away from working. Collapsing the two
+ * would mean telling somebody to go somewhere they already are.
  */
 export type UpdateResult<T> =
   | { status: "ok"; data: T }
   | { status: "unavailable" }
+  | { status: "unauthenticated" }
   | { status: "error"; code: string; message: string; errorId: string };
 
 export type UpdateFetch = (
@@ -120,22 +123,21 @@ export function createUpdateClient(
   /**
    * Reads the CSRF token the service expects on every write.
    *
-   * @returns The token, or `null` when there is no authenticated session to
-   *   write with, which includes the service being unreachable.
+   * A service that answers without an authenticated session is reported as
+   * such, so the interface can offer a sign-in rather than claiming nothing is
+   * there.
    */
-  const csrfToken = async (): Promise<string | null> => {
+  const csrfToken = async (): Promise<UpdateResult<string>> => {
     const response = await request("GET", "/api/session");
-    if (response === null || !response.ok) return null;
-    const body = await readJson(response);
-    if (
-      body === null ||
-      typeof body !== "object" ||
-      (body as Record<string, unknown>).authenticated !== true
-    ) {
-      return null;
+    if (response === null) return { status: "unavailable" };
+    if (!response.ok) return { status: "unauthenticated" };
+    const body = record(await readJson(response));
+    if (!body || body.authenticated !== true) {
+      return { status: "unauthenticated" };
     }
-    const token = (body as Record<string, unknown>).csrfToken;
-    return typeof token === "string" && token.length > 0 ? token : null;
+    return typeof body.csrfToken === "string" && body.csrfToken.length > 0
+      ? { status: "ok", data: body.csrfToken }
+      : { status: "unavailable" };
   };
 
   const request = async (
@@ -165,15 +167,18 @@ export function createUpdateClient(
     let init: RequestInit = {};
     if (body !== undefined) {
       const token = await csrfToken();
-      if (token === null) return { status: "unavailable" };
+      if (token.status !== "ok") return token;
       init = {
-        headers: { "Content-Type": "application/json", "X-Velvet-CSRF": token },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Velvet-CSRF": token.data,
+        },
         body: JSON.stringify(body),
       };
     }
     const response = await request(method, path, init);
     if (response === null) return { status: "unavailable" };
-    if (response.status === 401) return { status: "unavailable" };
+    if (response.status === 401) return { status: "unauthenticated" };
 
     const payload = await readJson(response);
     if (!response.ok) return failure(payload);

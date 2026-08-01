@@ -13,10 +13,11 @@
     "preview": "vite preview",
     "screenshot": "bun scripts/screenshot.mjs",
     "pretest": "bun run --filter @velvet/contracts build",
-    "test": "bun run test:units && bun run test:builds",
+    "test": "bun run test:units && bun run test:browser && bun run test:builds",
     "pretypecheck": "bun run --filter @velvet/contracts build",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
-    "test:units": "bun test --max-concurrency 1 $(ls test/*.test.ts | grep -v build-scripts.slow)",
+    "test:units": "bun test --max-concurrency 1 $(ls test/*.test.ts | grep -vE 'build-scripts.slow|browser')",
+    "test:browser": "for file in test/*browser*.test.ts; do bun test \"$file\" || exit 1; done",
     "test:builds": "bun test ./test/build-scripts.slow.test.ts"
   },
   "dependencies": {

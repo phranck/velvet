@@ -109,7 +109,7 @@ test("does not attempt a write without a session to write with", async () => {
   });
 
   assert.deepEqual(await velvet.start(selector, "2.0.0"), {
-    status: "unavailable",
+    status: "unauthenticated",
   });
   assert.equal(
     calls.some(({ method }) => method === "POST"),
@@ -158,12 +158,20 @@ test("treats a failure body it did not produce as unavailable", async () => {
   assert.deepEqual(await velvet.read(selector), { status: "unavailable" });
 });
 
-test("treats a signed-out session as unavailable rather than an error", async () => {
-  const { client: velvet } = client({
+test("tells a signed-out visitor apart from an absent service", async () => {
+  // One of these is one sign-in away from working and the other is not, so
+  // reporting them the same way would send somebody to a page they are on.
+  const { client: signedOut } = client({
     "/api/updates": new Response("{}", { status: 401 }),
   });
+  assert.deepEqual(await signedOut.read(selector), {
+    status: "unauthenticated",
+  });
 
-  assert.deepEqual(await velvet.read(selector), { status: "unavailable" });
+  const absent = createUpdateClient(async () => {
+    throw new TypeError("Failed to fetch");
+  });
+  assert.deepEqual(await absent.read(selector), { status: "unavailable" });
 });
 
 test("shows nothing rather than something wrong", async () => {

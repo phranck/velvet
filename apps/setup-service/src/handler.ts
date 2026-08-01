@@ -420,8 +420,13 @@ export function createSetupHandler(
       if (request.method === "GET" && route === "/") {
         return finish(redirectResponse(`${options.config.publicOrigin}/onboarding/`));
       }
-      if (request.method === "GET" && route === "/onboarding") {
-        return finish(redirectResponse(`${options.config.publicOrigin}/onboarding/`));
+      if (
+        request.method === "GET" &&
+        (route === "/onboarding" || route === "/configurator")
+      ) {
+        return finish(
+          redirectResponse(`${options.config.publicOrigin}${route}/`),
+        );
       }
       if (request.method === "GET" && options.staticAsset) {
         const assetPath = allowlistedAssetPath(route);
@@ -699,12 +704,20 @@ function defaultUpdateRoutes(
   });
 }
 
+/**
+ * Maps a request path onto a hosted application's file, or refuses it.
+ *
+ * Only a document root and hashed asset names resolve, so no request can
+ * address anything else the service happens to have on disk.
+ *
+ * @returns The path below the public root, or `null` when nothing matches.
+ */
 function allowlistedAssetPath(pathname: string): string | null {
-  if (pathname === "/onboarding/") return "index.html";
-  const match = /^\/onboarding\/(assets\/[A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(
-    pathname,
+  const match = pathname.match(
+    /^\/(onboarding|configurator)\/(assets\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/u,
   );
-  return match?.[1] ?? null;
+  if (!match) return null;
+  return `${match[1]}/${match[2] ?? "index.html"}`;
 }
 
 function redirectResponse(location: string, headers?: HeadersInit): Response {
@@ -723,7 +736,19 @@ function secureResponse(
   headers.set("X-Request-Id", requestId);
   headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+    // Two deliberate grants beyond the default.
+    //
+    // `connect-src` names GitHub Pages because the Configurator reads the
+    // community theme registry Velvet publishes there, and validates it before
+    // using it. It is the only origin either application talks to besides this
+    // one.
+    //
+    // `style-src-attr` allows style attributes, which is how a themed preview
+    // carries per-element custom properties. Stylesheets and `<style>`
+    // elements stay restricted to this origin through `style-src`, so this
+    // grants declarations on elements the application already renders and
+    // nothing that could introduce a stylesheet.
+    "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Cross-Origin-Resource-Policy", "same-origin");
