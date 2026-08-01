@@ -310,3 +310,88 @@ test("returns bounded GitHub errors without response bodies or credentials", asy
     },
   );
 });
+
+test("pushes the managed files again when GitHub still serves the previous head", async () => {
+  // Observed in production: writing the configuration and then immediately
+  // reading `refs/heads/main` can return the head from before that commit.
+  // The managed-file commit then hangs off a parent that is already behind,
+  // the non-forced push is not a fast-forward, and GitHub answers 422. The
+  // repository was left with a configuration and no version lock, which is an
+  // installation nothing can ever update.
+  const heads = ["a".repeat(40), "b".repeat(40)];
+  let refReads = 0;
+  let pushes = 0;
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret-value",
+    privateKey: privateKeyPem,
+    fetch: async (request) => {
+      const url = new URL(request.url);
+      if (url.pathname.endsWith("/git/ref/heads/main")) {
+        const head = heads[Math.min(refReads, heads.length - 1)]!;
+        refReads += 1;
+        return Response.json({ object: { sha: head } });
+      }
+      if (url.pathname.includes("/git/commits/")) {
+        return Response.json({ tree: { sha: "c".repeat(40) } });
+      }
+      if (url.pathname.endsWith("/git/trees")) {
+        return Response.json({ sha: "d".repeat(40) });
+      }
+      if (url.pathname.endsWith("/git/commits")) {
+        return Response.json({ sha: "e".repeat(40) });
+      }
+      if (url.pathname.endsWith("/git/refs/heads/main")) {
+        pushes += 1;
+        return pushes === 1
+          ? new Response("{}", { status: 422 })
+          : Response.json({ object: { sha: "e".repeat(40) } });
+      }
+      throw new Error(`Unexpected request ${url.pathname}`);
+    },
+  });
+
+  await client.writeManagedFiles("installation-token", "example", "status", [
+    { path: "velvet.lock.json", content: "{}\n" },
+  ]);
+
+  assert.equal(pushes, 2, "the refused push is retried");
+  assert.equal(refReads, 2, "each attempt reads the head again");
+});
+
+test("gives up on a push GitHub keeps refusing", async () => {
+  let pushes = 0;
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret-value",
+    privateKey: privateKeyPem,
+    fetch: async (request) => {
+      const url = new URL(request.url);
+      if (url.pathname.endsWith("/git/ref/heads/main")) {
+        return Response.json({ object: { sha: "a".repeat(40) } });
+      }
+      if (url.pathname.includes("/git/commits/")) {
+        return Response.json({ tree: { sha: "c".repeat(40) } });
+      }
+      if (url.pathname.endsWith("/git/trees")) {
+        return Response.json({ sha: "d".repeat(40) });
+      }
+      if (url.pathname.endsWith("/git/commits")) {
+        return Response.json({ sha: "e".repeat(40) });
+      }
+      pushes += 1;
+      return new Response("{}", { status: 422 });
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      client.writeManagedFiles("installation-token", "example", "status", [
+        { path: "velvet.lock.json", content: "{}\n" },
+      ]),
+    GitHubApiError,
+  );
+  assert.equal(pushes, 6, "a genuine conflict still fails");
+});
