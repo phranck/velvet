@@ -380,7 +380,7 @@ function complianceMarks(x, y, height, marks) {
   const elements = [];
   // Generous, because the marks are four unrelated symbols rather than a
   // sequence. Set close together they read as one graphic.
-  const gap = height * 0.85;
+  const gap = height * 1.4;
   let cursor = x;
 
   /**
