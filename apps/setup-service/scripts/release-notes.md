@@ -1,16 +1,20 @@
-# Velvet 2.0.1
+# Velvet 1.0.0
 
-Every update now proves itself inside your own repository before it is allowed in.
+Velvet monitors your services from GitHub Actions and publishes a status page through GitHub Pages, without a server or a database.
 
-## What is new
+## What it does
 
-- A new workflow, `Velvet update check`, runs on each update pull request and refuses to pass unless the change touches only files Velvet owns and the version lock matches the update being installed.
-- Velvet will not merge an update until that check has succeeded, so a failed check leaves your page exactly as it was.
+- Direct IPv4 checks of every configured endpoint, every five minutes, with separate response-time samples four times a day.
+- Incidents and planned maintenance recorded as GitHub Issues, opened and closed automatically after confirmed failures and recoveries.
+- Up to 365 days of availability, response-time, incident, and maintenance history on a dedicated branch the monitor owns alone.
+- A themeable status page built from that history, with four system themes and detailed visual configuration.
 
-## Why this matters
+## Installing and updating
 
-Until now the promise that an update never touches your own files rested entirely on the update service. It now also rests on a check that runs on your runner, in your repository, against the merge GitHub actually built. If the two ever disagreed, the update would stop.
+Browser onboarding at [setup.velvet.li](https://setup.velvet.li/onboarding/) creates the repository, writes the configuration, enables Pages, and starts monitoring. It is the only supported way in, and the only one that records which Velvet version an installation runs.
 
-## What stays yours
+From then on Velvet installs new versions for you. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. Your configuration, history, incidents, secrets, `README.md`, and `LICENSE` are never part of one, and a check running in your own repository refuses any update that would touch them.
 
-`velvet.yml`, the complete `velvet-data` branch, your incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `LICENSE` are never touched by an update. Velvet only replaces the workflow and issue-template files it owns, plus its own version lock.
+## Notes
+
+IPv6 monitoring is deliberately absent until GitHub-hosted runners provide documented native support. A configured service is monitored over IPv4 only.
