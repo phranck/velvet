@@ -529,6 +529,10 @@
 <style>
   .onboarding-shell {
     --setup-accent: #8ca5ff;
+    /* The page's own base tone, matching the last background layer in
+       onboarding.css. Anything that has to hide the board backdrop fills with
+       this rather than inventing a shade. */
+    --setup-base: #0a0b0f;
     --setup-panel: rgba(27, 29, 38, 0.9);
     --setup-panel-raised: #272a36;
     --setup-card: #222530;
@@ -628,7 +632,7 @@
     margin: 3.5rem 0 0;
     color: color-mix(in srgb, var(--setup-muted) 78%, var(--setup-text));
     font-size: var(--setup-text-intro);
-    line-height: 1.6;
+    line-height: 1.3;
   }
   .steps {
     --step-size: clamp(4.5rem, 18vw, 5.5rem);
@@ -998,6 +1002,12 @@
   @media (max-width: 720px) {
     .two-columns {
       grid-template-columns: 1fr;
+    }
+    /* The intro carries a hard break that balances the two lines on a wide
+       screen. Narrow enough and that break lands mid-thought, so the sentence
+       is left to wrap on its own instead. */
+    .intro > p:last-child br {
+      display: none;
     }
   }
 

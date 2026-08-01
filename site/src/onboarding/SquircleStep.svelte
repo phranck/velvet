@@ -40,6 +40,13 @@
   bind:clientWidth={size}
 >
   <svg class="base-outline" viewBox={`0 0 ${Math.max(size, 1)} ${Math.max(size, 1)}`} aria-hidden="true">
+    <!--
+      An opaque fill in the squircle's own shape. The button cannot carry it as a
+      background, because a squircle is not a border-radius, so anything behind
+      the page would otherwise show through the step. That matters now the
+      backdrop carries artwork rather than a flat colour.
+    -->
+    <path d={outerPath} class="fill" stroke="none"></path>
     <path
       d={outerPath}
       fill="none"
@@ -119,6 +126,9 @@
   }
   .base-outline {
     color: color-mix(in srgb, var(--setup-muted) 46%, transparent);
+  }
+  .fill {
+    fill: var(--setup-base);
   }
   .active-highlight {
     color: var(--setup-accent);
