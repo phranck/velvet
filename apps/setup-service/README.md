@@ -112,6 +112,20 @@ repository ID, the version, the trigger, and a redacted cause. It contains no
 configuration, no repository content, no credentials, and no upstream response
 body.
 
+## Verifying the whole flow
+
+`test/update-lifecycle.test.ts` runs onboarding and a managed update against
+one repository double, which is what unit tests cannot cover: that a
+repository setup produces is one the updater recognises, and that an update
+leaves protected content exactly as setup wrote it. It asserts the user's own
+files are byte-identical afterwards and that the configured header secret
+still reaches the workflow.
+
+What it cannot cover is GitHub itself. Before the first standalone release,
+run the same flow against a disposable repository with real App credentials
+and confirm the branch, pull request, checks, merge, Pages deployment, and
+cleanup behave as the double assumes.
+
 ## GitHub App registration
 
 Register a GitHub App owned by the Velvet maintainer with these settings:
