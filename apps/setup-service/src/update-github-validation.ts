@@ -84,16 +84,22 @@ export function parsePullRequest(value: unknown): GitHubUpdatePullRequest {
   // the test merge it computed rather than a merge that happened. Only
   // `merged_at` distinguishes the two, so requiring both to be absent together
   // rejects every open pull request GitHub actually returns.
+  // Both fields are optional in GitHub's response. A freshly created pull
+  // request omits `merge_commit_sha` entirely rather than sending null, so
+  // absence and null have to be treated the same way.
   const mergedAtValid =
     mergedAt === null ||
+    mergedAt === undefined ||
     (typeof mergedAt === "string" &&
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u.test(mergedAt));
   const mergeShaValid =
     mergeCommitSha === null ||
+    mergeCommitSha === undefined ||
     (typeof mergeCommitSha === "string" && COMMIT_SHA.test(mergeCommitSha));
   // A merged pull request must name the commit it produced.
   const validMerge =
-    mergedAtValid && mergeShaValid && (mergedAt === null || mergeCommitSha !== null);
+    mergedAtValid && mergeShaValid
+      && (mergedAt === null || mergedAt === undefined || typeof mergeCommitSha === "string");
   if (
     !isRecord(value) ||
     !positiveInteger(value.number) ||
@@ -109,7 +115,7 @@ export function parsePullRequest(value: unknown): GitHubUpdatePullRequest {
     typeof value.base.sha !== "string" ||
     !COMMIT_SHA.test(value.base.sha) ||
     !validMerge ||
-    (value.state === "open" && mergedAt !== null)
+    (value.state === "open" && mergedAt !== null && mergedAt !== undefined)
   ) {
     throw new Error("GitHub pull request response was invalid.");
   }
@@ -121,8 +127,8 @@ export function parsePullRequest(value: unknown): GitHubUpdatePullRequest {
     headSha: value.head.sha,
     baseRef: value.base.ref,
     baseSha: value.base.sha,
-    mergedAt: mergedAt as string | null,
-    mergeCommitSha: mergeCommitSha as string | null,
+    mergedAt: (mergedAt ?? null) as string | null,
+    mergeCommitSha: (mergeCommitSha ?? null) as string | null,
   };
 }
 

@@ -717,3 +717,36 @@ test("rejects a merged pull request that names no commit", async () => {
     /pull request response was invalid/u,
   );
 });
+
+test("accepts a freshly created pull request that omits its merge fields", async () => {
+  const client = app(async (request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    // GitHub omits merge_commit_sha entirely on a freshly created pull
+    // request rather than sending null, which is what a real POST returns.
+    return Response.json({
+      number: 12,
+      state: "open",
+      html_url: "https://github.com/example/status/pull/12",
+      merged_at: null,
+      head: { ref: "velvet/update/2.1.0", sha: updateSha },
+      base: { ref: "main", sha: baseSha },
+    });
+  });
+  const repository = await client.forRepository(7, 99);
+
+  const pullRequest = await repository.createPullRequest("2.1.0", updateSha, baseSha);
+
+  assert.equal(pullRequest.state, "open");
+  assert.equal(pullRequest.mergedAt, null);
+  assert.equal(
+    pullRequest.mergeCommitSha,
+    null,
+    "an absent field is normalised to null for callers",
+  );
+});
