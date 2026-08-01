@@ -19,17 +19,26 @@ import { protectedChangedPaths } from "../src/update-ownership.js";
  * exactly what an installation performs. That is what makes this able to catch
  * a wrong API shape or a refused permission, which a double cannot.
  *
+ * By default it creates a disposable repository from the template, verifies
+ * against it, and deletes it again, so every run starts from the same state a
+ * real user would. Repeating a run against a repository left behind by a
+ * previous one proves nothing, because the second run finds the first one's
+ * branch and commit already in place.
+ *
  * Usage:
- *   GITHUB_TOKEN=$(gh auth token) bun run scripts/verify-against-github.ts \
- *     --repository <owner/name>
+ *   GITHUB_TOKEN=$(gh auth token) bun run scripts/verify-against-github.ts --owner <login>
+ *   GITHUB_TOKEN=... bun run scripts/verify-against-github.ts --repository <owner/name> --keep
  */
 
 const token = process.env.GITHUB_TOKEN;
 if (!token) fail("Set GITHUB_TOKEN, for example with $(gh auth token).");
 
-const slug = argument("repository") ?? fail("Pass --repository <owner/name>.");
-const [owner, name] = slug.split("/");
-if (!owner || !name) fail("--repository must look like owner/name.");
+const keep = Bun.argv.includes("--keep");
+const suppliedRepository = argument("repository");
+const login = argument("owner");
+if (!suppliedRepository && !login) {
+  fail("Pass --owner <login> to create a disposable repository, or --repository <owner/name>.");
+}
 
 function argument(flag: string): string | undefined {
   const index = Bun.argv.indexOf(`--${flag}`);
@@ -72,6 +81,8 @@ const api = async <T>(path: string): Promise<T> => {
   return (await response.json()) as T;
 };
 
+const slug = suppliedRepository ?? (await createDisposableRepository(login!));
+const [owner, name] = slug.split("/") as [string, string];
 const repositoryId = (await api<{ id: number }>(`/repos/${owner}/${name}`)).id;
 // The client signs an app JWT before requesting a token. That request never
 // leaves the process, so any well-formed key satisfies the signing step.
@@ -111,16 +122,25 @@ const version = release.manifest.version;
 let branchHead = await repository.updateBranchHead(version);
 if (branchHead === null) {
   await repository.createUpdateBranch(version, head);
-  branchHead = head;
+  // Mirrors the orchestrator: GitHub answers the single-ref read with 404 for
+  // a moment after creating a ref, so confirm it rather than assume the head.
+  const confirmed = await confirmBranch(version);
+  check("a freshly created branch becomes readable", confirmed !== null);
+  if (confirmed === null) await finish();
+  branchHead = confirmed;
 }
-if (branchHead === head) {
-  branchHead = await repository.commitUpdate(version, branchHead, files);
+if (branchHead === null) await finish();
+// `finish` never returns, but an await cannot express that, so the value is
+// narrowed once here rather than asserted at each use below.
+let updateHead = branchHead as string;
+if (updateHead === head) {
+  updateHead = await repository.commitUpdate(version, updateHead, files);
 }
-check("an update branch carries the complete managed set", true, branchHead.slice(0, 8));
+check("an update branch carries the complete managed set", true, updateHead.slice(0, 8));
 
 const existing = await repository.pullRequests(version);
 const pullRequest = existing[0]
-  ?? (await repository.createPullRequest(version, branchHead, head));
+  ?? (await repository.createPullRequest(version, updateHead, head));
 check("a technical pull request exists", true, `#${pullRequest.number}`);
 
 const changed = await repository.changedPaths(pullRequest.number);
@@ -182,6 +202,82 @@ if (branchAfter !== null) {
 }
 check("the update branch is removed afterwards", true);
 
+/**
+ * Creates a repository from the template, as browser onboarding does.
+ *
+ * The name carries a timestamp so a failed run never blocks the next one, and
+ * the repository is private because it exists for minutes.
+ */
+async function createDisposableRepository(ownerLogin: string): Promise<string> {
+  const created = `velvet-verify-${Date.now().toString(36)}`;
+  const response = await request(
+    "POST",
+    "/repos/phranck/velvet-template/generate",
+    { owner: ownerLogin, name: created, private: true, include_all_branches: false },
+  );
+  if (!response.ok) {
+    fail(`Could not create the disposable repository: ${response.status}`);
+  }
+  console.log(`· created ${ownerLogin}/${created} from the template`);
+  // GitHub populates a generated repository asynchronously.
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const contents = await request("GET", `/repos/${ownerLogin}/${created}/contents/velvet.yml`);
+    if (contents.ok) return `${ownerLogin}/${created}`;
+    await Bun.sleep(1_000);
+  }
+  fail("The generated repository never became readable.");
+}
+
+async function request(
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<Response> {
+  return fetch(`https://api.github.com${path}`, {
+    method,
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "User-Agent": "velvet-verification",
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+}
+
+/**
+ * Reads an update branch back until GitHub reports it, within a bounded wait.
+ *
+ * A ref is not immediately visible to the single-ref endpoint after creation.
+ * This is the same window the orchestrator closes through its retrying read.
+ */
+async function confirmBranch(forVersion: string): Promise<string | null> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const found = await repository.updateBranchHead(forVersion);
+    if (found !== null) return found;
+    await Bun.sleep(500);
+  }
+  return null;
+}
+
+/** Removes the disposable repository, then reports and exits. */
+async function finish(): Promise<never> {
+  if (!suppliedRepository && !keep) {
+    const deleted = await request("DELETE", `/repos/${owner}/${name}`);
+    check(
+      "the disposable repository is removed",
+      deleted.ok,
+      deleted.ok ? slug : `needs deleting by hand: ${slug}`,
+    );
+  }
+  const unmet = checks.filter((entry) => !entry.ok);
+  console.log(
+    `\n${checks.length - unmet.length}/${checks.length} checks passed against ${slug}.`,
+  );
+  console.log(`Managed paths verified: ${MANAGED_TEMPLATE_PATHS.length}.`);
+  process.exit(unmet.length === 0 ? 0 : 1);
+}
+
 async function fileAt(path: string, ref: string): Promise<string> {
   const body = await api<{ content: string }>(
     `/repos/${owner}/${name}/contents/${path}?ref=${encodeURIComponent(ref)}`,
@@ -203,9 +299,4 @@ async function snapshot(paths: readonly string[]): Promise<Record<string, string
   return Object.fromEntries(entries);
 }
 
-const failed = checks.filter((entry) => !entry.ok);
-console.log(
-  `\n${checks.length - failed.length}/${checks.length} checks passed against ${slug}.`,
-);
-console.log(`Managed paths verified: ${MANAGED_TEMPLATE_PATHS.length}.`);
-process.exit(failed.length === 0 ? 0 : 1);
+await finish();

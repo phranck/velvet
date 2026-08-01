@@ -80,12 +80,20 @@ export function parseShaObject(value: unknown, message: string): string {
 export function parsePullRequest(value: unknown): GitHubUpdatePullRequest {
   const mergedAt = isRecord(value) ? value.merged_at : undefined;
   const mergeCommitSha = isRecord(value) ? value.merge_commit_sha : undefined;
-  const validMerge =
-    (mergedAt === null && mergeCommitSha === null) ||
+  // GitHub sets `merge_commit_sha` on an open pull request too, where it names
+  // the test merge it computed rather than a merge that happened. Only
+  // `merged_at` distinguishes the two, so requiring both to be absent together
+  // rejects every open pull request GitHub actually returns.
+  const mergedAtValid =
+    mergedAt === null ||
     (typeof mergedAt === "string" &&
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u.test(mergedAt) &&
-      typeof mergeCommitSha === "string" &&
-      COMMIT_SHA.test(mergeCommitSha));
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u.test(mergedAt));
+  const mergeShaValid =
+    mergeCommitSha === null ||
+    (typeof mergeCommitSha === "string" && COMMIT_SHA.test(mergeCommitSha));
+  // A merged pull request must name the commit it produced.
+  const validMerge =
+    mergedAtValid && mergeShaValid && (mergedAt === null || mergeCommitSha !== null);
   if (
     !isRecord(value) ||
     !positiveInteger(value.number) ||
