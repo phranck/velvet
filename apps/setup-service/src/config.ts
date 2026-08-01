@@ -112,7 +112,7 @@ export function loadSetupServiceConfig(
 
   const serialRepository = environment.SERIAL_COUNTER_REPOSITORY?.trim();
   if (serialRepository) parseSerialRepository(serialRepository);
-  const serialPath = environment.SERIAL_COUNTER_PATH?.trim() || "serials.json";
+  const serialPath = environment.SERIAL_COUNTER_PATH?.trim() || "registry.json";
   if (serialRepository && !/^[A-Za-z0-9][A-Za-z0-9._/-]*\.json$/u.test(serialPath)) {
     throw new TypeError(
       "SERIAL_COUNTER_PATH must be a relative path to a .json file.",

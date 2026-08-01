@@ -25,7 +25,7 @@ import {
  * intends, it lists installations that never agreed to be named, and a tally of
  * every installation is not something to leave open either.
  *
- * It is **not** `phranck/velvet`. That repository ships the Actions every
+ * The repository is `phranck/velvet-registry`. It is **not** `phranck/velvet`. That repository ships the Actions every
  * installation runs, so it has to stay public, and a push to its default branch
  * starts the whole CI suite. Writing a counter there would also hand the service
  * write access to the product's own source.

@@ -24,8 +24,8 @@ const { privateKey } = generateKeyPairSync("rsa", {
 const OPTIONS = {
   appId: "1234",
   privateKey: privateKey as unknown as string,
-  repository: "phranck/velvet-serials",
-  path: "serials.json",
+  repository: "phranck/velvet-registry",
+  path: "registry.json",
   userAgent: "velvet-setup-test",
 };
 
@@ -72,16 +72,16 @@ interface Recorded {
 function identityResponse(url: string): Response | null {
   if (url.endsWith("/installation")) return jsonResponse({ id: 55 });
   if (url.endsWith("/access_tokens")) return jsonResponse({ token: "installation-token" });
-  if (url.endsWith("/repos/phranck/velvet-serials")) return jsonResponse({ id: 909 });
+  if (url.endsWith("/repos/phranck/velvet-registry")) return jsonResponse({ id: 909 });
   return null;
 }
 
 test("the repository reference must name exactly one owner and repository", () => {
-  assert.deepEqual(parseSerialRepository("phranck/velvet-serials"), {
+  assert.deepEqual(parseSerialRepository("phranck/velvet-registry"), {
     owner: "phranck",
-    name: "velvet-serials",
+    name: "velvet-registry",
   });
-  for (const invalid of ["velvet-serials", "a/b/c", "", "  ", "/name", "owner/"]) {
+  for (const invalid of ["velvet-registry", "a/b/c", "", "  ", "/name", "owner/"]) {
     assert.throws(() => parseSerialRepository(invalid), TypeError, invalid);
   }
 });
@@ -103,7 +103,7 @@ test("peek reports the next number, authenticated because the counter is private
 
   assert.equal(await counter.peek(), 42);
   const read = seen.at(-1)!;
-  assert.match(read.url, /\/contents\/serials\.json$/u);
+  assert.match(read.url, /\/contents\/registry\.json$/u);
   assert.equal(read.auth, true, "a private repository cannot be read anonymously");
   assert.equal(
     seen.some((entry) => entry.url.includes("raw.githubusercontent.com")),
@@ -164,7 +164,7 @@ test("the token is minted once and reused until it nears expiry", async () => {
         mints += 1;
         return jsonResponse({ token: `token-${mints}` });
       }
-      if (request.url.endsWith("/repos/phranck/velvet-serials")) {
+      if (request.url.endsWith("/repos/phranck/velvet-registry")) {
         return jsonResponse({ id: 909 });
       }
       return contentsResponse(41, "blob-sha");
@@ -362,7 +362,7 @@ test("the write token is scoped to the counter repository alone", async () => {
         if (body.repository_ids) scopedRequest = body;
         return jsonResponse({ token: "installation-token" });
       }
-      if (request.url.endsWith("/repos/phranck/velvet-serials")) {
+      if (request.url.endsWith("/repos/phranck/velvet-registry")) {
         return jsonResponse({ id: 909 });
       }
       if (request.method === "GET") return contentsResponse(0, "blob-sha");
@@ -388,7 +388,7 @@ test("the repository identity is resolved once and reused across claims", async 
       if (request.url.endsWith("/access_tokens")) {
         return jsonResponse({ token: "installation-token" });
       }
-      if (request.url.endsWith("/repos/phranck/velvet-serials")) {
+      if (request.url.endsWith("/repos/phranck/velvet-registry")) {
         return jsonResponse({ id: 909 });
       }
       if (request.method === "GET") return contentsResponse(issued, `sha-${issued}`);

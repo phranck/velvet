@@ -72,22 +72,22 @@ test("the serial counter takes a repository and defaults its path", () => {
   assert.deepEqual(
     loadSetupServiceConfig({
       ...environment,
-      SERIAL_COUNTER_REPOSITORY: "phranck/velvet-serials",
+      SERIAL_COUNTER_REPOSITORY: "phranck/velvet-registry",
     }).serialCounter,
-    { repository: "phranck/velvet-serials", path: "serials.json" },
+    { repository: "phranck/velvet-registry", path: "registry.json" },
   );
   assert.deepEqual(
     loadSetupServiceConfig({
       ...environment,
-      SERIAL_COUNTER_REPOSITORY: "phranck/velvet-serials",
+      SERIAL_COUNTER_REPOSITORY: "phranck/velvet-registry",
       SERIAL_COUNTER_PATH: "data/counter.json",
     }).serialCounter,
-    { repository: "phranck/velvet-serials", path: "data/counter.json" },
+    { repository: "phranck/velvet-registry", path: "data/counter.json" },
   );
 });
 
 test("a misconfigured serial counter fails at start-up, not at the first setup", () => {
-  for (const repository of ["velvet-serials", "a/b/c", "/name"]) {
+  for (const repository of ["velvet-registry", "a/b/c", "/name"]) {
     assert.throws(
       () =>
         loadSetupServiceConfig({
@@ -103,7 +103,7 @@ test("a misconfigured serial counter fails at start-up, not at the first setup",
       () =>
         loadSetupServiceConfig({
           ...environment,
-          SERIAL_COUNTER_REPOSITORY: "phranck/velvet-serials",
+          SERIAL_COUNTER_REPOSITORY: "phranck/velvet-registry",
           SERIAL_COUNTER_PATH: path,
         }),
       /SERIAL_COUNTER_PATH/,
