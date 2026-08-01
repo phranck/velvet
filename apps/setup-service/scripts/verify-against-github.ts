@@ -46,8 +46,9 @@ if (!token) fail("Set GITHUB_TOKEN, for example with $(gh auth token).");
 const keep = Bun.argv.includes("--keep");
 const login = argument("owner") ?? fail("Pass --owner <login>.");
 
-/** The version a repository is seeded at, so the embedded release is a step up. */
-const SEEDED_VERSION = "2.0.0";
+/** The version the next release declares as its own floor. */
+const NEXT_VERSION = "1.0.1";
+const REFUSED_VERSION = "1.0.2";
 const CHECK_TIMEOUT_MS = 8 * 60_000;
 const POLL_MS = 5_000;
 
@@ -179,29 +180,29 @@ const templateCommit = release.manifest.template.commit;
 // A repository generated from the template carries no version lock, which is
 // precisely the gap onboarding closes. Seeding one through the same write
 // onboarding performs is what makes the update below a real forward step.
-const seeded = seedRelease(templateCommit);
-const seedFiles = materialize(seeded, "seed");
+const seedFiles = materialize(release, "seed");
 await setup.writeManagedFiles(token!, owner, name, seedFiles);
 const lockAfterSeed = await repository.readVersionLock();
 check(
   "onboarding's own write produces a lock the updater recognises",
-  lockAfterSeed.lock.installedVersion === SEEDED_VERSION,
+  lockAfterSeed.lock.installedVersion === release.manifest.version,
   lockAfterSeed.lock.installedVersion,
 );
 
 const protectedBefore = await snapshot(["README.md", "LICENSE", "velvet.yml"]);
 const dataBranchBefore = await repository.dataBranchHead();
 
+const next = seedRelease(templateCommit, NEXT_VERSION);
 const orchestrator = createManagedUpdateOrchestrator({
   github: updateClient,
-  releases: embedded,
+  releases: { latest: () => NEXT_VERSION, get: async () => next },
   requiredCheckNames: [VELVET_UPDATE_CHECK_NAME],
 });
 const reconcile = () =>
   orchestrator.reconcile({
     installationId: 1,
     repositoryId,
-    version: release.manifest.version,
+    version: NEXT_VERSION,
     trigger: "manual",
   });
 
@@ -225,7 +226,7 @@ check(
 // This is what could not be answered without a real repository: a workflow
 // added by the pull request itself has to run for the very update that adds
 // it, because GitHub evaluates pull-request workflows from the merge commit.
-const branchHead = await repository.updateBranchHead(release.manifest.version);
+const branchHead = await repository.updateBranchHead(NEXT_VERSION);
 const checkRun = await waitForCheck(branchHead!);
 check(
   "the update check runs on the pull request that introduces it",
@@ -259,7 +260,7 @@ check(
 const lockFile = await repository.readVersionLock();
 check(
   "the version lock records the installed release",
-  lockFile.lock.installedVersion === release.manifest.version,
+  lockFile.lock.installedVersion === NEXT_VERSION,
   `${lockFile.lock.installedVersion} at ${lockFile.lock.template.commit.slice(0, 8)}`,
 );
 
@@ -283,7 +284,7 @@ await finish();
  * the default branch may move afterwards.
  */
 async function verifyRefusedUpdate(): Promise<void> {
-  const version = "2.0.2";
+  const version = REFUSED_VERSION;
   const tampered = seedRelease(templateCommit, version);
   const files = materialize(tampered, "refusal");
   const provider: ManagedUpdateReleaseProvider = {
@@ -388,13 +389,13 @@ async function waitForCheck(
 }
 
 /** Builds a publishable release at one version from a template revision. */
-function seedRelease(commit: string, version = SEEDED_VERSION): ManagedUpdateRelease {
+function seedRelease(commit: string, version: string): ManagedUpdateRelease {
   const built = buildReleaseManifest({
     version,
     releaseType: "fix",
     automaticInstallEligible: false,
     compatibility: {
-      minimumInstalledVersion: SEEDED_VERSION,
+      minimumInstalledVersion: release.manifest.version,
       configurationSchemaVersion:
         release.manifest.compatibility.configurationSchemaVersion,
       dataSchemaVersion: release.manifest.compatibility.dataSchemaVersion,

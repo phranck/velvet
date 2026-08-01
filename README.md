@@ -129,7 +129,7 @@ workflow, and its value never belongs in `velvet.yml`.
 
 ## IPv4 and IPv6
 
-Velvet v2 performs direct IPv4 checks from GitHub-hosted runners and has no
+Velvet performs direct IPv4 checks from GitHub-hosted runners and has no
 remote probe dependency. IPv6 monitoring is deferred until GitHub-hosted
 runners provide documented native IPv6 connectivity. A configured service is
 therefore monitored over IPv4 only.
@@ -188,10 +188,12 @@ Security releases that need no migration can install themselves, which is on by
 default and can be turned off in the Configurator. Everything else waits for
 you.
 
-## Migrate from Velvet v1.8
+## Migrate from an Upptime status page
 
-Velvet v1.8 used Upptime as its temporary monitor and could route IPv6 checks
-through Globalping. Velvet v2 replaces both with the native IPv4 monitor.
+An earlier prototype of this repository used Upptime as its monitor and could
+route IPv6 checks through Globalping. Velvet replaces both with its own IPv4
+monitor, and the adapter below converts a status page that still runs the
+older arrangement.
 
 Use [`vum`](packages/upptime-adapter) for a non-destructive conversion. It runs
 as a dry run by default, pins the source revision, validates the complete
