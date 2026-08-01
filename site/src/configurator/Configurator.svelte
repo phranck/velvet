@@ -23,7 +23,7 @@
   import ColorSourceControl from "./ColorSourceControl.svelte";
   import ConfiguratorSection from "./ConfiguratorSection.svelte";
   import { UpdateSection } from "../components/update/index.js";
-  import { readAvailableRelease, type AvailableRelease } from "../lib/update-client.js";
+  import type { InstallationUpdate } from "../lib/update-client.js";
   import * as Slider from "./slider";
   import ThemeDropdown from "./ThemeDropdown.svelte";
   import {
@@ -161,15 +161,12 @@
   );
   let sectionState = $state(readStoredSectionState());
 
-  let availableRelease = $state<AvailableRelease | null>(null);
+  // A Configurator started with `./config start` edits a file on a computer and
+  // knows no installation, so it has nothing true to say about versions. The
+  // hosted Configurator learns both from the service; see #127.
+  const availableRelease: InstallationUpdate | null = null;
   let automaticSecurityUpdates = $state(true);
   const installedVelvetVersion = "2.0.0";
-
-  onMount(() => {
-    // Reading is harmless when the service is unreachable, which is the normal
-    // case for a Configurator opened offline: it simply reports nothing.
-    void readAvailableRelease().then((value) => (availableRelease = value));
-  });
   let sidebarCollapsed = $state(readStoredSidebarCollapsed());
   let importedDocument = $state<ConfiguratorDocument | null>(
     RESTORED_SESSION?.importedDocument ?? null,
