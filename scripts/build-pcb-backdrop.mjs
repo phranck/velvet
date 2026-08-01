@@ -19,7 +19,7 @@ import { dirname, resolve } from "node:path";
  *
  * Usage:
  *   node scripts/build-pcb-backdrop.mjs [--out <path>] [--seed <integer>]
- *     [--release <semver>] [--contrast]
+ *     [--release <semver>] [--year <yyyy>] [--contrast]
  *
  * `--contrast` raises every opacity to a level where the pattern is plainly
  * visible. That output is for judging the artwork and is never shipped, because
@@ -458,9 +458,11 @@ function complianceMarks(x, y, height, marks) {
  * @param y - Wordmark baseline.
  * @param version - The Velvet version to print as the revision.
  * @param wordmark - Path data and metrics for the wordmark.
+ * @param marks - Sourced compliance logos.
+ * @param year - Year printed in the copyright line.
  * @returns Silkscreen elements, keyed by whether they belong to the wordmark.
  */
-function identityBlock(random, x, y, version, wordmark, marks) {
+function identityBlock(random, x, y, version, wordmark, marks, year) {
   const blockWidth = 292;
   const scale = blockWidth / wordmark.advanceWidth;
   const revision = `STATUS BOARD REV ${version}`;
@@ -469,7 +471,7 @@ function identityBlock(random, x, y, version, wordmark, marks) {
   // the two flush even though the system monospace face is unknown here.
   const revisionSize = blockWidth / (revision.length * 0.6);
   const lot = `LOT ${pickInt(random, 2100, 2699)}   PNL ${pickInt(random, 1, 8)}/${pickInt(random, 8, 24)}`;
-  const origin = "MADE IN EU   PB-FREE";
+  const origin = `Copyright © ${year} LAYERED, Made in Austria`;
   const smallSize = 11;
   const revisionY = revisionSize * 1.15;
   // Only the revision line is justified, so it ends flush with the wordmark
@@ -496,9 +498,11 @@ function identityBlock(random, x, y, version, wordmark, marks) {
  * @param opacity - Per-layer opacities to render with.
  * @param version - Velvet version printed in the identity block.
  * @param wordmark - Path data and metrics for the wordmark.
+ * @param marks - Sourced compliance logos.
+ * @param year - Year printed in the copyright line.
  * @returns The SVG document as a string.
  */
-function buildBoard(seed, opacity, version, wordmark, marks) {
+function buildBoard(seed, opacity, version, wordmark, marks, year) {
   const random = createRandom(seed);
   const traces = [];
   const copper = [];
@@ -523,7 +527,7 @@ function buildBoard(seed, opacity, version, wordmark, marks) {
   const identityY = snap(
     MARGIN + 80 + random() * (HEIGHT - MARGIN * 2 - identityHeight - 80),
   );
-  const identity = identityBlock(random, identityX, identityY, version, wordmark, marks);
+  const identity = identityBlock(random, identityX, identityY, version, wordmark, marks, year);
   silkscreen.push(...identity.silkscreen);
   occupied.push([
     identityX + identityWidth / 2,
@@ -743,6 +747,18 @@ const outputPath = resolve(
       : "site/src/onboarding/pcb-backdrop.svg",
   ),
 );
+/**
+ * Year printed in the copyright line.
+ *
+ * Defaults to the current one, which means regenerating in a later year changes
+ * the output. Passing it explicitly reproduces an earlier board exactly, which
+ * is what the seed alone otherwise guarantees.
+ */
+const year = Number(argument("year", String(new Date().getFullYear())));
+if (!Number.isInteger(year) || year < 2000 || year > 2999) {
+  console.error("--year must be a four-digit year.");
+  process.exit(1);
+}
 const version = argument("release", await releaseVersion());
 if (!version) {
   console.error(
@@ -757,6 +773,7 @@ const svg = buildBoard(
   version,
   await loadJson("velvet-wordmark.json"),
   await loadJson("compliance-marks.json"),
+  year,
 );
 await mkdir(dirname(outputPath), { recursive: true });
 await writeFile(outputPath, svg, "utf8");
