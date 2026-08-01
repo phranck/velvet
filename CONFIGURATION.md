@@ -566,8 +566,8 @@ not deleted, and source license notices must remain with the imported data.
 
 Migration implementation and provenance details live in the
 [`@velvet/upptime-adapter` guide](packages/upptime-adapter/README.md). The legacy
-sync Action is retained for existing v1.8 installations only and is not part of
-a new v2 setup.
+sync Action exists only to read an Upptime repository during a migration and is
+not part of a Velvet installation.
 
 ## Licensing and generated-data policy
 
