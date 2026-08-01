@@ -873,6 +873,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       });
     });
     await page.goto(`http://127.0.0.1:${address.port}/configurator.html`);
+    // A first visit collapses every section, so expand them once before
+    // inspecting their contents. A reader does the same before configuring.
+    await page.locator("[data-toggle-all-sections]").click();
+    await page
+      .locator('[data-configurator-section="themes"][data-section-expanded="true"]')
+      .waitFor();
     assert.equal(
       await page.locator(".control-panel").evaluate((element) =>
         element.getBoundingClientRect().width,
