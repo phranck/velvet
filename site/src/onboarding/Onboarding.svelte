@@ -540,8 +540,13 @@
             aria-label="Deployment progress"
           >
             {#each Object.entries(PROGRESS_LABELS) as [stage, label], index (stage)}
-              <li class:complete={index <= reachedIndex}>
-                <i class={`ph-duotone ${index <= reachedIndex ? "ph-check-circle" : "ph-circle"}`} aria-hidden="true"></i>
+              {@const running = submitting && index === reachedIndex}
+              {@const done = index < reachedIndex || (!submitting && index <= reachedIndex)}
+              <li class:complete={done} class:running>
+                <i
+                  class={`ph-duotone ${done ? "ph-check-circle" : running ? "ph-spinner-ball" : "ph-circle"}`}
+                  aria-hidden="true"
+                ></i>
                 {label}
               </li>
             {/each}
@@ -550,7 +555,6 @@
 
         <div class="result" data-setup-state={submissionState} aria-live="polite">
           {#if resultMessage}<p>{resultMessage}</p>{/if}
-          {#if installationUrl}<a href={installationUrl}>Open your status page</a>{/if}
           {#if repositoryUrl || workflowUrl}
             <div class="recovery-links" data-recovery-links>
               {#if repositoryUrl}<a href={repositoryUrl} target="_blank" rel="noopener noreferrer">Open repository</a>{/if}
@@ -572,25 +576,38 @@
           <button class="primary-button" type="button" onclick={nextStep}>
             <span data-step-card-button-label>{nextStepLabel}</span>
           </button>
+        {:else if submissionState === "success" && installationUrl}
+          <!--
+            Once the page exists, going there is the only thing left to do.
+            Offering to set up again invited a second repository from somebody
+            who had just finished making one.
+          -->
+          <a class="primary-button" href={installationUrl} data-open-status-page>
+            <span data-step-card-button-label>Open Status Page</span>
+          </a>
         {:else}
           <button class="primary-button" type="submit" disabled={submitting}>
             <span data-step-card-button-label>
               {submitting
                 ? "Setting up Velvet…"
-                : submissionState === "success"
-                  ? "Set up again"
-                  : submissionState === "permission-required"
-                    ? "Continue with GitHub"
-                    : submissionState === "failed"
-                      ? retryAvailable
-                        ? "Retry setup"
-                        : "Try setup again"
-                      : "Create status page"}
+                : submissionState === "permission-required"
+                  ? "Continue with GitHub"
+                  : submissionState === "failed"
+                    ? retryAvailable
+                      ? "Retry setup"
+                      : "Try setup again"
+                    : "Create status page"}
             </span>
           </button>
         {/if}
       </StepCard.Footer>
       </StepCard.Root>
+      {#if serialLabel}
+        <p class="card-serial" data-card-serial>
+          <span>Serial Nr.:</span>
+          <span class="card-serial-number">{serialLabel}</span>
+        </p>
+      {/if}
     </form>
   </main>
   <footer class="page-footer">
@@ -703,11 +720,8 @@
   /* Set to match the board's silkscreen: white, monospace, and at the size the
      identity block prints its small lines. It sits over the backdrop rather
      than in it, because that SVG is generated at build time. */
-  .board-serial {
-    position: fixed;
-    right: clamp(1rem, 4vw, 3rem);
-    bottom: clamp(3.5rem, 7vw, 5rem);
-    z-index: 0;
+  .board-serial,
+  .card-serial {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -717,18 +731,31 @@
     font-size: 0.8125rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    pointer-events: none;
     user-select: none;
   }
-  /* Inverted, the way a board prints a value meant to be read rather than
-     skimmed, which also sets it apart from the surrounding legends. */
-  .board-serial-number {
+  .board-serial-number,
+  .card-serial-number {
     padding: 0.1rem 0.4rem;
     border-radius: 0.15rem;
     background: color-mix(in srgb, #fff 62%, transparent);
     color: var(--setup-base);
   }
+  /* Centred under the card, where somebody reading the page is already looking.
+     The board print stays as well, since it belongs to the artwork. */
+  .card-serial {
+    justify-content: center;
+    margin-top: 1.25rem;
+  }
+  .board-serial {
+    position: fixed;
+    right: clamp(1rem, 4vw, 3rem);
+    bottom: clamp(3.5rem, 7vw, 5rem);
+    z-index: 0;
+    pointer-events: none;
+  }
   @media (max-width: 720px) {
+    /* Only the board print goes; the one under the card is the readable copy
+       and stays on a narrow screen. */
     .board-serial {
       display: none;
     }
@@ -953,10 +980,18 @@
   .deployment-progress i {
     flex: none;
     color: var(--setup-accent);
-    font-size: 1.375rem;
+    font-size: 1.625rem;
   }
   .deployment-progress li.complete i {
     color: var(--setup-success);
+  }
+  .deployment-progress li.running i {
+    animation: velvet-spin 900ms linear infinite;
+  }
+  @keyframes velvet-spin {
+    to {
+      transform: rotate(1turn);
+    }
   }
   .result {
     min-height: 2rem;
