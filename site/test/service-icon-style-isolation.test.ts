@@ -4,6 +4,14 @@ import { resolve } from "node:path";
 import { test } from "bun:test";
 import { chromium } from "playwright";
 
+/**
+ * Launching a browser takes far longer than a unit test, and how much longer
+ * depends on what else the machine is doing. The default five seconds covered
+ * it until the suite grew, at which point the test began failing in CI for
+ * being slow rather than for finding a defect.
+ */
+const BROWSER_TIMEOUT_MS = 120_000;
+
 test("keeps affected UI styles safe when component CSS loses its scope", async () => {
   const siteRoot = resolve(import.meta.dirname, "..");
   const iconOptionSource = await readFile(
@@ -92,4 +100,4 @@ test("keeps affected UI styles safe when component CSS loses its scope", async (
   } finally {
     await browser.close();
   }
-});
+}, BROWSER_TIMEOUT_MS);
