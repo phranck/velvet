@@ -656,3 +656,64 @@ test("keeps the merge commit needed to reconcile a completed update", async () =
     },
   ]);
 });
+
+test("accepts the test-merge commit GitHub reports on an open pull request", async () => {
+  const client = app(async (request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    return Response.json([
+      {
+        number: 12,
+        state: "open",
+        html_url: "https://github.com/example/status/pull/12",
+        // GitHub computes a merge candidate and reports it here even while the
+        // pull request is open. Only merged_at says a merge actually happened.
+        merged_at: null,
+        merge_commit_sha: mergeSha,
+        head: { ref: "velvet/update/2.1.0", sha: updateSha },
+        base: { ref: "main", sha: baseSha },
+      },
+    ]);
+  });
+  const repository = await client.forRepository(7, 99);
+
+  const [pullRequest] = await repository.pullRequests("2.1.0");
+
+  assert.equal(pullRequest?.state, "open");
+  assert.equal(pullRequest?.mergedAt, null);
+  assert.equal(pullRequest?.mergeCommitSha, mergeSha);
+});
+
+test("rejects a merged pull request that names no commit", async () => {
+  const client = app(async (request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    return Response.json([
+      {
+        number: 12,
+        state: "closed",
+        html_url: "https://github.com/example/status/pull/12",
+        merged_at: "2026-08-01T12:00:00Z",
+        merge_commit_sha: null,
+        head: { ref: "velvet/update/2.1.0", sha: updateSha },
+        base: { ref: "main", sha: baseSha },
+      },
+    ]);
+  });
+  const repository = await client.forRepository(7, 99);
+
+  await assert.rejects(
+    () => repository.pullRequests("2.1.0"),
+    /pull request response was invalid/u,
+  );
+});
