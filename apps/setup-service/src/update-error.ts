@@ -1,4 +1,5 @@
 import { GitHubApiError } from "./github-api.js";
+import { UpdateAccessError } from "./update-access.js";
 
 /**
  * Stable identifiers for failures at the managed-update boundary.
@@ -9,6 +10,10 @@ import { GitHubApiError } from "./github-api.js";
  * which is why there are few of them.
  */
 export type ManagedUpdateErrorCode =
+  /** The signed-in user may not act on the requested installation. */
+  | "UPDATE_ACCESS_DENIED"
+  /** The request did not name an installation, repository, and version. */
+  | "UPDATE_REQUEST_INVALID"
   /** The release to install is not a valid, complete Velvet release. */
   | "UPDATE_RELEASE_INVALID"
   /** The installation's own configuration or version lock cannot be used. */
@@ -35,6 +40,10 @@ export interface PublicManagedUpdateError {
 }
 
 const SAFE_MESSAGES: Record<ManagedUpdateErrorCode, string> = {
+  UPDATE_ACCESS_DENIED:
+    "This Velvet installation is not available to the signed-in account.",
+  UPDATE_REQUEST_INVALID:
+    "The update request did not identify an installation to act on.",
   UPDATE_RELEASE_INVALID: "The selected Velvet release could not be verified.",
   UPDATE_INSTALLATION_INVALID:
     "This installation's Velvet configuration could not be read.",
@@ -84,6 +93,7 @@ export class ManagedUpdateError extends Error {
  */
 export function managedUpdateErrorCode(cause: unknown): ManagedUpdateErrorCode {
   if (cause instanceof ManagedUpdateError) return cause.code;
+  if (cause instanceof UpdateAccessError) return "UPDATE_ACCESS_DENIED";
   if (cause instanceof GitHubApiError) {
     return cause.status >= 500 ||
       cause.status === 429 ||
@@ -92,6 +102,30 @@ export function managedUpdateErrorCode(cause: unknown): ManagedUpdateErrorCode {
       : "UPDATE_GITHUB_REJECTED";
   }
   return "UPDATE_FAILED";
+}
+
+const STATUSES: Record<ManagedUpdateErrorCode, number> = {
+  UPDATE_ACCESS_DENIED: 403,
+  UPDATE_REQUEST_INVALID: 400,
+  UPDATE_RELEASE_INVALID: 500,
+  UPDATE_INSTALLATION_INVALID: 409,
+  UPDATE_REPOSITORY_CHANGED: 409,
+  UPDATE_GITHUB_UNAVAILABLE: 503,
+  UPDATE_GITHUB_REJECTED: 502,
+  UPDATE_FAILED: 500,
+};
+
+/**
+ * The HTTP status one update failure is reported with.
+ *
+ * Kept beside the codes rather than at the route, so a new code cannot be
+ * added without deciding what a caller is told about it.
+ *
+ * @param code - The stable code being reported.
+ * @returns The status for that code.
+ */
+export function managedUpdateErrorStatus(code: ManagedUpdateErrorCode): number {
+  return STATUSES[code];
 }
 
 /**

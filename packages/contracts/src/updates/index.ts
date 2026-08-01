@@ -27,6 +27,7 @@ export type { ManagedTemplatePath } from "./validation.js";
 export {
   MANAGED_UPDATE_REASONS,
   MANAGED_UPDATE_STATES,
+  VELVET_UPDATE_CHECK_NAME,
 } from "./operations.js";
 export type {
   ManagedUpdateReason,

@@ -5,6 +5,7 @@ import {
   validateSetupRequest,
   validateSetupSession,
   validateSetupStatus,
+  VELVET_UPDATE_CHECK_NAME,
   type SetupEvent,
   type SetupRequest,
 } from "@velvet/contracts";
@@ -33,10 +34,21 @@ import {
 } from "./session.js";
 import { publicSetupError, SetupServiceError } from "./setup-error.js";
 import { embeddedVelvetReleases } from "./update-releases.js";
+import {
+  jsonResponse,
+  readBoundedJson,
+  RequestTooLargeError,
+} from "./http.js";
+import { createGitHubUpdateClient } from "./update-github.js";
+import { createManagedUpdateOrchestrator } from "./update-orchestrator.js";
+import {
+  createUpdateRoutes,
+  UPDATE_ROUTES,
+  type UpdateRoutes,
+} from "./update-routes.js";
 import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.js";
 
 const SESSION_MAX_AGE_SECONDS = 30 * 60;
-const MAX_REQUEST_BYTES = 256 * 1_024;
 
 type ProvisionFunction = typeof provisionVelvet;
 type StaticAssetProvider = (path: string) => Promise<Response | null>;
@@ -48,6 +60,7 @@ interface SetupHandlerOptions {
   logger: AuditLogger;
   provision?: ProvisionFunction;
   releases?: ManagedUpdateReleaseProvider;
+  updates?: UpdateRoutes;
   staticAsset?: StaticAssetProvider;
   setupRateLimiter?: RateLimiter;
   authRateLimiter?: RateLimiter;
@@ -61,6 +74,7 @@ export function createSetupHandler(
 ): (request: Request) => Promise<Response> {
   const provision = options.provision ?? provisionVelvet;
   const releases = options.releases ?? embeddedVelvetReleases();
+  const updates = options.updates ?? defaultUpdateRoutes(options, releases);
   const setupRateLimiter =
     options.setupRateLimiter ??
     createRateLimiter({ limit: 10, windowMs: 60_000, maxEntries: 2_000 });
@@ -344,24 +358,30 @@ export function createSetupHandler(
         return finish(jsonResponse(session.operation));
       }
 
-      if (route === "/api/updates") {
-        if (request.method !== "GET") return reject(methodError(), "updates");
+      if (UPDATE_ROUTES.includes(route)) {
+        // Authenticated throughout, because everything here concerns one
+        // person's installation rather than public information about Velvet.
         if (!authenticated(session)) {
           return reject(authenticationRequired(), "updates");
         }
-        // Authenticated because the release notes describe a version a user is
-        // being offered, and offering it is part of managing their
-        // installation rather than public information about the product.
-        const version = releases.latest();
-        const release = await releases.get(version);
-        return finish(
-          jsonResponse({
-            availableVersion: version,
-            releaseType: release.manifest.releaseType,
-            automaticInstallEligible: release.manifest.automaticInstallEligible,
-            releaseNotes: release.manifest.releaseNotes,
-          }),
-        );
+        if (request.method !== "GET") {
+          const mutationError = mutationBoundaryError(
+            request,
+            session,
+            options.config,
+          );
+          if (mutationError) return reject(mutationError, "updates");
+        }
+        const response = await updates.handle({
+          route,
+          url,
+          request,
+          session,
+          requestId: currentRequestId,
+        });
+        return response
+          ? finish(response)
+          : reject(methodError(), "updates");
       }
 
       if (route === "/api/logout") {
@@ -653,17 +673,31 @@ function installationForOwner(
   );
 }
 
-async function readBoundedJson(request: Request): Promise<unknown> {
-  const contentLength = Number(request.headers.get("Content-Length"));
-  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
-    throw new RequestTooLargeError();
-  }
-  const bytes = new Uint8Array(await request.arrayBuffer());
-  if (bytes.byteLength > MAX_REQUEST_BYTES) throw new RequestTooLargeError();
-  return JSON.parse(new TextDecoder().decode(bytes));
+/**
+ * Builds the managed-update routes from the service's own configuration.
+ *
+ * Constructing them here rather than requiring them as an argument means a
+ * deployment cannot start with the update surface missing, which would present
+ * as installations that never see an update rather than as a failure.
+ */
+function defaultUpdateRoutes(
+  options: SetupHandlerOptions,
+  releases: ManagedUpdateReleaseProvider,
+): UpdateRoutes {
+  return createUpdateRoutes({
+    github: options.github,
+    releases,
+    logger: options.logger,
+    orchestrator: createManagedUpdateOrchestrator({
+      github: createGitHubUpdateClient({
+        appId: options.config.github.appId,
+        privateKey: options.config.github.privateKey,
+      }),
+      releases,
+      requiredCheckNames: [VELVET_UPDATE_CHECK_NAME],
+    }),
+  });
 }
-
-class RequestTooLargeError extends Error {}
 
 function allowlistedAssetPath(pathname: string): string | null {
   if (pathname === "/onboarding/") return "index.html";
@@ -671,17 +705,6 @@ function allowlistedAssetPath(pathname: string): string | null {
     pathname,
   );
   return match?.[1] ?? null;
-}
-
-function jsonResponse(
-  body: unknown,
-  status = 200,
-  headers?: HeadersInit,
-): Response {
-  return Response.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...headers },
-  });
 }
 
 function redirectResponse(location: string, headers?: HeadersInit): Response {

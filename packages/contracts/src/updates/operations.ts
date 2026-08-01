@@ -7,6 +7,17 @@
  * silently reaching an interface that has no wording for it.
  */
 
+/**
+ * The check run a managed update waits for before merging.
+ *
+ * The name is shared because two sides have to agree on it exactly: the
+ * workflow in an installation's repository publishes a check run under this
+ * name, and the service refuses to merge until a check with this name has
+ * succeeded. A mismatch does not fail loudly; it makes every update wait
+ * forever, which is why the string lives here rather than at either end.
+ */
+export const VELVET_UPDATE_CHECK_NAME = "Velvet update check";
+
 /** Where an update operation currently stands. */
 export const MANAGED_UPDATE_STATES = [
   "waiting_for_checks",

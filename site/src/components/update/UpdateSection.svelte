@@ -7,7 +7,7 @@
   } from "../overlay/index.js";
   import ReleaseNotes from "../release-notes/ReleaseNotes.svelte";
   import { describeUpdate, isUpdateRunning } from "../../lib/update-state.js";
-  import type { AvailableRelease } from "../../lib/update-client.js";
+  import type { InstallationUpdate } from "../../lib/update-client.js";
   import type {
     ManagedUpdateReason,
     ManagedUpdateState,
@@ -23,7 +23,7 @@
     onAutomaticChange,
   }: {
     installedVersion: string;
-    release: AvailableRelease | null;
+    release: InstallationUpdate | null;
     automaticSecurityUpdates: boolean;
     updateState?: ManagedUpdateState;
     updateReason?: ManagedUpdateReason;

@@ -74,6 +74,7 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
 function harness(
   github = githubClient(),
   logger: Parameters<typeof createSetupHandler>[0]["logger"] = () => {},
+  updates?: Parameters<typeof createSetupHandler>[0]["updates"],
 ) {
   let tokenIndex = 0;
   let idIndex = 0;
@@ -86,6 +87,7 @@ function harness(
     sessions,
     github,
     logger,
+    ...(updates ? { updates } : {}),
     randomToken: () => `${tokenIndex++}`.padStart(43, "B"),
     requestId: () => `request${idIndex++}`.padEnd(20, "0"),
     errorId: () => `error${idIndex++}`.padEnd(20, "0"),
@@ -716,39 +718,88 @@ test("serves only allowlisted onboarding assets", async () => {
   assert.equal((await missing.json()).error.code, "NOT_FOUND");
 });
 
-test("offers the installable release only to an authenticated session", async () => {
-  const { handler, sessions } = harness(githubClient());
+/** Records what the handler forwarded, so the boundary can be tested alone. */
+function recordingUpdateRoutes() {
+  const seen: { route: string; method: string }[] = [];
+  return {
+    seen,
+    routes: {
+      async handle(input: {
+        route: string;
+        request: Request;
+      }): Promise<Response | null> {
+        seen.push({ route: input.route, method: input.request.method });
+        return input.request.method === "DELETE"
+          ? null
+          : Response.json({ forwarded: true });
+      },
+    },
+  };
+}
 
-  const anonymous = await handler(new Request(`${origin}/api/updates`));
-  assert.equal(anonymous.status, 401);
-  const denied = await anonymous.json();
-  assert.equal("releaseNotes" in denied, false, "nothing leaks before sign-in");
+test("reaches the update routes only through an authenticated session", async () => {
+  const recorder = recordingUpdateRoutes();
+  const { handler, sessions } = harness(
+    githubClient(),
+    () => {},
+    recorder.routes,
+  );
+
+  for (const route of ["/api/updates", "/api/installations"]) {
+    const anonymous = await handler(new Request(`${origin}${route}`));
+    assert.equal(anonymous.status, 401);
+    assert.equal((await anonymous.json()).error.code, "AUTHENTICATION_REQUIRED");
+  }
+  assert.deepEqual(recorder.seen, [], "nothing reaches the routes unauthenticated");
 
   const browser = await authenticate(handler, sessions);
   const response = await handler(
-    new Request(`${origin}/api/updates`, {
+    new Request(`${origin}/api/updates?installation=7&repository=9`, {
       headers: { Cookie: `__Host-velvet_session=${browser.cookie}` },
     }),
   );
 
   assert.equal(response.status, 200);
-  const body = (await response.json()) as {
-    availableVersion: string;
-    releaseType: string;
-    automaticInstallEligible: boolean;
-    releaseNotes: string;
-  };
-  assert.match(body.availableVersion, /^\d+\.\d+\.\d+/u);
-  assert.equal(["security", "fix", "feature"].includes(body.releaseType), true);
-  assert.equal(typeof body.automaticInstallEligible, "boolean");
-  assert.equal(body.releaseNotes.length > 0, true);
+  assert.deepEqual(await response.json(), { forwarded: true });
+  assert.deepEqual(recorder.seen, [{ route: "/api/updates", method: "GET" }]);
 });
 
-test("rejects a write method on the update endpoint", async () => {
-  const { handler, sessions } = harness(githubClient());
+test("holds update writes to the same origin and CSRF rules as setup", async () => {
+  const recorder = recordingUpdateRoutes();
+  const { handler, sessions } = harness(
+    githubClient(),
+    () => {},
+    recorder.routes,
+  );
   const browser = await authenticate(handler, sessions);
 
-  const response = await handler(
+  const withoutToken = await handler(
+    new Request(`${origin}/api/updates`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+      },
+    }),
+  );
+  assert.equal(withoutToken.status, 403);
+  assert.equal((await withoutToken.json()).error.code, "CSRF_REJECTED");
+
+  const foreignOrigin = await handler(
+    new Request(`${origin}/api/updates`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: "https://attacker.example",
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+    }),
+  );
+  assert.equal(foreignOrigin.status, 403);
+  assert.equal((await foreignOrigin.json()).error.code, "ORIGIN_REJECTED");
+  assert.deepEqual(recorder.seen, [], "no write reaches the routes unproven");
+
+  const accepted = await handler(
     new Request(`${origin}/api/updates`, {
       method: "POST",
       headers: {
@@ -758,6 +809,30 @@ test("rejects a write method on the update endpoint", async () => {
       },
     }),
   );
+  assert.equal(accepted.status, 200);
+  assert.deepEqual(recorder.seen, [{ route: "/api/updates", method: "POST" }]);
+});
+
+test("reports an unsupported update method rather than forwarding it", async () => {
+  const recorder = recordingUpdateRoutes();
+  const { handler, sessions } = harness(
+    githubClient(),
+    () => {},
+    recorder.routes,
+  );
+  const browser = await authenticate(handler, sessions);
+
+  const response = await handler(
+    new Request(`${origin}/api/updates`, {
+      method: "DELETE",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+    }),
+  );
 
   assert.equal(response.status, 405);
+  assert.equal((await response.json()).error.code, "METHOD_NOT_ALLOWED");
 });
