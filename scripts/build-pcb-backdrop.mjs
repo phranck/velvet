@@ -386,11 +386,16 @@ function complianceMarks(x, y, height, marks) {
   /**
    * Stamps a sourced logo at the row height, scaled from its own viewBox.
    *
+   * The viewBox origin is subtracted, not just its size used. A logo whose
+   * artwork starts away from zero, which is what a measured bounding box gives
+   * you, would otherwise be displaced by that origin: the RoHS mark begins at
+   * y=286 and hung exactly that far below the others.
+   *
    * @param logo - Entry from `scripts/compliance-marks.json`.
    * @returns The width it consumed.
    */
   const stamp = (logo) => {
-    const [, , boxWidth, boxHeight] = logo.viewBox;
+    const [boxX, boxY, boxWidth, boxHeight] = logo.viewBox;
     const scale = height / boxHeight;
     const inner = logo.paths
       .map(
@@ -399,7 +404,7 @@ function complianceMarks(x, y, height, marks) {
       )
       .join("");
     elements.push(
-      `<g transform="translate(${coordinate(cursor)} ${coordinate(y - height)}) scale(${coordinate(scale)})" fill="${SILKSCREEN}" stroke="none">${inner}</g>`,
+      `<g transform="translate(${coordinate(cursor - boxX * scale)} ${coordinate(y - height - boxY * scale)}) scale(${coordinate(scale)})" fill="${SILKSCREEN}" stroke="none">${inner}</g>`,
     );
     return boxWidth * scale;
   };
