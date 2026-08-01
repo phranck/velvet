@@ -590,7 +590,18 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator(".steps").evaluate((element) =>
         getComputedStyle(element).columnGap,
       ),
-      "42px",
+      "32px",
+    );
+    // The row must stay a row. It wrapped when the grid was fixed at four
+    // columns and a fifth step was added, dropping Install onto its own line.
+    assert.deepEqual(
+      await page.locator(".steps").evaluate((element) => {
+        const tops = [...element.querySelectorAll("button")].map((button) =>
+          Math.round(button.getBoundingClientRect().top),
+        );
+        return { count: tops.length, rows: [...new Set(tops)].length };
+      }),
+      { count: 5, rows: 1 },
     );
     assert.deepEqual(
       await page.locator(".steps li").first().evaluate((element) => {

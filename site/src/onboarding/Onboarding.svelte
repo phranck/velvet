@@ -319,7 +319,7 @@
     </section>
 
     <nav aria-label="Setup progress">
-      <ol class="steps">
+      <ol class="steps" style={`--step-count: ${STEPS.length}`}>
         {#each STEPS as label, index (label)}
           <li>
             <SquircleStep
@@ -764,11 +764,15 @@
     line-height: 1.3;
   }
   .steps {
-    --step-size: clamp(4.5rem, 18vw, 5.5rem);
-    --step-gap: clamp(0.9rem, 4vw, 2.625rem);
+    /* Sized so the whole row fits a narrow phone. Five tiles and four gaps come
+       to roughly 300px at the lower bound, which clears a 320px viewport. */
+    --step-size: clamp(3.4rem, 15vw, 5.5rem);
+    --step-gap: clamp(0.5rem, 2.5vw, 2.25rem);
 
     display: grid;
-    grid-template-columns: repeat(4, var(--step-size));
+    /* Driven by the number of steps, so adding one does not wrap the row as it
+       did when this was fixed at four. */
+    grid-template-columns: repeat(var(--step-count, 4), var(--step-size));
     align-items: center;
     justify-content: center;
     gap: var(--step-gap);
