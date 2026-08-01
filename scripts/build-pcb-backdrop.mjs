@@ -380,7 +380,7 @@ function complianceMarks(x, y, height, marks) {
   const elements = [];
   // Generous, because the marks are four unrelated symbols rather than a
   // sequence. Set close together they read as one graphic.
-  const gap = height * 0.85;
+  const gap = height * 1.4;
   let cursor = x;
 
   /**
@@ -424,24 +424,12 @@ function complianceMarks(x, y, height, marks) {
   cursor += stamp(marks.ce) + gap;
   cursor += stamp(marks.fcc) + gap;
 
-  // RoHS has no official pictogram. What boards actually carry is a tick beside
-  // the wording in a rounded frame, an arrangement generic enough to draw here
-  // rather than take from a stock asset, which would drag a licence and an
-  // attribution requirement along with it.
-  const frameHeight = height;
-  const tickCell = frameHeight * 0.92;
-  const frameWidth = tickCell + frameHeight * 2.5;
-  const frameTop = y - frameHeight;
-  const stroke = frameHeight * 0.09;
-  const radius = frameHeight * 0.16;
-  const divider = cursor + tickCell;
-  elements.push(
-    `<rect x="${coordinate(cursor)}" y="${coordinate(frameTop)}" width="${coordinate(frameWidth)}" height="${coordinate(frameHeight)}" rx="${coordinate(radius)}" fill="none" stroke-width="${coordinate(stroke)}"/>`,
-    `<path d="M${coordinate(divider)},${coordinate(frameTop)} v${coordinate(frameHeight)}" fill="none" stroke-width="${coordinate(stroke)}"/>`,
-    `<path d="M${coordinate(cursor + tickCell * 0.24)},${coordinate(frameTop + frameHeight * 0.54)} l${coordinate(tickCell * 0.2)},${coordinate(frameHeight * 0.22)} l${coordinate(tickCell * 0.34)},${coordinate(-frameHeight * 0.42)}" fill="none" stroke-width="${coordinate(stroke * 1.5)}" stroke-linecap="round" stroke-linejoin="round"/>`,
-    `<text x="${coordinate(divider + frameHeight * 0.22)}" y="${coordinate(frameTop + frameHeight * 0.56)}" font-size="${coordinate(frameHeight * 0.46)}" letter-spacing="0" font-weight="700">RoHS</text>`,
-    `<text x="${coordinate(divider + frameHeight * 0.22)}" y="${coordinate(frameTop + frameHeight * 0.88)}" font-size="${coordinate(frameHeight * 0.26)}" letter-spacing="0.3" font-weight="600">COMPLIANT</text>`,
-  );
+  // RoHS, as a tick and the wording inside a ring. Sourced rather than drawn,
+  // since it has no official pictogram and this arrangement is the conventional
+  // one. Its own bounding box was measured rather than estimated, so the ring
+  // sits on the same baseline as the marks beside it.
+  cursor += stamp(marks.rohs);
+
   return elements;
 }
 
