@@ -4,3 +4,8 @@ velvet-dist/
 site/public/CNAME
 *.tsbuildinfo
 .DS_Store
+
+# Local agent workspaces, never published
+.claude/
+.codex/
+.serena/
