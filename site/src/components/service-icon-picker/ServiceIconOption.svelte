@@ -99,16 +99,6 @@
     opacity: 0;
     transition: none;
   }
-  /* Where these render small, two concentric rings stop reading as two rings
-     and blur together, so a consumer can ask for one outline instead. Driven
-     by a variable rather than a measured width, because measuring an element
-     in order to change how it renders invites a feedback loop. */
-  .service-icon-option .selection-outline.inner {
-    display: var(--picker-inner-ring-display, block);
-  }
-  .service-icon-option .selection-outline.outer {
-    stroke-width: var(--picker-outer-ring-width, 1);
-  }
   .service-icon-option .selection-outline {
     color: var(--picker-accent, #6366f1);
     opacity: 0;
