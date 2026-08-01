@@ -196,6 +196,30 @@ test("creates only a signed session cookie and applies security headers", async 
   assert.equal(policy.includes("script-src 'self' 'unsafe-inline'"), false);
   assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
+
+  // Analytics needs the same origin in both directives, since the script is
+  // fetched from it and its events are posted back to it. Granting one without
+  // the other is the failure worth guarding: the script loads, the page looks
+  // instrumented, and nothing is ever recorded.
+  const analytics = "https://umami.layered.work";
+  const directive = (name: string) =>
+    policy
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${name} `)) ?? "";
+  assert.ok(
+    directive("script-src").includes(analytics),
+    "the analytics script has to be loadable",
+  );
+  assert.ok(
+    directive("connect-src").includes(analytics),
+    "its events have to be sendable, or the script records nothing",
+  );
+  // Nothing else was widened along with it.
+  assert.match(policy, /object-src 'none'/);
+  assert.match(policy, /base-uri 'none'/);
+  assert.match(policy, /frame-ancestors 'none'/);
+  assert.equal(directive("default-src"), "default-src 'self'");
 });
 
 test("uses one-time OAuth state and rotates the authenticated session", async () => {
