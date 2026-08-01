@@ -7,13 +7,19 @@ import {
   type NormalizedService,
 } from "@velvet/contracts";
 
+// Imported from the modules themselves rather than from the service-editor
+// barrel. The barrel also re-exports Svelte components, and a plain TypeScript
+// consumer that reaches them drags every test that loads this file into needing
+// a Svelte transform it has no reason to need.
 import {
   createHeaderDraft,
   createJsonAssertionDraft,
   createServiceDraft,
+} from "../components/service-editor/model.js";
+import {
   validateServiceDrafts,
   type ContractServiceDraft,
-} from "../components/service-editor";
+} from "../components/service-editor/validation.js";
 import type { VelvetLayout } from "../lib/config";
 import { canonicalConfiguratorTheme } from "../lib/configuration-theme.js";
 import { isCuratedServiceIcon } from "../lib/icons.js";
