@@ -464,7 +464,7 @@ contain credentials, secret values, configuration content, or your status data.
 
 ## GitHub workflows and permissions
 
-The direct template contains the supported workflows. Their essential access is:
+An installation carries these workflows. Their essential access is:
 
 | Workflow | Purpose | Permissions |
 | --- | --- | --- |
