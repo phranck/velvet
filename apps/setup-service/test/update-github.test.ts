@@ -689,7 +689,12 @@ test("accepts the test-merge commit GitHub reports on an open pull request", asy
   assert.equal(pullRequest?.mergeCommitSha, mergeSha);
 });
 
-test("rejects a merged pull request that names no commit", async () => {
+test("accepts the merged pull request the list endpoint actually returns", async () => {
+  // Observed against real GitHub: the list representation carries `merged_at`
+  // for a merged pull request and omits `merge_commit_sha` altogether.
+  // Requiring the two together rejected every merged pull request Velvet reads
+  // back after merging one, so an update that had already succeeded reported
+  // that it could not be completed.
   const client = app(async (request) => {
     const url = new URL(request.url);
     if (url.pathname.endsWith("/access_tokens")) {
@@ -704,7 +709,6 @@ test("rejects a merged pull request that names no commit", async () => {
         state: "closed",
         html_url: "https://github.com/example/status/pull/12",
         merged_at: "2026-08-01T12:00:00Z",
-        merge_commit_sha: null,
         head: { ref: "velvet/update/2.1.0", sha: updateSha },
         base: { ref: "main", sha: baseSha },
       },
@@ -712,10 +716,11 @@ test("rejects a merged pull request that names no commit", async () => {
   });
   const repository = await client.forRepository(7, 99);
 
-  await assert.rejects(
-    () => repository.pullRequests("2.1.0"),
-    /pull request response was invalid/u,
-  );
+  const [pullRequest] = await repository.pullRequests("2.1.0");
+
+  assert.equal(pullRequest?.state, "closed");
+  assert.equal(pullRequest?.mergedAt, "2026-08-01T12:00:00Z");
+  assert.equal(pullRequest?.mergeCommitSha, null);
 });
 
 test("accepts a freshly created pull request that omits its merge fields", async () => {
@@ -749,4 +754,57 @@ test("accepts a freshly created pull request that omits its merge fields", async
     null,
     "an absent field is normalised to null for callers",
   );
+});
+
+test("commits to a branch GitHub has not published to its ref endpoint yet", async () => {
+  // Observed against real GitHub: the single-ref endpoint answers 404 for a
+  // short window after a ref is created, which is not the same as the branch
+  // being gone. Treating it as gone made an update fail immediately after
+  // creating its own branch.
+  let refReads = 0;
+  const treeSha = "d".repeat(40);
+  const client = app(async (request) => {
+    const url = new URL(request.url);
+    if (url.pathname.endsWith("/access_tokens")) {
+      return Response.json({ token: "installation-token" });
+    }
+    if (url.pathname === "/repositories/99") {
+      return Response.json(repositoryResponse());
+    }
+    if (url.pathname.includes("/git/ref/heads/")) {
+      refReads += 1;
+      return refReads < 3
+        ? new Response("{}", { status: 404 })
+        : Response.json({
+            ref: "refs/heads/velvet/update/2.1.0",
+            object: { type: "commit", sha: baseSha },
+          });
+    }
+    if (url.pathname.endsWith("/git/commits/" + baseSha)) {
+      return Response.json({ sha: baseSha, tree: { sha: treeSha } });
+    }
+    if (url.pathname.endsWith("/git/trees")) {
+      return Response.json({ sha: treeSha });
+    }
+    if (url.pathname.endsWith("/git/commits")) {
+      return Response.json({ sha: updateSha });
+    }
+    if (url.pathname.includes("/git/refs/heads/")) {
+      return Response.json({
+        ref: "refs/heads/velvet/update/2.1.0",
+        object: { type: "commit", sha: updateSha },
+      });
+    }
+    throw new Error(`Unexpected request ${url.pathname}`);
+  });
+  const repository = await client.forRepository(7, 99);
+
+  const committed = await repository.commitUpdate(
+    "2.1.0",
+    baseSha,
+    MANAGED_TEMPLATE_PATHS.map((path) => ({ path, content: `${path}\n` })),
+  );
+
+  assert.equal(committed, updateSha);
+  assert.equal(refReads >= 3, true, "it waited for the branch to appear");
 });

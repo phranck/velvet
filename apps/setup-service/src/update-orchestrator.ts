@@ -83,7 +83,19 @@ interface ReconcileContext {
   files: GitHubManagedFile[];
   read: <T>(operation: () => Promise<T>) => Promise<T>;
   requiredCheckNames: readonly string[];
+  sleep: (milliseconds: number) => Promise<void>;
 }
+
+/**
+ * Attempts made to see a branch that was just created.
+ *
+ * GitHub answers the single-ref read with 404 for a short window after a ref
+ * is created, and a 404 is reported as an absent branch rather than as a
+ * failure, so the ordinary retry never sees it. Waiting for the branch to
+ * appear is therefore the only thing that closes that window.
+ */
+const BRANCH_VISIBILITY_ATTEMPTS = 8;
+const BRANCH_VISIBILITY_DELAY_MS = 500;
 
 export function createManagedUpdateOrchestrator(
   options: ManagedUpdateOrchestratorOptions,
@@ -239,6 +251,7 @@ async function reconcileManagedUpdate(
     files,
     read,
     requiredCheckNames: runtime.requiredCheckNames,
+    sleep: runtime.sleep,
   };
   const pullRequests = await read(() => repository.pullRequests(request.version));
   if (pullRequests.length > 1) {
@@ -249,7 +262,11 @@ async function reconcileManagedUpdate(
     if (pullRequest.state === "open") {
       return reconcileOpenPullRequest(context, pullRequest);
     }
-    if (pullRequest.mergedAt && pullRequest.mergeCommitSha) {
+    // Whether it merged is decided by `mergedAt` alone. GitHub omits
+    // `merge_commit_sha` from the list representation, and the merge commit is
+    // not needed here anyway: what follows compares the default branch against
+    // the pull request's base.
+    if (pullRequest.mergedAt) {
       return reconcileMergedUpdate(context, pullRequest);
     }
     return result(request, "failed", "update_closed", pullRequest);
@@ -269,11 +286,7 @@ async function prepareUpdate(
   let branchHead = await read(() => repository.updateBranchHead(request.version));
   if (branchHead === null) {
     await repository.createUpdateBranch(request.version, defaultHead);
-    // GitHub is briefly inconsistent after creating a ref: the single-ref read
-    // that the commit performs can still answer 404 immediately afterwards.
-    // Confirming through the retrying read closes that window, which a real
-    // repository surfaced and no double could have.
-    branchHead = await read(() => repository.updateBranchHead(request.version));
+    branchHead = await waitForUpdateBranch(context);
     if (branchHead === null) {
       return result(request, "failed", "repository_changed");
     }
@@ -296,6 +309,30 @@ async function prepareUpdate(
     defaultHead,
   );
   return result(request, "waiting_for_checks", undefined, pullRequest);
+}
+
+/**
+ * Waits for a freshly created update branch to become readable.
+ *
+ * A single confirming read is not enough. The read reports GitHub's 404 as an
+ * absent branch rather than as a failure, so the retry around safe reads never
+ * fires for it, and an update would fail with `repository_changed` whilst
+ * nothing had changed at all.
+ *
+ * @returns The branch head, or `null` when it never appeared, which by then
+ *   means something really did change underneath the operation.
+ */
+async function waitForUpdateBranch(
+  context: ReconcileContext,
+): Promise<string | null> {
+  for (let attempt = 0; attempt < BRANCH_VISIBILITY_ATTEMPTS; attempt += 1) {
+    const head = await context.read(() =>
+      context.repository.updateBranchHead(context.request.version),
+    );
+    if (head !== null) return head;
+    await context.sleep(BRANCH_VISIBILITY_DELAY_MS);
+  }
+  return null;
 }
 
 async function reconcileOpenPullRequest(
