@@ -1,3 +1,6 @@
+# Companion to velvet-status.yml, for wiring the monitor up by hand. It tracks
+# the `@v1` tag for the same reason: a commit written down here would fall behind
+# the configuration contract and fail every run.
 name: Velvet response times
 
 on:
@@ -18,9 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out status repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Publish Velvet response times
-        uses: phranck/velvet/actions/monitor@1126eb1f6d531c2eff7f0958937574aa7aed2092
+        uses: phranck/velvet/actions/monitor@v1
         with:
           mode: response
         # Map the same explicitly configured header secrets as the status job.

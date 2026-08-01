@@ -1,11 +1,29 @@
+# Wire the Velvet monitor into a repository by hand.
+#
+# A repository created through onboarding receives this workflow already, pinned
+# to the exact revision its release was cut from. This copy is for adding Velvet
+# to a repository yourself, so it tracks the `@v1` tag instead: the tag follows
+# compatible releases, whilst a commit written down here would quietly fall
+# behind the configuration contract and fail every run.
 name: Velvet status
 
 on:
+  # Re-check as soon as the configuration changes, but not when the branch is
+  # first created, since there is nothing to check yet.
+  push:
+    branches: [main]
+    paths:
+      - "velvet.yml"
+      - ".github/workflows/velvet-status.yml"
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch: {}
   repository_dispatch:
     types: [velvet-monitor]
+  # Planned maintenance is opened and closed as an issue, so the page has to be
+  # rebuilt when one changes.
+  issues:
+    types: [opened, closed, reopened, edited, labeled, unlabeled]
 
 permissions:
   contents: write
@@ -17,13 +35,14 @@ concurrency:
 
 jobs:
   monitor:
+    if: (github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000') && (github.event_name != 'issues' || github.event.label.name == 'maintenance' || contains(github.event.issue.labels.*.name, 'maintenance'))
     name: Check services
     runs-on: ubuntu-latest
     steps:
       - name: Check out status repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Publish Velvet status
-        uses: phranck/velvet/actions/monitor@1126eb1f6d531c2eff7f0958937574aa7aed2092
+        uses: phranck/velvet/actions/monitor@v1
         with:
           mode: status
         # Map only explicitly configured header secrets here, for example:

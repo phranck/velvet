@@ -35,3 +35,37 @@ test("status-page action publishes Velvet and third-party license notices", asyn
     /cp "\$VELVET_ROOT\/THIRD_PARTY_NOTICES\.md" "\$VELVET_SITE\/dist\/THIRD_PARTY_NOTICES\.md"/,
   );
 });
+
+test("hand-wiring examples track the v1 tag rather than a commit", async () => {
+  // A commit written into an example goes stale the moment the configuration
+  // contract moves, and then fails every run for whoever copied it. That is what
+  // happened: both monitor examples sat on 1126eb1f, a revision predating
+  // `updates.automaticSecurityUpdates`, which the schema refuses as unknown.
+  //
+  // The workflows an installation receives are pinned by commit on purpose, so
+  // an installation is reproducible, and a guard in the setup service asserts
+  // those. These examples are the opposite case: nobody regenerates them, so
+  // they follow the tag, which is also what RELEASING.md requires of consumer
+  // examples.
+  const examples = [
+    "actions/monitor/examples/velvet-status.yml",
+    "actions/monitor/examples/velvet-response-times.yml",
+    "actions/sync-data/examples/sync-velvet-data.yml",
+  ];
+
+  let checked = 0;
+  for (const path of examples) {
+    const source = await readFile(resolve(repositoryRoot, path), "utf8");
+    const pins = [...source.matchAll(/uses:\s*(phranck\/velvet(?![-\w])[^@\s]*)@(\S+)/gu)];
+    assert.notEqual(pins.length, 0, `${path} uses a Velvet action`);
+    for (const [, action, reference] of pins) {
+      checked += 1;
+      assert.equal(
+        reference,
+        "v1",
+        `${path} pins ${action} at ${reference}; an example tracks the tag`,
+      );
+    }
+  }
+  assert.notEqual(checked, 0, "no Velvet references were recognised at all");
+});

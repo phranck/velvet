@@ -38,11 +38,39 @@ function actionStep(document: Workflow): {
   return step;
 }
 
+/**
+ * Requires every third-party action to be pinned by commit, and Velvet's own to
+ * track its major tag.
+ *
+ * The two rules differ because the risk differs. A tag on somebody else's action
+ * can be moved to code nobody here reviewed, so those are pinned by commit. The
+ * `v1` tag on this repository is moved deliberately as part of releasing, and
+ * `RELEASING.md` requires consumer examples to use it, since nobody regenerates
+ * an example a person copied once. A commit written into one goes stale at the
+ * next contract change and then fails every run for whoever copied it, which is
+ * exactly what issue 149 was.
+ *
+ * The workflows an installation actually receives are a separate matter: those
+ * are pinned by commit so an installation is reproducible, and the setup service
+ * asserts that separately.
+ */
 function assertPinnedActions(document: Workflow): void {
   const steps = Object.values(document.jobs).flatMap(({ steps }) => steps);
   for (const step of steps) {
     if (step.uses === undefined) continue;
-    assert.match(step.uses, /^[^@\s]+@[0-9a-f]{40}$/u);
+    if (step.uses.startsWith("phranck/velvet")) {
+      assert.match(
+        step.uses,
+        /^phranck\/velvet(?:\/[^@\s]+)?@v1$/u,
+        "an example tracks Velvet's major tag rather than a commit",
+      );
+      continue;
+    }
+    assert.match(
+      step.uses,
+      /^[^@\s]+@[0-9a-f]{40}$/u,
+      "a third-party action is pinned by commit",
+    );
   }
 }
 
