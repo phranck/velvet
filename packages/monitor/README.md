@@ -3,7 +3,7 @@
 `@velvet/monitor` executes normalized Velvet HTTP checks and turns their
 results into current status, availability history, and response-time data. It
 uses Bun and Node-compatible `http` and `https` primitives directly, forces
-IPv4 lookup, and has no runtime dependency on Upptime, Globalping, GitHub, or
+IPv4 lookup, and has no runtime dependency on GitHub or
 the presentation layer.
 
 ## Checks and state

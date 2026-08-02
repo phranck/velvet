@@ -529,46 +529,6 @@ branch at `.velvet-data` first. The Action validates the configuration and data,
 builds the static site, generates SEO and social assets, and copies license
 notices into the output directory.
 
-## Migrate from an Upptime status page
-
-An earlier prototype used an Upptime repository as the source and could include
-Globalping-backed IPv6 checks. This is a migration-only boundary in v2.
-
-Run [`vum`](packages/upptime-adapter) without `--write` first:
-
-```bash
-vum --repository owner/status
-```
-
-The dry run resolves one source revision, reads legacy configuration and
-history, checks GitHub Issue state, and reports unsupported behavior without
-changing either repository or local files. Resolve every open legacy incident
-before materializing the bundle:
-
-```bash
-vum --repository owner/status --write --destination ./velvet-migration
-```
-
-The destination must be new or empty. `vum` writes `velvet.yml`, private monitor
-state, all three public documents, and Markdown plus JSON provenance reports only
-after validating the complete bundle. It has no overwrite mode. Legacy IPv6 and
-Globalping services are listed and omitted instead of being converted silently.
-
-Review the report, preserve all applicable source-data notices, and switch
-configuration, native workflows, generated data, and Pages build in one reviewed
-cutover. Keep a pre-cutover commit or tag until status, response sampling,
-incidents, recovery, maintenance, data publication, and Pages are verified.
-
-For rollback, disable the native schedules and revert the complete cutover
-commit. Do not run native and legacy monitors concurrently. Git history keeps
-the removed configuration and workflows recoverable, closed GitHub Issues are
-not deleted, and source license notices must remain with the imported data.
-
-Migration implementation and provenance details live in the
-[`@velvet/upptime-adapter` guide](packages/upptime-adapter/README.md). The legacy
-sync Action exists only to read an Upptime repository during a migration and is
-not part of a Velvet installation.
-
 ## Licensing and generated-data policy
 
 Velvet's MIT license covers its code, schemas, and original assets. Monitoring

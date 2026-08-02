@@ -50,7 +50,6 @@ test("hand-wiring examples track the v1 tag rather than a commit", async () => {
   const examples = [
     "actions/monitor/examples/velvet-status.yml",
     "actions/monitor/examples/velvet-response-times.yml",
-    "actions/sync-data/examples/sync-velvet-data.yml",
   ];
 
   let checked = 0;

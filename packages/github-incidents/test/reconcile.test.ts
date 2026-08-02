@@ -707,7 +707,7 @@ test("returns contract-valid public data without raw issue bodies", async () => 
     services,
     issues: [
       issue(40, "Public API / Readiness is unavailable", secretBody, "incident"),
-      issue(41, "Old Upptime issue", "raw historical data", "incident"),
+      issue(41, "Unrelated issue", "raw historical data", "incident"),
     ],
   });
 

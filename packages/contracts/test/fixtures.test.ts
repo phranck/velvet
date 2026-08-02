@@ -33,7 +33,6 @@ for (const [path, validate] of validFixtures) {
     assert.deepEqual(validate(fixture), { success: true, data: fixture });
 
     const publicData = JSON.stringify(fixture).toLowerCase();
-    assert.equal(publicData.includes("upptime"), false);
     assert.equal(publicData.includes("/health"), false);
     assert.equal(publicData.includes("http://"), false);
     assert.equal(publicData.includes("https://"), false);

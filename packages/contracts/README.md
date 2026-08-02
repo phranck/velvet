@@ -1,6 +1,6 @@
 # Velvet contracts
 
-`@velvet/contracts` is the presentation-independent boundary between Velvet data producers and consumers. It has no dependency on Svelte, Upptime, GitHub issue payloads, monitored endpoint URLs, or a specific monitor implementation.
+`@velvet/contracts` is the presentation-independent boundary between Velvet data producers and consumers. It has no dependency on Svelte, GitHub issue payloads, monitored endpoint URLs, or a specific monitor implementation.
 
 ## Velvet configuration
 
@@ -129,7 +129,6 @@ GitHub, the monitor, setup infrastructure, or Svelte.
 | Direct HTTP execution | One normalized HTTP check plus an injected secret resolver and clock | Redacted observation containing availability, final status, latency, and assertion outcome | Contracts and runtime HTTP primitives; no GitHub or presentation imports |
 | Monitor orchestration and state | Normalized services, observations, previous state, incident policy, and history policy | State transitions and new append-only measurements | Contracts and direct HTTP execution; no Svelte imports |
 | GitHub persistence and incidents | State transitions, measurements, and sanitized incident commands | Repository commits and GitHub Issue operations | Contracts, monitor orchestration, and an injected GitHub client |
-| Upptime migration | Legacy configuration, history, and incident records | Validated Velvet configuration, public documents, and a provenance report | Contracts plus migration-only legacy parsers; never imported by the monitor runtime |
 | Browser onboarding and setup API | User choices and short-lived GitHub App authorization | Validated `velvet.yml` and generated repository changes | Contracts and an injected GitHub App client; generated repositories have no setup-service runtime dependency |
 | Managed-update GitHub operations | One installation ID, one repository ID, validated versions, and the complete Velvet-owned file set | Repository-scoped version discovery, update branch, technical pull request, checks, merge, cleanup, and normal recovery commit | Contracts and bounded GitHub REST access; no monitor, history, Configurator, or persisted user configuration |
 | Svelte presentation | Validated public documents and presentation settings derived from normalized configuration | Static status UI, social image, and SEO files | Contracts and presentation libraries; no monitor, persistence, migration, or endpoint access |

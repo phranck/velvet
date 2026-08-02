@@ -34,43 +34,6 @@ Velvet's code remains MIT-licensed, while the data keeps its separate status.
 The generated `LICENSE` and `THIRD_PARTY_NOTICES.md` files cover Velvet and its
 distributed third-party components, not the consumer dataset.
 
-## Imported data and Upptime migration
-
-Conversion changes a data format; it does not erase source provenance or grant
-new rights. Before importing data:
-
-1. Inspect the source repository's README, data-directory license files,
-   attribution, terms of use, and privacy constraints.
-2. Keep applicable notices with the original data and place any required notice
-   next to the normalized `velvet-data/v1` documents.
-3. Do not delete source notices when old Upptime files or workflows are removed.
-4. Record the source, import date, and transformations when provenance is not
-   already evident from Git history.
-
-The upstream Upptime repository currently licenses its code under MIT and labels
-the data in `history` as
-[ODbL-1.0](https://github.com/upptime/upptime/blob/89365e67b44f101e9f1875aeb27bb0e2893e4ad5/history/LICENSE).
-Consumer repositories can change or supplement those defaults, so the notices
-in the repository being migrated are authoritative.
-
-For ODbL material, preserve the license URI and database-right notices and check
-the attribution, share-alike, and source-access conditions before public use.
-The [ODbL-1.0 text](https://opendatacommons.org/licenses/odbl/1-0/)
-distinguishes the database from its individual contents and explicitly covers
-database rights. Do not describe an ODbL-derived database as MIT-licensed merely
-because Velvet's converter is MIT-licensed.
-
-## Upptime compatibility implementation
-
-`@velvet/upptime-adapter` is an original Velvet implementation based on public
-input formats and documented behavior. It does not copy or execute Upptime
-implementation code. Upptime names identify compatibility and provenance; they
-do not make the adapter an Upptime distribution.
-
-If future work copies or adapts third-party source, the change must first verify
-license compatibility, retain all required copyright and permission notices,
-identify the reused files in `THIRD_PARTY_NOTICES.md`, and update this statement.
-
 ## Bundled and externally loaded third-party materials
 
 The generated browser JavaScript includes Svelte runtime code, the `esm-env`

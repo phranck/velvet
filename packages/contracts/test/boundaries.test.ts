@@ -27,8 +27,7 @@ test("contracts remain independent from presentation, monitor, and GitHub implem
     dependencies.some(
       (dependency) =>
         dependency.includes("svelte") ||
-        dependency.includes("github") ||
-        dependency.includes("upptime"),
+        dependency.includes("github"),
     ),
     false,
   );
@@ -36,7 +35,7 @@ test("contracts remain independent from presentation, monitor, and GitHub implem
 
 test("presentation code cannot import monitor or persistence internals", () => {
   const siteSource = new URL("site/src/", repositoryRoot).pathname;
-  const forbiddenImport = /@velvet\/(?:monitor|github-persistence|upptime-adapter)/;
+  const forbiddenImport = /@velvet\/(?:monitor|github-persistence)/;
 
   for (const path of sourceFiles(siteSource)) {
     assert.doesNotMatch(readFileSync(path, "utf8"), forbiddenImport, path);
@@ -51,7 +50,6 @@ test("package boundary documentation defines input, output, and dependencies", (
     "Direct HTTP execution",
     "Monitor orchestration and state",
     "GitHub persistence and incidents",
-    "Upptime migration",
     "Browser onboarding and setup API",
     "Svelte presentation",
   ]) {
