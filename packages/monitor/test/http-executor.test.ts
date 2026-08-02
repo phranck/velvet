@@ -1,19 +1,55 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "bun:test";
 
-const TEST_TLS_CERTIFICATE = readFileSync(
-  new URL("./fixtures/test-certificate.pem", import.meta.url),
-  "utf8",
-);
-const TEST_TLS_PRIVATE_KEY = [
-  "-----BEGIN PRIVATE KEY-----",
-  readFileSync(
-    new URL("./fixtures/test-private-key-body.txt", import.meta.url),
-    "utf8",
-  ).trim(),
-  "-----END PRIVATE KEY-----",
-].join("\n");
+/**
+ * A throwaway certificate and key for the loopback TLS server used below.
+ *
+ * Generated per run rather than committed. A private key in a repository is
+ * indistinguishable from a real one hidden from secret scanning, however
+ * harmless the key itself happens to be, and a committed certificate expires on
+ * a date nobody will connect to a test written years earlier. The tests need a
+ * certificate for `127.0.0.1`, not any particular one.
+ *
+ * @returns The PEM-encoded certificate and its matching private key.
+ */
+function loopbackTls(): { certificate: string; privateKey: string } {
+  const directory = mkdtempSync(join(tmpdir(), "velvet-monitor-tls-"));
+  try {
+    execFileSync(
+      "openssl",
+      [
+        "req",
+        "-x509",
+        "-newkey",
+        "rsa:2048",
+        "-nodes",
+        "-keyout",
+        join(directory, "key.pem"),
+        "-out",
+        join(directory, "certificate.pem"),
+        // A single day, because it outlives nothing but this run.
+        "-days",
+        "1",
+        "-subj",
+        "/CN=127.0.0.1",
+      ],
+      { stdio: "pipe" },
+    );
+    return {
+      certificate: readFileSync(join(directory, "certificate.pem"), "utf8"),
+      privateKey: readFileSync(join(directory, "key.pem"), "utf8"),
+    };
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+const { certificate: TEST_TLS_CERTIFICATE, privateKey: TEST_TLS_PRIVATE_KEY } =
+  loopbackTls();
 
 type TestCheck = {
   id: string;
