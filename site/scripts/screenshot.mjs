@@ -237,8 +237,12 @@ async function main() {
       `<!doctype html><html><head><meta charset="utf-8"><style>
         *{margin:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+        /* The onboarding's own tones, so the picture sits on the website's
+           board backdrop instead of fighting it. Those are the indigo and
+           fuchsia its two lit corners use, kept dark enough here that the
+           frame reads as depth rather than as a second accent colour. */
         #frame{display:inline-block;padding:${FRAME_PAD}px;border-radius:34px;
-          background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 28%,#c026d3 70%,#ec4899 100%)}
+          background:linear-gradient(135deg,#151824 0%,#242a4d 38%,#3a2c52 74%,#4a2f57 100%)}
         #win{width:${PAGE_W}px;border-radius:12px;overflow:hidden;
           border:1px solid rgba(255,255,255,.08);
           box-shadow:0 60px 140px rgba(0,0,0,.55),0 14px 40px rgba(0,0,0,.45)}

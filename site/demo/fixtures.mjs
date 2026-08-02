@@ -109,13 +109,11 @@ export const demoStatus = {
     service({
       id: "auth",
       name: "Auth",
-      responseTimeMs: 612,
-      status: "degraded",
-      outages: [
-        { daysAgo: 0, minutes: 86 },
-        { daysAgo: 1, minutes: 64 },
-        { daysAgo: 6, minutes: 41 },
-      ],
+      responseTimeMs: 156,
+      // A single outage well in the past. The bars stay honest about a service
+      // having had a bad day without the page itself announcing a problem, which
+      // is not what a first-time visitor should be shown.
+      outages: [{ daysAgo: 41, minutes: 27 }],
     }),
     service({
       id: "mail",
@@ -142,19 +140,29 @@ export const demoResponseTimes = {
   ),
 };
 
+/**
+ * A scheduled maintenance window rather than an open incident.
+ *
+ * Both are drawn from the same panel, so one event is enough to show that
+ * Velvet surfaces them at all. Maintenance is the one to show, because it
+ * leaves every service operational and therefore lets the page read as healthy
+ * whilst still demonstrating the feature. An open incident would put "Some
+ * systems degraded" across the top of the picture the README and the website
+ * both use to introduce the product.
+ */
 export const demoIncidents = {
   schemaVersion: 1,
   generatedAt: FIXED_NOW,
   events: [
     {
-      id: "auth-latency",
-      kind: "incident",
-      state: "open",
-      title: "Elevated login latency in eu-west",
-      summary: "The authentication service is under investigation.",
-      affectedServiceIds: ["auth"],
-      startsAt: "2026-07-28T09:00:00.000Z",
-      endsAt: null,
+      id: "database-upgrade",
+      kind: "maintenance",
+      state: "scheduled",
+      title: "Database upgrade in eu-west",
+      summary: "Brief connection resets are expected while the primary fails over.",
+      affectedServiceIds: ["database"],
+      startsAt: "2026-08-04T22:00:00.000Z",
+      endsAt: "2026-08-04T23:30:00.000Z",
     },
   ],
 };
