@@ -30,7 +30,6 @@ const config = {
   // An instance that configures no analytics is the default everywhere,
   // including here, so the ordinary assertions describe that instance.
   analytics: null,
-  public: { publicOrigin: origin, githubAppSlug: "velvet-setup" },
 } satisfies SetupServiceConfig;
 
 const setupBody = JSON.stringify({

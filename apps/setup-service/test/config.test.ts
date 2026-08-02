@@ -20,18 +20,14 @@ const environment = {
   PORT: "3000",
 };
 
-test("loads deployment secrets without exposing them through public config", () => {
+test("loads the deployment's origin, key, and port from the environment", () => {
   const config = loadSetupServiceConfig(environment);
 
   assert.equal(config.publicOrigin, "https://setup.velvet.dev");
   assert.equal(config.github.privateKey.includes("BEGIN PRIVATE KEY"), true);
   assert.equal(config.secureCookies, true);
   assert.equal(config.port, 3_000);
-  assert.deepEqual(config.public, {
-    publicOrigin: "https://setup.velvet.dev",
-    githubAppSlug: "velvet-setup",
-  });
-  assert.doesNotMatch(JSON.stringify(config.public), /client-secret|PRIVATE KEY|ssss/);
+  assert.equal(config.github.appSlug, "velvet-setup");
 });
 
 test("collects no analytics unless an instance asks for it", () => {
