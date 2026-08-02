@@ -57,7 +57,34 @@ export function createUpdateServices(input: {
       app,
       releases: input.releases,
       orchestrator,
-      log: (entry) =>
+      /*
+       * A sweep reports twice over: one line per repository it acted on, and
+       * one for the sweep itself however little it found. The second is what
+       * separates a schedule that ran and had nothing to do from one that
+       * stopped firing, which the per-repository lines alone cannot show.
+       */
+      log: (entry) => {
+        if (entry.scope === "sweep") {
+          input.logger({
+            level: entry.failures > 0 ? "warn" : "info",
+            requestId: "automatic-security",
+            route: "/api/updates",
+            operation: "automatic-security-sweep",
+            status: entry.failures > 0 ? 502 : 200,
+            outcome: entry.failures > 0 ? "failed" : "succeeded",
+            ...(entry.code ? { code: entry.code } : {}),
+            context: {
+              version: entry.version,
+              eligible: entry.eligible,
+              installations: entry.installations,
+              repositories: entry.repositories,
+              reconciled: entry.reconciled,
+              failures: entry.failures,
+              truncated: entry.truncated,
+            },
+          });
+          return;
+        }
         input.logger({
           level: entry.outcome === "failed" ? "warn" : "info",
           requestId: "automatic-security",
@@ -74,7 +101,8 @@ export function createUpdateServices(input: {
             ...(entry.state ? { state: entry.state } : {}),
             ...(entry.reason ? { reason: entry.reason } : {}),
           },
-        }),
+        });
+      },
     }),
   };
 }

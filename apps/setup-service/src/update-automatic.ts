@@ -66,7 +66,8 @@ export interface AutomaticUpdateRunner {
 }
 
 /** One line per repository a sweep touched, safe for a shared log. */
-export interface AutomaticUpdateLogEntry {
+export interface AutomaticUpdateRepositoryLogEntry {
+  scope: "repository";
   installationId: number;
   repositoryId: number;
   version: string;
@@ -75,6 +76,33 @@ export interface AutomaticUpdateLogEntry {
   reason?: string;
   code?: ManagedUpdateErrorCode;
 }
+
+/**
+ * One line per sweep, written whatever the sweep found.
+ *
+ * A sweep that finds nothing is the case worth seeing, because without a line
+ * of its own it is indistinguishable from a schedule that has stopped firing.
+ * That is the ordinary case too: most releases are not eligible security
+ * releases, so most sweeps touch GitHub not at all and would otherwise be
+ * silent for weeks at a time.
+ */
+export interface AutomaticUpdateSweepLogEntry {
+  scope: "sweep";
+  version: string;
+  /** Whether the release was one that may install itself unattended. */
+  eligible: boolean;
+  installations: number;
+  repositories: number;
+  reconciled: number;
+  failures: number;
+  truncated: boolean;
+  /** Set when the sweep threw, in which case the counts are what it reached. */
+  code?: ManagedUpdateErrorCode;
+}
+
+export type AutomaticUpdateLogEntry =
+  | AutomaticUpdateRepositoryLogEntry
+  | AutomaticUpdateSweepLogEntry;
 
 interface AutomaticUpdateRunnerOptions {
   app: GitHubAppApiOptions;
@@ -212,7 +240,7 @@ export function createAutomaticUpdateRunner(
     return parsed.success ? parsed.data.installedVersion : null;
   };
 
-  const sweep = async (): Promise<AutomaticUpdateSweep> => {
+  const collect = async (): Promise<AutomaticUpdateSweep> => {
     const version = options.releases.latest();
     const release = await options.releases.get(version);
     const manifest = release.manifest as VelvetReleaseManifest;
@@ -256,6 +284,7 @@ export function createAutomaticUpdateRunner(
         const key = `${repository.id}:${version}`;
         if ((attempts.get(key) ?? 0) >= MAX_ATTEMPTS_PER_RELEASE) {
           log({
+            scope: "repository",
             installationId,
             repositoryId: repository.id,
             version,
@@ -266,6 +295,7 @@ export function createAutomaticUpdateRunner(
         const installed = await installedVersion(token, repository);
         if (installed === null) {
           log({
+            scope: "repository",
             installationId,
             repositoryId: repository.id,
             version,
@@ -284,6 +314,7 @@ export function createAutomaticUpdateRunner(
           result.reconciled.push(reconciled);
           attempts.delete(key);
           log({
+            scope: "repository",
             installationId,
             repositoryId: repository.id,
             version,
@@ -297,6 +328,7 @@ export function createAutomaticUpdateRunner(
           result.failures += 1;
           attempts.set(key, (attempts.get(key) ?? 0) + 1);
           log({
+            scope: "repository",
             installationId,
             repositoryId: repository.id,
             version,
@@ -308,6 +340,44 @@ export function createAutomaticUpdateRunner(
     }
 
     return result;
+  };
+
+  /*
+   * Every path out of a sweep leaves exactly one summary line, including the
+   * ordinary one where the release is not eligible and nothing is touched at
+   * all. Wrapping `collect` rather than logging at each return is what makes
+   * that true by construction: a return added later cannot forget to report.
+   */
+  const sweep = async (): Promise<AutomaticUpdateSweep> => {
+    try {
+      const result = await collect();
+      log({
+        scope: "sweep",
+        version: result.version,
+        eligible: result.eligible,
+        installations: result.installations,
+        repositories: result.repositories,
+        reconciled: result.reconciled.length,
+        failures: result.failures,
+        truncated: result.truncated,
+      });
+      return result;
+    } catch (cause) {
+      // A sweep that threw is the one most worth seeing, so it is reported
+      // before the failure travels on to whoever scheduled it.
+      log({
+        scope: "sweep",
+        version: options.releases.latest(),
+        eligible: false,
+        installations: 0,
+        repositories: 0,
+        reconciled: 0,
+        failures: 1,
+        truncated: false,
+        code: managedUpdateErrorCode(cause),
+      });
+      throw cause;
+    }
   };
 
   return {

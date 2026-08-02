@@ -202,7 +202,48 @@ test("touches GitHub not at all whilst no release may install itself", async () 
     assert.equal(sweep.eligible, false, JSON.stringify(options));
     assert.deepEqual(velvet.paths, [], "the cheap question is asked first");
     assert.deepEqual(velvet.requested, []);
+    // Touching nothing is not the same as having nothing to say. Without this
+    // line a sweep that ran and found nothing to do reads exactly like a
+    // schedule that stopped firing, which is the ordinary case for weeks on
+    // end whilst no eligible security release exists.
+    assert.deepEqual(
+      velvet.logs,
+      [
+        {
+          scope: "sweep",
+          version: "2.0.1",
+          eligible: false,
+          installations: 0,
+          repositories: 0,
+          reconciled: 0,
+          failures: 0,
+          truncated: false,
+        },
+      ],
+      JSON.stringify(options),
+    );
   }
+});
+
+test("reports one summary for a sweep that did reach installations", async () => {
+  const velvet = harness({
+    entry: release("2.0.1", { security: true, automatic: true }),
+  });
+
+  await velvet.run();
+
+  const summaries = velvet.logs.filter((entry) => entry.scope === "sweep");
+  assert.equal(summaries.length, 1, "one line per sweep, never more");
+  assert.deepEqual(summaries[0], {
+    scope: "sweep",
+    version: "2.0.1",
+    eligible: true,
+    installations: 1,
+    repositories: 1,
+    reconciled: 1,
+    failures: 0,
+    truncated: false,
+  });
 });
 
 test("reconciles every installation that carries a version lock", async () => {
@@ -228,7 +269,9 @@ test("reconciles every installation that carries a version lock", async () => {
     },
   ]);
   assert.equal(
-    velvet.logs.filter((entry) => entry.outcome === "skipped").length,
+    velvet.logs.filter(
+      (entry) => entry.scope === "repository" && entry.outcome === "skipped",
+    ).length,
     1,
     "a repository that is not a Velvet installation is passed over quietly",
   );
@@ -299,7 +342,9 @@ test("stops retrying a release that keeps failing for one repository", async () 
   assert.equal(velvet.requested.length, 3, "three attempts, then no more");
   assert.equal(abandoning.failures, 0);
   assert.equal(
-    velvet.logs.some((entry) => entry.outcome === "abandoned"),
+    velvet.logs.some(
+      (entry) => entry.scope === "repository" && entry.outcome === "abandoned",
+    ),
     true,
   );
 });
@@ -311,18 +356,23 @@ test("logs what it did without carrying a token", async () => {
 
   await velvet.run();
 
-  assert.deepEqual(velvet.logs, [
-    {
-      installationId: 7,
-      repositoryId: 9,
-      version: "2.0.1",
-      outcome: "reconciled",
-      state: "waiting_for_checks",
-    },
-  ]);
+  assert.deepEqual(
+    velvet.logs.filter((entry) => entry.scope === "repository"),
+    [
+      {
+        scope: "repository",
+        installationId: 7,
+        repositoryId: 9,
+        version: "2.0.1",
+        outcome: "reconciled",
+        state: "waiting_for_checks",
+      },
+    ],
+  );
   assert.equal(
     JSON.stringify(velvet.logs).includes("installation-token"),
     false,
+    "no line carries the token, the summary included",
   );
 });
 
