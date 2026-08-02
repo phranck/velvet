@@ -309,3 +309,58 @@ test("leaves an unsupported method to the surrounding handler", async () => {
   assert.equal(await routes.handle("POST", "/api/installations", {}), null);
   assert.equal(await routes.handle("GET", "/api/setup"), null);
 });
+
+test("changes the reference setting in the repository's own configuration", async () => {
+  const routes = harness();
+
+  const on = await routes.handle("POST", "/api/updates/gallery", {
+    installationId: 7,
+    repositoryId: 9,
+    listed: true,
+  });
+
+  assert.equal(on!.status, 200);
+  assert.deepEqual(await on!.json(), { listedAsReference: true });
+  assert.equal(routes.written.length, 1);
+  assert.match(routes.written[0]!, /listed: true/u);
+  assert.equal(
+    routes.written[0]!.startsWith(CONFIGURATION),
+    true,
+    "the rest of the file is untouched",
+  );
+
+  const again = await routes.handle("POST", "/api/updates/gallery", {
+    installationId: 7,
+    repositoryId: 9,
+    listed: true,
+  });
+
+  assert.equal(again!.status, 200);
+  assert.equal(routes.written.length, 1, "an unchanged answer writes nothing");
+});
+
+test("rejects a reference setting that is not an answer", async () => {
+  const routes = harness();
+
+  const response = await routes.handle("POST", "/api/updates/gallery", {
+    installationId: 7,
+    repositoryId: 9,
+    listed: "yes",
+  });
+
+  assert.equal(response!.status, 400);
+  assert.equal((await response!.json()).error.code, "UPDATE_REQUEST_INVALID");
+  assert.deepEqual(routes.written, []);
+});
+
+test("reports the reference setting when reading an installation", async () => {
+  const routes = harness();
+
+  const response = await routes.handle(
+    "GET",
+    "/api/updates?installation=7&repository=9",
+  );
+
+  assert.equal(response!.status, 200);
+  assert.equal((await response!.json()).listedAsReference, false);
+});

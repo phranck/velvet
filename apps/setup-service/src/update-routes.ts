@@ -22,7 +22,10 @@ import type {
   ManagedUpdateOrchestrator,
   ManagedUpdateReleaseProvider,
 } from "./update-orchestrator-types.js";
-import { setAutomaticSecurityUpdates } from "./update-preference.js";
+import {
+  setAutomaticSecurityUpdates,
+  setGalleryListing,
+} from "./update-preference.js";
 import { isRecord, positiveInteger } from "./update-github-validation.js";
 
 const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
@@ -30,12 +33,14 @@ const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
 const INSTALLATIONS_ROUTE = "/api/installations";
 const UPDATES_ROUTE = "/api/updates";
 const AUTOMATIC_ROUTE = "/api/updates/automatic";
+const GALLERY_ROUTE = "/api/updates/gallery";
 
 /** Every route in this module, so the handler can tell them apart from setup. */
 export const UPDATE_ROUTES: readonly string[] = [
   INSTALLATIONS_ROUTE,
   UPDATES_ROUTE,
   AUTOMATIC_ROUTE,
+  GALLERY_ROUTE,
 ];
 
 /**
@@ -197,6 +202,7 @@ export function createUpdateRoutes(
             installedVersion: repository.installedVersion,
             automaticSecurityUpdates:
               parsed.data.updates.automaticSecurityUpdates,
+            listedAsReference: parsed.data.gallery.listed,
             availableVersion: version,
             releaseType: release.manifest.releaseType,
             automaticInstallEligible: release.manifest.automaticInstallEligible,
@@ -259,6 +265,40 @@ export function createUpdateRoutes(
             );
           }
           return jsonResponse({ automaticSecurityUpdates: enabled });
+        }
+
+        if (input.route === GALLERY_ROUTE && method === "POST") {
+          const body = await requestBody(input.request);
+          if (typeof body.listed !== "boolean") {
+            throw new ManagedUpdateError("UPDATE_REQUEST_INVALID", {
+              errorId: errorId(),
+            });
+          }
+          const repository = await target(
+            input,
+            body.installationId,
+            body.repositoryId,
+          );
+          const listed = body.listed;
+          const current = await access.readConfiguration(
+            input.session.githubUserToken,
+            repository,
+          );
+          const edited = setGalleryListing(current.source, listed);
+          if (edited === null) {
+            throw new ManagedUpdateError("UPDATE_INSTALLATION_INVALID", {
+              errorId: errorId(),
+            });
+          }
+          if (edited !== current.source) {
+            await access.writeConfiguration(
+              input.session.githubUserToken,
+              repository,
+              edited,
+              current.blobSha,
+            );
+          }
+          return jsonResponse({ listedAsReference: listed });
         }
 
         return null;
