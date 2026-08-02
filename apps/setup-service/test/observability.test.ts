@@ -111,3 +111,43 @@ test("bounds rate-limit state and returns a retry delay", () => {
   now = 1_001;
   assert.equal(limiter.consume("one").allowed, true);
 });
+
+test("keeps a stateless installation token out of the log", () => {
+  // The shape GitHub is moving to: a `ghs_` prefix, two dots, around 520
+  // characters. Redaction here keeps a fixed set of fields rather than matching
+  // secrets by pattern, so a longer token cannot slip past a pattern that no
+  // longer fits. This proves that rather than reasoning about it.
+  const token = `ghs_${"A1b2C3d4_-".repeat(52).slice(0, 516)}`;
+  const lines: string[] = [];
+  const logger = createAuditLogger({
+    write: (line) => lines.push(line),
+    now: () => "2026-08-02T12:00:00.000Z",
+  });
+  const cause = new Error("Installation token rejected");
+  Object.assign(cause, {
+    token,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  logger({
+    level: "error",
+    requestId: "request-id",
+    route: "/api/setup",
+    operation: "provision",
+    status: 502,
+    outcome: "failed",
+    code: "GITHUB_UNAVAILABLE",
+    errorId: "error-id",
+    cause,
+  });
+
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0]!.includes(token), false, "the token itself never appears");
+  assert.equal(lines[0]!.includes("ghs_"), false, "nor does its prefix");
+  assert.equal(lines[0]!.includes("Bearer"), false, "nor the header carrying it");
+  assert.equal(
+    JSON.parse(lines[0]!).cause.name,
+    "Error",
+    "the cause is still reported, just without its payload",
+  );
+});

@@ -80,3 +80,31 @@ test("sets a host-only secure production cookie and parses only that cookie", ()
   );
   assert.equal(parseSessionCookie(`${SESSION_COOKIE_NAME}=bad value`), null);
 });
+
+test("keeps the cookie the same size whatever length the token has", () => {
+  // A stateless GitHub token runs to around 520 characters. Browsers cap a
+  // cookie at roughly four kilobytes, so a token that travelled in one would
+  // eventually stop fitting. It never does: the cookie carries an identifier
+  // and a signature, and the token stays on the server.
+  const token = `ghs_${"A1b2C3d4_-".repeat(52).slice(0, 516)}`;
+  assert.equal(token.length, 520);
+
+  let index = 0;
+  const store = createSessionStore({
+    secret,
+    now: () => 1_000,
+    randomToken: () => ids[index++]!,
+  });
+  const short = store.create();
+  short.githubUserToken = "gho_short";
+  const shortCookie = store.cookieValue(short.id);
+
+  const long = store.create();
+  long.githubUserToken = token;
+  const longCookie = store.cookieValue(long.id);
+
+  assert.equal(longCookie.length, shortCookie.length);
+  assert.equal(longCookie.includes(token), false);
+  assert.equal(longCookie.includes("ghs_"), false);
+  assert.equal(store.fromCookie(longCookie)?.githubUserToken, token);
+});
