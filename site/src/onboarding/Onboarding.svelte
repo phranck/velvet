@@ -30,8 +30,8 @@
   import SquircleStep from "./SquircleStep.svelte";
   import { SYSTEM_THEMES, systemThemeById } from "./system-themes.js";
 
-  const STEPS = ["Basics", "Services", "Theme", "Publish", "Install"] as const;
-  /** Installing is its own step, and the last one. */
+  const STEPS = ["Basics", "Services", "Theme", "Review", "Publish"] as const;
+  /** Publishing is its own step, and the last one. */
   const INSTALL_STEP = STEPS.length - 1;
   const REVIEW_STEP = INSTALL_STEP - 1;
   const CURRENT_YEAR = new Date().getFullYear();
@@ -490,9 +490,9 @@
           <div class="section-title">
             <span>04</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
-            <h2 id="publish-title">Review and publish</h2>
+            <h2 id="publish-title">Review your status page</h2>
           </div>
-          <p>Review your choices. Velvet then creates the repository, starts monitoring, and publishes the status page with GitHub Pages.</p>
+          <p>Check everything over. Publishing creates the repository, starts monitoring, and puts the status page online with GitHub Pages.</p>
         </div>
         <ReviewList.Root>
           <ReviewList.Item
@@ -533,7 +533,7 @@
           <div class="section-title">
             <span>05</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
-            <h2 id="install-title">Install</h2>
+            <h2 id="install-title">Publish</h2>
           </div>
           <p>Velvet creates the repository, runs the first check, and publishes your status page. This takes a couple of minutes.</p>
         </div>
@@ -584,7 +584,7 @@
             onclick={() => changeStep(REVIEW_STEP)}
             data-back-to-review
           >
-            <span data-step-card-button-label>Publish</span>
+            <span data-step-card-button-label>Review</span>
           </button>
         {/if}
         {#if step < REVIEW_STEP}

@@ -739,7 +739,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");
     assert.equal(await themeRadios.nth(1).isChecked(), true);
-    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    await page.getByRole("button", { name: "Review", exact: true }).click();
     const reviewItems = page.locator("[data-review-item]");
     assert.equal(await reviewItems.count(), 5);
     assert.deepEqual(
@@ -861,7 +861,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await secondService.getByLabel("Service name").fill("API");
     await secondService.getByLabel("URL to monitor").fill("https://api.example.com");
     await page.getByRole("button", { name: "Theme", exact: true }).click();
-    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    await page.getByRole("button", { name: "Review", exact: true }).click();
     assert.deepEqual(
       await page.locator("[data-review-item]").nth(2).evaluate((item) => ({
         label: item.querySelector("dt")?.textContent,
@@ -958,12 +958,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     );
     assert.equal(
       await page.locator("[data-squircle-step][aria-current='step'] .label").textContent(),
-      "Install",
+      "Publish",
     );
     assert.equal(
       await page.locator("[data-step-card-body]:not([hidden])").count(),
       1,
-      "only the install body is shown once the run finishes",
+      "only the publish body is shown once the run finishes",
     );
     // One serial on the page, in the footer, padded to five digits.
     assert.equal(await page.locator("[data-footer-serial]").count(), 1);
