@@ -18,7 +18,9 @@ export interface AuditLogInput {
    * scheduled sweep was working on. Numbers and short identifiers only:
    * nothing here is redacted, so nothing secret belongs in it.
    */
-  context?: Record<string, string | number>;
+  /** Booleans are carried as they are, so a log reader sees a yes or no
+   * rather than a stringified one. */
+  context?: Record<string, string | number | boolean>;
   cause?: unknown;
 }
 
