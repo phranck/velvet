@@ -91,6 +91,112 @@ async function svelteReachedFrom(entry: string): Promise<string | null> {
   return null;
 }
 
+/**
+ * Every module an entry reaches, components included.
+ *
+ * The walk above stops at the first Svelte file, because reaching one at all is
+ * what it reports. This one goes through them, which is what makes the reach of
+ * a component visible.
+ */
+async function modulesReachedFrom(entry: string): Promise<Set<string>> {
+  const seen = new Set<string>([entry]);
+  const queue = [entry];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const source = await readFile(current, "utf8");
+    for (const specifier of relativeSpecifiers(source)) {
+      const resolved = await resolveSpecifier(current, specifier);
+      if (resolved === null || seen.has(resolved)) continue;
+      seen.add(resolved);
+      queue.push(resolved);
+    }
+  }
+  return seen;
+}
+
+/** The four browser entries, each the root of one application. */
+const APPLICATIONS = {
+  "status page": "main.ts",
+  onboarding: "onboarding/main.ts",
+  configurator: "configurator/main.ts",
+  website: "website/main.ts",
+} as const;
+
+/**
+ * Which applications each shared component reaches.
+ *
+ * Kept here so a change to it is a change somebody had to write down. Editing a
+ * component otherwise gives no sign of how far the edit travels, and that has
+ * cost real time: #184 corrected an attribute in `VelvetToolBrand`, which three
+ * applications use, and the fix reached the website in minutes whilst the
+ * onboarding waited for a manual deployment nobody had thought to run.
+ *
+ * A component reached by exactly one application is not shared. Those are
+ * listed too, so that stays visible rather than being assumed.
+ */
+const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
+  "VelvetWordmark.svelte": ["configurator", "onboarding", "status page", "website"],
+  "RainbowScale.svelte": ["configurator", "onboarding", "website"],
+  "VelvetToolBrand.svelte": ["configurator", "onboarding", "website"],
+  "step-card": ["onboarding", "website"],
+  "required-field": ["configurator", "onboarding"],
+  "service-editor": ["configurator", "onboarding"],
+  "service-icon-picker": ["configurator", "onboarding"],
+  "theme-card": ["configurator", "onboarding"],
+  "Incidents.svelte": ["configurator", "status page"],
+  "ServiceRow.svelte": ["configurator", "status page"],
+  "StatusHero.svelte": ["configurator", "status page"],
+  "StatusPage.svelte": ["configurator", "status page"],
+  "UptimeBar.svelte": ["configurator", "status page"],
+  service: ["configurator", "status page"],
+  "review-list": ["onboarding"],
+  overlay: ["configurator"],
+  "release-notes": ["configurator"],
+  update: ["configurator"],
+};
+
+/** The directory or file under `components/` a path belongs to, if any. */
+function componentOf(path: string): string | null {
+  const componentRoot = resolve(sourceRoot, "components");
+  const rest = relative(componentRoot, path);
+  if (rest.startsWith("..")) return null;
+  return rest.includes("/") ? rest.slice(0, rest.indexOf("/")) : rest;
+}
+
+test("every shared component reaches the applications it is expected to", async () => {
+  const reach = new Map<string, Set<string>>();
+  for (const [application, entry] of Object.entries(APPLICATIONS)) {
+    for (const module of await modulesReachedFrom(resolve(sourceRoot, entry))) {
+      const component = componentOf(module);
+      if (component === null) continue;
+      if (!reach.has(component)) reach.set(component, new Set());
+      reach.get(component)!.add(application);
+    }
+  }
+
+  const differences: string[] = [];
+  for (const component of new Set([...reach.keys(), ...Object.keys(EXPECTED_REACH)])) {
+    const actual = [...(reach.get(component) ?? [])].sort();
+    const expected = [...(EXPECTED_REACH[component] ?? [])].sort();
+    if (actual.join() === expected.join()) continue;
+    const gained = actual.filter((name) => !expected.includes(name));
+    const lost = expected.filter((name) => !actual.includes(name));
+    // Named rather than diffed, because the useful question when this fails is
+    // which application just started or stopped depending on the component.
+    differences.push(
+      `${component}: ${[
+        gained.length > 0 ? `now also reached by ${gained.join(", ")}` : "",
+        lost.length > 0 ? `no longer reached by ${lost.join(", ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("; ")}`,
+    );
+  }
+
+  assert.deepEqual(differences, []);
+});
+
 test("every test loads without a Svelte transform", async () => {
   const violations: string[] = [];
 
