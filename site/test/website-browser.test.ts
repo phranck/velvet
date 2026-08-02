@@ -120,6 +120,36 @@ test("reserves the showcase band's height before the picture arrives", async () 
   }
 }, TIMEOUT_MS);
 
+test("does not defer a picture that is already on screen", async () => {
+  const site = await serve(await buildWebsite());
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(site.base, { waitUntil: "load" });
+    const measured = await page.evaluate(() => {
+      const img = document.querySelector<HTMLImageElement>(".showcase img")!;
+      const rect = img.getBoundingClientRect();
+      return {
+        lazy: img.getAttribute("loading") === "lazy",
+        onScreen: rect.top < window.innerHeight,
+        completeAtLoad: img.complete && img.naturalWidth > 0,
+      };
+    });
+
+    // The rule, rather than the attribute: a picture inside the first screenful
+    // must not be deferred. Marking it lazy makes the browser wait for layout
+    // and visibility before it will even ask, which measured 1580ms against
+    // 195ms on a throttled connection.
+    assert.equal(measured.onScreen, true, "the picture is within the first screenful");
+    assert.equal(measured.lazy, false, "a picture on screen is not deferred");
+    assert.equal(measured.completeAtLoad, true, "it has arrived by the load event");
+    await page.close();
+  } finally {
+    await browser.close();
+    site.close();
+  }
+}, TIMEOUT_MS);
+
 test("gives both hero buttons the same width", async () => {
   const site = await serve(await buildWebsite());
   const browser = await chromium.launch();

@@ -126,7 +126,7 @@
             alt="A Velvet status page showing services, uptime bars, and a response-time chart"
             width="2010"
             height="1536"
-            loading="lazy"
+            fetchpriority="high"
             decoding="async"
           />
         </a>
