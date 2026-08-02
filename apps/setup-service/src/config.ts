@@ -45,10 +45,6 @@ export interface SetupServiceConfig {
    * report into whichever dashboard the source happened to name.
    */
   analytics: AnalyticsConfiguration | null;
-  public: {
-    publicOrigin: string;
-    githubAppSlug: string;
-  };
 }
 
 export function loadSetupServiceConfig(
@@ -140,7 +136,6 @@ export function loadSetupServiceConfig(
       ? { repository: serialRepository, path: serialPath }
       : null,
     analytics: parseAnalytics(environment),
-    public: { publicOrigin, githubAppSlug: appSlug },
   };
 }
 
