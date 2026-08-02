@@ -96,7 +96,7 @@ test("reports deployment drift on merge without deploying anything", async () =>
   assert.doesNotMatch(source, /zcli|secrets\./);
 });
 
-test("spells the deploy command one way, in the documentation and in the report", async () => {
+test("keeps one operator's infrastructure out of everybody's checkout", async () => {
   const documentation = await readFile(
     new URL("documentation/setup-service.md", repositoryRoot),
     "utf8",
@@ -106,16 +106,20 @@ test("spells the deploy command one way, in the documentation and in the report"
     "utf8",
   );
 
+  // Deploying needs the identifiers of one particular Zerops project and
+  // service. Those describe whoever runs an instance, not Velvet, which other
+  // people install and operate themselves, so the documentation asks for them
+  // and no file states them.
   const documented = documentation.match(/^zcli push .+$/mu);
   assert.notEqual(documented, null, "the documentation must show how to deploy");
+  assert.match(documented[0], /--project-id <project-id>/u);
+  assert.match(documented[0], /--service-id <service-id>/u);
+  assert.match(documentation, /^zcli project list$/mu);
 
-  // A deploy documented in one place and reported in another is the same class
-  // of gap this check exists to close, so the report quotes the documentation.
-  assert.equal(
-    check.includes(documented[0]),
-    true,
-    `the drift report must name the documented command: ${documented[0]}`,
-  );
+  // The report points at that documentation rather than repeating a command,
+  // which also leaves the deploy with a single spelling by construction.
+  assert.doesNotMatch(check, /zcli/u);
+  assert.match(check, /documentation\/setup-service\.md/u);
 });
 
 test("imports the setup service with fixed single-container scaling", async () => {

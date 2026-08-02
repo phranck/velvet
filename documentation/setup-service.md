@@ -177,8 +177,27 @@ secret, and fixes horizontal scaling to one container. Import the service, add
 the remaining runtime values, and deploy from the repository root:
 
 ```sh
-zcli push setup --setup setup --workspace-state clean --zerops-yaml-path zerops.yaml
+zcli push --project-id <project-id> --service-id <service-id> --setup setup \
+  --workspace-state clean --zerops-yaml-path zerops.yaml
 ```
+
+Both identifiers describe your own Zerops project rather than anything about
+Velvet, so read them from the account that holds it:
+
+```sh
+zcli project list
+zcli service list --project-id <project-id>
+```
+
+Naming both is required rather than convenient. Given no project, zcli selects
+one by itself, and an account commonly holds several, so the push goes wherever
+that choice lands. It then fails with `Service [setup] not found` only for as
+long as no other project happens to contain a service of that name.
+
+`--zerops-yaml-path` is equally not optional, because this repository's file is
+`zerops.yaml` whilst zcli looks for `zerops.yml`. `--workspace-state clean`
+pushes `HEAD` and ignores local edits, which is what makes the deployed build
+comparable to a commit at all.
 
 The service uses a **Single container** because OAuth state, user authorization,
 and installation tokens exist only in bounded memory. A restart invalidates

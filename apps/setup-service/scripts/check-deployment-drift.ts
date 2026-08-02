@@ -11,14 +11,15 @@ const SERVICE_ORIGIN =
 const TIMEOUT_MS = 15_000;
 
 /**
- * The command that closes the gap this check reports.
+ * Where the deploy is written down.
  *
- * Quoted from `documentation/setup-service.md` rather than spelled a second
- * way. A deploy documented in one place and reported in another is the same
- * class of gap this check exists to close, so a test holds the two together.
+ * The report points here instead of repeating the command, because the command
+ * needs the identifiers of one particular Zerops project and service. Those
+ * belong to whoever runs an instance, not to Velvet, which other people install
+ * and operate themselves. Naming them here would also give the deploy a second
+ * spelling, which is the same class of gap this check exists to close.
  */
-const DEPLOY_COMMAND =
-  "zcli push setup --setup setup --workspace-state clean --zerops-yaml-path zerops.yaml";
+const DEPLOY_DOCUMENTATION = "documentation/setup-service.md";
 
 /**
  * What the comparison concluded.
@@ -118,8 +119,7 @@ export async function compareDeployment(
       `  main:     ${expected.slice(0, 12)}`,
       "",
       "Anything shared with the website is already live there and is not live here.",
-      "Deploy with:",
-      `  ${DEPLOY_COMMAND}`,
+      `Deploy it with the command in ${DEPLOY_DOCUMENTATION}.`,
     ].join("\n"),
   };
 }
