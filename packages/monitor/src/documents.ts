@@ -8,12 +8,11 @@ import {
 
 import {
   deriveDailyAvailability,
-  mergeDailyAvailability,
+  sortDailyAvailability,
 } from "./history.js";
 import { aggregateServiceStatus } from "./state-machine.js";
 import type {
   MonitorCheckState,
-  MonitorImportedDailyAvailability,
   MonitorMaintenanceWindow,
   MonitorResponseSample,
   MonitorStateChange,
@@ -32,7 +31,6 @@ export interface MonitorStatusDocumentInput {
   retentionDays: number;
   services: MonitorDocumentService[];
   stateChanges: MonitorStateChange[];
-  importedDailyAvailability?: MonitorImportedDailyAvailability[];
   maintenanceWindows: MonitorMaintenanceWindow[];
 }
 
@@ -103,13 +101,8 @@ export function createStatusDocument(
         checkedAt: check.checkedAt,
         responseTimeMs: check.responseTimeMs,
       })),
-      dailyAvailability: mergeDailyAvailability({
-        serviceId: service.id,
-        monitoringStartedAt: input.monitoringStartedAt,
-        generatedAt: input.generatedAt,
-        retentionDays: input.retentionDays,
-        imported: input.importedDailyAvailability ?? [],
-        native: deriveDailyAvailability({
+      dailyAvailability: sortDailyAvailability(
+        deriveDailyAvailability({
           serviceId: service.id,
           monitoringStartedAt: input.monitoringStartedAt,
           generatedAt: input.generatedAt,
@@ -117,7 +110,7 @@ export function createStatusDocument(
           stateChanges: input.stateChanges,
           maintenanceWindows: input.maintenanceWindows,
         }),
-      }),
+      ),
     })),
   };
 

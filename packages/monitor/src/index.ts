@@ -16,15 +16,12 @@ export type {
 export {
   appendResponseSamples,
   appendStateChanges,
-  compactImportedDailyAvailability,
   compactStateChanges,
   deriveDailyAvailability,
-  mergeDailyAvailability,
+  sortDailyAvailability,
 } from "./history.js";
 export type {
-  DailyAvailabilityMergeInput,
   DailyAvailabilityInput,
-  ImportedDailyAvailabilityRetention,
   ResponseSampleRetention,
   StateChangeRun,
 } from "./history.js";
@@ -53,8 +50,6 @@ export type {
 export type {
   MonitorCheckState,
   MonitorDailyAvailability,
-  MonitorImportedDailyAvailability,
-  MonitorImportedEvent,
   MonitorMaintenanceWindow,
   MonitorPersistentState,
   MonitorResponseSample,
