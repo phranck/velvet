@@ -62,7 +62,10 @@ const SILKSCREEN = "#ffffff";
  * light: the white print is what you make out first.
  */
 const SHIPPED_OPACITY = {
-  trace: 0.034,
+  // Raised from 0.034 so the routing can be followed rather than merely sensed.
+  // Kept below copperFeature, so the parts still sit in front of the wiring
+  // rather than level with it.
+  trace: 0.045,
   copperFeature: 0.05,
   silkscreen: 0.062,
   wordmark: 0.078,
