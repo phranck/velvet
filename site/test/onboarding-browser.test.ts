@@ -429,6 +429,22 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByRole("button", { name: "Services", exact: true }).click();
 
     await page.getByLabel("Service name").fill("Website");
+    // A malformed URL has to stop the step it was typed on. Before this was
+    // checked here, the contract rejected it on Publish instead, which put the
+    // message two steps away from the field that caused it.
+    await page.getByLabel("URL to monitor").fill("example.com");
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
+    assert.equal(
+      await page
+        .locator("[data-squircle-step][aria-current='step'] .label")
+        .textContent(),
+      "Services",
+      "a malformed URL keeps the visitor on the Services step",
+    );
+    assert.equal(
+      await page.locator("[data-service-editor] .field-error").textContent(),
+      "URL must be an absolute HTTP(S) URL without credentials or a fragment.",
+    );
     await page.getByLabel("URL to monitor").fill("https://example.com");
     assert.equal(
       await page.getByLabel("Service name").evaluate((element) =>

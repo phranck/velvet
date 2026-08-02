@@ -21,10 +21,11 @@
     persistOnboardingDraft,
   } from "./onboarding-session.js";
   import {
-    buildSetupRequest,
     createOnboardingDraft,
     createServiceDraft,
     submitOnboarding,
+    validateBasicsStep,
+    validateServicesStep,
     type SetupProgressStage,
   } from "./state.js";
   import SquircleStep from "./SquircleStep.svelte";
@@ -223,22 +224,12 @@
   }
 
   function nextStep(): void {
-    const currentErrors: Record<string, string> = {};
-    if (step === 0) {
-      if (!draft.repositoryOwner.trim()) currentErrors.repositoryOwner = "Enter your GitHub name.";
-      if (!draft.repositoryName.trim()) currentErrors.repositoryName = "Enter a repository name.";
-      if (!draft.statusPageName.trim()) currentErrors.statusPageName = "Enter a status page name.";
-      const validation = buildSetupRequest(draft);
-      if (!validation.success && validation.errors.customDomain) {
-        currentErrors.customDomain = validation.errors.customDomain;
-      }
-    }
-    if (step === 1) {
-      draft.services.forEach((service, index) => {
-        if (!service.name.trim()) currentErrors[`services.${index}.name`] = "Enter a service name.";
-        if (!service.url.trim()) currentErrors[`services.${index}.url`] = "Enter a URL to monitor.";
-      });
-    }
+    const currentErrors =
+      step === 0
+        ? validateBasicsStep(draft)
+        : step === 1
+          ? validateServicesStep(draft)
+          : {};
     errors = currentErrors;
     if (Object.keys(currentErrors).length === 0) {
       changeStep(Math.min(step + 1, STEPS.length - 1));

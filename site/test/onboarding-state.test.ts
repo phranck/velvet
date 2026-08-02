@@ -6,6 +6,7 @@ import {
   createOnboardingDraft,
   createServiceDraft,
   submitOnboarding,
+  validateServicesStep,
   type SetupClient,
 } from "../src/onboarding/state.js";
 
@@ -223,4 +224,48 @@ test("keeps the draft while GitHub authorization continues", async () => {
 
 test("creates stable unique UI keys for repeatable service rows", () => {
   assert.notEqual(createServiceDraft().id, createServiceDraft().id);
+});
+
+test("refuses to leave the Services step while a URL is not an HTTP address", () => {
+  for (const url of [
+    "not a url",
+    "example.com",
+    "ftp://example.com",
+    "https://user:secret@example.com",
+    "https://example.com/#section",
+  ]) {
+    const draft = createOnboardingDraft();
+    draft.services = [{ ...createServiceDraft("website"), name: "Website", url }];
+
+    const errors = validateServicesStep(draft);
+
+    assert.equal(
+      errors["services.0.url"],
+      "URL must be an absolute HTTP(S) URL without credentials or a fragment.",
+      url,
+    );
+  }
+});
+
+test("keeps the plainer wording when a service field is simply empty", () => {
+  const draft = createOnboardingDraft();
+  draft.services = [{ ...createServiceDraft("website"), name: "", url: "" }];
+
+  const errors = validateServicesStep(draft);
+
+  assert.equal(errors["services.0.name"], "Enter a service name.");
+  assert.equal(errors["services.0.url"], "Enter a URL to monitor.");
+});
+
+test("lets a valid service through the Services step", () => {
+  const draft = createOnboardingDraft();
+  draft.services = [
+    {
+      ...createServiceDraft("website"),
+      name: "Website",
+      url: "https://example.com",
+    },
+  ];
+
+  assert.deepEqual(validateServicesStep(draft), {});
 });
