@@ -395,3 +395,64 @@ test("gives up on a push GitHub keeps refusing", async () => {
   );
   assert.equal(pushes, 6, "a genuine conflict still fails");
 });
+
+/**
+ * An installation token in the stateless format GitHub is moving to: a `ghs_`
+ * prefix, JWT-shaped with two dots, and around 520 characters. Built rather
+ * than pasted, so the length is stated where it can be read.
+ */
+function statelessInstallationToken(): string {
+  const segment = (length: number): string => "A1b2C3d4_-".repeat(length).slice(0, length);
+  const token = `ghs_${segment(180)}.${segment(180)}.${segment(154)}`;
+  assert.equal(token.length, 520);
+  assert.equal(token.split(".").length, 3);
+  return token;
+}
+
+test("carries a stateless installation token through unchanged", async () => {
+  const token = statelessInstallationToken();
+  const requests: Request[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    nowSeconds: () => 1_000_000,
+    fetch: async (request) => {
+      requests.push(request);
+      return Response.json(
+        { token, permissions: { workflows: "write" } },
+        { status: 200 },
+      );
+    },
+  });
+
+  const issued = await client.createInstallationToken(7, 99);
+
+  assert.equal(
+    issued.token,
+    token,
+    "nothing truncates or rewrites a token this long",
+  );
+  assert.equal(requests.length, 1);
+});
+
+test("sends a stateless token whole in the Authorization header", async () => {
+  const token = statelessInstallationToken();
+  const seen: string[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    nowSeconds: () => 1_000_000,
+    fetch: async (request) => {
+      seen.push(request.headers.get("Authorization") ?? "");
+      return Response.json({ sha: "configuration-sha" }, { status: 200 });
+    },
+  });
+
+  await client.getConfigurationSha(token, "example", "status");
+
+  assert.equal(seen[0], `Bearer ${token}`);
+});
