@@ -27,6 +27,50 @@ const OUT = join(SITE, "src/website/public/og.png");
 /** The size every platform crops from, so the card is authored at it directly. */
 const CARD = { width: 1200, height: 630 };
 
+/**
+ * Composes the card out of the page rather than out of a second design.
+ *
+ * A preview is read in a glance and is often cropped further by whoever renders
+ * it, so it carries the mark and the one sentence that says what Velvet is, and
+ * nothing else. The buttons are useless in a picture, and the screenshot band
+ * only ever showed a sliver of itself. What stays keeps the page's own type,
+ * palette, and board backdrop, because it is the page, restyled for the frame.
+ */
+const CARD_LAYOUT = `
+  .hero-actions,
+  .showcase,
+  .page-footer,
+  main > section.column:not(.hero) {
+    display: none !important;
+  }
+  main {
+    width: min(100% - 5rem, 1040px) !important;
+    min-height: 100vh;
+    /* Both axes. The page lets this element fill the width and centres its
+       sections inside it, so constraining the width here without centring what
+       is left leaves the whole card hanging off the left edge. */
+    margin-inline: auto !important;
+    padding: 0 !important;
+    align-content: center;
+  }
+  .lead {
+    margin-top: 3rem !important;
+    font-size: 2.25rem !important;
+  }
+  .brand-block {
+    width: min(100%, 330px) !important;
+  }
+  /* The board carries its own silkscreened "VELVET" near its lower edge, which
+     lands inside a frame this short and reads as the wordmark printed twice.
+     Anchoring the artwork to the top and enlarging it pushes that block past
+     the bottom of the card. Only the board layer is resized; the two lit
+     corners keep their own sizing. */
+  body {
+    background-position: center top !important;
+    background-size: auto, auto, 150% auto, auto !important;
+  }
+`;
+
 const MIME: Record<string, string> = {
   ".css": "text/css",
   ".html": "text/html",
@@ -84,6 +128,7 @@ async function main(): Promise<void> {
     });
     const page = await context.newPage();
     await page.goto(site.base, { waitUntil: "load" });
+    await page.addStyleTag({ content: CARD_LAYOUT });
     await page.evaluate(() => document.fonts.ready);
     // The board backdrop is a background image on the body, and the wordmark
     // needs its face resolved. Neither reports readiness, so the frame is given
