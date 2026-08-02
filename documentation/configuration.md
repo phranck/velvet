@@ -534,5 +534,5 @@ notices into the output directory.
 Velvet's MIT license covers its code, schemas, and original assets. Monitoring
 records, imported datasets, logos, fonts, and other third-party material keep
 their own rights and notices. The monitor never deletes historical GitHub
-Issues or source license files. See [LICENSING.md](LICENSING.md) and
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the complete boundary.
+Issues or source license files. See [LICENSING.md](../LICENSING.md) and
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) for the complete boundary.

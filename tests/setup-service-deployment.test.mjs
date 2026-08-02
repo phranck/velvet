@@ -61,7 +61,9 @@ test("imports the setup service with fixed single-container scaling", async () =
 
 test("documents minimum GitHub permissions, secrets, recovery, and rotation", async () => {
   const readme = await readFile(
-    new URL("apps/setup-service/README.md", repositoryRoot),
+    // The operational detail moved into the documentation directory;
+    // the README says what the service is and points at it.
+    new URL("documentation/setup-service.md", repositoryRoot),
     "utf8",
   );
 

@@ -50,7 +50,7 @@ installed dependency tree.
 
 ## Release rule
 
-Every release follows the licensing step in [RELEASING.md](RELEASING.md). A
+Every release follows the licensing step in [documentation/releasing.md](documentation/releasing.md). A
 change to package manifests, `bun.lock`, external asset URLs, copied
 source, or generated build contents requires a fresh inventory and notice
 review before release.

@@ -43,7 +43,12 @@ test("presentation code cannot import monitor or persistence internals", () => {
 });
 
 test("package boundary documentation defines input, output, and dependencies", () => {
-  const readme = readFileSync(new URL("README.md", packageRoot), "utf8");
+  // The boundary table moved into the documentation directory; the README
+  // now says what the package is and points here.
+  const readme = readFileSync(
+    new URL("../../documentation/contracts.md", packageRoot),
+    "utf8",
+  );
   for (const heading of [
     "Contracts and configuration",
     "Managed template materialization",

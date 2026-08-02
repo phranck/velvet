@@ -105,7 +105,7 @@ JSON assertions use RFC 6901 JSON Pointers and compare the selected value with
 one configured string, number, boolean, or `null`. They are for dedicated
 health endpoints, not a requirement for normal websites.
 
-See [CONFIGURATION.md](CONFIGURATION.md) for every service, page, theme,
+See [the configuration reference](documentation/configuration.md) for every service, page, theme,
 incident, retention, permission, secret, recovery, and custom-domain option.
 
 ## Monitoring rules
@@ -188,6 +188,12 @@ Security releases that need no migration can install themselves, which is on by
 default and can be turned off in the Configurator. Everything else waits for
 you.
 
+## Documentation
+
+[documentation/](documentation/) holds the reference material: every
+configuration option, the contracts between the layers, how the setup service is
+run, and how a release is cut.
+
 ## Develop
 
 Velvet pins Bun 1.3.14 as its package manager and runtime.
@@ -210,7 +216,8 @@ bun run build
 ## Releases and licensing
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes,
-[RELEASING.md](RELEASING.md) for the release process, and
-[LICENSING.md](LICENSING.md) for source-data and third-party license boundaries.
+[documentation/releasing.md](documentation/releasing.md) for the release
+process, and [LICENSING.md](LICENSING.md) for source-data and third-party
+license boundaries.
 
 Velvet is published under the [MIT license](https://layered.mit-license.org).
