@@ -66,9 +66,15 @@ test("runs local and distributed automation through the pinned Bun toolchain", a
     assert.doesNotMatch(source, /actions\/setup-node|\bnpm\b|\bnpx\b|package-lock\.json/);
   }
 
+  // The major versions of these two actions are deliberately not pinned by the
+  // test. What matters here is that the workflow sets Bun up and caches Bun's
+  // own directory, keyed on Bun's own lockfile, which the assertions below
+  // establish. Naming a major instead turns every routine action upgrade into a
+  // test failure that says nothing about the toolchain, which is what happened
+  // when actions/cache moved to v6.
   const screenshotWorkflow = await read(".github/workflows/screenshot.yml");
-  assert.match(screenshotWorkflow, /uses: oven-sh\/setup-bun@v2/);
-  assert.match(screenshotWorkflow, /uses: actions\/cache@v4/);
+  assert.match(screenshotWorkflow, /uses: oven-sh\/setup-bun@v\d+/);
+  assert.match(screenshotWorkflow, /uses: actions\/cache@v\d+/);
   assert.match(screenshotWorkflow, /~\/\.bun\/install\/cache/);
   assert.match(screenshotWorkflow, /hashFiles\('bun\.lock'\)/);
 
