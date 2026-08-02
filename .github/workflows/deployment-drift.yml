@@ -1,0 +1,39 @@
+# Reports whether the deployed setup service still matches `main`.
+#
+# The website deploys itself on every merge whilst the setup service is
+# deployed by hand. Without this, the gap between them is invisible: a fix to a
+# component both use reached the website within minutes and the onboarding days
+# later, and nothing said so.
+#
+# This deliberately does not deploy. The service holds live sessions, and a
+# failed deploy in the middle of somebody's installation is worse than a stale
+# one, so the release stays under a person's hand. What it removes is not
+# knowing.
+name: Deployment drift
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Once a day, so a service that drifts without anyone merging is still
+    # reported rather than waiting for the next push to notice.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: velvet-deployment-drift
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - name: Compare the deployed service against this commit
+        run: bun run apps/setup-service/scripts/check-deployment-drift.ts

@@ -39,6 +39,85 @@ test("deploys the bundled setup service as one health-checked Bun container", as
   }
 });
 
+test("stamps the deployed build with the sources it was made from", async () => {
+  const setupPackage = JSON.parse(
+    await readFile(
+      new URL("apps/setup-service/package.json", repositoryRoot),
+      "utf8",
+    ),
+  );
+
+  // Zerops runs this build command, so whatever it produces has to be able to
+  // say which sources it came from. Without the stamp there is nothing for the
+  // drift check to compare against.
+  assert.equal(
+    setupPackage.scripts.fingerprint,
+    "bun run scripts/deployment-fingerprint.ts",
+  );
+  assert.equal(
+    setupPackage.scripts.build,
+    "bun run fingerprint && bun run scripts/build.ts",
+  );
+  // The stamp is generated rather than committed, so the gates that compile or
+  // run the service have to produce it first.
+  for (const gate of ["pretest", "pretypecheck"]) {
+    assert.match(setupPackage.scripts[gate], /bun run fingerprint$/);
+  }
+});
+
+test("reports deployment drift on merge without deploying anything", async () => {
+  const source = await readFile(
+    new URL(".github/workflows/deployment-drift.yml", repositoryRoot),
+    "utf8",
+  );
+  const workflow = load(source);
+  const [checkout, runtime, compare] = workflow.jobs.compare.steps;
+
+  assert.deepEqual(workflow.on.push.branches, ["main"]);
+  // A deploy can be skipped or fail without anyone merging afterwards, so the
+  // comparison also runs on its own rather than only after a push.
+  assert.equal(typeof workflow.on.schedule[0].cron, "string");
+  assert.equal("workflow_dispatch" in workflow.on, true);
+  assert.deepEqual(workflow.permissions, { contents: "read" });
+
+  assert.equal(checkout.uses, "actions/checkout@v7");
+  assert.equal(runtime.uses, "oven-sh/setup-bun@v2");
+  assert.equal(runtime.with["bun-version-file"], "package.json");
+  assert.equal(
+    compare.run,
+    "bun run apps/setup-service/scripts/check-deployment-drift.ts",
+  );
+
+  // The decision on #198. The service holds live sessions, so a failed deploy
+  // during somebody's installation is worse than a stale one. The release
+  // stays with a person, and this workflow only reports the gap. Deploying
+  // from here would also need the App's private key in CI, which it does not
+  // have and, under this decision, never will.
+  assert.doesNotMatch(source, /zcli|secrets\./);
+});
+
+test("spells the deploy command one way, in the documentation and in the report", async () => {
+  const documentation = await readFile(
+    new URL("documentation/setup-service.md", repositoryRoot),
+    "utf8",
+  );
+  const check = await readFile(
+    new URL("apps/setup-service/scripts/check-deployment-drift.ts", repositoryRoot),
+    "utf8",
+  );
+
+  const documented = documentation.match(/^zcli push .+$/mu);
+  assert.notEqual(documented, null, "the documentation must show how to deploy");
+
+  // A deploy documented in one place and reported in another is the same class
+  // of gap this check exists to close, so the report quotes the documentation.
+  assert.equal(
+    check.includes(documented[0]),
+    true,
+    `the drift report must name the documented command: ${documented[0]}`,
+  );
+});
+
 test("imports the setup service with fixed single-container scaling", async () => {
   const document = load(
     (await readFile(
@@ -80,6 +159,7 @@ test("documents minimum GitHub permissions, secrets, recovery, and rotation", as
     "SESSION_SECRET",
     "Single container",
     "--zerops-yaml-path zerops.yaml",
+    "Deployment drift",
     "Partial setup recovery",
     "Key rotation",
   ]) {

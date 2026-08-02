@@ -190,6 +190,37 @@ serves port `3000`, and checks `/healthz`. Keep secrets out of basic
 `run.envVariables`; Zerops secret variables can be updated without rebuilding
 the application, followed by a service restart.
 
+## Deployment drift
+
+The website publishes itself on every merge to `main` whilst this service is
+deployed by hand, so anything the two share can be live in one place and stale
+in the other. That is not hypothetical. A prohibited `aria-label` was fixed in a
+component both use, the website carried the fix within minutes, and the deployed
+onboarding still served the old bundle days later because nothing reported the
+difference.
+
+Each build therefore stamps itself with a fingerprint of the sources it was made
+from and reports it on `/healthz`. The `Deployment drift` workflow computes the
+same fingerprint from `main` and compares the two on every push to `main`, once
+a day, and on demand.
+
+It deliberately does not deploy. This service holds live onboarding sessions, so
+a failed deploy in the middle of somebody's installation is worse than a stale
+one, and the release stays under a person's hand. What the workflow removes is
+not knowing. A red run means the deployed service is older than `main`; deploy
+it with the command above and the next run passes on its own. An unreachable
+service is reported as unknown rather than as drift, because a network failure
+says nothing about what is deployed and a check that cries wolf gets ignored.
+
+The fingerprint covers `apps/setup-service/src`, `packages/contracts/src`,
+`packages/template-files/src`, and the committed `onboarding/` and
+`configurator/` bundles, because the service embeds those at build time. It is a
+hash of paths and contents, so it discloses nothing about the sources
+themselves. The value lives in `src/deployment-fingerprint.generated.ts`, which
+the build writes rather than the repository carrying it, and which is excluded
+from the hash it reports. Were it counted, writing it would invalidate the very
+value it had just recorded.
+
 ## Partial setup recovery
 
 The current browser session records each completed step. On the first setup for
