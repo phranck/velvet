@@ -155,8 +155,8 @@
         onclick={(event) => event.stopPropagation()}
       >Velvet website</a>
       {#snippet note()}
-        Off unless you turn it on. Nothing but the name of your page and a
-        link to it is shown.
+        Off unless you turn it on. Only the page itself is shown, never the
+        repository behind it.
       {/snippet}
     </ConsentCheckbox>
   {/if}
