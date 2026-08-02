@@ -8,6 +8,11 @@ site/dist-website/
 *.tsbuildinfo
 .DS_Store
 
+# The setup service build writes this from the sources it was made from, so a
+# committed copy would only ever hold the previous build's value. Every gate
+# that needs it regenerates it first.
+apps/setup-service/src/deployment-fingerprint.generated.ts
+
 # Local agent workspaces, never published
 .claude/
 .codex/

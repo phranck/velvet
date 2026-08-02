@@ -8,6 +8,7 @@ export default defineConfig(
   globalIgnores([
     "**/dist/**",
     "**/node_modules/**",
+    "apps/setup-service/src/*.generated.ts",
     "configurator/assets/**",
     "onboarding/assets/**",
     "site/dist-website/**",

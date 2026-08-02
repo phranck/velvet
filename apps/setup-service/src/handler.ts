@@ -9,6 +9,7 @@ import {
   type SetupRequest,
 } from "@velvet/contracts";
 
+import { DEPLOYMENT_FINGERPRINT } from "./deployment-fingerprint.generated.js";
 import {
   createGitHubAuthorizationUrl,
   createGitHubBootstrapInstallationUrl,
@@ -135,7 +136,20 @@ export function createSetupHandler(
     try {
       if (route === "/healthz") {
         if (request.method !== "GET") return reject(methodError(), "health");
-        return finish(jsonResponse({ status: "ok" }));
+        /*
+         * The fingerprint identifies the sources this build was made from, so
+         * a check can tell whether what is deployed is what `main` holds. The
+         * website deploys itself on merge whilst this service is deployed by
+         * hand, and without this the gap between them is invisible: a fix to a
+         * shared component reached the website within minutes and the
+         * onboarding days later, with nothing reporting the difference.
+         *
+         * It is a hash of source paths and contents, so it reveals nothing
+         * about the sources themselves.
+         */
+        return finish(
+          jsonResponse({ status: "ok", fingerprint: DEPLOYMENT_FINGERPRINT }),
+        );
       }
 
       if (route === "/api/serial") {

@@ -935,3 +935,26 @@ test("a serial the counter refuses does not fail the endpoint", async () => {
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { next: null });
 });
+
+test("reports on the health route which sources this build was made from", async () => {
+  const { DEPLOYMENT_FINGERPRINT } = await import(
+    "../src/deployment-fingerprint.generated.js"
+  );
+  const { handler } = harness();
+
+  const response = await handler(
+    new Request("https://setup.example/healthz", { method: "GET" }),
+  );
+
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as {
+    status: string;
+    fingerprint: string;
+  };
+  assert.equal(body.status, "ok");
+  // A check on main compares this against the same hash computed from the
+  // repository, which is the only way the gap between a merge and a hand
+  // deploy becomes visible at all.
+  assert.equal(body.fingerprint, DEPLOYMENT_FINGERPRINT);
+  assert.match(body.fingerprint, /^[0-9a-f]{64}$/u);
+});
