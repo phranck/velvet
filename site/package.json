@@ -11,6 +11,7 @@
     "onboarding:build": "svelte-check --tsconfig ./tsconfig.json && vite build --config vite.onboarding.ts",
     "prewebsite:build": "bun run --filter @velvet/contracts build",
     "website:build": "svelte-check --tsconfig ./tsconfig.json && vite build --config vite.website.ts",
+    "website:og": "bun scripts/website-og.ts",
     "theme-screenshots": "bun scripts/system-theme-screenshots.mjs",
     "preview": "vite preview",
     "screenshot": "bun scripts/screenshot.mjs",
