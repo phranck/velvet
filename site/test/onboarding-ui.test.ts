@@ -657,6 +657,23 @@ test("marks every required field and explains the mark once per card", async () 
   assert.equal((onboarding.match(/<RequiredField\.Legend \/>/g) ?? []).length, 2);
 });
 
+test("defers the theme previews and reserves the space they will take", async () => {
+  const option = await readFile(
+    resolve(import.meta.dirname, "../src/components/theme-card/ThemeCardOption.svelte"),
+    "utf8",
+  );
+
+  // The four previews weigh 360 KB together, more than the application bundle,
+  // and the step showing them sits behind two forms. Measured before this
+  // change: all four were fetched whilst the first step was on screen.
+  assert.match(option, /<img[^>]*\bloading="lazy"/);
+
+  // Deferring is only safe whilst the box is claimed in advance. Without this
+  // the step would jump as each preview lands, which is the fault #193 fixed on
+  // the website.
+  assert.match(option, /\.image-shell\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*10/s);
+});
+
 test("offers an optional description that becomes the page's SEO copy", async () => {
   const onboarding = await readFile(
     resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),

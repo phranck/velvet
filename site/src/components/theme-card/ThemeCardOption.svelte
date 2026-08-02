@@ -25,7 +25,17 @@
     onchange={() => onSelect(value)}
   />
   <span class="image-shell">
-    <img src={screenshot} alt="" />
+    <!--
+      Deferred on purpose, which is the opposite of the picture on the website
+      and right for the same reason. These four previews weigh 360 KB together,
+      more than the whole application bundle, and the step that shows them sits
+      behind two forms. Measured before this: all four were fetched whilst the
+      first step was on screen.
+
+      Nothing moves when they arrive, because the shell around them states its
+      own aspect ratio.
+    -->
+    <img src={screenshot} alt="" loading="lazy" decoding="async" />
     <span class="check" aria-hidden="true">
       <i class="ph-duotone ph-check-circle"></i>
     </span>
