@@ -43,10 +43,10 @@ beforeAll(async () => {
 });
 
 /*
- * Given room beyond the five seconds a hook gets by default. The closing
- * itself takes about thirty milliseconds; what overruns is the work the runner
- * counts against this hook, because the section now shows an icon and both
- * pages therefore pull in the icon font for the first time.
+ * Given room beyond the five seconds a hook gets by default, which the runner
+ * otherwise overruns whenever the consent control renders a shape. Closing
+ * itself takes about thirty milliseconds, so the time is spent before the hook
+ * body starts and the cause is not yet known. Tracked in #214.
  */
 afterAll(async () => {
   await harness.close();

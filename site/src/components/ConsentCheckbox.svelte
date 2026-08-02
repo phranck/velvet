@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import { createSquirclePath } from "../lib/squircle.js";
+
   /**
    * A tick box for a question the user answers about themselves, with room for
    * the sentence that says what answering yes actually means.
@@ -14,11 +16,12 @@
    * The whole thing is a `label`, so the sentence is part of the hit area and
    * the box does not have to be aimed at.
    *
-   * The box itself is a real checkbox with the platform's own artwork switched
-   * off, and the ring beside it is drawn with the same icon family as the rest
-   * of Velvet. The input keeps every behaviour that matters, so the space bar,
-   * the label, form association, and assistive technology all work as they
-   * would with any checkbox. Only the picture changes.
+   * The box is a real checkbox with the platform's own artwork switched off,
+   * and the shape beside it is drawn here as a squircle from the same path
+   * builder the step markers use, so the two agree. The input keeps every
+   * behaviour that matters, so the space bar, the label, form association, and
+   * assistive technology all work as they would with any checkbox. Only the
+   * picture changes.
    *
    * Colours come from `--consent-text`, `--consent-muted`, and
    * `--consent-checked`, which each tool sets from its own palette. The
@@ -40,6 +43,14 @@
     /** What agreeing means, shown quieter beneath the question. */
     note?: Snippet;
   } = $props();
+
+  /**
+   * The outline, inset by half its own stroke so the drawn edge sits inside
+   * the box rather than half outside it.
+   */
+  const OUTLINE = createSquirclePath(100, 5);
+  /** The tick, drawn across the middle third of the shape. */
+  const TICK = "M30 51 L44 66 L71 35";
 </script>
 
 <label class="consent">
@@ -48,10 +59,25 @@
     {checked}
     onchange={(event) => onchange(event.currentTarget.checked)}
   />
-  <i
-    class="mark ph-duotone {checked ? 'ph-check-square' : 'ph-square'}"
-    aria-hidden="true"
-  ></i>
+  <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+    <path
+      d={OUTLINE}
+      fill="none"
+      stroke="currentColor"
+      stroke-width="9"
+      stroke-linejoin="round"
+    ></path>
+    {#if checked}
+      <path
+        d={TICK}
+        fill="none"
+        stroke="currentColor"
+        stroke-width="11"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      ></path>
+    {/if}
+  </svg>
   <span>
     {@render children()}
     {#if note}
@@ -78,29 +104,29 @@
   /*
    * Kept in the page rather than hidden away, because a box removed from the
    * layout is also removed from where the focus ring would be drawn. Stacking
-   * it under the icon at the same size leaves it clickable and focusable whilst
-   * the icon is what anyone sees.
+   * it under the shape at the same size leaves it clickable and focusable
+   * whilst the drawing is what anyone sees.
    */
   .consent input {
     flex: none;
-    inline-size: 1.35em;
-    block-size: 1.35em;
-    margin: 0.05em -1.35em 0 0;
+    inline-size: 1.15em;
+    block-size: 1.15em;
+    margin: 0.21em -1.15em 0 0;
     appearance: none;
     opacity: 0;
   }
   /*
-   * Sized and centred against the text rather than left at whatever the
-   * platform draws, which reads as an afterthought beside the larger type the
-   * onboarding uses. Half the difference between the line box and the icon
-   * puts it on the middle of the first line at any size.
+   * Offset so the shape sits on the middle of the first line rather than on
+   * the middle of its line box, which are not the same thing: a line box
+   * carries room for descenders that the letters on that line mostly do not
+   * use. Both the size and the offset are in em, so they hold at any size.
    */
   .mark {
     flex: none;
-    margin-top: 0.05em;
+    inline-size: 1.15em;
+    block-size: 1.15em;
+    margin-top: 0.21em;
     color: var(--consent-muted, inherit);
-    font-size: 1.35em;
-    line-height: 1;
     pointer-events: none;
   }
   /*
@@ -119,8 +145,8 @@
     color: var(--consent-checked, var(--consent-accent, currentColor));
   }
   .consent input:focus-visible ~ .mark {
-    border-radius: 50%;
+    border-radius: 30%;
     outline: 2px solid var(--consent-accent, currentColor);
-    outline-offset: 2px;
+    outline-offset: 3px;
   }
 </style>
