@@ -31,6 +31,14 @@ export interface OnboardingDraft {
   repositoryOwner: string;
   repositoryName: string;
   statusPageName: string;
+  /**
+   * One sentence about the page, or empty.
+   *
+   * Optional, and stored as the configuration's SEO description rather than as
+   * a field of its own, because what somebody writes about their page is
+   * exactly what a search engine and a shared link should show.
+   */
+  description: string;
   customDomain: string;
   themeId: string;
   services: ServiceDraft[];
@@ -82,6 +90,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     repositoryOwner: "",
     repositoryName: "status",
     statusPageName: "Status",
+    description: "",
     customDomain: "",
     themeId: SYSTEM_THEMES[0].id,
     services: [createServiceDraft()],
@@ -97,6 +106,7 @@ export function buildSetupRequest(
   const customDomain = draft.customDomain.trim()
     ? normalizeCustomDomain(draft.customDomain)
     : null;
+  const description = draft.description.trim();
   if (draft.customDomain.trim() && !customDomain) {
     errors.customDomain =
       "Enter a hostname without https://, a path, port, credentials, or wildcard.";
@@ -124,6 +134,10 @@ export function buildSetupRequest(
       name: draft.statusPageName.trim(),
       theme: canonicalSystemTheme(theme),
       ...(customDomain ? { customDomain } : {}),
+      // Omitted entirely when blank. The contract caps the description at 300
+      // characters and rejects an empty string, so writing one would fail the
+      // whole configuration over a field nobody filled in.
+      ...(description ? { seo: { description } } : {}),
     },
     services: serviceValidation.services,
     history: { retentionDays: 365 },

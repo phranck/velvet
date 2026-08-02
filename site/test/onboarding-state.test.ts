@@ -6,7 +6,9 @@ import {
   createOnboardingDraft,
   createServiceDraft,
   submitOnboarding,
+  validateBasicsStep,
   validateServicesStep,
+  type OnboardingDraft,
   type SetupClient,
 } from "../src/onboarding/state.js";
 
@@ -268,4 +270,81 @@ test("lets a valid service through the Services step", () => {
   ];
 
   assert.deepEqual(validateServicesStep(draft), {});
+});
+
+test("carries an optional description into the configuration as SEO copy", () => {
+  const draft = createOnboardingDraft();
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.description = "  Live status for the Velvet Underground platform.  ";
+  draft.services = [
+    { ...createServiceDraft("website"), name: "Website", url: "https://example.com" },
+  ];
+
+  const result = buildSetupRequest(draft);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.equal(
+    result.request.configuration.statusPage.seo?.description,
+    "Live status for the Velvet Underground platform.",
+  );
+});
+
+test("omits the description entirely when it is blank", () => {
+  const draft = createOnboardingDraft();
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.description = "   ";
+  draft.services = [
+    { ...createServiceDraft("website"), name: "Website", url: "https://example.com" },
+  ];
+
+  const result = buildSetupRequest(draft);
+
+  // Not an empty string. The contract requires at least one character, so
+  // writing one would fail the whole configuration over a field left blank.
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.equal("seo" in result.request.configuration.statusPage, false);
+});
+
+test("rejects exactly the fields that carry the required mark", () => {
+  const complete = () => {
+    const draft = createOnboardingDraft();
+    draft.repositoryOwner = "velvet-user";
+    draft.repositoryName = "status";
+    draft.statusPageName = "My Status";
+    draft.services = [
+      { ...createServiceDraft("website"), name: "Website", url: "https://example.com" },
+    ];
+    return draft;
+  };
+
+  // The mark promises the step will not let you past. Anything wearing it has
+  // to be rejected here, and anything rejected here has to wear it, or the
+  // form teaches a rule it does not keep.
+  const required: [string, (draft: OnboardingDraft) => Record<string, string>][] = [
+    ["repositoryOwner", (draft) => { draft.repositoryOwner = ""; return validateBasicsStep(draft); }],
+    ["repositoryName", (draft) => { draft.repositoryName = ""; return validateBasicsStep(draft); }],
+    ["statusPageName", (draft) => { draft.statusPageName = ""; return validateBasicsStep(draft); }],
+    ["services.0.name", (draft) => { draft.services[0]!.name = ""; return validateServicesStep(draft); }],
+    ["services.0.url", (draft) => { draft.services[0]!.url = ""; return validateServicesStep(draft); }],
+    ["services.0.expectedStatusCodes", (draft) => {
+      draft.services[0]!.expectedStatusCodes = "";
+      return validateServicesStep(draft);
+    }],
+  ];
+  for (const [field, empty] of required) {
+    const errors = empty(complete());
+    assert.ok(errors[field], `${field} is marked required and must be rejected when empty`);
+  }
+
+  // The two that are not marked, and must not be. Both have contract defaults.
+  const optional = complete();
+  optional.customDomain = "";
+  optional.description = "";
+  assert.deepEqual(validateBasicsStep(optional), {});
 });
