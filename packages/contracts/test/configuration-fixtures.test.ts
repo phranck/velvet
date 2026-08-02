@@ -17,7 +17,7 @@ const validFixtures = [
   "json-health",
   "incident-policy",
   "maintenance-policy",
-  "lmaa-space",
+  "full-configuration",
 ] as const;
 
 for (const name of validFixtures) {
@@ -84,8 +84,8 @@ for (const [name, expectedCode, expectedPath] of invalidFixtures) {
   });
 }
 
-test("lmaa.space fixture represents every current service as an IPv4-only default check", () => {
-  const source = readFileSync(fixtureUrl("valid", "lmaa-space"), "utf8");
+test("a fully populated configuration gives every service one IPv4-only default check", () => {
+  const source = readFileSync(fixtureUrl("valid", "full-configuration"), "utf8");
   const result = parseVelvetConfiguration(source);
   assert.equal(result.success, true);
   if (!result.success) return;

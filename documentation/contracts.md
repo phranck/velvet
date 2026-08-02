@@ -75,8 +75,8 @@ if (!result.success) {
 ```
 
 Valid examples cover a minimal website, multiple services, advanced status
-codes, JSON health assertions, incident policy, maintenance labeling, and the
-current lmaa.space services under
+codes, JSON health assertions, incident policy, maintenance labeling, and one
+fully populated configuration under
 [`fixtures/valid/configuration`](../packages/contracts/fixtures/valid/configuration). Invalid examples
 under [`fixtures/invalid/configuration`](../packages/contracts/fixtures/invalid/configuration) pin the
 stable error code and JSON Pointer for every rejected class.
