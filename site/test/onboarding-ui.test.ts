@@ -613,3 +613,63 @@ test("offers concrete recovery targets without exposing backend details", async 
   assert.match(onboarding, />View failed workflow</);
   assert.match(onboarding, /Reference:/);
 });
+
+test("marks every required field and explains the mark once per card", async () => {
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
+  const serviceEditor = await readFile(
+    resolve(import.meta.dirname, "../src/components/service-editor/ServiceEditorRoot.svelte"),
+    "utf8",
+  );
+
+  // Six fields are enforced by the step checks, measured by emptying each one
+  // in onboarding-state.test.ts. Each has to carry the mark, and each has to
+  // tell assistive technology the same thing through `required`, which is where
+  // that belongs rather than on a decorative icon.
+  for (const label of ["Your GitHub name", "Repository name", "Status page name"]) {
+    assert.match(
+      onboarding,
+      new RegExp(`<span>${label}<RequiredField\\.Mark /></span>`),
+      label,
+    );
+  }
+  for (const label of ["Service name", "\\{urlLabel\\}", "Healthy status codes"]) {
+    assert.match(
+      serviceEditor,
+      new RegExp(`<span>${label}<RequiredField\\.Mark /></span>`),
+      label,
+    );
+  }
+  // Counted as an attribute on an input rather than as the word anywhere, since
+  // the import path contains it too.
+  const requiredInputs = (source: string) =>
+    (source.match(/<input\b[^>]*\brequired\b/g) ?? []).length;
+  assert.equal(requiredInputs(onboarding), 3);
+  assert.equal(requiredInputs(serviceEditor), 3);
+
+  // The optional two must not be marked, or the mark means nothing.
+  assert.doesNotMatch(onboarding, /Custom domain \(optional\)<RequiredField\.Mark/);
+  assert.doesNotMatch(onboarding, /Description \(optional\)<RequiredField\.Mark/);
+
+  // One legend per card that carries marks, which is the two collecting steps.
+  assert.equal((onboarding.match(/<RequiredField\.Legend \/>/g) ?? []).length, 2);
+});
+
+test("offers an optional description that becomes the page's SEO copy", async () => {
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
+  const state = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/state.ts"),
+    "utf8",
+  );
+
+  assert.match(onboarding, /<span>Description \(optional\)<\/span>/);
+  // Capped in the field as well as in the contract, so the limit is met before
+  // the whole configuration is rejected over it.
+  assert.match(onboarding, /maxlength="300"/);
+  assert.match(state, /seo: \{ description \}/);
+});

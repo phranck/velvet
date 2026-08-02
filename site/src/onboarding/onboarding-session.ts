@@ -72,6 +72,10 @@ function parseDraft(value: unknown): OnboardingDraft {
     typeof value.repositoryName !== "string" ||
     typeof value.statusPageName !== "string" ||
     (value.customDomain !== undefined && typeof value.customDomain !== "string") ||
+    // Absent in a session stored before the field existed, which is why it is
+    // tolerated rather than required. Rejecting it would throw away a draft
+    // somebody had already filled in.
+    (value.description !== undefined && typeof value.description !== "string") ||
     typeof value.themeId !== "string" ||
     !Array.isArray(value.services) ||
     value.services.length === 0
@@ -83,6 +87,7 @@ function parseDraft(value: unknown): OnboardingDraft {
     repositoryName: value.repositoryName,
     statusPageName: value.statusPageName,
     customDomain: value.customDomain ?? "",
+    description: value.description ?? "",
     themeId: value.themeId,
     services: value.services.map(parseService),
   };

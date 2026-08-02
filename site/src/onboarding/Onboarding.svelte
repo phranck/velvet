@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
+  import * as RequiredField from "../components/required-field";
   import * as ReviewList from "../components/review-list";
   import * as ServiceEditor from "../components/service-editor";
   import * as StepCard from "../components/step-card";
@@ -343,8 +344,9 @@
         </div>
         <div class="form-grid two-columns">
           <label>
-            <span>Your GitHub name</span>
+            <span>Your GitHub name<RequiredField.Mark /></span>
             <input
+              required
               autocomplete="username"
               bind:value={draft.repositoryOwner}
               aria-describedby="repository-owner-help"
@@ -356,8 +358,9 @@
             {#if errors.repositoryOwner}<small class="field-error">{errors.repositoryOwner}</small>{/if}
           </label>
           <label>
-            <span>Repository name</span>
+            <span>Repository name<RequiredField.Mark /></span>
             <input
+              required
               autocomplete="off"
               bind:value={draft.repositoryName}
               aria-describedby="repository-name-help"
@@ -369,8 +372,9 @@
             {#if errors.repositoryName}<small class="field-error">{errors.repositoryName}</small>{/if}
           </label>
           <label>
-            <span>Status page name</span>
+            <span>Status page name<RequiredField.Mark /></span>
             <input
+              required
               autocomplete="organization"
               bind:value={draft.statusPageName}
               aria-describedby="status-page-name-help"
@@ -398,6 +402,21 @@
             </small>
             {#if errors.customDomain}<small class="field-error">{errors.customDomain}</small>{/if}
           </label>
+          <label class="full-width">
+            <span>Description (optional)</span>
+            <input
+              autocomplete="off"
+              maxlength="300"
+              placeholder="Live status for the Velvet Underground platform."
+              bind:value={draft.description}
+              aria-describedby="description-help"
+              aria-invalid={errors.description ? "true" : undefined}
+            />
+            <small id="description-help" class="field-hint">
+              One sentence about your page. Search engines and shared links show it beneath the name.
+            </small>
+            {#if errors.description}<small class="field-error">{errors.description}</small>{/if}
+          </label>
           {#if draft.customDomain.trim()}
             <aside
               class="dns-guidance full-width"
@@ -419,6 +438,7 @@
             </aside>
           {/if}
         </div>
+        <RequiredField.Legend />
       </StepCard.Body>
 
       <StepCard.Body active={step === 1} labelledBy="services-title">
@@ -447,6 +467,7 @@
             </ServiceEditor.Item>
           {/each}
         </ServiceEditor.List>
+        <RequiredField.Legend />
       </StepCard.Body>
 
       <StepCard.Body active={step === 2} labelledBy="theme-title">
@@ -649,6 +670,9 @@
     --setup-button-font-size: var(--setup-text-body);
     --setup-font: "Barlow", "Segoe UI", sans-serif;
     --setup-heading-font: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --required-mark-color: var(--setup-accent);
+    --required-legend-color: var(--setup-muted);
+    --required-legend-size: var(--setup-text-caption);
     --picker-accent: var(--setup-accent);
     --picker-description-font-size: var(--setup-card-copy);
     --picker-icon-size: 1.875rem;

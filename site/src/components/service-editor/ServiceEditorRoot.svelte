@@ -6,6 +6,7 @@
     CURATED_SERVICE_ICONS,
     iconFor,
   } from "../../lib/icons.js";
+  import * as RequiredField from "../required-field";
   import ServiceIconPicker from "../service-icon-picker/ServiceIconPicker.svelte";
   import {
     createHeaderDraft,
@@ -69,8 +70,9 @@
 
   <div class="form-grid two-columns">
     <label>
-      <span>Service name</span>
+      <span>Service name<RequiredField.Mark /></span>
       <input
+        required
         placeholder="Website"
         bind:value={service.name}
         aria-describedby={serviceNameDescription
@@ -88,8 +90,9 @@
       {/if}
     </label>
     <label>
-      <span>{urlLabel}</span>
+      <span>{urlLabel}<RequiredField.Mark /></span>
       <input
+        required
         type="url"
         inputmode="url"
         placeholder="https://example.com"
@@ -158,8 +161,8 @@
             </select>
           </label>
           <label>
-            <span>Healthy status codes</span>
-            <input inputmode="numeric" bind:value={service.expectedStatusCodes} />
+            <span>Healthy status codes<RequiredField.Mark /></span>
+            <input required inputmode="numeric" bind:value={service.expectedStatusCodes} />
             {#if errors[`services.${index}.expectedStatusCodes`]}
               <small class="field-error">
                 {errors[`services.${index}.expectedStatusCodes`]}
