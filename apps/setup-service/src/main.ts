@@ -8,7 +8,11 @@ import { createInstallationSerialCounter } from "./serial.js";
 import { createSessionStore } from "./session.js";
 import { createStaticAssetProvider } from "./static.js";
 import { embeddedVelvetReleases } from "./update-releases.js";
+import { scheduleAutomaticSweeps } from "./update-schedule.js";
 import { createUpdateServices } from "./update-service.js";
+
+/** Long enough to be serving requests first, short enough to be this deploy. */
+const SWEEP_START_DELAY_MS = 30_000;
 
 const config = loadSetupServiceConfig(process.env);
 const logger = createAuditLogger();
@@ -46,10 +50,10 @@ Bun.serve({
   fetch: handler,
 });
 
-if (config.automaticUpdateIntervalMs > 0) {
-  // Unreferenced so a sweep waiting to run never keeps the process alive on
-  // its own. Serving is what this process is for.
-  setInterval(() => {
+scheduleAutomaticSweeps({
+  intervalMs: config.automaticUpdateIntervalMs,
+  startDelayMs: SWEEP_START_DELAY_MS,
+  run: () => {
     void updates.automatic.run().catch((cause: unknown) => {
       logger({
         level: "error",
@@ -61,8 +65,8 @@ if (config.automaticUpdateIntervalMs > 0) {
         cause,
       });
     });
-  }, config.automaticUpdateIntervalMs).unref();
-}
+  },
+});
 
 logger({
   level: "info",
