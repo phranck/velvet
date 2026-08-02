@@ -1,3 +1,13 @@
+/**
+ * Browser entry for the website.
+ *
+ * This runs during development, where mounting the component gives hot module
+ * replacement. It never runs in production: `vite.website.ts` renders the page
+ * at build time and removes the script, since the page has nothing to do once
+ * it is drawn. The module still matters to the build, because walking it is how
+ * Vite finds the fonts, the icon face, and every component's styles for the
+ * stylesheet that does ship.
+ */
 import "@phosphor-icons/web/duotone";
 import { mount } from "svelte";
 

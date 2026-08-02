@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
@@ -88,6 +88,53 @@ test("builds the standalone onboarding at the repository root", async () => {
   assert.match(html, /<script[^>]+src="\.\/assets\/[^"]+\.js"/);
   assert.match(html, /<link[^>]+href="\.\/assets\/[^"]+\.css"/);
   assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
+}, BUILD_TIMEOUT_MS);
+
+test("publishes the website as static HTML with no script at all", async () => {
+  const outDir = await buildDirectory();
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--config", "vite.website.ts",
+    "--outDir", outDir,
+    "--emptyOutDir",
+  ]);
+
+  const html = await readFile(resolve(outDir, "index.html"), "utf8");
+  assert.match(html, /<title>Velvet<\/title>/);
+  // The page's own words, which only appear once it has been rendered. Without
+  // the prerender the body is an empty mount point and a reader without
+  // JavaScript, or a crawler that does not run it, receives nothing.
+  assert.match(html, /GitHub-native status monitoring/);
+  assert.match(html, /What an installation gives you/);
+  assert.match(html, /href="https:\/\/setup\.velvet\.li\/onboarding\/"/);
+  assert.doesNotMatch(html, /<script/);
+  assert.equal((await readdir(resolve(outDir, "assets"))).some((entry) => entry.endsWith(".js")), false);
+
+  // Svelte scopes styles by hashing them, and the markup is rendered in a
+  // separate pass from the stylesheet. Identical hashes are what makes that
+  // safe, and a mismatch would produce an unstyled page rather than an error,
+  // so it is checked rather than assumed.
+  const stylesheetName = (await readdir(resolve(outDir, "assets"))).find(
+    (entry) => entry.endsWith(".css"),
+  );
+  assert.ok(stylesheetName, "the build emits a stylesheet");
+  const stylesheet = await readFile(
+    resolve(outDir, "assets", stylesheetName),
+    "utf8",
+  );
+  const scopedClasses = new Set(html.match(/svelte-[a-z0-9]+/g) ?? []);
+  assert.ok(scopedClasses.size > 0, "the markup carries scoped classes");
+  for (const scopedClass of scopedClasses) {
+    assert.ok(
+      stylesheet.includes(`.${scopedClass}`),
+      `${scopedClass} is missing from the stylesheet`,
+    );
+  }
+
+  // The render resolves imported assets the way a dev server would, so a
+  // failure here means the published page points at the build machine.
+  assert.doesNotMatch(html, /\/@fs\//);
+  assert.match(html, /src="\.\/assets\/screenshot-[^"]+\.png"/);
 }, BUILD_TIMEOUT_MS);
 
 test("builds status-page assets relative to the deployed Pages path", async () => {

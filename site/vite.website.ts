@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 
 import {
   phosphorWoff2Only,
+  prerenderStaticEntry,
   renameHtmlEntry,
 } from "./vite.static-tool.js";
 
@@ -18,16 +19,32 @@ import {
  *
  * `publicDir` carries the `CNAME` file that binds the published site to
  * `velvet.li`, because GitHub reads that name from the deployed output.
+ *
+ * What ships is static HTML. The page is built from the same Svelte components
+ * as the onboarding, but it is rendered once here rather than in every
+ * visitor's browser, so the output carries no script at all.
  */
 const websiteOutDir = resolve(import.meta.dirname, "dist-website");
 
 export default defineConfig({
+  // Stated rather than inherited from NODE_ENV. Anything that builds this from
+  // inside another tool passes its own environment down, and the test runner
+  // sets NODE_ENV=test, which was enough to make Svelte scope its styles under
+  // a different scheme than the one the render used. What gets published must
+  // not depend on what happened to be exported in the shell that built it.
+  mode: "production",
   base: "./",
   publicDir: resolve(import.meta.dirname, "src/website/public"),
   plugins: [
     phosphorWoff2Only,
     svelte(),
     renameHtmlEntry("website.html"),
+    // After the rename, because it rewrites the entry under its final name.
+    prerenderStaticEntry({
+      root: import.meta.dirname,
+      component: "/src/website/Website.svelte",
+      mountId: "website",
+    }),
   ],
   build: {
     outDir: websiteOutDir,
