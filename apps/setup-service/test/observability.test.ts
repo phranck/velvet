@@ -136,7 +136,7 @@ test("keeps a stateless installation token out of the log", () => {
     operation: "provision",
     status: 502,
     outcome: "failed",
-    code: "GITHUB_UNAVAILABLE",
+    code: "GITHUB_API_FAILED",
     errorId: "error-id",
     cause,
   });
