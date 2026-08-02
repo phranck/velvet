@@ -8,7 +8,10 @@ import {
   persistOnboardingDraft,
   type OnboardingSessionStorage,
 } from "../src/onboarding/onboarding-session.js";
-import { createOnboardingDraft } from "../src/onboarding/state.js";
+import {
+  createOnboardingDraft,
+  type OnboardingDraft,
+} from "../src/onboarding/state.js";
 
 class MemoryStorage implements OnboardingSessionStorage {
   readonly values = new Map<string, string>();
@@ -84,4 +87,24 @@ test("starts fresh when browser session storage is unavailable", () => {
   assert.equal(loadOnboardingDraft(storage), null);
   assert.equal(persistOnboardingDraft(createOnboardingDraft(), storage), false);
   assert.doesNotThrow(() => clearOnboardingDraft(storage));
+});
+
+test("carries a given gallery consent through a stored session", () => {
+  const storage = new MemoryStorage();
+  const draft = Object.assign(createOnboardingDraft(), { listInGallery: true });
+
+  assert.equal(persistOnboardingDraft(draft, storage), true);
+  assert.equal(loadOnboardingDraft(storage)?.listInGallery, true);
+});
+
+test("reads a session stored before the gallery question as a no", () => {
+  const storage = new MemoryStorage();
+  const withoutConsent: Partial<OnboardingDraft> = createOnboardingDraft();
+  delete withoutConsent.listInGallery;
+  storage.setItem(
+    ONBOARDING_SESSION_STORAGE_KEY,
+    JSON.stringify({ version: 1, draft: withoutConsent }),
+  );
+
+  assert.equal(loadOnboardingDraft(storage)?.listInGallery, false);
 });

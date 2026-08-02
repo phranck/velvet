@@ -348,3 +348,44 @@ test("rejects exactly the fields that carry the required mark", () => {
   optional.description = "";
   assert.deepEqual(validateBasicsStep(optional), {});
 });
+
+test("writes no gallery consent for a visitor who never gave one", () => {
+  const draft = createOnboardingDraft();
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.services = [
+    {
+      ...createServiceDraft("website"),
+      name: "Website",
+      url: "https://example.com",
+    },
+  ];
+
+  const result = buildSetupRequest(draft);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.deepEqual(result.request.configuration.gallery, { listed: false });
+});
+
+test("carries a ticked gallery consent into the written configuration", () => {
+  const draft = createOnboardingDraft();
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.listInGallery = true;
+  draft.services = [
+    {
+      ...createServiceDraft("website"),
+      name: "Website",
+      url: "https://example.com",
+    },
+  ];
+
+  const result = buildSetupRequest(draft);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.deepEqual(result.request.configuration.gallery, { listed: true });
+});

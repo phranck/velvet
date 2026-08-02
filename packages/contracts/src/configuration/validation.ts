@@ -525,6 +525,13 @@ function normalizeConfiguration(
         maintenanceLabel: value.incidents?.maintenanceLabel ?? "maintenance",
       },
       history: { retentionDays: value.history?.retentionDays ?? 365 },
+      /*
+       * Written out even when nobody said yes, so the answer is visible in the
+       * file and can be changed there. A flag that only appears once it is true
+       * is one nobody discovers, and withdrawing it would mean guessing at a
+       * key that is not written down anywhere.
+       */
+      gallery: { listed: value.gallery?.listed ?? false },
       updates: {
         automaticSecurityUpdates:
           value.updates?.automaticSecurityUpdates ?? true,

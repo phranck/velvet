@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
+  import ConsentCheckbox from "../components/ConsentCheckbox.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
   import * as RequiredField from "../components/required-field";
   import * as PageFooter from "../components/page-footer";
@@ -404,14 +405,15 @@
           </label>
           <label class="full-width">
             <span>Description (optional)</span>
-            <input
+            <textarea
               autocomplete="off"
               maxlength="300"
+              rows="3"
               placeholder="Live status for the Velvet Underground platform."
               bind:value={draft.description}
               aria-describedby="description-help"
               aria-invalid={errors.description ? "true" : undefined}
-            />
+            ></textarea>
             <small id="description-help" class="field-hint">
               One sentence about your page. Search engines and shared links show it beneath the name.
             </small>
@@ -535,6 +537,28 @@
             />
           {/if}
         </ReviewList.Root>
+        <div class="gallery-consent">
+          <ConsentCheckbox
+            checked={draft.listInGallery}
+            onchange={(listed) => (draft.listInGallery = listed)}
+          >
+            By checking this box, you allow Velvet to display your status page
+            as a reference on an
+            <!-- Inside the label, so a click on it would otherwise toggle the
+                 box on the way past. Opening the page and answering the
+                 question are separate intentions. -->
+            <a
+              href="https://velvet.li/references"
+              target="_blank"
+              rel="noopener noreferrer"
+              onclick={(event) => event.stopPropagation()}
+            >overview page</a>
+            on the Velvet website. Only the page itself is shown, never the
+            repository behind it, so a private repository makes no difference.
+            You can change this setting at any time in your status page's
+            configurator.
+          </ConsentCheckbox>
+        </div>
         <p class="github-permission-note">
           GitHub asks for two approvals during the first setup. The first lets Velvet create the repository and is removed immediately. The second gives Velvet access only to that new repository.
         </p>
@@ -662,9 +686,14 @@
     --setup-button-font-size: var(--setup-text-body);
     --setup-font: var(--velvet-font);
     --setup-heading-font: var(--velvet-font-heading);
-    --required-mark-color: var(--setup-accent);
+    --consent-text: var(--setup-text);
+    --consent-muted: var(--setup-muted);
+    --consent-accent: var(--setup-accent);
+    --consent-checked: var(--setup-success);
+    --consent-font-size: var(--setup-card-copy);
+    --required-mark-color: var(--setup-error);
     --required-legend-color: var(--setup-muted);
-    --required-legend-size: var(--setup-text-caption);
+    --required-legend-size: var(--setup-text-body);
     --picker-accent: var(--setup-accent);
     --picker-description-font-size: var(--setup-card-copy);
     --picker-icon-size: 1.875rem;
@@ -845,7 +874,8 @@
     font-size: var(--setup-text-body);
     font-weight: 650;
   }
-  input {
+  input,
+  textarea {
     width: 100%;
     height: var(--setup-control-height);
     min-width: 0;
@@ -858,13 +888,25 @@
     box-sizing: border-box;
     font: inherit;
   }
-  input::placeholder {
+  /* Three lines of room, so a sentence that runs on stays readable whilst it
+     is being written. Resizing stays vertical, because a wider box would
+     break out of the two-column grid the fields sit in. */
+  textarea {
+    height: auto;
+    padding: 0.55rem 0.75rem;
+    line-height: 1.45;
+    resize: vertical;
+  }
+  input::placeholder,
+  textarea::placeholder {
     color: #747887;
   }
-  input:focus-visible {
+  input:focus-visible,
+  textarea:focus-visible {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--setup-accent) 22%, transparent);
   }
-  input[aria-invalid="true"] {
+  input[aria-invalid="true"],
+  textarea[aria-invalid="true"] {
     background: color-mix(in srgb, var(--setup-error) 9%, var(--setup-input));
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--setup-error) 70%, transparent);
   }
@@ -920,6 +962,9 @@
   }
   .velvet-button i {
     font-size: 1.15em;
+  }
+  .gallery-consent {
+    margin: 1.4rem 1rem 0;
   }
   .github-permission-note {
     margin: 1rem 1rem 0;

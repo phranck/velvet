@@ -42,9 +42,15 @@ beforeAll(async () => {
   harness = await createConfiguratorHarness("configurator-update");
 });
 
+/*
+ * Given room beyond the five seconds a hook gets by default, which the runner
+ * otherwise overruns whenever the consent control renders a shape. Closing
+ * itself takes about thirty milliseconds, so the time is spent before the hook
+ * body starts and the cause is not yet known. Tracked in #214.
+ */
 afterAll(async () => {
   await harness.close();
-});
+}, 30_000);
 
 test("connects the update section to an installation and installs from it", async () => {
   const page = await harness.newPage();

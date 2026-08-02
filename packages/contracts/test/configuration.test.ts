@@ -99,8 +99,51 @@ services:
       maintenanceLabel: "maintenance",
     },
     history: { retentionDays: 365 },
+    gallery: { listed: false },
     updates: { automaticSecurityUpdates: true },
   });
+});
+
+test("does not put an installation forward as a reference unless asked", () => {
+  const result = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - { name: Website, url: https://example.com }
+`);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.deepEqual(result.data.gallery, { listed: false });
+});
+
+test("records the owner agreeing to be named as a reference", () => {
+  const result = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - { name: Website, url: https://example.com }
+gallery: { listed: true }
+`);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.deepEqual(result.data.gallery, { listed: true });
+});
+
+test("rejects a gallery block that answers nothing", () => {
+  const result = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - { name: Website, url: https://example.com }
+gallery: {}
+`);
+
+  assert.equal(result.success, false);
 });
 
 test("lets users opt out of automatic security updates", () => {
