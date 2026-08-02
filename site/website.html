@@ -5,18 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#0a0b0f" />
+    <link rel="canonical" href="https://velvet.li/" />
     <meta
       name="description"
       content="Velvet monitors websites and HTTP endpoints from GitHub Actions and publishes a themeable status page through GitHub Pages, without a server or a database."
     />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Velvet" />
+    <meta property="og:locale" content="en" />
     <meta property="og:title" content="Velvet" />
     <meta
       property="og:description"
-      content="GitHub-native status monitoring and a polished status page, without a server or database."
+      content="GitHub-native status monitoring and a polished status page, without a server or a database. Just five steps away."
     />
-    <meta property="og:type" content="website" />
     <meta property="og:url" content="https://velvet.li/" />
+    <meta property="og:image" content="https://velvet.li/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Velvet, GitHub-native status monitoring and a polished status page"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Velvet" />
+    <meta
+      name="twitter:description"
+      content="GitHub-native status monitoring and a polished status page, without a server or a database. Just five steps away."
+    />
+    <meta name="twitter:image" content="https://velvet.li/og.png" />
     <title>Velvet</title>
+    <!--
+      Described as software rather than as prose, so a search engine reads the
+      licence, the price, and where to get it as facts instead of inferring them
+      from the copy. The two entities are linked through @id, which is what tells
+      a consumer they describe one thing rather than two.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://velvet.li/#website",
+            "url": "https://velvet.li/",
+            "name": "Velvet",
+            "description": "GitHub-native status monitoring and a polished status page, without a server or a database.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://velvet.li/#publisher" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://velvet.li/#publisher",
+            "name": "Layered",
+            "url": "https://layered.work"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://velvet.li/#velvet",
+            "name": "Velvet",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Any",
+            "url": "https://velvet.li/",
+            "description": "Velvet monitors websites and HTTP endpoints from GitHub Actions, records incidents and planned maintenance in GitHub Issues, and publishes a themeable status page through GitHub Pages.",
+            "license": "https://layered.mit-license.org",
+            "isAccessibleForFree": true,
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "EUR"
+            },
+            "author": { "@id": "https://velvet.li/#publisher" },
+            "codeRepository": "https://github.com/phranck/velvet",
+            "featureList": [
+              "Direct IPv4 GET and HEAD checks from GitHub-hosted runners",
+              "Automatic incident creation and recovery through GitHub Issues",
+              "Up to 365 days of availability and response-time history",
+              "Four system themes with detailed visual configuration",
+              "Custom domains through GitHub Pages"
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="website"></div>
