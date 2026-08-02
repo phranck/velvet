@@ -10,6 +10,7 @@ export default defineConfig(
     "**/node_modules/**",
     "configurator/assets/**",
     "onboarding/assets/**",
+    "site/dist-website/**",
     "site/.svelte-kit/**",
   ]),
   js.configs.recommended,

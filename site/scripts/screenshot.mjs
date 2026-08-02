@@ -35,8 +35,17 @@ const OUT = resolve(SITE, "..", "docs", "screenshot.png");
 const PAGE_W = 1180;
 /** CSS px height captured — shows logo, hero, range bar, and the first cards. */
 const PAGE_H = 760;
-/** Padding around the framed card, in CSS px. */
-const FRAME_PAD = 88;
+/**
+ * Transparent room around the window, in CSS px, sized to hold its drop shadow.
+ *
+ * The picture carries no background of its own. Whatever displays it supplies
+ * that, which is what lets the website run its own tint out to both edges of
+ * the window behind an unchanged screenshot, and lets the README sit the same
+ * image on whichever GitHub theme the reader uses.
+ */
+const FRAME_PAD = 80;
+/** The shadow reaches further down than sideways, so the bottom gets more. */
+const FRAME_PAD_BOTTOM = 130;
 
 const MIME = {
   ".html": "text/html",
@@ -180,6 +189,12 @@ async function main() {
     const desktopChartWidth = await firstChart.locator("svg").evaluate((chart) => chart.getBoundingClientRect().width);
     assert.ok(desktopChartWidth > 500);
 
+    // Focusing the summary and the chart link scrolled them into view, which
+    // left the page a little under sixty pixels down and cropped the header out
+    // of the picture. Back to the top before the shutter.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(150);
+
     const shot = await page.screenshot({ type: "png" });
 
     await page
@@ -227,7 +242,7 @@ async function main() {
     const frame = await ctx.newPage();
     await frame.setViewportSize({
       width: PAGE_W + FRAME_PAD * 2 + 40,
-      height: PAGE_H + BAR_H + FRAME_PAD * 2 + 40,
+      height: PAGE_H + BAR_H + FRAME_PAD + FRAME_PAD_BOTTOM + 40,
     });
     const chevL = `<svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M6.5 1 1.5 6.5 6.5 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     const chevR = `<svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M1.5 1 6.5 6.5 1.5 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -237,11 +252,15 @@ async function main() {
       `<!doctype html><html><head><meta charset="utf-8"><style>
         *{margin:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-        #frame{display:inline-block;padding:${FRAME_PAD}px;border-radius:34px;
-          background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 28%,#c026d3 70%,#ec4899 100%)}
+        /* No background of its own. The transparent margin exists only so the
+           shadow is not clipped, which leaves whatever displays the picture
+           free to put its own surface behind it. */
+        #frame{display:inline-block;
+          padding:${FRAME_PAD}px ${FRAME_PAD}px ${FRAME_PAD_BOTTOM}px;
+          background:transparent}
         #win{width:${PAGE_W}px;border-radius:12px;overflow:hidden;
           border:1px solid rgba(255,255,255,.08);
-          box-shadow:0 60px 140px rgba(0,0,0,.55),0 14px 40px rgba(0,0,0,.45)}
+          box-shadow:0 34px 78px rgba(0,0,0,.6),0 10px 26px rgba(0,0,0,.5)}
         #bar{height:${BAR_H}px;display:flex;align-items:center;gap:18px;padding:0 20px;
           position:relative;background:#2b2b31;border-bottom:1px solid rgba(0,0,0,.45)}
         .lights{display:flex;gap:8px}
