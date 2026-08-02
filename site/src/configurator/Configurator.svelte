@@ -1111,13 +1111,13 @@
   .configurator {
     --tool-bg: #101116;
     --tool-panel: #1b1d26;
-    --tool-panel-raised: #272a36;
+    --tool-panel-raised: var(--velvet-surface-raised);
     --tool-input: #171922;
     --tool-line: #363a47;
-    --tool-text: #efedf5;
-    --tool-muted: #979aa8;
+    --tool-text: var(--velvet-text);
+    --tool-muted: var(--velvet-text-muted);
     --tool-faint: #6f7280;
-    --tool-accent: #8ca5ff;
+    --tool-accent: var(--velvet-accent);
     --tool-error: #ff7e8c;
     --picker-accent: var(--tool-accent);
     --picker-selection-scale: 1.14;
