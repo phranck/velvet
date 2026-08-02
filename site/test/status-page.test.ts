@@ -100,6 +100,7 @@ async function renderStatusPage(
   allServicesOpen = true,
   incidents: IncidentsDocument = incidentsDocument,
   renderedStatus: StatusDocument = statusDocument,
+  serial?: number,
 ): Promise<string> {
   const config: VelvetConfig = {
     owner: "example",
@@ -120,6 +121,7 @@ async function renderStatusPage(
     icons: Object.fromEntries(
       renderedStatus.services.map(({ id }) => [id, "ph-globe"]),
     ),
+    ...(serial === undefined ? {} : { serial }),
   };
 
   return renderer.render("/src/components/StatusPage.svelte", {
@@ -369,4 +371,20 @@ test("uses browser view transitions without live height animation", async () => 
   assert.match(page, /animation-duration:\s*200ms/);
   assert.match(page, /\.toggle-all i\s*\{[^}]*transform 200ms ease-in-out/s);
   assert.doesNotMatch(page, /\.animate\(/);
+});
+
+test("prints the installation serial beside the Velvet mark, when there is one", async () => {
+  const withSerial = await renderStatusPage(
+    "grouped",
+    true,
+    incidentsDocument,
+    statusDocument,
+    412,
+  );
+  assert.match(withSerial, /data-status-serial[^>]*>00412</);
+
+  // An installation made before serials existed has none, and inventing a
+  // placeholder would claim something untrue about it.
+  const withoutSerial = await renderStatusPage("grouped");
+  assert.doesNotMatch(withoutSerial, /data-status-serial/);
 });

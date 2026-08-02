@@ -93,6 +93,10 @@
     viewTransitions = createViewTransitionController(document);
     return () => viewTransitions?.destroy();
   });
+  /** Padded to five digits, the way a board prints a unit number. */
+  const serialLabel = $derived(
+    typeof config.serial === "number" ? String(config.serial).padStart(5, "0") : "",
+  );
 </script>
 
 <main class="status-page" data-layout={config.layout}>
@@ -212,6 +216,15 @@
         target="_blank"
         rel="noopener noreferrer"
       />
+      {#if serialLabel}
+        <!--
+          The number this installation was issued, printed the way a board
+          prints a unit number. Shown only where there is one: an installation
+          from before serials existed has no number, and inventing a placeholder
+          would claim something untrue about it.
+        -->
+        <span class="serial" data-status-serial>{serialLabel}</span>
+      {/if}
     </div>
   {/if}
 </main>
@@ -341,6 +354,17 @@
   }
   .toggle-all i.expanded {
     transform: rotate(180deg);
+  }
+  .serial {
+    padding: 0.05rem 0.3rem;
+    border-radius: 0.15rem;
+    background: color-mix(in srgb, var(--text-tertiary) 60%, transparent);
+    color: var(--canvas);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    user-select: none;
   }
   .powered {
     --velvet-wordmark-size: 24px;
