@@ -2,6 +2,7 @@
   import { onMount, tick } from "svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
   import * as RequiredField from "../components/required-field";
+  import * as PageFooter from "../components/page-footer";
   import * as ReviewList from "../components/review-list";
   import * as ServiceEditor from "../components/service-editor";
   import * as StepCard from "../components/step-card";
@@ -36,7 +37,6 @@
   /** Publishing is its own step, and the last one. */
   const INSTALL_STEP = STEPS.length - 1;
   const REVIEW_STEP = INSTALL_STEP - 1;
-  const CURRENT_YEAR = new Date().getFullYear();
   const SESSION_STORAGE = browserSessionStorage();
   const GITHUB_RETURN = githubReturnState();
   const PROGRESS_LABELS: Record<SetupProgressStage, string> = {
@@ -334,8 +334,8 @@
       <StepCard.Root>
       <div class="step-card-viewport" data-step-card-viewport>
       <StepCard.Body active={step === 0} labelledBy="identity-title">
-        <div class="section-heading">
-          <div class="section-title">
+        <div class="velvet-section-heading">
+          <div class="velvet-section-title">
             <span>01</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="identity-title">Name your status page</h2>
@@ -442,8 +442,8 @@
       </StepCard.Body>
 
       <StepCard.Body active={step === 1} labelledBy="services-title">
-        <div class="section-heading">
-          <div class="section-title">
+        <div class="velvet-section-heading">
+          <div class="velvet-section-title">
             <span>02</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="services-title">Add services</h2>
@@ -471,8 +471,8 @@
       </StepCard.Body>
 
       <StepCard.Body active={step === 2} labelledBy="theme-title">
-        <div class="section-heading">
-          <div class="section-title">
+        <div class="velvet-section-heading">
+          <div class="velvet-section-title">
             <span>03</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="theme-title">Choose a starting theme</h2>
@@ -498,8 +498,8 @@
       </StepCard.Body>
 
       <StepCard.Body active={step === 3} labelledBy="publish-title">
-        <div class="section-heading">
-          <div class="section-title">
+        <div class="velvet-section-heading">
+          <div class="velvet-section-title">
             <span>04</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="publish-title">Review your status page</h2>
@@ -541,8 +541,8 @@
       </StepCard.Body>
 
       <StepCard.Body active={step === INSTALL_STEP} labelledBy="install-title">
-        <div class="section-heading">
-          <div class="section-title">
+        <div class="velvet-section-heading">
+          <div class="velvet-section-title">
             <span>05</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
             <h2 id="install-title">Publish</h2>
@@ -583,7 +583,7 @@
 
       <StepCard.Footer>
         {#if step > 0 && !submitting && step !== INSTALL_STEP}
-          <button class="secondary-button" type="button" onclick={previousStep}>
+          <button class="velvet-button velvet-button--secondary" type="button" onclick={previousStep}>
             <span data-step-card-button-label>{previousStepLabel}</span>
           </button>
         {/if}
@@ -591,7 +591,7 @@
           <!-- A failed install is usually a wrong answer earlier, so the way
                back to the review is the useful offer. -->
           <button
-            class="secondary-button"
+            class="velvet-button velvet-button--secondary"
             type="button"
             onclick={() => changeStep(REVIEW_STEP)}
             data-back-to-review
@@ -600,16 +600,16 @@
           </button>
         {/if}
         {#if step < REVIEW_STEP}
-          <button class="primary-button" type="button" onclick={nextStep}>
+          <button class="velvet-button velvet-button--primary" type="button" onclick={nextStep}>
             <span data-step-card-button-label>{nextStepLabel}</span>
           </button>
         {:else if step === INSTALL_STEP && submissionState === "success" && installationUrl}
-          <a class="primary-button" href={installationUrl} data-open-status-page>
+          <a class="velvet-button velvet-button--primary" href={installationUrl} data-open-status-page>
             <i class="ph-duotone ph-chart-line-up" aria-hidden="true"></i>
             <span data-step-card-button-label>Open Status Page</span>
           </a>
         {:else}
-          <button class="primary-button" type="submit" disabled={submitting}>
+          <button class="velvet-button velvet-button--primary" type="submit" disabled={submitting}>
             <span data-step-card-button-label>
               {submitting
                 ? "Setting up Velvet…"
@@ -627,49 +627,41 @@
       </StepCard.Root>
     </form>
   </main>
-  <footer class="page-footer">
-    <span class="page-footer-credit">
-      <span>© {CURRENT_YEAR} by </span>
-      <a href="https://layered.work" target="_blank" rel="noopener noreferrer">LAYERED</a>
-    </span>
-    {#if serialLabel}
-      <p class="footer-serial" aria-live="polite" data-footer-serial>
-        <span>Serial Nr.:</span>
-        <span class="footer-serial-number">{serialLabel}</span>
-      </p>
-    {/if}
-  </footer>
+  <PageFooter.Root>
+    <PageFooter.Credit />
+    <PageFooter.Serial label={serialLabel} />
+  </PageFooter.Root>
 </div>
 
 <style>
   .onboarding-shell {
-    --setup-accent: #8ca5ff;
+    --setup-accent: var(--velvet-accent);
     /* The page's own base tone, matching the last background layer in
        onboarding.css. Anything that has to hide the board backdrop fills with
        this rather than inventing a shade. */
-    --setup-base: #0a0b0f;
+    --setup-base: var(--velvet-base);
     --setup-panel: rgba(27, 29, 38, 0.9);
-    --setup-panel-raised: #272a36;
+    --setup-panel-raised: var(--velvet-surface-raised);
     --setup-card: #222530;
     --setup-input: #11131a;
     --setup-input-border: 1px solid
       color-mix(in srgb, var(--setup-text) 14%, transparent);
-    --setup-text: #efedf5;
-    --setup-muted: #979aa8;
+    --setup-text: var(--velvet-text);
+    --setup-muted: var(--velvet-text-muted);
     --setup-error: #ff8d9a;
     --setup-success: #7fdda2;
     --setup-control-height: 2.5rem;
     --setup-control-radius: 0.55rem;
-    --setup-text-small: 0.9375rem;
-    --setup-text-body: 1rem;
+    --setup-text-small: var(--velvet-text-small);
+    --setup-text-body: var(--velvet-text-body);
     --setup-text-lead: 1.125rem;
     --setup-text-caption: 0.8125rem;
-    --setup-text-intro: 2rem;
-    --setup-text-copy: 1.25rem;
+    --setup-text-intro: var(--velvet-text-intro);
+    --setup-text-copy: var(--velvet-text-copy);
     --setup-card-copy: var(--setup-text-copy);
     --setup-button-font-size: var(--setup-text-body);
-    --setup-font: "Barlow", "Segoe UI", sans-serif;
-    --setup-heading-font: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --setup-font: var(--velvet-font);
+    --setup-heading-font: var(--velvet-font-heading);
     --required-mark-color: var(--setup-accent);
     --required-legend-color: var(--setup-muted);
     --required-legend-size: var(--setup-text-caption);
@@ -751,25 +743,8 @@
   /* The unit number, kept as the page's small print rather than painted onto
      the board. The backdrop is a generated SVG used as a CSS background, so it
      could never have carried a live value anyway. */
-  .footer-serial {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin: 0;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: var(--setup-text-caption);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    user-select: none;
-  }
   /* Inverted, the way a board prints a value meant to be read rather than
      skimmed. */
-  .footer-serial-number {
-    padding: 0.05rem 0.35rem;
-    border-radius: 0.15rem;
-    background: color-mix(in srgb, var(--setup-muted) 70%, transparent);
-    color: var(--setup-base);
-  }
   .intro > p:last-child {
     width: 100%;
     max-width: none;
@@ -822,18 +797,7 @@
   .step-card-viewport :global([data-step-card-body]:not([hidden])) {
     view-transition-name: onboarding-step-card;
   }
-  .section-heading {
-    display: grid;
-    gap: 0.45rem;
-    margin-inline: 1rem;
-    margin-bottom: 2rem;
-  }
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .section-title > span {
+  .velvet-section-title > span {
     color: var(--setup-accent);
     font-family: var(--setup-heading-font);
     font-size: clamp(1.5rem, 3vw, 1.875rem);
@@ -841,7 +805,7 @@
     letter-spacing: 0.08em;
     line-height: 1.1;
   }
-  .section-title .separator {
+  .velvet-section-title .separator {
     color: var(--setup-accent);
     letter-spacing: 0;
   }
@@ -853,7 +817,7 @@
     font-weight: 600;
     letter-spacing: -0.025em;
   }
-  .section-heading p {
+  .velvet-section-heading p {
     margin: 0;
     color: var(--setup-muted);
     font-size: var(--setup-card-copy);
@@ -954,21 +918,7 @@
     font-family: inherit;
     overflow-wrap: anywhere;
   }
-  .primary-button,
-  .secondary-button {
-    min-height: var(--setup-control-height);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    border-radius: var(--step-card-inner-radius);
-    cursor: pointer;
-    font-size: var(--setup-button-font-size);
-    font-weight: 650;
-    line-height: 1;
-    text-decoration: none;
-  }
-  .primary-button i {
+  .velvet-button i {
     font-size: 1.15em;
   }
   .github-permission-note {
@@ -1042,23 +992,13 @@
     color: var(--setup-text);
     font-family: inherit;
   }
-  .primary-button,
-  .secondary-button {
+  .velvet-button {
     min-width: 7rem;
     padding: 0 0.75rem;
   }
-  .primary-button {
-    background: var(--setup-accent);
-    color: #10131c;
-  }
-  .primary-button:disabled {
-    cursor: wait;
-    opacity: 0.65;
-  }
-  .secondary-button {
+  /* Pushed to the far end of the card footer, away from the primary action. */
+  .velvet-button--secondary {
     margin-right: auto;
-    background: var(--setup-panel-raised);
-    color: var(--setup-text);
   }
   button:focus-visible {
     outline: 2px solid var(--setup-accent);
@@ -1068,42 +1008,19 @@
     outline: 2px solid var(--setup-accent);
     outline-offset: 3px;
   }
-  .page-footer {
+  /* Pinned over a page that scrolls beneath it, which is a property of this
+     page rather than of a footer. */
+  :global([data-page-footer]) {
     position: fixed;
     z-index: 80;
     right: 0;
     bottom: 0;
     left: 0;
-    min-height: 3rem;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 0.2rem;
-    padding: 0.5rem 1rem;
     background: color-mix(in srgb, #0d0e14 88%, transparent);
-    color: var(--setup-muted);
-    box-sizing: border-box;
-    font-size: var(--setup-text-small);
     backdrop-filter: blur(16px);
   }
   /* Middle column, so the credit stays centred on the page regardless of how
      wide the serial beside it happens to be. */
-  .page-footer-credit {
-    grid-column: 2;
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-  }
-  .page-footer .footer-serial {
-    grid-column: 3;
-    justify-self: end;
-    color: var(--setup-muted);
-  }
-  .page-footer a {
-    color: var(--setup-text);
-    font-weight: 650;
-    text-decoration: none;
-  }
   :global(::view-transition-group(root)),
   :global(::view-transition-old(root)),
   :global(::view-transition-new(root)) {
@@ -1203,7 +1120,7 @@
       width: min(100% - 1rem, 960px);
       padding-top: 2rem;
     }
-    .section-heading {
+    .velvet-section-heading {
       margin-inline: var(--setup-control-radius);
     }
   }

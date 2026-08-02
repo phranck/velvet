@@ -257,7 +257,9 @@ test("uses one subtly raised surface scale across the sidebar", async () => {
   );
 
   assert.match(source, /--tool-panel:\s*#1b1d26/);
-  assert.match(source, /--tool-panel-raised:\s*#272a36/);
+  // The raised surface is one of the four values every Velvet tool shares, so
+  // the configurator names it rather than repeating it.
+  assert.match(source, /--tool-panel-raised:\s*var\(--velvet-surface-raised\)/);
   assert.match(source, /--tool-input:\s*#171922/);
   assert.match(source, /--tool-line:\s*#363a47/);
   assert.match(

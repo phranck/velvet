@@ -83,17 +83,33 @@ test("uses the local Barlow family for onboarding typography", async () => {
     resolve(import.meta.dirname, "../src/onboarding/onboarding.css"),
     "utf8",
   );
+  // The faces and the sizes are declared once for every Velvet tool and reached
+  // from here, so the chain is what this checks rather than the location.
+  const tokens = await readFile(
+    resolve(import.meta.dirname, "../src/lib/velvet-tokens.css"),
+    "utf8",
+  );
+  // The faces live apart from the values, because the configurator shares the
+  // values and sets its own text in a different face.
+  const shell = await readFile(
+    resolve(import.meta.dirname, "../src/lib/velvet-board-shell.css"),
+    "utf8",
+  );
 
-  assert.match(styles, /@fontsource\/barlow\/latin-400\.css/);
-  assert.match(styles, /@fontsource\/barlow\/latin-600\.css/);
-  assert.match(styles, /@fontsource\/barlow-condensed\/latin-600\.css/);
-  assert.match(styles, /font-family:\s*"Barlow"/);
-  assert.match(onboarding, /--setup-text-small:\s*0\.9375rem/);
-  assert.match(onboarding, /--setup-text-body:\s*1rem/);
+  assert.match(styles, /@import "\.\.\/lib\/velvet-tokens\.css"/);
+  assert.match(styles, /@import "\.\.\/lib\/velvet-board-shell\.css"/);
+  assert.match(shell, /@fontsource\/barlow\/latin-400\.css/);
+  assert.match(shell, /@fontsource\/barlow\/latin-600\.css/);
+  assert.match(shell, /@fontsource\/barlow-condensed\/latin-600\.css/);
+  assert.match(tokens, /--velvet-font:\s*"Barlow"/);
+  assert.match(tokens, /--velvet-text-small:\s*0\.9375rem/);
+  assert.match(tokens, /--velvet-text-body:\s*1rem/);
+  assert.match(onboarding, /--setup-text-small:\s*var\(--velvet-text-small\)/);
+  assert.match(onboarding, /--setup-text-body:\s*var\(--velvet-text-body\)/);
   assert.match(onboarding, /--setup-text-lead:\s*1\.125rem/);
   assert.match(onboarding, /--setup-text-caption:\s*0\.8125rem/);
-  assert.match(onboarding, /--setup-text-intro:\s*2rem/);
-  assert.match(onboarding, /--setup-text-copy:\s*1\.25rem/);
+  assert.match(onboarding, /--setup-text-intro:\s*var\(--velvet-text-intro\)/);
+  assert.match(onboarding, /--setup-text-copy:\s*var\(--velvet-text-copy\)/);
   assert.match(onboarding, /--setup-card-copy:\s*var\(--setup-text-copy\)/);
   assert.match(
     onboarding,
@@ -105,7 +121,7 @@ test("uses the local Barlow family for onboarding typography", async () => {
   );
   assert.match(
     onboarding,
-    /\.section-heading p\s*\{[^}]*font-size:\s*var\(--setup-card-copy\)/s,
+    /\.velvet-section-heading p\s*\{[^}]*font-size:\s*var\(--setup-card-copy\)/s,
   );
   assert.match(onboarding, /--service-editor-small-font-size:\s*var\(--setup-text-small\)/);
   assert.match(onboarding, /--service-editor-caption-font-size:\s*var\(--setup-text-caption\)/);
@@ -383,7 +399,7 @@ test("uses reusable squircle steps and directional card motion", async () => {
   assert.match(onboarding, /width:\s*calc\(var\(--step-gap\) - 10px\)/);
   assert.match(
     onboarding,
-    /\.section-title \.separator\s*\{[^}]*color:\s*var\(--setup-accent\)/s,
+    /\.velvet-section-title \.separator\s*\{[^}]*color:\s*var\(--setup-accent\)/s,
   );
   assert.doesNotMatch(onboarding, /\.steps li\s*\{[^}]*flex:\s*1 1 0/s);
 });
@@ -450,9 +466,16 @@ test("exposes the reusable StepCard compound component", async () => {
     onboarding,
     /--step-card-inner-radius:\s*\$\{STEP_CARD_INNER_RADIUS\}px/,
   );
+  // The buttons take the card's inner radius, which is what makes them look
+  // like they belong inside it. The rule lives in the shared surface now, so
+  // that is where the pairing is checked.
+  const surface = await readFile(
+    resolve(import.meta.dirname, "../src/lib/velvet-surface.css"),
+    "utf8",
+  );
   assert.match(
-    onboarding,
-    /\.(?:primary-button|secondary-button)[^{]*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s,
+    surface,
+    /\.velvet-button\s*\{[^}]*border-radius:\s*var\(--step-card-inner-radius/s,
   );
   assert.doesNotMatch(onboarding, /import SquircleSurface/);
   assert.doesNotMatch(onboarding, /<SquircleSurface/);

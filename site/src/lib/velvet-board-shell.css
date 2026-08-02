@@ -1,0 +1,29 @@
+/**
+ * The faces the board-backed tools set their text in.
+ *
+ * Separate from velvet-tokens.css because the configurator shares the values
+ * but not the typography: it sets its own text in the system UI face, and
+ * importing this there would ship it eight font files it never renders.
+ */
+@import "@fontsource/barlow/latin-400.css";
+@import "@fontsource/barlow/latin-600.css";
+@import "@fontsource/barlow/latin-700.css";
+@import "@fontsource/barlow-condensed/latin-600.css";
+
+:root {
+  color-scheme: dark;
+  font-family: var(--velvet-font);
+  background: var(--velvet-base);
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}

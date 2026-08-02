@@ -1,5 +1,6 @@
 <script lang="ts">
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
+  import * as PageFooter from "../components/page-footer";
   import * as StepCard from "../components/step-card";
   import {
     STEP_CARD_CONTENT_INSET,
@@ -15,7 +16,6 @@
    */
   const ONBOARDING_URL = "https://setup.velvet.li/onboarding/";
   const REPOSITORY_URL = "https://github.com/phranck/velvet";
-  const CURRENT_YEAR = new Date().getFullYear();
 
   /**
    * What an installation gives you, drawn from the README so the page and the
@@ -102,12 +102,12 @@
         without a server or a database. Just five steps away.
       </p>
       <div class="hero-actions">
-        <a class="primary-button" href={ONBOARDING_URL} data-onboarding-link>
+        <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL} data-onboarding-link>
           <i class="ph-duotone ph-rocket-launch" aria-hidden="true"></i>
           <span>Create your status page</span>
         </a>
         <a
-          class="secondary-button"
+          class="velvet-button velvet-button--secondary"
           href={REPOSITORY_URL}
           target="_blank"
           rel="noopener noreferrer"
@@ -136,8 +136,8 @@
     <section class="column" aria-labelledby="capabilities-title">
       <StepCard.Root>
         <div class="card-inset">
-          <div class="section-heading">
-            <div class="section-title">
+          <div class="velvet-section-heading">
+            <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
               <h2 id="capabilities-title">What an installation gives you</h2>
             </div>
@@ -165,8 +165,8 @@
     <section class="column" aria-labelledby="pipeline-title">
       <StepCard.Root>
         <div class="card-inset">
-          <div class="section-heading">
-            <div class="section-title">
+          <div class="velvet-section-heading">
+            <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
               <h2 id="pipeline-title">How it works</h2>
             </div>
@@ -201,40 +201,35 @@
         on GitHub it creates the repository, enables Pages, starts monitoring,
         and waits for the first deployment.
       </p>
-      <a class="primary-button" href={ONBOARDING_URL}>
+      <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL}>
         <i class="ph-duotone ph-rocket-launch" aria-hidden="true"></i>
         <span>Create your status page</span>
       </a>
     </section>
   </main>
 
-  <footer class="page-footer">
-    <span>
-      © {CURRENT_YEAR} by
-      <a href="https://layered.work" target="_blank" rel="noopener noreferrer">
-        LAYERED
-      </a>
-    </span>
-  </footer>
+  <PageFooter.Root>
+    <PageFooter.Credit />
+  </PageFooter.Root>
 </div>
 
 <style>
   .website-shell {
     /* The same tokens the onboarding defines, so a visitor crossing from here
        into setup does not meet a second palette. */
-    --setup-accent: #8ca5ff;
-    --setup-base: #0a0b0f;
+    --setup-accent: var(--velvet-accent);
+    --setup-base: var(--velvet-base);
     --setup-panel: rgba(27, 29, 38, 0.9);
-    --setup-panel-raised: #272a36;
-    --setup-text: #efedf5;
-    --setup-muted: #979aa8;
+    --setup-panel-raised: var(--velvet-surface-raised);
+    --setup-text: var(--velvet-text);
+    --setup-muted: var(--velvet-text-muted);
     --setup-control-height: 2.75rem;
-    --setup-text-body: 1rem;
-    --setup-text-copy: 1.25rem;
-    --setup-text-intro: 2rem;
-    --setup-text-small: 0.9375rem;
-    --setup-font: "Barlow", "Segoe UI", sans-serif;
-    --setup-heading-font: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --setup-text-body: var(--velvet-text-body);
+    --setup-text-copy: var(--velvet-text-copy);
+    --setup-text-intro: var(--velvet-text-intro);
+    --setup-text-small: var(--velvet-text-small);
+    --setup-font: var(--velvet-font);
+    --setup-heading-font: var(--velvet-font-heading);
     --tool-brand-accent: var(--setup-accent);
     --tool-brand-text: var(--setup-text);
     --tool-brand-heading-font: var(--setup-heading-font);
@@ -285,36 +280,14 @@
     gap: 0.75rem;
     margin-top: 2.5rem;
   }
-  .primary-button,
-  .secondary-button {
-    min-height: var(--setup-control-height);
+  /* Only what this page's buttons do differently: they stand alone in a hero
+     rather than sitting in a card footer, so they are roomier. */
+  .velvet-button {
     min-width: 7rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
     padding: 0 1.1rem;
-    border-radius: var(--step-card-inner-radius);
-    font-size: var(--setup-text-body);
-    font-weight: 650;
-    line-height: 1;
-    text-decoration: none;
   }
-  .primary-button {
-    background: var(--setup-accent);
-    color: #10131c;
-  }
-  .secondary-button {
-    background: var(--setup-panel-raised);
-    color: var(--setup-text);
-  }
-  .primary-button i,
-  .secondary-button i {
+  .velvet-button i {
     font-size: 1.25em;
-  }
-  a:focus-visible {
-    outline: 2px solid var(--setup-accent);
-    outline-offset: 3px;
   }
   /* The one section that is not a column. It spans the window as a band with a
      rule above and below, whilst the picture inside stays the size it was. */
@@ -392,17 +365,7 @@
   .card-inset {
     padding: var(--step-card-content-inset, 20px);
   }
-  .section-heading {
-    display: grid;
-    gap: 0.45rem;
-    margin-inline: 1rem;
-    margin-bottom: 2rem;
-  }
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
+
   .marker {
     color: var(--setup-accent);
     font-family: var(--setup-heading-font);
@@ -418,7 +381,7 @@
     font-weight: 600;
     letter-spacing: -0.025em;
   }
-  .section-heading p {
+  .velvet-section-heading p {
     margin: 0;
     color: var(--setup-muted);
     font-size: var(--setup-text-copy);
@@ -482,24 +445,8 @@
     font-size: var(--setup-text-copy);
     line-height: 1.5;
   }
-  .closing .primary-button {
+  .closing .velvet-button {
     margin-top: 0.5rem;
-  }
-  .page-footer {
-    min-height: 3rem;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem 1.5rem;
-    padding: 0.5rem 1rem 2rem;
-    color: var(--setup-muted);
-    font-size: var(--setup-text-small);
-  }
-  .page-footer a {
-    color: var(--setup-text);
-    font-weight: 650;
-    text-decoration: none;
   }
 
   @media (max-width: 720px) {

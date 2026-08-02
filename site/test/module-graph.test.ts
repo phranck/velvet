@@ -140,6 +140,7 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "RainbowScale.svelte": ["configurator", "onboarding", "website"],
   "VelvetToolBrand.svelte": ["configurator", "onboarding", "website"],
   "step-card": ["onboarding", "website"],
+  "page-footer": ["onboarding", "website"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],
   "service-icon-picker": ["configurator", "onboarding"],

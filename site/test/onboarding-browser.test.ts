@@ -134,9 +134,9 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "0px",
     );
     assert.equal(await page.locator(".topbar").count(), 0);
-    assert.equal(await page.locator(".page-footer").count(), 1);
+    assert.equal(await page.locator("[data-page-footer]").count(), 1);
     assert.equal(
-      await page.locator(".page-footer").evaluate((element) =>
+      await page.locator("[data-page-footer]").evaluate((element) =>
         getComputedStyle(element).position,
       ),
       "fixed",
@@ -188,7 +188,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       /Barlow/,
     );
     assert.match(
-      await page.locator(".section-heading h2").first().evaluate((element) =>
+      await page.locator(".velvet-section-heading h2").first().evaluate((element) =>
         getComputedStyle(element).fontFamily,
       ),
       /Barlow Condensed/,
@@ -365,7 +365,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "13px",
     );
     assert.equal(
-      await page.locator(".section-heading p").first().evaluate((element) =>
+      await page.locator(".velvet-section-heading p").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
       "20px",
