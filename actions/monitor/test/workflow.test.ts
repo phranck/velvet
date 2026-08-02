@@ -45,7 +45,7 @@ function actionStep(document: Workflow): {
  * The two rules differ because the risk differs. A tag on somebody else's action
  * can be moved to code nobody here reviewed, so those are pinned by commit. The
  * `v1` tag on this repository is moved deliberately as part of releasing, and
- * `RELEASING.md` requires consumer examples to use it, since nobody regenerates
+ * `documentation/releasing.md` requires consumer examples to use it, since nobody regenerates
  * an example a person copied once. A commit written into one goes stale at the
  * next contract change and then fails every run for whoever copied it, which is
  * exactly what issue 149 was.

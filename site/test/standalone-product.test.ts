@@ -13,7 +13,7 @@ async function read(path: string): Promise<string> {
 test("public documentation presents the standalone native product first", async () => {
   const [readme, configuration, onboarding] = await Promise.all([
     read("README.md"),
-    read("CONFIGURATION.md"),
+    read("documentation/configuration.md"),
     read("site/src/onboarding/Onboarding.svelte"),
   ]);
 
@@ -64,7 +64,7 @@ test("the public demo uses a valid IPv4-only native configuration", async () => 
 });
 
 test("repository documentation has no broken local link targets", async () => {
-  for (const path of ["README.md", "CONFIGURATION.md", "LICENSING.md"]) {
+  for (const path of ["README.md", "documentation/configuration.md", "LICENSING.md"]) {
     const source = await read(path);
     const links = source.matchAll(/(?<!!)\[[^\]]+\]\(([^)]+)\)/gu);
 

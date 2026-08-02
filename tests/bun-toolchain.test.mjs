@@ -95,7 +95,7 @@ test("documents the pinned Bun support matrix without obsolete npm guidance", as
   const documentation = await Promise.all(
     [
       "README.md",
-      "RELEASING.md",
+      "documentation/releasing.md",
       "LICENSING.md",
       "THIRD_PARTY_NOTICES.md",
       "packages/contracts/README.md",

@@ -45,7 +45,7 @@ test("hand-wiring examples track the v1 tag rather than a commit", async () => {
   // The workflows an installation receives are pinned by commit on purpose, so
   // an installation is reproducible, and a guard in the setup service asserts
   // those. These examples are the opposite case: nobody regenerates them, so
-  // they follow the tag, which is also what RELEASING.md requires of consumer
+  // they follow the tag, which is also what documentation/releasing.md requires of consumer
   // examples.
   const examples = [
     "actions/monitor/examples/velvet-status.yml",

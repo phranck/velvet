@@ -7,7 +7,7 @@ validated private state and public v1 documents to the dedicated
 ## Install
 
 1. Add a validated `velvet.yml` to the repository root. See the
-   [native configuration reference](../../CONFIGURATION.md#github-native-monitor-configuration).
+   [native configuration reference](../../documentation/configuration.md#github-native-monitor-configuration).
 2. Copy [`examples/velvet-status.yml`](examples/velvet-status.yml) and
    [`examples/velvet-response-times.yml`](examples/velvet-response-times.yml)
    to `.github/workflows/` in the status repository.
