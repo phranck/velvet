@@ -141,6 +141,73 @@ export function buildSetupRequest(
   return { success: true, request: { configuration: finalResult.data } };
 }
 
+/**
+ * Checks everything the Basics step collects, so a wrong entry stops the
+ * visitor at the field that holds it.
+ *
+ * The custom domain is read out of a full `buildSetupRequest` rather than
+ * checked again here, because that keeps its rule and its wording in one
+ * place. Every other error the build reports belongs to a later step and is
+ * dropped.
+ *
+ * @param draft - The onboarding draft as it currently stands.
+ * @returns Field keys mapped to messages, empty when the step may be left.
+ */
+export function validateBasicsStep(
+  draft: OnboardingDraft,
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (!draft.repositoryOwner.trim()) {
+    errors.repositoryOwner = "Enter your GitHub name.";
+  }
+  if (!draft.repositoryName.trim()) {
+    errors.repositoryName = "Enter a repository name.";
+  }
+  if (!draft.statusPageName.trim()) {
+    errors.statusPageName = "Enter a status page name.";
+  }
+  const validation = buildSetupRequest(draft);
+  if (!validation.success && validation.errors.customDomain) {
+    errors.customDomain = validation.errors.customDomain;
+  }
+  return errors;
+}
+
+/**
+ * Checks every service the visitor has entered, so a malformed URL is rejected
+ * beside its own field instead of on the Publish step.
+ *
+ * The two emptiness checks run first and win, because "Enter a URL to monitor."
+ * reads better on an untouched field than the contract's description of what a
+ * URL has to be. Everything beyond emptiness comes from the contract itself
+ * through `validateServiceDrafts`, so this step and the final submission can
+ * never disagree about what counts as valid.
+ *
+ * @param draft - The onboarding draft as it currently stands.
+ * @returns Field keys mapped to messages, empty when the step may be left.
+ */
+export function validateServicesStep(
+  draft: OnboardingDraft,
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  draft.services.forEach((service, index) => {
+    if (!service.name.trim()) {
+      errors[`services.${index}.name`] = "Enter a service name.";
+    }
+    if (!service.url.trim()) {
+      errors[`services.${index}.url`] = "Enter a URL to monitor.";
+    }
+  });
+
+  const validation = validateServiceDrafts(draft.services);
+  if (!validation.success) {
+    for (const [field, message] of Object.entries(validation.errors)) {
+      errors[field] ??= message;
+    }
+  }
+  return errors;
+}
+
 export async function submitOnboarding(
   draft: OnboardingDraft,
   client: SetupClient,
