@@ -52,6 +52,14 @@ export interface SetupServerSession {
      * recorded against an installation that also holds another.
      */
     serial?: number;
+    /**
+     * Whether the claimed serial reached the installation's version lock.
+     *
+     * The lock is written before the number is claimed, so it is written again
+     * afterwards. This records that the second write succeeded, which keeps a
+     * retry from repeating a commit that is already in place.
+     */
+    serialRecorded?: boolean;
   };
 }
 

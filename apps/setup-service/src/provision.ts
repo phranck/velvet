@@ -325,6 +325,34 @@ export async function provisionVelvet(
         ...(customDomain ? { customDomain } : {}),
       });
       if (claimed !== undefined) state.serial = claimed;
+      // Written a second time, because the lock went in at the
+      // writing-configuration step and the number did not exist yet. Only the
+      // lock is rewritten, and only when a number was actually issued.
+      //
+      // A failure here leaves the number issued in the registry but absent from
+      // the installation, so its page shows nothing. That matches how the rest
+      // of this feature fails: never by stopping a setup that has otherwise
+      // succeeded.
+      if (state.serial !== undefined && !state.serialRecorded) {
+        try {
+          await input.github.writeManagedFiles(
+            installationToken,
+            state.repository.owner,
+            state.repository.name,
+            await managedSetupFiles(
+              input.releases ?? embeddedVelvetReleases(),
+              input.request.configuration,
+              false,
+              state.serial,
+            ),
+          );
+          state.serialRecorded = true;
+        } catch {
+          // Swallowed for the same reason claiming is: a repository that is
+          // built, monitored, and published must not be reported as failed
+          // over a number. The page then shows none.
+        }
+      }
     }
     const result: SetupSuccessEvent = {
       type: "success",
@@ -410,12 +438,14 @@ async function managedSetupFiles(
   releases: ManagedUpdateReleaseProvider,
   configuration: NormalizedVelvetConfiguration,
   canWriteWorkflows: boolean,
+  serial?: number,
 ): Promise<{ path: string; content: string }[]> {
   const release = await releases.get(releases.latest());
   const materialized = materializeManagedTemplateFiles({
     manifest: release.manifest,
     configuration,
     sources: release.sources,
+    ...(serial === undefined ? {} : { serial }),
   });
   if (!materialized.success) {
     throw new SetupServiceError(

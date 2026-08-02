@@ -5,6 +5,7 @@ import { load } from "js-yaml";
 
 import {
   parseVelvetConfiguration,
+  validateVelvetVersionLock,
   type NormalizedVelvetConfiguration,
   type VelvetManagedFile,
   type VelvetReleaseManifest,
@@ -146,11 +147,13 @@ function manifest(files: VelvetManagedFile[]): VelvetReleaseManifest {
 function materialize(
   files: VelvetManagedFile[],
   availableSources: Record<string, string> = sources,
+  serial?: number,
 ): ManagedTemplateFilesResult {
   return materializeManagedTemplateFiles({
     manifest: manifest(files),
     configuration,
     sources: availableSources,
+    ...(serial === undefined ? {} : { serial }),
   });
 }
 
@@ -268,6 +271,25 @@ test("generates a stable installed-version lock from the release", () => {
 
   assert.equal(output(first, "velvet.lock.json"), expected);
   assert.equal(output(second, "velvet.lock.json"), expected);
+});
+
+test("writes the serial into the lock, and omits it when there is none", () => {
+  const withSerial = JSON.parse(output(materialize([], sources, 412), "velvet.lock.json"));
+  assert.equal(withSerial.serial, 412);
+
+  // Absent rather than null, because every installation made before serials
+  // existed has a lock without the field, and the status page distinguishes
+  // "no number" from "number zero" by the field simply not being there.
+  const withoutSerial = JSON.parse(output(materialize([]), "velvet.lock.json"));
+  assert.equal("serial" in withoutSerial, false);
+});
+
+test("keeps a serialised lock valid against the contract", () => {
+  const lock = JSON.parse(output(materialize([], sources, 1), "velvet.lock.json"));
+  const validation = validateVelvetVersionLock(lock);
+  assert.equal(validation.success, true);
+  if (!validation.success) return;
+  assert.equal(validation.data.serial, 1);
 });
 
 test("rejects a missing or changed source before returning any files", () => {

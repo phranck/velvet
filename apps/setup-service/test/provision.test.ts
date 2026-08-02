@@ -536,6 +536,77 @@ test("still completes setup when the app cannot write workflow files", async () 
   );
 });
 
+test("records the claimed serial in the version lock", async () => {
+  const session = authenticatedSession();
+  const writes: { path: string; content: string }[][] = [];
+  const { client } = successfulGitHub();
+  const github = {
+    ...client,
+    async writeManagedFiles(
+      _token: string,
+      _owner: string,
+      _repository: string,
+      files: readonly { path: string; content: string }[],
+    ) {
+      writes.push(files.map((file) => ({ ...file })));
+    },
+  };
+
+  const result = await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github,
+    onEvent: () => {},
+    serials: { peek: async () => 1, claim: async () => 412 },
+    operationId: () => "O".repeat(26),
+    sleep: async () => {},
+  });
+
+  assert.equal(result.serial, 412);
+  // Two writes, not one. The lock goes in whilst the configuration is written,
+  // long before the number is claimed at the very end, so it is written again
+  // once the number exists.
+  assert.equal(writes.length, 2);
+
+  const lockOf = (files: { path: string; content: string }[]) => {
+    const file = files.find((entry) => entry.path === "velvet.lock.json");
+    assert.ok(file, "the write includes the version lock");
+    return JSON.parse(file.content);
+  };
+  assert.equal("serial" in lockOf(writes[0]!), false);
+  assert.equal(lockOf(writes[1]!).serial, 412);
+});
+
+test("leaves the lock alone when no serial could be issued", async () => {
+  const session = authenticatedSession();
+  const writes: unknown[][] = [];
+  const { client } = successfulGitHub();
+  const github = {
+    ...client,
+    async writeManagedFiles(
+      _token: string,
+      _owner: string,
+      _repository: string,
+      files: readonly unknown[],
+    ) {
+      writes.push([...files]);
+    },
+  };
+
+  const result = await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github,
+    onEvent: () => {},
+    // An instance without a registry, which is every self-hosted one.
+    operationId: () => "O".repeat(26),
+    sleep: async () => {},
+  });
+
+  assert.equal(result.serial, undefined);
+  assert.equal(writes.length, 1, "no second write without a number to record");
+});
+
 test("claims a serial only once the page is published, and only once", async () => {
   const session = authenticatedSession();
   const { client } = successfulGitHub();

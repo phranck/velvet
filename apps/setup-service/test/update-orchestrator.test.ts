@@ -452,6 +452,41 @@ test("reconciles one manual update from branch creation through published cleanu
   );
 });
 
+test("carries the installation's serial across an update", async () => {
+  const repository = new FakeRepository();
+  // The lock this installation already has, carrying the number it was issued.
+  repository.currentFiles = repository.currentFiles.map((file) =>
+    file.path === "velvet.lock.json"
+      ? {
+          path: file.path,
+          content: `${JSON.stringify({ ...previousLock, serial: 412 }, null, 2)}\n`,
+        }
+      : file,
+  );
+  repository.lock = lockFrom(repository.currentFiles);
+
+  const updates = orchestrator(repository);
+  await updates.reconcile(manualRequest);
+
+  // Every other field of the lock is rebuilt from the release being installed.
+  // This one describes the installation, so an update that regenerated it would
+  // silently take the number off a page that had been showing it.
+  assert.ok(repository.updateFiles, "the update wrote its files");
+  const written = lockFrom(repository.updateFiles);
+  assert.equal(written.installedVersion, "2.1.0");
+  assert.equal(written.serial, 412);
+});
+
+test("leaves the lock without a serial when the installation never had one", async () => {
+  const repository = new FakeRepository();
+  const updates = orchestrator(repository);
+  await updates.reconcile(manualRequest);
+
+  assert.ok(repository.updateFiles, "the update wrote its files");
+  const written = lockFrom(repository.updateFiles);
+  assert.equal("serial" in written, false);
+});
+
 test("does not start an automatic update when the user disabled it or the release is not safe", async () => {
   const disabledRepository = new FakeRepository();
   disabledRepository.configurationSource = configuration(false);

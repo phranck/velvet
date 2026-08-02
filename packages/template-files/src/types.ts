@@ -35,6 +35,18 @@ export interface MaterializeManagedTemplateFilesInput {
   manifest: VelvetReleaseManifest;
   configuration: NormalizedVelvetConfiguration;
   sources: Readonly<Record<string, string>>;
+  /**
+   * The running number this installation was issued, if it has one.
+   *
+   * Every other field of the version lock describes the release being written
+   * and is rebuilt from the manifest on each update. This one describes the
+   * installation, so it has to be supplied by whoever knows it: the issued
+   * number when provisioning, and the number already in the lock when updating.
+   * Omitting it writes a lock without a serial, which is what an installation
+   * made before serials existed carries and what keeps its page from claiming a
+   * number it was never given.
+   */
+  serial?: number;
 }
 
 export type ManagedTemplateFilesResult =
