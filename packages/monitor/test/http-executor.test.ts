@@ -143,7 +143,6 @@ test("default GET succeeds on 200 without parsing the response body", async () =
     assert.equal(result.error, null);
     assert.equal(result.latencyMs >= 0, true);
     assert.equal("url" in result, false);
-    assert.equal("upptime" in result, false);
   } finally {
     await stopServer(fixture.server);
   }

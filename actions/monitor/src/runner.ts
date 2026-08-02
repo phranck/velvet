@@ -11,14 +11,12 @@ import {
   aggregateServiceTargetAvailability,
   appendResponseSamples,
   appendStateChanges,
-  compactImportedDailyAvailability,
   compactStateChanges,
   createResponseTimesDocument,
   createStatusDocument,
   executeMonitorChecks,
   updateCheckState,
   type MonitorCheckState,
-  type MonitorImportedEvent,
   type MonitorObservation,
   type MonitorPersistentState,
   type MonitorRun,
@@ -106,59 +104,6 @@ function emptyIncidents(generatedAt: string): IncidentsDocument {
     schemaVersion: CONTRACT_SCHEMA_VERSION,
     generatedAt,
     events: [],
-  };
-}
-
-function importedEventAt(
-  imported: MonitorImportedEvent,
-  generatedAt: string,
-): MonitorImportedEvent {
-  if (imported.event.kind !== "maintenance") return imported;
-  const timestamp = Date.parse(generatedAt);
-  const state =
-    timestamp < Date.parse(imported.event.startsAt)
-      ? "scheduled"
-      : timestamp < Date.parse(imported.event.endsAt)
-        ? "active"
-        : "completed";
-  return {
-    ...imported,
-    event: { ...imported.event, state },
-  };
-}
-
-function compactImportedEvents(
-  importedEvents: MonitorImportedEvent[],
-  generatedAt: string,
-  retentionDays: number,
-): MonitorImportedEvent[] {
-  const cutoff = Date.parse(generatedAt) - retentionDays * 86_400_000;
-  return importedEvents
-    .filter(
-      ({ event }) =>
-        event.endsAt !== null && Date.parse(event.endsAt) >= cutoff,
-    )
-    .map((imported) => importedEventAt(imported, generatedAt));
-}
-
-function mergeImportedEvents(
-  nativeDocument: IncidentsDocument,
-  importedEvents: MonitorImportedEvent[],
-): IncidentsDocument {
-  const eventsById = new Map(
-    importedEvents.map(({ event }) => [event.id, event]),
-  );
-  for (const event of nativeDocument.events) {
-    eventsById.set(event.id, event);
-  }
-  return {
-    schemaVersion: CONTRACT_SCHEMA_VERSION,
-    generatedAt: nativeDocument.generatedAt,
-    events: [...eventsById.values()].sort((left, right) =>
-      `${left.startsAt}\u0000${left.id}`.localeCompare(
-        `${right.startsAt}\u0000${right.id}`,
-      ),
-    ),
   };
 }
 
@@ -358,28 +303,6 @@ export async function runMonitorAction(
       retentionDays: parsedConfiguration.history.retentionDays,
     },
   );
-  const previousImportedDailyAvailability = (
-    input.currentState?.importedDailyAvailability ?? []
-  ).filter(({ serviceId }) => configuredServiceIds.has(serviceId));
-  const importedDailyAvailability =
-    runMode === "status"
-      ? compactImportedDailyAvailability(
-          previousImportedDailyAvailability,
-          {
-            generatedAt: completedAt,
-            retentionDays: parsedConfiguration.history.retentionDays,
-          },
-        )
-      : previousImportedDailyAvailability;
-  const previousImportedEvents = input.currentState?.importedEvents ?? [];
-  const importedEvents =
-    runMode === "status"
-      ? compactImportedEvents(
-          previousImportedEvents,
-          completedAt,
-          parsedConfiguration.history.retentionDays,
-        )
-      : previousImportedEvents;
   const documentServices = parsedConfiguration.services.map((service) => ({
     id: service.id,
     name: service.name,
@@ -394,7 +317,6 @@ export async function runMonitorAction(
           retentionDays: parsedConfiguration.history.retentionDays,
           services: documentServices,
           stateChanges,
-          importedDailyAvailability,
           maintenanceWindows:
             input.currentState?.maintenanceWindows ?? [],
         });
@@ -412,8 +334,6 @@ export async function runMonitorAction(
     monitoringStartedAt,
     current: { checks, services },
     stateChanges,
-    importedDailyAvailability,
-    importedEvents,
     maintenanceWindows: input.currentState?.maintenanceWindows ?? [],
     responseSamples,
     documents: { status, responseTimes },
@@ -439,17 +359,7 @@ export async function runMonitorAction(
       },
       { client: dependencies.incidentClient! },
     );
-    const nativeEventIds = new Set(
-      reconciliation.document.events.map(({ id }) => id),
-    );
-    const retainedImportedEvents = importedEvents.filter(
-      ({ event }) => !nativeEventIds.has(event.id),
-    );
-    content.importedEvents = retainedImportedEvents;
-    incidents = mergeImportedEvents(
-      reconciliation.document,
-      retainedImportedEvents,
-    );
+    incidents = reconciliation.document;
     incidentResult = "reconciled";
   }
   if (!validateIncidentsDocument(incidents).success) {

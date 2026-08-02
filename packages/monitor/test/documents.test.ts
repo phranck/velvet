@@ -41,16 +41,6 @@ type DailyAvailability = {
   unavailableSeconds: number;
 };
 
-type ImportedDailyAvailability = DailyAvailability & {
-  serviceId: string;
-  source: {
-    kind: "upptime";
-    repository: string;
-    commit: string;
-    path: string;
-  };
-};
-
 type TestDocumentInput = {
   generatedAt: string;
   monitoringStartedAt: string;
@@ -61,7 +51,6 @@ type TestDocumentInput = {
     checks: TestCheckState[];
   }>;
   stateChanges: TestStateChange[];
-  importedDailyAvailability?: ImportedDailyAvailability[];
   maintenanceWindows: Array<{
     id: string;
     affectedServiceIds: string[];
@@ -307,138 +296,6 @@ test("passes the configured retention period to status history", async () => {
       date: "2026-07-29",
       monitoredSeconds: 43_200,
       unavailableSeconds: 0,
-    },
-  ]);
-});
-
-test("keeps imported daily availability and prefers native history for overlapping days", async () => {
-  const { createMonitorDocuments } = await documentFunctions();
-  const documents = createMonitorDocuments({
-    generatedAt: "2026-07-29T12:00:00.000Z",
-    monitoringStartedAt: "2026-07-27T00:00:00.000Z",
-    retentionDays: 365,
-    services: [
-      {
-        id: "website",
-        name: "Website",
-        checks: [
-          checkState("primary", {
-            checkedAt: "2026-07-29T11:59:00.000Z",
-          }),
-        ],
-      },
-    ],
-    stateChanges: [
-      {
-        runId: "run-1",
-        serviceId: "website",
-        changedAt: "2026-07-28T00:00:00.000Z",
-        status: "up",
-        targetAvailability: "available",
-      },
-    ],
-    importedDailyAvailability: [
-      {
-        serviceId: "website",
-        date: "2026-07-27",
-        monitoredSeconds: 86_400,
-        unavailableSeconds: 600,
-        source: {
-          kind: "upptime",
-          repository: "example/status",
-          commit: "0123456789abcdef0123456789abcdef01234567",
-          path: "history/website.yml",
-        },
-      },
-      {
-        serviceId: "website",
-        date: "2026-07-28",
-        monitoredSeconds: 86_400,
-        unavailableSeconds: 1_200,
-        source: {
-          kind: "upptime",
-          repository: "example/status",
-          commit: "0123456789abcdef0123456789abcdef01234567",
-          path: "history/website.yml",
-        },
-      },
-    ],
-    maintenanceWindows: [],
-    responseSamples: [],
-  }) as {
-    status: { services: Array<{ dailyAvailability: DailyAvailability[] }> };
-  };
-
-  assert.deepEqual(documents.status.services[0]?.dailyAvailability, [
-    {
-      date: "2026-07-27",
-      monitoredSeconds: 86_400,
-      unavailableSeconds: 600,
-    },
-    {
-      date: "2026-07-28",
-      monitoredSeconds: 86_400,
-      unavailableSeconds: 0,
-    },
-    {
-      date: "2026-07-29",
-      monitoredSeconds: 43_200,
-      unavailableSeconds: 0,
-    },
-  ]);
-});
-
-test("drops imported daily availability outside retention", async () => {
-  const { createMonitorDocuments } = await documentFunctions();
-  const source = {
-    kind: "upptime" as const,
-    repository: "example/status",
-    commit: "0123456789abcdef0123456789abcdef01234567",
-    path: "history/website.yml",
-  };
-  const documents = createMonitorDocuments({
-    generatedAt: "2026-07-29T12:00:00.000Z",
-    monitoringStartedAt: "2025-07-28T00:00:00.000Z",
-    retentionDays: 365,
-    services: [
-      {
-        id: "website",
-        name: "Website",
-        checks: [
-          checkState("primary", {
-            checkedAt: "2026-07-29T11:59:00.000Z",
-          }),
-        ],
-      },
-    ],
-    stateChanges: [],
-    importedDailyAvailability: [
-      {
-        serviceId: "website",
-        date: "2025-07-29",
-        monitoredSeconds: 86_400,
-        unavailableSeconds: 60,
-        source,
-      },
-      {
-        serviceId: "website",
-        date: "2025-07-30",
-        monitoredSeconds: 86_400,
-        unavailableSeconds: 120,
-        source,
-      },
-    ],
-    maintenanceWindows: [],
-    responseSamples: [],
-  }) as {
-    status: { services: Array<{ dailyAvailability: DailyAvailability[] }> };
-  };
-
-  assert.deepEqual(documents.status.services[0]?.dailyAvailability, [
-    {
-      date: "2025-07-30",
-      monitoredSeconds: 86_400,
-      unavailableSeconds: 120,
     },
   ]);
 });
