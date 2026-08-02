@@ -93,13 +93,13 @@
   style={`--step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px; --step-card-content-inset: ${STEP_CARD_CONTENT_INSET}px`}
 >
   <main>
-    <section class="hero">
+    <section class="hero column">
       <div class="brand-block">
         <VelvetToolBrand subtitle="STATUS PAGES" />
       </div>
       <p class="lead">
         GitHub-native status monitoring and a polished status page,<br />
-        without a server or a database.
+        without a server or a database. Just five steps away.
       </p>
       <div class="hero-actions">
         <a class="primary-button" href={ONBOARDING_URL} data-onboarding-link>
@@ -119,19 +119,21 @@
     </section>
 
     <section class="showcase" aria-label="A published Velvet status page">
-      <a href={ONBOARDING_URL} tabindex="-1" aria-hidden="true">
-        <img
-          src={screenshotUrl}
-          alt="A Velvet status page showing services, uptime bars, and a response-time chart"
-          width="2034"
-          height="1485"
-          loading="lazy"
-          decoding="async"
-        />
-      </a>
+      <div class="showcase-plate">
+        <a href={ONBOARDING_URL} tabindex="-1" aria-hidden="true">
+          <img
+            src={screenshotUrl}
+            alt="A Velvet status page showing services, uptime bars, and a response-time chart"
+            width="2010"
+            height="1536"
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+      </div>
     </section>
 
-    <section aria-labelledby="capabilities-title">
+    <section class="column" aria-labelledby="capabilities-title">
       <StepCard.Root>
         <div class="card-inset">
           <div class="section-heading">
@@ -160,7 +162,7 @@
       </StepCard.Root>
     </section>
 
-    <section aria-labelledby="pipeline-title">
+    <section class="column" aria-labelledby="pipeline-title">
       <StepCard.Root>
         <div class="card-inset">
           <div class="section-heading">
@@ -191,7 +193,7 @@
       </StepCard.Root>
     </section>
 
-    <section class="closing" aria-labelledby="start-title">
+    <section class="closing column" aria-labelledby="start-title">
       <h2 id="start-title">Ready in a couple of minutes</h2>
       <p>
         The browser setup asks for a repository and page name, your services, an
@@ -212,17 +214,6 @@
       <a href="https://layered.work" target="_blank" rel="noopener noreferrer">
         LAYERED
       </a>
-    </span>
-    <span>
-      Published under the
-      <a
-        href="https://layered.mit-license.org"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        MIT
-      </a>
-      license
     </span>
   </footer>
 </div>
@@ -252,12 +243,18 @@
     font-family: var(--setup-font);
     font-size: var(--setup-text-body);
   }
+  /* The page itself spans the window and each section decides how wide it sits,
+     rather than the picture escaping a narrower parent. A viewport-width
+     breakout would include the scrollbar on systems that reserve room for one,
+     which is horizontal scrolling nobody asked for. */
   main {
-    width: min(100% - 2rem, 960px);
     display: grid;
     gap: 3.5rem;
-    margin: 0 auto;
     padding: clamp(2.5rem, 6vw, 4.5rem) 0 6rem;
+  }
+  .column {
+    width: min(100% - 2rem, 960px);
+    justify-self: center;
   }
   .hero {
     display: grid;
@@ -316,19 +313,60 @@
     outline: 2px solid var(--setup-accent);
     outline-offset: 3px;
   }
+  /* The one section that is not a column. It spans the window as a band with a
+     rule above and below, whilst the picture inside stays the size it was. */
   .showcase {
     display: grid;
-    justify-items: center;
+    border-top: 1px solid color-mix(in srgb, var(--setup-muted) 26%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--setup-muted) 26%, transparent);
   }
+  /* Carries the band's colour and the fade, so the two rules stay solid from
+     edge to edge whilst the tint behind the picture dissolves before it
+     reaches them. Both layers are stacked here rather than on the section for
+     that reason. */
+  /* The tint the screenshot used to carry baked in, now supplied here so it can
+     run out to both edges whilst the picture stays the size it was. Partly
+     transparent, so the board backdrop keeps showing through rather than being
+     covered by a solid panel. */
+  .showcase-plate {
+    display: grid;
+    justify-items: center;
+    padding: 2.5rem 1rem 1.5rem;
+    /* The page's own indigo and violet, kept quiet. The contrast in this
+       section is meant to come from the themed page in the picture, so the
+       surface behind it stays part of the site. */
+    background: linear-gradient(
+      135deg,
+      rgba(21, 24, 36, 0.55) 0%,
+      rgba(36, 42, 77, 0.55) 38%,
+      rgba(58, 44, 82, 0.55) 74%,
+      rgba(74, 47, 87, 0.55) 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 30%,
+      #000 70%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 30%,
+      #000 70%,
+      transparent 100%
+    );
+  }
+  /* The picture is transparent apart from the window and its shadow, so it
+     needs no rounding or shadow of its own here. */
   .showcase img {
     width: 100%;
     height: auto;
-    max-width: 820px;
+    /* Wider than the window inside it by exactly the transparent margin the
+       picture carries, so the window itself lands at the size it had when the
+       frame was still baked in. */
+    max-width: 830px;
     display: block;
-    border-radius: var(--step-card-inner-radius);
-    box-shadow:
-      0 0.75rem 1.5rem rgba(0, 0, 0, 0.45),
-      0 2rem 5rem rgba(0, 0, 0, 0.55);
   }
   .card-inset {
     padding: var(--step-card-content-inset, 20px);

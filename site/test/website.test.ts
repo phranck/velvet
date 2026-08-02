@@ -52,7 +52,6 @@ test("sends every call to action into the onboarding", async () => {
       "the page offers the setup at the top and again at the end",
     );
     assert.ok(links.includes("https://github.com/phranck/velvet"));
-    assert.ok(links.includes("https://layered.mit-license.org"));
     assert.ok(links.includes("https://layered.work"));
     // Every outbound link leaves in its own tab without handing the opener
     // over, apart from the onboarding, which is the journey this page exists
