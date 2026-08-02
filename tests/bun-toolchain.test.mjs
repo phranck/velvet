@@ -24,9 +24,7 @@ test("pins Bun as the only package manager and JavaScript command runner", async
   for (const packagePath of [
     "package.json",
     "actions/monitor/package.json",
-    "actions/sync-data/package.json",
     "packages/contracts/package.json",
-    "packages/upptime-adapter/package.json",
     "site/package.json",
   ]) {
     const packageDocument = await json(packagePath);
@@ -54,8 +52,6 @@ test("runs local and distributed automation through the pinned Bun toolchain", a
   const files = [
     "action.yml",
     "actions/monitor/action.yml",
-    "actions/sync-data/action.yml",
-    "actions/sync-data/scripts/sync.sh",
     ".github/workflows/screenshot.yml",
     ".github/workflows/theme-registry.yml",
     "config",
@@ -87,8 +83,6 @@ test("passes the working directory to Bun subcommands", async () => {
   const files = [
     "action.yml",
     "actions/monitor/action.yml",
-    "actions/sync-data/action.yml",
-    "actions/sync-data/scripts/sync.sh",
   ];
 
   for (const file of files) {

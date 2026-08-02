@@ -59,14 +59,6 @@ IPv6 monitoring is deliberately absent until GitHub-hosted runners provide
 documented native IPv6 connectivity. A configured service is monitored over
 IPv4 only.
 
-### Migrating an Upptime status page
-
-`vum` converts a status page that still runs the older Upptime arrangement. It
-is a dry run by default, pins the source revision, validates the complete
-result, and reports anything it cannot convert safely. Keep the pre-migration
-commit until the native workflows are verified, and preserve any existing
-monitoring-data license and attribution.
-
 ### Licensing
 
 Velvet is published under the [MIT](https://layered.mit-license.org) license.

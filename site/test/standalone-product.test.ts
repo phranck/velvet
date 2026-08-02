@@ -10,17 +10,6 @@ async function read(path: string): Promise<string> {
   return readFile(resolve(repositoryRoot, path), "utf8");
 }
 
-function activeDocumentation(source: string): string {
-  const migrationHeading = "## Migrate from an Upptime status page";
-  const migrationStart = source.indexOf(migrationHeading);
-  assert.notEqual(
-    migrationStart,
-    -1,
-    `documentation must contain ${migrationHeading}`,
-  );
-  return source.slice(0, migrationStart);
-}
-
 test("public documentation presents the standalone native product first", async () => {
   const [readme, configuration, onboarding] = await Promise.all([
     read("README.md"),
@@ -28,7 +17,9 @@ test("public documentation presents the standalone native product first", async 
     read("site/src/onboarding/Onboarding.svelte"),
   ]);
 
-  for (const source of [activeDocumentation(readme), activeDocumentation(configuration)]) {
+  // Whole documents rather than a leading section: there is no migration
+  // chapter left to hold the names, so nothing in either file may carry them.
+  for (const source of [readme, configuration]) {
     assert.doesNotMatch(source, /Upptime|Globalping/iu);
     assert.match(source, /GitHub-native/iu);
     assert.match(source, /IPv4/iu);
@@ -46,7 +37,7 @@ test("public documentation presents the standalone native product first", async 
   assert.match(readme, /GitHub Issues/iu);
   assert.match(readme, /GitHub Pages/iu);
   assert.match(readme, /365 days/iu);
-  assert.match(readme, /rollback/iu);
+  assert.match(readme, /rerun the failed workflow/iu);
   assert.match(configuration, /JSON Pointer/iu);
   assert.match(configuration, /failureThreshold/u);
   assert.match(configuration, /recoveryThreshold/u);

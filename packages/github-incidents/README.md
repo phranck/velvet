@@ -6,7 +6,7 @@ state with existing marked issues, applies only missing changes, and creates a
 contract-valid public incidents document.
 
 The package never deletes issues. Issues without one strict hidden Velvet
-marker, including historical Upptime issues, are not treated as Velvet
+marker are not treated as Velvet
 incidents.
 
 ## Workflow requirements

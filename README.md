@@ -188,39 +188,6 @@ Security releases that need no migration can install themselves, which is on by
 default and can be turned off in the Configurator. Everything else waits for
 you.
 
-## Migrate from an Upptime status page
-
-An earlier prototype of this repository used Upptime as its monitor and could
-route IPv6 checks through Globalping. Velvet replaces both with its own IPv4
-monitor, and the adapter below converts a status page that still runs the
-older arrangement.
-
-Use [`vum`](packages/upptime-adapter) for a non-destructive conversion. It runs
-as a dry run by default, pins the source revision, validates the complete
-result, and reports anything that cannot be migrated safely:
-
-```bash
-vum --repository owner/status
-vum --repository owner/status --write --destination ./velvet-migration
-```
-
-Resolve every open legacy incident before writing the migration bundle. Review
-the generated provenance report, preserve applicable data-license notices, and
-switch the repository to the native workflows only after the imported status,
-history, incidents, maintenance, and custom-domain settings match the report.
-Unsupported IPv6 and Globalping checks are listed in the report and are not
-silently converted into IPv4 checks.
-
-For rollback, keep the pre-migration commit or tag and the previous deployment
-until the native status, response, incident, maintenance, and Pages workflows
-are verified. If cutover fails, disable the native schedules and revert the
-reviewed cutover commit as one unit. Do not run both monitor stacks against the
-same repository. Generated data and historical Issues remain recoverable from
-Git history; source license notices must not be deleted.
-
-The compatibility packages remain in this repository solely for migration and
-provenance. They are not part of a new Velvet installation.
-
 ## Develop
 
 Velvet pins Bun 1.3.14 as its package manager and runtime.

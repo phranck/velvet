@@ -37,7 +37,6 @@ test("configuration has its own explicit schema without monitor-provider fields"
   assert.equal(VelvetConfigurationSchema.additionalProperties, false);
 
   const schema = JSON.stringify(VelvetConfigurationSchema).toLowerCase();
-  assert.equal(schema.includes("upptime"), false);
   assert.equal(schema.includes("globalping"), false);
   assert.equal(schema.includes("provider"), false);
   assert.equal(schema.includes("ipv6"), false);
