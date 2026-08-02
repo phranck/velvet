@@ -1,4 +1,4 @@
-import { readFile, rename, rm, writeFile } from "node:fs/promises";
+import { readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { createServer, type Plugin } from "vite";
@@ -62,12 +62,16 @@ export function renameHtmlEntry(filename: string): Plugin {
  * @param options.root - Vite root the component resolves against.
  * @param options.component - Component path, as Vite would import it.
  * @param options.mountId - `id` of the element the markup is placed inside.
+ * @param options.preloadFonts - Matches against emitted font file names. Every
+ *   match is preloaded, which is worth doing only for faces that set text in
+ *   the first screenful, since preloading the rest competes with them.
  * @returns A plugin that rewrites the built HTML in place.
  */
 export function prerenderStaticEntry(options: {
   root: string;
   component: string;
   mountId: string;
+  preloadFonts?: readonly RegExp[];
 }): Plugin {
   let outDir = "";
   /**
@@ -155,10 +159,30 @@ export function prerenderStaticEntry(options: {
         throw new Error(`No empty #${options.mountId} to render into.`);
       }
 
+      // The faces are declared with font-display: swap, so the browser paints a
+      // fallback and reflows once the real one arrives. Fetching them alongside
+      // the stylesheet rather than after it is what moves that swap in front of
+      // the first paint instead of after it.
+      const preloads = (
+        await Promise.all(
+          (options.preloadFonts ?? []).map(async (pattern) =>
+            (await readdir(resolve(outDir, "assets")))
+              .filter((entry) => pattern.test(entry))
+              .map(
+                (entry) =>
+                  `    <link rel="preload" as="font" type="font/woff2" crossorigin href="./assets/${entry}" />`,
+              ),
+          ),
+        )
+      ).flat();
+
       const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*><\/script>/g)];
       const rewritten = html
         .replace(mount, `$1${body}$2`)
-        .replace("</head>", `${markup.head}</head>`)
+        .replace(
+          "</head>",
+          `${preloads.length > 0 ? `${preloads.join("\n")}\n  ` : ""}${markup.head}</head>`,
+        )
         .replace(/\s*<script\b[^>]*\bsrc="[^"]+"[^>]*><\/script>/g, "");
       await writeFile(htmlPath, rewritten);
 
