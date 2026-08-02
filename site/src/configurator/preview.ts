@@ -62,6 +62,14 @@ export const PREVIEW_CONFIG: VelvetConfig = {
   name: "Velvet Preview",
   logoHeight: 72,
   showPoweredBy: true,
+  /**
+   * A stand-in, because the preview has no installation behind it.
+   *
+   * Shown so somebody configuring their page sees where the number will sit
+   * rather than meeting it for the first time after publishing. A real page
+   * reads its own from velvet.lock.json.
+   */
+  serial: 1,
   navbar: [{ title: "Status", href: "/" }],
   layout: "grouped",
   defaultRange: "month",

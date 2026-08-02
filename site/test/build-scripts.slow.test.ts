@@ -674,3 +674,48 @@ test("removes Atom feed generation from the status-page build", async () => {
     (error: NodeJS.ErrnoException) => error.code === "ENOENT",
   );
 });
+
+test("carries the installation serial from the lock into the generated config", async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), "velvet-serial-"));
+  const configuration = resolve(directory, "velvet.yml");
+  await writeFile(
+    configuration,
+    [
+      "schemaVersion: 1",
+      "repository:",
+      "  owner: example",
+      "  name: status",
+      "statusPage:",
+      "  name: Example Status",
+      "services:",
+      "  - name: Website",
+      "    url: https://example.com",
+      "",
+    ].join("\n"),
+  );
+
+  // No lock beside it, which is every repository assembled by hand and every
+  // installation made before serials existed.
+  const withoutLock = resolve(directory, "without.json");
+  await bun([resolve(siteRoot, "scripts/generate-config.mjs"), configuration, withoutLock]);
+  assert.equal(
+    "serial" in JSON.parse(await readFile(withoutLock, "utf8")),
+    false,
+    "no lock means no number rather than a placeholder",
+  );
+
+  await writeFile(
+    resolve(directory, "velvet.lock.json"),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      installedVersion: "2.0.0",
+      template: { repository: "phranck/velvet-template", commit: "a".repeat(40) },
+      configurationSchemaVersion: 1,
+      dataSchemaVersion: 1,
+      serial: 412,
+    }, null, 2)}\n`,
+  );
+  const withLock = resolve(directory, "with.json");
+  await bun([resolve(siteRoot, "scripts/generate-config.mjs"), configuration, withLock]);
+  assert.equal(JSON.parse(await readFile(withLock, "utf8")).serial, 412);
+}, BUILD_TIMEOUT_MS);

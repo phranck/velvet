@@ -43,6 +43,14 @@ export interface VelvetConfig {
   logoHeight: number;
   /** Show the "Powered by Velvet" credit in the footer. */
   showPoweredBy: boolean;
+  /**
+   * The running number this installation was issued, if it has one.
+   *
+   * Written into velvet.lock.json when the setup service creates the
+   * repository and read from there at build time. Absent for installations
+   * made before serials existed and for repositories assembled by hand.
+   */
+  serial?: number;
   /** Navbar links. */
   navbar: Array<{ title: string; href: string }>;
   /** Card layout: one grouped card (default) or one card per service. */

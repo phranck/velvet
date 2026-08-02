@@ -24,6 +24,26 @@ const [
   repositoryDataPath = "velvet-data/v1",
 ] = process.argv;
 
+/**
+ * The installation's running number, read from the lock beside the
+ * configuration.
+ *
+ * Absent for anything installed before serials existed, and for anyone who
+ * assembled a repository by hand, so a missing file or field is ordinary rather
+ * than a fault. The page then shows no number instead of claiming one.
+ */
+function readSerial(configurationPath) {
+  try {
+    const lock = JSON.parse(
+      readFileSync(join(dirname(configurationPath), "velvet.lock.json"), "utf8"),
+    );
+    return Number.isSafeInteger(lock.serial) && lock.serial > 0 ? lock.serial : null;
+  } catch {
+    return null;
+  }
+}
+
+const serial = readSerial(inputPath);
 const source = readFileSync(inputPath, "utf8");
 const rc = load(source) ?? {};
 const nativeResult = rc.schemaVersion === undefined
@@ -187,6 +207,7 @@ const config = {
     ? { googleAnalytics: velvet.googleAnalytics.trim() }
     : {}),
   ...(Object.keys(seo).length ? { seo } : {}),
+  ...(serial === null ? {} : { serial }),
 };
 
 mkdirSync(dirname(outputPath), { recursive: true });
