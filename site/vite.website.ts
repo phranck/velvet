@@ -44,6 +44,14 @@ export default defineConfig({
       root: import.meta.dirname,
       component: "/src/website/Website.svelte",
       mountId: "website",
+      // The faces the first screenful is set in: the wordmark, the sentence
+      // beneath it, and the buttons. The headings further down and the extended
+      // Latin cut are left to load normally, so they do not compete with these.
+      preloadFonts: [
+        /^plaster-latin-400-normal-.*\.woff2$/,
+        /^barlow-latin-400-normal-.*\.woff2$/,
+        /^barlow-latin-600-normal-.*\.woff2$/,
+      ],
     }),
   ],
   build: {

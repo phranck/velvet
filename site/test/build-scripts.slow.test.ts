@@ -107,7 +107,10 @@ test("publishes the website as static HTML with no script at all", async () => {
   assert.match(html, /GitHub-native status monitoring/);
   assert.match(html, /What an installation gives you/);
   assert.match(html, /href="https:\/\/setup\.velvet\.li\/onboarding\/"/);
-  assert.doesNotMatch(html, /<script/);
+  // No executable script of any kind. The structured-data block is a script
+  // element too, but it carries data a search engine reads rather than code a
+  // browser runs, so it is named explicitly instead of loosening the check.
+  assert.doesNotMatch(html, /<script(?![^>]*type="application\/ld\+json")/);
   assert.equal((await readdir(resolve(outDir, "assets"))).some((entry) => entry.endsWith(".js")), false);
 
   // Svelte scopes styles by hashing them, and the markup is rendered in a
@@ -135,6 +138,81 @@ test("publishes the website as static HTML with no script at all", async () => {
   // failure here means the published page points at the build machine.
   assert.doesNotMatch(html, /\/@fs\//);
   assert.match(html, /src="\.\/assets\/screenshot-[^"]+\.png"/);
+}, BUILD_TIMEOUT_MS);
+
+test("gives the website everything a search engine and a social platform read", async () => {
+  const outDir = await buildDirectory();
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--config", "vite.website.ts",
+    "--outDir", outDir,
+    "--emptyOutDir",
+  ]);
+
+  const html = await readFile(resolve(outDir, "index.html"), "utf8");
+  assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/" \/>/);
+  assert.match(html, /<meta property="og:site_name" content="Velvet" \/>/);
+  assert.match(html, /<meta property="og:locale"/);
+  assert.match(html, /<meta property="og:image" content="https:\/\/velvet\.li\/og\.png" \/>/);
+  assert.match(html, /<meta property="og:image:width" content="1200" \/>/);
+  assert.match(html, /<meta property="og:image:height" content="630" \/>/);
+  // Matched on the attribute rather than the whole tag, since a long content
+  // value is wrapped across lines in the source and stays that way.
+  assert.match(html, /property="og:image:alt"/);
+  assert.match(html, /<meta name="twitter:card" content="summary_large_image" \/>/);
+  assert.match(html, /<meta name="twitter:image" content="https:\/\/velvet\.li\/og\.png" \/>/);
+
+  // A platform fetching og:image against a URL that 404s renders the link bare,
+  // which is the failure this pairing exists to prevent.
+  const published = await readdir(outDir);
+  assert.ok(published.includes("og.png"), "the social card is published");
+  assert.ok(published.includes("robots.txt"), "robots.txt is published");
+  assert.ok(published.includes("sitemap.xml"), "sitemap.xml is published");
+
+  const sitemap = await readFile(resolve(outDir, "sitemap.xml"), "utf8");
+  assert.match(sitemap, /<loc>https:\/\/velvet\.li\/<\/loc>/);
+  const robots = await readFile(resolve(outDir, "robots.txt"), "utf8");
+  assert.match(robots, /^Sitemap: https:\/\/velvet\.li\/sitemap\.xml$/m);
+
+  // Parsed rather than pattern-matched, because malformed JSON-LD is silently
+  // ignored by every consumer and would look identical to none at all.
+  const structuredData = html.match(
+    /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+  );
+  assert.ok(structuredData, "the page carries structured data");
+  const graph = JSON.parse(structuredData[1]);
+  assert.equal(graph["@context"], "https://schema.org");
+  const types = graph["@graph"].map((entry: { "@type": string }) => entry["@type"]);
+  assert.deepEqual(types, ["WebSite", "Organization", "SoftwareApplication"]);
+  const application = graph["@graph"][2];
+  assert.equal(application.license, "https://layered.mit-license.org");
+  assert.equal(application.codeRepository, "https://github.com/phranck/velvet");
+
+  // The faces are declared with font-display: swap, so without this the page
+  // paints in a fallback and reflows, which is a layout shift Google counts
+  // against the page. Only the three that set the first screenful are listed;
+  // adding the heading face measured no better and only competed for bandwidth.
+  const preloaded = [
+    ...html.matchAll(/<link rel="preload" as="font"[^>]*href="\.\/assets\/([^"]+)"/g),
+  ].map(([, file]) => file);
+  // Matched on the prefix, because the build appends a hash that may itself
+  // contain a hyphen, so splitting the name apart is not reliable.
+  for (const face of [
+    "plaster-latin-400-normal-",
+    "barlow-latin-400-normal-",
+    "barlow-latin-600-normal-",
+  ]) {
+    assert.ok(
+      preloaded.some((file) => file.startsWith(face)),
+      `${face} is not preloaded`,
+    );
+  }
+  assert.equal(preloaded.length, 3, "only the first-screenful faces are preloaded");
+
+  const emitted = await readdir(resolve(outDir, "assets"));
+  for (const file of preloaded) {
+    assert.ok(emitted.includes(file), `${file} is preloaded but not published`);
+  }
 }, BUILD_TIMEOUT_MS);
 
 test("builds status-page assets relative to the deployed Pages path", async () => {
