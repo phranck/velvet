@@ -5,7 +5,7 @@
 **GitHub-native status monitoring and a polished status page, without a server or database.**
 
 <a href="https://setup.velvet.li/onboarding/">
-  <img src="docs/screenshot.png" alt="Velvet status page" width="820">
+  <img src="docs/screenshot.png" alt="Velvet status page" width="930">
 </a>
 
 **[Create your status page](https://setup.velvet.li/onboarding/)**

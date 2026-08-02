@@ -13,17 +13,22 @@ statusPage:
   layout: cards
   defaultRange: 90d
   theme:
-    name: Velvet Demo
+    # Sunny Spring, one of the four themes an installation can pick, copied from
+    # the registry in site/src/configurator/theme-registry.ts. Its yellow-green
+    # sets the picture apart from the indigo the website and the onboarding are
+    # lit with, and it shows a real choice rather than a palette invented for
+    # the screenshot.
+    name: Sunny Spring
     palette:
-      canvas: "#0a0b0f"
-      foreground: "#e8eaed"
-      accent: "#6366f1"
-      alternate: "#38bdf8"
-      warning: "#d29922"
-      danger: "#f85149"
-      textPrimary: "#e8eaed"
-      textSecondary: "#8b8c90"
-      textTertiary: "#515256"
+      canvas: "#101713"
+      foreground: "#f2f8e9"
+      accent: "#78c850"
+      alternate: "#f2cf4a"
+      warning: "#e9a53b"
+      danger: "#ef6868"
+      textPrimary: "#f2f8e9"
+      textSecondary: "#939a8f"
+      textTertiary: "#585f57"
     grid:
       operational: accent
       degraded: warning
