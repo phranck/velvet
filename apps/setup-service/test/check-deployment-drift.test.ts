@@ -54,8 +54,10 @@ test("fails and names the deploy command when the two have drifted", async () =>
       assert.equal(report.status, "drifted");
       assert.equal(exitCodeFor(report.status), 1);
       // A report that only says "drifted" leaves the reader to work out what
-      // to run, which is the friction that let the last gap sit for days.
-      assert.match(report.message, /zcli push/u);
+      // to do, which is the friction that let the last gap sit for days. It
+      // points at the documentation rather than repeating a command, because
+      // the command names one operator's Zerops project.
+      assert.match(report.message, /documentation\/setup-service\.md/u);
       assert.match(report.message, new RegExp(DEPLOYED.slice(0, 12), "u"));
       assert.match(report.message, new RegExp(MATCHING.slice(0, 12), "u"));
     },
