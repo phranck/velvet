@@ -6,20 +6,16 @@
     <meta name="description" content="Set up a GitHub-native Velvet status page in your browser." />
     <title>Set up Velvet</title>
     <!--
-      Umami, self-hosted, so no third party receives the traffic. It sets no
-      cookies and stores no identifier in the browser, which is why this page
-      carries no consent dialogue.
+      No analytics script belongs here. This document is built once, committed,
+      and served by whichever setup service hosts it, so a tag written in would
+      report every instance's visitors into whichever dashboard the source
+      happened to name.
 
-      The service's Content Security Policy names this origin in both script-src
-      and connect-src. Change one without the other and the script loads whilst
-      its events are refused, which looks like working analytics that collects
-      nothing.
+      The service injects one before this closing tag when its own
+      ANALYTICS_SCRIPT_URL and ANALYTICS_WEBSITE_ID are set, and grants that
+      origin in its Content Security Policy from the same configuration. An
+      instance that sets neither serves no analytics and grants nothing.
     -->
-    <script
-      defer
-      src="https://umami.layered.work/script.js"
-      data-website-id="db86a44d-c6c1-4ef7-9180-56c3735cdb3a"
-    ></script>
   </head>
   <body>
     <div id="onboarding"></div>
