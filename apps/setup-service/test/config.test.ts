@@ -34,6 +34,60 @@ test("loads deployment secrets without exposing them through public config", () 
   assert.doesNotMatch(JSON.stringify(config.public), /client-secret|PRIVATE KEY|ssss/);
 });
 
+test("collects no analytics unless an instance asks for it", () => {
+  // The default that matters. Velvet is installed and run by other people, so
+  // an instance that configures nothing must report to nobody.
+  assert.equal(loadSetupServiceConfig(environment).analytics, null);
+
+  const configured = loadSetupServiceConfig({
+    ...environment,
+    ANALYTICS_SCRIPT_URL: "https://analytics.example.com/script.js",
+    ANALYTICS_WEBSITE_ID: "11111111-2222-3333-4444-555555555555",
+  });
+  assert.deepEqual(configured.analytics, {
+    scriptUrl: "https://analytics.example.com/script.js",
+    websiteId: "11111111-2222-3333-4444-555555555555",
+  });
+});
+
+test("refuses analytics settings that would silently record nothing", () => {
+  // Half a configuration is the worst outcome: the page looks instrumented and
+  // no data ever arrives, which nobody discovers until they go looking.
+  assert.throws(
+    () =>
+      loadSetupServiceConfig({
+        ...environment,
+        ANALYTICS_SCRIPT_URL: "https://analytics.example.com/script.js",
+      }),
+    /together/u,
+  );
+  assert.throws(
+    () =>
+      loadSetupServiceConfig({ ...environment, ANALYTICS_WEBSITE_ID: "abc" }),
+    /together/u,
+  );
+  assert.throws(
+    () =>
+      loadSetupServiceConfig({
+        ...environment,
+        ANALYTICS_SCRIPT_URL: "http://analytics.example.com/script.js",
+        ANALYTICS_WEBSITE_ID: "abc",
+      }),
+    /HTTPS/u,
+  );
+  // The identifier is written into an HTML attribute, so anything that could
+  // break out of one is refused where it enters rather than escaped later.
+  assert.throws(
+    () =>
+      loadSetupServiceConfig({
+        ...environment,
+        ANALYTICS_SCRIPT_URL: "https://analytics.example.com/script.js",
+        ANALYTICS_WEBSITE_ID: '"><script>alert(1)</script>',
+      }),
+    /ANALYTICS_WEBSITE_ID/u,
+  );
+});
+
 test("rejects unsafe origins, weak sessions, and invalid private keys", () => {
   assert.throws(
     () => loadSetupServiceConfig({ ...environment, PUBLIC_ORIGIN: "http://setup.velvet.dev" }),

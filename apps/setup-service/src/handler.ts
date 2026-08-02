@@ -9,6 +9,7 @@ import {
   type SetupRequest,
 } from "@velvet/contracts";
 
+import { analyticsOrigin } from "./analytics.js";
 import { DEPLOYMENT_FINGERPRINT } from "./deployment-fingerprint.generated.js";
 import {
   createGitHubAuthorizationUrl,
@@ -45,16 +46,6 @@ import { UPDATE_ROUTES, type UpdateRoutes } from "./update-routes.js";
 import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.js";
 
 const SESSION_MAX_AGE_SECONDS = 30 * 60;
-
-/**
- * Where the analytics script is served from and where its events go.
- *
- * A self-hosted Umami instance, so it is one origin rather than a third party's
- * network. Declared once because the Content Security Policy has to name it
- * twice, and the two must never drift: the script would load whilst its events
- * were blocked, which looks exactly like working analytics that records nothing.
- */
-const ANALYTICS_ORIGIN = "https://umami.layered.work";
 
 type ProvisionFunction = typeof provisionVelvet;
 type StaticAssetProvider = (path: string) => Promise<Response | null>;
@@ -106,7 +97,10 @@ export function createSetupHandler(
     const session = options.sessions.fromCookie(cookieValue);
 
     const finish = (response: Response): Response =>
-      secureResponse(response, currentRequestId, options.config.secureCookies);
+      secureResponse(response, currentRequestId, {
+        secure: options.config.secureCookies,
+        analyticsOrigin: analyticsOrigin(options.config.analytics),
+      });
     const reject = (
       error: SetupServiceError,
       operation: string,
@@ -764,29 +758,30 @@ function redirectResponse(location: string, headers?: HeadersInit): Response {
 function secureResponse(
   response: Response,
   requestId: string,
-  secure: boolean,
+  policy: { secure: boolean; analyticsOrigin: string | null },
 ): Response {
   const headers = new Headers(response.headers);
   headers.set("X-Request-Id", requestId);
+  // Named in both `script-src` and `connect-src`, because the script is fetched
+  // from that origin and its events are posted back to it. Granting only the
+  // first loads the script and then records nothing, which looks like working
+  // analytics whilst collecting no data. An instance with no analytics
+  // configured grants neither.
+  const analytics = policy.analyticsOrigin ? ` ${policy.analyticsOrigin}` : "";
   headers.set(
     "Content-Security-Policy",
-    // Three deliberate grants beyond the default.
+    // Two further deliberate grants beyond the default.
     //
     // `connect-src` names GitHub Pages because the Configurator reads the
     // community theme registry Velvet publishes there, and validates it before
     // using it.
-    //
-    // Both `script-src` and `connect-src` name the analytics host, because the
-    // script is fetched from it and its events are posted back to it. Granting
-    // only the first loads the script and then records nothing, which looks like
-    // working analytics whilst collecting no data.
     //
     // `style-src-attr` allows style attributes, which is how a themed preview
     // carries per-element custom properties. Stylesheets and `<style>`
     // elements stay restricted to this origin through `style-src`, so this
     // grants declarations on elements the application already renders and
     // nothing that could introduce a stylesheet.
-    `default-src 'self'; script-src 'self' ${ANALYTICS_ORIGIN}; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io ${ANALYTICS_ORIGIN}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
+    `default-src 'self'; script-src 'self'${analytics}; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io${analytics}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Cross-Origin-Resource-Policy", "same-origin");
@@ -794,7 +789,7 @@ function secureResponse(
   headers.set("Referrer-Policy", "no-referrer");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "DENY");
-  if (secure) {
+  if (policy.secure) {
     headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   }
   return new Response(response.body, {

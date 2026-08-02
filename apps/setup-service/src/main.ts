@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 
+import { withAnalytics } from "./analytics.js";
 import { loadSetupServiceConfig } from "./config.js";
 import { createGitHubSetupClient } from "./github.js";
 import { createSetupHandler } from "./handler.js";
@@ -41,7 +42,12 @@ const handler = createSetupHandler({
   releases,
   ...(serials ? { serials } : {}),
   updates: updates.routes,
-  staticAsset: createStaticAssetProvider(resolve(import.meta.dir, "public")),
+  staticAsset: createStaticAssetProvider(
+    resolve(import.meta.dir, "public"),
+    // The committed bundles carry no analytics of their own, so each instance
+    // adds its own here or serves none at all.
+    (document) => withAnalytics(document, config.analytics),
+  ),
 });
 
 Bun.serve({

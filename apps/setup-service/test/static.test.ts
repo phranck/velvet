@@ -54,6 +54,26 @@ test("serves each hosted application's document and fingerprinted assets", async
   }
 });
 
+test("applies per-instance changes to documents but never to hashed assets", async () => {
+  const directory = await publicRoot();
+  try {
+    const asset = createStaticAssetProvider(directory, (document) =>
+      document.replace("<title>", "<meta name=instance><title>"),
+    );
+
+    const document = await asset("onboarding/index.html");
+    assert.match(await document!.text(), /<meta name=instance>/u);
+
+    // Hashed assets are cached for a year under a name derived from their
+    // contents, so serving anything but the built bytes would hand out a file
+    // that no longer matches the name it is cached under.
+    const script = await asset("onboarding/assets/app-ABC123.js");
+    assert.equal(await script!.text(), "export {};");
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
 test("refuses anything outside a hosted application", async () => {
   const directory = await publicRoot();
   try {

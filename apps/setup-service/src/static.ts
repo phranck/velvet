@@ -26,7 +26,20 @@ const CONTENT_TYPES: Record<string, string> = {
   ".woff2": "font/woff2",
 };
 
-export function createStaticAssetProvider(root: string): StaticAssetProvider {
+/**
+ * Serves the hosted browser applications from a directory.
+ *
+ * @param root - Directory holding one subdirectory per hosted application.
+ * @param transformDocument - Applied to each `index.html` before it is served,
+ *   which is how per-instance settings reach a bundle that is otherwise built
+ *   once and committed. Hashed assets are served untouched, because they are
+ *   cached for a year and must stay byte-identical to what was built.
+ * @returns A provider answering with the file, or `null` when nothing matches.
+ */
+export function createStaticAssetProvider(
+  root: string,
+  transformDocument?: (document: string) => string,
+): StaticAssetProvider {
   const absoluteRoot = resolve(root);
   return async (path) => {
     if (!allowlistedPath(path)) return null;
@@ -37,11 +50,15 @@ export function createStaticAssetProvider(root: string): StaticAssetProvider {
     const extension = path.slice(path.lastIndexOf("."));
     const contentType = CONTENT_TYPES[extension];
     if (!contentType) return null;
-    return new Response(file, {
+    const document = path.endsWith("/index.html");
+    const body = document && transformDocument
+      ? transformDocument(await file.text())
+      : file;
+    return new Response(body, {
       headers: {
         // A document names its own hashed assets, so it must never be cached
         // whilst they may be replaced under it.
-        "Cache-Control": path.endsWith("/index.html")
+        "Cache-Control": document
           ? "no-store"
           : "public, max-age=31536000, immutable",
         "Content-Type": contentType,

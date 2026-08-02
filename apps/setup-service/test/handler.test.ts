@@ -27,6 +27,9 @@ const config = {
   sessionSecret: "s".repeat(32),
   automaticUpdateIntervalMs: 0,
   serialCounter: null,
+  // An instance that configures no analytics is the default everywhere,
+  // including here, so the ordinary assertions describe that instance.
+  analytics: null,
   public: { publicOrigin: origin, githubAppSlug: "velvet-setup" },
 } satisfies SetupServiceConfig;
 
@@ -198,29 +201,62 @@ test("creates only a signed session cookie and applies security headers", async 
   assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
 
-  // Analytics needs the same origin in both directives, since the script is
-  // fetched from it and its events are posted back to it. Granting one without
-  // the other is the failure worth guarding: the script loads, the page looks
-  // instrumented, and nothing is ever recorded.
-  const analytics = "https://umami.layered.work";
+  // This instance configures no analytics, so it grants no third origin at all.
+  // Anyone running their own copy of Velvet gets exactly this policy.
   const directive = (name: string) =>
     policy
       .split(";")
       .map((part) => part.trim())
       .find((part) => part.startsWith(`${name} `)) ?? "";
-  assert.ok(
-    directive("script-src").includes(analytics),
-    "the analytics script has to be loadable",
-  );
-  assert.ok(
-    directive("connect-src").includes(analytics),
-    "its events have to be sendable, or the script records nothing",
+  assert.equal(directive("script-src"), "script-src 'self'");
+  assert.equal(
+    directive("connect-src"),
+    "connect-src 'self' https://phranck.github.io",
   );
   // Nothing else was widened along with it.
   assert.match(policy, /object-src 'none'/);
   assert.match(policy, /base-uri 'none'/);
   assert.match(policy, /frame-ancestors 'none'/);
   assert.equal(directive("default-src"), "default-src 'self'");
+});
+
+test("grants a configured analytics origin in both directives that need it", async () => {
+  const handler = createSetupHandler({
+    config: {
+      ...config,
+      analytics: {
+        scriptUrl: "https://analytics.example.com/script.js",
+        websiteId: "abc-123",
+      },
+    },
+    sessions: createSessionStore({ secret: config.sessionSecret }),
+    github: githubClient(),
+    logger: () => {},
+  });
+
+  const response = await handler(
+    new Request(`${origin}/healthz`, { method: "GET" }),
+  );
+  const policy = response.headers.get("Content-Security-Policy")!;
+  const directive = (name: string) =>
+    policy
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${name} `)) ?? "";
+
+  // The script is fetched from that origin and its events are posted back to
+  // it. Granting one without the other is the failure worth guarding: the
+  // script loads, the page looks instrumented, and nothing is ever recorded.
+  assert.ok(
+    directive("script-src").includes("https://analytics.example.com"),
+    "the analytics script has to be loadable",
+  );
+  assert.ok(
+    directive("connect-src").includes("https://analytics.example.com"),
+    "its events have to be sendable, or the script records nothing",
+  );
+  // The origin, not the script path, because that is what a policy grants.
+  assert.equal(policy.includes("/script.js"), false);
 });
 
 test("uses one-time OAuth state and rotates the authenticated session", async () => {
