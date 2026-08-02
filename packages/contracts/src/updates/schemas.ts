@@ -34,6 +34,18 @@ export const VelvetVersionLockSchema = Type.Object(
     template: TemplateReferenceSchema,
     configurationSchemaVersion: SchemaVersionSchema,
     dataSchemaVersion: SchemaVersionSchema,
+    /**
+     * The running number this installation was issued, counting from one.
+     *
+     * Optional, and deliberately so. Every installation made before serials
+     * existed has a lock without it, and an absent field is what lets those
+     * pages show nothing rather than claim a number they were never given.
+     * Once written it never changes, which is what separates it from every
+     * other field here: the rest describe the release currently installed and
+     * are rewritten by each update, whilst this one describes the installation
+     * itself and has to be carried across.
+     */
+    serial: Type.Optional(Type.Integer({ minimum: 1 })),
   },
   {
     $id: "urn:velvet:schema:update-lock:v1",

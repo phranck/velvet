@@ -156,7 +156,19 @@ function renderMonitorWorkflow(
   return { content: renderYaml(parsed.value) };
 }
 
-function renderVersionLock(manifest: VelvetReleaseManifest): string {
+/**
+ * Builds the version lock for a release.
+ *
+ * @param manifest - Release being installed, which supplies every field but one.
+ * @param serial - The installation's running number, carried in from outside
+ *   because the manifest cannot know it. Absent for installations issued before
+ *   serials existed, and the field is then left out entirely rather than
+ *   written as a null.
+ */
+function renderVersionLock(
+  manifest: VelvetReleaseManifest,
+  serial: number | undefined,
+): string {
   const lock = {
     schemaVersion: 1 as const,
     installedVersion: manifest.version,
@@ -164,6 +176,7 @@ function renderVersionLock(manifest: VelvetReleaseManifest): string {
     configurationSchemaVersion:
       manifest.compatibility.configurationSchemaVersion,
     dataSchemaVersion: manifest.compatibility.dataSchemaVersion,
+    ...(serial === undefined ? {} : { serial }),
   };
   const validation = validateVelvetVersionLock(lock);
   if (!validation.success) {
@@ -189,6 +202,7 @@ function generateFile(
   source: string | undefined,
   configuration: NormalizedVelvetConfiguration,
   manifest: VelvetReleaseManifest,
+  serial: number | undefined,
 ): { content: string } | { error: TemplateFilesError } {
   if (file.strategy === "replace") return { content: source! };
   switch (file.generator) {
@@ -201,7 +215,7 @@ function generateFile(
     case "status-workflow-v1":
       return renderMonitorWorkflow(source!, file.path, configuration);
     case "version-lock-v1":
-      return { content: renderVersionLock(manifest) };
+      return { content: renderVersionLock(manifest, serial) };
     default:
       return {
         error: templateError(
@@ -252,6 +266,7 @@ export function materializeManagedTemplateFiles(
       verifiedSources.get(file.path),
       input.configuration,
       manifest,
+      input.serial,
     );
     if ("error" in rendered) {
       return { success: false, errors: [rendered.error] };

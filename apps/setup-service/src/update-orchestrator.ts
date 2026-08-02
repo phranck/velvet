@@ -237,6 +237,11 @@ async function reconcileManagedUpdate(
     manifest: validation.data,
     configuration,
     sources: release.sources,
+    // Carried across rather than regenerated. Every other field of the lock
+    // describes the release being installed, so an update rebuilds it, but the
+    // serial describes the installation and was issued once. Dropping it here
+    // would take the number away from a page that has been showing it.
+    ...(installed.serial === undefined ? {} : { serial: installed.serial }),
   });
   if (!materialized.success) {
     throw new ManagedUpdateError("UPDATE_RELEASE_INVALID", { errorId: "" });
