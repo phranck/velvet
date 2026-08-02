@@ -51,6 +51,15 @@ export interface InstallationUpdate {
   repository: ManagedInstallation;
   installedVersion: string | null;
   automaticSecurityUpdates: boolean;
+  /**
+   * Whether the owner lets Velvet name this page as a reference, or `null`
+   * when the service says nothing about it.
+   *
+   * A service from before the setting existed answers without the field, and
+   * showing that as "off" would claim an answer nobody gave. Nothing is shown
+   * instead, and the rest of the section keeps working.
+   */
+  listedAsReference: boolean | null;
   availableVersion: string;
   releaseType: "security" | "fix" | "feature";
   automaticInstallEligible: boolean;
@@ -106,6 +115,16 @@ export interface VelvetUpdateClient {
   setAutomatic(
     selector: InstallationSelector,
     enabled: boolean,
+  ): Promise<UpdateResult<boolean>>;
+  /**
+   * Changes whether this installation may be named as a reference.
+   *
+   * The onboarding promises this can be changed here later, which is the only
+   * reason the setting is reachable from the Configurator at all.
+   */
+  setListedAsReference(
+    selector: InstallationSelector,
+    listed: boolean,
   ): Promise<UpdateResult<boolean>>;
 }
 
@@ -217,6 +236,18 @@ export function createUpdateClient(
         { ...selector, enabled },
       );
     },
+
+    setListedAsReference(selector, listed) {
+      return call(
+        "POST",
+        "/api/updates/gallery",
+        (body) => {
+          const value = record(body)?.listedAsReference;
+          return typeof value === "boolean" ? value : null;
+        },
+        { ...selector, listed },
+      );
+    },
   };
 }
 
@@ -322,6 +353,10 @@ function parseUpdate(value: unknown): InstallationUpdate | null {
     repository,
     installedVersion: repository.installedVersion,
     automaticSecurityUpdates: body.automaticSecurityUpdates,
+    listedAsReference:
+      typeof body.listedAsReference === "boolean"
+        ? body.listedAsReference
+        : null,
     availableVersion: body.availableVersion,
     releaseType: body.releaseType as InstallationUpdate["releaseType"],
     automaticInstallEligible: body.automaticInstallEligible,

@@ -3,7 +3,10 @@ import { test } from "bun:test";
 
 import { parseVelvetConfiguration } from "@velvet/contracts";
 
-import { setAutomaticSecurityUpdates } from "../src/update-preference.js";
+import {
+  setAutomaticSecurityUpdates,
+  setGalleryListing,
+} from "../src/update-preference.js";
 
 const base = `# The services this page watches.
 schemaVersion: 1
@@ -111,4 +114,52 @@ test("returns the same text when the preference already holds", () => {
   const source = `${base}updates:\n  automaticSecurityUpdates: true\n`;
 
   assert.equal(setAutomaticSecurityUpdates(source, true), source);
+});
+
+test("adds the gallery answer to a configuration that has never carried one", () => {
+  const written = setGalleryListing(base, true);
+
+  assert.equal(typeof written, "string");
+  assert.equal(written!.startsWith(base), true, "the original text is untouched");
+  assert.match(written!, /gallery:\n {2}listed: true\n/u);
+});
+
+test("turns a given gallery answer back off", () => {
+  const source = `${base}gallery:\n  listed: true\n`;
+
+  const written = setGalleryListing(source, false);
+
+  assert.equal(written, `${base}gallery:\n  listed: false\n`);
+});
+
+test("keeps the comment beside the gallery answer", () => {
+  const source = `${base}gallery:\n  listed: true # yes, name us\n`;
+
+  const written = setGalleryListing(source, false);
+
+  assert.equal(written, `${base}gallery:\n  listed: false # yes, name us\n`);
+});
+
+test("writes the gallery answer without disturbing the update preference", () => {
+  const source = `${base}updates:\n  automaticSecurityUpdates: false\n`;
+
+  const written = setGalleryListing(source, true);
+
+  assert.equal(typeof written, "string");
+  const parsed = parseVelvetConfiguration(written!);
+  assert.equal(parsed.success, true);
+  if (!parsed.success) return;
+  assert.deepEqual(parsed.data.gallery, { listed: true });
+  assert.deepEqual(parsed.data.updates, { automaticSecurityUpdates: false });
+  assert.equal(
+    written!.includes("# The services this page watches."),
+    true,
+    "the comments the owner wrote survive",
+  );
+});
+
+test("refuses a gallery block it cannot edit rather than rewriting the file", () => {
+  const source = `${base}gallery: &anchor\n  listed: true\n`;
+
+  assert.equal(setGalleryListing(source, false), null);
 });
