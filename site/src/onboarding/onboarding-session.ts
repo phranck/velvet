@@ -76,6 +76,8 @@ function parseDraft(value: unknown): OnboardingDraft {
     // tolerated rather than required. Rejecting it would throw away a draft
     // somebody had already filled in.
     (value.description !== undefined && typeof value.description !== "string") ||
+    (value.listInGallery !== undefined &&
+      typeof value.listInGallery !== "boolean") ||
     typeof value.themeId !== "string" ||
     !Array.isArray(value.services) ||
     value.services.length === 0
@@ -88,6 +90,9 @@ function parseDraft(value: unknown): OnboardingDraft {
     statusPageName: value.statusPageName,
     customDomain: value.customDomain ?? "",
     description: value.description ?? "",
+    // A session stored before this question existed answers it with a no,
+    // which is the same thing an untouched box says.
+    listInGallery: value.listInGallery ?? false,
     themeId: value.themeId,
     services: value.services.map(parseService),
   };

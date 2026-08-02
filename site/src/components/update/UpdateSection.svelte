@@ -5,6 +5,7 @@
     OverlayHeader,
     OverlayRoot,
   } from "../overlay/index.js";
+  import ConsentCheckbox from "../ConsentCheckbox.svelte";
   import ReleaseNotes from "../release-notes/ReleaseNotes.svelte";
   import { describeUpdate, isUpdateRunning } from "../../lib/update-state.js";
   import type { InstallationUpdate } from "../../lib/update-client.js";
@@ -122,20 +123,16 @@
     </p>
   {/if}
 
-  <label class="automatic">
-    <input
-      type="checkbox"
-      checked={automaticSecurityUpdates}
-      onchange={(event) => onAutomaticChange(event.currentTarget.checked)}
-    />
-    <span>
-      Install safe security updates automatically
-      <small>
-        Only security releases that need no configuration or data migration.
-        Everything else always waits for you.
-      </small>
-    </span>
-  </label>
+  <ConsentCheckbox
+    checked={automaticSecurityUpdates}
+    onchange={onAutomaticChange}
+  >
+    Install safe security updates automatically
+    {#snippet note()}
+      Only security releases that need no configuration or data migration.
+      Everything else always waits for you.
+    {/snippet}
+  </ConsentCheckbox>
 </div>
 
 <OverlayRoot
@@ -178,6 +175,13 @@
 
 <style>
   .update {
+    /* The tool's own palette, handed to the shared parts that ask for one. */
+    --consent-text: var(--tool-text);
+    --consent-muted: var(--tool-muted);
+    --consent-accent: var(--tool-accent);
+    --consent-checked: var(--tool-accent);
+    --consent-font-size: 16px;
+
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -272,26 +276,6 @@
   /* Nothing to install by hand, so the remaining action takes the full width. */
   .actions.single {
     grid-template-columns: 1fr;
-  }
-
-  .automatic {
-    display: flex;
-    align-items: flex-start;
-    gap: 9px;
-    color: var(--tool-text);
-    font-size: 16px;
-  }
-
-  .automatic small {
-    display: block;
-    margin-top: 2px;
-    color: var(--tool-muted);
-    font-size: 16px;
-  }
-
-  .automatic input {
-    margin-top: 1px;
-    accent-color: var(--tool-accent);
   }
 
   .button {

@@ -139,6 +139,7 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "VelvetWordmark.svelte": ["configurator", "onboarding", "status page", "website"],
   "RainbowScale.svelte": ["configurator", "onboarding", "website"],
   "VelvetToolBrand.svelte": ["configurator", "onboarding", "website"],
+  "ConsentCheckbox.svelte": ["configurator", "onboarding"],
   "step-card": ["onboarding", "website"],
   "page-footer": ["onboarding", "website"],
   "required-field": ["configurator", "onboarding"],

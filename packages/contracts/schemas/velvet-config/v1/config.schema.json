@@ -1569,6 +1569,19 @@
         }
       }
     },
+    "gallery": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "listed"
+      ],
+      "properties": {
+        "listed": {
+          "description": "Name this installation as a reference on the Velvet website. Off unless the owner has said otherwise.",
+          "type": "boolean"
+        }
+      }
+    },
     "updates": {
       "additionalProperties": false,
       "type": "object",

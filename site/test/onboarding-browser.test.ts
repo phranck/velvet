@@ -8,6 +8,8 @@ import { createServer } from "vite";
 
 import { SetupProgressStageSchema } from "@velvet/contracts";
 
+import { ONBOARDING_SESSION_STORAGE_KEY } from "../src/onboarding/onboarding-session.js";
+
 import { parseConfiguratorYaml } from "../src/configurator/configuration.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
@@ -884,6 +886,28 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         value: item.querySelector("dd")?.textContent,
       })),
       { label: "Services", value: "2" },
+    );
+    // Being named as a reference is asked for rather than assumed, so the box
+    // starts empty. Ticking it by keyboard alone also proves the sentence
+    // beside it is part of the same control rather than loose text.
+    const galleryConsent = page.locator(".gallery-consent input");
+    assert.equal(await galleryConsent.isChecked(), false);
+    await galleryConsent.focus();
+    await page.keyboard.press("Space");
+    assert.equal(await galleryConsent.isChecked(), true);
+    assert.equal(
+      await page.evaluate((key) => {
+        const stored = sessionStorage.getItem(key);
+        return stored === null
+          ? null
+          : (
+              JSON.parse(stored) as {
+                draft?: { listInGallery?: unknown };
+              }
+            ).draft?.listInGallery;
+      }, ONBOARDING_SESSION_STORAGE_KEY),
+      true,
+      "the answer must survive the two GitHub approvals, which reload the page",
     );
     await page.goto(
       `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,

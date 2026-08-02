@@ -42,9 +42,15 @@ beforeAll(async () => {
   harness = await createConfiguratorHarness("configurator-update");
 });
 
+/*
+ * Given room beyond the five seconds a hook gets by default. The closing
+ * itself takes about thirty milliseconds; what overruns is the work the runner
+ * counts against this hook, because the section now shows an icon and both
+ * pages therefore pull in the icon font for the first time.
+ */
 afterAll(async () => {
   await harness.close();
-});
+}, 30_000);
 
 test("connects the update section to an installation and installs from it", async () => {
   const page = await harness.newPage();

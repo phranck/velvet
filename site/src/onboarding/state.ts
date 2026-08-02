@@ -42,6 +42,15 @@ export interface OnboardingDraft {
   customDomain: string;
   themeId: string;
   services: ServiceDraft[];
+  /**
+   * Whether this installation may be named as a reference on velvet.li.
+   *
+   * Starts off, and only the visitor's own tick turns it on. A public
+   * repository is easy to mistake for agreement, but publishing something and
+   * agreeing to be advertised with it are different decisions, and only the
+   * owner makes the second one.
+   */
+  listInGallery: boolean;
 }
 
 export interface SetupRequest {
@@ -94,6 +103,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     customDomain: "",
     themeId: SYSTEM_THEMES[0].id,
     services: [createServiceDraft()],
+    listInGallery: false,
   };
 }
 
@@ -141,6 +151,7 @@ export function buildSetupRequest(
     },
     services: serviceValidation.services,
     history: { retentionDays: 365 },
+    gallery: { listed: draft.listInGallery },
   };
   const finalResult = validateVelvetConfiguration({
     ...baseInput,

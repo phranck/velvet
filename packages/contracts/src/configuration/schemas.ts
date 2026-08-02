@@ -387,6 +387,17 @@ export const VelvetConfigurationSchema = Type.Object(
         { additionalProperties: false },
       ),
     ),
+    gallery: Type.Optional(
+      Type.Object(
+        {
+          listed: Type.Boolean({
+            description:
+              "Name this installation as a reference on the Velvet website. Off unless the owner has said otherwise.",
+          }),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     updates: Type.Optional(
       Type.Object(
         {
