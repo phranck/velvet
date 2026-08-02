@@ -1067,7 +1067,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           rainbowMatchesPalette: Math.abs(rainbowWidth - widths[1]) <= 1,
           innerWidthRatio:
             widths[0] > 0 ? Number((widths[1] / widths[0]).toFixed(2)) : 0,
-          subtitleText: subtitle?.getAttribute("aria-label"),
+          // Read from the text rather than from an aria-label. The subtitle is
+          // set letter by letter for its spacing, and the accessible name for
+          // the whole lockup lives on the heading, which is the only element
+          // here where aria-label is permitted.
+          subtitleText: subtitle?.textContent?.trim(),
+          headingName: brand?.getAttribute("aria-label"),
           subtitleEdges:
             subtitle && subtitleLetters.length > 1
               ? [
@@ -1091,6 +1096,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         rainbowMatchesPalette: true,
         innerWidthRatio: 0.94,
         subtitleText: "CONFIGURATOR",
+        headingName: "Velvet CONFIGURATOR",
         subtitleEdges: [0, 0],
         stacked: true,
       },

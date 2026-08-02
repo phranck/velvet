@@ -20,11 +20,14 @@
   >
     <RainbowScale />
   </div>
-  <span
-    class="velvet-tool-subtitle"
-    data-velvet-tool-subtitle
-    aria-label={subtitle.toUpperCase()}
-  >
+  <!--
+    No aria-label here. The heading above already carries the full name, and an
+    aria-label replaces an element's contents for assistive technology, so
+    repeating it would add nothing. It was also being ignored, because the
+    attribute is prohibited on a span that carries no role, which failed both
+    the ARIA and the accessibility-tree audits.
+  -->
+  <span class="velvet-tool-subtitle" data-velvet-tool-subtitle>
     {#each subtitleLetters as letter, index (index)}
       <span aria-hidden="true">{letter}</span>
     {/each}

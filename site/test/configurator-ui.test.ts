@@ -27,7 +27,10 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /class="velvet-wordmark(?:\s|")/);
   assert.match(html, /data-velvet-tool-brand/);
   assert.match(html, /data-velvet-tool-subtitle/);
-  assert.match(html, /aria-label="CONFIGURATOR"/);
+  // The whole name sits on the heading, which is where aria-label is valid.
+  // The subtitle used to repeat it on a bare span, where the attribute is
+  // prohibited and was ignored by assistive technology anyway.
+  assert.match(html, /aria-label="Velvet CONFIGURATOR"/);
   assert.match(html, /Local only/);
   assert.ok((html.match(/type="color"/g)?.length ?? 0) >= 6);
   assert.ok((html.match(/data-color-value/g)?.length ?? 0) >= 6);
