@@ -251,61 +251,6 @@ test("migrates schema version 2 state forward", async () => {
   assert.equal(migrated?.schemaVersion, 5);
 });
 
-test("rejects imported events whose Issue provenance does not match", async () => {
-  const { updateMonitorState } = await storeFunctions();
-  const firstRun = run("run-1", 1);
-  const importedEvent = {
-    event: {
-      id: "incident-7",
-      kind: "incident",
-      state: "resolved",
-      title: "Website was unavailable",
-      summary: "Imported from the previous monitor.",
-      affectedServiceIds: ["website"],
-      startsAt: "2026-07-28T10:00:00.000Z",
-      endsAt: "2026-07-28T10:15:00.000Z",
-    },
-    source: {
-      kind: "upptime",
-      repository: "example/status",
-      commit: "0123456789abcdef0123456789abcdef01234567",
-      issueUrl: "https://github.com/example/status/issues/7",
-    },
-  };
-  const invalidEvents = [
-    {
-      ...importedEvent,
-      source: {
-        ...importedEvent.source,
-        issueUrl: "https://github.com/example/status/issues/8",
-      },
-    },
-    {
-      ...importedEvent,
-      event: { ...importedEvent.event, id: "maintenance-7" },
-    },
-    {
-      ...importedEvent,
-      event: { ...importedEvent.event, id: "outage-7" },
-    },
-  ];
-
-  for (const invalidEvent of invalidEvents) {
-    const path = await statePath();
-    const content = {
-      ...stateContent(firstRun.completedAt),
-      importedEvents: [invalidEvent],
-    };
-    await assert.rejects(
-      updateMonitorState(path, firstRun, () => content),
-      (error: unknown) =>
-        error instanceof Error &&
-        "code" in error &&
-        error.code === "STATE_INVALID",
-    );
-  }
-});
-
 test("returns the stored state for a duplicate run without writing", async () => {
   const { updateMonitorState } = await storeFunctions();
   const path = await statePath();

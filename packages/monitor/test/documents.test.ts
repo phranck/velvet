@@ -41,16 +41,6 @@ type DailyAvailability = {
   unavailableSeconds: number;
 };
 
-type ImportedDailyAvailability = DailyAvailability & {
-  serviceId: string;
-  source: {
-    kind: "upptime";
-    repository: string;
-    commit: string;
-    path: string;
-  };
-};
-
 type TestDocumentInput = {
   generatedAt: string;
   monitoringStartedAt: string;
@@ -61,7 +51,6 @@ type TestDocumentInput = {
     checks: TestCheckState[];
   }>;
   stateChanges: TestStateChange[];
-  importedDailyAvailability?: ImportedDailyAvailability[];
   maintenanceWindows: Array<{
     id: string;
     affectedServiceIds: string[];
