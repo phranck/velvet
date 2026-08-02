@@ -371,17 +371,24 @@ function headerFootprint(random, x, y) {
  * These are regulatory marks on a real product. Here they are part of a
  * stylised backdrop and declare nothing about anything.
  *
- * @param x - Left edge of the row.
+ * The row is laid out from zero and then shifted, because its width is only
+ * known once every mark has been placed. That is what allows it to be centred
+ * under the wordmark rather than started at the same left edge, which left it
+ * ending well short of the block it belongs to.
+ *
+ * @param x - Left edge of the block the row is centred within.
  * @param y - Baseline the marks sit on.
- * @param scale - Multiplier applied to the whole row.
- * @returns Silkscreen elements.
+ * @param height - Height of each mark, which the row is scaled to.
+ * @param marks - Sourced compliance logos.
+ * @param blockWidth - Width to centre the finished row within.
+ * @returns Silkscreen elements, as one positioned group.
  */
-function complianceMarks(x, y, height, marks) {
+function complianceMarks(x, y, height, marks, blockWidth) {
   const elements = [];
   // Generous, because the marks are four unrelated symbols rather than a
   // sequence. Set close together they read as one graphic.
   const gap = height * 1.4;
-  let cursor = x;
+  let cursor = 0;
 
   /**
    * Stamps a sourced logo at the row height, scaled from its own viewBox.
@@ -435,7 +442,10 @@ function complianceMarks(x, y, height, marks) {
   // sits on the same baseline as the marks beside it.
   cursor += stamp(marks.rohs);
 
-  return elements;
+  const offset = x + (blockWidth - cursor) / 2;
+  return [
+    `<g transform="translate(${coordinate(offset)} 0)">${elements.join("")}</g>`,
+  ];
 }
 
 /**
@@ -481,7 +491,7 @@ function identityBlock(random, x, y, version, wordmark, marks, year) {
       `<text x="${coordinate(x)}" y="${coordinate(y + revisionY)}" font-size="${coordinate(revisionSize)}" letter-spacing="0" textLength="${coordinate(blockWidth)}" lengthAdjust="spacing">${revision}</text>`,
       line(lot, revisionY + 20, smallSize),
       line(origin, revisionY + 36, smallSize),
-      ...complianceMarks(x, y + revisionY + 74, 20, marks),
+      ...complianceMarks(x, y + revisionY + 74, 20, marks, blockWidth),
     ],
   };
 }
