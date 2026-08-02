@@ -182,6 +182,31 @@
     });
   }
 
+  /**
+   * Changes whether this installation may be named as a reference.
+   *
+   * Corrected from the service's answer for the same reason the preference
+   * above is: a write the service refused must not leave the box claiming an
+   * agreement the configuration does not carry.
+   */
+  function setListed(listed: boolean): void {
+    const target = selected;
+    if (!target || !installation) return;
+    installation = { ...installation, listedAsReference: listed };
+
+    void client.setListedAsReference(target, listed).then((result) => {
+      if (result.status === "ok") {
+        installation = installation && {
+          ...installation,
+          listedAsReference: result.data,
+        };
+        return;
+      }
+      report(result);
+      void read();
+    });
+  }
+
   function choose(value: string): void {
     stopPolling();
     selectedId = value;
@@ -256,6 +281,8 @@
       updateReason={operation?.reason}
       onInstall={install}
       onAutomaticChange={setAutomatic}
+      listedAsReference={installation.listedAsReference}
+      onListedChange={setListed}
     />
   {:else}
     <p class="update-note">Reading this installation.</p>

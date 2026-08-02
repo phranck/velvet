@@ -67,7 +67,12 @@ test("reads one installation's version, preference, and release", async () => {
   const result = await velvet.read(selector);
 
   assert.equal(result.status, "ok");
-  assert.deepEqual(result.status === "ok" ? result.data : null, update);
+  assert.deepEqual(result.status === "ok" ? result.data : null, {
+    ...update,
+    // A service from before the setting existed says nothing about it, which
+    // is not the same as saying no.
+    listedAsReference: null,
+  });
   assert.equal(calls[0]!.url, "/api/updates?installation=7&repository=9");
   assert.equal(calls[0]!.method, "GET");
 });
@@ -247,4 +252,33 @@ test("reports the preference the service settled on", async () => {
   });
   const write = calls.find(({ method }) => method === "POST")!;
   assert.deepEqual(JSON.parse(write.body!), { ...selector, enabled: false });
+});
+
+test("reads the reference setting when the service reports one", async () => {
+  const { client: velvet } = client({
+    "/api/updates": { ...update, listedAsReference: true },
+  });
+
+  const result = await velvet.read(selector);
+
+  assert.equal(result.status, "ok");
+  assert.equal(
+    result.status === "ok" ? result.data.listedAsReference : null,
+    true,
+  );
+});
+
+test("changes the reference setting and reports what the service settled on", async () => {
+  const { client: velvet, calls } = client({
+    "/api/session": session,
+    "/api/updates/gallery": { listedAsReference: true },
+  });
+
+  assert.deepEqual(await velvet.setListedAsReference(selector, true), {
+    status: "ok",
+    data: true,
+  });
+  const write = calls.find(({ method }) => method === "POST")!;
+  assert.equal(write.url, "/api/updates/gallery");
+  assert.deepEqual(JSON.parse(write.body!), { ...selector, listed: true });
 });

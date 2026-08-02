@@ -22,6 +22,8 @@
     updateReason,
     onInstall,
     onAutomaticChange,
+    listedAsReference,
+    onListedChange,
   }: {
     installedVersion: string;
     release: InstallationUpdate;
@@ -30,6 +32,9 @@
     updateReason?: ManagedUpdateReason;
     onInstall: () => void;
     onAutomaticChange: (enabled: boolean) => void;
+    /** Whether the owner agrees, or `null` when the service does not say. */
+    listedAsReference: boolean | null;
+    onListedChange: (listed: boolean) => void;
   } = $props();
 
   let notesOpen = $state(false);
@@ -133,6 +138,28 @@
       Everything else always waits for you.
     {/snippet}
   </ConsentCheckbox>
+
+  <!--
+    Worded as it is in the onboarding, which is where this was first agreed to
+    or declined. Somebody coming back to change their mind should recognise the
+    sentence they answered rather than have to work out that it is the same
+    question.
+  -->
+  {#if listedAsReference !== null}
+    <ConsentCheckbox checked={listedAsReference} onchange={onListedChange}>
+      Show this status page as a reference on the
+      <a
+        href="https://velvet.li/references"
+        target="_blank"
+        rel="noopener noreferrer"
+        onclick={(event) => event.stopPropagation()}
+      >Velvet website</a>
+      {#snippet note()}
+        Off unless you turn it on. Nothing but the name of your page and a
+        link to it is shown.
+      {/snippet}
+    </ConsentCheckbox>
+  {/if}
 </div>
 
 <OverlayRoot
@@ -180,6 +207,7 @@
     --consent-muted: var(--tool-muted);
     --consent-accent: var(--tool-accent);
     --consent-checked: var(--tool-accent);
+    --consent-link: var(--tool-accent);
     --consent-font-size: 16px;
 
     display: flex;
