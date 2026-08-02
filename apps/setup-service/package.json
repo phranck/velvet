@@ -5,11 +5,12 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "fingerprint": "bun run scripts/deployment-fingerprint.ts",
     "prebuild": "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run --filter @velvet/site onboarding:build && bun run --filter @velvet/site configurator:build",
-    "build": "bun run scripts/build.ts",
-    "pretest": "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build",
+    "build": "bun run fingerprint && bun run scripts/build.ts",
+    "pretest": "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run fingerprint",
     "test": "bun test test/*.test.ts",
-    "pretypecheck": "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build",
+    "pretypecheck": "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run fingerprint",
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
