@@ -275,10 +275,13 @@
     font-size: var(--setup-text-intro);
     line-height: 1.3;
   }
+  /* Both buttons the same width, which a flex row cannot do without giving one
+     of them a length. The columns take their size from the wider label, so the
+     pair stays balanced whatever the labels say. */
   .hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     gap: 0.75rem;
     margin-top: 2.5rem;
   }
@@ -359,14 +362,32 @@
   }
   /* The picture is transparent apart from the window and its shadow, so it
      needs no rounding or shadow of its own here. */
-  .showcase img {
+  /* The link is the grid item, and a centred grid item is sized by its
+     contents. With the picture still loading those contents are narrower than
+     the cap, so the width has to be stated here rather than on the image, or
+     the band reserves too little and the cards below it move when the file
+     arrives. Measured at 208px short on a desktop width before this. */
+  /* The link is the grid item, and a centred grid item is sized by its
+     contents. With the picture still loading those contents are narrower than
+     the cap, so the width has to be stated here rather than on the image, or
+     the band reserves too little and the cards below it move when the file
+     arrives. Measured at 208px short on a desktop width before this. */
+  .showcase-plate a {
     width: 100%;
-    height: auto;
     /* Wider than the window inside it by exactly the transparent margin the
        picture carries, so the window itself lands at the size it had when the
        frame was still baked in. */
     max-width: 830px;
+  }
+  .showcase img {
+    width: 100%;
+    height: auto;
     display: block;
+    /* Claims the box before the picture is fetched. Stated here rather than
+       left to the width and height attributes, because the picture loads
+       lazily and the ratio has to hold whilst it is still absent. It is the
+       file's own, 2010 by 1536. */
+    aspect-ratio: 2010 / 1536;
   }
   .card-inset {
     padding: var(--step-card-content-inset, 20px);
@@ -485,6 +506,10 @@
     .capabilities,
     .pipeline {
       grid-template-columns: 1fr;
+    }
+    /* Stacked once a row of two would be cramped, still matching each other. */
+    .hero-actions {
+      grid-auto-flow: row;
     }
     /* The lead carries a hard break that balances its two lines on a wide
        screen. Narrow enough and that break lands mid-thought, so the sentence
