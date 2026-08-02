@@ -8,7 +8,10 @@ import {
   persistOnboardingDraft,
   type OnboardingSessionStorage,
 } from "../src/onboarding/onboarding-session.js";
-import { createOnboardingDraft } from "../src/onboarding/state.js";
+import {
+  createOnboardingDraft,
+  type OnboardingDraft,
+} from "../src/onboarding/state.js";
 
 class MemoryStorage implements OnboardingSessionStorage {
   readonly values = new Map<string, string>();
@@ -96,8 +99,8 @@ test("carries a given gallery consent through a stored session", () => {
 
 test("reads a session stored before the gallery question as a no", () => {
   const storage = new MemoryStorage();
-  const { listInGallery: _omitted, ...withoutConsent } =
-    createOnboardingDraft();
+  const withoutConsent: Partial<OnboardingDraft> = createOnboardingDraft();
+  delete withoutConsent.listInGallery;
   storage.setItem(
     ONBOARDING_SESSION_STORAGE_KEY,
     JSON.stringify({ version: 1, draft: withoutConsent }),
