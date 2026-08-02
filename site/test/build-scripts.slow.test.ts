@@ -100,7 +100,11 @@ test("publishes the website as static HTML with no script at all", async () => {
   ]);
 
   const html = await readFile(resolve(outDir, "index.html"), "utf8");
-  assert.match(html, /<title>Velvet<\/title>/);
+  // The title says what Velvet is, not just what it is called. Clients that
+  // show a large preview image, iMessage among them, print the title and the
+  // host and drop the description entirely, so the one word on its own told a
+  // reader nothing.
+  assert.match(html, /<title>Velvet, GitHub-native status pages<\/title>/);
   // The page's own words, which only appear once it has been rendered. Without
   // the prerender the body is an empty mount point and a reader without
   // JavaScript, or a crawler that does not run it, receives nothing.
@@ -151,7 +155,17 @@ test("gives the website everything a search engine and a social platform read", 
 
   const html = await readFile(resolve(outDir, "index.html"), "utf8");
   assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/" \/>/);
+  // The site is named Velvet whatever a given page is titled, so this one stays
+  // the bare mark.
   assert.match(html, /<meta property="og:site_name" content="Velvet" \/>/);
+  // Both titles track the document title, since a preview that disagrees with
+  // the tab is a preview somebody forgot to update.
+  for (const property of ['property="og:title"', 'name="twitter:title"']) {
+    assert.match(
+      html,
+      new RegExp(`<meta ${property} content="Velvet, GitHub-native status pages" />`),
+    );
+  }
   assert.match(html, /<meta property="og:locale"/);
   assert.match(html, /<meta property="og:image" content="https:\/\/velvet\.li\/og\.png" \/>/);
   assert.match(html, /<meta property="og:image:width" content="1200" \/>/);
