@@ -57,7 +57,7 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.equal(html.match(/data-squircle-step=""/g)?.length, 5);
   assert.equal(html.match(/data-step-connector/g)?.length, 4);
   assert.match(html, />Basics</);
-  assert.match(html, />Install</);
+  assert.match(html, />Review</);
   assert.match(html, /data-step-card=""/);
   assert.match(html, /data-step-card-viewport/);
   assert.match(html, /data-step-card-body/);
