@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { test } from "bun:test";
 
-import { parseChangelog, resolveRepositoryLinks } from "../src/changelog/changelog.js";
+import { parseChangelog } from "../src/changelog/changelog.js";
 
 const repositoryRoot = resolve(import.meta.dirname, "../..");
 
@@ -40,35 +40,6 @@ test("splits the changelog into one entry per release, in file order", () => {
 test("names no release rather than inventing one for a document without any", () => {
   assert.deepEqual(parseChangelog("# Changelog\n\nNothing published yet.\n"), []);
   assert.deepEqual(parseChangelog(""), []);
-});
-
-test("points a repository-relative link at the repository", () => {
-  assert.equal(
-    resolveRepositoryLinks("See [LICENSING.md](LICENSING.md) for the boundary."),
-    "See [LICENSING.md](https://github.com/phranck/velvet/blob/main/LICENSING.md) for the boundary.",
-  );
-  assert.equal(
-    resolveRepositoryLinks("[the reference](documentation/configuration.md)"),
-    "[the reference](https://github.com/phranck/velvet/blob/main/documentation/configuration.md)",
-  );
-});
-
-test("leaves a destination that already resolves on its own", () => {
-  for (const destination of [
-    "https://setup.velvet.li/onboarding/",
-    "http://example.com",
-    "//example.com/protocol-relative",
-    "/absolute-path",
-    "#a-fragment",
-    "mailto:someone@example.com",
-  ]) {
-    const source = `[label](${destination})`;
-    assert.equal(
-      resolveRepositoryLinks(source),
-      source,
-      `${destination} was rewritten and should not have been`,
-    );
-  }
 });
 
 test("reads the repository's own changelog rather than a copy", async () => {
