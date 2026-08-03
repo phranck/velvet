@@ -61,12 +61,15 @@
     margin-block: 0 2.5rem;
   }
   h2 {
-    margin-block: 2.5rem 0.75rem;
+    margin-block: 3.5rem 0.75rem;
     scroll-margin-top: 5.5rem;
     font-size: var(--velvet-text-heading);
     line-height: 1.2;
   }
-  h2:first-of-type {
+  /* Only where nothing stands in front of it. `:first-of-type` matched the
+     first heading whatever preceded it, so the lead card and the first topic
+     were pressed together. */
+  h2:first-child {
     margin-block-start: 0;
   }
   /* The first column names the component, and a name broken across two lines
