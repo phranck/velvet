@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
   // The repository's own configuration reference, read at build time. The page
@@ -97,6 +98,8 @@
     {/each}
   </main>
 </div>
+
+<SiteFooter />
 
 <style>
   /* The topics on the left and the reference on the right, from the width at

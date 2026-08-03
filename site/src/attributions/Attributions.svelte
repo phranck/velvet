@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
   // The repository's own notices, read at build time. Nothing is copied here,
@@ -37,6 +38,8 @@
   {/each}
 </main>
 
+<SiteFooter />
+
 <style>
   .attributions {
     padding: 2.5rem 0 6rem;
@@ -65,6 +68,13 @@
   }
   h2:first-of-type {
     margin-block-start: 0;
+  }
+  /* The first column names the component, and a name broken across two lines
+     is read as two entries. It runs on one line and the table scrolls inside
+     its own frame instead, which it already does. */
+  .card :global(td:first-child),
+  .card :global(th:first-child) {
+    white-space: nowrap;
   }
   .card {
     --tool-text: var(--velvet-text);

@@ -158,6 +158,8 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // release-note overlay, which draws the copy and external-link marks, and
   // nothing else of its own.
   "Icon.svelte": ["configurator", "website"],
+  // The site's own footer, which holds the shared strip to the page measure.
+  "SiteFooter.svelte": ["website"],
   "ConsentCheckbox.svelte": ["configurator", "onboarding"],
   "step-card": ["onboarding", "website"],
   "page-footer": ["onboarding", "website"],

@@ -338,15 +338,22 @@
   th,
   td {
     padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
     vertical-align: top;
   }
   th {
     font-weight: 650;
     white-space: nowrap;
   }
-  tbody tr:last-child td {
-    border-bottom: 0;
+  /* Banded rather than ruled. A rule between every row draws as many lines as
+     there are entries, which is more structure than a reader needs to follow
+     one across. */
+  tbody tr:nth-child(even) {
+    background: color-mix(in srgb, currentColor 4%, transparent);
+  }
+  /* No transition on purpose: the band under the pointer should be where the
+     pointer is, not where it was a moment ago. */
+  tbody tr:hover {
+    background: color-mix(in srgb, currentColor 9%, transparent);
   }
 
   pre > code {

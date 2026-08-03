@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
   // Read from the repository's own changelog at build time. The page is
@@ -33,6 +34,8 @@
     in the Configurator, and everything else waits for you.
   </p>
 </main>
+
+<SiteFooter />
 
 <style>
   /* The site's own measure, shared with the header and the footer. */
