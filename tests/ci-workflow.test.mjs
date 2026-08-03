@@ -41,9 +41,19 @@ test("runs independent repository gates for pull requests and main", async () =>
   assert.match(lintJob, /docker:\/\/rhysd\/actionlint:1\.7\.12/);
   assert.match(lintJob, /bun run lint/);
   assert.match(typecheckJob, /bun run typecheck/);
+  // The browsers are installed before the tests and their system dependencies
+  // separately, because those are apt packages on the runner and the cache that
+  // carries the browser builds cannot carry them. The install itself is skipped
+  // on a cache hit, which is why the two are not one step any more: the download
+  // took sixteen minutes and thirty-six seconds of an eighteen-minute job.
   assert.match(
     testJob,
-    /name:\s*Install Playwright browser[\s\S]*bunx playwright install --with-deps chromium[\s\S]*name:\s*Test/,
+    /name:\s*Install Playwright browser[\s\S]*bunx playwright install chromium webkit[\s\S]*name:\s*Test/,
+  );
+  assert.match(testJob, /path:\s*~\/\.cache\/ms-playwright/);
+  assert.match(
+    testJob,
+    /name:\s*Install the browsers' system dependencies[\s\S]*playwright install-deps chromium webkit[\s\S]*name:\s*Test/,
   );
   assert.match(
     testJob,
