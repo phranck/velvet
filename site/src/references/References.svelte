@@ -146,9 +146,16 @@
     color: var(--velvet-accent, #8ca5ff);
   }
   /* Closes the page with nothing beneath it. There is no card here to line up
-     with, so it sits at the page measure, and its rule runs the full width of
-     that measure rather than stopping short of it on both sides. */
+     with, so it takes no text inset, and its rule closes the page rather than
+     separating two parts of it.
+
+     The one paragraph on the site held narrower than its column. It is a note
+     about the gallery above it rather than prose somebody reads down, and
+     centring it under the entries is what marks it as the end of the page
+     instead of a further entry. */
   .consent-note {
+    width: 80%;
+    margin-inline: auto;
     border-top: 1px solid #222530;
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-small);

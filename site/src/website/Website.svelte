@@ -113,8 +113,12 @@
   ];
 </script>
 
+<!--
+  The shell rather than the mount point carries the site class here, because on
+  this page it is the shell that holds the bar, the content, and the credit.
+-->
 <div
-  class="website-shell"
+  class="website-shell velvet-site"
   style={`--step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px; --step-card-content-inset: ${STEP_CARD_CONTENT_INSET}px`}
 >
   <SiteHeader />

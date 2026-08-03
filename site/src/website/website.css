@@ -107,6 +107,22 @@ h6 {
   margin-inline: auto;
 }
 
-#website {
-  min-height: 100%;
+/**
+ * The element holding a page's three parts: the bar, the content, and the
+ * credit at the foot.
+ *
+ * It is at least as tall as the window so that the footer has somewhere to be
+ * pushed to. The footer claims that room itself, with an automatic margin above
+ * it, which works whatever the content between them turns out to be; the
+ * reference lays its content out as a grid and the other pages as a single
+ * element, and neither needs to be named here.
+ *
+ * Measured on the references page at a 900px window before this: the document
+ * was 900px tall and the footer ended at 513, leaving 387px of backdrop beneath
+ * a credit that reads as the end of the page.
+ */
+.velvet-site {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
 }
