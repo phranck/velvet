@@ -21,7 +21,9 @@ import { chromium } from "playwright";
 
 import { EMBEDDED_THEME_REGISTRY } from "../src/configurator/theme-registry.ts";
 import { canonicalSystemTheme } from "../src/lib/configuration-theme.ts";
+import { PREVIEW_STATUS } from "../src/configurator/preview.ts";
 
+const PREVIEW_GENERATED_AT = PREVIEW_STATUS.generatedAt;
 const SITE = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DISTRIBUTION = resolve(SITE, "../configurator");
 /** Where each set is written, and what the page has to be showing for it. */
@@ -101,7 +103,9 @@ async function main() {
       timezoneId: "UTC",
     });
     const page = await context.newPage();
-    await page.clock.setFixedTime(new Date("2026-07-27T12:00:00.000Z"));
+    // The same instant the preview fixture states it was generated at, so the
+    // relative labels in the picture agree with the date printed on it.
+    await page.clock.setFixedTime(new Date(PREVIEW_GENERATED_AT));
     await page.route("https://phranck.github.io/velvet-themes/index.json", (route) =>
       route.abort(),
     );

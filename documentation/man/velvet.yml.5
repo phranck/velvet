@@ -163,13 +163,14 @@ outside
 a DNS or TLS failure, a timeout, a failed assertion, or an invalid response is
 an unavailable measurement.
 .PP
-Invalid configuration, a missing configured secret, an unsafe request setup,
-cancellation, and internal errors are not. They abort publication rather than
-reporting downtime that did not happen.
+Invalid configuration, a missing configured secret, an unsafe request setup, a
+cancelled run, and internal errors are not. Velvet publishes nothing in those
+cases rather than claim the endpoint was down.
 .SS JSON assertions
-Status-only checks neither read nor parse the body. Use
+By default Velvet looks at the status code and does not read the body at all.
+Use
 .B jsonAssertions
-only where an endpoint deliberately exposes structured health.
+where an endpoint deliberately reports its own health as JSON.
 .PP
 .RS 4
 .nf
@@ -461,8 +462,10 @@ and
 and
 .BR tertiary .
 .PP
-Response-time curves use monotone cubic interpolation and invent no values
-beyond local extrema. Unavailable samples stay visible as gaps.
+The response-time chart draws a smooth curve through the measurements, and the
+curve never rises above the highest one or falls below the lowest. Where a
+measurement is missing, the line breaks rather than being drawn across the
+gap.
 .SH INCIDENTS AND MAINTENANCE
 .RS 4
 .nf
@@ -551,9 +554,10 @@ hash the release recorded for it.
 An automatic update that fails is not retried for that version, so it will not
 open the same branch and pull request repeatedly.
 .PP
-An update works from an immutable template commit and a closed list of
-Velvet-owned workflow and Issue-template files, plus the machine-managed
-.IR velvet.lock.json .
+An update may change a fixed list of files and nothing else: the workflows
+Velvet installed, the Issue templates it installed, and
+.IR velvet.lock.json ,
+which it maintains for you.
 Everything else is yours and is never a target, including
 .IR velvet.yml ,
 the whole

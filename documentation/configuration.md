@@ -1,14 +1,17 @@
 # Velvet configuration reference
 
-`velvet.yml` is the canonical configuration for the GitHub-native Velvet
-monitor, browser onboarding, Configurator, build Action, and status page. The
-complete file is validated before Velvet checks an endpoint, changes an Issue,
-or publishes generated data. Unknown fields are rejected.
+`velvet.yml` describes your whole installation. Velvet is GitHub-native, so this
+one file is all there is: the monitor, the browser setup, the Configurator, the
+build Action, and the status page all read it.
+
+Velvet checks the whole file before it does anything. If something is wrong, it
+stops before checking an endpoint, touching an Issue, or publishing data. A
+field Velvet does not know is an error rather than something it ignores.
 
 ## Minimal configuration
 
-A normal website needs only a display name and URL. Velvet sends a direct IPv4
-`GET` request and considers a final HTTP `200` healthy:
+An ordinary website needs a name and a URL, and nothing else. Velvet sends a
+`GET` request over IPv4 and treats a final HTTP `200` as healthy.
 
 ```yaml
 schemaVersion: 1
@@ -22,8 +25,9 @@ services:
     url: https://example.com
 ```
 
-`repository.owner` and `repository.name` must match the repository in which the
-workflow runs. A mismatch stops before any check or repository mutation.
+`repository.owner` and `repository.name` have to name the repository the
+workflow is running in. If they name a different one, Velvet stops there,
+before checking anything or writing anything.
 
 ## Top-level fields
 
@@ -38,16 +42,17 @@ workflow runs. A mismatch stops before any check or repository mutation.
 | `history` | no | see below | Retention policy for generated history. |
 | `updates` | no | see below | Preference for compatible managed security updates. |
 
-Stable service and check IDs are derived from their names as lowercase
-kebab-case. Set an explicit `id` before renaming a service or check when its
-historical identity must stay unchanged.
+If you give a service or a check no `id`, Velvet makes one from its name, in
+lowercase with dashes. That id is what its history is filed under. So if you
+rename something later, give it an explicit `id` first, or its history starts
+again under the new name.
 
 ## Services and checks
 
 ### One website or endpoint
 
-The compact service form creates one check whose ID and name are derived from
-the service:
+Give the service a `url` and Velvet makes one check from it, taking the check's
+name and id from the service.
 
 ```yaml
 services:
@@ -58,8 +63,9 @@ services:
 
 ### Several endpoints in one service
 
-Use `checks` instead of `url` when one public service contains several named
-endpoints. A service must use exactly one of these two forms.
+When one service has several endpoints worth showing separately, list them under
+`checks` instead of giving the service a `url`. A service uses one of the two
+forms, never both.
 
 ```yaml
 services:
@@ -94,16 +100,25 @@ services:
 | `checks[].headers` | no | `[]` | Up to 16 header names with secret references. |
 | `checks[].jsonAssertions` | no | `[]` | Up to 16 explicit JSON response assertions. |
 
-Each check gets one initial attempt and at most one immediate retry. A status
-response outside `expectedStatusCodes`, DNS or TLS failure, timeout, failed JSON
-assertion, or invalid response counts as an unavailable measurement. Invalid
-configuration, missing configured secrets, unsafe request setup, cancellation,
-or an internal error aborts publication instead of reporting false downtime.
+Velvet tries each check once, and once more straight away if the first attempt
+fails.
+
+Some failures mean your endpoint was unavailable, and Velvet records them as
+such. Those are an unexpected status code, a DNS or TLS failure, a timeout, a
+failed JSON assertion, and a response Velvet cannot make sense of.
+
+Other failures mean Velvet itself could not do its job, and it publishes nothing
+rather than claim your endpoint was down. Those are a broken configuration, a
+secret it was told to use and cannot find, a request it considers unsafe to
+send, a cancelled run, and an internal error.
 
 ### Optional JSON health assertions
 
-Status-only checks do not read or parse the body. Use `jsonAssertions` only when
-an endpoint intentionally exposes structured application health:
+By default Velvet looks at the status code and stops there. It does not read the
+response body at all.
+
+Use `jsonAssertions` when an endpoint deliberately reports its own health as
+JSON and you want that checked too.
 
 ```yaml
 services:
@@ -118,17 +133,20 @@ services:
             equals: true
 ```
 
-`path` is an RFC 6901 JSON Pointer. `equals` accepts a string, number, boolean,
-or `null`. Every assertion must match. Velvet reads at most 64 KiB for an
-asserted JSON response and never infers a schema from arbitrary content.
+`path` is a JSON Pointer, as described in RFC 6901. `equals` takes a string, a
+number, a boolean, or `null`. Every assertion has to match, or the check counts
+as failed.
 
-`HEAD` cannot be combined with JSON assertions because a `HEAD` response has no
-body.
+Velvet reads at most 64 KiB of the response and compares only the paths you
+named. It never guesses at the rest.
+
+A check using `HEAD` cannot have JSON assertions, because a `HEAD` response has
+no body to read.
 
 ### Header secrets
 
-Secret values never belong in `velvet.yml`. Reference only the environment
-variable name:
+Never put a secret value in `velvet.yml`. Name the environment variable that
+holds it instead.
 
 ```yaml
 services:
@@ -141,18 +159,26 @@ services:
             secret: API_HEALTH_TOKEN
 ```
 
-Map that repository secret explicitly into both monitor workflow steps:
+Then map that repository secret into both steps of the monitor workflow:
 
 ```yaml
 env:
   API_HEALTH_TOKEN: ${{ secrets.API_HEALTH_TOKEN }}
 ```
 
-Do not pass all repository secrets to the Action. Secret interpolation such as
-`$TOKEN` or `${TOKEN}` is rejected in configuration. Request-routing, framing,
-and connection headers such as `Host`, `Content-Length`, and
-`Transfer-Encoding` cannot be configured. Configured headers are removed on a
-cross-origin redirect.
+Pass only the secrets a check needs, not all of them.
+
+Writing a value into `velvet.yml`, in any form, is refused. That includes
+`$TOKEN` and `${TOKEN}`: the file holds the name of an environment variable and
+nothing else.
+
+Some headers cannot be set at all, because they decide how the request itself is
+routed and framed. `Host`, `Content-Length`, and `Transfer-Encoding` are the
+ones you are most likely to reach for.
+
+If a check follows a redirect to another origin, Velvet drops your headers
+before sending the next request, so a token cannot travel to a host you did not
+name.
 
 ## Status page
 
@@ -188,18 +214,22 @@ statusPage:
 | `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
 | `seo` | no | generated | Optional title, description, and social-image overrides. |
 
-Setting `customDomain` writes a `CNAME` file into every build. The repository
-setting alone does not change DNS. Add the required DNS record with the domain
-provider and follow GitHub's
-[custom-domain documentation](https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages).
-Do not remove the GitHub Pages domain until the custom domain resolves and its
-certificate is active.
+Setting `customDomain` puts a `CNAME` file into every build. That is all it
+does. Your domain still has to point at GitHub, which means adding a DNS record
+at whoever you bought the domain from. GitHub's
+[custom-domain documentation](https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages)
+explains which record.
+
+Keep the GitHub Pages address working until your own domain answers and its
+certificate is live. Removing it earlier takes your page offline in between.
 
 ## Themes
 
-Browser onboarding offers the four system themes as preview cards. The
-Configurator can select the same themes and edit every field below afterward.
-`theme.name` is required when a theme block exists.
+The browser setup shows the four system themes as cards you can pick from. The
+Configurator offers the same four and lets you change every field below
+afterwards.
+
+If you write a `theme` block yourself, it has to have a `name`.
 
 ```yaml
 statusPage:
@@ -254,8 +284,11 @@ statusPage:
       tertiary: textTertiary
 ```
 
-Every palette value is a six-digit hexadecimal color. A semantic color field
-accepts `auto`, a palette key, or its own six-digit hexadecimal value.
+Each value in `palette` is a six-digit hexadecimal colour.
+
+Every other colour field takes one of three things: `auto`, so Velvet picks; the
+name of a palette entry, so it follows that colour; or a six-digit hexadecimal
+colour of its own.
 
 | Group | Fields and accepted values |
 | --- | --- |
@@ -268,14 +301,18 @@ accepts `auto`, a palette key, or its own six-digit hexadecimal value.
 | `service` | `icon` |
 | `text` | `primary`, `secondary`, `tertiary` |
 
-Response-time curves use monotone cubic interpolation without inventing values
-beyond local extrema. Unavailable samples remain visible gaps.
+The response-time chart draws a smooth curve through the measurements, and the
+curve never rises above the highest one or falls below the lowest. Where a
+measurement is missing, the line breaks rather than being drawn across the
+gap.
 
 ### Service icons
 
-`statusPage.icons` maps the stable service ID to a
-[Phosphor](https://phosphoricons.com) class. The browser setup and Configurator
-offer the supported set visually. Unknown services use `ph-circle`.
+`statusPage.icons` gives a service its icon, by mapping the service's id to a
+[Phosphor](https://phosphoricons.com) class name. The browser setup and the
+Configurator let you pick from the supported icons rather than typing a class.
+
+A service with no icon named here gets `ph-circle`.
 
 ```yaml
 statusPage:
@@ -300,9 +337,10 @@ statusPage:
 Velvet offers no analytics. A generated status page loads no third-party script
 and reports to nobody, and there is no setting that would make it.
 
-Without SEO overrides, each build derives the title, description, canonical
-URL, Open Graph and Twitter metadata, a 1200 x 630 social card, `robots.txt`,
-and `sitemap.xml` from the page configuration and latest validated status.
+Set nothing here and each build works it all out for you, from your page's
+configuration and its latest status: the title, the description, the canonical
+URL, the Open Graph and Twitter metadata, a 1200 by 630 social card,
+`robots.txt`, and `sitemap.xml`.
 
 ## Incidents and maintenance
 
@@ -321,19 +359,29 @@ incidents:
 | `incidentLabel` | `incident` | Lowercase kebab-case GitHub label. |
 | `maintenanceLabel` | `maintenance` | Lowercase kebab-case GitHub label. |
 
-A first failed measurement is pending and appears degraded. Reaching the
-failure threshold confirms the outage and opens one marked GitHub Issue. A
-recovered target counts as available immediately, while the displayed state
-waits for the recovery threshold. Confirmed recovery adds one comment and
-closes the same Issue. Manual closure during an active outage is reconciled by
-reopening the marked Issue; unrelated Issues are never changed.
+One failed measurement is not yet an outage. The page shows the service as
+degraded and waits. When the failures reach `failureThreshold` in a row, Velvet
+confirms the outage and opens one GitHub Issue for it.
 
-Planned maintenance is submitted through the generated Issue Form or the
-maintenance workflow. Velvet validates the selected service IDs and timestamps.
-Monitoring continues during maintenance. Covered outages do not create an
-incident until the maintenance window ends, but measured availability is never
-rewritten. Scheduled, active, and completed maintenance remains a neutral event
-in public history.
+Recovery works the same way round. The moment the endpoint answers again, that
+measurement counts as available in your history. The page keeps showing the
+outage until the successes reach `recoveryThreshold`, and then Velvet comments
+on the Issue and closes it.
+
+If you close that Issue yourself whilst the outage is still going on, Velvet
+reopens it. It only ever touches the Issue it opened, never anything else in
+your repository.
+
+You announce planned maintenance through the Issue Form in your repository, or
+through the maintenance workflow. Velvet checks that the services you named
+exist and that the times make sense.
+
+Monitoring carries on during the window. If the service goes down inside it,
+Velvet opens no incident, but it still records what it measured: your
+availability figures are never adjusted to be kinder.
+
+Maintenance shows on the page as its own kind of event, before, during, and
+after, and it is not counted as trouble.
 
 ## History and generated data
 
@@ -342,11 +390,16 @@ history:
   retentionDays: 365
 ```
 
-`retentionDays` accepts `1` through `365` and defaults to `365`. The same window
-applies to public daily availability, response samples, resolved incidents,
-completed maintenance, private transition history, and generated branch
-history. Open incidents and scheduled or active maintenance remain visible.
-Historical GitHub Issues are never deleted.
+`retentionDays` is how far back your page reaches. It takes a number from `1`
+through `365` and defaults to `365`.
+
+The same window applies to everything Velvet keeps: daily availability, response
+samples, closed incidents, finished maintenance, and its own record of what
+changed when.
+
+Two things are never dropped for being old. An incident that is still open and
+maintenance that is scheduled or under way both stay visible. And Velvet never
+deletes a GitHub Issue, whatever its age.
 
 The monitor owns only these paths on the dedicated `velvet-data` branch:
 
@@ -355,13 +408,18 @@ The monitor owns only these paths on the dedicated `velvet-data` branch:
 - `velvet-data/v1/response-times.json`
 - `velvet-data/v1/incidents.json`
 
-Status and response workflows share the `velvet-status-data` concurrency group.
-Every successful run validates and publishes one complete commit. An unchanged
-or failed partial result never replaces the latest valid snapshot. Once the
-retained Git history reaches beyond the configured period, the current complete
-snapshot becomes a new root, written against the exact branch head the run read,
-so a run working from an outdated view is refused rather than applied. The
-default branch is never force-pushed.
+The two workflows that write data never run at the same time, so they cannot
+overwrite each other.
+
+A run publishes one commit with everything in it, and only after checking that
+everything is there. A run that failed part-way, or that found nothing had
+changed, publishes nothing and leaves the last good data in place.
+
+When the branch history grows past your retention window, Velvet starts it again
+from the current data. It writes that against the exact commit it read, so a run
+working from an out-of-date view is refused instead of applied.
+
+Your default branch is never force-pushed.
 
 ## Managed updates
 
@@ -370,17 +428,18 @@ updates:
   automaticSecurityUpdates: true
 ```
 
-`automaticSecurityUpdates` defaults to `true`. The preference applies only to
-releases explicitly classified as security updates that require neither a
-configuration migration nor a data migration. Feature releases, fixes without
-that classification, and incompatible schema changes always require
-confirmation.
+`automaticSecurityUpdates` is on by default.
+
+It covers one narrow case: a release that fixes a security problem and needs no
+change to your configuration or your data. Everything else waits for you to say
+yes. That includes new features, ordinary fixes, and anything that changes the
+shape of the configuration.
 
 ### How a release is classified
 
-Every release carries one of three classifications, and the classification must
-match how the version number moves. Publication is refused when they disagree,
-so a release cannot be labelled to make it look safer than it is.
+Every release says what kind of release it is, and the version number has to
+agree. If the two disagree, the release is refused before it is published, so
+nobody can label a feature release as a security fix to slip it past you.
 
 | Type | Version change | Meaning |
 | --- | --- | --- |
@@ -390,75 +449,82 @@ so a release cannot be labelled to make it look safer than it is.
 
 ### What may install without asking
 
-A release installs unattended only when every one of these holds. Any single
-failure means it waits for confirmation.
+All of the following have to be true. If any one of them is not, the release
+waits for you.
 
 - It is classified `security`.
-- It is explicitly marked eligible for automatic installation. The marking
-  alone is not enough; a release marked eligible whilst not being a
-  migration-free security release is rejected at publication.
+- It is marked as suitable for automatic installation. Marking it is not enough
+  on its own: a release that carries the mark without meeting the other
+  conditions is refused at publication.
 - It requires neither a configuration migration nor a data migration.
 - Your installation still has `automaticSecurityUpdates` enabled.
 - Its recorded template revision is immutable, and every file matches the hash
   the release recorded for it.
 
-An automatic update that fails is not retried for that version. It will not
-open the same branch or pull request again and again.
+If an automatic update fails, Velvet does not try that version again. You will
+not find the same branch and pull request reappearing.
 
 ### What an update never touches
 
-The update contract works from an immutable template commit and a closed list
-of Velvet-owned workflow and Issue-template files, plus the machine-managed
-`velvet.lock.json`. Everything else is yours and is never an update target:
-`velvet.yml`, the complete `velvet-data` branch, incidents, maintenance
-history, repository secrets, Pages and domain settings, `README.md`, and
-`LICENSE`.
+An update may change a fixed list of files, and nothing else. That list is the
+workflows Velvet installed, the Issue templates it installed, and
+`velvet.lock.json`, which it maintains for you.
 
-This is proven rather than promised. Before merging, Velvet reads the changed
-files of its own pull request, including both sides of a rename, and stops
-whilst your installation is still untouched if any path falls outside that
-closed set. It also refuses to run at all against a repository whose default
-branch is the generated `velvet-data` history.
+Everything else is yours and is never touched: `velvet.yml`, the whole
+`velvet-data` branch, your incidents and maintenance history, your repository
+secrets, your Pages and domain settings, your `README.md`, and your `LICENSE`.
 
-The `velvet-data` branch is verified by existence rather than by comparison,
-because the monitor rewrites it on its own schedule and replaces it with an
-unrelated root commit whenever it compacts elder history. Comparing commits
-would raise false alarms on a perfectly healthy installation.
+Velvet does not simply promise this. Before merging its own pull request it
+reads the list of files that request changes, renames included, and if a single
+path is not on the allowed list it stops there. Nothing has been merged at that
+point, so your installation is exactly as it was. It also refuses to run at all
+in a repository whose default branch is the generated `velvet-data` history.
 
-Repository secrets are protected by absence of capability rather than by
-policy. The update token carries no permission that can read or write them.
+For the `velvet-data` branch it checks only that the branch is still there,
+rather than comparing commits. The monitor rewrites that branch on its own
+schedule, so comparing would report trouble on a perfectly healthy
+installation.
+
+Your repository secrets are safe because Velvet cannot reach them at all. The
+token it uses for updates has no permission to read or write a secret.
 
 ### What Velvet is allowed to do to your repository
 
-Updates use a token restricted to exactly one verified repository, requesting
-Actions read and write, Checks read, Contents write, Pull requests write, and
-Workflows write. It holds no Administration, Pages, Issues, Secrets,
-organisation, or account permission.
+Updates use a token that works on one repository, the one you approved, and
+nothing else. It can read and write Actions, read Checks, write Contents, write
+Pull requests, and write Workflows.
 
-Granting these is a one-time approval. Velvet cannot widen its own access
-afterwards, because the permissions come from the app registration you
-approved.
+It cannot touch anything to do with administration, Pages, Issues, secrets, your
+organisation, or your account.
+
+You approve this once. Velvet cannot give itself more later, because the
+permissions come from the app registration you agreed to and not from anything
+it controls.
 
 ### When something goes wrong
 
-A failed check before merging leaves your installation completely unchanged.
-Nothing was merged, so there is nothing to undo.
+If a check fails before merging, your installation is untouched. Nothing was
+merged, so there is nothing to undo.
 
-If publication fails after merging, Velvet restores the previous managed files
-with a normal new commit and publishes them again. History is never rewritten
-and nothing is force-pushed, so your commit history stays intact and readable.
+If something fails after merging, Velvet puts the previous files back with an
+ordinary new commit and publishes them again. It never rewrites history and
+never force-pushes, so your commit log stays readable and nothing disappears
+from it.
 
-An interrupted operation resumes from what the repository actually shows rather
-than from remembered state, so a restart in the middle of an update cannot
-leave it half applied. Repeating a request that already succeeded does nothing.
+If an update is interrupted, whatever picks it up afterwards looks at what your
+repository actually contains rather than at what it remembers doing. So a
+restart in the middle cannot leave an update half applied, and asking twice for
+something that already worked does nothing the second time.
 
-Every failure reports a stable code, a message safe to show, and a unique error
-ID you can quote. The full cause is recorded in Velvet's logs, which never
-contain credentials, secret values, configuration content, or your status data.
+Every failure gives you a code, a message that is safe to show anyone, and an
+error ID you can quote when asking about it. The detail goes into Velvet's own
+logs, which never contain credentials, secret values, your configuration, or
+your status data.
 
 ## GitHub workflows and permissions
 
-An installation carries these workflows. Their essential access is:
+Your installation has three workflows. This is what each one does and what it
+needs to be allowed to do:
 
 | Workflow | Purpose | Permissions |
 | --- | --- | --- |
@@ -466,42 +532,53 @@ An installation carries these workflows. Their essential access is:
 | Velvet response times | Samples at 00:00, 06:00, 12:00, 18:00 UTC | `contents: write` |
 | Velvet Pages | Build and deploy after valid data publication | `contents: read`, `pages: write`, `id-token: write` |
 
-All installed third-party Actions and Velvet Actions are pinned to immutable
-commit IDs. Monitoring workflows do not run for pull requests or untrusted fork
-content. They use the repository-scoped `GITHUB_TOKEN`; no personal access token
-is required for ordinary monitoring or publishing.
+Every Action these workflows use, Velvet's own and anyone else's, is pinned to
+an exact commit, so none of them can change under you.
 
-After changing services, update the choices in
-`.github/ISSUE_TEMPLATE/maintenance.yml` so its labels and embedded IDs match
-`velvet.yml`. Browser setup does this during installation.
+The monitoring workflows never run on a pull request or on code from a fork.
+They use the `GITHUB_TOKEN` that GitHub gives a workflow in its own repository,
+so ordinary monitoring and publishing need no personal access token from you.
+
+When you add or rename a service, update the list of choices in
+`.github/ISSUE_TEMPLATE/maintenance.yml` to match, or the maintenance form will
+offer the old names. The browser setup writes that file for you at
+installation.
 
 ## Failure and recovery
 
-Velvet distinguishes endpoint downtime from failures that make the measurement
-unreliable:
+Velvet separates two things that both look like failure: your endpoint being
+down, and Velvet being unable to measure it properly.
 
-- HTTP, DNS, TLS, timeout, assertion, or final-status failures are valid endpoint
-  measurements.
-- Invalid configuration, missing secrets, unsafe request setup, invalid state or
-  output, cancellation, and internal failures stop publication.
-- GitHub errors expose a stable safe code and unique error ID. Logs never contain
-  endpoint URLs, secret names or values, authorization headers, request bodies,
-  or raw GitHub responses.
-- A safe data-branch conflict is retried once against the newer state. A stale
-  run stops without overwriting it.
+Your endpoint was down when the request failed at HTTP, DNS, or TLS level, timed
+out, returned an unexpected status, or failed a JSON assertion. Velvet records
+those.
 
-Correct the reported configuration, permission, secret mapping, or temporary
-GitHub failure, then rerun the failed workflow. The previous snapshot remains
-public throughout recovery. Never hand-edit one generated document or assemble
-a partial replacement.
+Velvet could not measure when the configuration is wrong, a secret is missing,
+the request would be unsafe to send, its own state or output does not check out,
+the run was cancelled, or something inside it went wrong. It publishes nothing
+in those cases rather than claim you were down.
+
+When GitHub itself is the problem, you get a code and an error ID. The logs
+never contain your endpoint URLs, secret names or values, authorization headers,
+request bodies, or GitHub's raw replies.
+
+If two runs collide on the data branch and it is safe to do so, Velvet tries
+once more against the newer state. A run working from an out-of-date view stops
+instead of overwriting what is there.
+
+To recover, fix what was reported, whether that is the configuration, a
+permission, a secret mapping, or a passing GitHub outage, and rerun the workflow
+that failed. Your page keeps showing the last good data throughout. Do not edit
+a generated file by hand or piece one together yourself.
 
 ## IPv4 and IPv6
 
-Velvet performs direct HTTP(S) checks over IPv4, because GitHub-hosted runners
-do not provide documented IPv6 connectivity. A configured service is therefore
-monitored over IPv4, and the configuration offers no external-probe option.
-IPv6 monitoring will be added once those runners support it for every
-installation.
+Velvet checks your endpoints over IPv4. GitHub's runners offer no documented
+IPv6 connectivity, so there is nothing to check over.
+
+That is why there is no setting for it, and no option to send checks through an
+outside service instead. IPv6 will be added when GitHub's runners support it for
+everyone.
 
 ## Build Action
 
@@ -516,16 +593,25 @@ The page Action defaults to these paths:
     output: velvet-dist
 ```
 
-The workflow must check out the default branch and the generated `velvet-data`
-branch at `.velvet-data` first. The Action validates the configuration and data,
-builds the static site, generates SEO and social assets, and copies license
-notices into the output directory.
+Before this step, the workflow has to check out two things: your default branch,
+and the generated `velvet-data` branch into `.velvet-data`.
+
+The Action then checks the configuration and the data, builds the site, makes
+the SEO files and the social image, and copies the licence notices into the
+output directory.
 
 ## Licensing and generated-data policy
 
-Velvet's MIT license covers its code, schemas, and original assets. The
-monitoring records an installation produces, along with any logos, fonts, and
-other third-party material it displays, keep their own rights and notices. The
-monitor never deletes a closed GitHub Issue or a license file it finds in the
-repository. See [LICENSING.md](../LICENSING.md) and
-[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) for the complete boundary.
+Velvet's MIT licence covers Velvet: its code, its schemas, and the assets it
+ships.
+
+It does not cover what your installation produces or displays. Your monitoring
+records are yours, and any logo, font, or other material you bring keeps
+whatever rights and notices came with it.
+
+Velvet never deletes a closed GitHub Issue, and never deletes a licence file it
+finds in your repository.
+
+[LICENSING.md](../LICENSING.md) and
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) set out the whole
+boundary.
