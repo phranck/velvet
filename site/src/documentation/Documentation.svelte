@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as Card from "../components/card";
   import Icon from "../components/Icon.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
@@ -84,18 +85,18 @@
     </aside>
 
     {#if lead}
-      <div class="card reference">
+      <Card.Root>
         <ReleaseNotes source={lead} headings="outline" copyable />
-      </div>
+      </Card.Root>
     {/if}
 
     {#each sections as section (section.id)}
       <!-- The name above the card rather than inside it, so the topics read as
            a list of headings down the page with their content beneath each. -->
       <h2 id={section.id} data-topic={section.id}>{section.title}</h2>
-      <div class="card reference">
+      <Card.Root>
         <ReleaseNotes source={section.body} headings="outline" copyable />
-      </div>
+      </Card.Root>
     {/each}
   </main>
 </div>
@@ -142,7 +143,6 @@
       0px
     );
     padding: var(--topics-padding);
-    border: 1px solid #222530;
     border-radius: var(--topics-radius);
     background: #14161d;
   }
@@ -231,7 +231,6 @@
   .warning {
     margin: 0 0 2.5rem;
     padding: var(--velvet-card-padding);
-    border: 1px solid color-mix(in srgb, #d29922 45%, transparent);
     border-radius: var(--velvet-card-radius);
     background: color-mix(in srgb, #d29922 12%, #14161d);
   }
@@ -291,19 +290,11 @@
   main h2:first-child {
     margin-block-start: 0;
   }
-  .card {
-    --tool-text: var(--velvet-text);
-    background: #14161d;
-    border: 1px solid #222530;
-    border-radius: var(--velvet-card-radius);
-    padding: var(--velvet-card-padding);
-    font-size: var(--velvet-text-body);
-    line-height: 1.7;
-  }
+
   /* The document's own subheadings are its structure inside a topic, so they
      are given room the component does not assume, having been written for notes
      shown in a panel rather than a document read on its own. */
-  .reference :global(h3) {
+  main :global(h3) {
     margin-top: 1.5rem;
   }
 </style>

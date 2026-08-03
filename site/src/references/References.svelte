@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as Card from "../components/card";
   import Icon from "../components/Icon.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
@@ -73,10 +74,12 @@
     <ul class="reference-list" data-reference-list>
       {#each references as reference (reference.url)}
         <li>
-          <a href={reference.url} target="_blank" rel="noopener noreferrer">
-            <span class="reference-name">{reference.statusPageName}</span>
-            <Icon name="export-arrow-01" />
-          </a>
+          <Card.Root>
+            <a href={reference.url} target="_blank" rel="noopener noreferrer">
+              <span class="reference-name">{reference.statusPageName}</span>
+              <Icon name="export-arrow-01" />
+            </a>
+          </Card.Root>
         </li>
       {/each}
     </ul>
@@ -123,21 +126,22 @@
     margin: 0 0 3rem;
     padding: 0;
   }
+  /* The entry is the site's card, and the link fills it, so the whole surface
+     is the target rather than the words on it. The card states the surface, the
+     radius, and the padding; only the arrangement inside it is stated here. */
   .reference-list a {
     align-items: center;
-    background: #14161d;
-    border: 1px solid #222530;
-    border-radius: 0.75rem;
     color: inherit;
     display: flex;
     gap: 0.75rem;
     justify-content: space-between;
-    padding: 1rem 1.25rem;
+    margin-inline: var(--velvet-card-text-inset);
     text-decoration: none;
   }
+  /* Marked by the text, because the card it sits on draws no edge to mark. */
   .reference-list a:hover,
   .reference-list a:focus-visible {
-    border-color: var(--velvet-accent, #8ca5ff);
+    color: var(--velvet-accent, #8ca5ff);
   }
   .reference-name {
     font-weight: 600;
