@@ -160,8 +160,6 @@ Set these non-secret runtime values separately:
 | `PUBLIC_ORIGIN` | Exact HTTPS origin without a trailing path, query, or fragment |
 | `GITHUB_APP_SLUG` | Public slug from the GitHub App URL |
 | `AUTOMATIC_UPDATE_INTERVAL_MINUTES` | How often eligible security releases are swept for, from 0 through 1440. Defaults to 60, and 0 turns the sweep off |
-| `ANALYTICS_SCRIPT_URL` | Absolute HTTPS URL of an analytics script, with no credentials, query, or fragment. Optional |
-| `ANALYTICS_WEBSITE_ID` | The identifier that analytics installation knows this instance by. Optional |
 
 Analytics is off unless both variables are set, and setting only one is refused
 rather than accepted. A script URL without an identifier loads the script and

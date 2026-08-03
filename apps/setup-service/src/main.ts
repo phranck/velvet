@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
 
-import { withAnalytics } from "./analytics.js";
 import { loadSetupServiceConfig } from "./config.js";
 import { createGitHubSetupClient } from "./github.js";
 import { createSetupHandler } from "./handler.js";
@@ -48,12 +47,9 @@ const handler = createSetupHandler({
   releases,
   ...(serials ? { serials } : {}),
   updates: updates.routes,
-  staticAsset: createStaticAssetProvider(
-    resolve(import.meta.dir, "public"),
-    // The committed bundles carry no analytics of their own, so each instance
-    // adds its own here or serves none at all.
-    (document) => withAnalytics(document, config.analytics),
-  ),
+  // Served exactly as built. Nothing is inserted into a document on the way
+  // out, because there is nothing left to insert: Velvet observes nobody.
+  staticAsset: createStaticAssetProvider(resolve(import.meta.dir, "public")),
 });
 
 Bun.serve({
