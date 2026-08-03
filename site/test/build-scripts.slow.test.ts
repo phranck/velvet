@@ -396,11 +396,6 @@ test("generated runtime config preserves native appearance and custom domain", a
       "    mono: Example Mono",
       "  icons:",
       "    website: ph-globe",
-      "  analytics:",
-      "    umami:",
-      "      websiteId: 12345678-1234-1234-1234-123456789abc",
-      "      src: https://analytics.example.com/script.js",
-      "    googleAnalytics: G-ABC123",
       "  seo:",
       "    title: Example System Status",
       "    description: Current availability for Example.",
@@ -438,11 +433,11 @@ test("generated runtime config preserves native appearance and custom domain", a
   assert.equal(config.theme.fontSans, "Example Sans");
   assert.equal(config.theme.fontMono, "Example Mono");
   assert.deepEqual(config.icons, { website: "ph-globe" });
-  assert.deepEqual(config.umami, {
-    websiteId: "12345678-1234-1234-1234-123456789abc",
-    src: "https://analytics.example.com/script.js",
-  });
-  assert.equal(config.googleAnalytics, "G-ABC123");
+  // Velvet offers no analytics, so a generated page's configuration carries no
+  // trace of any. Asserted rather than assumed, because the fields it used to
+  // carry were written by the generator and would come back unnoticed.
+  assert.equal("umami" in config, false);
+  assert.equal("googleAnalytics" in config, false);
   assert.deepEqual(config.seo, {
     title: "Example System Status",
     description: "Current availability for Example.",

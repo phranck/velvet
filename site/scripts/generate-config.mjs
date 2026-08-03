@@ -105,8 +105,6 @@ const velvet = native === null
       fontSans: native.statusPage.fonts?.sans,
       fontMono: native.statusPage.fonts?.mono,
       icons: native.statusPage.icons,
-      umami: native.statusPage.analytics?.umami,
-      googleAnalytics: native.statusPage.analytics?.googleAnalytics,
       seo: native.statusPage.seo,
     };
 const themeInput = velvet.theme && typeof velvet.theme === "object" ? velvet.theme : {};
@@ -198,14 +196,6 @@ const config = {
     ...(velvet.fontMono ? { fontMono: velvet.fontMono } : {}),
   },
   icons: velvet.icons ?? {},
-  // Analytics: emit each block only when fully configured, so the app injects the
-  // tracker only when the consumer asked for it. Umami needs both id + script URL.
-  ...(velvet.umami && velvet.umami.websiteId && velvet.umami.src
-    ? { umami: { websiteId: String(velvet.umami.websiteId), src: String(velvet.umami.src) } }
-    : {}),
-  ...(typeof velvet.googleAnalytics === "string" && velvet.googleAnalytics.trim()
-    ? { googleAnalytics: velvet.googleAnalytics.trim() }
-    : {}),
   ...(Object.keys(seo).length ? { seo } : {}),
   ...(serial === null ? {} : { serial }),
 };

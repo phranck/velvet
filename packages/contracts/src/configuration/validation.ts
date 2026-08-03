@@ -296,14 +296,6 @@ function inspectConfiguration(value: unknown): ConfigurationValidationError[] {
         );
       });
     }
-    if (isRecord(statusPage.analytics) && isRecord(statusPage.analytics.umami)) {
-      errors.push(
-        ...inspectUrl(
-          statusPage.analytics.umami.src,
-          "/statusPage/analytics/umami/src",
-        ),
-      );
-    }
     if (isRecord(statusPage.seo)) {
       errors.push(...inspectUrl(statusPage.seo.image, "/statusPage/seo/image"));
     }
@@ -512,9 +504,6 @@ function normalizeConfiguration(
           : {}),
         ...(statusPage.theme ? { theme: structuredClone(statusPage.theme) } : {}),
         ...(statusPage.fonts ? { fonts: { ...statusPage.fonts } } : {}),
-        ...(statusPage.analytics
-          ? { analytics: structuredClone(statusPage.analytics) }
-          : {}),
         ...(statusPage.seo ? { seo: { ...statusPage.seo } } : {}),
       },
       services: services.data,
