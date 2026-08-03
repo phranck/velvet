@@ -90,7 +90,7 @@ test("builds the standalone onboarding at the repository root", async () => {
   assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
 }, BUILD_TIMEOUT_MS);
 
-test("publishes the website as static HTML with no script at all", async () => {
+test("publishes the start page as static HTML that loads no script", async () => {
   const outDir = await buildDirectory();
   await bun([
     "run", "--bun", "vite", "build",
@@ -115,7 +115,12 @@ test("publishes the website as static HTML with no script at all", async () => {
   // element too, but it carries data a search engine reads rather than code a
   // browser runs, so it is named explicitly instead of loosening the check.
   assert.doesNotMatch(html, /<script(?![^>]*type="application\/ld\+json")/);
-  assert.equal((await readdir(resolve(outDir, "assets"))).some((entry) => entry.endsWith(".js")), false);
+  // The references page is built alongside this one and deliberately keeps its
+  // script, because it reads the list of installations when a visitor opens it.
+  // JavaScript therefore exists in the output, including chunks the two pages
+  // share, and what matters is that this page loads none of it.
+  assert.doesNotMatch(html, /<script[^>]+src=/);
+  assert.doesNotMatch(html, /<link[^>]+rel="modulepreload"/);
 
   // Svelte scopes styles by hashing them, and the markup is rendered in a
   // separate pass from the stylesheet. Identical hashes are what makes that
@@ -718,4 +723,29 @@ test("carries the installation serial from the lock into the generated config", 
   const withLock = resolve(directory, "with.json");
   await bun([resolve(siteRoot, "scripts/generate-config.mjs"), configuration, withLock]);
   assert.equal(JSON.parse(await readFile(withLock, "utf8")).serial, 412);
+}, BUILD_TIMEOUT_MS);
+
+test("publishes the references page where GitHub Pages will find it", async () => {
+  const outDir = await buildDirectory();
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--config", "vite.references.ts",
+    "--outDir", resolve(outDir, "references"),
+  ]);
+
+  // A bare path resolves to index.html inside a directory of that name, so
+  // anything else would answer velvet.li/references with a 404.
+  const html = await readFile(resolve(outDir, "references", "index.html"), "utf8");
+
+  assert.match(html, /<title>Who runs Velvet<\/title>/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/references"/);
+  // It keeps its script, unlike the start page, because the list is read when
+  // somebody opens the page rather than baked in at build time. Baking it in
+  // would leave a withdrawn consent visible until the next rebuild.
+  assert.match(html, /<script[^>]+src="\.\/assets\/references-[^"]+\.js"/);
+  // Built separately from the start page, so it carries its own assets beside
+  // it. Sharing a build put the wordmark's styles in a stylesheet the
+  // prerendered start page never loads, and left that page preloading a bundle
+  // it does not run.
+  assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
 }, BUILD_TIMEOUT_MS);

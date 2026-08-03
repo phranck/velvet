@@ -1,4 +1,4 @@
-import { readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { createServer, type Plugin } from "vite";
@@ -46,6 +46,43 @@ export function renameHtmlEntry(filename: string): Plugin {
     },
     async closeBundle() {
       await rename(resolve(outDir, filename), resolve(outDir, "index.html"));
+    },
+  };
+}
+
+/**
+ * Publishes an HTML entry at a path of its own, as `<name>/index.html`.
+ *
+ * GitHub Pages resolves a bare path by looking for `index.html` inside a
+ * directory of that name, so this is what makes `velvet.li/references` answer
+ * rather than 404.
+ *
+ * Asset references are rewritten from `./assets/` to `../assets/` as it moves,
+ * because the document ends up one level deeper than the assets it names and
+ * the build emitted those paths relative to the output root.
+ *
+ * @param filename - Entry HTML file, as named in `rollupOptions`.
+ * @param directory - Directory to publish it under.
+ */
+export function publishHtmlEntryAt(
+  filename: string,
+  directory: string,
+): Plugin {
+  let outDir = "";
+  return {
+    name: `velvet-${directory}-entry-path`,
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    async closeBundle() {
+      const source = resolve(outDir, filename);
+      const html = await readFile(source, "utf8");
+      await mkdir(resolve(outDir, directory), { recursive: true });
+      await writeFile(
+        resolve(outDir, directory, "index.html"),
+        html.replaceAll('"./assets/', '"../assets/'),
+      );
+      await rm(source, { force: true });
     },
   };
 }
@@ -195,7 +232,16 @@ export function prerenderStaticEntry(options: {
           "</head>",
           `${preloads.length > 0 ? `${preloads.join("\n")}\n  ` : ""}${markup.head}</head>`,
         )
-        .replace(/\s*<script\b[^>]*\bsrc="[^"]+"[^>]*><\/script>/g, "");
+        .replace(/\s*<script\b[^>]*\bsrc="[^"]+"[^>]*><\/script>/g, "")
+        // Preloads go with it. Vite emits one per chunk the entry would have
+        // loaded, and a page that runs no script has no use for any of them; a
+        // reader would fetch the bundle and never execute it. This only appears
+        // once a second entry shares a chunk with this one, which is why it was
+        // not needed whilst the website was the only page built here.
+        .replace(
+          /\s*<link\b[^>]*\brel="modulepreload"[^>]*>/g,
+          "",
+        );
       await writeFile(htmlPath, rewritten);
 
       // The bundle is not merely unreferenced now, it is unreachable, so
