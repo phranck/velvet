@@ -5,6 +5,7 @@
  * reader finds on GitHub. Nothing is copied here, so the page and the
  * repository cannot come to describe different releases.
  */
+import { splitIntoSections } from "../lib/markdown-sections.js";
 import { resolveRepositoryLinks } from "../lib/repository-links.js";
 
 /** One entry of the changelog, being one published release. */
@@ -15,9 +16,6 @@ export interface ChangelogRelease {
   notes: string;
 }
 
-/** A release heading, which is what separates one entry from the next. */
-const RELEASE_HEADING = /^##\s+(.+?)\s*$/u;
-
 /**
  * Splits the changelog into its releases, in the order the file lists them.
  *
@@ -26,32 +24,16 @@ const RELEASE_HEADING = /^##\s+(.+?)\s*$/u;
  * keeps its notes as Markdown so they can be rendered by the same component the
  * Configurator uses, which never puts embedded markup into the document.
  *
+ * A release is a level-two heading, which is the same cut the configuration
+ * reference makes for its topics, so both read it from
+ * {@link splitIntoSections}.
+ *
  * @param source Contents of `CHANGELOG.md`.
  * @returns One entry per release. A document naming no release yields an empty
  *   list rather than a single untitled entry holding the whole file.
  */
 export function parseChangelog(source: string): ChangelogRelease[] {
-  const releases: ChangelogRelease[] = [];
-  let current: { title: string; lines: string[] } | null = null;
-
-  const close = (): void => {
-    if (!current) return;
-    releases.push({
-      title: current.title,
-      notes: current.lines.join("\n").trim(),
-    });
-  };
-
-  for (const line of resolveRepositoryLinks(source).split("\n")) {
-    const heading = line.match(RELEASE_HEADING);
-    if (heading) {
-      close();
-      current = { title: heading[1]!, lines: [] };
-      continue;
-    }
-    current?.lines.push(line);
-  }
-  close();
-
-  return releases;
+  return splitIntoSections(resolveRepositoryLinks(source)).sections.map(
+    (section) => ({ title: section.title, notes: section.body }),
+  );
 }

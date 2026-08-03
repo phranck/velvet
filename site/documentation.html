@@ -70,5 +70,48 @@
         }
       })();
     </script>
+    <!--
+      Marks the topic a reader is looking at, for the same reason the buttons
+      above are wired here: the page ships no bundle, so nothing else can.
+
+      Without this the sidebar still works. Every entry is an ordinary link to
+      an ordinary anchor, so a reader whose script never runs can still reach
+      any topic; only the mark showing where they are is missing.
+    -->
+    <script>
+      (function () {
+        const headings = [...document.querySelectorAll("[data-topic]")];
+        const links = new Map(
+          [...document.querySelectorAll("[data-topic-link]")].map(function (link) {
+            return [link.dataset.topicLink, link];
+          }),
+        );
+        if (headings.length === 0 || links.size === 0) return;
+
+        let marked = null;
+        function mark() {
+          // The last heading that has passed the line the sticky bar leaves
+          // free, which is the one whose content fills the screen. Before the
+          // first has passed it, the first is the one being read.
+          const line = 120;
+          let current = headings[0];
+          for (const heading of headings) {
+            if (heading.getBoundingClientRect().top <= line) current = heading;
+            else break;
+          }
+          const link = links.get(current.dataset.topic);
+          if (!link || link === marked) return;
+          if (marked) marked.removeAttribute("data-current");
+          link.setAttribute("data-current", "");
+          marked = link;
+        }
+
+        // Passive, because this never prevents the scroll it observes, and
+        // reading a rectangle is cheap enough not to need throttling.
+        addEventListener("scroll", mark, { passive: true });
+        addEventListener("resize", mark, { passive: true });
+        mark();
+      })();
+    </script>
   </body>
 </html>
