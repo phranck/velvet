@@ -849,8 +849,11 @@ test("publishes the configuration reference whole, tables and all", async () => 
   // below the document it warns about is one nobody reaches.
   const warning = html.indexOf("Editing this file by hand is not the supported path");
   assert.notEqual(warning, -1, "the page carries no warning");
+  // Against the first card rather than against a topic's name, because every
+  // name appears in the sidebar before the warning as well, and comparing with
+  // that would pass whatever order the page is in.
   assert.equal(
-    warning < html.indexOf("Minimal configuration"),
+    warning < html.indexOf('<div class="card'),
     true,
     "the warning sits after the reference it warns about",
   );
@@ -878,18 +881,36 @@ test("publishes the configuration reference whole, tables and all", async () => 
     "rows went missing between the reference and the page",
   );
 
-  // The document's own outline, which is what `headings: "outline"` preserves.
-  // Its level-one heading is dropped, because the page supplies one. Counted
-  // inside the rendered reference rather than across the page, since the
-  // warning above it carries a heading of its own that belongs to neither the
-  // document nor its outline.
-  const rendered = html.slice(html.indexOf('<div class="reference'));
+  // The document's own outline. Its level-one heading is dropped, because the
+  // page supplies one. Each level-two heading becomes a topic, named above its
+  // own card and listed once in the sidebar, and the level-three headings stay
+  // inside the cards where `headings: "outline"` renders them.
   const headingsOfDepth = (depth: number): number =>
     reference.split("\n").filter((line) => new RegExp(`^#{${depth}} `, "u").test(line))
       .length;
   assert.equal((html.match(/<h1[ >]/gu) ?? []).length, 1);
-  assert.equal((rendered.match(/<h2[ >]/gu) ?? []).length, headingsOfDepth(2));
-  assert.equal((rendered.match(/<h3[ >]/gu) ?? []).length, headingsOfDepth(3));
+  assert.equal(
+    (html.match(/<h2[^>]*\bdata-topic=/gu) ?? []).length,
+    headingsOfDepth(2),
+    "a topic went missing between the reference and the page",
+  );
+  assert.equal(
+    (html.match(/\bdata-topic-link=/gu) ?? []).length,
+    headingsOfDepth(2),
+    "the sidebar does not list every topic exactly once",
+  );
+  assert.equal((html.match(/<h3[ >]/gu) ?? []).length, headingsOfDepth(3));
+
+  // Every topic's card carries the name above it, and every sidebar entry
+  // points at a heading that exists.
+  const anchors = [...html.matchAll(/\bdata-topic-link="([^"]+)"/gu)].map(([, id]) => id);
+  for (const id of anchors) {
+    assert.match(
+      html,
+      new RegExp(`<h2[^>]*\\bid="${id}"`),
+      `the sidebar points at ${id}, which no heading carries`,
+    );
+  }
 
   // Written as `../LICENSING.md` in a document one directory down, so a page at
   // the site root has to resolve it rather than repeat it.
