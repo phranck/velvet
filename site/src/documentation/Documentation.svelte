@@ -1,0 +1,99 @@
+<script lang="ts">
+  import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
+  // The repository's own configuration reference, read at build time. The page
+  // is prerendered, so this file is baked into the published document and a
+  // visitor downloads no script to read it.
+  import reference from "../../../documentation/configuration.md?raw";
+  import { resolveRepositoryLinks } from "../lib/repository-links.js";
+
+  /**
+   * The reference without its own title.
+   *
+   * The document opens with a level-one heading, and so does this page. Keeping
+   * both would print the same thing twice and give the page two level-one
+   * headings, which is one more than a document may have.
+   */
+  const body = resolveRepositoryLinks(
+    reference.replace(/^#\s+.*\n/u, ""),
+    "documentation/",
+  );
+</script>
+
+<header class="documentation-header">
+  <a href="/"><VelvetWordmark /></a>
+</header>
+
+<main class="documentation">
+  <h1>Configuration</h1>
+  <p class="lede">
+    Every option <code>velvet.yml</code> accepts, from a one-service website to
+    themes, incidents, retention, and managed updates. This is the reference the
+    repository carries, and it is also available offline as
+    <code>man velvet.yml</code>.
+  </p>
+
+  <div class="reference">
+    <ReleaseNotes source={body} headings="outline" />
+  </div>
+</main>
+
+<style>
+  .documentation-header {
+    padding: 2rem clamp(1rem, 5vw, 4rem) 0;
+    font-size: 1.5rem;
+  }
+  .documentation-header a {
+    color: inherit;
+    text-decoration: none;
+  }
+  /* Wider than the references and changelog pages, because the reference is
+     built out of four-column tables and a 48rem column makes every one of them
+     scroll sideways. */
+  .documentation {
+    margin: 0 auto;
+    max-width: 62rem;
+    padding: 3rem clamp(1rem, 5vw, 4rem) 6rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.1;
+    margin: 0 0 1rem;
+  }
+  .lede {
+    color: var(--velvet-muted, #9aa3b2);
+    font-size: 1.125rem;
+    margin: 0 0 3rem;
+    max-width: 40rem;
+  }
+  .lede code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+  /* On its own surface, the same one the changelog gives a release. The board
+     backdrop is patterned, and several hundred lines of reference read directly
+     over it are harder work than they need to be.
+
+     The document's own headings are also its structure, so they are given room
+     the component does not assume, having been written for notes shown in a
+     panel rather than a document read on its own. */
+  .reference {
+    --tool-text: var(--velvet-text);
+    background: #14161d;
+    border: 1px solid #222530;
+    border-radius: 0.75rem;
+    padding: 2rem clamp(1.25rem, 4vw, 2.5rem);
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+  .reference :global(h2) {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #222530;
+    font-size: 1.5rem;
+  }
+  .reference :global(h3) {
+    margin-top: 1.5rem;
+    font-size: 1.15rem;
+  }
+</style>
