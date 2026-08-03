@@ -1,5 +1,5 @@
 <script lang="ts">
-  import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
   // The repository's own configuration reference, read at build time. The page
   // is prerendered, so this file is baked into the published document and a
@@ -20,9 +20,7 @@
   );
 </script>
 
-<header class="documentation-header">
-  <a href="/"><VelvetWordmark /></a>
-</header>
+<SiteHeader current="documentation" />
 
 <main class="documentation">
   <h1>Configuration</h1>
@@ -39,14 +37,6 @@
 </main>
 
 <style>
-  .documentation-header {
-    padding: 2rem clamp(1rem, 5vw, 4rem) 0;
-    font-size: 1.5rem;
-  }
-  .documentation-header a {
-    color: inherit;
-    text-decoration: none;
-  }
   /* Wider than the references and changelog pages, because the reference is
      built out of four-column tables and a 48rem column makes every one of them
      scroll sideways. */

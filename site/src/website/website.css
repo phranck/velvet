@@ -3,6 +3,32 @@
 @import "../lib/board-backdrop.css";
 @import "../lib/velvet-surface.css";
 
+/**
+ * The faces every velvet.li page sets its text in.
+ *
+ * Stated here rather than left to the board shell, because `app.css` names a
+ * different family on `body` for the tools and that declaration wins over the
+ * shell's rule on `:root`. This file is loaded after it by the four entries
+ * that make up the site and by nothing else, so the tools keep their own face.
+ *
+ * Without this the start page was the only page in Barlow, since its shell
+ * remaps the family for itself, whilst the reference, the changelog, and the
+ * references page all rendered in Inter with no condensed headings at all.
+ */
+body {
+  font-family: var(--velvet-font);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--velvet-font-heading);
+  font-weight: 600;
+}
+
 #website {
   min-height: 100%;
 }

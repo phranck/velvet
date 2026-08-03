@@ -1,5 +1,5 @@
 <script lang="ts">
-  import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import SiteHeader from "../components/SiteHeader.svelte";
 
   /** What the setup service discloses about a consenting installation. */
   interface Reference {
@@ -58,9 +58,7 @@
   });
 </script>
 
-<header class="references-header">
-  <a href="/"><VelvetWordmark /></a>
-</header>
+<SiteHeader current="references" />
 
 <main class="references column">
   <h1>Who runs Velvet</h1>
@@ -90,14 +88,6 @@
 </main>
 
 <style>
-  .references-header {
-    padding: 2rem clamp(1rem, 5vw, 4rem) 0;
-    font-size: 1.5rem;
-  }
-  .references-header a {
-    color: inherit;
-    text-decoration: none;
-  }
   .references {
     margin: 0 auto;
     max-width: 48rem;

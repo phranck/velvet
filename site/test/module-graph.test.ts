@@ -150,6 +150,10 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "VelvetWordmark.svelte": ["configurator", "onboarding", "status page", "website"],
   "RainbowScale.svelte": ["configurator", "onboarding", "website"],
   "VelvetToolBrand.svelte": ["configurator", "onboarding", "website"],
+  // The site's own chrome. The reference, changelog, and references pages use
+  // it too, but they are not applications in the sense this table means and are
+  // not walked from here.
+  "SiteHeader.svelte": ["website"],
   "ConsentCheckbox.svelte": ["configurator", "onboarding"],
   "step-card": ["onboarding", "website"],
   "page-footer": ["onboarding", "website"],
