@@ -4,6 +4,7 @@
     type ReleaseNotesHeadings,
     type ReleaseNotesInline,
   } from "../../lib/release-notes.js";
+  import { tokenizeCode } from "../../lib/highlight-yaml.js";
 
   let {
     source,
@@ -14,7 +15,18 @@
      * page rendering a whole document asks for `outline` instead.
      */
     headings = "flattened",
-  }: { source: string; headings?: ReleaseNotesHeadings } = $props();
+    /**
+     * Whether each code block carries a button that copies it. Off by default,
+     * because the button is wired by a script in the page rather than by this
+     * component, and a surface that does not carry that script would show a
+     * control that does nothing.
+     */
+    copyable = false,
+  }: {
+    source: string;
+    headings?: ReleaseNotesHeadings;
+    copyable?: boolean;
+  } = $props();
 
   const blocks = $derived(parseReleaseNotes(source, { headings }));
 </script>
@@ -54,7 +66,32 @@
     {:else if block.kind === "paragraph"}
       <p>{@render inline(block.content)}</p>
     {:else if block.kind === "code"}
-      <pre><code>{block.value}</code></pre>
+      <div class="code-block">
+        {#if copyable}
+          <!--
+            Wired by a small script in the page rather than here, because the
+            documentation is prerendered and its bundle is removed. The button
+            is disabled until that script enables it, so a page whose script
+            never arrives shows no control that does nothing.
+          -->
+          <button
+            type="button"
+            class="copy"
+            data-copy-code
+            aria-label="Copy this configuration"
+            disabled
+          >
+            <i class="ph-duotone ph-copy" aria-hidden="true"></i>
+          </button>
+        {/if}
+        <pre><code>{#each tokenizeCode(block.value, block.language) as line, lineIndex (lineIndex)}<span
+                class="line"
+              ><span class="line-number" aria-hidden="true">{lineIndex + 1}</span
+                >{#each line as token, tokenIndex (tokenIndex)}<span
+                    class={token.kind}>{token.value}</span
+                  >{/each}</span
+              >{/each}</code></pre>
+      </div>
     {:else if block.kind === "table"}
       <!-- Wrapped, because a reference table is wider than a phone and the
            alternative is either a squeezed column or a page that scrolls
@@ -150,12 +187,84 @@
     background: color-mix(in srgb, currentColor 10%, transparent);
   }
 
+  /* Positions the copy button against the block rather than in the flow, and
+     carries the surface so the button sits on it rather than beside it. */
+  .code-block {
+    position: relative;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
   pre {
     margin: 0;
     padding: 0.875rem 1rem;
-    border-radius: 0.5rem;
+    /* Room on the right for the button, so a long line runs under nothing. */
+    padding-right: 3.25rem;
     overflow-x: auto;
+  }
+  /* A line is its number and its content, and the number is a column of its own
+     so a wrapped or scrolled line cannot slide underneath it. */
+  .line {
+    display: block;
+  }
+  .line-number {
+    display: inline-block;
+    width: 2ch;
+    margin-right: 1.25ch;
+    color: color-mix(in srgb, currentColor 35%, transparent);
+    text-align: right;
+    user-select: none;
+  }
+
+  .comment {
+    color: color-mix(in srgb, currentColor 45%, transparent);
+    font-style: italic;
+  }
+  .key {
+    color: var(--velvet-accent, #8ca5ff);
+  }
+  .string {
+    color: #9ece6a;
+  }
+  .number,
+  .boolean {
+    color: #e0af68;
+  }
+  .punctuation {
+    color: color-mix(in srgb, currentColor 55%, transparent);
+  }
+
+  .copy {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: 0.375rem;
     background: color-mix(in srgb, currentColor 8%, transparent);
+    color: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .copy[disabled] {
+    /* Not merely dimmed. Until the page's script enables it, pressing it would
+       do nothing, and a control that does nothing is worse than none. */
+    display: none;
+  }
+  .copy:hover,
+  .copy:focus-visible {
+    border-color: color-mix(in srgb, currentColor 35%, transparent);
+  }
+  /* Global, because the attribute is set by the page's script after the copy
+     succeeds and never appears in this markup. Left scoped, Svelte finds no
+     element carrying it and removes the rule as unused, so the button gave no
+     sign that anything had happened. */
+  .copy:global([data-copied]) {
+    color: #9ece6a;
+    border-color: currentColor;
   }
 
   /* The scroll lives on this wrapper rather than the table, because a table is

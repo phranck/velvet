@@ -49,7 +49,7 @@ export type ReleaseNotesBlock =
       headers: ReleaseNotesInline[][];
       rows: ReleaseNotesInline[][][];
     }
-  | { kind: "code"; value: string };
+  | { kind: "code"; value: string; language?: string };
 
 /**
  * How the levels a document writes are turned into the levels it renders at.
@@ -118,6 +118,10 @@ export function parseReleaseNotes(
     }
 
     if (line.trimStart().startsWith("```")) {
+      // Whatever the opening fence names, which decides how the block is
+      // coloured. An unnamed or unrecognised language is shown uncoloured
+      // rather than coloured wrongly.
+      const language = line.trimStart().slice(3).trim().toLowerCase();
       const collected: string[] = [];
       index += 1;
       while (index < lines.length && !(lines[index] ?? "").trimStart().startsWith("```")) {
@@ -125,7 +129,11 @@ export function parseReleaseNotes(
         index += 1;
       }
       index += 1;
-      blocks.push({ kind: "code", value: collected.join("\n") });
+      blocks.push({
+        kind: "code",
+        value: collected.join("\n"),
+        ...(language ? { language } : {}),
+      });
       continue;
     }
 
