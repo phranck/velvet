@@ -557,7 +557,12 @@ test("records the claimed serial in the version lock", async () => {
     request: normalizedRequest,
     github,
     onEvent: () => {},
-    serials: { peek: async () => 1, claim: async () => 412 },
+    serials: {
+      peek: async () => 1,
+      claim: async () => 412,
+      listed: async () => [],
+      setListed: async () => false,
+    },
     operationId: () => "O".repeat(26),
     sleep: async () => {},
   });
@@ -613,6 +618,8 @@ test("claims a serial only once the page is published, and only once", async () 
   const claims: unknown[] = [];
   const serials = {
     peek: async () => 1,
+    listed: async () => [],
+    setListed: async () => false,
     claim: async (installation: unknown) => {
       claims.push(installation);
       return 42;
@@ -663,6 +670,8 @@ test("a registry that will not answer does not fail a finished setup", async () 
     onEvent: () => {},
     serials: {
       peek: async () => null,
+      listed: async () => [],
+      setListed: async () => false,
       claim: async () => {
         throw new Error("registry unreachable");
       },

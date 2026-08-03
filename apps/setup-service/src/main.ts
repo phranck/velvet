@@ -33,7 +33,13 @@ const serials = config.serialCounter
   : undefined;
 // Built once and shared, so a person pressing install and a scheduled security
 // sweep reaching the same repository queue behind each other.
-const updates = createUpdateServices({ config, github, releases, logger });
+const updates = createUpdateServices({
+  config,
+  github,
+  releases,
+  logger,
+  ...(serials ? { serials } : {}),
+});
 const handler = createSetupHandler({
   config,
   github,
@@ -60,6 +66,20 @@ scheduleAutomaticSweeps({
   intervalMs: config.automaticUpdateIntervalMs,
   startDelayMs: SWEEP_START_DELAY_MS,
   run: () => {
+    // Consent first, and independently of whether a release may install
+    // itself. A withdrawal has to leave the gallery on the next pass rather
+    // than waiting for whenever a security release next happens to exist.
+    void updates.automatic.reconcileGallery().catch((cause: unknown) => {
+      logger({
+        level: "error",
+        requestId: "gallery-reconcile",
+        route: "/api/references",
+        operation: "gallery-reconcile",
+        status: 500,
+        outcome: "failed",
+        cause,
+      });
+    });
     void updates.automatic.run().catch((cause: unknown) => {
       logger({
         level: "error",

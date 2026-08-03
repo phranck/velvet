@@ -1,6 +1,7 @@
 import { VELVET_UPDATE_CHECK_NAME } from "@velvet/contracts";
 
 import type { SetupServiceConfig } from "./config.js";
+import type { InstallationSerialCounter } from "./serial.js";
 import type { GitHubSetupClient } from "./github.js";
 import type { AuditLogger } from "./observability.js";
 import {
@@ -34,6 +35,14 @@ export function createUpdateServices(input: {
   github: GitHubSetupClient;
   releases: ManagedUpdateReleaseProvider;
   logger: AuditLogger;
+  /**
+   * The registry, when the instance has one.
+   *
+   * Passed through so the gallery reconciliation can write consent back to it.
+   * Absent means no gallery, which is the state of an instance that issues no
+   * serials either.
+   */
+  serials?: InstallationSerialCounter;
 }): UpdateServices {
   const app = {
     appId: input.config.github.appId,
@@ -57,6 +66,7 @@ export function createUpdateServices(input: {
       app,
       releases: input.releases,
       orchestrator,
+      ...(input.serials ? { serials: input.serials } : {}),
       /*
        * A sweep reports twice over: one line per repository it acted on, and
        * one for the sweep itself however little it found. The second is what

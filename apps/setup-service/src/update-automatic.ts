@@ -1,4 +1,5 @@
 import {
+  parseVelvetConfiguration,
   parseVelvetVersionLock,
   type VelvetReleaseManifest,
 } from "@velvet/contracts";
@@ -19,6 +20,7 @@ import type {
   ManagedUpdateReleaseProvider,
   ManagedUpdateResult,
 } from "./update-orchestrator-types.js";
+import type { InstallationSerialCounter } from "./serial.js";
 import { isRecord, positiveInteger } from "./update-github-validation.js";
 
 const AUTOMATIC_USER_AGENT = "velvet-update-service";
@@ -63,6 +65,17 @@ export interface AutomaticUpdateRunner {
    * cannot pile them up.
    */
   run(): Promise<AutomaticUpdateSweep>;
+
+  /**
+   * Brings the registry's gallery consent back in step with the installations.
+   *
+   * Separate from {@link run} because that one answers the cheap question first
+   * and stops when the release cannot install itself, which is the ordinary
+   * state. Consent has to be read whether or not a release is pending, so
+   * hanging it off that sweep would leave a withdrawal in place for as long as
+   * no security release happened to be published.
+   */
+  reconcileGallery(): Promise<GalleryReconciliation>;
 }
 
 /** One line per repository a sweep touched, safe for a shared log. */
@@ -109,6 +122,28 @@ interface AutomaticUpdateRunnerOptions {
   releases: ManagedUpdateReleaseProvider;
   orchestrator: ManagedUpdateOrchestrator;
   log?: (entry: AutomaticUpdateLogEntry) => void;
+  /**
+   * The registry the gallery reconciliation writes to.
+   *
+   * Absent on an instance without one, in which case nothing is reconciled and
+   * the gallery endpoint reports nothing, exactly as it does for an instance
+   * that has issued no serials.
+   */
+  serials?: InstallationSerialCounter;
+}
+
+/** What one pass over the installations found out about gallery consent. */
+export interface GalleryReconciliation {
+  /** Installations the app is on. */
+  installations: number;
+  /** Repositories examined. */
+  repositories: number;
+  /** Records whose consent differed from the installation and was corrected. */
+  changed: number;
+  /** Repositories that could not be read at all. */
+  failures: number;
+  /** Whether the enumeration hit its page limit. */
+  truncated: boolean;
 }
 
 /**
@@ -238,6 +273,88 @@ export function createAutomaticUpdateRunner(
       Buffer.from(body.content.replace(/\s/gu, ""), "base64").toString("utf8"),
     );
     return parsed.success ? parsed.data.installedVersion : null;
+  };
+
+  /**
+   * What an installation's own configuration says about the gallery.
+   *
+   * `velvet.yml` belongs to the owner and is never written by an update, so it
+   * is the only place the answer lives. A repository without one, or with one
+   * that no longer parses, counts as no consent, because appearing publicly is
+   * something a person opts into rather than something inferred.
+   *
+   * @returns `true` only when the file explicitly says so.
+   */
+  const galleryConsent = async (
+    token: string,
+    repository: { owner: string; name: string },
+  ): Promise<boolean> => {
+    let body: unknown;
+    try {
+      body = await githubRequest<unknown>(
+        `/repos/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}/contents/velvet.yml`,
+        token,
+      );
+    } catch (error) {
+      if (error instanceof GitHubApiError && error.status === 404) return false;
+      throw error;
+    }
+    if (
+      !isRecord(body) ||
+      body.type !== "file" ||
+      body.encoding !== "base64" ||
+      typeof body.content !== "string"
+    ) {
+      return false;
+    }
+    const parsed = parseVelvetConfiguration(
+      Buffer.from(body.content.replace(/\s/gu, ""), "base64").toString("utf8"),
+    );
+    return parsed.success && parsed.data.gallery?.listed === true;
+  };
+
+  const reconcileGallery = async (): Promise<GalleryReconciliation> => {
+    const result: GalleryReconciliation = {
+      installations: 0,
+      repositories: 0,
+      changed: 0,
+      failures: 0,
+      truncated: false,
+    };
+    const serials = options.serials;
+    if (!serials) return result;
+
+    const found = await installations();
+    result.installations = found.ids.length;
+    result.truncated = found.truncated;
+
+    for (const installationId of found.ids) {
+      const token = await createInstallationToken(
+        { ...options.app, fetch: fetchImplementation },
+        installationId,
+        { contents: "read", metadata: "read" },
+        AUTOMATIC_USER_AGENT,
+      );
+      const covered = await repositories(token);
+      result.truncated ||= covered.truncated;
+
+      for (const repository of covered.entries) {
+        result.repositories += 1;
+        try {
+          const consented = await galleryConsent(token, repository);
+          const written = await serials.setListed(
+            `${repository.owner}/${repository.name}`,
+            consented,
+          );
+          if (written) result.changed += 1;
+        } catch {
+          // One unreadable repository is not a reason to leave every other
+          // installation's consent stale.
+          result.failures += 1;
+        }
+      }
+    }
+    return result;
   };
 
   const collect = async (): Promise<AutomaticUpdateSweep> => {
@@ -395,5 +512,7 @@ export function createAutomaticUpdateRunner(
       );
       return operation;
     },
+
+    reconcileGallery,
   };
 }
