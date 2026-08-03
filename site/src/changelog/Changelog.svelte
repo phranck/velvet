@@ -42,21 +42,26 @@
   .changelog {
     padding: 3rem 0 6rem;
   }
-  /* Beside a card and on the same level as one, so the same inset applies. */
+  /* Both introduce the cards beneath them, so both take the inset the text
+     inside those cards takes.
+
+     Every rule below states `margin-block` rather than the `margin` shorthand.
+     The shorthand sets all four sides, so it reset the inline margins this rule
+     had just given them, and the inset was thrown away without a trace of it in
+     the markup. Measured at a 1440px window: both sat at 120, the page edge. */
   h1,
-  .lede,
-  .source-note {
+  .lede {
     margin-inline: var(--velvet-card-text-inset);
   }
   h1 {
     font-size: var(--velvet-text-title);
     line-height: 1.1;
-    margin: 0 0 1rem;
+    margin-block: 0 1rem;
   }
   .lede {
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-copy);
-    margin: 0 0 3rem;
+    margin-block: 0 3rem;
   }
   article {
     background: #14161d;
@@ -65,11 +70,17 @@
     margin: 0 0 1.5rem;
     padding: var(--velvet-card-padding);
   }
+  /* Inside the card rather than beside one, so it meets the card's own curve
+     and takes the inset the notes beneath it take. It sat 16px to the left of
+     that prose before, at 141 against 157. */
   h2 {
     font-size: var(--velvet-text-heading);
     line-height: 1.2;
-    margin: 0 0 1rem;
+    margin: 0 var(--velvet-card-text-inset) 1rem;
   }
+  /* Closes the page with nothing beneath it. There is no card here to line up
+     with, so it sits at the page measure, and its rule runs the full width of
+     that measure rather than stopping short of it on both sides. */
   .source-note {
     border-top: 1px solid #222530;
     color: var(--velvet-text-muted);

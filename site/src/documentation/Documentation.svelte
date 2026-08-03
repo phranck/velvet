@@ -204,7 +204,12 @@
     background: color-mix(in srgb, #d29922 12%, #14161d);
   }
   /* Text and headings take the further inset; nothing in this notice runs
-     full width, so all of it does. */
+     full width, so all of it does.
+
+     Both rules below state `margin-block` rather than the `margin` shorthand,
+     which sets all four sides and reset the inline margins this rule had just
+     given them. Measured at a 1440px window: both sat at 445, the notice's
+     padding edge, rather than at 461. */
   .warning-head,
   .warning p {
     margin-inline: var(--velvet-card-text-inset);
@@ -216,7 +221,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin: 0 0 0.6rem;
+    margin-block: 0 0.6rem;
   }
   .warning :global(svg) {
     color: #d29922;
@@ -230,11 +235,11 @@
     line-height: 1.2;
   }
   .warning p {
-    margin: 0 0 0.6rem;
+    margin-block: 0 0.6rem;
     line-height: 1.55;
   }
   .warning p:last-child {
-    margin-bottom: 0;
+    margin-block-end: 0;
   }
   .warning code {
     font-family: var(--font-mono);
