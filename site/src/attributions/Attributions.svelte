@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as Card from "../components/card";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
@@ -25,16 +26,16 @@
   </p>
 
   {#if lead}
-    <div class="card">
+    <Card.Root>
       <ReleaseNotes source={lead} headings="outline" />
-    </div>
+    </Card.Root>
   {/if}
 
   {#each sections as section (section.id)}
     <h2 id={section.id}>{section.title}</h2>
-    <div class="card">
+    <Card.Root>
       <ReleaseNotes source={section.body} headings="outline" />
-    </div>
+    </Card.Root>
   {/each}
 </main>
 
@@ -75,17 +76,9 @@
   /* The first column names the component, and a name broken across two lines
      is read as two entries. It runs on one line and the table scrolls inside
      its own frame instead, which it already does. */
-  .card :global(td:first-child),
-  .card :global(th:first-child) {
+  :global(td:first-child),
+  :global(th:first-child) {
     white-space: nowrap;
   }
-  .card {
-    --tool-text: var(--velvet-text);
-    background: #14161d;
-    border: 1px solid #222530;
-    border-radius: var(--velvet-card-radius);
-    padding: var(--velvet-card-padding);
-    font-size: var(--velvet-text-body);
-    line-height: 1.7;
-  }
+
 </style>

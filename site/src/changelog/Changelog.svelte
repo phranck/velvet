@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as Card from "../components/card";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
@@ -22,10 +23,10 @@
   </p>
 
   {#each releases as release (release.title)}
-    <article>
+    <Card.Root>
       <h2>{release.title}</h2>
       <ReleaseNotes source={release.notes} />
-    </article>
+    </Card.Root>
   {/each}
 </main>
 
@@ -57,12 +58,10 @@
     font-size: var(--velvet-text-copy);
     margin-block: 0 3rem;
   }
-  article {
-    background: #14161d;
-    border: 1px solid #222530;
-    border-radius: var(--velvet-card-radius);
-    margin: 0 0 1.5rem;
-    padding: var(--velvet-card-padding);
+  /* The gap between one release and the next. The card itself states no
+     margin, because how far apart two of them stand is the page's business. */
+  main :global(.card) {
+    margin-block-end: 1.5rem;
   }
   /* Inside the card rather than beside one, so it meets the card's own curve
      and takes the inset the notes beneath it take. It sat 16px to the left of

@@ -126,12 +126,22 @@ async function modulesReachedFrom(entry: string): Promise<Set<string>> {
   return seen;
 }
 
-/** The four browser entries, each the root of one application. */
+/**
+ * The browser entries, each the root of one application.
+ *
+ * The four pages of the site are entries of their own rather than part of
+ * `website`, because each is built by its own Vite config and publishes its own
+ * document. A component reaching one of them says nothing about the others.
+ */
 const APPLICATIONS = {
   "status page": "main.ts",
   onboarding: "onboarding/main.ts",
   configurator: "configurator/main.ts",
   website: "website/main.ts",
+  documentation: "documentation/main.ts",
+  changelog: "changelog/main.ts",
+  attributions: "attributions/main.ts",
+  references: "references/main.ts",
 } as const;
 
 /**
@@ -147,25 +157,77 @@ const APPLICATIONS = {
  * listed too, so that stays visible rather than being assumed.
  */
 const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
-  "VelvetWordmark.svelte": ["configurator", "onboarding", "status page", "website"],
-  "RainbowScale.svelte": ["configurator", "onboarding", "website"],
+  "VelvetWordmark.svelte": [
+    "attributions",
+    "changelog",
+    "configurator",
+    "documentation",
+    "onboarding",
+    "references",
+    "status page",
+    "website",
+  ],
+  "RainbowScale.svelte": [
+    "attributions",
+    "changelog",
+    "configurator",
+    "documentation",
+    "onboarding",
+    "references",
+    "website",
+  ],
   "VelvetToolBrand.svelte": ["configurator", "onboarding", "website"],
-  // The site's own chrome. The reference, changelog, and references pages use
-  // it too, but they are not applications in the sense this table means and are
-  // not walked from here.
-  "SiteHeader.svelte": ["website"],
+  // The site's own chrome, on every page of it.
+  "SiteHeader.svelte": [
+    "attributions",
+    "changelog",
+    "documentation",
+    "references",
+    "website",
+  ],
   // The Iconsax icons the site draws. The Configurator reaches it through the
   // release-note overlay, which draws the copy and external-link marks, and
   // nothing else of its own.
-  "Icon.svelte": ["configurator", "website"],
+  "Icon.svelte": [
+    "attributions",
+    "changelog",
+    "configurator",
+    "documentation",
+    "references",
+    "website",
+  ],
   // The site's own footer, which holds the shared strip to the page measure.
-  "SiteFooter.svelte": ["website"],
+  "SiteFooter.svelte": [
+    "attributions",
+    "changelog",
+    "documentation",
+    "references",
+    "website",
+  ],
   // A coloured, numbered block of code. The Configurator reaches it through
   // the release-note overlay, which renders whatever a release note contains.
-  "CodeBlock.svelte": ["configurator", "website"],
+  "CodeBlock.svelte": [
+    "attributions",
+    "changelog",
+    "configurator",
+    "documentation",
+    "website",
+  ],
   "ConsentCheckbox.svelte": ["configurator", "onboarding"],
+  // The surface everything on velvet.li sits on. One component rather than one
+  // per page, which is what the four pages had. The start page is not in this
+  // list because its cards are step cards, which carry a wizard's body and
+  // footer as well as a surface.
+  card: ["attributions", "changelog", "documentation", "references"],
   "step-card": ["onboarding", "website"],
-  "page-footer": ["onboarding", "website"],
+  "page-footer": [
+    "attributions",
+    "changelog",
+    "documentation",
+    "onboarding",
+    "references",
+    "website",
+  ],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],
   "service-icon-picker": ["configurator", "onboarding"],
@@ -178,7 +240,11 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   service: ["configurator", "status page"],
   "review-list": ["onboarding"],
   overlay: ["configurator"],
-  "release-notes": ["configurator"],
+  // A rendered Markdown document. The Configurator shows a release's notes in
+  // its overlay, and three of the pages render a whole file of the repository
+  // through it. The references page does not, because what it shows comes from
+  // the setup service rather than from a document.
+  "release-notes": ["attributions", "changelog", "configurator", "documentation"],
   update: ["configurator"],
 };
 
