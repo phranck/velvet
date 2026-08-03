@@ -57,6 +57,101 @@
   }
 
   /**
+   * One scroll, whichever browser is reading.
+   *
+   * `scroll-behavior: smooth` says that a scroll should be animated and nothing
+   * about how. Duration and easing are the browser's, and the browsers differ:
+   * Chrome eases in and out over a comfortable distance whilst Safari covers it
+   * almost at once and in a straight line. CSS exposes neither figure, so the
+   * only way to have the two agree is to move the page here.
+   *
+   * Everything this does not intercept still follows the stylesheet. A reader
+   * whose script never runs follows an ordinary link to an ordinary anchor.
+   */
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  /** Cancels the animation in flight, or nothing when none is running. */
+  let stopScrolling = null;
+
+  /**
+   * Moves the page to a position over time, easing in and out.
+   *
+   * @param {number} to - Where the page should come to rest.
+   */
+  function glideTo(to) {
+    const from = scrollY;
+    const distance = to - from;
+    if (distance === 0) return;
+    // Long enough to be read as movement and short enough not to be waited
+    // for, and proportional in between, so a neighbouring topic does not take
+    // as long to reach as one at the far end of the document.
+    const duration = Math.min(900, Math.max(320, Math.abs(distance) * 0.45));
+    const started = performance.now();
+    let frame = 0;
+
+    function abandon() {
+      // A reader who reaches for the page owns it from that moment. Without
+      // this the animation would keep pulling against them until it finished.
+      cancelAnimationFrame(frame);
+      removeEventListener("wheel", abandon);
+      removeEventListener("touchstart", abandon);
+      removeEventListener("keydown", abandon);
+      stopScrolling = null;
+    }
+    stopScrolling = abandon;
+    addEventListener("wheel", abandon, { passive: true, once: true });
+    addEventListener("touchstart", abandon, { passive: true, once: true });
+    addEventListener("keydown", abandon, { once: true });
+
+    function step(now) {
+      const elapsed = Math.min(1, (now - started) / duration);
+      // Ease in and out: slow at both ends, quickest in the middle. This is
+      // the shape Chrome draws and the one Safari does not.
+      const eased =
+        elapsed < 0.5
+          ? 4 * elapsed * elapsed * elapsed
+          : 1 - Math.pow(-2 * elapsed + 2, 3) / 2;
+      // Instant on every frame, because the stylesheet asks for a smooth
+      // scroll and the two animations would otherwise fight over the same
+      // position, each starting a new one from where the other had got to.
+      scrollTo({ top: from + distance * eased, behavior: "instant" });
+      if (elapsed < 1) frame = requestAnimationFrame(step);
+      else abandon();
+    }
+    frame = requestAnimationFrame(step);
+  }
+
+  addEventListener("click", function (event) {
+    // Anything but a plain click belongs to the browser: a modified click opens
+    // a tab, and a middle click opens one too.
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target.closest?.("a[href^='#']");
+    if (!link) return;
+    const id = decodeURIComponent(link.getAttribute("href").slice(1));
+    const target = id && document.getElementById(id);
+    if (!target) return;
+    // Under reduced motion the browser's own jump is what was asked for, so
+    // this steps aside entirely rather than animating more gently.
+    if (reducedMotion.matches) return;
+
+    event.preventDefault();
+    if (stopScrolling) stopScrolling();
+    // The same position the anchor would have reached, which is the element's
+    // own `scroll-margin-top` clear of the sticky bar. Read from the element so
+    // that a page stating a different margin is followed rather than second
+    // guessed.
+    const margin =
+      Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+    const top = target.getBoundingClientRect().top + scrollY - margin;
+    const furthest = document.documentElement.scrollHeight - innerHeight;
+    glideTo(Math.max(0, Math.min(top, furthest)));
+    // The address bar keeps up, so the topic can be shared and the back button
+    // returns to the one before it. Written rather than assigned, because
+    // assigning to `location.hash` scrolls the page a second time.
+    history.pushState(null, "", `#${id}`);
+  });
+
+  /**
    * The topic being read, marked in a sidebar that has one.
    *
    * Without this the sidebar still works: every entry is an ordinary link to
