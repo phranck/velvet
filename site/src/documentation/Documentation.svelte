@@ -31,6 +31,31 @@
     <code>man velvet.yml</code>.
   </p>
 
+  <!--
+    Above the reference and set apart from it. A reference read without this
+    reads as an invitation to edit the file it describes, which is not the path
+    Velvet supports and is the one way an installation breaks in a manner
+    nobody can repair for its owner.
+  -->
+  <aside class="warning" aria-labelledby="warning-title">
+    <i class="ph-duotone ph-warning-diamond" aria-hidden="true"></i>
+    <div>
+      <h2 id="warning-title">Editing this file by hand is not the supported path</h2>
+      <p>
+        Velvet writes and updates <code>velvet.yml</code> through the
+        Configurator, which validates every change before it reaches your
+        repository. That is the only supported way to change it.
+      </p>
+      <p>
+        What follows describes what the file contains, so that an installation
+        can be read and understood. Change it by hand only if you know exactly
+        what you are doing. A configuration edited by hand can stop a status
+        page from building or publishing, and an installation broken that way is
+        not something Velvet can repair or answer for.
+      </p>
+    </div>
+  </aside>
+
   <div class="reference">
     <ReleaseNotes source={body} headings="outline" copyable />
   </div>
@@ -60,6 +85,43 @@
     font-family: var(--font-mono);
     font-size: 0.9em;
   }
+  /* The one thing on this page that must not be read past. It carries the
+     warning colour of the Velvet Default theme rather than a new one, on its
+     own tinted surface, above the reference instead of inside it. */
+  .warning {
+    display: flex;
+    align-items: start;
+    gap: 1rem;
+    margin: 0 0 2rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid color-mix(in srgb, #d29922 45%, transparent);
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, #d29922 12%, #14161d);
+  }
+  .warning i {
+    flex: none;
+    color: #d29922;
+    font-size: 1.75rem;
+    line-height: 1.2;
+  }
+  .warning h2 {
+    margin: 0 0 0.5rem;
+    color: #d29922;
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+  .warning p {
+    margin: 0 0 0.6rem;
+    line-height: 1.55;
+  }
+  .warning p:last-child {
+    margin-bottom: 0;
+  }
+  .warning code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
   /* On its own surface, the same one the changelog gives a release. The board
      backdrop is patterned, and several hundred lines of reference read directly
      over it are harder work than they need to be.

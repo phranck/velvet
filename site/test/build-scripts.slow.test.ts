@@ -842,6 +842,21 @@ test("publishes the configuration reference whole, tables and all", async () => 
   assert.match(html, /<span class="key[^"]*">schemaVersion<\/span>/);
   assert.match(html, /<span class="line-number[^"]*"[^>]*>1<\/span>/);
 
+  // The warning, above the reference rather than inside it. A reference read
+  // without it reads as an invitation to edit the file it describes, which is
+  // the one way an installation breaks so that nobody can repair it for its
+  // owner. Its position is asserted as well as its presence, because a notice
+  // below the document it warns about is one nobody reaches.
+  const warning = html.indexOf("Editing this file by hand is not the supported path");
+  assert.notEqual(warning, -1, "the page carries no warning");
+  assert.equal(
+    warning < html.indexOf("Minimal configuration"),
+    true,
+    "the warning sits after the reference it warns about",
+  );
+  assert.match(html, /the only supported way to change it/);
+  assert.match(html, /not something Velvet can repair or answer for/);
+
   // Counted against the source rather than sampled, because a renderer that
   // drops a block silently is exactly what a spot check misses. The tables
   // carry the field names, their defaults, and their accepted values, which is
@@ -864,13 +879,17 @@ test("publishes the configuration reference whole, tables and all", async () => 
   );
 
   // The document's own outline, which is what `headings: "outline"` preserves.
-  // Its level-one heading is dropped, because the page supplies one.
+  // Its level-one heading is dropped, because the page supplies one. Counted
+  // inside the rendered reference rather than across the page, since the
+  // warning above it carries a heading of its own that belongs to neither the
+  // document nor its outline.
+  const rendered = html.slice(html.indexOf('<div class="reference'));
   const headingsOfDepth = (depth: number): number =>
     reference.split("\n").filter((line) => new RegExp(`^#{${depth}} `, "u").test(line))
       .length;
   assert.equal((html.match(/<h1[ >]/gu) ?? []).length, 1);
-  assert.equal((html.match(/<h2[ >]/gu) ?? []).length, headingsOfDepth(2));
-  assert.equal((html.match(/<h3[ >]/gu) ?? []).length, headingsOfDepth(3));
+  assert.equal((rendered.match(/<h2[ >]/gu) ?? []).length, headingsOfDepth(2));
+  assert.equal((rendered.match(/<h3[ >]/gu) ?? []).length, headingsOfDepth(3));
 
   // Written as `../LICENSING.md` in a document one directory down, so a page at
   // the site root has to resolve it rather than repeat it.
