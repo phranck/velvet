@@ -804,6 +804,68 @@ test("publishes the changelog where GitHub Pages will find it, and without a scr
   );
 }, BUILD_TIMEOUT_MS);
 
+test("publishes the configuration reference whole, tables and all", async () => {
+  const outDir = await buildDirectory();
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--config", "vite.documentation.ts",
+    "--outDir", resolve(outDir, "documentation"),
+  ]);
+
+  const html = await readFile(resolve(outDir, "documentation", "index.html"), "utf8");
+  const reference = await readFile(
+    resolve(repositoryRoot, "documentation/configuration.md"),
+    "utf8",
+  );
+
+  assert.match(html, /<title>Velvet configuration reference<\/title>/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/documentation"/);
+  assert.doesNotMatch(html, /<script(?![^>]*type="application\/ld\+json")/);
+  assert.doesNotMatch(html, /\/@fs\//);
+  assert.doesNotMatch(html, /["'](\/src\/[^"']+)["']/);
+
+  // Counted against the source rather than sampled, because a renderer that
+  // drops a block silently is exactly what a spot check misses. The tables
+  // carry the field names, their defaults, and their accepted values, which is
+  // the substance of the document.
+  const pipeLines = reference
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("|"));
+  const delimiters = pipeLines.filter((line) => /^\|\s*:?-{3,}/u.test(line));
+
+  assert.equal(
+    (html.match(/<table[ >]/gu) ?? []).length,
+    delimiters.length,
+    "not every table in the reference was rendered",
+  );
+  assert.equal(
+    (html.match(/<tr[ >]/gu) ?? []).length,
+    pipeLines.length - delimiters.length,
+    "rows went missing between the reference and the page",
+  );
+
+  // The document's own outline, which is what `headings: "outline"` preserves.
+  // Its level-one heading is dropped, because the page supplies one.
+  const headingsOfDepth = (depth: number): number =>
+    reference.split("\n").filter((line) => new RegExp(`^#{${depth}} `, "u").test(line))
+      .length;
+  assert.equal((html.match(/<h1[ >]/gu) ?? []).length, 1);
+  assert.equal((html.match(/<h2[ >]/gu) ?? []).length, headingsOfDepth(2));
+  assert.equal((html.match(/<h3[ >]/gu) ?? []).length, headingsOfDepth(3));
+
+  // Written as `../LICENSING.md` in a document one directory down, so a page at
+  // the site root has to resolve it rather than repeat it.
+  assert.match(
+    html,
+    /href="https:\/\/github\.com\/phranck\/velvet\/blob\/main\/LICENSING\.md"/,
+  );
+  assert.match(
+    html,
+    /href="https:\/\/github\.com\/phranck\/velvet\/blob\/main\/THIRD_PARTY_NOTICES\.md"/,
+  );
+}, BUILD_TIMEOUT_MS);
+
 test("packages the man pages so an archive unpacks straight into a manpath", async () => {
   const outDir = await buildDirectory();
   // The packaging script refuses to write into a directory holding no built
@@ -865,7 +927,12 @@ test("builds every published page as part of the website", async () => {
   // Pages workflow uploads.
   assert.match(scripts["website:build"], /bun run references:build/);
   assert.match(scripts["website:build"], /bun run changelog:build/);
+  assert.match(scripts["website:build"], /bun run documentation:build/);
   assert.equal(scripts["changelog:build"], "vite build --config vite.changelog.ts");
+  assert.equal(
+    scripts["documentation:build"],
+    "vite build --config vite.documentation.ts",
+  );
 
   // Every page also belongs in the sitemap, which is served from the website's
   // public directory rather than generated.
@@ -875,6 +942,7 @@ test("builds every published page as part of the website", async () => {
   );
   for (const location of [
     "https://velvet.li/",
+    "https://velvet.li/documentation",
     "https://velvet.li/changelog",
     "https://velvet.li/references",
   ]) {

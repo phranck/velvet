@@ -35,6 +35,68 @@ test("renders the block structure Velvet release notes actually use", () => {
   assert.equal(blocks[5]?.kind === "code" && blocks[5].value, "bun run build");
 });
 
+test("reads a table as a header and its rows, with inline content in every cell", () => {
+  const blocks = parseReleaseNotes(
+    [
+      "| Field | Default | Description |",
+      "| --- | --- | --- |",
+      "| `timeoutMs` | `10000` | The absolute timeout. |",
+      "| `method` | `GET` | Either `GET` or `HEAD`. |",
+      "",
+      "A paragraph after the table.",
+    ].join("\n"),
+  );
+
+  assert.deepEqual(
+    blocks.map((block) => block.kind),
+    ["table", "paragraph"],
+  );
+
+  const [table] = blocks;
+  if (table?.kind !== "table") return;
+  const text = (cells: (typeof table.headers)[number]): string =>
+    cells.map((part) => part.value).join("");
+  assert.deepEqual(table.headers.map(text), ["Field", "Default", "Description"]);
+  assert.equal(table.rows.length, 2);
+  assert.deepEqual(table.rows[0]!.map(text), [
+    "timeoutMs",
+    "10000",
+    "The absolute timeout.",
+  ]);
+  // Marked up rather than flattened, so a field name renders as code the way it
+  // does in the document it came from.
+  assert.deepEqual(table.rows[1]![0], [{ kind: "code", value: "method" }]);
+});
+
+test("treats a line beginning with a pipe as a table only when the dashes follow", () => {
+  const blocks = parseReleaseNotes("| this is not a table |\n\nNor is this.");
+
+  assert.deepEqual(
+    blocks.map((block) => block.kind),
+    ["paragraph", "paragraph"],
+  );
+});
+
+test("keeps the document's own outline when asked for one", () => {
+  const source = ["# Reference", "", "## Fields", "", "### Services"].join("\n");
+
+  // The overlay's arrangement, which is what a caller gets without asking.
+  assert.deepEqual(
+    parseReleaseNotes(source).map((block) =>
+      block.kind === "heading" ? block.level : null,
+    ),
+    [2, 3, 3],
+  );
+  // A reference page needs the levels the document wrote, except that nothing
+  // may claim level 1, because the page around it already has one.
+  assert.deepEqual(
+    parseReleaseNotes(source, { headings: "outline" }).map((block) =>
+      block.kind === "heading" ? block.level : null,
+    ),
+    [2, 2, 3],
+  );
+});
+
 test("keeps a wrapped list item whole instead of ending the list at the wrap", () => {
   const blocks = parseReleaseNotes(
     [

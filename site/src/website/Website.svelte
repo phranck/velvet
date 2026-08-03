@@ -298,6 +298,7 @@
     <!-- The site's other two pages. Both stand at their own address and were
          reachable only by typing it, which is no way to find them. -->
     <nav class="footer-links" aria-label="More of this site">
+      <a href="/documentation">Configuration</a>
       <a href="/changelog">Changelog</a>
       <a href="/references">Who runs Velvet</a>
     </nav>
