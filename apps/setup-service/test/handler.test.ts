@@ -941,6 +941,8 @@ test("reports the next serial, and nothing when no registry is configured", asyn
     serials: {
       peek: async () => 42,
       claim: async () => 42,
+      listed: async () => [],
+      setListed: async () => false,
     },
   });
   const response = await counting(new Request(`${origin}/api/serial`));
@@ -964,6 +966,8 @@ test("a serial the counter refuses does not fail the endpoint", async () => {
       claim: async () => {
         throw new Error("unreachable");
       },
+      listed: async () => [],
+      setListed: async () => false,
     },
   });
   const response = await handler(new Request(`${origin}/api/serial`));
@@ -992,4 +996,77 @@ test("reports on the health route which sources this build was made from", async
   // deploy becomes visible at all.
   assert.equal(body.fingerprint, DEPLOYMENT_FINGERPRINT);
   assert.match(body.fingerprint, /^[0-9a-f]{64}$/u);
+});
+
+test("the gallery names only the pages whose owners agreed, and nothing else", async () => {
+  const handler = createSetupHandler({
+    config,
+    sessions: createSessionStore({ secret: config.sessionSecret }),
+    github: githubClient(),
+    logger: () => {},
+    serials: {
+      peek: async () => 42,
+      claim: async () => 42,
+      listed: async () => [
+        { statusPageName: "Example", url: "https://status.example.com" },
+      ],
+      setListed: async () => false,
+    },
+  });
+
+  const response = await handler(new Request(`${origin}/api/references`));
+
+  assert.equal(response.status, 200);
+  const body = await response.text();
+  assert.deepEqual(JSON.parse(body), {
+    entries: [{ statusPageName: "Example", url: "https://status.example.com" }],
+  });
+  // The registry also knows the repository, the account behind it, and when
+  // each installation joined. A GitHub account names a person, so none of that
+  // may leave the private counter.
+  assert.equal(body.includes("repository"), false);
+  assert.equal(body.includes("issuedAt"), false);
+  assert.equal(body.includes("serial"), false);
+  assert.equal(
+    response.headers.get("Set-Cookie"),
+    null,
+    "reading the gallery needs no session",
+  );
+});
+
+test("an unreadable registry reports nothing rather than an empty gallery", async () => {
+  const handler = createSetupHandler({
+    config,
+    sessions: createSessionStore({ secret: config.sessionSecret }),
+    github: githubClient(),
+    logger: () => {},
+    serials: {
+      peek: async () => null,
+      claim: async () => 42,
+      listed: async () => null,
+      setListed: async () => false,
+    },
+  });
+
+  const response = await handler(new Request(`${origin}/api/references`));
+
+  // Distinct from an empty list on purpose: nobody has agreed and the registry
+  // cannot be read are different facts, and the page says nothing for either
+  // rather than claiming Velvet has no references.
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { entries: null });
+});
+
+test("an instance without a registry answers the gallery plainly", async () => {
+  const handler = createSetupHandler({
+    config,
+    sessions: createSessionStore({ secret: config.sessionSecret }),
+    github: githubClient(),
+    logger: () => {},
+  });
+
+  const response = await handler(new Request(`${origin}/api/references`));
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { entries: null });
 });

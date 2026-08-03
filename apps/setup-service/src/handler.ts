@@ -156,6 +156,30 @@ export function createSetupHandler(
         return finish(jsonResponse({ next }));
       }
 
+      if (route === "/api/references") {
+        if (request.method !== "GET") return reject(methodError(), "references");
+        /*
+         * Public and unauthenticated, and deliberately narrow: the page name
+         * and its address, both of which are already published by the status
+         * page itself. The repository and the account behind it stay in the
+         * private registry, because a GitHub account names a person.
+         *
+         * An entry appears only whilst that installation's own `velvet.yml`
+         * says so. `null` means the registry could not be read, which the page
+         * shows as nothing rather than as an empty gallery.
+         */
+        const entries = (await options.serials?.listed()) ?? null;
+        return finish(
+          jsonResponse(
+            { entries },
+            200,
+            // Short enough that a withdrawal disappears promptly, long enough
+            // that the page does not read the registry on every visit.
+            { "Cache-Control": "public, max-age=300" },
+          ),
+        );
+      }
+
       if (route === "/api/session") {
         if (request.method !== "GET") return reject(methodError(), "session");
         const activeSession = session ?? options.sessions.create();

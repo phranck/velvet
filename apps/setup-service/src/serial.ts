@@ -55,6 +55,24 @@ export interface SerialInstallationRecord {
   customDomain?: string;
   /** When the serial was issued, as an ISO 8601 instant. */
   issuedAt: string;
+  /**
+   * Whether the owner agreed to appear in the public gallery.
+   *
+   * Absent means no. Consent is recorded in the installation's own `velvet.yml`
+   * as `gallery.listed`, and this is the copy the service keeps so a public
+   * endpoint can answer without reading every installation on every request.
+   * It is only ever written from what that file says, so withdrawing there
+   * removes the entry here on the next reconciliation.
+   */
+  listed?: boolean;
+}
+
+/** What the public gallery is allowed to disclose about an installation. */
+export interface GalleryEntry {
+  /** The public name shown on the status page. */
+  statusPageName: string;
+  /** Where the status page is published. */
+  url: string;
 }
 
 /** What onboarding knows about an installation when it claims a serial. */
@@ -116,6 +134,32 @@ export interface InstallationSerialCounter {
    *   rather than having that decided here.
    */
   claim(installation: SerialInstallationDetails): Promise<number>;
+
+  /**
+   * The installations whose owners agreed to appear publicly.
+   *
+   * Carries only the page name and its address. Everything else the registry
+   * holds, including the repository and the account behind it, identifies a
+   * person and never leaves the private counter.
+   *
+   * @returns The consenting entries, oldest first, or `null` when the counter
+   *   cannot be read. A caller shows nothing in that case rather than an empty
+   *   gallery, since the two mean different things.
+   */
+  listed(): Promise<GalleryEntry[] | null>;
+
+  /**
+   * Records what an installation's own configuration says about the gallery.
+   *
+   * Writing only when the answer differs keeps a reconciliation that finds
+   * nothing changed from touching the counter at all, which is the ordinary
+   * case once every installation has been seen once.
+   *
+   * @param repository - The installation, as `owner/name`.
+   * @param listed - What `gallery.listed` says, or `false` when it says nothing.
+   * @returns Whether the counter was written.
+   */
+  setListed(repository: string, listed: boolean): Promise<boolean>;
 }
 
 interface RepositoryReference {
@@ -384,5 +428,76 @@ export function createInstallationSerialCounter(
         { cause: lastConflict },
       );
     },
+
+    async listed() {
+      try {
+        const { state } = await readState(await repositoryToken());
+        return state.installations
+          .filter((installation) => installation.listed === true)
+          .map(({ statusPageName, url }) => ({ statusPageName, url }));
+      } catch {
+        // Unreadable is not the same as empty, and the caller shows nothing
+        // rather than an empty gallery when it cannot tell which it is.
+        return null;
+      }
+    },
+
+    async setListed(repository, listed) {
+      let lastConflict: unknown;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const token = await repositoryToken();
+        const { state, sha } = await readState(token);
+        const current = state.installations.find(
+          (installation) => installation.repository === repository,
+        );
+        // An installation with no record was never issued a serial, so there is
+        // nothing to mark and nothing to report as changed.
+        if (!current) return false;
+        if ((current.listed === true) === listed) return false;
+
+        const next: SerialCounterState = {
+          ...state,
+          installations: state.installations.map((installation) =>
+            installation.repository === repository
+              ? listed
+                ? { ...installation, listed: true }
+                : withoutListed(installation)
+              : installation,
+          ),
+        };
+        try {
+          await githubRequest<unknown>(contentsPath, token, {
+            method: "PUT",
+            body: JSON.stringify({
+              message: `Chore: ${listed ? "list" : "unlist"} ${repository}`,
+              content: Buffer.from(serializeState(next), "utf8").toString("base64"),
+              ...(sha ? { sha } : {}),
+            }),
+          });
+          return true;
+        } catch (error) {
+          if (!isConflict(error)) throw error;
+          lastConflict = error;
+        }
+      }
+      throw new Error(
+        `The serial counter could not be updated after ${maxAttempts} attempts.`,
+        { cause: lastConflict },
+      );
+    },
   };
+}
+
+/**
+ * Drops the consent flag rather than storing a false.
+ *
+ * Absent and false mean the same thing, and keeping only one of the two spellings
+ * means a record cannot say one thing by its presence and another by its value.
+ */
+function withoutListed(
+  installation: SerialInstallationRecord,
+): SerialInstallationRecord {
+  const rest = { ...installation };
+  delete rest.listed;
+  return rest;
 }
