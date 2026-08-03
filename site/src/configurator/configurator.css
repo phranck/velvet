@@ -1,23 +1,51 @@
 @import "../lib/velvet-tokens.css";
+/* The faces this tool sets its text in. It drew in one machine's own interface
+   face before, so it needed none, and its preview reached for the status page's
+   Inter without ever loading it. */
+@import "@fontsource/barlow/latin-400.css";
+@import "@fontsource/barlow/latin-600.css";
+@import "@fontsource/barlow/latin-700.css";
+@import "@fontsource/barlow-condensed/latin-600.css";
 html,
 body,
 #configurator {
   min-height: 100%;
 }
 
+:root {
+  /* The reader's own monospace face, for the same reason as the board shell:
+     `app.css` names JetBrains Mono for the status page, which fetches it, and
+     this tool does not. */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 body {
   overflow: hidden;
   background: #101116;
-  /* The system's own interface face, which is what this tool has always
-     rendered in. It took the status page's `body` rule from `app.css` before,
-     and that names Inter first, so the stylesheet claimed a face the
-     Configurator neither loads nor draws a single word in. */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Velvet's own face. It took the status page's `body` rule from `app.css`
+     before, and that names Inter, which this tool does not have. */
+  font-family: var(--velvet-font);
 }
 
 button,
 input {
   font: inherit;
+}
+
+/* Every heading in Velvet is set condensed. Stated here rather than in the
+   component, because a Svelte rule does not reach the headings its children
+   render, and half of this tool's headings come from shared components.
+   Deliberately weak, at one element, so the rules that give a group label the
+   code face still win. */
+:is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--velvet-font-heading);
+}
+
+/* Except in the preview, which draws a status page and has to look like one.
+   Its headings follow whatever face that page is set in, including the one an
+   installation names for itself. */
+.preview-workspace :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-sans);
 }
 
 :where(button, input, textarea, select, summary, a, [tabindex]):focus {

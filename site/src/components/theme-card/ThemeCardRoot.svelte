@@ -33,7 +33,11 @@
     padding: 0;
     margin: 0 var(--theme-card-text-inset, 0);
     color: var(--picker-text, currentColor);
-    font-family: var(--theme-card-heading-font, inherit);
+    /* Falls back to Velvet's condensed face rather than to whatever the
+       surrounding text is set in. Left to inherit, this heading rendered in the
+       body face on any surface that did not name one, which is every heading in
+       the product except this one. */
+    font-family: var(--theme-card-heading-font, var(--velvet-font-heading));
     font-size: var(--theme-card-heading-font-size, 1.25rem);
     font-weight: 700;
   }
