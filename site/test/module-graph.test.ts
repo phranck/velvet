@@ -303,3 +303,37 @@ test("every test loads without a Svelte transform", async () => {
 
   assert.deepEqual(violations, []);
 });
+
+test("names every browser-driven test so the runner can leave it out", async () => {
+  const files = await collectTests();
+  const misnamed: string[] = [];
+  for (const file of files) {
+    // This file names the driver only in order to look for it, which is the one
+    // mention that is not a use.
+    if (file.endsWith("module-graph.test.ts")) continue;
+    // Reached rather than imported directly, because a test may open its
+    // browser through a helper beside it, which `configurator-update-browser`
+    // does.
+    const reached = await modulesReachedFrom(file);
+    let drivesABrowser = false;
+    for (const module_ of reached) {
+      const source = await readFile(module_, "utf8");
+      if (/from "playwright"|safaridriver/u.test(source)) {
+        drivesABrowser = true;
+        break;
+      }
+    }
+    // A test that opens a browser is a test somebody watches, and those run on
+    // a machine with a screen rather than on a runner. The name is what the
+    // `test:units` and `test:browser` scripts split on, so a file driving a
+    // browser without saying so lands in the group meant to need nothing but
+    // Bun, and takes a browser download onto the runner with it.
+    const saysSo = /(browser|safari)[^/]*\.test\.ts$/u.test(file);
+    if (drivesABrowser !== saysSo) {
+      misnamed.push(
+        `${relative(testRoot, file)} ${drivesABrowser ? "drives a browser and does not say so" : "says it drives a browser and does not"}`,
+      );
+    }
+  }
+  assert.deepEqual(misnamed, []);
+});

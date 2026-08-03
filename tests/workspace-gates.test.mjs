@@ -2,6 +2,20 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "bun:test";
 
+/**
+ * The script that carries a gate's per-workspace commands.
+ *
+ * `test` is the whole suite and delegates: the part a runner can carry lives in
+ * `test:headless`, and the browser part runs no workspace gates of its own. The
+ * ordering this file is about is therefore recorded in `test:headless`.
+ *
+ * @param {string} gate - The gate's name.
+ * @returns {string} The script name to read.
+ */
+function scriptCarrying(gate) {
+  return gate === "test" ? "test:headless" : gate;
+}
+
 test("builds runtime packages needed by clean typechecking", async () => {
   const packageDocument = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),
@@ -30,7 +44,7 @@ test("runs monitor gates after its contracts dependency", async () => {
   );
 
   for (const gate of ["build", "test", "typecheck"]) {
-    const script = packageDocument.scripts[gate];
+    const script = packageDocument.scripts[scriptCarrying(gate)];
     const contractsCommand = `bun run --filter @velvet/contracts ${gate}`;
     const monitorCommand = `bun run --filter @velvet/monitor ${gate}`;
 
@@ -60,7 +74,7 @@ test("runs GitHub incident gates after contracts and monitor", async () => {
     "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build",
   );
   for (const gate of ["build", "test", "typecheck"]) {
-    const script = packageDocument.scripts[gate];
+    const script = packageDocument.scripts[scriptCarrying(gate)];
     const contractsCommand = `bun run --filter @velvet/contracts ${gate}`;
     const monitorCommand = `bun run --filter @velvet/monitor ${gate}`;
     const incidentsCommand = `bun run --filter @velvet/github-incidents ${gate}`;
@@ -94,7 +108,7 @@ test("runs the monitor action gates after all runtime dependencies", async () =>
     "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build",
   );
   for (const gate of ["build", "test", "typecheck"]) {
-    const script = packageDocument.scripts[gate];
+    const script = packageDocument.scripts[scriptCarrying(gate)];
     const actionCommand = `bun run --filter @velvet/monitor-action ${gate}`;
     const dependencyCommands = [
       `bun run --filter @velvet/contracts ${gate}`,
@@ -129,7 +143,7 @@ test("runs managed template-file gates after their contracts dependency", async 
     "bun run --filter @velvet/contracts build",
   );
   for (const gate of ["build", "test", "typecheck"]) {
-    const script = packageDocument.scripts[gate];
+    const script = packageDocument.scripts[scriptCarrying(gate)];
     const contractsCommand = `bun run --filter @velvet/contracts ${gate}`;
     const templateCommand = `bun run --filter @velvet/template-files ${gate}`;
 
@@ -161,7 +175,7 @@ test("runs setup service gates from the root workspace", async () => {
   );
   for (const gate of ["build", "test", "typecheck"]) {
     assert.match(
-      packageDocument.scripts[gate],
+      packageDocument.scripts[scriptCarrying(gate)],
       new RegExp(`bun run --filter @velvet/setup-service ${gate}`),
     );
   }
