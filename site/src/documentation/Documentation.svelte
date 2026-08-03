@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
   // The repository's own configuration reference, read at build time. The page
@@ -97,6 +98,8 @@
     {/each}
   </main>
 </div>
+
+<SiteFooter />
 
 <style>
   /* The topics on the left and the reference on the right, from the width at
@@ -240,14 +243,17 @@
      patterned, and several hundred lines of reference read directly over it are
      harder work than they need to be. */
   main h2 {
-    margin-block: 2.5rem 0.75rem;
+    margin-block: 3.5rem 0.75rem;
     /* Clears the sticky bar, so following a topic link does not land the
        heading underneath it. */
     scroll-margin-top: 5.5rem;
     font-size: var(--velvet-text-heading);
     line-height: 1.2;
   }
-  main h2:first-of-type {
+  /* Only where nothing stands in front of it. `:first-of-type` matched the
+     first heading whatever preceded it, so the lead card and the first topic
+     were pressed together. */
+  main h2:first-child {
     margin-block-start: 0;
   }
   .card {

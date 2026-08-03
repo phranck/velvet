@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
   // The repository's own notices, read at build time. Nothing is copied here,
@@ -37,6 +38,8 @@
   {/each}
 </main>
 
+<SiteFooter />
+
 <style>
   .attributions {
     padding: 2.5rem 0 6rem;
@@ -58,13 +61,23 @@
     margin-block: 0 2.5rem;
   }
   h2 {
-    margin-block: 2.5rem 0.75rem;
+    margin-block: 3.5rem 0.75rem;
     scroll-margin-top: 5.5rem;
     font-size: var(--velvet-text-heading);
     line-height: 1.2;
   }
-  h2:first-of-type {
+  /* Only where nothing stands in front of it. `:first-of-type` matched the
+     first heading whatever preceded it, so the lead card and the first topic
+     were pressed together. */
+  h2:first-child {
     margin-block-start: 0;
+  }
+  /* The first column names the component, and a name broken across two lines
+     is read as two entries. It runs on one line and the table scrolls inside
+     its own frame instead, which it already does. */
+  .card :global(td:first-child),
+  .card :global(th:first-child) {
+    white-space: nowrap;
   }
   .card {
     --tool-text: var(--velvet-text);

@@ -1,8 +1,8 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
-  import * as PageFooter from "../components/page-footer";
   import * as StepCard from "../components/step-card";
   import {
     STEP_CARD_CONTENT_INSET,
@@ -301,11 +301,7 @@
     </section>
   </main>
 
-  <div class="velvet-page">
-    <PageFooter.Root>
-      <PageFooter.Credit />
-    </PageFooter.Root>
-  </div>
+  <SiteFooter />
 </div>
 
 <style>

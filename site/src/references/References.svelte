@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
 
   /** What the setup service discloses about a consenting installation. */
@@ -87,6 +88,8 @@
     whether the repository behind it is public or private makes no difference.
   </p>
 </main>
+
+<SiteFooter />
 
 <style>
   /* The site's own measure, shared with the header and the footer. */
