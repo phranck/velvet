@@ -45,6 +45,10 @@ test("runs independent repository gates for pull requests and main", async () =>
     testJob,
     /name:\s*Install Playwright browser[\s\S]*bunx playwright install --with-deps chromium[\s\S]*name:\s*Test/,
   );
+  assert.match(
+    testJob,
+    /name:\s*Install the roff renderer[\s\S]*install -y --no-install-recommends mandoc[\s\S]*name:\s*Test/,
+  );
   assert.match(testJob, /bun run test/);
   assert.match(buildJob, /bun run build/);
   assert.doesNotMatch(workflow, /actions\/setup-node|\bnpm\b|\bnpx\b/);

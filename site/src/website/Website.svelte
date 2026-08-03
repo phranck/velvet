@@ -18,6 +18,24 @@
   const REPOSITORY_URL = "https://github.com/phranck/velvet";
 
   /**
+   * The man-page archive, written into this build by
+   * `site/scripts/build-man-pages.ts`. Absolute, because the file sits at the
+   * root of the published site whilst the page linking to it may not.
+   */
+  const MAN_PAGES_ARCHIVE = "/velvet-man-pages.tar.gz";
+
+  /**
+   * How the archive is installed. Every line runs as an ordinary user and
+   * writes only inside the home directory, which is the point of offering it
+   * this way rather than as a package.
+   */
+  const MAN_PAGES_INSTALL = [
+    `curl -LO https://velvet.li${MAN_PAGES_ARCHIVE}`,
+    "tar -xzf velvet-man-pages.tar.gz",
+    "./velvet-man-pages/install.sh",
+  ].join("\n");
+
+  /**
    * What an installation gives you, drawn from the README so the page and the
    * repository cannot describe the product differently.
    */
@@ -189,6 +207,36 @@
               </li>
             {/each}
           </ol>
+        </div>
+      </StepCard.Root>
+    </section>
+
+    <section class="column" aria-labelledby="manual-title">
+      <StepCard.Root>
+        <div class="card-inset">
+          <div class="velvet-section-heading">
+            <div class="velvet-section-title">
+              <span class="marker" aria-hidden="true">//</span>
+              <h2 id="manual-title">Read it in your terminal</h2>
+            </div>
+            <p>
+              Velvet ships three manual pages: velvet(7) for the architecture,
+              velvet-config(1) for the local Configurator, and velvet.yml(5) for
+              every configuration option there is. They install into your own
+              home directory and ask for no administrator rights.
+            </p>
+          </div>
+          <div class="manual">
+            <pre><code>{MAN_PAGES_INSTALL}</code></pre>
+            <a
+              class="velvet-button velvet-button--secondary"
+              href={MAN_PAGES_ARCHIVE}
+              download
+            >
+              <i class="ph-duotone ph-download-simple" aria-hidden="true"></i>
+              <span>Download the manual</span>
+            </a>
+          </div>
         </div>
       </StepCard.Root>
     </section>
@@ -431,6 +479,35 @@
     color: var(--setup-muted);
     font-size: var(--setup-text-small);
     line-height: 1.5;
+  }
+  /* The commands and the button sit side by side whilst there is room for
+     both, and the block of commands takes whatever the button leaves. */
+  .manual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+  }
+  .manual pre {
+    flex: 1 1 22rem;
+    margin: 0;
+    padding: 1rem;
+    border-radius: var(--step-card-inner-radius);
+    background: #222530;
+    /* The commands wrap rather than scroll, and a break is permitted inside
+       the URL so no window is too narrow for them. Both are needed: a pre
+       reports the length of its longest line as its minimum width, and that
+       figure travels up through the card and the grid to the page. Measured
+       at a 500px window, the page was 535px wide before this, and confining
+       the overflow to the block with overflow-x did not change that. */
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .manual code {
+    color: var(--setup-muted);
+    font-family: var(--font-mono);
+    font-size: var(--setup-text-small);
+    line-height: 1.7;
   }
   .closing {
     display: grid;

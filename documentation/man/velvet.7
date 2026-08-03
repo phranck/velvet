@@ -1,0 +1,170 @@
+.TH VELVET 7 2026-08-03 Velvet "Velvet Manual"
+.SH NAME
+velvet \- GitHub-native status monitoring and status pages
+.SH DESCRIPTION
+Velvet monitors websites and HTTP endpoints from GitHub Actions, records
+incidents and planned maintenance in GitHub Issues, and publishes a themeable
+status page through GitHub Pages. It uses no server and no database. A public
+website is described by a display name and a URL, and every other option has a
+default.
+.PP
+An installation is an ordinary GitHub repository. What Velvet adds to it is a
+set of workflows, a configuration file named
+.IR velvet.yml ,
+a machine-managed version record named
+.IR velvet.lock.json ,
+and a dedicated branch holding the generated data.
+.SH ARCHITECTURE
+Every moving part of an installation is a service GitHub already provides, so
+none of the following is hosted by the project.
+.TP
+.B Scheduling
+GitHub Actions. The status workflow runs every five minutes, and the
+response-time workflow runs at 00:00, 06:00, 12:00, and 18:00 UTC.
+.TP
+.B Incidents and maintenance
+GitHub Issues. A confirmed outage opens one marked Issue, and a confirmed
+recovery closes the same Issue. Planned maintenance is submitted through a
+generated Issue Form.
+.TP
+.B Generated data
+A dedicated branch named
+.BR velvet-data .
+The monitor owns four files there and never rewrites the default branch.
+.TP
+.B The public site
+GitHub Pages, optionally under a custom domain.
+.SH HOW AN INSTALLATION WORKS
+.IP 1. 4
+.I velvet.yml
+names the repository, the page, and every service. The repository owner and
+name in it must match the repository the workflow runs in, and a mismatch stops
+the run before any check or repository change.
+.IP 2. 4
+The monitor checks every configured endpoint over IPv4 from a GitHub-hosted
+runner. Each check gets one initial attempt and at most one immediate retry.
+.IP 3. 4
+A successful run publishes one complete validated snapshot to the
+.B velvet-data
+branch. A partial or failed result never replaces the last valid snapshot.
+.IP 4. 4
+The Pages workflow builds the site, its social card, and its SEO files from
+that snapshot.
+.IP 5. 4
+The browser validates the published documents before rendering them. Endpoint
+URLs and configured secrets never enter them.
+.SH INSTALLATION
+The browser setup at
+.UR https://setup.velvet.li/onboarding/
+setup.velvet.li
+.UE
+is the only supported way to install Velvet. It asks for the repository and
+page name, the services, an optional custom domain, and one of the four system
+themes, and it creates the repository, enables Pages, and starts monitoring
+once the GitHub App is approved.
+.PP
+It is also the only path that writes
+.IR velvet.lock.json ,
+the record of which release an installation runs. A repository created by
+copying the template by hand carries no such record, so Velvet has no version
+to compare against and can never update it.
+.PP
+The setup service is used only whilst installing and whilst updating. A
+published status page keeps monitoring and publishing whilst the service is
+unavailable.
+.SH CONFIGURATOR
+The Configurator edits
+.I velvet.yml
+and previews the real status page. It runs in two places.
+.PP
+The hosted one at
+.UR https://setup.velvet.li/configurator/
+setup.velvet.li/configurator
+.UE
+signs in with GitHub, finds the installations you administer, shows which
+release each one runs, and installs a new one for you.
+.PP
+The local one is described in
+.BR velvet-config (1).
+It edits a file on your computer and talks to no network at all, so it reports
+no installed version rather than one it cannot check.
+.SH UPDATES
+Velvet installs new releases for you. An update replaces only the workflow and
+Issue-template files Velvet owns, plus its own version record. Your
+.IR velvet.yml ,
+the whole
+.B velvet-data
+branch, your incidents, your maintenance history, repository secrets, Pages and
+domain settings,
+.IR README.md ,
+and
+.I LICENSE
+are never part of one.
+.PP
+That boundary is checked twice. The service reads the changed files of its own
+pull request before merging and stops whilst the installation is untouched if
+any path falls outside the closed set, and a workflow in the repository proves
+it again against the merge GitHub actually built.
+.PP
+A release classified as a security fix that needs neither a configuration nor a
+data migration may install unattended. The preference is
+.B updates.automaticSecurityUpdates
+in
+.BR velvet.yml (5)
+and defaults to being enabled. Everything else waits for confirmation.
+.SH GENERATED DATA
+The monitor owns exactly these paths on the
+.B velvet-data
+branch and nothing else.
+.PP
+.RS 4
+.nf
+\&.velvet/monitor-state.json
+velvet-data/v1/status.json
+velvet-data/v1/response-times.json
+velvet-data/v1/incidents.json
+.fi
+.RE
+.PP
+Retention defaults to 365 days, which is also the maximum. Open incidents and
+scheduled or active maintenance stay visible past it, and historical GitHub
+Issues are never deleted.
+.SH LIMITATIONS
+Velvet performs direct HTTP and HTTPS checks over IPv4, because GitHub-hosted
+runners provide no documented native IPv6 connectivity. The configuration
+offers no external-probe option, so a configured service is monitored over IPv4
+only. IPv6 will be added once those runners support it for every installation.
+.PP
+Velvet cannot import a history recorded by another tool. An installation starts
+its history at the first check it runs itself.
+.SH FILES
+.TP
+.I velvet.yml
+The configuration, described in
+.BR velvet.yml (5).
+.TP
+.I velvet.lock.json
+The machine-managed record of the installed release. Written by the setup
+service and never edited by hand.
+.TP
+.I .github/workflows/
+The Velvet status, response-time, and Pages workflows.
+.TP
+.I .github/ISSUE_TEMPLATE/maintenance.yml
+The generated maintenance Issue Form. Its service choices are rewritten
+whenever the configured services change.
+.SH SEE ALSO
+.BR velvet-config (1),
+.BR velvet.yml (5)
+.PP
+The complete documentation is at
+.UR https://velvet.li
+velvet.li
+.UE
+and in the
+.I documentation
+directory of the repository.
+.SH LICENCE
+Velvet is published under the MIT licence. Monitoring records, imported
+datasets, logos, fonts, and other third-party material keep their own rights
+and notices.

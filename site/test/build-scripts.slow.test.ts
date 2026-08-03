@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
@@ -749,3 +749,54 @@ test("publishes the references page where GitHub Pages will find it", async () =
   // it does not run.
   assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
 }, BUILD_TIMEOUT_MS);
+
+test("packages the man pages so an archive unpacks straight into a manpath", async () => {
+  const outDir = await buildDirectory();
+  // The packaging script refuses to write into a directory holding no built
+  // site, which is a guard rather than the subject here, so it is satisfied
+  // with a stub instead of a second full Vite build.
+  await writeFile(resolve(outDir, "index.html"), "<!doctype html>\n");
+  await bun([resolve(siteRoot, "scripts/build-man-pages.ts"), outDir]);
+
+  const unpacked = await mkdtemp(resolve(tmpdir(), "velvet-man-"));
+  await execFileAsync("tar", [
+    "-xzf", resolve(outDir, "velvet-man-pages.tar.gz"),
+    "-C", unpacked,
+  ]);
+  const root = resolve(unpacked, "velvet-man-pages");
+
+  // Section directories, because `man` finds a page by the directory it sits
+  // in rather than by its name. A flat archive installs and then resolves
+  // nothing.
+  for (const [section, page] of [
+    ["man1", "velvet-config.1"],
+    ["man5", "velvet.yml.5"],
+    ["man7", "velvet.7"],
+  ]) {
+    assert.equal(
+      await readFile(resolve(root, section, page), "utf8"),
+      await readFile(resolve(repositoryRoot, "documentation/man", page), "utf8"),
+      `${page} in the archive differs from its source`,
+    );
+  }
+
+  // Executable as unpacked, so the documented install path is one command and
+  // not one command preceded by a chmod.
+  const installer = await stat(resolve(root, "install.sh"));
+  assert.equal(
+    (installer.mode & 0o111) !== 0,
+    true,
+    "install.sh is not executable inside the archive",
+  );
+});
+
+test("builds the man-page archive as part of the published website", async () => {
+  const scripts = JSON.parse(
+    await readFile(resolve(siteRoot, "package.json"), "utf8"),
+  ).scripts;
+
+  // The archive is derived output and is never committed, so the only thing
+  // that puts it in front of a visitor is the website build itself.
+  assert.match(scripts["website:build"], /bun run man-pages:build/);
+  assert.equal(scripts["man-pages:build"], "bun scripts/build-man-pages.ts");
+});
