@@ -172,13 +172,16 @@
     letter-spacing: -0.01em;
   }
 
+  /* The panel the Configurator shows these in is small, so its headings are
+     too. A page rendering a whole document states the scale it reads at, and
+     both fall back to the panel's sizes where it does not. */
   h2 {
-    font-size: 15px;
+    font-size: var(--notes-heading-size, 15px);
     font-weight: 650;
   }
 
   h3 {
-    font-size: 14px;
+    font-size: var(--notes-subheading-size, 14px);
     font-weight: 650;
   }
 
@@ -325,9 +328,26 @@
 
   /* The scroll lives on this wrapper rather than the table, because a table is
      sized by its contents and would report that width to everything above it,
-     widening the page instead of scrolling inside it. */
+     widening the page instead of scrolling inside it.
+
+     It reaches past the card's padding to both edges, so a banded row and the
+     band under the pointer run the full width of the card rather than floating
+     inside it. The padding comes back on the outermost cells, and with the
+     text inset added, so the first column still lines up with the prose above
+     it. Nothing when the surface states no card geometry. */
   .table-scroll {
     overflow-x: auto;
+    margin-inline: calc(var(--velvet-card-padding, 0px) * -1);
+  }
+  th:first-child,
+  td:first-child {
+    padding-left: calc(
+      var(--velvet-card-padding, 0px) + var(--velvet-card-text-inset, 0.75rem)
+    );
+  }
+  th:last-child,
+  td:last-child {
+    padding-right: calc(var(--velvet-card-padding, 0px) + 0.75rem);
   }
   table {
     width: 100%;

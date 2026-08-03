@@ -81,6 +81,8 @@
   }
   .card {
     --tool-text: var(--velvet-text);
+    --notes-heading-size: var(--velvet-text-heading);
+    --notes-subheading-size: var(--velvet-text-copy);
     background: #14161d;
     border: 1px solid #222530;
     border-radius: var(--velvet-card-radius);

@@ -258,6 +258,8 @@
   }
   .card {
     --tool-text: var(--velvet-text);
+    --notes-heading-size: var(--velvet-text-heading);
+    --notes-subheading-size: var(--velvet-text-copy);
     background: #14161d;
     border: 1px solid #222530;
     border-radius: var(--velvet-card-radius);
@@ -270,6 +272,5 @@
      shown in a panel rather than a document read on its own. */
   .reference :global(h3) {
     margin-top: 1.5rem;
-    font-size: var(--velvet-text-copy);
   }
 </style>
