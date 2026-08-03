@@ -21,3 +21,6 @@ apps/setup-service/src/deployment-fingerprint.generated.ts
 # Local credentials for verification runs, never committed
 .env.local
 .env
+
+# Cut from the Phosphor face at build time to the icons Velvet names.
+site/src/assets/phosphor-duotone-subset.woff2

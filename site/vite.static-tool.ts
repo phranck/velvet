@@ -3,6 +3,18 @@ import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { createServer, type Plugin } from "vite";
 
+/**
+ * Points the icon face at the subset built for this repository.
+ *
+ * The complete duotone face is 161 KB and carries about fifteen hundred icons.
+ * `scripts/subset-icon-font.ts` cuts it to the ones Velvet names, which is
+ * around a twentieth of that, and this rewrites the declaration so the build
+ * emits the subset instead of the original. The rule also drops the other
+ * formats the package offers, none of which any supported browser needs.
+ *
+ * The path is root-absolute because it is resolved against the Vite root
+ * rather than against the stylesheet, which lives inside `node_modules`.
+ */
 export const phosphorWoff2Only: Plugin = {
   name: "velvet-phosphor-woff2-only",
   enforce: "pre",
@@ -10,7 +22,7 @@ export const phosphorWoff2Only: Plugin = {
     if (!id.includes("@phosphor-icons/web/src/duotone/style.css")) return;
     return source.replace(
       /src:\s*[\s\S]*?;\n {2}font-weight:/,
-      'src: url("./Phosphor-Duotone.woff2") format("woff2");\n  font-weight:',
+      'src: url("/src/assets/phosphor-duotone-subset.woff2") format("woff2");\n  font-weight:',
     );
   },
 };
