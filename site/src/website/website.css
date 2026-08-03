@@ -74,9 +74,18 @@ h6 {
   --notes-heading-size: var(--velvet-text-heading);
   --notes-subheading-size: var(--velvet-text-copy);
 
-  --velvet-card-radius: 23px;
+  --velvet-card-radius: 32px;
   --velvet-card-padding: 20px;
   --velvet-card-text-inset: calc(var(--velvet-card-radius) / 2);
+  /* Anything sitting at the card's content edge, so the gap between the two
+     curves stays constant. Change the radius above and this follows, which is
+     the point of stating it rather than a second number. Clamped at zero,
+     because an element further in than the radius sits past the curve and is
+     square. */
+  --velvet-card-inner-radius: max(
+    calc(var(--velvet-card-radius) - var(--velvet-card-padding)),
+    0px
+  );
 
   /* The site reads a step larger than the tools do. It is a page somebody
      reads, whilst the onboarding and the Configurator are surfaces somebody

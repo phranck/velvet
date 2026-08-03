@@ -63,9 +63,17 @@
      carries the surface so the button sits on it rather than beside it. */
   .code-block {
     position: relative;
-    border-radius: 0.5rem;
+    border-radius: var(--velvet-card-inner-radius, 0.5rem);
     overflow: hidden;
     background: color-mix(in srgb, currentColor 8%, transparent);
+    /* A `pre` reports the length of its longest line as its minimum width, and
+       that figure travels up through every ancestor and widens the page.
+       `min-width: 0` does not stop it, because that governs how a flex item is
+       sized rather than what the box contributes to an ancestor's intrinsic
+       width. Containing the inline size does, and unlike wrapping the content
+       it leaves the block scrolling within itself. Measured at a 390px window:
+       the page was 616px wide before this. */
+    contain: inline-size;
   }
   /* Two columns rather than one flow: the gutter, then the code. The block
      carries no padding of its own, so the gutter reaches the top and bottom
@@ -98,6 +106,9 @@
      line does not run underneath it. */
   pre > code {
     flex: 1;
+    /* Without this the column reports its longest line as a minimum width, and
+       that figure travels up through the card and the grid to the page. */
+    min-width: 0;
     padding: 0.875rem 3.25rem 0.875rem 1rem;
     overflow-x: auto;
     background: none;

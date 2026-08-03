@@ -111,10 +111,12 @@ test("publishes the start page as static HTML that loads no script", async () =>
   assert.match(html, /GitHub-native status monitoring/);
   assert.match(html, /What an installation gives you/);
   assert.match(html, /href="https:\/\/setup\.velvet\.li\/onboarding\/"/);
-  // No executable script of any kind. The structured-data block is a script
-  // element too, but it carries data a search engine reads rather than code a
-  // browser runs, so it is named explicitly instead of loosening the check.
-  assert.doesNotMatch(html, /<script(?![^>]*type="application\/ld\+json")/);
+  // No bundle. The page carries two script elements and neither is one: the
+  // structured-data block, which a search engine reads rather than a browser
+  // runs, and the small inline script every prerendered page carries to wire
+  // its copy buttons.
+  assert.doesNotMatch(html, /<script[^>]*\bsrc=/);
+  assert.match(html, /data-copy-code/);
   // The references page is built alongside this one and deliberately keeps its
   // script, because it reads the list of installations when a visitor opens it.
   // JavaScript therefore exists in the output, including chunks the two pages
@@ -782,10 +784,11 @@ test("publishes the changelog where GitHub Pages will find it, and without a scr
 
   assert.match(html, /<title>Velvet releases<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/changelog"/);
-  // Prerendered, unlike the references page. The releases come from a file in
-  // this repository, so there is nothing to read at request time and nothing a
-  // visitor gains from running code to see them.
-  assert.doesNotMatch(html, /<script(?![^>]*type="application\/ld\+json")/);
+  // No bundle. Prerendered, unlike the references page: the releases come from
+  // a file in this repository, so there is nothing to read at request time.
+  // The one script it carries is the small inline one every prerendered page
+  // gets, which wires the copy buttons.
+  assert.doesNotMatch(html, /<script[^>]*\bsrc=/);
   assert.doesNotMatch(html, /\/@fs\//);
   assert.doesNotMatch(html, /["'](\/src\/[^"']+)["']/);
 

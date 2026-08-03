@@ -152,7 +152,7 @@
   .topics a {
     display: block;
     padding: 0.25rem var(--velvet-card-text-inset);
-    border-radius: 0.5rem;
+    border-radius: var(--velvet-card-inner-radius);
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-body);
     line-height: 1.45;

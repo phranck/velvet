@@ -240,6 +240,15 @@ export function prerenderStaticEntry(options: {
         )
       ).flat();
 
+      // The one script a prerendered page publishes, held in a single file
+      // and inlined here. Those pages ship no bundle, so nothing a component
+      // renders can be wired by the component itself, and writing the same
+      // script into each page's HTML is the copy this avoids.
+      const pageScript = await readFile(
+        resolve(options.root, "src/lib/page-script.js"),
+        "utf8",
+      );
+
       const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*><\/script>/g)];
       const rewritten = html
         .replace(mount, `$1${body}$2`)
@@ -256,7 +265,8 @@ export function prerenderStaticEntry(options: {
         .replace(
           /\s*<link\b[^>]*\brel="modulepreload"[^>]*>/g,
           "",
-        );
+        )
+        .replace("</body>", `  <script>\n${pageScript}  </script>\n  </body>`);
       await writeFile(htmlPath, rewritten);
 
       // The bundle is not merely unreferenced now, it is unreachable, so
