@@ -1146,7 +1146,10 @@
     grid-template-columns: minmax(720px, 1fr) auto;
     background: var(--tool-bg);
     color: var(--tool-text);
-    font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+    /* The same face the rest of Velvet is set in. It stood in Avenir Next
+       before, which is one machine's interface face and nothing the product
+       states anywhere else. */
+    font-family: var(--velvet-font);
   }
   .control-panel {
     position: relative;
