@@ -9,6 +9,10 @@
   // The README's screenshot, imported from where it already lives rather than
   // copied here, so the page and the repository can never show different ones.
   import screenshotUrl from "../../../docs/screenshot.png";
+  // The four themes an installation can be set to, read from the registry the
+  // browser setup and the Configurator read, so the page cannot advertise a
+  // theme that is not offered or miss one that is.
+  import { SYSTEM_THEMES } from "../onboarding/system-themes.js";
 
   /**
    * Where a visitor goes to install Velvet. The setup service redirects its
@@ -207,6 +211,40 @@
               </li>
             {/each}
           </ol>
+        </div>
+      </StepCard.Root>
+    </section>
+
+    <section class="column" aria-labelledby="themes-title">
+      <StepCard.Root>
+        <div class="card-inset">
+          <div class="velvet-section-heading">
+            <div class="velvet-section-title">
+              <span class="marker" aria-hidden="true">//</span>
+              <h2 id="themes-title">Four themes to start from</h2>
+            </div>
+            <p>
+              The browser setup offers these as preview cards and the
+              Configurator edits every colour behind them, from the palette and
+              the uptime grid to the response-time chart, the cards, and the
+              backdrop.
+            </p>
+          </div>
+          <ul class="themes">
+            {#each SYSTEM_THEMES as theme (theme.id)}
+              <li>
+                <figure>
+                  <img
+                    src={theme.screenshot}
+                    alt={`The ${theme.name} theme on a Velvet status page`}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <figcaption>{theme.name}</figcaption>
+                </figure>
+              </li>
+            {/each}
+          </ul>
         </div>
       </StepCard.Root>
     </section>
@@ -480,6 +518,37 @@
     font-size: var(--setup-text-small);
     line-height: 1.5;
   }
+  /* Two across, because a status page in a quarter of this card is too small
+     to read anything from. */
+  .themes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .themes figure {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+  }
+  .themes img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: var(--step-card-inner-radius);
+    /* Claimed before the file arrives, so the cards below do not move when it
+       does. It is the ratio the four preview images are cut to. */
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    background: #0a0b0f;
+  }
+  .themes figcaption {
+    color: var(--setup-muted);
+    font-size: var(--setup-text-small);
+    font-weight: 650;
+  }
   /* The commands and the button sit side by side whilst there is room for
      both, and the block of commands takes whatever the button leaves. */
   .manual {
@@ -528,7 +597,10 @@
 
   @media (max-width: 720px) {
     .capabilities,
-    .pipeline {
+    .pipeline,
+    /* A status page shown a third of a phone wide says nothing about a theme,
+       so the previews take the full column here rather than half of it. */
+    .themes {
       grid-template-columns: 1fr;
     }
     /* Stacked once a row of two would be cramped, still matching each other. */

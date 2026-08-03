@@ -185,17 +185,32 @@ export function prerenderStaticEntry(options: {
         else process.env.NODE_ENV = callerNodeEnv;
       }
 
+      // A server render names an imported asset the way the dev server would,
+      // and that is two different shapes depending on where the file lives.
+      // Anything outside the Vite root arrives as `/@fs/` and an absolute path,
+      // and anything inside it as a path relative to the root. Both name a file
+      // that exists only on the machine that built the page, so both are
+      // replaced by whatever the client build emitted for them. Only an exact
+      // match is rewritten, which is what keeps an ordinary URL untouched.
       const body = markup.body.replace(
-        /\/@fs(\/[^"')\s]+)/g,
-        (unresolved, absolute: string) => {
-          const emitted = emittedAssets.get(absolute);
-          return emitted ? `./${emitted}` : unresolved;
+        /(?:\/@fs)?(\/[^"')\s]+)/g,
+        (reference, path: string) => {
+          const emitted = emittedAssets.get(
+            reference.startsWith("/@fs")
+              ? path
+              : resolve(options.root, `.${path}`),
+          );
+          return emitted ? `./${emitted}` : reference;
         },
       );
-      const stray = body.match(/\/@fs\/[^"')\s]+/);
+      // The published page may reference the public directory, which is copied
+      // verbatim, but never the sources. A leftover here means an asset was
+      // rendered by its source path whilst the build emitted a hashed copy of
+      // it, which publishes a page asking for a file nobody else has.
+      const stray = body.match(/\/@fs\/[^"')\s]+|["'](\/src\/[^"']+)["']/);
       if (stray) {
         throw new Error(
-          `Rendered markup still points at a build-machine path: ${stray[0]}`,
+          `Rendered markup still points at a build-machine path: ${stray[1] ?? stray[0]}`,
         );
       }
 

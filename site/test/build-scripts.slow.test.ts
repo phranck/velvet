@@ -144,9 +144,29 @@ test("publishes the start page as static HTML that loads no script", async () =>
   }
 
   // The render resolves imported assets the way a dev server would, so a
-  // failure here means the published page points at the build machine.
+  // failure here means the published page points at the build machine. That
+  // happens in two shapes: an asset outside the Vite root arrives as `/@fs/`
+  // and an absolute path, and one inside it as a path under `/src/`. The second
+  // shipped unnoticed until the theme previews became the first in-root asset
+  // the prerendered page imports.
   assert.doesNotMatch(html, /\/@fs\//);
+  assert.doesNotMatch(html, /["'](\/src\/[^"']+)["']/);
   assert.match(html, /src="\.\/assets\/screenshot-[^"]+\.png"/);
+
+  // One preview per system theme, each pointing at the copy this build emitted.
+  const themePreviews = [
+    "velvet-default",
+    "cloudy-autumn",
+    "sunny-spring",
+    "violet-velvet",
+  ];
+  for (const theme of themePreviews) {
+    assert.match(
+      html,
+      new RegExp(`src="\\./assets/${theme}-[^"]+\\.png"`),
+      `the page does not show the ${theme} preview from this build`,
+    );
+  }
 }, BUILD_TIMEOUT_MS);
 
 test("gives the website everything a search engine and a social platform read", async () => {

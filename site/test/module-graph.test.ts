@@ -25,8 +25,19 @@ async function collectTests(): Promise<string[]> {
     .map((entry) => resolve(testRoot, entry.name));
 }
 
+/**
+ * A relative specifier a module actually depends on at run time.
+ *
+ * `import type` and `export type` are excluded, because TypeScript erases the
+ * whole statement and neither Bun nor the bundler ever loads what it names.
+ * Counting one is not a harmless overestimate: it reports a component as
+ * reaching an application it cannot affect, which is the opposite of what the
+ * table below is for. `theme-registry.ts` names `ConfiguratorTheme` that way,
+ * and that alone put the configurator's configuration model, and with it the
+ * service editor, in the website's graph.
+ */
 const IMPORT_PATTERN =
-  /(?:^|[\s;}])(?:import|export)\s(?:[^'"]*?\sfrom\s)?["'](\.[^"']*)["']/gu;
+  /(?:^|[\s;}])(?:import|export)\s+(?!type\s)(?:[^'"]*?\sfrom\s)?["'](\.[^"']*)["']/gu;
 
 /** Relative specifiers an ECMAScript module imports or re-exports. */
 function relativeSpecifiers(source: string): string[] {
