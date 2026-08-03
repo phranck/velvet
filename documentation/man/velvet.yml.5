@@ -1,0 +1,603 @@
+.TH VELVET.YML 5 2026-08-03 Velvet "Velvet Manual"
+.SH NAME
+velvet.yml \- configuration format for a Velvet installation
+.SH DESCRIPTION
+.I velvet.yml
+sits at the root of a Velvet installation and is the single configuration the
+monitor, the browser setup, the Configurator, the build Action, and the status
+page all read. The complete file is validated before Velvet checks an endpoint,
+changes an Issue, or publishes generated data, and unknown fields are rejected
+rather than ignored.
+.PP
+A minimal file needs a display name and a URL:
+.PP
+.RS 4
+.nf
+schemaVersion: 1
+repository:
+  owner: your-username
+  name: your-status-repo
+statusPage:
+  name: Example Status
+services:
+  - name: Website
+    url: https://example.com
+.fi
+.RE
+.PP
+That configuration sends a direct IPv4
+.B GET
+request and considers a final HTTP
+.B 200
+healthy.
+.PP
+.B repository.owner
+and
+.B repository.name
+must match the repository the workflow runs in. A mismatch stops the run before
+any check or repository change.
+.PP
+Stable service and check identifiers are derived from their names as lowercase
+kebab-case. Set an explicit
+.B id
+before renaming a service or a check whose historical identity has to stay
+unchanged.
+.SH TOP-LEVEL FIELDS
+.TP
+.B schemaVersion
+Required. The configuration contract version, currently
+.BR 1 .
+.TP
+.B repository
+Required. Holds
+.B owner
+and
+.BR name ,
+being the GitHub user or organisation and the repository the installation lives
+in.
+.TP
+.B statusPage
+Required. The public identity, presentation, navigation, analytics, and SEO of
+the page.
+.TP
+.B services
+Required. At least one public service, each with one or more HTTP checks.
+.TP
+.B incidents
+Optional. Confirmation thresholds and the GitHub labels Velvet marks its own
+Issues with.
+.TP
+.B history
+Optional. The retention policy for generated history.
+.TP
+.B updates
+Optional. The preference for compatible managed security updates.
+.SH SERVICES AND CHECKS
+A service takes exactly one of two forms. The compact form names a single
+.B url
+and creates one check whose identifier and name come from the service. The
+explicit form names
+.B checks
+instead and cannot be combined with
+.BR url .
+.PP
+.RS 4
+.nf
+services:
+  - id: api
+    name: Public API
+    checks:
+      - id: readiness
+        name: Readiness
+        url: https://api.example.com/ready
+      - id: version
+        name: Version
+        url: https://api.example.com/version
+        method: HEAD
+        expectedStatusCodes: [200, 204]
+        maxRedirects: 2
+        timeoutMs: 5000
+.fi
+.RE
+.SS Service fields
+.TP
+.B id
+Optional, derived from the name. A stable lowercase kebab-case identifier of at
+most 64 characters.
+.TP
+.B name
+Required. The public service name, at most 128 characters.
+.TP
+.B url
+The compact single-check form. Cannot be combined with
+.BR checks .
+.TP
+.B checks
+The explicit form, holding one or more named checks. Cannot be combined with
+.BR url .
+.SS Check fields
+.TP
+.B id
+Optional, derived from the name. A stable lowercase kebab-case identifier,
+unique within its service.
+.TP
+.B name
+Required. The public check name.
+.TP
+.B url
+Required. An absolute HTTP or HTTPS URL. Credentials and fragments are
+rejected.
+.TP
+.B method
+Optional, defaulting to
+.BR GET .
+Either
+.B GET
+or
+.BR HEAD .
+.TP
+.B expectedStatusCodes
+Optional, defaulting to
+.BR [200] .
+One to 32 unique final status codes from 100 through 599.
+.TP
+.B maxRedirects
+Optional, defaulting to
+.BR 5 .
+A redirect limit from 0 through 10.
+.TP
+.B timeoutMs
+Optional, defaulting to
+.BR 10000 .
+The absolute timeout across all redirects, from 100 through 60000 milliseconds.
+.TP
+.B headers
+Optional, empty by default. Up to 16 header names carrying secret references.
+.TP
+.B jsonAssertions
+Optional, empty by default. Up to 16 explicit assertions about a JSON response.
+.SS What counts as downtime
+Each check gets one initial attempt and at most one immediate retry. A status
+outside
+.BR expectedStatusCodes ,
+a DNS or TLS failure, a timeout, a failed assertion, or an invalid response is
+an unavailable measurement.
+.PP
+Invalid configuration, a missing configured secret, an unsafe request setup,
+cancellation, and internal errors are not. They abort publication rather than
+reporting downtime that did not happen.
+.SS JSON assertions
+Status-only checks neither read nor parse the body. Use
+.B jsonAssertions
+only where an endpoint deliberately exposes structured health.
+.PP
+.RS 4
+.nf
+jsonAssertions:
+  - path: /status
+    equals: ok
+  - path: /dependencies/database/ready
+    equals: true
+.fi
+.RE
+.PP
+.B path
+is an RFC 6901 JSON Pointer, and
+.B equals
+accepts a string, a number, a boolean, or null. Every assertion has to match.
+Velvet reads at most 64 KiB of an asserted response and never infers a schema
+from arbitrary content.
+.PP
+.B HEAD
+cannot be combined with assertions, because a
+.B HEAD
+response carries no body.
+.SS Header secrets
+A secret value never belongs in
+.IR velvet.yml .
+Reference the name of the environment variable instead.
+.PP
+.RS 4
+.nf
+headers:
+  - name: Authorization
+    secret: API_HEALTH_TOKEN
+.fi
+.RE
+.PP
+Map that repository secret explicitly into both monitor workflow steps rather
+than passing every repository secret to the Action. Secret interpolation such
+as
+.B $TOKEN
+inside the configuration is rejected. Request-routing, framing, and connection
+headers such as
+.BR Host ,
+.BR Content-Length ,
+and
+.B Transfer-Encoding
+cannot be configured, and configured headers are removed on a cross-origin
+redirect.
+.SH STATUS PAGE
+.TP
+.B name
+Required. The public page name and the default document title.
+.TP
+.B customDomain
+Optional, defaulting to the GitHub Pages URL. A hostname only, with no scheme,
+path, port, credentials, or wildcard.
+.TP
+.B logoUrl
+Optional. An absolute HTTP or HTTPS logo URL.
+.TP
+.B logoHeight
+Optional, defaulting to
+.BR 72 .
+A display height from 16 through 256 pixels.
+.TP
+.B showPoweredBy
+Optional, enabled by default. Shows the centred Powered by Velvet credit.
+.TP
+.B layout
+Optional, defaulting to
+.BR grouped .
+Either
+.B grouped
+for one shared service card or
+.B cards
+for one card per service.
+.TP
+.B defaultRange
+Optional, defaulting to
+.BR 30d .
+The initial range, being
+.BR 24h ,
+.BR 7d ,
+.BR 30d ,
+.BR 90d ,
+or
+.BR 1yr .
+A visitor's own saved choice wins afterwards.
+.TP
+.B navigation
+Optional, empty by default. Up to 16 links, each with
+.B title
+and
+.BR href .
+.TP
+.B theme
+Optional, defaulting to Velvet Default. A theme name plus optional semantic
+visual overrides.
+.TP
+.B fonts
+Optional. Holds
+.B sans
+for interface text, defaulting to Inter, and
+.B mono
+for times, values, and labels, defaulting to JetBrains Mono. Both take a CSS
+font-family.
+.TP
+.B icons
+Optional, chosen automatically. A map from stable service identifier to a
+Phosphor icon class.
+.TP
+.B analytics
+Optional, off by default. Umami and Google Analytics settings.
+.TP
+.B seo
+Optional, generated by default. Title, description, and social-image overrides.
+.PP
+Setting
+.B customDomain
+writes a
+.I CNAME
+file into every build. The repository setting alone changes no DNS, so the
+required record has to be added with the domain provider. Do not remove the
+GitHub Pages domain until the custom domain resolves and its certificate is
+active.
+.SS Service icons
+.B icons
+maps the stable service identifier to a Phosphor class. Browser setup and the
+Configurator offer the supported set visually, and an unlisted service uses
+.BR ph-circle .
+.PP
+.RS 4
+.nf
+icons:
+  website: ph-globe
+  api: ph-brackets-curly
+  database: ph-database
+.fi
+.RE
+.SS Analytics and SEO
+.RS 4
+.nf
+analytics:
+  umami:
+    websiteId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    src: https://analytics.example.com/script.js
+  googleAnalytics: G-XXXXXXXXXX
+seo:
+  title: Example System Status
+  description: Current availability for Example.
+  image: https://example.com/status-social.png
+.fi
+.RE
+.PP
+Umami needs both
+.B websiteId
+and an absolute
+.BR src .
+.B googleAnalytics
+takes a measurement identifier beginning with
+.BR G- .
+No tracker is emitted unless it is configured, and the site owner remains
+responsible for consent and privacy obligations.
+.PP
+Without
+.B seo
+overrides, each build derives the
+.BR title ,
+the
+.BR description ,
+the canonical URL, the Open Graph and Twitter metadata, a 1200 by 630 social
+.BR image ,
+.IR robots.txt ,
+and
+.I sitemap.xml
+from the page configuration and the latest validated status.
+.SH THEMES
+A theme block requires
+.BR name .
+Every palette value is a six-digit hexadecimal colour, and every semantic
+colour field accepts
+.BR auto ,
+a palette key, or its own six-digit hexadecimal value.
+.PP
+.RS 4
+.nf
+theme:
+  name: Example Theme
+  palette:
+    canvas: "#0a0b0f"
+    foreground: "#e8eaed"
+    accent: "#6366f1"
+    alternate: "#38bdf8"
+    warning: "#d29922"
+    danger: "#f85149"
+    textPrimary: "#e8eaed"
+    textSecondary: "#8b8c90"
+    textTertiary: "#515256"
+  grid:
+    operational: accent
+    degraded: warning
+    outage: danger
+    noData: auto
+  chart:
+    line: accent
+    lineStyle: solid
+    fill: true
+    background: canvas
+    backgroundOpacity: 0.2
+  background:
+    start: auto
+    end: canvas
+    blobs:
+      enabled: true
+      count: 3
+      colors: [accent, alternate]
+  card:
+    background: auto
+    border: auto
+    separator: auto
+    borderEnabled: true
+    shadowEnabled: true
+    radius: 14
+    padding: 16
+    maxWidth: 760
+  headline:
+    start: textPrimary
+    end: textSecondary
+  service:
+    icon: accent
+  text:
+    primary: textPrimary
+    secondary: textSecondary
+    tertiary: textTertiary
+.fi
+.RE
+.TP
+.B palette
+.BR canvas ,
+.BR foreground ,
+.BR accent ,
+.BR alternate ,
+.BR warning ,
+.BR danger ,
+.BR textPrimary ,
+.BR textSecondary ,
+and
+.BR textTertiary .
+.TP
+.B grid
+.BR operational ,
+.BR degraded ,
+.BR outage ,
+and
+.BR noData .
+.TP
+.B chart
+.BR line ;
+.B lineStyle
+as
+.BR solid ,
+.BR dashed ,
+or
+.BR dotted ;
+.BR fill ;
+.BR background ;
+and
+.B backgroundOpacity
+from 0 through 1.
+.TP
+.B background
+.B start
+and
+.BR end ;
+.BR blobs.enabled ;
+.B blobs.count
+from 1 through 5; and exactly two
+.BR blobs.colors .
+.TP
+.B card
+.BR background ,
+.BR border ,
+and
+.BR separator ;
+.BR borderEnabled ;
+.BR shadowEnabled ;
+.B radius
+and
+.B padding
+from 0 through 32; and
+.B maxWidth
+as 640, 760, 920, or 1080.
+.TP
+.B headline
+.B start
+and
+.BR end .
+.TP
+.B service
+.BR icon .
+.TP
+.B text
+.BR primary ,
+.BR secondary ,
+and
+.BR tertiary .
+.PP
+Response-time curves use monotone cubic interpolation and invent no values
+beyond local extrema. Unavailable samples stay visible as gaps.
+.SH INCIDENTS AND MAINTENANCE
+.RS 4
+.nf
+incidents:
+  failureThreshold: 2
+  recoveryThreshold: 2
+  incidentLabel: incident
+  maintenanceLabel: maintenance
+.fi
+.RE
+.TP
+.B failureThreshold
+Defaults to
+.BR 2 .
+Consecutive failed measurements, from 1 through 20.
+.TP
+.B recoveryThreshold
+Defaults to
+.BR 2 .
+Consecutive successful measurements, from 1 through 20.
+.TP
+.B incidentLabel
+Defaults to
+.BR incident .
+A lowercase kebab-case GitHub label.
+.TP
+.B maintenanceLabel
+Defaults to
+.BR maintenance .
+A lowercase kebab-case GitHub label.
+.PP
+A first failed measurement is pending and shows as degraded. Reaching the
+failure threshold confirms the outage and opens one marked Issue. A recovered
+target counts as available immediately whilst the displayed state waits for the
+recovery threshold, and confirmed recovery adds one comment and closes the same
+Issue. Closing that Issue by hand during an active outage reopens it, and
+unrelated Issues are never touched.
+.PP
+Planned maintenance arrives through the generated Issue Form or the maintenance
+workflow, and Velvet validates the service identifiers and timestamps in it.
+Monitoring continues throughout. An outage covered by a window opens no
+incident until the window ends, measured availability is never rewritten, and
+the window stays a neutral event in public history.
+.SH HISTORY
+.RS 4
+.nf
+history:
+  retentionDays: 365
+.fi
+.RE
+.TP
+.B retentionDays
+Accepts 1 through 365 and defaults to
+.BR 365 .
+.PP
+The same window applies to public daily availability, response samples,
+resolved incidents, completed maintenance, private transition history, and
+generated branch history. Open incidents and scheduled or active maintenance
+stay visible past it, and historical GitHub Issues are never deleted.
+.PP
+Once retained Git history exceeds the configured period, the current complete
+snapshot becomes a new root, taken with an exact lease against the branch head
+that was read. The default branch is never force-pushed.
+.SH UPDATES
+.RS 4
+.nf
+updates:
+  automaticSecurityUpdates: true
+.fi
+.RE
+.TP
+.B automaticSecurityUpdates
+Enabled by default. Applies only to releases classified as security updates
+that need neither a configuration nor a data migration.
+.PP
+A release installs unattended only whilst every one of the following holds, and
+any single failure means it waits for confirmation. It is classified as a
+security release. It is explicitly marked eligible for automatic installation,
+and a release marked eligible whilst not being a migration-free security
+release is refused at publication. It needs neither a configuration nor a data
+migration. The installation still has
+.B automaticSecurityUpdates
+enabled. Its recorded template revision is immutable and every file matches the
+hash the release recorded for it.
+.PP
+An automatic update that fails is not retried for that version, so it will not
+open the same branch and pull request repeatedly.
+.PP
+An update works from an immutable template commit and a closed list of
+Velvet-owned workflow and Issue-template files, plus the machine-managed
+.IR velvet.lock.json .
+Everything else is yours and is never a target, including
+.IR velvet.yml ,
+the whole
+.B velvet-data
+branch, incidents, maintenance history, repository secrets, Pages and domain
+settings,
+.IR README.md ,
+and
+.IR LICENSE .
+.SH FILES
+.TP
+.I velvet.yml
+This file, at the root of the default branch.
+.TP
+.I velvet.lock.json
+The machine-managed record of the installed release. Never edited by hand.
+.TP
+.I .github/ISSUE_TEMPLATE/maintenance.yml
+The generated maintenance Issue Form. Its choices and embedded identifiers have
+to match the configured services, which browser setup and the Configurator
+handle during installation.
+.SH SEE ALSO
+.BR velvet (7),
+.BR velvet-config (1)
+.PP
+The complete configuration reference is at
+.UR https://velvet.li
+velvet.li
+.UE
+and in
+.I documentation/configuration.md
+in the repository.
