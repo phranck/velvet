@@ -14,6 +14,10 @@ const MAX_SOURCE_LENGTH = 65_536;
 const MAX_BLOCKS = 500;
 /** Upper bound on inline parts per block, for the same reason. */
 const MAX_INLINE_PARTS = 200;
+/** Upper bound on body rows in one table, for the same reason. */
+const MAX_TABLE_ROWS = 200;
+/** Upper bound on cells in one row, so a wide row cannot exhaust the page either. */
+const MAX_TABLE_COLUMNS = 12;
 
 /** A run of text inside a block. */
 export type ReleaseNotesInline =
@@ -23,32 +27,85 @@ export type ReleaseNotesInline =
   | { kind: "code"; value: string }
   | { kind: "link"; value: string; href: string };
 
+/** A heading level a rendered block may use. Never 1, whatever the source says. */
+export type ReleaseNotesHeadingLevel = 2 | 3 | 4 | 5 | 6;
+
 /**
  * One rendered block.
  *
- * Headings start at level 2 because the overlay already provides the only
- * level-1 heading, so a release note cannot break the document outline.
+ * Headings never reach level 1, because the page around them always supplies
+ * that one and a document cannot be allowed to break its outline.
  */
 export type ReleaseNotesBlock =
-  | { kind: "heading"; level: 2 | 3; content: ReleaseNotesInline[] }
+  | {
+      kind: "heading";
+      level: ReleaseNotesHeadingLevel;
+      content: ReleaseNotesInline[];
+    }
   | { kind: "paragraph"; content: ReleaseNotesInline[] }
   | { kind: "list"; ordered: boolean; items: ReleaseNotesInline[][] }
+  | {
+      kind: "table";
+      headers: ReleaseNotesInline[][];
+      rows: ReleaseNotesInline[][][];
+    }
   | { kind: "code"; value: string };
+
+/**
+ * How the levels a document writes are turned into the levels it renders at.
+ *
+ * `flattened` puts everything into two levels, which suits a short document
+ * shown inside something that already has a heading of its own, such as the
+ * Configurator's release-note overlay. `outline` keeps the document's own
+ * structure and only refuses level 1, which is what a reference page needs to
+ * stay navigable.
+ */
+export type ReleaseNotesHeadings = "flattened" | "outline";
+
+export interface ReleaseNotesOptions {
+  /** Defaults to `flattened`, which is what the overlay has always received. */
+  headings?: ReleaseNotesHeadings;
+}
 
 const HEADING = /^(#{1,6})\s+(.*)$/u;
 const UNORDERED_ITEM = /^[-*]\s+(.*)$/u;
 const ORDERED_ITEM = /^\d+[.)]\s+(.*)$/u;
+/** A table row, which is any line fenced by pipes. */
+const TABLE_ROW = /^\|(.*)\|$/u;
+/** The row of dashes under a header, which is what makes the table a table. */
+const TABLE_DELIMITER = /^\|(?:\s*:?-{3,}:?\s*\|)+$/u;
 const INLINE =
   /\[([^\]\n]{1,200})\]\(([^)\s]{1,2048})\)|\*\*([^*\n]{1,500})\*\*|\*([^*\n]{1,500})\*|`([^`\n]{1,500})`/u;
 
 /**
- * Parses release notes into a renderable structure.
+ * Turns a heading's own depth into the level it renders at.
  *
- * @param source - Markdown from a release manifest.
+ * @param depth - Number of hashes the document wrote.
+ * @param headings - Which of the two arrangements the caller asked for.
+ * @returns A level of 2 or deeper, never 1.
+ */
+function headingLevel(
+  depth: number,
+  headings: ReleaseNotesHeadings,
+): ReleaseNotesHeadingLevel {
+  if (headings === "flattened") return depth <= 1 ? 2 : 3;
+  return Math.min(Math.max(depth, 2), 6) as ReleaseNotesHeadingLevel;
+}
+
+/**
+ * Parses Markdown into a renderable structure.
+ *
+ * @param source - Markdown from a release manifest or a documentation file.
+ * @param options - See {@link ReleaseNotesOptions}. Omitting it renders exactly
+ *   as this function always has.
  * @returns Blocks in document order, bounded in count and size. An empty or
  *   content-free document yields an empty list.
  */
-export function parseReleaseNotes(source: string): ReleaseNotesBlock[] {
+export function parseReleaseNotes(
+  source: string,
+  options: ReleaseNotesOptions = {},
+): ReleaseNotesBlock[] {
+  const headings = options.headings ?? "flattened";
   const lines = source.slice(0, MAX_SOURCE_LENGTH).split("\n");
   const blocks: ReleaseNotesBlock[] = [];
   let index = 0;
@@ -74,14 +131,19 @@ export function parseReleaseNotes(source: string): ReleaseNotesBlock[] {
 
     const heading = line.match(HEADING);
     if (heading) {
-      // A document's own level-1 heading becomes level 2, and everything
-      // deeper collapses to level 3, so the outline stays shallow and valid.
       blocks.push({
         kind: "heading",
-        level: heading[1]!.length <= 1 ? 2 : 3,
+        level: headingLevel(heading[1]!.length, headings),
         content: parseInline(heading[2] ?? ""),
       });
       index += 1;
+      continue;
+    }
+
+    const tableBlock = collectTable(lines, index);
+    if (tableBlock) {
+      blocks.push(tableBlock.block);
+      index = tableBlock.next;
       continue;
     }
 
@@ -100,6 +162,11 @@ export function parseReleaseNotes(source: string): ReleaseNotesBlock[] {
         HEADING.test(current) ||
         UNORDERED_ITEM.test(current.trim()) ||
         ORDERED_ITEM.test(current.trim()) ||
+        // Only a row that actually opens a table, which is one followed by the
+        // row of dashes. A line merely beginning with a pipe is prose and stays
+        // in the paragraph, and treating it as a boundary here left the index
+        // where it was whilst nothing consumed the line.
+        collectTable(lines, index) !== null ||
         current.trimStart().startsWith("```")
       ) {
         break;
@@ -112,6 +179,56 @@ export function parseReleaseNotes(source: string): ReleaseNotesBlock[] {
     }
   }
   return blocks;
+}
+
+/**
+ * Splits one table row into its cells.
+ *
+ * The outer pipes are the fence rather than cell boundaries, so they are
+ * stripped before splitting. An escaped pipe is not supported and is not worth
+ * supporting, because a cell needing one would be unreadable in the source too.
+ *
+ * @param row - One line already known to be fenced by pipes.
+ * @returns The cells, trimmed, bounded in number.
+ */
+function tableCells(row: string): string[] {
+  return (row.match(TABLE_ROW)?.[1] ?? "")
+    .split("|")
+    .slice(0, MAX_TABLE_COLUMNS)
+    .map((cell) => cell.trim());
+}
+
+/**
+ * Reads a table, which is a header row, a row of dashes, and the body.
+ *
+ * The row of dashes is what distinguishes a table from a paragraph that happens
+ * to begin with a pipe, so a header without one is not a table and is left to
+ * whatever handles the line next.
+ *
+ * @param lines - Every line of the document.
+ * @param start - Index of the candidate header row.
+ * @returns The block and the index after it, or `null` when this is not a
+ *   table.
+ */
+function collectTable(
+  lines: readonly string[],
+  start: number,
+): { block: ReleaseNotesBlock; next: number } | null {
+  const header = (lines[start] ?? "").trim();
+  const delimiter = (lines[start + 1] ?? "").trim();
+  if (!TABLE_ROW.test(header) || !TABLE_DELIMITER.test(delimiter)) return null;
+
+  const headers = tableCells(header).map((cell) => parseInline(cell));
+  const rows: ReleaseNotesInline[][][] = [];
+  let index = start + 2;
+  while (index < lines.length && rows.length < MAX_TABLE_ROWS) {
+    const current = (lines[index] ?? "").trim();
+    if (!TABLE_ROW.test(current) || TABLE_DELIMITER.test(current)) break;
+    rows.push(tableCells(current).map((cell) => parseInline(cell)));
+    index += 1;
+  }
+
+  return { block: { kind: "table", headers, rows }, next: index };
 }
 
 function collectList(

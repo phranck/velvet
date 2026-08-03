@@ -1,12 +1,22 @@
 <script lang="ts">
   import {
     parseReleaseNotes,
+    type ReleaseNotesHeadings,
     type ReleaseNotesInline,
   } from "../../lib/release-notes.js";
 
-  let { source }: { source: string } = $props();
+  let {
+    source,
+    /**
+     * Which heading arrangement the surrounding page needs. The default is what
+     * the Configurator's overlay has always shown, because that panel supplies
+     * the only level-one heading and a note may not add depth beneath it. A
+     * page rendering a whole document asks for `outline` instead.
+     */
+    headings = "flattened",
+  }: { source: string; headings?: ReleaseNotesHeadings } = $props();
 
-  const blocks = $derived(parseReleaseNotes(source));
+  const blocks = $derived(parseReleaseNotes(source, { headings }));
 </script>
 
 <!--
@@ -40,6 +50,30 @@
       <p>{@render inline(block.content)}</p>
     {:else if block.kind === "code"}
       <pre><code>{block.value}</code></pre>
+    {:else if block.kind === "table"}
+      <!-- Wrapped, because a reference table is wider than a phone and the
+           alternative is either a squeezed column or a page that scrolls
+           sideways as a whole. -->
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              {#each block.headers as header, headerIndex (headerIndex)}
+                <th scope="col">{@render inline(header)}</th>
+              {/each}
+            </tr>
+          </thead>
+          <tbody>
+            {#each block.rows as row, rowIndex (rowIndex)}
+              <tr>
+                {#each row as cell, cellIndex (cellIndex)}
+                  <td>{@render inline(cell)}</td>
+                {/each}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     {:else if block.ordered}
       <ol>
         {#each block.items as item, itemIndex (itemIndex)}
@@ -115,6 +149,32 @@
     border-radius: 0.5rem;
     overflow-x: auto;
     background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  /* The scroll lives on this wrapper rather than the table, because a table is
+     sized by its contents and would report that width to everything above it,
+     widening the page instead of scrolling inside it. */
+  .table-scroll {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375em;
+    text-align: left;
+  }
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+    vertical-align: top;
+  }
+  th {
+    font-weight: 650;
+    white-space: nowrap;
+  }
+  tbody tr:last-child td {
+    border-bottom: 0;
   }
 
   pre code {
