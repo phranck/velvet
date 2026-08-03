@@ -161,18 +161,10 @@ Set these non-secret runtime values separately:
 | `GITHUB_APP_SLUG` | Public slug from the GitHub App URL |
 | `AUTOMATIC_UPDATE_INTERVAL_MINUTES` | How often eligible security releases are swept for, from 0 through 1440. Defaults to 60, and 0 turns the sweep off |
 
-Analytics is off unless both variables are set, and setting only one is refused
-rather than accepted. A script URL without an identifier loads the script and
-records nothing, and an identifier without a URL loads nothing at all; both
-present as analytics that simply does not work, which is the failure hardest to
-notice.
-
-The service adds the script to the pages it serves and grants that origin in
-its Content Security Policy, in `script-src` because the script is fetched from
-there and in `connect-src` because its events are posted back. Both come from
-the same setting, so they cannot be granted apart. Nothing is compiled into the
-committed onboarding bundle, which is why an instance that sets neither variable
-serves no analytics and grants no third origin at all.
+The service collects nothing about the people who use it. It serves the
+documents it was built with, unchanged, and its Content Security Policy grants
+one third-party origin: GitHub Pages, in `connect-src`, because the Configurator
+reads the community theme registry Velvet publishes there.
 
 A sweep costs no GitHub request whilst the release the service carries is not a
 security release marked for automatic installation, which is the ordinary
