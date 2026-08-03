@@ -20,6 +20,11 @@ html,
 body {
   min-height: 100%;
   margin: 0;
+  /* Stated on `body` as well as on `:root` above, because `app.css` sets a face
+     on `body` for the status page and an element's own rule beats anything it
+     would otherwise inherit. Without this the onboarding's `body` named a face
+     the onboarding never fetches. */
+  font-family: var(--velvet-font);
 }
 
 button,
