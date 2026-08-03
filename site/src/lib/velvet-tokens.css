@@ -28,8 +28,17 @@
   --velvet-base: #0a0b0f;
   --velvet-font: "Barlow", "Segoe UI", sans-serif;
   --velvet-font-heading: "Barlow Condensed", "Arial Narrow", sans-serif;
+  /* The type scale, in the order it grows. The start page is where it was set,
+     and the rest of the site is measured against it rather than choosing sizes
+     of its own. A page that names a size in rem here is a page that will drift
+     the next time one of these moves. */
   --velvet-text-small: 0.9375rem;
   --velvet-text-body: 1rem;
   --velvet-text-copy: 1.25rem;
+  --velvet-text-heading: clamp(1.5rem, 3vw, 1.875rem);
   --velvet-text-intro: 2rem;
+  --velvet-text-title: clamp(2rem, 6vw, 3rem);
+  /* A glyph standing beside text rather than in it: a section icon, the number
+     of a step, the mark on a notice. */
+  --velvet-text-ornament: 1.75rem;
 }

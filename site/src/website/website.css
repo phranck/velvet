@@ -17,6 +17,11 @@
  */
 body {
   font-family: var(--velvet-font);
+  /* The size as well as the face. `app.css` states 18px on `body` for the
+     tools, and the start page's shell was the only thing that set the token
+     instead, so the other three pages ran two pixels larger than the page they
+     are measured against. */
+  font-size: var(--velvet-text-body);
 }
 
 h1,
@@ -27,6 +32,29 @@ h5,
 h6 {
   font-family: var(--velvet-font-heading);
   font-weight: 600;
+}
+
+/**
+ * One width for the whole site.
+ *
+ * The header, every page's content, and the footer are held to it, so a page
+ * reads as a single column from the wordmark to the call to action. Before
+ * this a changelog at a 1600px window put the header across 1472 pixels, the
+ * content across 768, and its opening paragraph across 544, which is three
+ * different columns stacked on top of each other.
+ *
+ * The inset is the same one the header always used, so nothing touches the
+ * window edge on a narrow screen.
+ */
+:root {
+  --velvet-page-width: 1200px;
+  --velvet-page-inset: clamp(1rem, 5vw, 4rem);
+}
+
+/** The one measure everything on the site is laid out in. */
+.velvet-page {
+  width: min(100% - 2 * var(--velvet-page-inset), var(--velvet-page-width));
+  margin-inline: auto;
 }
 
 #website {

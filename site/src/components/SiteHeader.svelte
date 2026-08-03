@@ -26,7 +26,7 @@
   ] as const;
 </script>
 
-<header class="site-header">
+<header class="site-header velvet-page">
   <a class="home" href="/" aria-label="Velvet, back to the start page">
     <VelvetWordmark />
   </a>
@@ -53,13 +53,17 @@
 </header>
 
 <style>
+  /* The inset comes from `.velvet-page`, which every page on the site shares,
+     so the wordmark starts exactly where the text beneath it does. */
   .site-header {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem 1.5rem;
-    padding: 1.25rem clamp(1rem, 5vw, 4rem);
+    padding: 1.25rem 0;
   }
+  /* The mark is sized by the brand rather than by the text scale, because it is
+     a mark and not a heading. Everything else in this bar takes a token. */
   .home {
     color: inherit;
     font-size: 1.5rem;
@@ -80,7 +84,7 @@
   }
   nav a {
     color: var(--velvet-text-muted, #9aa3b2);
-    font-size: 0.9375rem;
+    font-size: var(--velvet-text-small);
     text-decoration: none;
   }
   nav a:hover,

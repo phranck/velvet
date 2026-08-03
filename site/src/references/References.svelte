@@ -60,7 +60,7 @@
 
 <SiteHeader current="references" />
 
-<main class="references column">
+<main class="references velvet-page">
   <h1>Who runs Velvet</h1>
   <p class="lede">
     Status pages published with Velvet, named here because their owners said
@@ -88,21 +88,19 @@
 </main>
 
 <style>
+  /* The site's own measure, shared with the header and the footer. */
   .references {
-    margin: 0 auto;
-    max-width: 48rem;
-    padding: 3rem clamp(1rem, 5vw, 4rem) 6rem;
+    padding: 3rem 0 6rem;
   }
   h1 {
-    font-size: clamp(2rem, 6vw, 3rem);
+    font-size: var(--velvet-text-title);
     line-height: 1.1;
     margin: 0 0 1rem;
   }
   .lede {
-    color: var(--velvet-muted, #9aa3b2);
-    font-size: 1.125rem;
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-copy);
     margin: 0 0 3rem;
-    max-width: 34rem;
   }
   .reference-list {
     display: grid;
@@ -135,9 +133,8 @@
   }
   .consent-note {
     border-top: 1px solid #222530;
-    color: var(--velvet-muted, #9aa3b2);
-    font-size: 0.9375rem;
-    max-width: 34rem;
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-small);
     padding-top: 1.5rem;
   }
 </style>

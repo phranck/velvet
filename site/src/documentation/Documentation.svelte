@@ -22,7 +22,7 @@
 
 <SiteHeader current="documentation" />
 
-<main class="documentation">
+<main class="documentation velvet-page">
   <h1>Configuration</h1>
   <p class="lede">
     Every option <code>velvet.yml</code> accepts, from a one-service website to
@@ -65,21 +65,19 @@
   /* Wider than the references and changelog pages, because the reference is
      built out of four-column tables and a 48rem column makes every one of them
      scroll sideways. */
+  /* The site's own measure, shared with the header and the footer. */
   .documentation {
-    margin: 0 auto;
-    max-width: 62rem;
-    padding: 3rem clamp(1rem, 5vw, 4rem) 6rem;
+    padding: 3rem 0 6rem;
   }
   h1 {
-    font-size: clamp(2rem, 6vw, 3rem);
+    font-size: var(--velvet-text-title);
     line-height: 1.1;
     margin: 0 0 1rem;
   }
   .lede {
-    color: var(--velvet-muted, #9aa3b2);
-    font-size: 1.125rem;
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-copy);
     margin: 0 0 3rem;
-    max-width: 40rem;
   }
   .lede code {
     font-family: var(--font-mono);
@@ -101,13 +99,13 @@
   .warning i {
     flex: none;
     color: #d29922;
-    font-size: 1.75rem;
+    font-size: var(--velvet-text-ornament);
     line-height: 1.2;
   }
   .warning h2 {
     margin: 0 0 0.5rem;
     color: #d29922;
-    font-size: 1.25rem;
+    font-size: var(--velvet-text-heading);
     line-height: 1.2;
   }
   .warning p {
@@ -135,17 +133,17 @@
     border: 1px solid #222530;
     border-radius: 0.75rem;
     padding: 2rem clamp(1.25rem, 4vw, 2.5rem);
-    font-size: 1rem;
+    font-size: var(--velvet-text-body);
     line-height: 1.7;
   }
   .reference :global(h2) {
     margin-top: 2.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid #222530;
-    font-size: 1.5rem;
+    font-size: var(--velvet-text-heading);
   }
   .reference :global(h3) {
     margin-top: 1.5rem;
-    font-size: 1.15rem;
+    font-size: var(--velvet-text-copy);
   }
 </style>
