@@ -122,9 +122,9 @@
      one panel rather than as links loose on the backdrop. */
   .topics {
     align-self: start;
-    padding: 0.75rem;
+    padding: var(--velvet-card-padding);
     border: 1px solid #222530;
-    border-radius: 0.75rem;
+    border-radius: var(--velvet-card-radius);
     background: #14161d;
   }
   @media (min-width: 960px) {
@@ -145,7 +145,7 @@
   }
   .topics a {
     display: block;
-    padding: 0.25rem 0.5rem;
+    padding: 0.25rem var(--velvet-card-text-inset);
     border-radius: 0.5rem;
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-body);
@@ -164,15 +164,23 @@
     background: color-mix(in srgb, var(--velvet-accent) 10%, transparent);
   }
 
+  /* Text and headings standing beside a card, on the same level as one, take
+     the same horizontal inset the text inside it takes, so a topic's name
+     lines up with the first line beneath it rather than sitting proud of it. */
+  h1,
+  .lede,
+  main h2 {
+    margin-inline: var(--velvet-card-text-inset);
+  }
   h1 {
     font-size: var(--velvet-text-title);
     line-height: 1.1;
-    margin: 0 0 1rem;
+    margin-block: 0 1rem;
   }
   .lede {
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-copy);
-    margin: 0 0 2.5rem;
+    margin-block: 0 2.5rem;
   }
   .lede code {
     font-family: var(--font-mono);
@@ -184,10 +192,16 @@
      own tinted surface, above the reference instead of inside it. */
   .warning {
     margin: 0 0 2.5rem;
-    padding: 1.25rem 1.5rem;
+    padding: var(--velvet-card-padding);
     border: 1px solid color-mix(in srgb, #d29922 45%, transparent);
-    border-radius: 0.75rem;
+    border-radius: var(--velvet-card-radius);
     background: color-mix(in srgb, #d29922 12%, #14161d);
+  }
+  /* Text and headings take the further inset; nothing in this notice runs
+     full width, so all of it does. */
+  .warning-head,
+  .warning p {
+    margin-inline: var(--velvet-card-text-inset);
   }
   /* The mark and the heading share a row, which is what puts them on the same
      centre line. Held apart, the mark aligned to the top of a two-line heading
@@ -226,7 +240,7 @@
      patterned, and several hundred lines of reference read directly over it are
      harder work than they need to be. */
   main h2 {
-    margin: 2.5rem 0 0.75rem;
+    margin-block: 2.5rem 0.75rem;
     /* Clears the sticky bar, so following a topic link does not land the
        heading underneath it. */
     scroll-margin-top: 5.5rem;
@@ -234,14 +248,14 @@
     line-height: 1.2;
   }
   main h2:first-of-type {
-    margin-top: 0;
+    margin-block-start: 0;
   }
   .card {
     --tool-text: var(--velvet-text);
     background: #14161d;
     border: 1px solid #222530;
-    border-radius: 0.75rem;
-    padding: 1.75rem clamp(1.25rem, 4vw, 2.25rem);
+    border-radius: var(--velvet-card-radius);
+    padding: var(--velvet-card-padding);
     font-size: var(--velvet-text-body);
     line-height: 1.7;
   }

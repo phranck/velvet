@@ -39,6 +39,12 @@
   .changelog {
     padding: 3rem 0 6rem;
   }
+  /* Beside a card and on the same level as one, so the same inset applies. */
+  h1,
+  .lede,
+  .source-note {
+    margin-inline: var(--velvet-card-text-inset);
+  }
   h1 {
     font-size: var(--velvet-text-title);
     line-height: 1.1;
@@ -52,9 +58,9 @@
   article {
     background: #14161d;
     border: 1px solid #222530;
-    border-radius: 0.75rem;
+    border-radius: var(--velvet-card-radius);
     margin: 0 0 1.5rem;
-    padding: 1.5rem 1.75rem;
+    padding: var(--velvet-card-padding);
   }
   h2 {
     font-size: var(--velvet-text-heading);
