@@ -83,6 +83,15 @@ body {
   background-repeat: no-repeat;
   color: var(--text);
   font-size: 18px;
+  /* The status page's face, and only the status page's. `--font-sans` holds
+     Inter by default and `applyTheme` writes an installation's own choice into
+     it, which is why the token stays here rather than moving somewhere the
+     Configurator can no longer reach for the preview it draws.
+
+     The onboarding, the Configurator, and the site all import this file for its
+     palette and each states its own face after it, because none of the three
+     loads Inter. Before they did, all three named a face they never fetched,
+     and a reader of this rule could not tell which surface meant it. */
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

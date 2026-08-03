@@ -8,6 +8,11 @@ body,
 body {
   overflow: hidden;
   background: #101116;
+  /* The system's own interface face, which is what this tool has always
+     rendered in. It took the status page's `body` rule from `app.css` before,
+     and that names Inter first, so the stylesheet claimed a face the
+     Configurator neither loads nor draws a single word in. */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 button,
