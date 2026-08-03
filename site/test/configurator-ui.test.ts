@@ -501,8 +501,14 @@ test("shares one accessible custom listbox across themes and color sources", asy
   assert.match(customListbox, /style:max-height/);
   assert.match(customListbox, /import ColorSwatch from "\.\/ColorSwatch\.svelte"/);
   assert.match(customListbox, /<ColorSwatch\s+\{color\}\s+size=\{compact \? 22 : 14\}/);
-  assert.match(customListbox, /option\.value === value \? 'ph-check-fat' : 'ph-blank'/);
-  assert.doesNotMatch(customListbox, /\? 'ph-check' : 'ph-blank'/);
+  // The tick is always rendered and hidden when the row is not selected, so
+  // every row reserves the same width. It used to swap in `ph-blank`, which
+  // Phosphor does not define, and which therefore reserved that width only
+  // because an undefined icon renders nothing.
+  assert.match(customListbox, /class="ph-duotone ph-check-fat"/);
+  assert.match(customListbox, /class:unselected=\{option\.value !== value\}/);
+  assert.match(customListbox, /\.listbox-options i\.unselected \{\s*visibility: hidden;/);
+  assert.doesNotMatch(customListbox, /ph-blank/);
   assert.doesNotMatch(customListbox, /data-listbox-swatch/);
   assert.match(themeDropdown, /import CustomListbox from "\.\/CustomListbox\.svelte"/);
   assert.match(colorSource, /import CustomListbox from "\.\/CustomListbox\.svelte"/);

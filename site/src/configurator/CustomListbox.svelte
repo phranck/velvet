@@ -237,8 +237,15 @@
           aria-selected={option.value === value}
           onclick={() => choose(option)}
         >
+<!--
+            Always the same icon, hidden rather than swapped, so every row
+            reserves exactly the width the tick occupies. The placeholder used
+            to be a class Phosphor does not define, which reserved the right
+            space only because an undefined icon renders nothing.
+          -->
           <i
-            class="ph-duotone {option.value === value ? 'ph-check-fat' : 'ph-blank'}"
+            class="ph-duotone ph-check-fat"
+            class:unselected={option.value !== value}
             aria-hidden="true"
           ></i>
           <span class="listbox-copy">
@@ -354,5 +361,8 @@
   .listbox-options i {
     color: var(--tool-accent);
     font-size: 16px;
+  }
+  .listbox-options i.unselected {
+    visibility: hidden;
   }
 </style>
