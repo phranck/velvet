@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from "../components/Icon.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
   // The repository's own configuration reference, read at build time. The page
@@ -63,7 +64,7 @@
     -->
     <aside class="warning" aria-labelledby="warning-title">
       <div class="warning-head">
-        <i class="ph-duotone ph-warning-octagon" aria-hidden="true"></i>
+        <Icon name="danger" />
         <h2 id="warning-title">Editing this file by hand is not the supported path</h2>
       </div>
       <p>
@@ -212,11 +213,10 @@
     gap: 0.75rem;
     margin: 0 0 0.6rem;
   }
-  .warning i {
-    flex: none;
+  .warning :global(svg) {
     color: #d29922;
-    font-size: var(--velvet-text-intro);
-    line-height: 1;
+    width: var(--velvet-text-intro);
+    height: var(--velvet-text-intro);
   }
   .warning h2 {
     margin: 0;

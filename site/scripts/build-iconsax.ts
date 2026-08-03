@@ -10,25 +10,29 @@
  * page. It also keeps the build offline and deterministic: nothing is fetched
  * whilst the site is built.
  *
- * The export is a manual step and cannot be automated. Iconsax serves its
- * artwork encrypted, so the files behind its public catalogue cannot be read
- * without the key its application holds, and getting at them any other way
- * would mean going around a protection its vendor put there deliberately.
+ * It reads the `iconsax` package by default, which publishes its free icons as
+ * plain SVG and needs no network of its own. That package carries the six
+ * styles and not the two corner finishes, so what it yields is Bulk in the
+ * straight finish.
  *
- * Export the icons named below as SVG from https://app.iconsax.io, with the
- * corner set to Rounded and the style to Bulk, into a directory of your
- * choosing, then run:
+ * To use the Rounded finish, export those icons from https://app.iconsax.io
+ * with the corner set to Rounded and the style to Bulk, and name the directory
+ * they landed in:
  *
  *   bun run --filter @velvet/site icons:build -- <directory>
  *
- * The directory is never committed. What is committed is the module this
- * writes.
+ * That step cannot be automated. Iconsax serves the artwork behind its public
+ * catalogue encrypted, so those files cannot be read without the key its
+ * application holds, and getting at them another way would mean going around a
+ * protection its vendor put there deliberately.
+ *
+ * The export directory is never committed. What is committed is the module
+ * this writes.
  */
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 
-/** The finish and style the site draws in, chosen once for all of them. */
-const TERM = "rounded";
+/** The style the site draws in, chosen once for all of them. */
 const STYLE = "bulk";
 
 /**
@@ -39,7 +43,7 @@ const STYLE = "bulk";
  * Iconsax carries no brand marks, so that one stays with Phosphor.
  */
 const WANTED: Readonly<Record<string, string>> = {
-  activity: "checks that run, formerly pulse",
+  activity: "checks that run",
   book: "the documentation section",
   chart: "the history a page keeps",
   clock: "the changelog",
@@ -47,12 +51,12 @@ const WANTED: Readonly<Record<string, string>> = {
   copy: "copying a code block",
   danger: "the notice on the reference",
   "document-download": "downloading the manual",
-  "export-arrow": "a link that leaves for a new tab",
+  "export-arrow-01": "a link that leaves for a new tab",
   flash: "creating a status page",
   global: "a custom domain",
   "profile-2user": "who runs Velvet",
   "shield-tick": "nothing leaks into the open",
-  warning: "incidents that open themselves",
+  "warning-2": "incidents that open themselves",
 };
 
 /** One drawn layer of an icon. Bulk draws two, the lower one at reduced alpha. */
@@ -95,45 +99,62 @@ function layersOf(svg: string): IconLayer[] {
   return layers;
 }
 
-async function main(): Promise<void> {
-  const directory = Bun.argv[2];
-  if (!directory) {
-    throw new Error(
-      "Name the directory holding the exported SVGs, as described above.",
-    );
+/** Every drawing the `iconsax` package publishes for the chosen style. */
+async function fromPackage(): Promise<Map<string, string>> {
+  const data = resolve(
+    import.meta.dirname,
+    "../node_modules/iconsax/dist/data",
+  );
+  const drawings = new Map<string, string>();
+  for (const fileName of await readdir(data)) {
+    if (!fileName.endsWith(".json")) continue;
+    const category = JSON.parse(await readFile(resolve(data, fileName), "utf8")) as Record<
+      string,
+      Record<string, string>
+    >;
+    for (const [name, styles] of Object.entries(category)) {
+      const svg = styles[STYLE];
+      if (svg) drawings.set(name, svg);
+    }
   }
+  return drawings;
+}
 
-  const exported = new Map<string, string>();
+/** Every drawing in a directory of files exported from the application. */
+async function fromExport(directory: string): Promise<Map<string, string>> {
+  const drawings = new Map<string, string>();
   for (const fileName of await readdir(directory)) {
     if (!fileName.endsWith(".svg")) continue;
-    exported.set(fileName, resolve(directory, fileName));
+    drawings.set(
+      iconNameOf(fileName),
+      await readFile(resolve(directory, fileName), "utf8"),
+    );
   }
+  return drawings;
+}
 
-  const found = new Map<string, string>();
-  for (const [fileName, path] of exported) {
-    found.set(iconNameOf(fileName), path);
-  }
+async function main(): Promise<void> {
+  const directory = Bun.argv[2];
+  const source = directory ? "the export" : "the iconsax package";
+  const drawings = directory ? await fromExport(directory) : await fromPackage();
 
-  const missing = Object.keys(WANTED).filter((name) => !found.has(name));
+  const missing = Object.keys(WANTED).filter((name) => !drawings.has(name));
   if (missing.length > 0) {
     // Loudly, for the reason the font subset fails loudly: an icon that is not
     // there renders as nothing at all, which is invisible in review.
-    throw new Error(
-      `No exported ${TERM} ${STYLE} SVG for: ${missing.join(", ")}.`,
-    );
+    throw new Error(`No ${STYLE} drawing in ${source} for: ${missing.join(", ")}.`);
   }
 
   const icons: Record<string, IconLayer[]> = {};
   for (const name of Object.keys(WANTED).sort()) {
-    const svg = await readFile(found.get(name)!, "utf8");
-    const layers = layersOf(svg);
+    const layers = layersOf(drawings.get(name)!);
     if (layers.length === 0) throw new Error(`${name} carries no path data.`);
     icons[name] = layers;
   }
 
   const module = `// Generated by scripts/build-iconsax.ts. Do not edit by hand.
 //
-// Iconsax icons by Vuesax and Lusaxweb, free ${TERM} ${STYLE}, from
+// Iconsax icons by Vuesax and Lusaxweb, free ${STYLE} style, from
 // https://iconsax.io. Redistributed as part of this code under the Iconsax
 // free licence, which permits exactly that and forbids loose files. The notice
 // it requires is kept on the attributions page.
@@ -144,20 +165,21 @@ export interface IconLayer {
   opacity?: number;
 }
 
-/** Every icon the site draws, in the finish and style chosen for all of them. */
-export const ICONS = ${JSON.stringify(icons, null, 2)} as const satisfies Record<
-  string,
-  readonly IconLayer[]
->;
-
 /** The name of an icon this module carries. */
-export type IconName = keyof typeof ICONS;
+export type IconName =
+${Object.keys(icons)
+  .map((name) => `  | "${name}"`)
+  .join("\n")};
+
+/** Every icon the site draws, in the style chosen for all of them. */
+export const ICONS: Readonly<Record<IconName, readonly IconLayer[]>> =
+  ${JSON.stringify(icons, null, 2)};
 `;
 
   const output = resolve(import.meta.dirname, "../src/lib/iconsax.generated.ts");
   await writeFile(output, module);
   console.log(
-    `velvet: wrote ${Object.keys(icons).length} icons to ${output}`,
+    `velvet: wrote ${Object.keys(icons).length} icons from ${source} to ${output}`,
   );
 }
 

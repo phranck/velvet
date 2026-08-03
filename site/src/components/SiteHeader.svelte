@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from "./Icon.svelte";
   import VelvetWordmark from "./VelvetWordmark.svelte";
 
   /**
@@ -22,19 +23,19 @@
       id: "documentation",
       label: "Documentation",
       href: "/documentation",
-      icon: "ph-book-open-text",
+      icon: "book",
     },
     {
       id: "changelog",
       label: "Changelog",
       href: "/changelog",
-      icon: "ph-clock-counter-clockwise",
+      icon: "clock",
     },
     {
       id: "references",
       label: "References",
       href: "/references",
-      icon: "ph-users-three",
+      icon: "profile-2user",
     },
   ] as const;
 </script>
@@ -58,7 +59,7 @@
               href={section.href}
               aria-current={section.id === current ? "page" : undefined}
             >
-              <i class={`ph-duotone ${section.icon}`} aria-hidden="true"></i>
+              <Icon name={section.icon} size="1.25rem" />
               <span>{section.label}</span>
             </a>
           </li>
@@ -115,10 +116,7 @@
     font-size: var(--velvet-text-small);
     text-decoration: none;
   }
-  nav a i {
-    font-size: 1.25rem;
-    line-height: 1;
-  }
+
   nav a:hover,
   nav a:focus-visible {
     color: var(--velvet-text);

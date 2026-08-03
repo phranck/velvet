@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from "../components/Icon.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
   import * as PageFooter from "../components/page-footer";
@@ -46,42 +47,42 @@
    */
   const CAPABILITIES = [
     {
-      icon: "ph-pulse",
+      icon: "activity",
       title: "Checks that run on GitHub",
       description:
         "Direct IPv4 GET and HEAD checks from GitHub-hosted runners, every five minutes, with response-time samples four times a day.",
     },
     {
-      icon: "ph-warning-diamond",
+      icon: "warning-2",
       title: "Incidents that open themselves",
       description:
         "A confirmed failure opens a GitHub issue, and a recovery closes it. Planned maintenance stays visible as a neutral event in the history.",
     },
     {
-      icon: "ph-chart-line-up",
+      icon: "chart",
       title: "A year of history",
       description:
         "Up to 365 days of availability, response times, incidents, and maintenance, kept on a dedicated branch rather than in a database.",
     },
     {
-      icon: "ph-palette",
+      icon: "color-swatch",
       title: "A page you can shape",
       description:
         "Four system themes, detailed visual configuration, service icons, analytics, SEO output, and selectable history ranges.",
     },
     {
-      icon: "ph-globe",
+      icon: "global",
       title: "Your own domain",
       description:
         "Published through GitHub Pages, with a custom domain when you want one, and no server or database anywhere in the picture.",
     },
     {
-      icon: "ph-shield-check",
+      icon: "shield-tick",
       title: "Nothing leaks into the open",
       description:
         "Endpoint URLs and secrets never enter the published documents, and invalid data leaves the last valid snapshot untouched.",
     },
-  ];
+  ] as const;
 
   /**
    * How a published installation works once it runs, condensed from the
@@ -123,12 +124,15 @@
         <VelvetToolBrand subtitle="STATUS PAGES" />
       </div>
       <p class="lead">
-        GitHub-native status monitoring and a polished status page, without a
-        server or a database. Just five steps away.
+        <!-- The one break on the site placed by hand, asked for deliberately.
+             It balances the sentence at the width the hero is read at, and the
+             rule against hand-set breaks holds everywhere else. -->
+        GitHub-native status monitoring and a polished status page,<br />
+        without a server or a database. Just five steps away.
       </p>
       <div class="hero-actions">
         <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL} data-onboarding-link>
-          <i class="ph-duotone ph-rocket-launch" aria-hidden="true"></i>
+          <Icon name="flash" />
           <span>Create your status page</span>
         </a>
         <a
@@ -175,7 +179,7 @@
           <ul class="capabilities">
             {#each CAPABILITIES as capability (capability.title)}
               <li>
-                <i class={`ph-duotone ${capability.icon}`} aria-hidden="true"></i>
+                <Icon name={capability.icon} />
                 <div>
                   <h3>{capability.title}</h3>
                   <p>{capability.description}</p>
@@ -274,7 +278,7 @@
               href={MAN_PAGES_ARCHIVE}
               download
             >
-              <i class="ph-duotone ph-download-simple" aria-hidden="true"></i>
+              <Icon name="document-download" />
               <span>Download the manual</span>
             </a>
           </div>
@@ -291,7 +295,7 @@
         and waits for the first deployment.
       </p>
       <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL}>
-        <i class="ph-duotone ph-rocket-launch" aria-hidden="true"></i>
+        <Icon name="flash" />
         <span>Create your status page</span>
       </a>
     </section>
@@ -381,6 +385,10 @@
   }
   .velvet-button i {
     font-size: 1.25em;
+  }
+  .velvet-button :global(svg) {
+    width: 1.25em;
+    height: 1.25em;
   }
   /* The one section that is not a column. It spans the window as a band with a
      rule above and below, whilst the picture inside stays the size it was. */
@@ -498,11 +506,10 @@
     border-radius: var(--step-card-inner-radius);
     background: #222530;
   }
-  .capabilities i {
-    flex: none;
+  .capabilities :global(svg) {
     color: var(--setup-accent);
-    font-size: var(--velvet-text-ornament);
-    line-height: 1;
+    width: var(--velvet-text-ornament);
+    height: var(--velvet-text-ornament);
   }
   .pipeline-number {
     flex: none;

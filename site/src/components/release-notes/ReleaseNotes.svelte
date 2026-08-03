@@ -5,6 +5,7 @@
     type ReleaseNotesInline,
   } from "../../lib/release-notes.js";
   import { tokenizeCode } from "../../lib/highlight-yaml.js";
+  import Icon from "../Icon.svelte";
 
   let {
     source,
@@ -48,8 +49,7 @@
       <!-- Every link here leaves for a new tab, so it says so. Left unmarked,
            a reader only discovers it after the tab has opened. -->
       <a href={part.href} target="_blank" rel="noreferrer noopener">
-        {part.value}<i class="ph-duotone ph-arrow-square-out" aria-hidden="true"
-        ></i>
+        {part.value}<Icon name="export-arrow-01" class="leaves" />
       </a>
     {:else}
       {part.value}
@@ -82,7 +82,7 @@
             aria-label="Copy this configuration"
             disabled
           >
-            <i class="ph-duotone ph-copy" data-copy-icon aria-hidden="true"></i>
+            <Icon name="copy" />
           </button>
         {/if}
         <!--
@@ -372,10 +372,9 @@
   }
   /* Beside the label rather than under the underline, and small enough to read
      as a mark on the link instead of as a second word. */
-  a i {
+  a :global(.leaves) {
     margin-left: 0.25em;
-    font-size: 0.85em;
-    text-decoration: none;
-    vertical-align: baseline;
+    width: 0.85em;
+    height: 0.85em;
   }
 </style>
