@@ -15,8 +15,11 @@
    * sit at different depths and a relative path would resolve differently on
    * each of them.
    */
-  let { current }: { current?: "documentation" | "changelog" | "references" } =
-    $props();
+  let {
+    current,
+  }: {
+    current?: "documentation" | "changelog" | "references" | "attributions";
+  } = $props();
 
   const SECTIONS = [
     {
@@ -36,6 +39,12 @@
       label: "References",
       href: "/references",
       icon: "profile-2user",
+    },
+    {
+      id: "attributions",
+      label: "Attributions",
+      href: "/attributions",
+      icon: "shield-tick",
     },
   ] as const;
 </script>
