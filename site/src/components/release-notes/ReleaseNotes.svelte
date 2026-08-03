@@ -66,6 +66,7 @@
     {:else if block.kind === "paragraph"}
       <p>{@render inline(block.content)}</p>
     {:else if block.kind === "code"}
+      {@const lines = tokenizeCode(block.value, block.language)}
       <div class="code-block">
         {#if copyable}
           <!--
@@ -81,13 +82,19 @@
             aria-label="Copy this configuration"
             disabled
           >
-            <i class="ph-duotone ph-copy" aria-hidden="true"></i>
+            <i class="ph-duotone ph-copy" data-copy-icon aria-hidden="true"></i>
           </button>
         {/if}
-        <pre><code>{#each tokenizeCode(block.value, block.language) as line, lineIndex (lineIndex)}<span
+        <!--
+          The numbers are a column beside the code rather than a span in front
+          of each line, so the gutter runs the full height of the block with no
+          gap above or below it, and stays put whilst a long line scrolls.
+        -->
+        <pre><span class="gutter" aria-hidden="true">{#each lines, lineIndex}<span
+                class="line-number">{lineIndex + 1}</span
+              >{/each}</span><code>{#each lines as line, lineIndex (lineIndex)}<span
                 class="line"
-              ><span class="line-number" aria-hidden="true">{lineIndex + 1}</span
-                >{#each line as token, tokenIndex (tokenIndex)}<span
+              >{#each line as token, tokenIndex (tokenIndex)}<span
                     class={token.kind}>{token.value}</span
                   >{/each}</span
               >{/each}</code></pre>
@@ -194,25 +201,51 @@
     border-radius: 0.5rem;
     background: color-mix(in srgb, currentColor 8%, transparent);
   }
+  /* Two columns rather than one flow: the gutter, then the code. The block
+     carries no padding of its own, so the gutter reaches the top and bottom
+     edges, and each column pads itself instead. */
   pre {
+    display: flex;
+    align-items: stretch;
     margin: 0;
-    padding: 0.875rem 1rem;
-    /* Room on the right for the button, so a long line runs under nothing. */
-    padding-right: 3.25rem;
-    overflow-x: auto;
+    padding: 0;
+    overflow: hidden;
   }
-  /* A line is its number and its content, and the number is a column of its own
-     so a wrapped or scrolled line cannot slide underneath it. */
-  .line {
-    display: block;
-  }
-  .line-number {
-    display: inline-block;
-    width: 2ch;
-    margin-right: 1.25ch;
-    color: color-mix(in srgb, currentColor 35%, transparent);
+  /* Darker than the block rather than lighter. The block is already a light
+     tint over a dark surface, so lightening the gutter further left the two
+     indistinguishable; measured at 2% alpha before this. */
+  .gutter {
+    flex: none;
+    padding: 0.875rem 0.6rem;
+    border-right: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+    background: color-mix(in srgb, #000 28%, transparent);
+    color: color-mix(in srgb, currentColor 40%, transparent);
     text-align: right;
     user-select: none;
+  }
+  .line-number {
+    display: block;
+    min-width: 1.5rem;
+  }
+  /* Stated on both columns and identical, because a number and the line it
+     counts have to sit on the same baseline. Left to inherit, the gutter took
+     its height from its own line boxes and the two drifted apart by a line
+     over nine of them. */
+  .gutter,
+  pre > code {
+    font-size: 0.9375em;
+    line-height: 1.7;
+  }
+  /* Only the code scrolls, so the numbers stay beside the line they belong to
+     however far a line runs. Room on the right for the copy button, so a long
+     line does not run underneath it. */
+  pre > code {
+    flex: 1;
+    padding: 0.875rem 3.25rem 0.875rem 1rem;
+    overflow-x: auto;
+  }
+  .line {
+    display: block;
   }
 
   .comment {
@@ -233,6 +266,7 @@
     color: color-mix(in srgb, currentColor 55%, transparent);
   }
 
+  /* The icon alone: no border, no background, nothing but the mark. */
   .copy {
     position: absolute;
     top: 0.5rem;
@@ -242,12 +276,15 @@
     display: grid;
     place-items: center;
     padding: 0;
-    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-    border-radius: 0.375rem;
-    background: color-mix(in srgb, currentColor 8%, transparent);
-    color: inherit;
-    font-size: 1rem;
+    border: 0;
+    background: none;
+    color: var(--velvet-text-muted, #979aa8);
+    font-size: 1.25rem;
     cursor: pointer;
+    /* The way back from the copied colour, and only that way. The rule below
+       turns the transition off whilst the mark is being set, so the green
+       arrives at once and drains away afterwards. */
+    transition: color 900ms ease;
   }
   .copy[disabled] {
     /* Not merely dimmed. Until the page's script enables it, pressing it would
@@ -256,7 +293,7 @@
   }
   .copy:hover,
   .copy:focus-visible {
-    border-color: color-mix(in srgb, currentColor 35%, transparent);
+    color: var(--velvet-text, #efedf5);
   }
   /* Global, because the attribute is set by the page's script after the copy
      succeeds and never appears in this markup. Left scoped, Svelte finds no
@@ -264,7 +301,7 @@
      sign that anything had happened. */
   .copy:global([data-copied]) {
     color: #9ece6a;
-    border-color: currentColor;
+    transition: none;
   }
 
   /* The scroll lives on this wrapper rather than the table, because a table is
@@ -293,9 +330,9 @@
     border-bottom: 0;
   }
 
-  pre code {
-    padding: 0;
+  pre > code {
     background: none;
+    border-radius: 0;
   }
 
   /* The colour is inherited on purpose, because these notes are shown on the
