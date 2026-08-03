@@ -1,5 +1,5 @@
 <script lang="ts">
-  import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
   // Read from the repository's own changelog at build time. The page is
   // prerendered, so this file is baked into the published document and the
@@ -10,9 +10,7 @@
   const releases = parseChangelog(changelogSource);
 </script>
 
-<header class="changelog-header">
-  <a href="/"><VelvetWordmark /></a>
-</header>
+<SiteHeader current="changelog" />
 
 <main class="changelog column">
   <h1>Changelog</h1>
@@ -37,14 +35,6 @@
 </main>
 
 <style>
-  .changelog-header {
-    padding: 2rem clamp(1rem, 5vw, 4rem) 0;
-    font-size: 1.5rem;
-  }
-  .changelog-header a {
-    color: inherit;
-    text-decoration: none;
-  }
   .changelog {
     margin: 0 auto;
     max-width: 48rem;

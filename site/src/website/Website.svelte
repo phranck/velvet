@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SiteHeader from "../components/SiteHeader.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
   import * as PageFooter from "../components/page-footer";
   import * as StepCard from "../components/step-card";
@@ -114,6 +115,8 @@
   class="website-shell"
   style={`--step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px; --step-card-content-inset: ${STEP_CARD_CONTENT_INSET}px`}
 >
+  <SiteHeader />
+
   <main>
     <section class="hero column">
       <div class="brand-block">
@@ -295,13 +298,6 @@
   </main>
 
   <PageFooter.Root>
-    <!-- The site's other two pages. Both stand at their own address and were
-         reachable only by typing it, which is no way to find them. -->
-    <nav class="footer-links" aria-label="More of this site">
-      <a href="/documentation">Configuration</a>
-      <a href="/changelog">Changelog</a>
-      <a href="/references">Who runs Velvet</a>
-    </nav>
     <PageFooter.Credit />
   </PageFooter.Root>
 </div>
@@ -524,21 +520,6 @@
     color: var(--setup-muted);
     font-size: var(--setup-text-small);
     line-height: 1.5;
-  }
-  /* The footer's first column, which the credit leaves free by sitting in the
-     middle one. */
-  .footer-links {
-    grid-column: 1;
-    display: flex;
-    gap: 1rem;
-  }
-  .footer-links a {
-    color: inherit;
-    text-decoration: none;
-  }
-  .footer-links a:hover,
-  .footer-links a:focus-visible {
-    color: var(--velvet-text);
   }
   /* Two across, because a status page in a quarter of this card is too small
      to read anything from. */
