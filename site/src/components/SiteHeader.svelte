@@ -120,7 +120,7 @@
     gap: 0.5rem;
     height: 2.75rem;
     padding: 0 0.75rem;
-    border-radius: 0.5rem;
+    border-radius: var(--velvet-card-inner-radius, 0.5rem);
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-small);
     text-decoration: none;

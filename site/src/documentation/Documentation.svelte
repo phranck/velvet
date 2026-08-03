@@ -126,7 +126,9 @@
      one panel rather than as links loose on the backdrop. */
   .topics {
     align-self: start;
-    padding: var(--velvet-card-padding);
+    /* Tighter than a card holding prose, because the list is its content and
+       every entry already carries the text inset of its own. */
+    padding: 10px;
     border: 1px solid #222530;
     border-radius: var(--velvet-card-radius);
     background: #14161d;
@@ -150,7 +152,7 @@
   .topics a {
     display: block;
     padding: 0.25rem var(--velvet-card-text-inset);
-    border-radius: 0.5rem;
+    border-radius: var(--velvet-card-inner-radius);
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-body);
     line-height: 1.45;
@@ -270,6 +272,5 @@
      shown in a panel rather than a document read on its own. */
   .reference :global(h3) {
     margin-top: 1.5rem;
-    font-size: var(--velvet-text-copy);
   }
 </style>

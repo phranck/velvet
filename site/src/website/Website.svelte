@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
+  import CodeBlock from "../components/CodeBlock.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
@@ -272,7 +273,12 @@
             </p>
           </div>
           <div class="manual">
-            <pre><code>{MAN_PAGES_INSTALL}</code></pre>
+            <CodeBlock
+              code={MAN_PAGES_INSTALL}
+              language="sh"
+              copyable
+              label="Copy these commands"
+            />
             <a
               class="velvet-button velvet-button--secondary"
               href={MAN_PAGES_ARCHIVE}
@@ -555,6 +561,7 @@
     background: #0a0b0f;
   }
   .themes figcaption {
+    text-align: center;
     color: var(--setup-muted);
     font-size: var(--setup-text-small);
     font-weight: 650;
@@ -567,26 +574,11 @@
     align-items: center;
     gap: 1rem;
   }
-  .manual pre {
+  /* The block takes whatever the button leaves, and scrolls inside itself
+     rather than reporting its longest line upwards as a minimum width. */
+  .manual :global(.code-block) {
     flex: 1 1 22rem;
-    margin: 0;
-    padding: 1rem;
-    border-radius: var(--step-card-inner-radius);
-    background: #222530;
-    /* The commands wrap rather than scroll, and a break is permitted inside
-       the URL so no window is too narrow for them. Both are needed: a pre
-       reports the length of its longest line as its minimum width, and that
-       figure travels up through the card and the grid to the page. Measured
-       at a 500px window, the page was 535px wide before this, and confining
-       the overflow to the block with overflow-x did not change that. */
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-  .manual code {
-    color: var(--setup-muted);
-    font-family: var(--font-mono);
-    font-size: var(--setup-text-small);
-    line-height: 1.7;
+    min-width: 0;
   }
   .closing {
     display: grid;

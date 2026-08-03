@@ -23,7 +23,11 @@ export default defineConfig(
     },
   },
   {
-    files: ["site/src/**/*.{ts,svelte}", "site/scripts/screenshot.mjs"],
+    files: [
+      "site/src/**/*.{ts,svelte}",
+      "site/src/lib/page-script.js",
+      "site/scripts/screenshot.mjs",
+    ],
     languageOptions: {
       globals: globals.browser,
     },
