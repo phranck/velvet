@@ -31,5 +31,5 @@ test("includes the theme registry checks in the root test command", async () => 
     packageDocument.scripts["test:theme-registry"],
     "bun test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
   );
-  assert.match(packageDocument.scripts.test, /test:theme-registry/);
+  assert.match(packageDocument.scripts["test:headless"], /test:theme-registry/);
 });

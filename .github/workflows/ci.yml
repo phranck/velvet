@@ -63,15 +63,19 @@ jobs:
           restore-keys: bun-${{ runner.os }}-${{ runner.arch }}-
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Install Playwright browser
-        run: bunx playwright install --with-deps chromium webkit
+      # No browser here. The tests that drive one are watched whilst they run
+      # and are run on a machine with a screen; putting them on a runner meant
+      # fetching Chromium and WebKit on every push, which took sixteen minutes
+      # and thirty-six seconds of an eighteen-minute job against one minute and
+      # fifty-two of testing. `test:headless` is everything that needs nothing
+      # but Bun, and `bun run test` still runs the lot locally.
       # The man-page gate renders every page and fails on any roff diagnostic,
       # so it needs a renderer. Installed explicitly rather than relied upon,
       # because what a runner image happens to carry is not a contract.
       - name: Install the roff renderer
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mandoc
       - name: Test
-        run: bun run test
+        run: bun run test:headless
 
   build:
     runs-on: ubuntu-latest

@@ -38,7 +38,19 @@ jobs:
           key: bun-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-${{ runner.arch }}-
       - run: bun install --frozen-lockfile
-      - run: bunx --bun playwright install --with-deps chromium
+      # Cached the same way the test job caches it, and for the same reason:
+      # downloading the browser costs many times what using it does.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(bun pm ls --all | grep -oE 'playwright-core@[0-9.]+' | head -1 | cut -d@ -f2)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: bunx --bun playwright install chromium
+      - run: bunx --bun playwright install-deps chromium
       - name: Install pngquant
         working-directory: .
         run: sudo apt-get update && sudo apt-get install -y pngquant

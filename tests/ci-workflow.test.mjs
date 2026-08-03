@@ -41,15 +41,16 @@ test("runs independent repository gates for pull requests and main", async () =>
   assert.match(lintJob, /docker:\/\/rhysd\/actionlint:1\.7\.12/);
   assert.match(lintJob, /bun run lint/);
   assert.match(typecheckJob, /bun run typecheck/);
-  assert.match(
-    testJob,
-    /name:\s*Install Playwright browser[\s\S]*bunx playwright install --with-deps chromium[\s\S]*name:\s*Test/,
-  );
+  // No browser on the runner. The tests that drive one are watched whilst they
+  // run and belong on a machine with a screen, and fetching Chromium and WebKit
+  // on every push took sixteen minutes and thirty-six seconds of an
+  // eighteen-minute job against one minute and fifty-two of testing.
+  assert.doesNotMatch(testJob, /playwright/);
+  assert.match(testJob, /run:\s*bun run test:headless/);
   assert.match(
     testJob,
     /name:\s*Install the roff renderer[\s\S]*install -y --no-install-recommends mandoc[\s\S]*name:\s*Test/,
   );
-  assert.match(testJob, /bun run test/);
   assert.match(buildJob, /bun run build/);
   assert.doesNotMatch(workflow, /actions\/setup-node|\bnpm\b|\bnpx\b/);
 });
@@ -62,5 +63,10 @@ test("keeps the complete local push gate in the root package", async () => {
     "bun run lint && bun run typecheck && bun run test && bun run build",
   );
   assert.equal(packageDocument.scripts["test:ci"], "bun test tests/ci-workflow.test.mjs");
-  assert.match(packageDocument.scripts.test, /test:ci/);
+  // `test` is the whole suite, browsers included, which is what a machine with
+  // a screen runs. `test:headless` is the part a runner can carry, and it is
+  // what CI runs. Both have to reach the workflow's own check.
+  assert.match(packageDocument.scripts.test, /test:headless/);
+  assert.match(packageDocument.scripts.test, /test:browser/);
+  assert.match(packageDocument.scripts["test:headless"], /test:ci/);
 });
