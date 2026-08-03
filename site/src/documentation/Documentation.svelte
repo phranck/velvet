@@ -32,7 +32,7 @@
   </p>
 
   <div class="reference">
-    <ReleaseNotes source={body} headings="outline" />
+    <ReleaseNotes source={body} headings="outline" copyable />
   </div>
 </main>
 

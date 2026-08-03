@@ -820,9 +820,27 @@ test("publishes the configuration reference whole, tables and all", async () => 
 
   assert.match(html, /<title>Velvet configuration reference<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/documentation"/);
-  assert.doesNotMatch(html, /<script(?![^>]*type="application\/ld\+json")/);
+  // No bundle. The one script this page publishes is written inline in
+  // `documentation.html` and wires the copy buttons, which cannot be done by
+  // the component that renders them because the bundle is removed.
+  assert.doesNotMatch(html, /<script[^>]*\bsrc=/);
   assert.doesNotMatch(html, /\/@fs\//);
   assert.doesNotMatch(html, /["'](\/src\/[^"']+)["']/);
+
+  // One button per block, each disabled in the markup so a reader whose script
+  // never runs is shown no control rather than a dead one.
+  const fences = (await readFile(
+    resolve(repositoryRoot, "documentation/configuration.md"),
+    "utf8",
+  )).match(/^```yaml$/gmu) ?? [];
+  assert.equal((html.match(/<button[^>]*data-copy-code/gu) ?? []).length, fences.length);
+  assert.equal(
+    (html.match(/<button[^>]*data-copy-code[^>]*disabled/gu) ?? []).length,
+    fences.length,
+  );
+  // Coloured and numbered at build time, so neither needs a script either.
+  assert.match(html, /<span class="key[^"]*">schemaVersion<\/span>/);
+  assert.match(html, /<span class="line-number[^"]*"[^>]*>1<\/span>/);
 
   // Counted against the source rather than sampled, because a renderer that
   // drops a block silently is exactly what a spot check misses. The tables
