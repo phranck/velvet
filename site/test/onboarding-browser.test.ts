@@ -8,6 +8,13 @@ import { createServer } from "vite";
 
 import { SetupProgressStageSchema } from "@velvet/contracts";
 
+import {
+  STEP_CARD_CONTENT_INSET,
+  STEP_CARD_FOOTER_INSET,
+  STEP_CARD_BUTTON_RADIUS,
+  STEP_CARD_INNER_RADIUS,
+  STEP_CARD_RADIUS,
+} from "../src/components/step-card/geometry.js";
 import { ONBOARDING_SESSION_STORAGE_KEY } from "../src/onboarding/onboarding-session.js";
 
 import { parseConfiguratorYaml } from "../src/configurator/configuration.js";
@@ -221,7 +228,11 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         };
       }),
       {
-        borderRadius: "32px",
+        // Read from the constant rather than written out, so this says the
+        // card takes the geometry the product states. Written out, it failed
+        // whenever that geometry was deliberately changed, which is a test
+        // reporting the change rather than a fault.
+        borderRadius: `${STEP_CARD_RADIUS}px`,
         overflow: "clip",
         // Two layers: a near one for the card's edge and a far one for its
         // height. One wide shadow alone dissolved into the board backdrop.
@@ -244,14 +255,24 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         const style = getComputedStyle(element);
         return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
       }),
-      ["20px", "20px", "20px", "20px"],
+      // The card holds its content equally on all four sides, and the figure
+      // comes from the constant so this asserts the rule rather than the
+      // number the rule produces today.
+      Array.from({ length: 4 }, () => `${STEP_CARD_CONTENT_INSET}px`),
     );
     assert.deepEqual(
       await stepCard.locator("[data-step-card-footer]").evaluate((element) => {
         const style = getComputedStyle(element);
         return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
       }),
-      ["0px", "20px", "20px", "20px"],
+      // Nothing above it, because the body it follows already ends at that
+      // distance and a second gap would double it.
+      [
+        "0px",
+        `${STEP_CARD_FOOTER_INSET}px`,
+        `${STEP_CARD_FOOTER_INSET}px`,
+        `${STEP_CARD_FOOTER_INSET}px`,
+      ],
     );
     const ownerInput = page.getByLabel("Your GitHub name");
     assert.equal(
@@ -570,11 +591,15 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
+    // The editor sits at the step card's content edge, so it takes the radius
+    // derived for anything standing there. Read from that derivation rather
+    // than written out, which is what keeps this an assertion about where the
+    // editor sits instead of about a number.
     assert.equal(
       await page.locator(".service-editor").evaluate((element) =>
         getComputedStyle(element).borderTopLeftRadius,
       ),
-      "12px",
+      `${STEP_CARD_INNER_RADIUS}px`,
     );
     assert.equal(
       await page.locator(".service-editor label > span").first().evaluate((element) =>
@@ -680,7 +705,13 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           paddingInline: [style.paddingLeft, style.paddingRight],
         };
       }),
-      { borderRadius: "12px", minWidth: "112px", paddingInline: ["12px", "12px"] },
+      {
+        // A footer button stands at the card's content edge like everything
+        // else it holds, so it takes the radius derived for that edge.
+        borderRadius: `${STEP_CARD_BUTTON_RADIUS}px`,
+        minWidth: "112px",
+        paddingInline: ["12px", "12px"],
+      },
     );
     assert.ok(
       await page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) => {
@@ -765,7 +796,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator("[data-theme-card-option]").first().evaluate((element) =>
         getComputedStyle(element).borderTopLeftRadius,
       ),
-      "12px",
+      `${STEP_CARD_INNER_RADIUS}px`,
     );
     await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");
@@ -808,7 +839,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await reviewCards.first().evaluate((element) =>
         getComputedStyle(element).borderTopLeftRadius,
       ),
-      "12px",
+      `${STEP_CARD_INNER_RADIUS}px`,
     );
     assert.equal(
       await reviewItems.first().evaluate((item) => {

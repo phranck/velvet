@@ -27,12 +27,6 @@
       <ReleaseNotes source={release.notes} />
     </article>
   {/each}
-
-  <p class="source-note">
-    Velvet installs new releases for you. A security release that needs no
-    migration can install itself, which is on by default and can be turned off
-    in the Configurator, and everything else waits for you.
-  </p>
 </main>
 
 <SiteFooter />
@@ -77,15 +71,5 @@
     font-size: var(--velvet-text-heading);
     line-height: 1.2;
     margin: 0 var(--velvet-card-text-inset) 1rem;
-  }
-  /* Closes the page with nothing beneath it. There is no card here to line up
-     with, so it sits at the page measure, and its rule runs the full width of
-     that measure rather than stopping short of it on both sides. */
-  .source-note {
-    border-top: 1px solid #222530;
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-small);
-    margin: 1.5rem 0 0;
-    padding-top: 1.5rem;
   }
 </style>

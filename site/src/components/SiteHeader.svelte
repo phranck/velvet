@@ -141,7 +141,7 @@
        standing as a block in the bar. The item measured 44px against a 20px
        icon before this, so eleven of every twenty-two were empty above and
        below. */
-    padding: 0.375rem 0.75rem;
+    padding: 0.5rem 0.75rem;
     /* Its own, rather than the radius a card gives what sits inside it. Nothing
        here is nested in a card: these are items in a bar, and taking that value
        only meant they moved whenever a card's padding did. */

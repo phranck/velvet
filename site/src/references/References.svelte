@@ -160,5 +160,6 @@
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-small);
     padding-top: 1.5rem;
+    text-align: center;
   }
 </style>

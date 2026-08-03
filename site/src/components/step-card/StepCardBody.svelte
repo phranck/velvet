@@ -25,7 +25,10 @@
 <style>
   .body {
     min-height: 27rem;
-    padding: var(--step-card-content-inset, 20px);
+    /* The fallback matches STEP_CARD_CONTENT_INSET, for a surface that renders
+       this without setting the property. Both move together or a card on such
+       a surface holds its content at a distance no longer used anywhere. */
+    padding: var(--step-card-content-inset, 10px);
     box-sizing: border-box;
   }
   .body[hidden] {
