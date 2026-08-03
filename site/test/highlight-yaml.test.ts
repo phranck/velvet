@@ -67,9 +67,21 @@ test("colours booleans, numbers, and the brackets of a flow sequence", () => {
   );
 });
 
+test("colours a command, its options, and where it points", () => {
+  assert.deepEqual(tokenizeCode("curl -LO https://velvet.li", "sh"), [
+    [
+      { kind: "boolean", value: "curl" },
+      { kind: "text", value: " " },
+      { kind: "key", value: "-LO" },
+      { kind: "text", value: " " },
+      { kind: "string", value: "https://velvet.li" },
+    ],
+  ]);
+});
+
 test("leaves a language it does not know uncoloured rather than guessing", () => {
-  assert.deepEqual(tokenizeCode("curl -LO https://velvet.li", "bash"), [
-    [{ kind: "text", value: "curl -LO https://velvet.li" }],
+  assert.deepEqual(tokenizeCode("a: 1", "rust"), [
+    [{ kind: "text", value: "a: 1" }],
   ]);
   assert.deepEqual(tokenizeCode("a: 1", undefined), [
     [{ kind: "text", value: "a: 1" }],

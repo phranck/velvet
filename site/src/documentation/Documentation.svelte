@@ -126,7 +126,9 @@
      one panel rather than as links loose on the backdrop. */
   .topics {
     align-self: start;
-    padding: var(--velvet-card-padding);
+    /* Tighter than a card holding prose, because the list is its content and
+       every entry already carries the text inset of its own. */
+    padding: 10px;
     border: 1px solid #222530;
     border-radius: var(--velvet-card-radius);
     background: #14161d;
@@ -258,8 +260,6 @@
   }
   .card {
     --tool-text: var(--velvet-text);
-    --notes-heading-size: var(--velvet-text-heading);
-    --notes-subheading-size: var(--velvet-text-copy);
     background: #14161d;
     border: 1px solid #222530;
     border-radius: var(--velvet-card-radius);

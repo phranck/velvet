@@ -128,6 +128,74 @@ export function tokenizeYamlLine(line: string): CodeToken[] {
   return tokens;
 }
 
+/** A command name at the head of a line, which is what a reader looks for. */
+const COMMAND = /^[./\w-]+/u;
+/** A short or long option. */
+const OPTION = /^-{1,2}[A-Za-z][\w-]*/u;
+/** A URL, which is the other thing worth picking out of a command line. */
+const URL_LIKE = /^[a-z][a-z0-9+.-]*:\/\/\S+/u;
+
+/**
+ * Splits one line of shell into coloured runs.
+ *
+ * It marks the three things a reader looks for in a command: what is being
+ * run, what it is being given, and where it points. Everything else is plain,
+ * because guessing further would colour arguments as though they meant
+ * something they do not.
+ *
+ * @param line - The line exactly as written.
+ * @returns Its tokens in order, spelling the line back unchanged.
+ */
+export function tokenizeShellLine(line: string): CodeToken[] {
+  const tokens: CodeToken[] = [];
+  let rest = line;
+  let first = true;
+
+  while (rest.length > 0) {
+    const space = rest.match(/^\s+/u);
+    if (space) {
+      tokens.push({ kind: "text", value: space[0] });
+      rest = rest.slice(space[0].length);
+      continue;
+    }
+    if (rest.startsWith("#")) {
+      tokens.push({ kind: "comment", value: rest });
+      break;
+    }
+
+    const url = rest.match(URL_LIKE);
+    if (url) {
+      tokens.push({ kind: "string", value: url[0] });
+      rest = rest.slice(url[0].length);
+      continue;
+    }
+
+    const option = rest.match(OPTION);
+    if (option) {
+      tokens.push({ kind: "key", value: option[0] });
+      rest = rest.slice(option[0].length);
+      continue;
+    }
+
+    if (first) {
+      const command = rest.match(COMMAND);
+      if (command) {
+        tokens.push({ kind: "boolean", value: command[0] });
+        rest = rest.slice(command[0].length);
+        first = false;
+        continue;
+      }
+    }
+    first = false;
+
+    const plain = rest.match(/^\S+/u)?.[0] ?? rest;
+    tokens.push({ kind: "text", value: plain });
+    rest = rest.slice(plain.length);
+  }
+
+  return tokens;
+}
+
 /**
  * Splits a whole block into lines of coloured runs.
  *
@@ -142,8 +210,11 @@ export function tokenizeCode(
   language: string | undefined,
 ): CodeToken[][] {
   const lines = code.split("\n");
-  if (language !== "yaml" && language !== "yml") {
-    return lines.map((line) => [{ kind: "text" as const, value: line }]);
+  if (language === "yaml" || language === "yml") {
+    return lines.map((line) => tokenizeYamlLine(line));
   }
-  return lines.map((line) => tokenizeYamlLine(line));
+  if (language === "sh" || language === "bash" || language === "shell") {
+    return lines.map((line) => tokenizeShellLine(line));
+  }
+  return lines.map((line) => [{ kind: "text" as const, value: line }]);
 }

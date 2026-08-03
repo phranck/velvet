@@ -160,6 +160,9 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "Icon.svelte": ["configurator", "website"],
   // The site's own footer, which holds the shared strip to the page measure.
   "SiteFooter.svelte": ["website"],
+  // A coloured, numbered block of code. The Configurator reaches it through
+  // the release-note overlay, which renders whatever a release note contains.
+  "CodeBlock.svelte": ["configurator", "website"],
   "ConsentCheckbox.svelte": ["configurator", "onboarding"],
   "step-card": ["onboarding", "website"],
   "page-footer": ["onboarding", "website"],
