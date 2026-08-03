@@ -131,12 +131,11 @@ scheduled or active maintenance stay visible past it, and historical GitHub
 Issues are never deleted.
 .SH LIMITATIONS
 Velvet performs direct HTTP and HTTPS checks over IPv4, because GitHub-hosted
-runners provide no documented native IPv6 connectivity. The configuration
-offers no external-probe option, so a configured service is monitored over IPv4
-only. IPv6 will be added once those runners support it for every installation.
+runners provide no documented IPv6 connectivity. The configuration offers no
+external-probe option, so a configured service is monitored over IPv4. IPv6
+will be added once those runners support it for every installation.
 .PP
-Velvet cannot import a history recorded by another tool. An installation starts
-its history at the first check it runs itself.
+An installation's history begins with the first check it runs.
 .SH FILES
 .TP
 .I velvet.yml
@@ -165,6 +164,6 @@ and in the
 .I documentation
 directory of the repository.
 .SH LICENCE
-Velvet is published under the MIT licence. Monitoring records, imported
-datasets, logos, fonts, and other third-party material keep their own rights
-and notices.
+Velvet is published under the MIT licence. The monitoring records an
+installation produces, along with any logos, fonts, and other third-party
+material it displays, keep their own rights and notices.

@@ -364,10 +364,11 @@ The monitor owns only these paths on the dedicated `velvet-data` branch:
 
 Status and response workflows share the `velvet-status-data` concurrency group.
 Every successful run validates and publishes one complete commit. An unchanged
-or failed partial result never replaces the latest valid snapshot. When retained
-Git history exceeds the configured period, the current complete snapshot
-becomes a new root using an exact lease against the previously read branch head.
-The default branch is never force-pushed.
+or failed partial result never replaces the latest valid snapshot. Once the
+retained Git history reaches beyond the configured period, the current complete
+snapshot becomes a new root, written against the exact branch head the run read,
+so a run working from an outdated view is refused rather than applied. The
+default branch is never force-pushed.
 
 ## Managed updates
 
@@ -503,17 +504,15 @@ a partial replacement.
 
 ## IPv4 and IPv6
 
-Velvet performs direct HTTP(S) checks over IPv4 because GitHub-hosted runners
-do not provide documented native IPv6 connectivity. The configuration contains
-no external-probe option. IPv6 monitoring will be added only after those runners
-offer documented native support that works for every installation.
-
-The public v1 data schema can still validate historical dual-stack records so a
-migration report remains reproducible. New native monitor output is IPv4-only.
+Velvet performs direct HTTP(S) checks over IPv4, because GitHub-hosted runners
+do not provide documented IPv6 connectivity. A configured service is therefore
+monitored over IPv4, and the configuration offers no external-probe option.
+IPv6 monitoring will be added once those runners support it for every
+installation.
 
 ## Build Action
 
-The page Action defaults to native paths:
+The page Action defaults to these paths:
 
 ```yaml
 - name: Build Velvet site
@@ -531,8 +530,9 @@ notices into the output directory.
 
 ## Licensing and generated-data policy
 
-Velvet's MIT license covers its code, schemas, and original assets. Monitoring
-records, imported datasets, logos, fonts, and other third-party material keep
-their own rights and notices. The monitor never deletes historical GitHub
-Issues or source license files. See [LICENSING.md](../LICENSING.md) and
+Velvet's MIT license covers its code, schemas, and original assets. The
+monitoring records an installation produces, along with any logos, fonts, and
+other third-party material it displays, keep their own rights and notices. The
+monitor never deletes a closed GitHub Issue or a license file it finds in the
+repository. See [LICENSING.md](../LICENSING.md) and
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) for the complete boundary.

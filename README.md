@@ -38,7 +38,7 @@ for generated data, and GitHub Pages for the public site.
 
 1. `velvet.yml` defines the repository, page, services, and optional advanced
    checks.
-2. The native Velvet monitor checks every configured endpoint over IPv4. The
+2. The Velvet monitor checks every configured endpoint over IPv4. The
    status workflow runs every five minutes; the response workflow runs four
    times per day.
 3. Successful runs publish one validated snapshot to the dedicated
@@ -129,10 +129,10 @@ workflow, and its value never belongs in `velvet.yml`.
 
 ## IPv4 and IPv6
 
-Velvet performs direct IPv4 checks from GitHub-hosted runners and has no
-remote probe dependency. IPv6 monitoring is deferred until GitHub-hosted
-runners provide documented native IPv6 connectivity. A configured service is
-therefore monitored over IPv4 only.
+Velvet checks every configured endpoint directly from GitHub-hosted runners,
+over IPv4. It contacts no other service to do so. IPv6 monitoring will be
+added once those runners provide documented IPv6 connectivity, so a
+configured service is monitored over IPv4.
 
 ## Data ownership and recovery
 
