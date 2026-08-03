@@ -123,8 +123,8 @@
         <VelvetToolBrand subtitle="STATUS PAGES" />
       </div>
       <p class="lead">
-        GitHub-native status monitoring and a polished status page,<br />
-        without a server or a database. Just five steps away.
+        GitHub-native status monitoring and a polished status page, without a
+        server or a database. Just five steps away.
       </p>
       <div class="hero-actions">
         <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL} data-onboarding-link>
@@ -297,9 +297,11 @@
     </section>
   </main>
 
-  <PageFooter.Root>
-    <PageFooter.Credit />
-  </PageFooter.Root>
+  <div class="velvet-page">
+    <PageFooter.Root>
+      <PageFooter.Credit />
+    </PageFooter.Root>
+  </div>
 </div>
 
 <style>
@@ -336,8 +338,10 @@
     gap: 3.5rem;
     padding: clamp(2.5rem, 6vw, 4.5rem) 0 6rem;
   }
+  /* The site's own measure, shared with the header and the footer, so the
+     page reads as one column rather than as three of different widths. */
   .column {
-    width: min(100% - 2rem, 960px);
+    width: min(100% - 2 * var(--velvet-page-inset), var(--velvet-page-width));
     justify-self: center;
   }
   .hero {
@@ -458,7 +462,7 @@
   .marker {
     color: var(--setup-accent);
     font-family: var(--setup-heading-font);
-    font-size: clamp(1.5rem, 3vw, 1.875rem);
+    font-size: var(--velvet-text-heading);
     font-weight: 600;
     line-height: 1.1;
   }
@@ -466,7 +470,7 @@
     margin: 0;
     color: var(--setup-text);
     font-family: var(--setup-heading-font);
-    font-size: clamp(1.5rem, 3vw, 1.875rem);
+    font-size: var(--velvet-text-heading);
     font-weight: 600;
     letter-spacing: -0.025em;
   }
@@ -497,14 +501,14 @@
   .capabilities i {
     flex: none;
     color: var(--setup-accent);
-    font-size: 1.75rem;
+    font-size: var(--velvet-text-ornament);
     line-height: 1;
   }
   .pipeline-number {
     flex: none;
     color: var(--setup-accent);
     font-family: var(--setup-heading-font);
-    font-size: 1.75rem;
+    font-size: var(--velvet-text-ornament);
     font-weight: 600;
     line-height: 1;
   }
@@ -588,7 +592,6 @@
     text-align: center;
   }
   .closing p {
-    max-width: 44rem;
     margin: 0;
     color: var(--setup-muted);
     font-size: var(--setup-text-copy);
@@ -609,12 +612,6 @@
     /* Stacked once a row of two would be cramped, still matching each other. */
     .hero-actions {
       grid-auto-flow: row;
-    }
-    /* The lead carries a hard break that balances its two lines on a wide
-       screen. Narrow enough and that break lands mid-thought, so the sentence
-       is left to wrap on its own instead. */
-    .lead br {
-      display: none;
     }
   }
 </style>

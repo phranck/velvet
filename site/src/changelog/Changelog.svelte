@@ -12,7 +12,7 @@
 
 <SiteHeader current="changelog" />
 
-<main class="changelog column">
+<main class="changelog velvet-page">
   <h1>Changelog</h1>
   <p class="lede">
     Every published Velvet release, newest first. This is the same document the
@@ -35,21 +35,19 @@
 </main>
 
 <style>
+  /* The site's own measure, shared with the header and the footer. */
   .changelog {
-    margin: 0 auto;
-    max-width: 48rem;
-    padding: 3rem clamp(1rem, 5vw, 4rem) 6rem;
+    padding: 3rem 0 6rem;
   }
   h1 {
-    font-size: clamp(2rem, 6vw, 3rem);
+    font-size: var(--velvet-text-title);
     line-height: 1.1;
     margin: 0 0 1rem;
   }
   .lede {
-    color: var(--velvet-muted, #9aa3b2);
-    font-size: 1.125rem;
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-copy);
     margin: 0 0 3rem;
-    max-width: 34rem;
   }
   article {
     background: #14161d;
@@ -59,16 +57,15 @@
     padding: 1.5rem 1.75rem;
   }
   h2 {
-    font-size: 1.5rem;
+    font-size: var(--velvet-text-heading);
     line-height: 1.2;
     margin: 0 0 1rem;
   }
   .source-note {
     border-top: 1px solid #222530;
-    color: var(--velvet-muted, #9aa3b2);
-    font-size: 0.9375rem;
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-small);
     margin: 1.5rem 0 0;
-    max-width: 34rem;
     padding-top: 1.5rem;
   }
 </style>
