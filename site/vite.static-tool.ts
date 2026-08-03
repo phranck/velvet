@@ -216,8 +216,12 @@ export function prerenderStaticEntry(options: {
 
       const htmlPath = resolve(outDir, "index.html");
       const html = await readFile(htmlPath, "utf8");
+      // Anything else the element carries is kept. It named the id and the
+      // closing angle bracket together at first, so giving a mount point a
+      // class of its own stopped the page rendering at all, with a message
+      // saying the element was not there.
       const mount = new RegExp(
-        `(<div id="${options.mountId}">)(</div>)`,
+        `(<div id="${options.mountId}"[^>]*>)(</div>)`,
       );
       if (!mount.test(html)) {
         throw new Error(`No empty #${options.mountId} to render into.`);

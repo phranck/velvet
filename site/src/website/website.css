@@ -74,8 +74,8 @@ h6 {
   --notes-heading-size: var(--velvet-text-heading);
   --notes-subheading-size: var(--velvet-text-copy);
 
-  --velvet-card-radius: 32px;
-  --velvet-card-padding: 20px;
+  --velvet-card-radius: 28px;
+  --velvet-card-padding: 10px;
   --velvet-card-text-inset: calc(var(--velvet-card-radius) / 2);
   /* Anything sitting at the card's content edge, so the gap between the two
      curves stays constant. Change the radius above and this follows, which is

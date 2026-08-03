@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "./Icon.svelte";
+  import RainbowScale from "./RainbowScale.svelte";
   import VelvetWordmark from "./VelvetWordmark.svelte";
 
   /**
@@ -58,6 +59,14 @@
   <header class="site-header velvet-page">
     <a class="home" href="/" aria-label="Velvet, back to the start page">
       <VelvetWordmark />
+      <!--
+        The same scale the start page draws beneath the mark, in a bar-sized
+        version of itself. Drawn from the one component rather than written out
+        again here, so the nine colours and their order exist in one place.
+      -->
+      <span class="scale" aria-hidden="true">
+        <RainbowScale />
+      </span>
     </a>
 
     <nav aria-label="Main">
@@ -97,14 +106,23 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem 1.5rem;
-    padding: 0.75rem 0;
+    padding: 1.25rem 0;
   }
   /* The mark is sized by the brand rather than by the text scale, because it is
      a mark and not a heading. Everything else in this bar takes a token. */
   .home {
+    display: block;
     color: inherit;
     font-size: 1.5rem;
     text-decoration: none;
+  }
+  /* Thinner than the start page's, which stands at 5px under a mark four times
+     this size. Its width follows the mark above it rather than being set, so
+     the two ends of the scale meet the two ends of the word. */
+  .home .scale {
+    display: block;
+    height: 2px;
+    margin-top: 0.3rem;
   }
   ul {
     display: flex;
@@ -118,9 +136,16 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    height: 2.75rem;
-    padding: 0 0.75rem;
-    border-radius: var(--velvet-card-inner-radius, 0.5rem);
+    /* Sized by what it holds rather than by a fixed height, which is what makes
+       the tint behind the current page sit close around its label instead of
+       standing as a block in the bar. The item measured 44px against a 20px
+       icon before this, so eleven of every twenty-two were empty above and
+       below. */
+    padding: 0.375rem 0.75rem;
+    /* Its own, rather than the radius a card gives what sits inside it. Nothing
+       here is nested in a card: these are items in a bar, and taking that value
+       only meant they moved whenever a card's padding did. */
+    border-radius: 12px;
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-small);
     text-decoration: none;

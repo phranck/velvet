@@ -136,7 +136,7 @@
        page radius less the 20px a card pads by, whilst this surface pads by
        10px. The formula was taken but not the number it should have been fed. */
     --topics-radius: 28px;
-    --topics-padding: 10px;
+    --topics-padding: 8px;
     --topics-inner-radius: max(
       calc(var(--topics-radius) - var(--topics-padding)),
       0px
@@ -293,19 +293,6 @@
   }
   .card {
     --tool-text: var(--velvet-text);
-    /* Closer in than the page's cards, because a topic card holds a reference
-       rather than a paragraph and its tables want the width.
-
-       The nested radius has to be restated with it. A custom property whose
-       value contains `var()` is resolved where it is declared, so the one on
-       `:root` had already become 32px less 20px before it was inherited here,
-       and overriding the padding alone would have left every surface inside
-       this card rounded for a padding it no longer has. */
-    --velvet-card-padding: 10px;
-    --velvet-card-inner-radius: max(
-      calc(var(--velvet-card-radius) - var(--velvet-card-padding)),
-      0px
-    );
     background: #14161d;
     border: 1px solid #222530;
     border-radius: var(--velvet-card-radius);
