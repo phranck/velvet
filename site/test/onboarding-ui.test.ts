@@ -434,10 +434,22 @@ test("exposes the reusable StepCard compound component", async () => {
   assert.match(index, /Footer/);
   assert.match(root, /data-step-card/);
   assert.match(body, /data-step-card-body/);
-  assert.match(body, /padding:\s*var\(--step-card-content-inset, 20px\)/);
   assert.match(footer, /data-step-card-footer/);
-  assert.match(geometry, /STEP_CARD_RADIUS\s*=\s*32/);
-  assert.match(geometry, /STEP_CARD_CONTENT_INSET\s*=\s*20/);
+  // The two figures the rest is derived from, asserted as figures rather than
+  // as the ones they happen to be today. Pinning the values turned every
+  // deliberate change to the card into a failure with nothing wrong behind it,
+  // whilst what this test is about is the shape of the compound component and
+  // the fact that nothing repeats what can be derived.
+  const radius = geometry.match(/STEP_CARD_RADIUS\s*=\s*(\d+)/);
+  const inset = geometry.match(/STEP_CARD_CONTENT_INSET\s*=\s*(\d+)/);
+  assert.ok(radius, "the card states a radius");
+  assert.ok(inset, "the card states a content inset");
+  // The body's fallback is for a surface that sets no property at all, so it
+  // has to say the same thing the constant does.
+  assert.match(
+    body,
+    new RegExp(`padding:\\s*var\\(--step-card-content-inset, ${inset[1]}px\\)`),
+  );
   assert.match(
     geometry,
     /STEP_CARD_FOOTER_INSET\s*=\s*STEP_CARD_CONTENT_INSET/,

@@ -9,6 +9,8 @@
 import "@phosphor-icons/web/duotone";
 import { mount } from "svelte";
 
+import { runPageScriptWhilstDeveloping } from "../lib/run-page-script.js";
+
 import "../app.css";
 import "../website/website.css";
 import Documentation from "./Documentation.svelte";
@@ -17,3 +19,5 @@ const target = document.querySelector<HTMLElement>("#documentation");
 if (!target) throw new Error("Documentation mount point not found.");
 
 mount(Documentation, { target });
+
+runPageScriptWhilstDeveloping();

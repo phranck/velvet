@@ -42,4 +42,14 @@
   /* A glyph standing beside text rather than in it: a section icon, the number
      of a step, the mark on a notice. */
   --velvet-text-ornament: 1.75rem;
+
+  /* A name or a filename set in a sentence. The tint is mixed from the colour
+     of the text it stands in, so the same three values carry a code word on a
+     card, in a notice, and in an opening paragraph without any of them naming a
+     colour of its own. Stated here rather than beside each of those, because
+     they were three separate sets of values before and only one of them drew a
+     background at all. */
+  --velvet-code-tint: color-mix(in srgb, currentColor 10%, transparent);
+  --velvet-code-radius: 0.25rem;
+  --velvet-code-inset: 0.125em 0.375em;
 }

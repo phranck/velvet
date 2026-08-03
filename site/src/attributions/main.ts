@@ -7,6 +7,8 @@
 import "@phosphor-icons/web/duotone";
 import { mount } from "svelte";
 
+import { runPageScriptWhilstDeveloping } from "../lib/run-page-script.js";
+
 import "../app.css";
 import "../website/website.css";
 import Attributions from "./Attributions.svelte";
@@ -15,3 +17,5 @@ const target = document.querySelector<HTMLElement>("#attributions");
 if (!target) throw new Error("Attributions mount point not found.");
 
 mount(Attributions, { target });
+
+runPageScriptWhilstDeveloping();

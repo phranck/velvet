@@ -78,9 +78,23 @@
     // passed it, the first is the one being read.
     const line = 120;
     let current = headings[0];
-    for (const heading of headings) {
-      if (heading.getBoundingClientRect().top <= line) current = heading;
-      else break;
+    // At the end of the scroll there is nothing further to reach, so the final
+    // heading is the one being read however far down the window it sits.
+    // Without this a last section shorter than a screenful can never be
+    // marked: the page stops scrolling whilst its heading is still below the
+    // line, so following its link left the mark on the section before it.
+    // Measured on the reference at a 900px window: at the foot of the page,
+    // scrolled to 14517 of a possible 14517, the last heading sat at 566.
+    const atEnd =
+      Math.ceil(scrollY + innerHeight) >=
+      document.documentElement.scrollHeight;
+    if (atEnd) {
+      current = headings[headings.length - 1];
+    } else {
+      for (const heading of headings) {
+        if (heading.getBoundingClientRect().top <= line) current = heading;
+        else break;
+      }
     }
     const link = links.get(current.dataset.topic);
     if (!link || link === marked) return;

@@ -181,9 +181,9 @@
        after it. The fallback here is for a surface that defines no token. */
     font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
     font-size: 0.875em;
-    padding: 0.125em 0.375em;
-    border-radius: 0.25rem;
-    background: color-mix(in srgb, currentColor 10%, transparent);
+    padding: var(--velvet-code-inset, 0.125em 0.375em);
+    border-radius: var(--velvet-code-radius, 0.25rem);
+    background: var(--velvet-code-tint, color-mix(in srgb, currentColor 10%, transparent));
   }
 
   /* The scroll lives on this wrapper rather than the table, because a table is

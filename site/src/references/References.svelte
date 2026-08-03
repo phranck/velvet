@@ -96,21 +96,25 @@
   .references {
     padding: 3rem 0 6rem;
   }
-  /* Beside a card and on the same level as one, so the same inset applies. */
+  /* Both introduce the gallery beneath them, so both take the inset its entries
+     take.
+
+     Each rule below states `margin-block` rather than the `margin` shorthand,
+     which sets all four sides and reset the inline margins this rule had just
+     given them. Measured at a 1440px window: both sat at 120, the page edge. */
   h1,
-  .lede,
-  .consent-note {
+  .lede {
     margin-inline: var(--velvet-card-text-inset);
   }
   h1 {
     font-size: var(--velvet-text-title);
     line-height: 1.1;
-    margin: 0 0 1rem;
+    margin-block: 0 1rem;
   }
   .lede {
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-copy);
-    margin: 0 0 3rem;
+    margin-block: 0 3rem;
   }
   .reference-list {
     display: grid;
@@ -141,10 +145,21 @@
   .reference-list :global(svg) {
     color: var(--velvet-accent, #8ca5ff);
   }
+  /* Closes the page with nothing beneath it. There is no card here to line up
+     with, so it takes no text inset, and its rule closes the page rather than
+     separating two parts of it.
+
+     The one paragraph on the site held narrower than its column. It is a note
+     about the gallery above it rather than prose somebody reads down, and
+     centring it under the entries is what marks it as the end of the page
+     instead of a further entry. */
   .consent-note {
+    width: 80%;
+    margin-inline: auto;
     border-top: 1px solid #222530;
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-small);
     padding-top: 1.5rem;
+    text-align: center;
   }
 </style>

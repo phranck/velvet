@@ -75,8 +75,9 @@
       </p>
       <p>
         What follows describes what the file contains, so that an installation
-        can be read and understood. Change it by hand only if you know exactly
-        what you are doing. A configuration edited by hand can stop a status
+        can be read and understood. Change it by hand
+        <strong>only if you know exactly what you are doing</strong>. A
+        configuration edited by hand can stop a status
         page from building or publishing, and an installation broken that way is
         not something Velvet can repair or answer for.
       </p>
@@ -126,11 +127,23 @@
      one panel rather than as links loose on the backdrop. */
   .topics {
     align-self: start;
-    /* Tighter than a card holding prose, because the list is its content and
-       every entry already carries the text inset of its own. */
-    padding: 10px;
+    /* Its own geometry rather than the page's, and stated here so the entries
+       below derive from what actually applies to them. A panel of short links
+       reads as a lighter surface than a card of prose, so it is rounded less
+       and holds its content closer in.
+
+       Deriving the entries from the page's card instead put them at 12px, the
+       page radius less the 20px a card pads by, whilst this surface pads by
+       10px. The formula was taken but not the number it should have been fed. */
+    --topics-radius: 28px;
+    --topics-padding: 8px;
+    --topics-inner-radius: max(
+      calc(var(--topics-radius) - var(--topics-padding)),
+      0px
+    );
+    padding: var(--topics-padding);
     border: 1px solid #222530;
-    border-radius: var(--velvet-card-radius);
+    border-radius: var(--topics-radius);
     background: #14161d;
   }
   @media (min-width: 960px) {
@@ -149,10 +162,16 @@
     padding: 0;
     list-style: none;
   }
+  /* The selection is a surface nested in the panel, so it takes the panel's
+     radius less the panel's own inset. Its label stands as far in from the
+     selection as the panel's content stands in from the panel, and takes half
+     the selection's radius on top of that to clear the curve. The panel states
+     that one distance and both readings of it follow. */
   .topics a {
     display: block;
-    padding: 0.25rem var(--velvet-card-text-inset);
-    border-radius: var(--velvet-card-inner-radius);
+    padding: 0.25rem
+      calc(var(--topics-padding) + var(--topics-inner-radius) / 2);
+    border-radius: var(--topics-inner-radius);
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-body);
     line-height: 1.45;
@@ -170,9 +189,14 @@
     background: color-mix(in srgb, var(--velvet-accent) 10%, transparent);
   }
 
-  /* Text and headings standing beside a card, on the same level as one, take
-     the same horizontal inset the text inside it takes, so a topic's name
-     lines up with the first line beneath it rather than sitting proud of it. */
+  /* Each of these introduces a card beneath it, so each begins half a radius
+     in, where that card's curve gives way to its straight edge. Left at the
+     page edge a heading sits out beyond the corner the card has already curved
+     away from, and reads as hanging off the side of it.
+
+     It does not line up with the text inside the card, and is not meant to:
+     that text stands a further padding in. Measured at a 1440px window, a topic
+     name sits at 440 and the first line under it at 451. */
   h1,
   .lede,
   main h2 {
@@ -188,9 +212,17 @@
     font-size: var(--velvet-text-copy);
     margin-block: 0 2.5rem;
   }
-  .lede code {
+  /* The same treatment a code word gets inside a card. A filename set in an
+     opening paragraph is the same thing as a filename set in a reference, and
+     it drew no background at all before, so the two read as different kinds of
+     word on one page. */
+  .lede code,
+  .warning code {
     font-family: var(--font-mono);
     font-size: 0.9em;
+    padding: var(--velvet-code-inset);
+    border-radius: var(--velvet-code-radius);
+    background: var(--velvet-code-tint);
   }
 
   /* The one thing on this page that must not be read past. It carries the
@@ -204,7 +236,12 @@
     background: color-mix(in srgb, #d29922 12%, #14161d);
   }
   /* Text and headings take the further inset; nothing in this notice runs
-     full width, so all of it does. */
+     full width, so all of it does.
+
+     Both rules below state `margin-block` rather than the `margin` shorthand,
+     which sets all four sides and reset the inline margins this rule had just
+     given them. Measured at a 1440px window: both sat at 445, the notice's
+     padding edge, rather than at 461. */
   .warning-head,
   .warning p {
     margin-inline: var(--velvet-card-text-inset);
@@ -216,7 +253,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin: 0 0 0.6rem;
+    margin-block: 0 0.6rem;
   }
   .warning :global(svg) {
     color: #d29922;
@@ -230,15 +267,11 @@
     line-height: 1.2;
   }
   .warning p {
-    margin: 0 0 0.6rem;
+    margin-block: 0 0.6rem;
     line-height: 1.55;
   }
   .warning p:last-child {
-    margin-bottom: 0;
-  }
-  .warning code {
-    font-family: var(--font-mono);
-    font-size: 0.9em;
+    margin-block-end: 0;
   }
 
   /* One card per topic, with the topic's name above it. The board backdrop is
