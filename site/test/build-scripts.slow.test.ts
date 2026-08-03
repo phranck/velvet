@@ -770,6 +770,40 @@ test("publishes the references page where GitHub Pages will find it", async () =
   assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
 }, BUILD_TIMEOUT_MS);
 
+test("publishes the changelog where GitHub Pages will find it, and without a script", async () => {
+  const outDir = await buildDirectory();
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--config", "vite.changelog.ts",
+    "--outDir", resolve(outDir, "changelog"),
+  ]);
+
+  const html = await readFile(resolve(outDir, "changelog", "index.html"), "utf8");
+
+  assert.match(html, /<title>Velvet releases<\/title>/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/changelog"/);
+  // Prerendered, unlike the references page. The releases come from a file in
+  // this repository, so there is nothing to read at request time and nothing a
+  // visitor gains from running code to see them.
+  assert.doesNotMatch(html, /<script(?![^>]*type="application\/ld\+json")/);
+  assert.doesNotMatch(html, /\/@fs\//);
+  assert.doesNotMatch(html, /["'](\/src\/[^"']+)["']/);
+
+  // The releases the repository's own changelog names, rendered rather than
+  // copied. A page that lost its content would still pass every check above.
+  const changelog = await readFile(resolve(repositoryRoot, "CHANGELOG.md"), "utf8");
+  for (const [, title] of changelog.matchAll(/^##\s+(.+?)\s*$/gmu)) {
+    assert.ok(html.includes(title!), `the page does not name ${title}`);
+  }
+
+  // Written as `LICENSING.md` in the changelog, which resolves inside the
+  // repository and nowhere else.
+  assert.match(
+    html,
+    /href="https:\/\/github\.com\/phranck\/velvet\/blob\/main\/LICENSING\.md"/,
+  );
+}, BUILD_TIMEOUT_MS);
+
 test("packages the man pages so an archive unpacks straight into a manpath", async () => {
   const outDir = await buildDirectory();
   // The packaging script refuses to write into a directory holding no built
@@ -819,4 +853,34 @@ test("builds the man-page archive as part of the published website", async () =>
   // that puts it in front of a visitor is the website build itself.
   assert.match(scripts["website:build"], /bun run man-pages:build/);
   assert.equal(scripts["man-pages:build"], "bun scripts/build-man-pages.ts");
+});
+
+test("builds every published page as part of the website", async () => {
+  const scripts = JSON.parse(
+    await readFile(resolve(siteRoot, "package.json"), "utf8"),
+  ).scripts;
+
+  // Each page has a build of its own, because Rollup splits what two entries
+  // share, and each has to be named here or it never reaches the artefact the
+  // Pages workflow uploads.
+  assert.match(scripts["website:build"], /bun run references:build/);
+  assert.match(scripts["website:build"], /bun run changelog:build/);
+  assert.equal(scripts["changelog:build"], "vite build --config vite.changelog.ts");
+
+  // Every page also belongs in the sitemap, which is served from the website's
+  // public directory rather than generated.
+  const sitemap = await readFile(
+    resolve(siteRoot, "src/website/public/sitemap.xml"),
+    "utf8",
+  );
+  for (const location of [
+    "https://velvet.li/",
+    "https://velvet.li/changelog",
+    "https://velvet.li/references",
+  ]) {
+    assert.ok(
+      sitemap.includes(`<loc>${location}</loc>`),
+      `the sitemap does not list ${location}`,
+    );
+  }
 });
