@@ -122,16 +122,38 @@ function collectList(
   const ordered = ORDERED_ITEM.test(first);
   if (!ordered && !UNORDERED_ITEM.test(first)) return null;
 
-  const items: ReleaseNotesInline[][] = [];
+  const marker = ordered ? ORDERED_ITEM : UNORDERED_ITEM;
+  const items: string[] = [];
   let index = start;
   while (index < lines.length && items.length < MAX_INLINE_PARTS) {
-    const current = (lines[index] ?? "").trim();
-    const match = current.match(ordered ? ORDERED_ITEM : UNORDERED_ITEM);
-    if (!match) break;
-    items.push(parseInline(match[1] ?? ""));
-    index += 1;
+    const raw = lines[index] ?? "";
+    const match = raw.trim().match(marker);
+    if (match) {
+      items.push(match[1] ?? "");
+      index += 1;
+      continue;
+    }
+    // A wrapped item. Markdown continues an item across the lines that follow
+    // it whilst they are indented and carry no marker of their own, and a
+    // document written to a column width is full of them. Without this the
+    // list ended at the first wrap and the remainder of the sentence became a
+    // paragraph beneath it, which is how the changelog first rendered.
+    if (
+      items.length > 0 &&
+      raw.trim() !== "" &&
+      /^\s/u.test(raw) &&
+      !raw.trimStart().startsWith("```")
+    ) {
+      items[items.length - 1] += ` ${raw.trim()}`;
+      index += 1;
+      continue;
+    }
+    break;
   }
-  return { block: { kind: "list", ordered, items }, next: index };
+  return {
+    block: { kind: "list", ordered, items: items.map((item) => parseInline(item)) },
+    next: index,
+  };
 }
 
 function parseInline(source: string): ReleaseNotesInline[] {
