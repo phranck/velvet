@@ -97,21 +97,33 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     });
 
     await page.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
+    // Read from the layer that carries the board, which is a fixed element
+    // behind the page rather than a background with fixed attachment. Both
+    // hold the board still whilst the page scrolls, but a fixed-attachment
+    // background is repositioned on every scroll frame, and during a fast
+    // scroll that correction lags visibly.
+    //
     // Asserted per layer rather than as one string, so adding a background
-    // layer cannot fail this for the wrong reason. What matters is that no
-    // layer scrolls and none tiles.
+    // layer cannot fail this for the wrong reason. What matters is that the
+    // board does not move and that no layer tiles.
     const backdrop = await page.locator("body").evaluate((element) => {
-      const style = getComputedStyle(element);
+      const style = getComputedStyle(element, "::before");
       return {
-        attachment: style.backgroundAttachment.split(", "),
+        position: style.position,
         repeat: style.backgroundRepeat.split(", "),
         size: style.backgroundSize.split(", "),
+        bodyAttachment: getComputedStyle(element).backgroundAttachment.split(", "),
       };
     });
-    assert.deepEqual(
-      [...new Set(backdrop.attachment)],
-      ["fixed"],
-      "every background layer stays fixed to the viewport",
+    assert.equal(
+      backdrop.position,
+      "fixed",
+      "the board is not a layer fixed to the viewport",
+    );
+    assert.equal(
+      backdrop.bodyAttachment.includes("fixed"),
+      false,
+      "a fixed-attachment background is back, which repaints on every scroll frame",
     );
     assert.deepEqual(
       [...new Set(backdrop.repeat)],
