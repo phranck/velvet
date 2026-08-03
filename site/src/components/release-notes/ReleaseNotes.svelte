@@ -33,7 +33,12 @@
     {:else if part.kind === "code"}
       <code>{part.value}</code>
     {:else if part.kind === "link"}
-      <a href={part.href} target="_blank" rel="noreferrer noopener">{part.value}</a>
+      <!-- Every link here leaves for a new tab, so it says so. Left unmarked,
+           a reader only discovers it after the tab has opened. -->
+      <a href={part.href} target="_blank" rel="noreferrer noopener">
+        {part.value}<i class="ph-duotone ph-arrow-square-out" aria-hidden="true"
+        ></i>
+      </a>
     {:else}
       {part.value}
     {/if}
@@ -136,7 +141,9 @@
   }
 
   code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    /* The token already carries its own fallbacks, so nothing is repeated
+       after it. The fallback here is for a surface that defines no token. */
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
     font-size: 0.875em;
     padding: 0.125em 0.375em;
     border-radius: 0.25rem;
@@ -197,5 +204,13 @@
   a:hover,
   a:focus-visible {
     text-decoration-thickness: 2px;
+  }
+  /* Beside the label rather than under the underline, and small enough to read
+     as a mark on the link instead of as a second word. */
+  a i {
+    margin-left: 0.25em;
+    font-size: 0.85em;
+    text-decoration: none;
+    vertical-align: baseline;
   }
 </style>
