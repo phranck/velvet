@@ -149,9 +149,25 @@
     overflow-wrap: break-word;
   }
 
+  /* Text and headings take a further horizontal inset of half the card's
+     corner radius, because the rounding eats into the corner of the content
+     box and a line flush against that edge collides with the curve. A code
+     block and a table run full width and keep the padding edge, which is why
+     the inset is applied here rather than to the container.
+
+     Nothing when the surface defines no card geometry, which is the case in
+     the Configurator's overlay. */
+  h2,
+  h3,
+  p,
+  ul,
+  ol {
+    margin-inline: var(--velvet-card-text-inset, 0);
+  }
+
   h2,
   h3 {
-    margin: 0;
+    margin-block: 0;
     line-height: 1.3;
     letter-spacing: -0.01em;
   }
@@ -168,16 +184,16 @@
 
   h2:not(:first-child),
   h3:not(:first-child) {
-    margin-top: 0.5rem;
+    margin-block-start: 0.5rem;
   }
 
   p {
-    margin: 0;
+    margin-block: 0;
   }
 
   ul,
   ol {
-    margin: 0;
+    margin-block: 0;
     padding-inline-start: 1.5rem;
     display: flex;
     flex-direction: column;

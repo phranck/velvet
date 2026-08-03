@@ -15,6 +15,15 @@
  * remaps the family for itself, whilst the reference, the changelog, and the
  * references page all rendered in Inter with no condensed headings at all.
  */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   font-family: var(--velvet-font);
   /* The size as well as the face. `app.css` states 18px on `body` for the
@@ -49,6 +58,18 @@ h6 {
 :root {
   --velvet-page-width: 1200px;
   --velvet-page-inset: clamp(1rem, 5vw, 4rem);
+
+  /* Card geometry, stated once so the relationship between the three is
+     visible rather than arithmetic somebody has to redo.
+
+     Padding is equal on all four sides. Text and headings take a further
+     horizontal inset of half the corner radius, because the rounding eats into
+     the corner of the content box and a line flush against that edge collides
+     with the curve. What runs full width inside a card, a code block or a
+     table, keeps the padding edge and does not take the extra inset. */
+  --velvet-card-radius: 23px;
+  --velvet-card-padding: 20px;
+  --velvet-card-text-inset: calc(var(--velvet-card-radius) / 2);
 
   /* The site reads a step larger than the tools do. It is a page somebody
      reads, whilst the onboarding and the Configurator are surfaces somebody

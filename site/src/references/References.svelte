@@ -92,6 +92,12 @@
   .references {
     padding: 3rem 0 6rem;
   }
+  /* Beside a card and on the same level as one, so the same inset applies. */
+  h1,
+  .lede,
+  .consent-note {
+    margin-inline: var(--velvet-card-text-inset);
+  }
   h1 {
     font-size: var(--velvet-text-title);
     line-height: 1.1;
