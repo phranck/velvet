@@ -1,7 +1,15 @@
 /**
- * Generate the four onboarding theme cards from the production Configurator.
+ * Generate the theme pictures from the production Configurator.
+ *
  * The Configurator renders the real Velvet preview fixture with the same
- * StatusPage component used by deployed sites.
+ * StatusPage component deployed sites use, so a picture here cannot drift from
+ * what an installation actually looks like.
+ *
+ * Two sets, from one run. The picker in the browser setup and the Configurator
+ * shows a degraded page, because somebody choosing colours has to see what a
+ * theme does with the warning and danger ones. The gallery on velvet.li shows a
+ * well one, because the first thing a visitor sees of Velvet should not be four
+ * status pages reporting trouble.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -16,7 +24,19 @@ import { canonicalSystemTheme } from "../src/lib/configuration-theme.ts";
 
 const SITE = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DISTRIBUTION = resolve(SITE, "../configurator");
-const ASSETS = resolve(SITE, "src/components/theme-card/assets");
+/** Where each set is written, and what the page has to be showing for it. */
+const SETS = [
+  {
+    // The picker, in the browser setup and in the Configurator.
+    directory: resolve(SITE, "src/components/theme-card/assets"),
+    health: "degraded",
+  },
+  {
+    // The gallery on the start page.
+    directory: resolve(SITE, "src/website/assets/themes"),
+    health: "operational",
+  },
+];
 const VIEWPORT = { width: 640, height: 400 };
 const MIME = {
   ".css": "text/css",
@@ -68,15 +88,10 @@ function buildConfigurator() {
 
 async function main() {
   buildConfigurator();
-  await mkdir(ASSETS, { recursive: true });
+  for (const { directory } of SETS) await mkdir(directory, { recursive: true });
 
   const server = await serveDistribution();
   const browser = await chromium.launch();
-  const manifest = {
-    schemaVersion: 1,
-    viewport: VIEWPORT,
-    themes: {},
-  };
 
   try {
     const context = await browser.newContext({
@@ -91,44 +106,66 @@ async function main() {
       route.abort(),
     );
 
-    for (const theme of EMBEDDED_THEME_REGISTRY.themes) {
-      await page.goto(server.url, { waitUntil: "networkidle" });
-      await page.getByRole("button", { name: "Community themes" }).click();
-      await page.locator(`#theme-registry-option-${theme.id}`).click();
-      await page.addStyleTag({
-        content: `.status-page {
-          width: ${VIEWPORT.width}px !important;
-          max-width: ${VIEWPORT.width}px !important;
-        }`,
-      });
-      await page.evaluate(() => globalThis.document.fonts.ready);
-      await page.waitForTimeout(50);
-
-      const statusPage = await page.locator(".status-page").boundingBox();
-      if (!statusPage) throw new Error("Missing Configurator status preview.");
-      const clip = {
-        x: Math.round(statusPage.x),
-        y: Math.round(statusPage.y),
-        width: VIEWPORT.width,
-        height: VIEWPORT.height,
+    for (const { directory, health } of SETS) {
+      const manifest = {
+        schemaVersion: 1,
+        viewport: VIEWPORT,
+        health,
+        themes: {},
       };
-      const image = await page.screenshot({ type: "png", clip });
-      const file = `${theme.id}.png`;
-      await writeFile(join(ASSETS, file), image);
-      manifest.themes[theme.id] = {
-        file,
-        imageSha256: sha256(image),
-        themeSha256: sha256(JSON.stringify(canonicalSystemTheme(theme))),
-      };
-    }
+      // The Configurator shows a degraded page by default and reads this to
+      // show a well one instead. Nothing but this script asks for it.
+      const address = health === "operational"
+        ? `${server.url}/?preview=operational`
+        : server.url;
 
-    await writeFile(
-      join(ASSETS, "manifest.json"),
-      `${JSON.stringify(manifest, null, 2)}\n`,
-    );
-    for (const { id } of EMBEDDED_THEME_REGISTRY.themes) {
-      const bytes = (await stat(join(ASSETS, `${id}.png`))).size;
-      if (bytes < 10_000) throw new Error(`Theme screenshot is unexpectedly small: ${id}`);
+      for (const theme of EMBEDDED_THEME_REGISTRY.themes) {
+        await page.goto(address, { waitUntil: "networkidle" });
+        // The theme picker lives in a section that opens on demand, so it is
+        // not in the accessibility tree until the section is opened and no
+        // query for it resolves. Opened the way a person opens it, by its
+        // summary, rather than by setting the attribute.
+        const section = page.locator("details:has([data-theme-picker])");
+        if ((await section.getAttribute("open")) === null) {
+          await section.locator("summary").first().click();
+        }
+        await page.getByRole("button", { name: "Community themes" }).click();
+        await page.locator(`#theme-registry-option-${theme.id}`).click();
+        await page.addStyleTag({
+          content: `.status-page {
+            width: ${VIEWPORT.width}px !important;
+            max-width: ${VIEWPORT.width}px !important;
+          }`,
+        });
+        await page.evaluate(() => globalThis.document.fonts.ready);
+        await page.waitForTimeout(50);
+
+        const statusPage = await page.locator(".status-page").boundingBox();
+        if (!statusPage) throw new Error("Missing Configurator status preview.");
+        const clip = {
+          x: Math.round(statusPage.x),
+          y: Math.round(statusPage.y),
+          width: VIEWPORT.width,
+          height: VIEWPORT.height,
+        };
+        const image = await page.screenshot({ type: "png", clip });
+        const file = `${theme.id}.png`;
+        await writeFile(join(directory, file), image);
+        manifest.themes[theme.id] = {
+          file,
+          imageSha256: sha256(image),
+          themeSha256: sha256(JSON.stringify(canonicalSystemTheme(theme))),
+        };
+      }
+
+      await writeFile(
+        join(directory, "manifest.json"),
+        `${JSON.stringify(manifest, null, 2)}\n`,
+      );
+      for (const { id } of EMBEDDED_THEME_REGISTRY.themes) {
+        const bytes = (await stat(join(directory, `${id}.png`))).size;
+        if (bytes < 10_000) throw new Error(`Theme screenshot is unexpectedly small: ${id}`);
+      }
     }
   } finally {
     await browser.close();

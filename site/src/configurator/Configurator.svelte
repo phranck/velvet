@@ -79,6 +79,7 @@
     PREVIEW_CONFIG,
     PREVIEW_STATUS,
     previewDocumentsForServices,
+    type PreviewHealth,
   } from "./preview";
 
   type PaletteKey = (typeof PALETTE_KEYS)[number];
@@ -241,8 +242,25 @@
       ? imported
       : PREVIEW_STATUS.services.map(({ id, name }) => ({ id, name }));
   });
+  /**
+   * Whether the preview shows a page with something wrong on it.
+   *
+   * Degraded by default, because somebody choosing colours has to see what a
+   * theme does with the warning and danger ones before they choose. The
+   * screenshot generator asks for the well page instead, for the gallery on the
+   * start page, where four status pages reporting trouble is the wrong first
+   * thing to show a visitor. Nothing else reads this.
+   */
+  const previewHealth: PreviewHealth =
+    // Read through `globalThis`, because this runs during server rendering too,
+    // where there is no location and reaching for one throws before the
+    // component has drawn anything.
+    new URLSearchParams(globalThis.location?.search ?? "").get("preview") ===
+    "operational"
+      ? "operational"
+      : "degraded";
   const previewDocuments = $derived(
-    previewDocumentsForServices(configuredServices),
+    previewDocumentsForServices(configuredServices, previewHealth),
   );
   const settingsDirty = $derived(
     isConfiguratorDirty(settings, selectedBaseline),

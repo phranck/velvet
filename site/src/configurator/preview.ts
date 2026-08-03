@@ -152,8 +152,48 @@ export interface PreviewServiceOption {
   name: string;
 }
 
+/**
+ * How the preview's services are faring.
+ *
+ * `degraded` is what the Configurator shows, because somebody choosing colours
+ * has to see what a theme does with the warning and danger ones before they
+ * choose. `operational` is what the start page's theme gallery shows, because
+ * the first picture a visitor sees of Velvet should not be four status pages
+ * reporting trouble.
+ */
+export type PreviewHealth = "degraded" | "operational";
+
+/**
+ * The same fixture with nothing wrong.
+ *
+ * Derived from the degraded one rather than written out beside it, so the two
+ * cannot drift: the services, their checks, and the shape of their history are
+ * the one definition above, and this changes only what each of them reports.
+ *
+ * @param status - The fixture to make well.
+ * @returns A copy in which every service, every check, and every day is sound.
+ */
+function operationalStatus(status: StatusDocument): StatusDocument {
+  return {
+    ...status,
+    services: status.services.map((service) => ({
+      ...structuredClone(service),
+      status: "operational",
+      checks: service.checks.map((check) => ({
+        ...structuredClone(check),
+        status: "operational",
+      })),
+      dailyAvailability: service.dailyAvailability.map((day) => ({
+        ...day,
+        unavailableSeconds: 0,
+      })),
+    })),
+  };
+}
+
 export function previewDocumentsForServices(
   services: readonly PreviewServiceOption[],
+  health: PreviewHealth = "degraded",
 ): {
   status: StatusDocument;
   responseTimes: ResponseTimesDocument;
@@ -189,8 +229,10 @@ export function previewDocumentsForServices(
     };
   });
 
+  const status: StatusDocument = { ...PREVIEW_STATUS, services: statusServices };
+
   return {
-    status: { ...PREVIEW_STATUS, services: statusServices },
+    status: health === "operational" ? operationalStatus(status) : status,
     responseTimes: { ...PREVIEW_RESPONSE_TIMES, series: responseSeries },
     incidents: structuredClone(PREVIEW_INCIDENTS),
   };
