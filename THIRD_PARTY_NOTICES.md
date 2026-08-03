@@ -59,7 +59,7 @@ separate distributed use is listed above.
 | `vite` | 6.4.3 | MIT |
 
 The complete locked tree was generated from `bun.lock` and manually
-reviewed on 2026-08-03. It contains 230 external package entries: 174 MIT, 18
+reviewed on 2026-08-03. It contains 231 external package entries: 175 MIT, 18
 Apache-2.0, 13 MPL-2.0, 8 BSD-2-Clause, 7 ISC, 4 BSD-3-Clause, 3 OFL-1.1, 1
 BlueOak-1.0.0, 1 Python-2.0, and 1 dual MIT and Zlib.
 Every locked entry declares license metadata. Package license files installed
