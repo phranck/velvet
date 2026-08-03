@@ -233,7 +233,10 @@
      over nine of them. */
   .gutter,
   pre > code {
-    font-size: 0.9375em;
+    /* Its own size rather than a fraction of the prose around it, so the site
+       reading a step larger does not carry the code with it. Code is read at
+       the size it is written at. */
+    font-size: var(--velvet-text-code, 0.9375rem);
     line-height: 1.7;
   }
   /* Only the code scrolls, so the numbers stay beside the line they belong to

@@ -32,6 +32,7 @@
      and the rest of the site is measured against it rather than choosing sizes
      of its own. A page that names a size in rem here is a page that will drift
      the next time one of these moves. */
+  --velvet-text-code: 0.9375rem;
   --velvet-text-small: 0.9375rem;
   --velvet-text-body: 1rem;
   --velvet-text-copy: 1.25rem;

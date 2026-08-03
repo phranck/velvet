@@ -97,11 +97,12 @@
     background: color-mix(in srgb, #d29922 12%, #14161d);
   }
   /* Larger than an ornament beside text, because this one is the reason the
-     notice is there. */
+     notice is there, and smaller than the page's own title, because it is not
+     one. */
   .warning i {
     flex: none;
     color: #d29922;
-    font-size: var(--velvet-text-title);
+    font-size: var(--velvet-text-intro);
     line-height: 1;
   }
   .warning h2 {
