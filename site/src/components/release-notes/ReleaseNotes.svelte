@@ -122,8 +122,20 @@
     background: none;
   }
 
+  /* The colour is inherited on purpose, because these notes are shown on the
+     Configurator's own surfaces as well as on the website and an accent chosen
+     here would clash with one of them. The underline is what makes a link a
+     link, and it was missing: the offset below was set whilst the global rule
+     in app.css turned the decoration off, so nothing distinguished a link from
+     the sentence around it. Measured on the changelog page, the link and its
+     paragraph both computed to rgb(232, 234, 237) with no decoration at all. */
   a {
     color: inherit;
+    text-decoration: underline;
     text-underline-offset: 0.2em;
+  }
+  a:hover,
+  a:focus-visible {
+    text-decoration-thickness: 2px;
   }
 </style>

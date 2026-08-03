@@ -35,6 +35,42 @@ test("renders the block structure Velvet release notes actually use", () => {
   assert.equal(blocks[5]?.kind === "code" && blocks[5].value, "bun run build");
 });
 
+test("keeps a wrapped list item whole instead of ending the list at the wrap", () => {
+  const blocks = parseReleaseNotes(
+    [
+      "- Direct IPv4 `GET` and `HEAD` checks of every configured endpoint from",
+      "  GitHub-hosted runners, every five minutes, with separate response-time",
+      "  samples four times a day.",
+      "- Incidents recorded as GitHub Issues, opened after confirmed failures",
+      "  and closed after confirmed recoveries.",
+      "",
+      "A paragraph that follows the list and belongs to nothing in it.",
+    ].join("\n"),
+  );
+
+  assert.deepEqual(
+    blocks.map((block) => block.kind),
+    ["list", "paragraph"],
+  );
+  assert.equal(blocks[0]?.kind === "list" && blocks[0].items.length, 2);
+
+  const [list] = blocks;
+  if (list?.kind !== "list") return;
+  const text = (parts: (typeof list.items)[number]): string =>
+    parts.map((part) => part.value).join("");
+  assert.equal(
+    text(list.items[0]!),
+    "Direct IPv4 GET and HEAD checks of every configured endpoint from GitHub-hosted runners, every five minutes, with separate response-time samples four times a day.",
+  );
+  assert.equal(
+    text(list.items[1]!),
+    "Incidents recorded as GitHub Issues, opened after confirmed failures and closed after confirmed recoveries.",
+  );
+  // A blank line still ends the list, so what follows is its own paragraph
+  // rather than more of the last item.
+  assert.equal(blocks[1]?.kind, "paragraph");
+});
+
 test("keeps inline emphasis, code, and safe links as separate parts", () => {
   const [block] = parseReleaseNotes(
     "Use **bold**, *italic*, `code`, and [the docs](https://velvet.li/docs).",
