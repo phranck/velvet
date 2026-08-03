@@ -8,22 +8,22 @@
   "themes": {
     "velvet-default": {
       "file": "velvet-default.png",
-      "imageSha256": "aadbf826453c3cbf933a9ff562ed67ec41d1a1af3acee0d9a7d55ad6b0f54d2a",
+      "imageSha256": "aa524277389eebdfbe9dfb875107045c59e379b10b8d1ef18326f13a3e74b92d",
       "themeSha256": "e70370bf3be512b89266b6046d216d3dfd1ef2f031fde7b2c20cef1c5745f991"
     },
     "cloudy-autumn": {
       "file": "cloudy-autumn.png",
-      "imageSha256": "f8d80a593d241b0d5c1ae598ef1194058930ec1b6a09f603dd11c68c6315a886",
+      "imageSha256": "3e2a28b9e743159f1378c2b89b21c0f46e4ce512d7d908aa3e4ec6dc5aaa81b1",
       "themeSha256": "4eadea455e49bc4ec9579d587d3ef305bfc82624dd68fd9d07fd282e0577573e"
     },
     "sunny-spring": {
       "file": "sunny-spring.png",
-      "imageSha256": "4efed28ea886e1c6f233b4a4ce9386d7face51c9294a2247335751d3e9255eb7",
+      "imageSha256": "c15257bfc0c09473e0220bc28bb0452285f8649aa35661d608c18f68f7f12da2",
       "themeSha256": "ace416a426dbe83557c848a4cfdf22aa0ea5253108b3122e6a95d6178016c207"
     },
     "violet-velvet": {
       "file": "violet-velvet.png",
-      "imageSha256": "72a23cafef0536b274de604eb6496dfb540f15cfe5326ee460a33d390cdbcd6f",
+      "imageSha256": "261758dc475a5444a3e24b19ed35e7e64748e396d1c6d82123590ee6aa8223ad",
       "themeSha256": "6a5c189f69fdc33e7b0852d947a9d7e1fc84ad1593a15c76d021cfa79e13bbda"
     }
   }

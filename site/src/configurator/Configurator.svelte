@@ -262,6 +262,28 @@
   const previewDocuments = $derived(
     previewDocumentsForServices(configuredServices, previewHealth),
   );
+  /**
+   * The moment the previewed page says it was last updated.
+   *
+   * Formatted from the fixture rather than written out, the way a real page
+   * formats its own. Written out, it went on printing a date the fixture had
+   * moved away from, and the theme pictures taken from this preview printed it
+   * with them.
+   *
+   * In English regardless of the reader's own language, because these pictures
+   * are published on the website and a screenshot whose date changes with
+   * whoever generated it is not reproducible.
+   */
+  const previewUpdatedAt = $derived(
+    new Date(previewDocuments.status.generatedAt).toLocaleString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "UTC",
+    }),
+  );
   const settingsDirty = $derived(
     isConfiguratorDirty(settings, selectedBaseline),
   );
@@ -616,7 +638,7 @@
         incidentsDocument={previewDocuments.incidents}
         {range}
         openMap={previewOpenMap}
-        updated="Jul 27, 2026, 12:00 PM"
+        updated={previewUpdatedAt}
         onSelectRange={(value) => (range = value)}
         onToggleAll={setAllPreviewServices}
         onToggleService={togglePreviewService}

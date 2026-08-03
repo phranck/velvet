@@ -8,8 +8,24 @@ import type {
 
 const PREVIEW_SAMPLE_DAYS = 82;
 const DAY_MS = 86_400_000;
-const PREVIEW_GENERATED_AT = "2026-07-27T12:00:00.000Z";
-const PREVIEW_MONITORING_STARTED_AT = "2026-05-07T00:00:00.000Z";
+/**
+ * The moment the preview pretends to have been generated.
+ *
+ * The eighth of August at 9:41, in the year the preview is rendered. The time
+ * is the one every product photograph has shown since the first iPhone was held
+ * up in 2007, and it is here for the same reason: a picture of a page wants a
+ * time that reads as deliberate rather than as whenever the screenshot happened
+ * to be taken.
+ *
+ * The year follows the calendar so that a page photographed for the website
+ * never shows a date from a year gone by, which is the one part of a preview a
+ * reader checks against their own clock.
+ */
+const PREVIEW_GENERATED_AT = `${new Date().getUTCFullYear()}-08-08T09:41:00.000Z`;
+/** Eighty-two days before, which is what the preview's history covers. */
+const PREVIEW_MONITORING_STARTED_AT = new Date(
+  Date.parse(PREVIEW_GENERATED_AT) - PREVIEW_SAMPLE_DAYS * DAY_MS,
+).toISOString();
 
 function previewResponseSamples(
   generatedAt: string,
@@ -91,7 +107,7 @@ export const PREVIEW_STATUS: StatusDocument = {
           id: "website-ipv4",
           protocol: "ipv4",
           status: "degraded",
-          checkedAt: "2026-07-27T12:00:00.000Z",
+          checkedAt: PREVIEW_GENERATED_AT,
           responseTimeMs: 108,
         },
       ],
@@ -110,7 +126,7 @@ export const PREVIEW_STATUS: StatusDocument = {
           id: "backend-ipv4",
           protocol: "ipv4",
           status: "operational",
-          checkedAt: "2026-07-27T12:00:00.000Z",
+          checkedAt: PREVIEW_GENERATED_AT,
           responseTimeMs: 82,
         },
       ],
