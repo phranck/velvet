@@ -13,6 +13,7 @@ page Action copies it into every generated site together with Velvet's own
 | [`esm-env`](https://github.com/benmccann/esm-env/blob/main/LICENSE) | 1.2.2 | MIT | Environment flags are compiled into the browser JavaScript bundle through Svelte. |
 | [Phosphor Core](https://github.com/phosphor-icons/core/blob/main/LICENSE) | 2.1.1 | MIT | Selected SVG data can be embedded in generated social images. |
 | [Phosphor Web](https://github.com/phosphor-icons/web/blob/v2.1.2/LICENSE) | 2.1.2 | MIT | Icon CSS is compiled into the stylesheet, and the face is subset to the icons Velvet names and emitted as a woff2 file. |
+| [Iconsax](https://docs.iconsax.io/license-and-terms/license) | Free Bulk icons via `iconsax` 0.1.1 | Iconsax Free Licence | Path data for the fourteen icons velvet.li draws is generated into `site/src/lib/iconsax.generated.ts` and compiled into the page. The licence permits redistribution only as part of code and forbids loose files, which is why no SVG is committed. Icons by Vuesax and Lusaxweb. |
 | [Barlow](https://github.com/google/fonts/blob/main/ofl/barlow/OFL.txt) | Google Fonts v13 via `@fontsource/barlow` 5.3.0 | OFL-1.1 | Latin 400, 600, and 700 font files are bundled with browser onboarding. |
 | [Barlow Condensed](https://github.com/google/fonts/blob/main/ofl/barlowcondensed/OFL.txt) | Google Fonts v13 via `@fontsource/barlow-condensed` 5.3.0 | OFL-1.1 | The Latin 600 font files are bundled with browser onboarding. |
 | [Plaster](https://github.com/google/fonts/blob/main/ofl/plaster/OFL.txt) | `@fontsource/plaster` 5.3.0 | OFL-1.1 | Wordmark font files are bundled with Velvet browser tools. The wordmark on the onboarding backdrop is embedded as glyph outlines, recorded in `scripts/velvet-wordmark.json`. |
@@ -58,7 +59,7 @@ separate distributed use is listed above.
 | `vite` | 6.4.3 | MIT |
 
 The complete locked tree was generated from `bun.lock` and manually
-reviewed on 2026-08-03. It contains 230 external package entries: 174 MIT, 18
+reviewed on 2026-08-03. It contains 231 external package entries: 175 MIT, 18
 Apache-2.0, 13 MPL-2.0, 8 BSD-2-Clause, 7 ISC, 4 BSD-3-Clause, 3 OFL-1.1, 1
 BlueOak-1.0.0, 1 Python-2.0, and 1 dual MIT and Zlib.
 Every locked entry declares license metadata. Package license files installed

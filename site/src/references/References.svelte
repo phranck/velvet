@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from "../components/Icon.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
 
   /** What the setup service discloses about a consenting installation. */
@@ -73,7 +74,7 @@
         <li>
           <a href={reference.url} target="_blank" rel="noopener noreferrer">
             <span class="reference-name">{reference.statusPageName}</span>
-            <i class="ph-duotone ph-arrow-square-out" aria-hidden="true"></i>
+            <Icon name="export-arrow-01" />
           </a>
         </li>
       {/each}
@@ -134,7 +135,7 @@
   .reference-name {
     font-weight: 600;
   }
-  .reference-list i {
+  .reference-list :global(svg) {
     color: var(--velvet-accent, #8ca5ff);
   }
   .consent-note {

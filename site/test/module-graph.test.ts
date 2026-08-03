@@ -154,6 +154,10 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // it too, but they are not applications in the sense this table means and are
   // not walked from here.
   "SiteHeader.svelte": ["website"],
+  // The Iconsax icons the site draws. The Configurator reaches it through the
+  // release-note overlay, which draws the copy and external-link marks, and
+  // nothing else of its own.
+  "Icon.svelte": ["configurator", "website"],
   "ConsentCheckbox.svelte": ["configurator", "onboarding"],
   "step-card": ["onboarding", "website"],
   "page-footer": ["onboarding", "website"],

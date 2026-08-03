@@ -112,6 +112,7 @@
         "@types/bun": "^1.3.14",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "^22.0.0",
+        "iconsax": "0.1.1",
         "js-yaml": "^4.1.0",
         "playwright": "^1.61.1",
         "subset-font": "^2.5.0",
@@ -442,6 +443,8 @@
     "globals": ["globals@17.8.0", "", {}, "sha512-Zz/LMDZScFmkakeL2cTHzf+PbWKdpU3uclqkZT7TjDG58j5WPt0PpA+n9uPI24fZtlw07q0OtEi84K+umsRzqQ=="],
 
     "harfbuzzjs": ["harfbuzzjs@0.10.3", "", {}, "sha512-GJnLUrgLMadlMYrBGEXwYEimObbysy3prWT4HyPpFQERvgTU/OZ+ReUlEPOum6w4RBtFXzXiCCmECOr4sz3qwQ=="],
+
+    "iconsax": ["iconsax@0.1.1", "", { "bin": { "iconsax": "bin/iconsax.js" } }, "sha512-/HXomG+SuhytKH/Yw4ZdunDGyWP02Osuk/pjony1k9CCMOsg7dUpnomu7HZUOHNu0yK0b3phErjH2IgUTJFjPA=="],
 
     "ignore": ["ignore@5.3.2", "", {}, "sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g=="],
 

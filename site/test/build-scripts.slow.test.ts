@@ -924,6 +924,43 @@ test("publishes the configuration reference whole, tables and all", async () => 
   );
 }, BUILD_TIMEOUT_MS);
 
+test("publishes the attributions from the repository's own notices", async () => {
+  const outDir = await buildDirectory();
+  await bun([
+    "run", "--bun", "vite", "build",
+    "--config", "vite.attributions.ts",
+    "--outDir", resolve(outDir, "attributions"),
+  ]);
+
+  const html = await readFile(resolve(outDir, "attributions", "index.html"), "utf8");
+  const notices = await readFile(
+    resolve(repositoryRoot, "THIRD_PARTY_NOTICES.md"),
+    "utf8",
+  );
+
+  assert.match(html, /<title>Velvet attributions<\/title>/);
+  assert.doesNotMatch(html, /<script[^>]*\bsrc=/);
+
+  // Rendered from the repository's own notices rather than a copy, so a
+  // component credited there is credited here and nowhere else has to be
+  // kept in step.
+  const pipeLines = notices
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("|"));
+  const delimiters = pipeLines.filter((line) => /^\|\s*:?-{3,}/u.test(line));
+  assert.equal(
+    (html.match(/<tr[ >]/gu) ?? []).length,
+    pipeLines.length - delimiters.length,
+    "a credit went missing between the notices and the page",
+  );
+
+  // The icons the site draws are licensed on the condition that the notice
+  // travels with them, which is what this page is for.
+  assert.match(html, /Iconsax/);
+  assert.match(html, /Vuesax/);
+}, BUILD_TIMEOUT_MS);
+
 test("packages the man pages so an archive unpacks straight into a manpath", async () => {
   const outDir = await buildDirectory();
   // The packaging script refuses to write into a directory holding no built
@@ -986,10 +1023,15 @@ test("builds every published page as part of the website", async () => {
   assert.match(scripts["website:build"], /bun run references:build/);
   assert.match(scripts["website:build"], /bun run changelog:build/);
   assert.match(scripts["website:build"], /bun run documentation:build/);
+  assert.match(scripts["website:build"], /bun run attributions:build/);
   assert.equal(scripts["changelog:build"], "vite build --config vite.changelog.ts");
   assert.equal(
     scripts["documentation:build"],
     "vite build --config vite.documentation.ts",
+  );
+  assert.equal(
+    scripts["attributions:build"],
+    "vite build --config vite.attributions.ts",
   );
 
   // Every page also belongs in the sitemap, which is served from the website's
@@ -1002,6 +1044,7 @@ test("builds every published page as part of the website", async () => {
     "https://velvet.li/",
     "https://velvet.li/documentation",
     "https://velvet.li/changelog",
+    "https://velvet.li/attributions",
     "https://velvet.li/references",
   ]) {
     assert.ok(
