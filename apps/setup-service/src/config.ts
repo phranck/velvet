@@ -1,6 +1,5 @@
 import { createPrivateKey } from "node:crypto";
 
-import type { AnalyticsConfiguration } from "./analytics.js";
 import { parseSerialRepository } from "./serial.js";
 
 export interface SetupServiceConfig {
@@ -37,14 +36,6 @@ export interface SetupServiceConfig {
     /** Path to the counter file inside it. */
     path: string;
   } | null;
-  /**
-   * Where this instance sends its usage statistics, or `null` to send none.
-   *
-   * Absent by default on purpose. Velvet is installed and run by other people,
-   * so an instance that configures nothing must collect nothing rather than
-   * report into whichever dashboard the source happened to name.
-   */
-  analytics: AnalyticsConfiguration | null;
 }
 
 export function loadSetupServiceConfig(
@@ -135,62 +126,7 @@ export function loadSetupServiceConfig(
     serialCounter: serialRepository
       ? { repository: serialRepository, path: serialPath }
       : null,
-    analytics: parseAnalytics(environment),
   };
-}
-
-/**
- * Reads the optional analytics settings, refusing a half-configured pair.
- *
- * Both values or neither. A script URL without an identifier loads the script
- * and records nothing, and an identifier without a URL loads nothing at all;
- * both present as analytics that simply does not work, which is the failure
- * mode hardest to notice.
- *
- * @param environment - The process environment to read from.
- * @returns The configuration, or `null` when this instance collects nothing.
- */
-function parseAnalytics(
-  environment: Record<string, string | undefined>,
-): AnalyticsConfiguration | null {
-  const scriptUrl = environment.ANALYTICS_SCRIPT_URL?.trim();
-  const websiteId = environment.ANALYTICS_WEBSITE_ID?.trim();
-  if (!scriptUrl && !websiteId) return null;
-  if (!scriptUrl || !websiteId) {
-    throw new TypeError(
-      "ANALYTICS_SCRIPT_URL and ANALYTICS_WEBSITE_ID must be set together.",
-    );
-  }
-
-  let url: URL;
-  try {
-    url = new URL(scriptUrl);
-  } catch (error) {
-    throw new TypeError("ANALYTICS_SCRIPT_URL must be an absolute URL.", {
-      cause: error,
-    });
-  }
-  if (
-    url.protocol !== "https:" ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  ) {
-    throw new TypeError(
-      "ANALYTICS_SCRIPT_URL must be an HTTPS URL without credentials, query, or fragment.",
-    );
-  }
-  // Deliberately narrow. The identifier is written into an HTML attribute on a
-  // document this service serves, and a character set with no quote and no
-  // angle bracket in it is what makes that safe without escaping.
-  if (!/^[A-Za-z0-9._-]{1,128}$/u.test(websiteId)) {
-    throw new TypeError(
-      "ANALYTICS_WEBSITE_ID must contain only letters, digits, dots, dashes, or underscores.",
-    );
-  }
-
-  return { scriptUrl: url.href, websiteId };
 }
 
 function required(

@@ -9,7 +9,6 @@ import {
   type SetupRequest,
 } from "@velvet/contracts";
 
-import { analyticsOrigin } from "./analytics.js";
 import { DEPLOYMENT_FINGERPRINT } from "./deployment-fingerprint.generated.js";
 import {
   createGitHubAuthorizationUrl,
@@ -99,7 +98,6 @@ export function createSetupHandler(
     const finish = (response: Response): Response =>
       secureResponse(response, currentRequestId, {
         secure: options.config.secureCookies,
-        analyticsOrigin: analyticsOrigin(options.config.analytics),
       });
     const reject = (
       error: SetupServiceError,
@@ -782,16 +780,10 @@ function redirectResponse(location: string, headers?: HeadersInit): Response {
 function secureResponse(
   response: Response,
   requestId: string,
-  policy: { secure: boolean; analyticsOrigin: string | null },
+  policy: { secure: boolean },
 ): Response {
   const headers = new Headers(response.headers);
   headers.set("X-Request-Id", requestId);
-  // Named in both `script-src` and `connect-src`, because the script is fetched
-  // from that origin and its events are posted back to it. Granting only the
-  // first loads the script and then records nothing, which looks like working
-  // analytics whilst collecting no data. An instance with no analytics
-  // configured grants neither.
-  const analytics = policy.analyticsOrigin ? ` ${policy.analyticsOrigin}` : "";
   headers.set(
     "Content-Security-Policy",
     // Two further deliberate grants beyond the default.
@@ -805,7 +797,7 @@ function secureResponse(
     // elements stay restricted to this origin through `style-src`, so this
     // grants declarations on elements the application already renders and
     // nothing that could introduce a stylesheet.
-    `default-src 'self'; script-src 'self'${analytics}; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io${analytics}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
+    `default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Cross-Origin-Resource-Policy", "same-origin");
