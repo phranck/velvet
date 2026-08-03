@@ -16,7 +16,10 @@ to one.
 - Up to 365 days of availability, response-time, incident, and maintenance
   history on a dedicated branch the monitor owns alone.
 - A themeable status page published through GitHub Pages, with four system
-  themes, service icons, analytics, SEO output, and custom domains.
+  themes, service icons, SEO output, and custom domains.
+- No analytics of any kind. A published status page loads no third-party
+  script, the browser setup reports to nobody, and there is no setting that
+  would change either.
 
 ### Installing
 

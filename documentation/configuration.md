@@ -286,7 +286,7 @@ statusPage:
     database: ph-database
 ```
 
-### Analytics and SEO
+### SEO
 
 ```yaml
 statusPage:
