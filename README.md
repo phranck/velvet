@@ -194,6 +194,17 @@ you.
 configuration option, the contracts between the layers, how the setup service is
 run, and how a release is cut.
 
+The same material is available offline as man pages. `velvet(7)` covers the
+architecture, `velvet-config(1)` the local Configurator, and `velvet.yml(5)`
+every configuration option. They install into your own home directory and need
+no administrator rights:
+
+```bash
+curl -LO https://velvet.li/velvet-man-pages.tar.gz
+tar -xzf velvet-man-pages.tar.gz
+./velvet-man-pages/install.sh
+```
+
 ## Develop
 
 Velvet pins Bun 1.3.14 as its package manager and runtime.
