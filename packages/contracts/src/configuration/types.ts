@@ -74,7 +74,6 @@ export interface NormalizedVelvetConfiguration {
     logoUrl?: string;
     theme?: VelvetThemeInput;
     fonts?: { sans?: string; mono?: string };
-    analytics?: VelvetConfigurationInput["statusPage"]["analytics"];
     seo?: VelvetConfigurationInput["statusPage"]["seo"];
   };
   services: NormalizedService[];

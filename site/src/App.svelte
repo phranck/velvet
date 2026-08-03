@@ -6,7 +6,6 @@
     type VelvetDataClient,
   } from "./lib/data-client";
   import { applyTheme, loadConfig, type VelvetConfig } from "./lib/config";
-  import { injectAnalytics } from "./lib/analytics";
   import type {
     IncidentsDocument,
     RangeKey,
@@ -92,7 +91,6 @@
     try {
       const cfg = await loadConfig();
       applyTheme(cfg);
-      injectAnalytics(cfg);
       // Honour the configured default range, but only for first-time visitors —
       // an explicit earlier choice (in localStorage) always wins.
       if (storedRange() === null) {

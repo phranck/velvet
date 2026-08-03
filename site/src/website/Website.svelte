@@ -69,7 +69,7 @@
       icon: "color-swatch",
       title: "A page you can shape",
       description:
-        "Four system themes, detailed visual configuration, service icons, analytics, SEO output, and selectable history ranges.",
+        "Four system themes, detailed visual configuration, service icons, SEO output, and selectable history ranges.",
     },
     {
       icon: "global",

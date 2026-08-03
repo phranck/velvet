@@ -308,22 +308,6 @@ const StatusPageSchema = Type.Object(
       ),
     ),
     icons: Type.Optional(Type.Record(IdentifierSchema, ShortTextSchema)),
-    analytics: Type.Optional(
-      Type.Object(
-        {
-          umami: Type.Optional(
-            Type.Object(
-              { websiteId: ShortTextSchema, src: UrlSchema },
-              { additionalProperties: false },
-            ),
-          ),
-          googleAnalytics: Type.Optional(
-            Type.String({ pattern: "^G-[A-Z0-9]+$" }),
-          ),
-        },
-        { additionalProperties: false },
-      ),
-    ),
     seo: Type.Optional(
       Type.Object(
         {

@@ -32,7 +32,7 @@ workflow runs. A mismatch stops before any check or repository mutation.
 | `schemaVersion` | yes | none | Configuration contract version, currently `1`. |
 | `repository.owner` | yes | none | GitHub user or organization that owns the status repository. |
 | `repository.name` | yes | none | Status repository name. |
-| `statusPage` | yes | none | Public identity, presentation, navigation, analytics, and SEO. |
+| `statusPage` | yes | none | Public identity, presentation, navigation, and SEO. |
 | `services` | yes | none | At least one public service with one or more HTTP checks. |
 | `incidents` | no | see below | Confirmation thresholds and GitHub Issue labels. |
 | `history` | no | see below | Retention policy for generated history. |
@@ -186,7 +186,6 @@ statusPage:
 | `fonts.sans` | no | `Inter` | CSS font-family for normal interface text. |
 | `fonts.mono` | no | `JetBrains Mono` | CSS font-family for times, values, and labels. |
 | `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
-| `analytics` | no | off | Optional Umami and Google Analytics settings. |
 | `seo` | no | generated | Optional title, description, and social-image overrides. |
 
 Setting `customDomain` writes a `CNAME` file into every build. The repository
@@ -292,20 +291,14 @@ statusPage:
 ```yaml
 statusPage:
   name: Example Status
-  analytics:
-    umami:
-      websiteId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-      src: https://analytics.example.com/script.js
-    googleAnalytics: G-XXXXXXXXXX
   seo:
     title: Example System Status
     description: Current availability for Example.
     image: https://example.com/status-social.png
 ```
 
-Umami requires both `websiteId` and an absolute HTTP(S) `src`. Google Analytics
-requires a `G-` measurement ID. Trackers are omitted unless configured; the
-site owner remains responsible for consent and privacy obligations.
+Velvet offers no analytics. A generated status page loads no third-party script
+and reports to nobody, and there is no setting that would make it.
 
 Without SEO overrides, each build derives the title, description, canonical
 URL, Open Graph and Twitter metadata, a 1200 x 630 social card, `robots.txt`,

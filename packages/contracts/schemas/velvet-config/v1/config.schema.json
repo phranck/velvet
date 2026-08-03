@@ -1323,36 +1323,6 @@
             }
           }
         },
-        "analytics": {
-          "additionalProperties": false,
-          "type": "object",
-          "properties": {
-            "umami": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "websiteId",
-                "src"
-              ],
-              "properties": {
-                "websiteId": {
-                  "minLength": 1,
-                  "maxLength": 128,
-                  "type": "string"
-                },
-                "src": {
-                  "minLength": 1,
-                  "maxLength": 2048,
-                  "type": "string"
-                }
-              }
-            },
-            "googleAnalytics": {
-              "pattern": "^G-[A-Z0-9]+$",
-              "type": "string"
-            }
-          }
-        },
         "seo": {
           "additionalProperties": false,
           "type": "object",
