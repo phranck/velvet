@@ -124,11 +124,20 @@
     color: var(--velvet-text);
     background: color-mix(in srgb, currentColor 8%, transparent);
   }
-  /* The page a reader is already on. Colour alone, as on the reference this
-     follows: no rule beneath it and no filled pill, because the bar is short
-     and an accent in it is read before the label is. */
+  /* The page a reader is already on: the accent, over the accent at a tenth
+     of its strength. The reference carries that tint on a pseudo-element,
+     which is why reading the element's own background reported none. Measured
+     there as the accent at 0.1 alpha. */
   nav a[aria-current="page"] {
     color: var(--velvet-accent);
+    background: color-mix(in srgb, var(--velvet-accent) 10%, transparent);
+  }
+  /* Hovering the current page must not wash its tint away, which the shared
+     hover rule would do by replacing the background with a neutral one. */
+  nav a[aria-current="page"]:hover,
+  nav a[aria-current="page"]:focus-visible {
+    color: var(--velvet-accent);
+    background: color-mix(in srgb, var(--velvet-accent) 16%, transparent);
   }
 
   /* Narrow enough and the labels cost more than they say, so the items keep

@@ -118,8 +118,14 @@
   /* Pinned below the bar rather than at the top of the window, because the bar
      is what sits there. It never scrolls out of the top, and scrolls within
      itself once the list is taller than what is left of the window. */
+  /* On the same surface the topics themselves sit on, so the list reads as
+     one panel rather than as links loose on the backdrop. */
   .topics {
     align-self: start;
+    padding: 0.75rem;
+    border: 1px solid #222530;
+    border-radius: 0.75rem;
+    background: #14161d;
   }
   @media (min-width: 960px) {
     .topics {
@@ -155,7 +161,7 @@
      removes it as unused. */
   .topics a:global([data-current]) {
     color: var(--velvet-accent);
-    background: color-mix(in srgb, currentColor 10%, transparent);
+    background: color-mix(in srgb, var(--velvet-accent) 10%, transparent);
   }
 
   h1 {
