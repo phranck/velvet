@@ -31,15 +31,22 @@ const SURFACES: readonly {
   document: string;
   face: string;
   source: FaceSource;
+  /**
+   * Whether this document is part of velvet.li and so draws the site's card.
+   *
+   * The Configurator has cards of its own, which are panels in a tool rather
+   * than surfaces on a page and are not held to the same shape.
+   */
+  site?: true;
 }[] = [
   { document: "index.html", face: "Inter", source: "linked" },
   { document: "onboarding.html", face: "Barlow", source: "bundled" },
   { document: "configurator.html", face: "Barlow", source: "bundled" },
-  { document: "website.html", face: "Barlow", source: "bundled" },
-  { document: "documentation.html", face: "Barlow", source: "bundled" },
-  { document: "changelog.html", face: "Barlow", source: "bundled" },
-  { document: "attributions.html", face: "Barlow", source: "bundled" },
-  { document: "references.html", face: "Barlow", source: "bundled" },
+  { document: "website.html", face: "Barlow", source: "bundled", site: true },
+  { document: "documentation.html", face: "Barlow", source: "bundled", site: true },
+  { document: "changelog.html", face: "Barlow", source: "bundled", site: true },
+  { document: "attributions.html", face: "Barlow", source: "bundled", site: true },
+  { document: "references.html", face: "Barlow", source: "bundled", site: true },
 ];
 
 /**
@@ -54,7 +61,7 @@ const SURFACES: readonly {
 const READERS_OWN =
   /^(?:ui-|system-ui|-apple-system|BlinkMacSystemFont|sans-serif|serif|monospace|cursive|fantasy|SFMono|Segoe|Consolas|Menlo|Liberation|Arial|Avenir|Helvetica)/;
 
-test("names no face a document is without", async () => {
+test("draws one card and names no face a document is without", async () => {
   const cache = await createViteTestCache("typeface-availability");
   const server = await createServer({
     root: resolve(import.meta.dirname, ".."),
@@ -70,6 +77,8 @@ test("names no face a document is without", async () => {
   const base = `http://127.0.0.1:${address.port}`;
 
   const browser = await chromium.launch();
+  /** The radius the first card seen sets, which every later one has to match. */
+  let cardRadius: string | null = null;
   try {
     for (const surface of SURFACES) {
       const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -115,7 +124,46 @@ test("names no face a document is without", async () => {
           ],
         };
       });
+      const cards = await page.evaluate(() =>
+        // Everything that reads as a card: the shared component, and the step
+        // card the start page draws.
+        [...document.querySelectorAll("[data-step-card], .card")].map((card) => {
+          const style = getComputedStyle(card);
+          return {
+            radius: style.borderTopLeftRadius,
+            border: [
+              style.borderTopWidth,
+              style.borderRightWidth,
+              style.borderBottomWidth,
+              style.borderLeftWidth,
+            ],
+          };
+        }),
+      );
       await page.close();
+
+      for (const card of surface.site ? cards : []) {
+        // A card is separated from the backdrop by its surface, and a rule
+        // around it draws a second edge just inside the first. The start page's
+        // never had one and every other page's did, which is what showed that
+        // the same card had been written four times.
+        assert.deepEqual(
+          card.border,
+          ["0px", "0px", "0px", "0px"],
+          `a card on ${surface.document} draws a border`,
+        );
+        if (cardRadius === null) cardRadius = card.radius;
+        else {
+          // One geometry, stated once. Four pages carried their own copy of it
+          // before, and keeping four copies in step by hand is what let the
+          // border survive on three of them.
+          assert.equal(
+            card.radius,
+            cardRadius,
+            `${surface.document} rounds its cards differently from the pages before it`,
+          );
+        }
+      }
 
       assert.equal(
         measured.body,
