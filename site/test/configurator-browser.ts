@@ -3,6 +3,7 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { chromium, type Browser, type Page } from "playwright";
 import { createServer, type ViteDevServer } from "vite";
 
+import { refuseOffsiteRequests } from "./offline.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
 /**
@@ -46,7 +47,9 @@ export async function createConfiguratorHarness(
       const page = await browser.newPage({
         viewport: { width: 1280, height: 900 },
       });
-      await page.route("https://phranck.github.io/**", (route) => route.abort());
+      // Confined to the dev server, which covers the theme registry this page
+      // would otherwise fetch and anything else added to it later.
+      await refuseOffsiteRequests(page);
       return page;
     },
 

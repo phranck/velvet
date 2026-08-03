@@ -5,6 +5,7 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { webkit } from "playwright";
 import { createServer } from "vite";
 
+import { refuseOffsiteRequests } from "./offline.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
 /**
@@ -37,7 +38,7 @@ test("opens and closes every service in WebKit, with or without view transitions
   const browser = await webkit.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-    await page.route("https://phranck.github.io/**", (route) => route.abort());
+    await refuseOffsiteRequests(page);
     await page.goto(`http://127.0.0.1:${address.port}/configurator.html`);
 
     const preview = page.locator(".status-page");
