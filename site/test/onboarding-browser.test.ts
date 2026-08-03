@@ -11,6 +11,7 @@ import { SetupProgressStageSchema } from "@velvet/contracts";
 import { ONBOARDING_SESSION_STORAGE_KEY } from "../src/onboarding/onboarding-session.js";
 
 import { parseConfiguratorYaml } from "../src/configurator/configuration.js";
+import { refuseOffsiteRequests } from "./offline.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
 /**
@@ -46,9 +47,9 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     const page = await context.newPage();
     let sessionCalls = 0;
     let setupCalls = 0;
-    await page.route("https://phranck.github.io/velvet-themes/index.json", (route) =>
-      route.abort(),
-    );
+    // Confined to the dev server, so no assertion here can be timed by a
+    // request to somebody else's machine.
+    await refuseOffsiteRequests(page);
     await page.route("**/api/serial", async (route) => {
       await route.fulfill({
         status: 200,

@@ -8,6 +8,8 @@ import { promisify } from "node:util";
 import { test } from "bun:test";
 import { chromium } from "playwright";
 
+import { refuseOffsiteRequests } from "./offline.js";
+
 const execFileAsync = promisify(execFile);
 const siteRoot = resolve(import.meta.dirname, "..");
 /** A production build plus a browser, on a shared runner. */
@@ -74,6 +76,9 @@ test("reserves the showcase band's height before the picture arrives", async () 
     ]) {
       const measure = async (withoutPicture: boolean) => {
         const page = await browser.newPage({ viewport });
+        // Measuring layout against a page that is still fetching from someone
+        // else's server measures their latency as much as this layout.
+        await refuseOffsiteRequests(page);
         // Blocking the picture outright is the honest form of this test. If the
         // band is the same height either way, the space was reserved rather
         // than taken once the file landed.
@@ -125,6 +130,7 @@ test("does not defer a picture that is already on screen", async () => {
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await refuseOffsiteRequests(page);
     await page.goto(site.base, { waitUntil: "load" });
     const measured = await page.evaluate(() => {
       const img = document.querySelector<HTMLImageElement>(".showcase img")!;
