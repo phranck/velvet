@@ -31,26 +31,24 @@
       (function () {
         if (!navigator.clipboard) return;
         for (const button of document.querySelectorAll("[data-copy-code]")) {
-          const code = button.parentElement.querySelector("code");
+          const code = button.parentElement.querySelector("pre > code");
           if (!code) continue;
           button.disabled = false;
           button.addEventListener("click", async function () {
-            // Every line renders its number in a span of its own, and that
-            // number is not part of the configuration, so the text is read
-            // back line by line without it.
+            // The numbers live in a column of their own, outside this
+            // element, so a line's text is the line.
             //
-            // Only text and elements are read. The renderer leaves anchor
-            // comments between the parts, and their textContent is "[" and
-            // "]", which put a bracket around every copied line until this
-            // filter named the node types it wanted rather than the one it
-            // did not.
+            // Only text and elements are read all the same. The renderer
+            // leaves anchor comments between the parts, and their textContent
+            // is "[" and "]", which put a bracket around every copied line
+            // until this filter named the node types it wanted rather than
+            // the one it did not.
             const lines = [...code.querySelectorAll(".line")].map(function (line) {
               return [...line.childNodes]
                 .filter(function (node) {
-                  if (node.nodeType === Node.TEXT_NODE) return true;
                   return (
-                    node.nodeType === Node.ELEMENT_NODE &&
-                    !node.classList.contains("line-number")
+                    node.nodeType === Node.TEXT_NODE ||
+                    node.nodeType === Node.ELEMENT_NODE
                   );
                 })
                 .map(function (node) {
@@ -63,7 +61,7 @@
               button.setAttribute("data-copied", "");
               setTimeout(function () {
                 button.removeAttribute("data-copied");
-              }, 1500);
+              }, 3000);
             } catch {
               // A refused clipboard leaves the button as it was. Nothing is
               // claimed to have been copied that was not.

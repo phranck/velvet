@@ -49,6 +49,19 @@ h6 {
 :root {
   --velvet-page-width: 1200px;
   --velvet-page-inset: clamp(1rem, 5vw, 4rem);
+
+  /* The site reads a step larger than the tools do. It is a page somebody
+     reads, whilst the onboarding and the Configurator are surfaces somebody
+     works in, and a form set at reading size wastes the room it needs.
+     The names stay the ones in velvet-tokens.css, so there is still one
+     vocabulary; only the site's own values are stated here. */
+  --velvet-text-small: 1rem;
+  --velvet-text-body: 1.125rem;
+  --velvet-text-copy: 1.375rem;
+  --velvet-text-heading: clamp(1.625rem, 3.2vw, 2.125rem);
+  --velvet-text-intro: 2.25rem;
+  --velvet-text-title: clamp(2.25rem, 6vw, 3.25rem);
+  --velvet-text-ornament: 2rem;
 }
 
 /** The one measure everything on the site is laid out in. */
