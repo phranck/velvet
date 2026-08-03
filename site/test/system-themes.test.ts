@@ -36,15 +36,59 @@ test("offers exactly the four embedded system themes as complete canonical theme
   }
 });
 
-test("theme screenshot manifest matches current system themes and assets", async () => {
-  const manifestPath = resolve(
-    import.meta.dirname,
-    "../src/components/theme-card/assets/manifest.json",
-  );
-  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-  const result = await validateThemeScreenshotManifest(manifest, {
-    assetDirectory: resolve(manifestPath, ".."),
-  });
+/**
+ * The two sets of theme pictures, and what each has to be showing.
+ *
+ * Both come from one run of `theme-screenshots`, photographed from the real
+ * Configurator preview. They differ in one thing on purpose: the picker shows a
+ * degraded page, because somebody choosing colours has to see what a theme does
+ * with its warning and danger ones, and the start page's gallery shows a well
+ * one, because four status pages reporting trouble is the wrong first thing to
+ * show a visitor.
+ */
+const SCREENSHOT_SETS = [
+  { directory: "../src/components/theme-card/assets", health: "degraded" },
+  { directory: "../src/website/assets/themes", health: "operational" },
+];
 
-  assert.deepEqual(result, { valid: true });
+test("both sets of theme pictures match the current themes and assets", async () => {
+  for (const set of SCREENSHOT_SETS) {
+    const manifestPath = resolve(
+      import.meta.dirname,
+      `${set.directory}/manifest.json`,
+    );
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    const result = await validateThemeScreenshotManifest(manifest, {
+      assetDirectory: resolve(manifestPath, ".."),
+    });
+
+    assert.deepEqual(result, { valid: true }, set.directory);
+    // Which page each set was photographed on. Without this the two could be
+    // regenerated from the same state and nobody would see it in the pictures
+    // until the start page reported trouble again.
+    assert.equal(manifest.health, set.health, set.directory);
+  }
+});
+
+test("the gallery shows a picture of every theme, and not the picker's", async () => {
+  const { GALLERY_THEMES } = await import("../src/website/theme-gallery.js");
+
+  assert.deepEqual(
+    GALLERY_THEMES.map(({ id }) => id),
+    SYSTEM_THEMES.map(({ id }) => id),
+  );
+  for (const theme of GALLERY_THEMES) {
+    assert.ok(theme.picture, `${theme.id} has no picture`);
+  }
+
+  // Read from the source rather than from the resolved URL, because the build
+  // rewrites those to hashed names and the assertion would then pass whatever
+  // the page ended up showing. What matters is which module the start page
+  // asks, since one answers with a degraded page and the other with a well one.
+  const startPage = await readFile(
+    resolve(import.meta.dirname, "../src/website/Website.svelte"),
+    "utf8",
+  );
+  assert.match(startPage, /from "\.\/theme-gallery\.js"/u);
+  assert.doesNotMatch(startPage, /system-themes/u);
 });

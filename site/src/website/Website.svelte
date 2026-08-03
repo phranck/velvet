@@ -15,7 +15,7 @@
   // The four themes an installation can be set to, read from the registry the
   // browser setup and the Configurator read, so the page cannot advertise a
   // theme that is not offered or miss one that is.
-  import { SYSTEM_THEMES } from "../onboarding/system-themes.js";
+  import { GALLERY_THEMES } from "./theme-gallery.js";
 
   /**
    * Where a visitor goes to install Velvet. The setup service redirects its
@@ -243,11 +243,11 @@
             </p>
           </div>
           <ul class="themes">
-            {#each SYSTEM_THEMES as theme (theme.id)}
+            {#each GALLERY_THEMES as theme (theme.id)}
               <li>
                 <figure>
                   <img
-                    src={theme.screenshot}
+                    src={theme.picture}
                     alt={`The ${theme.name} theme on a Velvet status page`}
                     loading="lazy"
                     decoding="async"
