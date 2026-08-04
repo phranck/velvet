@@ -218,26 +218,38 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     const stepCard = page.locator("[data-step-card]");
     assert.equal(await stepCard.count(), 1);
     assert.equal(await page.locator("[data-squircle-surface]").count(), 0);
+    // Read from the constant and from the token rather than written out, so
+    // this says the card takes the geometry and the surface the product
+    // states. Written out, it failed whenever either was deliberately changed,
+    // which is a test reporting the change rather than a fault.
     assert.deepEqual(
       await stepCard.evaluate((element) => {
         const style = getComputedStyle(element);
+        // What the card draws, beside what the token it draws from resolves to.
+        const probe = document.createElement("div");
+        probe.style.boxShadow = "var(--velvet-card-shadow)";
+        document.body.append(probe);
+        const fromToken = getComputedStyle(probe).boxShadow;
+        probe.remove();
         return {
           borderRadius: style.borderTopLeftRadius,
           overflow: style.overflow,
-          boxShadow: style.boxShadow,
+          shadowMatchesToken: style.boxShadow === fromToken,
+          // Two layers: a near one for the card's edge and a far one for its
+          // height. One wide shadow alone dissolves into the board backdrop.
+          shadowLayers: (style.boxShadow.match(/rgba?\(/gu) ?? []).length,
+          // No blur. The surface is barely transparent so the board shows
+          // through it, and a blur behind it averages the traces into an even
+          // fog, which reads as an opaque card.
+          backdropFilter: style.backdropFilter,
         };
       }),
       {
-        // Read from the constant rather than written out, so this says the
-        // card takes the geometry the product states. Written out, it failed
-        // whenever that geometry was deliberately changed, which is a test
-        // reporting the change rather than a fault.
         borderRadius: `${STEP_CARD_RADIUS}px`,
         overflow: "clip",
-        // Two layers: a near one for the card's edge and a far one for its
-        // height. One wide shadow alone dissolved into the board backdrop.
-        boxShadow:
-          "rgba(0, 0, 0, 0.45) 0px 12px 24px 0px, rgba(0, 0, 0, 0.55) 0px 32px 80px 0px",
+        shadowMatchesToken: true,
+        shadowLayers: 2,
+        backdropFilter: "none",
       },
     );
     // Five: the four the visitor fills in, plus Install, which reports the

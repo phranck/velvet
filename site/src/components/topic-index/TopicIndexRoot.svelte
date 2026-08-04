@@ -59,7 +59,7 @@
     );
     padding: var(--topic-index-padding);
     border-radius: var(--topic-index-radius);
-    background: #14161d;
+    background: var(--velvet-surface-card);
   }
   @media (min-width: 960px) {
     .topic-index {
