@@ -56,8 +56,26 @@ export const SetupPublicErrorSchema = Type.Object(
   { additionalProperties: false },
 );
 
+/**
+ * Whether the repository setup creates is visible to everybody.
+ *
+ * Not part of `velvet.yml`, because Velvet neither reads nor maintains it. It
+ * is decided once, when GitHub creates the repository, and belongs to GitHub
+ * from then on.
+ */
+export const RepositoryVisibilitySchema = Type.Union(
+  [Type.Literal("public"), Type.Literal("private")],
+  { description: "Whether the created status repository is public or private." },
+);
+
 export const SetupRequestSchema = Type.Object(
-  { configuration: VelvetConfigurationSchema },
+  {
+    configuration: VelvetConfigurationSchema,
+    // Optional so a caller that predates the choice still validates, and
+    // public when absent, because that is what every installation made before
+    // this existed received.
+    repositoryVisibility: Type.Optional(RepositoryVisibilitySchema),
+  },
   { additionalProperties: false },
 );
 

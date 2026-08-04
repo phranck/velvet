@@ -126,6 +126,7 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     "user-token",
     "example",
     "status",
+    "private",
   );
   assert.equal(repository.id, 99);
   assert.equal(repository.ownerId, 255_022_500);
@@ -169,11 +170,13 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     requests[1]!.url,
     "https://api.github.com/repos/phranck/velvet-template/generate",
   );
+  // Asked for privately above, and asked of GitHub privately here. The choice
+  // reaches the request rather than being decided in the service.
   assert.deepEqual(await requests[1]!.json(), {
     owner: "example",
     name: "status",
     include_all_branches: false,
-    private: false,
+    private: true,
   });
   assert.equal(
     requests[2]!.url,
@@ -455,4 +458,30 @@ test("sends a stateless token whole in the Authorization header", async () => {
   await client.getConfigurationSha(token, "example", "status");
 
   assert.equal(seen[0], `Bearer ${token}`);
+});
+
+test("creates a public repository when the request asks for one", async () => {
+  // The default every installation made before the choice existed received,
+  // and what the onboarding sends when the box is left unticked.
+  const requests: Request[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async (request) => {
+      requests.push(request.clone());
+      return Response.json({
+        id: 99,
+        name: "status",
+        html_url: "https://github.com/example/status",
+        default_branch: "main",
+        owner: { login: "example", id: 7 },
+      });
+    },
+  });
+
+  await client.createRepositoryFromTemplate("user-token", "example", "status", "public");
+
+  assert.equal((await requests[0]!.json()).private, false);
 });

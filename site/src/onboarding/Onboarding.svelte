@@ -559,6 +559,26 @@
             configurator.
           </ConsentCheckbox>
         </div>
+        <div class="visibility-choice">
+          <ConsentCheckbox
+            checked={draft.privateRepository}
+            onchange={(isPrivate) => (draft.privateRepository = isPrivate)}
+          >
+            Keep the repository private. Your status page stays public either
+            way; this only hides the repository behind it, with your
+            configuration and your monitoring history.
+          </ConsentCheckbox>
+          <!-- Marked out rather than set as fine print, because it decides
+               whether the page appears at all. Somebody on a free plan who
+               ticks the box above and reads past this gets a repository that
+               works and a page that never publishes. -->
+          <p class="visibility-requirement">
+            A private repository needs a paid GitHub plan. GitHub publishes
+            Pages from a private repository only on GitHub Pro and above, so on
+            a free account leave this unticked or your status page will not
+            appear.
+          </p>
+        </div>
         <p class="github-permission-note">
           GitHub asks for two approvals during the first setup. The first lets Velvet create the repository and is removed immediately. The second gives Velvet access only to that new repository.
         </p>
@@ -965,6 +985,22 @@
   }
   .gallery-consent {
     margin: 1.4rem 1rem 0;
+  }
+  .visibility-choice {
+    margin: 1.4rem 1rem 0;
+  }
+  /* Carries the warning colour of the Velvet Default theme on its own tinted
+     surface, the way the reference marks the one thing that must not be read
+     past. Somebody who ticks the box above and skims this ends up with a page
+     that never publishes. */
+  .visibility-requirement {
+    margin: 0.6rem 0 0;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--step-card-inner-radius);
+    background: color-mix(in srgb, #d29922 12%, transparent);
+    color: #d29922;
+    font-size: var(--setup-card-copy);
+    line-height: 1.5;
   }
   .github-permission-note {
     margin: 1rem 1rem 0;

@@ -78,6 +78,8 @@ function parseDraft(value: unknown): OnboardingDraft {
     (value.description !== undefined && typeof value.description !== "string") ||
     (value.listInGallery !== undefined &&
       typeof value.listInGallery !== "boolean") ||
+    (value.privateRepository !== undefined &&
+      typeof value.privateRepository !== "boolean") ||
     typeof value.themeId !== "string" ||
     !Array.isArray(value.services) ||
     value.services.length === 0
@@ -93,6 +95,9 @@ function parseDraft(value: unknown): OnboardingDraft {
     // A session stored before this question existed answers it with a no,
     // which is the same thing an untouched box says.
     listInGallery: value.listInGallery ?? false,
+    // A session stored before the question existed keeps what those
+    // installations received, which was a public repository.
+    privateRepository: value.privateRepository ?? false,
     themeId: value.themeId,
     services: value.services.map(parseService),
   };

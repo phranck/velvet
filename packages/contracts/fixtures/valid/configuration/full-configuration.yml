@@ -33,3 +33,14 @@ services:
     url: https://api.example.com/health/db
   - name: Storage
     url: https://api.example.com/health/storage
+incidents:
+  failureThreshold: 3
+  recoveryThreshold: 2
+  incidentLabel: incident
+  maintenanceLabel: maintenance
+history:
+  retentionDays: 180
+gallery:
+  listed: true
+updates:
+  automaticSecurityUpdates: false

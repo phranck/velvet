@@ -51,10 +51,19 @@ export interface OnboardingDraft {
    * owner makes the second one.
    */
   listInGallery: boolean;
+  /**
+   * Whether GitHub should create the repository private.
+   *
+   * On by default, because a status page is a public thing and its repository
+   * need not be. Publishing GitHub Pages from a private repository needs a paid
+   * plan, though, so the step that offers this says so where it is offered.
+   */
+  privateRepository: boolean;
 }
 
 export interface SetupRequest {
   configuration: NormalizedVelvetConfiguration;
+  repositoryVisibility: "public" | "private";
 }
 
 export type OnboardingValidationResult =
@@ -104,6 +113,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     themeId: SYSTEM_THEMES[0].id,
     services: [createServiceDraft()],
     listInGallery: false,
+    privateRepository: true,
   };
 }
 
@@ -163,7 +173,13 @@ export function buildSetupRequest(
   if (!finalResult.success) {
     return { success: false, errors: mapContractErrors(finalResult.errors) };
   }
-  return { success: true, request: { configuration: finalResult.data } };
+  return {
+    success: true,
+    request: {
+      configuration: finalResult.data,
+      repositoryVisibility: draft.privateRepository ? "private" : "public",
+    },
+  };
 }
 
 /**
