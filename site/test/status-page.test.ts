@@ -388,3 +388,25 @@ test("prints the installation serial beside the Velvet mark, when there is one",
   const withoutSerial = await renderStatusPage("grouped");
   assert.doesNotMatch(withoutSerial, /data-status-serial/);
 });
+
+test("says an empty page is expected, and stops once a day exists", async () => {
+  // A page set up a minute ago reports every service operational and shows "No
+  // data" against each of them. Both are true, and together they read as
+  // something being broken, which is what this notice exists to answer.
+  const withoutHistory: StatusDocument = {
+    ...statusDocument,
+    services: statusDocument.services.map((service) => ({
+      ...service,
+      dailyAvailability: [],
+    })),
+  };
+
+  const fresh = await renderStatusPage("grouped", true, incidentsDocument, withoutHistory);
+  assert.match(fresh, /Nothing has gone wrong/u);
+  assert.match(fresh, /every 5 minutes/u);
+
+  // One finished day is enough to make the bars mean something, so the notice
+  // goes by itself rather than waiting to be cleared.
+  const settled = await renderStatusPage("grouped");
+  assert.doesNotMatch(settled, /Nothing has gone wrong/u);
+});

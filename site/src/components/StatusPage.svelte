@@ -22,6 +22,7 @@
   import Incidents from "./Incidents.svelte";
   import ServiceRow from "./ServiceRow.svelte";
   import StatusHero from "./StatusHero.svelte";
+  import FirstRunNotice from "./FirstRunNotice.svelte";
   import VelvetWordmark from "./VelvetWordmark.svelte";
 
   let {
@@ -57,7 +58,28 @@
     { key: "quarter", label: "90d" },
     { key: "year", label: "1yr" },
   ];
+  /**
+   * How often the installed status workflow checks, in minutes.
+   *
+   * The status workflow an installation runs schedules itself every five
+   * minutes, so this is a property of what Velvet installs rather than a number
+   * this page invented. It is stated once here so the notice below can say it
+   * without guessing.
+   */
+  const CHECK_INTERVAL_MINUTES = 5;
   const services = $derived(statusDocument.services);
+  /**
+   * Whether the page has any history at all to show.
+   *
+   * True for the whole of an installation's first day and never again, because
+   * one finished day is enough to make the bars mean something. Read from the
+   * data rather than from a stored date, so nothing has to remember when setup
+   * happened and nothing has to clear the notice afterwards.
+   */
+  const hasNoHistory = $derived(
+    services.length > 0 &&
+      services.every((service) => service.dailyAvailability.length === 0),
+  );
   const incidents = $derived(
     visibleIncidentEvents(incidentsDocument.events),
   );
@@ -116,6 +138,9 @@
   {/if}
 
   <StatusHero status={overall} {updated} />
+  {#if hasNoHistory}
+    <FirstRunNotice checkIntervalMinutes={CHECK_INTERVAL_MINUTES} />
+  {/if}
   <Incidents {incidents} />
 
   {#snippet rangeButtons()}
