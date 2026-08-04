@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Card from "../components/card";
+  import * as TopicIndex from "../components/topic-index";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
@@ -14,38 +15,49 @@
 
 <SiteHeader current="changelog" />
 
-<main class="changelog velvet-page">
-  <h1>Changelog</h1>
-  <p class="lede">
-    Every published Velvet release, newest first. This is the same document the
-    repository carries, and the Configurator shows the notes for a release
-    before installing it.
-  </p>
+<div class="changelog velvet-page velvet-indexed-page">
+  <TopicIndex.Root
+    label="Releases"
+    entries={releases.map(({ id, title, date }) => ({
+      id,
+      label: title,
+      ...(date ? { detail: date } : {}),
+    }))}
+  />
 
-  {#each releases as release (release.title)}
-    <Card.Root>
-      <h2>{release.title}</h2>
-      <ReleaseNotes source={release.notes} />
-    </Card.Root>
-  {/each}
-</main>
+  <main>
+    <h1>Changelog</h1>
+    <p class="lede">
+      Every published Velvet release, newest first. This is the same document
+      the repository carries, and the Configurator shows the notes for a release
+      before installing it.
+    </p>
+
+    {#each releases as release (release.id)}
+      <!-- The version above the card rather than inside it, so the releases
+           read as a list of headings down the page with their notes beneath
+           each, which is how the reference reads too. -->
+      <h2 id={release.id} data-topic={release.id}>
+        {release.title}
+        {#if release.date}
+          <span class="date">{release.date}</span>
+        {/if}
+      </h2>
+      <Card.Root>
+        <ReleaseNotes source={release.notes} />
+      </Card.Root>
+    {/each}
+  </main>
+</div>
 
 <SiteFooter />
 
 <style>
-  /* The site's own measure, shared with the header and the footer. */
-  .changelog {
-    padding: 3rem 0 6rem;
-  }
-  /* Both introduce the cards beneath them, so both take the inset the text
-     inside those cards takes.
-
-     Every rule below states `margin-block` rather than the `margin` shorthand.
-     The shorthand sets all four sides, so it reset the inline margins this rule
-     had just given them, and the inset was thrown away without a trace of it in
-     the markup. Measured at a 1440px window: both sat at 120, the page edge. */
+  /* Each of these introduces a card beneath it, so each begins half a radius
+     in, where that card's curve gives way to its straight edge. */
   h1,
-  .lede {
+  .lede,
+  main h2 {
     margin-inline: var(--velvet-card-text-inset);
   }
   h1 {
@@ -56,19 +68,28 @@
   .lede {
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-copy);
-    margin-block: 0 3rem;
+    margin-block: 0 2.5rem;
   }
-  /* The gap between one release and the next. The card itself states no
-     margin, because how far apart two of them stand is the page's business. */
-  main :global(.card) {
-    margin-block-end: 1.5rem;
-  }
-  /* Inside the card rather than beside one, so it meets the card's own curve
-     and takes the inset the notes beneath it take. It sat 16px to the left of
-     that prose before, at 141 against 157. */
-  h2 {
+  main h2 {
+    margin-block: 3.5rem 0.75rem;
+    /* Clears the sticky bar, so following a release does not land its version
+       underneath it. */
+    scroll-margin-top: 5.5rem;
     font-size: var(--velvet-text-heading);
     line-height: 1.2;
-    margin: 0 var(--velvet-card-text-inset) 1rem;
+  }
+  /* Only where nothing stands in front of it, so the opening paragraph and the
+     first release are not pressed together. */
+  main h2:first-child {
+    margin-block-start: 0;
+  }
+  /* Beside the version rather than under it, and quieter, because the version
+     is what a reader is looking for and the day is what they check afterwards. */
+  .date {
+    margin-left: 0.75rem;
+    color: var(--velvet-text-muted);
+    font-family: var(--velvet-font);
+    font-size: var(--velvet-text-body);
+    font-weight: 400;
   }
 </style>
