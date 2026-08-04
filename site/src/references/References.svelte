@@ -1,14 +1,14 @@
 <script lang="ts">
   import * as Card from "../components/card";
-  import Icon from "../components/Icon.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
-
-  /** What the setup service discloses about a consenting installation. */
-  interface Reference {
-    statusPageName: string;
-    url: string;
-  }
+  import {
+    describeInstallation,
+    stateLabel,
+    watchingSince,
+    type Installation,
+    type Reference,
+  } from "./installation";
 
   /**
    * Where the consenting installations are read from.
@@ -28,7 +28,7 @@
    * no gallery at all. Printing an empty frame would claim Velvet has no
    * references, which is a different statement from not knowing.
    */
-  let references = $state<Reference[] | null>(null);
+  let installations = $state<Installation[] | null>(null);
 
   $effect(() => {
     const request = new AbortController();
@@ -45,12 +45,25 @@
             ? (body as { entries?: unknown }).entries
             : null;
         if (!Array.isArray(entries)) return;
-        references = entries.filter(
+        const references = entries.filter(
           (entry): entry is Reference =>
             typeof entry === "object" &&
             entry !== null &&
             typeof (entry as Reference).statusPageName === "string" &&
             typeof (entry as Reference).url === "string",
+        );
+
+        // Each installation is asked about itself, and one that does not answer
+        // is left out. Its card could only show a name pointing at a page a
+        // visitor cannot open, and the service removes it from the registry
+        // within the hour anyway.
+        const described = await Promise.all(
+          references.map((reference) =>
+            describeInstallation(reference, request.signal),
+          ),
+        );
+        installations = described.filter(
+          (entry): entry is Installation => entry !== null,
         );
       } catch {
         // An unreachable service leaves the page as it started, which is the
@@ -70,14 +83,43 @@
     they could be. Every one of them is a live installation.
   </p>
 
-  {#if references && references.length > 0}
+  {#if installations && installations.length > 0}
     <ul class="reference-list" data-reference-list>
-      {#each references as reference (reference.url)}
+      {#each installations as installation (installation.url)}
         <li>
           <Card.Root>
-            <a href={reference.url} target="_blank" rel="noopener noreferrer">
-              <span class="reference-name">{reference.statusPageName}</span>
-              <Icon name="export-arrow-01" />
+            <a
+              href={installation.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-reference-entry
+            >
+              <img
+                class="preview"
+                src={installation.previewUrl}
+                alt="The {installation.statusPageName} page"
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="details">
+                <span class="reference-name">{installation.statusPageName}</span>
+                <span class="host">{installation.host}</span>
+                <span class="state">
+                  <span
+                    class="dot"
+                    style="background: {installation.stateColour}"
+                    aria-hidden="true"
+                  ></span>
+                  <span>{stateLabel(installation.state)}</span>
+                  <span class="services">
+                    &middot; {installation.services}
+                    {installation.services === 1 ? "service" : "services"}
+                  </span>
+                </span>
+                {#if watchingSince(installation.startedAt)}
+                  <span class="since">{watchingSince(installation.startedAt)}</span>
+                {/if}
+              </span>
             </a>
           </Card.Root>
         </li>
@@ -119,34 +161,85 @@
     font-size: var(--velvet-text-copy);
     margin-block: 0 3rem;
   }
+  /* A grid rather than a column, so one entry occupies one cell instead of a
+     row the width of the page. The track is wide enough for the preview to be
+     legible and narrow enough that three fit the measure. */
   .reference-list {
     display: grid;
     gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
     list-style: none;
     margin: 0 0 3rem;
     padding: 0;
   }
   /* The entry is the site's card, and the link fills it, so the whole surface
      is the target rather than the words on it. The card states the surface, the
-     radius, and the padding; only the arrangement inside it is stated here. */
+     radius, and the padding. */
   .reference-list a {
-    align-items: center;
     color: inherit;
-    display: flex;
-    gap: 0.75rem;
-    justify-content: space-between;
-    margin-inline: var(--velvet-card-text-inset);
+    display: block;
     text-decoration: none;
   }
-  /* Marked by the text, because the card it sits on draws no edge to mark. */
-  .reference-list a:hover,
-  .reference-list a:focus-visible {
-    color: var(--velvet-accent, #8ca5ff);
+  /* The picture runs the full width of the card's content box, so it takes the
+     inner radius and no text inset: it has an edge of its own. Its ratio is the
+     social card's, stated so the space is held before the image arrives and the
+     grid does not jump as the gallery fills. */
+  .preview {
+    aspect-ratio: 1200 / 630;
+    background: #0e1017;
+    border-radius: var(--velvet-card-inner-radius);
+    display: block;
+    object-fit: cover;
+    width: 100%;
+  }
+  .details {
+    display: block;
+    padding: 1rem var(--velvet-card-text-inset) 0.75rem;
   }
   .reference-name {
+    display: block;
+    font-size: var(--velvet-text-copy);
     font-weight: 600;
+    line-height: 1.2;
   }
-  .reference-list :global(svg) {
+  .host {
+    color: var(--velvet-text-muted);
+    display: block;
+    font-size: var(--velvet-text-small);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* The word carries the state and the dot repeats it. Colour alone would ask a
+     reader to tell two tints apart, and the tints are the installation's own
+     rather than a palette this page controls. */
+  .state {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .dot {
+    border-radius: 50%;
+    flex: none;
+    height: 0.625rem;
+    width: 0.625rem;
+  }
+  .services,
+  .since {
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-small);
+  }
+  .services {
+    margin-inline-start: -0.15rem;
+  }
+  .since {
+    display: block;
+    margin-top: 0.375rem;
+  }
+  /* Marked by the text, because the card it sits on draws no edge to mark. */
+  .reference-list a:hover .reference-name,
+  .reference-list a:focus-visible .reference-name {
     color: var(--velvet-accent, #8ca5ff);
   }
   /* Closes the page with nothing beneath it. There is no card here to line up
