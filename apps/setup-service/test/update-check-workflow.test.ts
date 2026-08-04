@@ -23,12 +23,6 @@ import { VELVET_RELEASE } from "../src/velvet-release.generated.js";
 const WORKFLOW_PATH = ".github/workflows/velvet-update-check.yml";
 
 /**
- * The Velvet revision whose actions understand the configuration this release
- * writes. Raise it together with the pins in `phranck/velvet-template`.
- */
-const VELVET_ACTION_COMMIT = "4e3cc3a00aa9d72653f3be0b758ada804434a678";
-
-/**
  * Matches a step that uses an action from this repository, whether that is the
  * monitor at `phranck/velvet/actions/monitor` or the site build at the root.
  * The negative lookahead keeps `phranck/velvet-template`, which appears in
@@ -85,17 +79,23 @@ test("the workflow allows exactly the paths Velvet owns", () => {
   assert.deepEqual([...listed].sort(), [...MANAGED_TEMPLATE_PATHS].sort());
 });
 
-test("every Velvet action the release ships is pinned to its own contract", () => {
-  // A pin older than the configuration contract makes a new installation fail
-  // its first run with an invalid-configuration error, because the action
-  // rejects a field onboarding writes as unknown.
+test("every Velvet action the release ships names one revision", () => {
+  // An installation receives several workflows and each pins the Velvet it uses
+  // independently. When they disagree, the run that fails is whichever pin is
+  // behind the configuration contract, which is how 1.0.1 shipped a repaired
+  // monitor beside a Pages workflow that still refused what onboarding wrote.
   //
   // Every pin in the artefact is scanned rather than a listed few, because a
-  // maintained list is exactly what let this through once already: the list
-  // named the two recurring monitor workflows and omitted the Pages workflow,
-  // which is the only one onboarding dispatches, so the guard stayed green
-  // whilst the failing pin sat untouched.
-  let checked = 0;
+  // maintained list is what let that through: the list named the two recurring
+  // monitor workflows and omitted the Pages workflow, which is the only one
+  // onboarding dispatches.
+  //
+  // Which revision they name is not decided here. That is a question about the
+  // world outside this repository, and `scripts/check-template-drift.ts`
+  // answers it by building the pinned revision's contracts and validating a
+  // configuration against them. This test used to hold a copy of the answer,
+  // and that copy is what went stale on 2026-08-04.
+  const found = new Map<string, string[]>();
   for (const [path, source] of Object.entries(
     VELVET_RELEASE.sources as Record<string, string>,
   )) {
@@ -108,17 +108,20 @@ test("every Velvet action the release ships is pinned to its own contract", () =
       );
     }
     for (const [, action, commit] of pins) {
-      checked += 1;
-      assert.equal(
-        commit,
-        VELVET_ACTION_COMMIT,
-        `${path} pins ${action} at ${commit!.slice(0, 8)}, which is not the revision this release was cut against`,
-      );
+      found.set(commit!, [...(found.get(commit!) ?? []), `${path} (${action})`]);
     }
   }
+
   assert.notEqual(
-    checked,
+    found.size,
     0,
     "no Velvet pins were recognised at all, so this guard proves nothing",
+  );
+  assert.equal(
+    found.size,
+    1,
+    `the release pins more than one Velvet revision: ${[...found]
+      .map(([commit, where]) => `${commit.slice(0, 8)} in ${where.join(", ")}`)
+      .join("; ")}`,
   );
 });
