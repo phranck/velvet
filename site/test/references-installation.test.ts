@@ -7,6 +7,7 @@ import {
   stateLabel,
   uptimeBreakdown,
   uptimeDays,
+  STATE_TOKENS,
 } from "../src/references/installation";
 
 /**
@@ -79,8 +80,6 @@ test("describes an installation from its own published files", async () => {
   assert.equal(installation.previewUrl, `${PAGE}og.png`);
   assert.equal(installation.services, 2);
   assert.equal(installation.state, "operational");
-  // The installation's own colour, not one this page chose for it.
-  assert.equal(installation.stateColour, "#2ea043");
   assert.equal(installation.startedAt, "2026-01-05T08:00:00.000Z");
 });
 
@@ -101,7 +100,6 @@ test("a page with one service down is not operational", async () => {
   // The worst wins. A page with an endpoint down is not operational however
   // many others are up.
   assert.equal(installation?.state, "outage");
-  assert.equal(installation?.stateColour, "#f85149");
 });
 
 test("an installation whose page has gone is left out entirely", async () => {
@@ -127,19 +125,22 @@ test("an installation whose data cannot be read still appears", async () => {
   assert.equal(installation.state, "unknown");
   assert.equal(installation.services, 0);
   assert.equal(installation.startedAt, null);
-  assert.equal(installation.stateColour, "#1c1d21");
 });
 
-test("a theme that names no colours falls back to Velvet's own", async () => {
-  const installation = await withFetch(
-    serving({
-      [`${PAGE}config.json`]: { dataBaseUrl: DATA },
-      [`${DATA}/status.json`]: { services: [{ status: "degraded" }] },
-    }),
-    () => describeInstallation(reference),
-  );
-
-  assert.equal(installation?.stateColour, "#d29922");
+test("a state names a token rather than a colour", () => {
+  // The colour itself is stated once in velvet-tokens.css, so a change reaches
+  // the status page, the tools, and this gallery together. One set for every
+  // card, because the page carries a legend and a legend only means something
+  // whilst the same colour means the same thing on every card beneath it.
+  assert.deepEqual(STATE_TOKENS, {
+    operational: "--velvet-operational",
+    degraded: "--velvet-degraded",
+    outage: "--velvet-outage",
+    unknown: "--velvet-no-data",
+  });
+  for (const token of Object.values(STATE_TOKENS)) {
+    assert.match(token, /^--velvet-/u, "a state is drawn from a Velvet token");
+  }
 });
 
 test("names each state in words as well as colour", () => {

@@ -4,7 +4,7 @@
  * The setup service discloses a name and an address and nothing else, which is
  * the whole of what an owner agreed to. Everything a card shows beyond that is
  * published by the installation itself, to anybody, and is read straight from
- * it by the browser: its colours, what its services are doing, and since when.
+ * it by the browser: what its services are doing, and since when.
  *
  * Reading it here rather than through the service keeps that boundary intact.
  * It also keeps the service from making requests to addresses its own users
@@ -17,7 +17,7 @@ export interface Reference {
   url: string;
 }
 
-/** How a status page is doing, in the terms its own theme uses. */
+/** How a status page is doing, worst service first. */
 export type InstallationState = "operational" | "degraded" | "outage" | "unknown";
 
 /** One entry of the gallery, ready to render. */
@@ -28,20 +28,29 @@ export interface Installation extends Reference {
   previewUrl: string;
   /** Worst state across every service the page watches. */
   state: InstallationState;
-  /** The colour that state is drawn in, taken from the page's own theme. */
-  stateColour: string;
   /** How many services the page watches. */
   services: number;
   /** When monitoring began, as an ISO timestamp, or `null` when unknown. */
   startedAt: string | null;
 }
 
-/** Colours a status page draws its states in, with Velvet's own as fallbacks. */
-const FALLBACK_COLOURS: Record<InstallationState, string> = {
-  operational: "#8ca5ff",
-  degraded: "#d29922",
-  outage: "#f85149",
-  unknown: "#3a3d4a",
+/**
+ * The token each state is drawn from across the gallery.
+ *
+ * A name rather than a colour, so the colour itself is stated once in
+ * `velvet-tokens.css` beside the other three and a change reaches the status
+ * page, the tools, and this gallery together.
+ *
+ * One set for every card rather than each installation's own, because the page
+ * carries a legend and a legend only means something whilst the same colour
+ * means the same thing on every card beneath it. An installation's own palette
+ * belongs to its own page, where it is the only one on screen.
+ */
+export const STATE_TOKENS: Record<InstallationState, string> = {
+  operational: "--velvet-operational",
+  degraded: "--velvet-degraded",
+  outage: "--velvet-outage",
+  unknown: "--velvet-no-data",
 };
 
 /** How long a single request may take before the installation counts as gone. */
@@ -58,7 +67,6 @@ interface StatusSnapshot {
 
 interface PageConfiguration {
   dataBaseUrl?: unknown;
-  theme?: { accent?: unknown; grid?: Record<string, unknown> };
 }
 
 /**
@@ -90,12 +98,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function colour(value: unknown, fallback: string): string {
-  return typeof value === "string" && /^#[0-9a-f]{6}$/iu.test(value)
-    ? value
-    : fallback;
-}
-
 /**
  * Reduces every service's state to the one the page is in.
  *
@@ -114,9 +116,9 @@ function worstState(services: ServiceSnapshot[]): InstallationState {
 /**
  * Asks one installation about itself.
  *
- * Two documents are read, and both have to answer. `config.json` says where the
- * data lives and which colours the page draws its states in; the snapshot says
- * what those states are. An installation that answers neither is one whose page
+ * Two documents are read. `config.json` says where the data lives, and the
+ * snapshot says what the services are doing. An installation that answers
+ * neither is one whose page
  * a visitor could not open either, so it is left out rather than shown as a card
  * that leads nowhere.
  *
@@ -133,7 +135,6 @@ export async function describeInstallation(
   if (!isRecord(configuration)) return null;
 
   const page = configuration as PageConfiguration;
-  const grid = isRecord(page.theme?.grid) ? page.theme.grid : {};
   const snapshot =
     typeof page.dataBaseUrl === "string"
       ? await readJson(`${page.dataBaseUrl}/status.json`, signal)
@@ -148,12 +149,6 @@ export async function describeInstallation(
     host: reference.url.replace(/^https?:\/\//u, "").replace(/\/$/u, ""),
     previewUrl: new URL("og.png", base).href,
     state,
-    stateColour: colour(
-      state === "unknown" ? grid.noData : grid[state],
-      state === "operational"
-        ? colour(page.theme?.accent, FALLBACK_COLOURS.operational)
-        : FALLBACK_COLOURS[state],
-    ),
     services: services.length,
     startedAt:
       typeof status?.monitoringStartedAt === "string"

@@ -106,7 +106,10 @@ function readGeometry() {
   const style = getComputedStyle(card);
   const padding = Number.parseFloat(style.padding);
   const name = document.querySelector("[data-reference-entry] .reference-name");
+  const frame = document.querySelector("[data-reference-entry] .preview-frame");
   return {
+    frameWidth: frame ? Math.round(frame.getBoundingClientRect().width) : 0,
+    frameRadius: frame ? getComputedStyle(frame).borderRadius : "",
     cardWidth: Math.round(card.getBoundingClientRect().width),
     imageWidth: Math.round(image.getBoundingClientRect().width),
     contentWidth: Math.round(card.getBoundingClientRect().width - 2 * padding),
@@ -170,8 +173,6 @@ test("shows each installation as its own page, and leaves out one that has gone"
     assert.equal(entries.length, 1, "an installation whose page has gone is left out");
     assert.equal(entries[0]?.href, LIVE);
     assert.match(entries[0]?.text ?? "", /Live Status/u);
-    assert.match(entries[0]?.text ?? "", /live\.example\.com/u);
-    assert.match(entries[0]?.text ?? "", /All operational/u);
     assert.match(entries[0]?.text ?? "", /2 services/u);
     assert.match(entries[0]?.text ?? "", /Release: 05\.01\.2026/u);
     assert.match(entries[0]?.text ?? "", /Uptime: \d+ days/u);
@@ -183,21 +184,68 @@ test("shows each installation as its own page, and leaves out one that has gone"
     // Each fact is its own chip, so two cards can be compared a fact at a time.
     // The exact span is on the uptime chip rather than in it.
     const chips = await page.$$eval("[data-reference-entry] .fact", readChips);
-    assert.equal(chips.length, 4, "state, services, release, and uptime");
+    assert.equal(chips.length, 3, "services, release, and uptime");
     const unit = String.raw`\d+ (?:years?|months?|weeks?|days?)`;
     assert.match(
-      chips[3]?.title ?? "",
+      chips[2]?.title ?? "",
       new RegExp(`^${unit}(?:, ${unit})*$`, "u"),
-      `the uptime chip carries no breakdown, only ${JSON.stringify(chips[3])}`,
+      `the uptime chip carries no breakdown, only ${JSON.stringify(chips[2])}`,
     );
     // The point of the hover is that it says more than the chip does.
-    assert.notEqual(chips[3]?.title, chips[3]?.text);
+    assert.notEqual(chips[2]?.title, chips[2]?.text);
+
+    // The state is a lamp on the preview, and a colour on its own says nothing
+    // until a reader has been told what it means, so the legend states each one
+    // above the cards.
+    const legend = await page.$$eval(
+      "[data-reference-legend] .legend-item",
+      readChips,
+    );
+    assert.deepEqual(
+      legend.map((item) => item.text),
+      ["All operational", "Degraded", "Outage", "No data yet"],
+    );
+    // On the site's own card, centred, so it reads as belonging to the gallery
+    // beneath it rather than to the paragraph above.
+    const legendBox = await page.evaluate(() => {
+      const list = document.querySelector("[data-reference-legend]");
+      const card = document.querySelector(".legend-card > *");
+      if (!list || !card) return null;
+      const listBox = list.getBoundingClientRect();
+      const cardBox = card.getBoundingClientRect();
+      const items = [...list.children].map((item) => item.getBoundingClientRect());
+      return {
+        onCard: getComputedStyle(card).backgroundColor,
+        leftGap: Math.round(items[0].left - listBox.left),
+        rightGap: Math.round(listBox.right - items[items.length - 1].right),
+        cardWidth: Math.round(cardBox.width),
+      };
+    });
+    assert.ok(legendBox);
+    // Centred is one number against another rather than something to look at:
+    // the room left of the first item equals the room right of the last.
+    assert.ok(
+      Math.abs(legendBox.leftGap - legendBox.rightGap) <= 1,
+      `the legend sits ${legendBox.leftGap}px from one edge and ${legendBox.rightGap}px from the other`,
+    );
+    const lamp = await page.$eval("[data-reference-entry] .led", (node) => ({
+      title: node.getAttribute("title"),
+      colour: getComputedStyle(node).backgroundColor,
+      glow: getComputedStyle(node).boxShadow,
+    }));
+    assert.equal(lamp.title, "All operational");
+    // The same colour the legend names for that state, so the two agree.
+    assert.equal(lamp.colour, "rgb(46, 160, 67)");
+    assert.match(lamp.glow, /rgb/u);
 
     const geometry = await page.evaluate(readGeometry);
 
     assert.ok(geometry);
-    assert.equal(geometry.imageWidth, geometry.contentWidth);
-    assert.equal(geometry.imageRadius, geometry.expectedRadius);
+    // The preview reaches the card's own edge rather than sitting inside its
+    // padding, so it is wider than the content box and forms the top corners
+    // itself. Square where the details meet it.
+    assert.equal(geometry.frameWidth, geometry.cardWidth);
+    assert.match(geometry.frameRadius, /^28px 28px 0px 0px$/u);
     // One entry occupies one cell of the grid rather than a row the width of
     // the page, which is what a full-width row got wrong.
     assert.ok(
