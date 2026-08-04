@@ -32,9 +32,17 @@ function configuration(listed: boolean | null): string {
  */
 function harness(
   velvetYml: string | null,
-  options: { listedRepositories?: string[]; covered?: boolean; readable?: boolean } = {},
+  options: {
+    listedRepositories?: string[];
+    covered?: boolean;
+    readable?: boolean;
+    /** Records the counter holds, with whatever absence note each carries. */
+    records?: { repository: string; unreachableSince?: string }[];
+  } = {},
 ) {
   const written: { repository: string; listed: boolean }[] = [];
+  const records = options.records ?? [];
+  const forgotten: string[] = [];
   const covered = options.covered ?? true;
   const readable = options.readable ?? true;
   const runner = createAutomaticUpdateRunner({
@@ -85,13 +93,36 @@ function harness(
       claim: async () => 1,
       listed: async () => [],
       listedRepositories: async () => options.listedRepositories ?? [],
+      recordedRepositories: async () => records.map((record) => record.repository),
+      async setUnreachable(repository, since) {
+        const record = records.find((entry) => entry.repository === repository);
+        if (!record) return false;
+        // The first miss is what the period is measured from, so a note that
+        // exists is left where it is.
+        const noted = record.unreachableSince !== undefined;
+        if (since === null ? !noted : noted) return false;
+        if (since === null) delete record.unreachableSince;
+        else record.unreachableSince = since;
+        return true;
+      },
+      async forgetUnreachableSince(before) {
+        const gone = records.filter(
+          (record) =>
+            record.unreachableSince !== undefined && record.unreachableSince < before,
+        );
+        for (const record of gone) {
+          records.splice(records.indexOf(record), 1);
+          forgotten.push(record.repository);
+        }
+        return gone.map((record) => record.repository);
+      },
       async setListed(repository, listed) {
         written.push({ repository, listed });
         return true;
       },
     },
   });
-  return { runner, written };
+  return { runner, written, records, forgotten };
 }
 
 test("lists an installation whose own configuration says so", async () => {
@@ -166,6 +197,7 @@ test("does nothing at all without a registry", async () => {
     repositories: 0,
     changed: 0,
     unreachable: 0,
+    forgotten: 0,
     failures: 0,
     truncated: false,
   });
@@ -212,4 +244,65 @@ test("unlists nothing from a pass that could not read a repository", async () =>
   assert.equal(result.failures, 1);
   assert.equal(result.unreachable, 0);
   assert.deepEqual(written, []);
+});
+
+test("notes when an installation first went out of reach, and only then", async () => {
+  const records: { repository: string; unreachableSince?: string }[] = [
+    { repository: "example/status" },
+  ];
+  const { runner } = harness(null, { covered: false, records });
+
+  await runner.reconcileGallery();
+  const first = records[0]?.unreachableSince;
+  assert.ok(first, "the first miss is noted");
+
+  // A second pass must leave it where it is. Rewriting it would push the moment
+  // forward for as long as the installation stays gone, and the grace period
+  // would never elapse.
+  await runner.reconcileGallery();
+  assert.equal(records[0]?.unreachableSince, first);
+});
+
+test("clears the note as soon as the installation is seen again", async () => {
+  const records = [
+    { repository: "example/status", unreachableSince: "2026-07-01T00:00:00.000Z" },
+  ];
+  const { runner } = harness(configuration(true), { records });
+
+  await runner.reconcileGallery();
+
+  assert.equal(records[0]?.unreachableSince, undefined);
+});
+
+test("forgets a record once it has been out of reach for the grace period", async () => {
+  // Thirty-one days, so it is past the period rather than at its edge.
+  const long = new Date(Date.now() - 31 * 24 * 60 * 60 * 1_000).toISOString();
+  const records = [
+    { repository: "example/status", unreachableSince: long },
+    { repository: "example/recent", unreachableSince: new Date().toISOString() },
+  ];
+  const { runner, forgotten } = harness(null, { covered: false, records });
+
+  const result = await runner.reconcileGallery();
+
+  assert.deepEqual(forgotten, ["example/status"]);
+  assert.equal(result.forgotten, 1);
+  // The one that went out of reach recently stays, because a repository gone
+  // for an afternoon and one gone for good look identical from here.
+  assert.deepEqual(
+    records.map((record) => record.repository),
+    ["example/recent"],
+  );
+});
+
+test("forgets nothing from a pass that could not see everything", async () => {
+  const long = new Date(Date.now() - 31 * 24 * 60 * 60 * 1_000).toISOString();
+  const records = [{ repository: "example/other", unreachableSince: long }];
+  const { runner, forgotten } = harness(null, { readable: false, records });
+
+  const result = await runner.reconcileGallery();
+
+  assert.equal(result.failures, 1);
+  assert.equal(result.forgotten, 0);
+  assert.deepEqual(forgotten, []);
 });

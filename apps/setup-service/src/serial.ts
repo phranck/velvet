@@ -65,6 +65,16 @@ export interface SerialInstallationRecord {
    * removes the entry here on the next reconciliation.
    */
   listed?: boolean;
+  /**
+   * When the reconciliation first found this installation out of reach.
+   *
+   * Absent while it is reachable, and cleared the moment it is seen again. A
+   * repository that has been gone for the grace period is one whose record
+   * Velvet has no reason to keep, and this is what the period is measured
+   * from. Being unreachable once is not enough to delete anything by: an app
+   * removed for an afternoon looks exactly the same from here.
+   */
+  unreachableSince?: string;
 }
 
 /** What the public gallery is allowed to disclose about an installation. */
@@ -161,6 +171,46 @@ export interface InstallationSerialCounter {
    *   an unreadable counter is not an empty one.
    */
   listedRepositories(): Promise<string[] | null>;
+
+  /**
+   * Every installation the counter holds a record for, as `owner/name`.
+   *
+   * Wider than {@link listedRepositories}, which names only those that consent
+   * to be shown. Forgetting a record is about the record rather than about the
+   * gallery, so it has to see the ones nobody was ever shown either.
+   *
+   * @returns The repositories, or `null` when the counter cannot be read.
+   */
+  recordedRepositories(): Promise<string[] | null>;
+
+  /**
+   * Notes an installation as out of reach, or clears that note.
+   *
+   * Writing only when the answer differs keeps a pass that finds nothing
+   * changed from touching the counter, which is the ordinary case.
+   *
+   * The note is the first miss rather than the latest. Rewriting it on every
+   * pass would push the moment forward for as long as the installation stays
+   * gone, so the grace period would never elapse and nothing would ever be
+   * forgotten.
+   *
+   * @param repository - The installation, as `owner/name`.
+   * @param since - When it went out of reach, ignored if one is already noted,
+   *   or `null` now that it is back.
+   * @returns Whether the counter was written.
+   */
+  setUnreachable(repository: string, since: string | null): Promise<boolean>;
+
+  /**
+   * Removes the records of installations out of reach since before a moment.
+   *
+   * `issued` is left alone, so a number is retired rather than recycled. That
+   * is the whole reason the counter keeps it apart from the list.
+   *
+   * @param before - Records whose `unreachableSince` precedes this are removed.
+   * @returns The repositories forgotten, which may be none.
+   */
+  forgetUnreachableSince(before: string): Promise<string[]>;
 
   /**
    * Records what an installation's own configuration says about the gallery.
@@ -387,6 +437,57 @@ export function createInstallationSerialCounter(
     }
   };
 
+  /**
+   * Reads the counter, applies a change, and writes it back against its SHA.
+   *
+   * Every write here is the same shape: read, decide, write, and start again
+   * when somebody else wrote first. Two setups finishing at the same moment is
+   * the case that shape exists for, since the second write is rejected and has
+   * to be retried against what the first one left behind.
+   *
+   * @param change - Produces the next state and the message describing it, or
+   *   `null` when there is nothing to do, which is the ordinary case for a
+   *   reconciliation that finds no drift and means the counter is not touched
+   *   at all. The message comes from here rather than from the caller because
+   *   it often names something only the new state knows, such as the number
+   *   just issued.
+   * @returns The state written, or `null` when nothing needed writing.
+   * @throws When the write keeps conflicting, so the caller decides what an
+   *   unwritable counter means rather than having that decided here.
+   */
+  const writeState = async (
+    change: (
+      state: SerialCounterState,
+    ) => { next: SerialCounterState; message: string } | null,
+  ): Promise<SerialCounterState | null> => {
+    let lastConflict: unknown;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const token = await repositoryToken();
+      const { state, sha } = await readState(token);
+      const change_ = change(state);
+      if (change_ === null) return null;
+      const { next, message } = change_;
+      try {
+        await githubRequest<unknown>(contentsPath, token, {
+          method: "PUT",
+          body: JSON.stringify({
+            message,
+            content: Buffer.from(serializeState(next), "utf8").toString("base64"),
+            ...(sha ? { sha } : {}),
+          }),
+        });
+        return next;
+      } catch (error) {
+        if (!isConflict(error)) throw error;
+        lastConflict = error;
+      }
+    }
+    throw new Error(
+      `The serial counter could not be updated after ${maxAttempts} attempts.`,
+      { cause: lastConflict },
+    );
+  };
+
   return {
     async peek() {
       try {
@@ -400,18 +501,18 @@ export function createInstallationSerialCounter(
     },
 
     async claim(installation) {
-      let lastConflict: unknown;
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const token = await repositoryToken();
-        const { state, sha } = await readState(token);
-        const serial = state.issued + 1;
+      // The number is decided inside the write, from the state that write is
+      // made against, so two setups finishing together receive different ones.
+      let claimed = 0;
+      await writeState((state) => {
+        claimed = state.issued + 1;
         const next: SerialCounterState = {
           schemaVersion: 1,
-          issued: serial,
+          issued: claimed,
           installations: [
             ...state.installations,
             {
-              serial,
+              serial: claimed,
               repository: installation.repository,
               statusPageName: installation.statusPageName,
               url: installation.url,
@@ -422,25 +523,12 @@ export function createInstallationSerialCounter(
             },
           ],
         };
-        try {
-          await githubRequest<unknown>(contentsPath, token, {
-            method: "PUT",
-            body: JSON.stringify({
-              message: `Chore: issue serial ${serial} to ${installation.repository}`,
-              content: Buffer.from(serializeState(next), "utf8").toString("base64"),
-              ...(sha ? { sha } : {}),
-            }),
-          });
-          return serial;
-        } catch (error) {
-          if (!isConflict(error)) throw error;
-          lastConflict = error;
-        }
-      }
-      throw new Error(
-        `The serial counter could not be updated after ${maxAttempts} attempts.`,
-        { cause: lastConflict },
-      );
+        return {
+          next,
+          message: `Chore: issue serial ${claimed} to ${installation.repository}`,
+        };
+      });
+      return claimed;
     },
 
     async listed() {
@@ -467,48 +555,87 @@ export function createInstallationSerialCounter(
       }
     },
 
+    async recordedRepositories() {
+      try {
+        const { state } = await readState(await repositoryToken());
+        return state.installations.map((installation) => installation.repository);
+      } catch {
+        return null;
+      }
+    },
+
+    async setUnreachable(repository, since) {
+      return writeState((state) => {
+        const current = state.installations.find(
+          (installation) => installation.repository === repository,
+        );
+        if (!current) return null;
+        // The first miss is what the period is measured from. Rewriting it on
+        // every pass would push the moment forward for as long as the
+        // installation stays gone, and the period would never elapse.
+        const noted = current.unreachableSince !== undefined;
+        if (since === null ? !noted : noted) return null;
+        return {
+          message: `Chore: ${since ? "note" : "clear"} ${repository} as unreachable`,
+          next: {
+            ...state,
+            installations: state.installations.map((installation) =>
+              installation.repository === repository
+                ? since
+                  ? { ...installation, unreachableSince: since }
+                  : withoutUnreachable(installation)
+                : installation,
+            ),
+          },
+        };
+      }).then((written) => written !== null);
+    },
+
+    async forgetUnreachableSince(before) {
+      const forgotten: string[] = [];
+      await writeState((state) => {
+        forgotten.length = 0;
+        const staying = state.installations.filter((installation) => {
+          const since = installation.unreachableSince;
+          const gone = since !== undefined && since < before;
+          if (gone) forgotten.push(installation.repository);
+          return !gone;
+        });
+        if (staying.length === state.installations.length) return null;
+        return {
+          message: `Chore: forget ${forgotten.length} installation${forgotten.length === 1 ? "" : "s"} long out of reach`,
+          // `issued` is deliberately untouched, so a number is retired rather
+          // than recycled. That is the whole reason it is kept apart from the
+          // list it counts.
+          next: { ...state, installations: staying },
+        };
+      });
+      return forgotten;
+    },
+
     async setListed(repository, listed) {
-      let lastConflict: unknown;
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const token = await repositoryToken();
-        const { state, sha } = await readState(token);
+      return writeState((state) => {
         const current = state.installations.find(
           (installation) => installation.repository === repository,
         );
         // An installation with no record was never issued a serial, so there is
         // nothing to mark and nothing to report as changed.
-        if (!current) return false;
-        if ((current.listed === true) === listed) return false;
-
-        const next: SerialCounterState = {
-          ...state,
-          installations: state.installations.map((installation) =>
-            installation.repository === repository
-              ? listed
-                ? { ...installation, listed: true }
-                : withoutListed(installation)
-              : installation,
-          ),
+        if (!current) return null;
+        if ((current.listed === true) === listed) return null;
+        return {
+          message: `Chore: ${listed ? "list" : "unlist"} ${repository}`,
+          next: {
+            ...state,
+            installations: state.installations.map((installation) =>
+              installation.repository === repository
+                ? listed
+                  ? { ...installation, listed: true }
+                  : withoutListed(installation)
+                : installation,
+            ),
+          },
         };
-        try {
-          await githubRequest<unknown>(contentsPath, token, {
-            method: "PUT",
-            body: JSON.stringify({
-              message: `Chore: ${listed ? "list" : "unlist"} ${repository}`,
-              content: Buffer.from(serializeState(next), "utf8").toString("base64"),
-              ...(sha ? { sha } : {}),
-            }),
-          });
-          return true;
-        } catch (error) {
-          if (!isConflict(error)) throw error;
-          lastConflict = error;
-        }
-      }
-      throw new Error(
-        `The serial counter could not be updated after ${maxAttempts} attempts.`,
-        { cause: lastConflict },
-      );
+      }).then((written) => written !== null);
     },
   };
 }
@@ -524,5 +651,19 @@ function withoutListed(
 ): SerialInstallationRecord {
   const rest = { ...installation };
   delete rest.listed;
+  return rest;
+}
+
+/**
+ * Drops the absence note, for the same reason `withoutListed` drops consent.
+ *
+ * A record that is reachable says nothing about being unreachable, rather than
+ * carrying a field that has to be read to find out it means nothing.
+ */
+function withoutUnreachable(
+  installation: SerialInstallationRecord,
+): SerialInstallationRecord {
+  const rest = { ...installation };
+  delete rest.unreachableSince;
   return rest;
 }
