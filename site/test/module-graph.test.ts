@@ -219,6 +219,9 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // list because its cards are step cards, which carry a wizard's body and
   // footer as well as a surface.
   card: ["attributions", "changelog", "documentation", "references"],
+  // The list of places a long page holds. The reference lists its topics and
+  // the changelog its releases, and both want the same panel.
+  "topic-index": ["changelog", "documentation"],
   "step-card": ["onboarding", "website"],
   "page-footer": [
     "attributions",

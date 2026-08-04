@@ -108,6 +108,28 @@ h6 {
 }
 
 /**
+ * A long page with its own index beside it.
+ *
+ * The reference and the changelog are both read this way: the list on the left,
+ * the content on the right, and one column below the width at which a list
+ * leaves the content enough room. The reference's tables are what set that
+ * width, and the changelog follows it so the two pages do not part company on
+ * the way down to a phone.
+ */
+.velvet-indexed-page {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  padding: 2.5rem 0 6rem;
+}
+@media (min-width: 960px) {
+  .velvet-indexed-page {
+    grid-template-columns: 16rem minmax(0, 1fr);
+    gap: 3rem;
+  }
+}
+
+/**
  * The element holding a page's three parts: the bar, the content, and the
  * credit at the foot.
  *

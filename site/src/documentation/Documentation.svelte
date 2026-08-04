@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Card from "../components/card";
+  import * as TopicIndex from "../components/topic-index";
   import Icon from "../components/Icon.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
@@ -29,25 +30,16 @@
 
 <SiteHeader current="documentation" />
 
-<div class="documentation velvet-page">
+<div class="documentation velvet-page velvet-indexed-page">
   <!--
     The topics, and nothing beneath them. A reference with sixty entries in its
     sidebar is a reference nobody scans, so only the level-two headings are
     listed.
   -->
-  <aside class="topics" aria-label="Topics">
-    <nav>
-      <ul>
-        {#each sections as section (section.id)}
-          <li>
-            <a href={`#${section.id}`} data-topic-link={section.id}>
-              {section.title}
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </nav>
-  </aside>
+  <TopicIndex.Root
+    label="Topics"
+    entries={sections.map(({ id, title }) => ({ id, label: title }))}
+  />
 
   <main>
     <h1>Configuration</h1>
@@ -104,91 +96,6 @@
 <SiteFooter />
 
 <style>
-  /* The topics on the left and the reference on the right, from the width at
-     which a sidebar leaves the reference enough room for its four-column
-     tables. Below that the topics come first and the page reads in one column.
-     The site's own measure is shared with the header and the footer. */
-  .documentation {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-    padding: 2.5rem 0 6rem;
-  }
-  @media (min-width: 960px) {
-    .documentation {
-      grid-template-columns: 16rem minmax(0, 1fr);
-      gap: 3rem;
-    }
-  }
-
-  /* Pinned below the bar rather than at the top of the window, because the bar
-     is what sits there. It never scrolls out of the top, and scrolls within
-     itself once the list is taller than what is left of the window. */
-  /* On the same surface the topics themselves sit on, so the list reads as
-     one panel rather than as links loose on the backdrop. */
-  .topics {
-    align-self: start;
-    /* Its own geometry rather than the page's, and stated here so the entries
-       below derive from what actually applies to them. A panel of short links
-       reads as a lighter surface than a card of prose, so it is rounded less
-       and holds its content closer in.
-
-       Deriving the entries from the page's card instead put them at 12px, the
-       page radius less the 20px a card pads by, whilst this surface pads by
-       10px. The formula was taken but not the number it should have been fed. */
-    --topics-radius: 28px;
-    --topics-padding: 8px;
-    --topics-inner-radius: max(
-      calc(var(--topics-radius) - var(--topics-padding)),
-      0px
-    );
-    padding: var(--topics-padding);
-    border-radius: var(--topics-radius);
-    background: #14161d;
-  }
-  @media (min-width: 960px) {
-    .topics {
-      position: sticky;
-      top: 5.75rem;
-      max-height: calc(100vh - 7.5rem);
-      overflow-y: auto;
-    }
-  }
-  .topics ul {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  /* The selection is a surface nested in the panel, so it takes the panel's
-     radius less the panel's own inset. Its label stands as far in from the
-     selection as the panel's content stands in from the panel, and takes half
-     the selection's radius on top of that to clear the curve. The panel states
-     that one distance and both readings of it follow. */
-  .topics a {
-    display: block;
-    padding: 0.25rem
-      calc(var(--topics-padding) + var(--topics-inner-radius) / 2);
-    border-radius: var(--topics-inner-radius);
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-body);
-    line-height: 1.45;
-    text-decoration: none;
-  }
-  .topics a:hover,
-  .topics a:focus-visible {
-    color: var(--velvet-text);
-  }
-  /* The topic a reader is looking at. Marked by a script in the page, so the
-     rule is global or Svelte finds no element carrying the attribute and
-     removes it as unused. */
-  .topics a:global([data-current]) {
-    color: var(--velvet-accent);
-    background: color-mix(in srgb, var(--velvet-accent) 10%, transparent);
-  }
-
   /* Each of these introduces a card beneath it, so each begins half a radius
      in, where that card's curve gives way to its straight edge. Left at the
      page edge a heading sits out beyond the corner the card has already curved
