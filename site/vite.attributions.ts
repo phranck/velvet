@@ -41,6 +41,14 @@ export default defineConfig({
       root: import.meta.dirname,
       component: "/src/attributions/Attributions.svelte",
       mountId: "attributions",
+      // The same three the start page preloads, which it had and these did not.
+      // The heading face is deliberately not among them: preloading it measured
+      // no better there and only competed for bandwidth.
+      preloadFonts: [
+        /^plaster-latin-400-normal-.*\.woff2$/,
+        /^barlow-latin-400-normal-.*\.woff2$/,
+        /^barlow-latin-600-normal-.*\.woff2$/,
+      ],
     }),
   ],
   build: {
