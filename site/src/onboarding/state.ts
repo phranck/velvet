@@ -51,10 +51,21 @@ export interface OnboardingDraft {
    * owner makes the second one.
    */
   listInGallery: boolean;
+  /**
+   * Whether GitHub should create the repository private.
+   *
+   * Off by default, and deliberately so. Publishing GitHub Pages from a private
+   * repository needs a paid plan, so a default of private would hand anybody on
+   * a free account a repository that works and a status page that never
+   * appears. A setting that depends on something Velvet cannot check is one the
+   * reader has to choose rather than one they have to notice and undo.
+   */
+  privateRepository: boolean;
 }
 
 export interface SetupRequest {
   configuration: NormalizedVelvetConfiguration;
+  repositoryVisibility: "public" | "private";
 }
 
 export type OnboardingValidationResult =
@@ -104,6 +115,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     themeId: SYSTEM_THEMES[0].id,
     services: [createServiceDraft()],
     listInGallery: false,
+    privateRepository: false,
   };
 }
 
@@ -163,7 +175,13 @@ export function buildSetupRequest(
   if (!finalResult.success) {
     return { success: false, errors: mapContractErrors(finalResult.errors) };
   }
-  return { success: true, request: { configuration: finalResult.data } };
+  return {
+    success: true,
+    request: {
+      configuration: finalResult.data,
+      repositoryVisibility: draft.privateRepository ? "private" : "public",
+    },
+  };
 }
 
 /**

@@ -1,3 +1,5 @@
+import type { RepositoryVisibility } from "@velvet/contracts";
+
 import {
   GITHUB_API_VERSION,
   GITHUB_API_ORIGIN,
@@ -125,6 +127,7 @@ export interface GitHubSetupClient {
     userToken: string,
     owner: string,
     name: string,
+    visibility: RepositoryVisibility,
   ): Promise<GitHubRepository>;
   createInstallationToken(
     installationId: number,
@@ -264,7 +267,7 @@ export function createGitHubSetupClient(
       return body.installations.map(parseInstallation);
     },
 
-    async createRepositoryFromTemplate(userToken, owner, name) {
+    async createRepositoryFromTemplate(userToken, owner, name, visibility) {
       const body = await githubRequest<unknown>(
         "/repos/phranck/velvet-template/generate",
         userToken,
@@ -274,7 +277,7 @@ export function createGitHubSetupClient(
             owner,
             name,
             include_all_branches: false,
-            private: false,
+            private: visibility === "private",
           }),
         },
       );

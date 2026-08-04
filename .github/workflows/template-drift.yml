@@ -1,0 +1,48 @@
+# Reports whether the template's pinned Velvet can still read what Velvet writes.
+#
+# An installation runs two halves versioned separately. The setup service writes
+# `velvet.yml` from this repository, and the workflows it installs run the
+# monitor from whatever commit the template pins. Nothing made them agree, and
+# on 2026-08-04 they did not: the first run of a real installation failed with
+# INVALID_CONFIGURATION because the service wrote a field the pin had never
+# heard of.
+#
+# This deliberately does not move the pin. That is a change to another
+# repository and belongs under a person's hand, and a check that corrected the
+# drift silently would hide how often it happens.
+#
+# It reads no event payload, so there is nothing here an outsider can write into
+# a command.
+name: Template drift
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Once a day, so a pin that falls behind without anyone merging here is
+    # still reported rather than waiting for the next push to notice.
+    - cron: "41 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: velvet-template-drift
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      # The full history, because the check builds the pinned commit's own
+      # contracts in a worktree and a shallow clone does not contain it.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - name: Compare the pinned monitor against what this repository writes
+        run: bun scripts/check-template-drift.ts

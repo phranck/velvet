@@ -3,6 +3,7 @@ export {
   SetupEventSchema,
   SetupProgressStageSchema,
   SetupPublicErrorSchema,
+  RepositoryVisibilitySchema,
   SetupRequestSchema,
   SetupSessionSchema,
   SetupStatusSchema,
@@ -19,6 +20,7 @@ export { serializeVelvetConfiguration } from "./serialization.js";
 export type {
   SetupContractError,
   SetupContractValidationResult,
+  RepositoryVisibility,
   SetupRequest,
 } from "./types.js";
 export {

@@ -153,6 +153,9 @@ export async function provisionVelvet(
         userToken,
         owner,
         repositoryName,
+        // Public unless asked otherwise, which is what every installation made
+        // before the choice existed received.
+        input.request.repositoryVisibility ?? "public",
       );
       if (
         repository.owner.toLowerCase() !== owner.toLowerCase() ||
