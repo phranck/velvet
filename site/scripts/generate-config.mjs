@@ -13,8 +13,6 @@ import { resolveTheme } from "../src/lib/theme.js";
  * monitor owns. A file that does not validate stops the build rather than
  * producing a page from a configuration nobody checked.
  *
- * This used to accept a second, foreign format as well, and carried a branch at
- * every field to translate it. Velvet reads one format.
  *
  * Usage: bun generate-config.mjs <velvet.yml> <out/config.json>
  */

@@ -3,17 +3,14 @@
  *
  * An installation runs two halves that are versioned separately. The setup
  * service writes `velvet.yml` from this repository's contracts, and the
- * workflows it installs run the monitor from whatever commit they pin. Nothing
- * made the two agree, and on 2026-08-04 they did not: the service wrote a
- * `gallery` block that arrived 85 commits after the pin, the pinned contracts
- * refuse unknown fields, and the first run of a real installation failed with
- * `INVALID_CONFIGURATION`.
+ * workflows it installs run the monitor from whatever commit they pin. A pin
+ * older than the configuration contract refuses a field the service writes, and
+ * the installation's first run fails with `INVALID_CONFIGURATION`.
  *
- * Those workflows come from two places, and the first repair covered only one.
- * A new repository is created from `phranck/velvet-template`, and the release
- * artefact's own copy of the same files is then written over it, so both have
- * to be right. Repairing the template alone left the artefact shipping the pin
- * that had just been removed, which is what this now catches.
+ * Those workflows arrive from two places, so both are judged. A new repository
+ * is created from `phranck/velvet-template`, and the release artefact's own
+ * copy of the same files is written over it whenever the installation token may
+ * write workflows.
  *
  * The invariant is narrow and worth stating exactly: every configuration this
  * repository can produce has to validate against the contracts each pinned

@@ -27,9 +27,9 @@ test("renders the local controls in a right sidebar and two real services", asyn
   assert.match(html, /class="velvet-wordmark(?:\s|")/);
   assert.match(html, /data-velvet-tool-brand/);
   assert.match(html, /data-velvet-tool-subtitle/);
-  // The whole name sits on the heading, which is where aria-label is valid.
-  // The subtitle used to repeat it on a bare span, where the attribute is
-  // prohibited and was ignored by assistive technology anyway.
+  // The whole name sits on the heading, which is where aria-label is valid. A
+  // bare span carrying it as well is prohibited, and assistive technology
+  // ignores the attribute there.
   assert.match(html, /aria-label="Velvet CONFIGURATOR"/);
   assert.match(html, /Local only/);
   assert.ok((html.match(/type="color"/g)?.length ?? 0) >= 6);
@@ -502,9 +502,8 @@ test("shares one accessible custom listbox across themes and color sources", asy
   assert.match(customListbox, /import ColorSwatch from "\.\/ColorSwatch\.svelte"/);
   assert.match(customListbox, /<ColorSwatch\s+\{color\}\s+size=\{compact \? 22 : 14\}/);
   // The tick is always rendered and hidden when the row is not selected, so
-  // every row reserves the same width. It used to swap in `ph-blank`, which
-  // Phosphor does not define, and which therefore reserved that width only
-  // because an undefined icon renders nothing.
+  // every row reserves the same width. Swapping in a placeholder icon reserves
+  // it only for as long as that name stays undefined in Phosphor.
   assert.match(customListbox, /class="ph-duotone ph-check-fat"/);
   assert.match(customListbox, /class:unselected=\{option\.value !== value\}/);
   assert.match(customListbox, /\.listbox-options i\.unselected \{\s*visibility: hidden;/);

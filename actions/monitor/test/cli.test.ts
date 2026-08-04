@@ -131,9 +131,10 @@ test("reapplies the same observations once after a safe data conflict", async ()
 });
 
 test("a configuration that cannot be read is not reported as an invalid one", async () => {
-  // These two failures used to share INVALID_CONFIGURATION, which made them
-  // indistinguishable from a run's output. Diagnosing issue 145 went down the
-  // wrong path twice because of it, so the distinction is asserted here.
+  // A configuration that cannot be read and one that is invalid are different
+  // faults with different repairs, so they carry different codes. Sharing one
+  // makes them indistinguishable in a run's output, and a reader then looks for
+  // a schema error where the file was never opened.
   const module = (await cliModule) as Record<string, unknown>;
   if (typeof module.runMonitorCli !== "function") {
     assert.fail("@velvet/monitor-action must export runMonitorCli");

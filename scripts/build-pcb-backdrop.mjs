@@ -705,13 +705,11 @@ function argument(name, fallback) {
  * Reads the Velvet version the identity block prints.
  *
  * It comes from the root manifest, which is where Velvet states its version and
- * what every other place is written from. It used to be read from the generated
- * release artefact, and that put the silkscreen one step downstream of the
- * source: the backdrop then printed whichever version the artefact had last
- * been cut against, which on 2026-08-04 was not the version the repository
- * itself claimed.
+ * what every other place is written from. Reading it from the generated release
+ * artefact instead would put the silkscreen one step downstream of the source,
+ * printing whichever version that artefact was last cut against.
  *
- * `scripts/sync-version.mjs` reruns this whenever that number moves.
+ * `scripts/sync-version.mjs` reruns this whenever the version moves.
  *
  * @returns The version, or `null` when the manifest cannot be read.
  */

@@ -175,10 +175,9 @@ export function createSetupHandler(
             /*
              * The one route this service answers to another origin, because it
              * is the one written to be read by a page that is not ours to
-             * serve. velvet.li is static on GitHub Pages and the registry is
+             * serve. The website is static on GitHub Pages and the registry is
              * private, so without this the page shows an empty list however
-             * many installations have consented, which is what it did from the
-             * day it was published until 2026-08-04.
+             * many installations have consented.
              *
              * A single origin is named rather than `*`, and only when one is
              * configured. `secureResponse` reads this header back and relaxes
@@ -823,9 +822,9 @@ function secureResponse(
   /*
    * The resource policy follows the route's own decision rather than being
    * decided twice. A route that named an origin in `Access-Control-Allow-Origin`
-   * has already said it may be read from elsewhere, and leaving `same-origin`
-   * here would refuse the same read a second time, which is a failure that
-   * looks exactly like the first one and is fixed in a different file.
+   * has already said it may be read from elsewhere, and `same-origin` here would
+   * refuse that read a second time, with an error indistinguishable from the
+   * first and a cause in a different file.
    */
   headers.set(
     "Cross-Origin-Resource-Policy",
