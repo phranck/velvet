@@ -132,6 +132,16 @@ interface AutomaticUpdateRunnerOptions {
   serials?: InstallationSerialCounter;
 }
 
+/**
+ * How long an installation stays out of reach before its record is forgotten.
+ *
+ * Long enough that no ordinary interruption reaches it, since an app removed
+ * for an afternoon and a repository deleted for good look identical from here.
+ * Short enough that Velvet is not holding somebody's account name a year after
+ * they left.
+ */
+const FORGET_AFTER_MS = 30 * 24 * 60 * 60 * 1_000;
+
 /** What one pass over the installations found out about gallery consent. */
 export interface GalleryReconciliation {
   /** Installations the app is on. */
@@ -148,6 +158,8 @@ export interface GalleryReconciliation {
    * that cannot be verified is not acted on.
    */
   unreachable: number;
+  /** Records removed after staying out of reach for the grace period. */
+  forgotten: number;
   /** Repositories that could not be read at all. */
   failures: number;
   /** Whether the enumeration hit its page limit. */
@@ -327,6 +339,7 @@ export function createAutomaticUpdateRunner(
       repositories: 0,
       changed: 0,
       unreachable: 0,
+      forgotten: 0,
       failures: 0,
       truncated: false,
     };
@@ -385,6 +398,27 @@ export function createAutomaticUpdateRunner(
         if (visited.has(repository)) continue;
         if (await serials.setListed(repository, false)) result.unreachable += 1;
       }
+
+      /*
+       * Records are kept only as long as there is an installation behind them.
+       * They name a repository, and a repository names a person, so one whose
+       * installation has been gone for the grace period is one Velvet has no
+       * reason to hold.
+       *
+       * The note is written on the first pass that misses an installation and
+       * cleared the moment it is seen again, so an app removed for an afternoon
+       * never approaches the period. Only the record goes: `issued` is left
+       * alone, so the number is retired rather than handed to somebody else.
+       */
+      const now = new Date();
+      for (const repository of (await serials.recordedRepositories()) ?? []) {
+        await serials.setUnreachable(
+          repository,
+          visited.has(repository) ? null : now.toISOString(),
+        );
+      }
+      const cutoff = new Date(now.getTime() - FORGET_AFTER_MS).toISOString();
+      result.forgotten = (await serials.forgetUnreachableSince(cutoff)).length;
     }
 
     return result;

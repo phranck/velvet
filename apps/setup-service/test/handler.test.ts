@@ -936,6 +936,9 @@ test("reports the next serial, and nothing when no registry is configured", asyn
       claim: async () => 42,
       listed: async () => [],
       listedRepositories: async () => [],
+      recordedRepositories: async () => [],
+      setUnreachable: async () => false,
+      forgetUnreachableSince: async () => [],
       setListed: async () => false,
     },
   });
@@ -962,6 +965,9 @@ test("a serial the counter refuses does not fail the endpoint", async () => {
       },
       listed: async () => [],
       listedRepositories: async () => [],
+      recordedRepositories: async () => [],
+      setUnreachable: async () => false,
+      forgetUnreachableSince: async () => [],
       setListed: async () => false,
     },
   });
@@ -1006,6 +1012,9 @@ test("the gallery names only the pages whose owners agreed, and nothing else", a
         { statusPageName: "Example", url: "https://status.example.com" },
       ],
       listedRepositories: async () => ["example/status"],
+      recordedRepositories: async () => [],
+      setUnreachable: async () => false,
+      forgetUnreachableSince: async () => [],
       setListed: async () => false,
     },
   });
@@ -1041,6 +1050,9 @@ test("an unreadable registry reports nothing rather than an empty gallery", asyn
       claim: async () => 42,
       listed: async () => null,
       listedRepositories: async () => [],
+      recordedRepositories: async () => [],
+      setUnreachable: async () => false,
+      forgetUnreachableSince: async () => [],
       setListed: async () => false,
     },
   });
