@@ -748,3 +748,27 @@ test("offers an optional description that becomes the page's SEO copy", async ()
   assert.match(onboarding, /maxlength="300"/);
   assert.match(state, /seo: \{ description \}/);
 });
+
+test("asks before deleting a repository, and renders the question as a modal", async () => {
+  const html = await renderer.render("/src/onboarding/Onboarding.svelte", {});
+  const onboarding = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
+
+  // A dialog element rather than a panel in the flow, so the question takes
+  // focus and Escape answers it.
+  assert.match(html, /<dialog[^>]*data-repository-conflict/);
+  assert.match(onboarding, /showModal\(\)/);
+  assert.match(onboarding, /data-choose-another-name/);
+  assert.match(onboarding, /data-replace-repository/);
+  // What is lost has to be said before it is lost.
+  assert.match(onboarding, /This cannot be undone/);
+  // The destructive answer never carries the primary variant.
+  assert.doesNotMatch(
+    onboarding,
+    /velvet-button--primary[\s\S]{0,200}data-replace-repository/,
+  );
+  // And it is the only place either tool offers the danger variant.
+  assert.equal(onboarding.match(/velvet-button--danger/g)?.length, 1);
+});

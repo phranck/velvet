@@ -55,6 +55,8 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
         repositorySelection: "selected",
       }];
     },
+    async repositoryExists() { return false; },
+    async deleteRepository() {},
     async createRepositoryFromTemplate() { throw new Error("unused"); },
     async createInstallationToken() { throw new Error("unused"); },
     async deleteInstallation() { throw new Error("unused"); },
@@ -455,6 +457,8 @@ test("returns safe repository and workflow recovery targets after setup fails", 
 test("explains missing installation and organization approval without claiming success", async () => {
   const github = githubClient({
     async listInstallations() { return []; },
+    async repositoryExists() { return false; },
+    async deleteRepository() {},
     async createRepositoryFromTemplate() {
       return {
         id: 123_456_789,
@@ -527,6 +531,8 @@ test("uses a temporary installation only to create the repository, then offers r
             repositorySelection: installationMode,
           }];
     },
+    async repositoryExists() { return false; },
+    async deleteRepository() {},
     async createRepositoryFromTemplate() {
       return {
         id: 123_456_789,
@@ -608,6 +614,8 @@ test("rejects an installation id that GitHub did not grant to the authenticated 
             repositorySelection: "selected",
           }];
     },
+    async repositoryExists() { return false; },
+    async deleteRepository() {},
     async createRepositoryFromTemplate() {
       return {
         id: 123_456_789,

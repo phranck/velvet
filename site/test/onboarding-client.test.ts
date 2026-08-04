@@ -150,6 +150,7 @@ test("keeps safe error details and recovery links for a failed workflow", async 
     message: "The initial Velvet workflow did not complete successfully.",
     errorId: "E".repeat(26),
     recoverable: true,
+    code: "WORKFLOW_FAILED",
     repositoryUrl: "https://github.com/velvet-user/status",
     workflowUrl: "https://github.com/velvet-user/status/actions/runs/777",
   });

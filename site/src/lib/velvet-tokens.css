@@ -23,6 +23,10 @@
   --velvet-text: #efedf5;
   --velvet-text-muted: #979aa8;
   --velvet-surface-raised: #272a36;
+  /* The tone the tools mark something irreversible with. It is the same red a
+     status page shows an outage in, because a reader who has seen one should
+     read the other the same way. */
+  --velvet-outage: #f85149;
 
   /* Shared by the onboarding and the website, which sit on the board. */
   --velvet-base: #0a0b0f;

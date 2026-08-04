@@ -46,6 +46,20 @@
   color: var(--velvet-text);
 }
 
+/**
+ * The one button that destroys something.
+ *
+ * Added for the only irreversible action either tool offers, which is deleting
+ * a repository that stands where a new one is meant to go. It carries the
+ * outage colour rather than the accent, so it cannot be clicked in the belief
+ * that it is the ordinary way forward, and it is deliberately not the primary
+ * variant of anything: the safe answer keeps that place.
+ */
+.velvet-button--danger {
+  background: color-mix(in srgb, var(--velvet-outage, #f85149) 16%, transparent);
+  color: var(--velvet-outage, #f85149);
+}
+
 .velvet-button:disabled {
   cursor: wait;
   opacity: 0.65;

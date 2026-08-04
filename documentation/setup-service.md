@@ -245,6 +245,16 @@ the build writes rather than the repository carrying it, and which is excluded
 from the hash it reports. Were it counted, writing it would invalidate the very
 value it had just recorded.
 
+## Repository creation
+
+The onboarding decides whether the repository is created public or private, and
+sends that answer as `repositoryVisibility`. A request that omits it receives a
+public repository, which is what every installation made before the choice
+existed received. Publishing GitHub Pages from a private repository requires a
+paid GitHub plan, so the onboarding leaves the box unticked and says so beside
+it rather than choosing privacy on somebody's behalf. Velvet neither reads nor
+maintains the setting afterwards, and it is not part of `velvet.yml`.
+
 ## Partial setup recovery
 
 The current browser session records each completed step. On the first setup for
@@ -270,6 +280,14 @@ can be removed by its owner and setup can be retried with the same name. If
 `velvet.yml` was already committed, the owner can run the `Velvet Pages`
 workflow manually or retry with a new repository name. The service never
 silently overwrites an unrelated existing repository.
+
+Before creating anything, the service checks whether a repository of that name
+already exists. When one does, setup stops with `REPOSITORY_EXISTS` and creates
+nothing at all, so the name can be changed and the setup retried. Deleting the
+repository that is in the way is possible, but only when the request asks for it
+explicitly. The onboarding sends that permission after the person installing has
+been shown the repository by name and told what deleting it removes, and it
+never remembers the answer between attempts.
 
 An organization installation request remains pending until an organization
 owner approves it. Velvet reports that state without claiming the app was

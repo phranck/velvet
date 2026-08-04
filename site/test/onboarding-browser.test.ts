@@ -1678,6 +1678,136 @@ history:
     assert.ok(midpoint[1] < initialNextTop && midpoint[1] > finalNextTop);
     assert.equal(await serviceItems.count(), 2);
     await motionContext.close();
+
+    // A repository whose name is already taken. Setup stops before creating
+    // anything, and what happens next is the visitor's decision rather than
+    // Velvet's, so both answers are checked: the one that changes the name and
+    // the one that agrees to the deletion.
+    const conflictContext = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      reducedMotion: "reduce",
+    });
+    const conflictPage = await conflictContext.newPage();
+    await refuseOffsiteRequests(conflictPage);
+    await conflictPage.route("**/api/serial", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ next: 7 }),
+      }),
+    );
+    await conflictPage.route("**/api/session", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ authenticated: true, csrfToken: "S".repeat(43) }),
+      }),
+    );
+    const replaceRequests: (boolean | undefined)[] = [];
+    await conflictPage.route("**/api/setup", async (route) => {
+      const request = JSON.parse(route.request().postData() ?? "null") as {
+        replaceExistingRepository?: boolean;
+      };
+      replaceRequests.push(request.replaceExistingRepository);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/x-ndjson",
+        body: request.replaceExistingRepository
+          ? JSON.stringify({
+              type: "success",
+              installationUrl: "https://velvet-user.github.io/status/",
+              repositoryUrl: "https://github.com/velvet-user/status",
+            })
+          : JSON.stringify({
+              type: "error",
+              error: {
+                code: "REPOSITORY_EXISTS",
+                message: "velvet-user/status already exists.",
+                errorId: "R".repeat(26),
+              },
+              recoverable: true,
+            }),
+      });
+    });
+
+    const conflictDraft = {
+      version: 1,
+      draft: {
+        repositoryOwner: "velvet-user",
+        repositoryName: "status",
+        statusPageName: "My Status",
+        customDomain: "",
+        description: "",
+        listInGallery: false,
+        privateRepository: false,
+        themeId: "velvet-default",
+        services: [
+          {
+            id: "conflict-service",
+            name: "Website",
+            url: "https://example.com",
+            icon: null,
+            advanced: false,
+            method: "GET",
+            expectedStatusCodes: "200",
+            maxRedirects: 3,
+            timeoutMs: 5000,
+            headers: [],
+            jsonAssertions: [],
+          },
+        ],
+      },
+    };
+    await conflictPage.goto(`http://127.0.0.1:${address.port}/onboarding.html`);
+    await conflictPage.evaluate(
+      ([key, session]) => {
+        sessionStorage.setItem(key as string, session as string);
+      },
+      [ONBOARDING_SESSION_STORAGE_KEY, JSON.stringify(conflictDraft)] as const,
+    );
+    await conflictPage.goto(
+      `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
+    );
+
+    const conflictDialog = conflictPage.locator("[data-repository-conflict]");
+    await conflictDialog.waitFor({ state: "visible" });
+    // Modal, so nothing behind it can be reached whilst the question stands.
+    assert.equal(
+      await conflictDialog.evaluate((element) =>
+        (element as HTMLDialogElement).matches(":modal"),
+      ),
+      true,
+    );
+    // It names the repository it is about, because agreeing to a deletion in
+    // the abstract is not agreeing to this one.
+    assert.match(
+      (await conflictDialog.textContent()) ?? "",
+      /velvet-user\/status/,
+    );
+    assert.deepEqual(replaceRequests, [undefined]);
+
+    // Declining sends the visitor to the field that decides the name, and
+    // focuses it, because that is the only thing worth changing here.
+    await conflictPage.locator("[data-choose-another-name]").click();
+    await conflictDialog.waitFor({ state: "hidden" });
+    assert.equal(
+      await conflictPage.locator("#repository-name").evaluate(
+        (element) => element === document.activeElement,
+      ),
+      true,
+      "declining must land on the repository name",
+    );
+    assert.deepEqual(replaceRequests, [undefined], "declining sends nothing");
+
+    // Accepting asks again with the permission attached, and only then.
+    await conflictPage.goto(
+      `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
+    );
+    await conflictDialog.waitFor({ state: "visible" });
+    await conflictPage.locator("[data-replace-repository]").click();
+    await conflictPage.locator("[data-open-status-page]").waitFor();
+    assert.deepEqual(replaceRequests, [undefined, undefined, true]);
+    await conflictContext.close();
   } finally {
     await browser.close();
     await server.close();

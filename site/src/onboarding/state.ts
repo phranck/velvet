@@ -2,6 +2,7 @@ import {
   normalizeCustomDomain,
   validateVelvetConfiguration,
   type NormalizedVelvetConfiguration,
+  type SetupErrorCode,
   type SetupProgressStage as ContractSetupProgressStage,
   type VelvetConfigurationInput,
 } from "@velvet/contracts";
@@ -66,6 +67,15 @@ export interface OnboardingDraft {
 export interface SetupRequest {
   configuration: NormalizedVelvetConfiguration;
   repositoryVisibility: "public" | "private";
+  /**
+   * Permission to delete a repository of that name that already exists.
+   *
+   * Absent unless somebody has just been shown the name and has said to
+   * replace it. It is deliberately not part of the draft: the draft is kept in
+   * session storage and restored on a later visit, and an answer to a question
+   * asked once must not still be granting a deletion an hour afterwards.
+   */
+  replaceExistingRepository?: boolean;
 }
 
 export type OnboardingValidationResult =
@@ -85,6 +95,14 @@ export interface SetupFailure {
   message: string;
   errorId: string;
   recoverable: boolean;
+  /**
+   * What the service called the failure, when it said.
+   *
+   * Carried through so a failure the visitor can answer is told apart from one
+   * they can only read. Optional, because a failure that never reached the
+   * service has no code to carry.
+   */
+  code?: SetupErrorCode;
   repositoryUrl?: string;
   workflowUrl?: string;
 }
@@ -251,10 +269,23 @@ export function validateServicesStep(
   return errors;
 }
 
+/**
+ * Builds the request, sends it, and turns whatever comes back into one of the
+ * four outcomes the interface knows how to show.
+ *
+ * @param draft - The onboarding draft as it currently stands.
+ * @param client - The setup client to submit through.
+ * @param onProgress - Called as the service reports each stage.
+ * @param options - Answers to questions an earlier attempt asked. Currently
+ *   only `replaceExistingRepository`, which is set once, for one submission,
+ *   after somebody has agreed to a named repository being deleted.
+ * @returns What happened, with the field errors or the failure attached.
+ */
 export async function submitOnboarding(
   draft: OnboardingDraft,
   client: SetupClient,
   onProgress?: (stage: SetupProgressStage) => void,
+  options: { replaceExistingRepository?: boolean } = {},
 ): Promise<SetupSubmissionResult> {
   const validation = buildSetupRequest(draft);
   if (!validation.success) {
@@ -262,7 +293,15 @@ export async function submitOnboarding(
   }
 
   try {
-    const result = await client.provision(validation.request, onProgress);
+    const result = await client.provision(
+      {
+        ...validation.request,
+        ...(options.replaceExistingRepository
+          ? { replaceExistingRepository: true }
+          : {}),
+      },
+      onProgress,
+    );
     return {
       state: "success",
       installationUrl: result.installationUrl,

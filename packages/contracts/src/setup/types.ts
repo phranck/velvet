@@ -14,6 +14,15 @@ export interface SetupRequest {
    * repository that works and a page that never appears.
    */
   repositoryVisibility?: RepositoryVisibility;
+  /**
+   * Whether setup may delete a repository already using the name.
+   *
+   * Absent means no. A repository holds Issues, history, and a published page,
+   * and deleting it takes all three with nothing able to restore them, so this
+   * is never inferred from anything: it is a second request that says so, sent
+   * after somebody has been told what they would lose.
+   */
+  replaceExistingRepository?: boolean;
 }
 
 export interface SetupContractError {

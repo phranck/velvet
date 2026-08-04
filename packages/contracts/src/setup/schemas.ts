@@ -31,6 +31,10 @@ export const SetupErrorCodeSchema = Type.Union([
   Type.Literal("ORIGIN_REJECTED"),
   Type.Literal("RATE_LIMITED"),
   Type.Literal("GITHUB_RATE_LIMITED"),
+  // Distinct from REPOSITORY_CONFLICT, which means GitHub refused to create
+  // the repository for a reason setup cannot name. This one is answerable: the
+  // name is taken, and whoever is installing can free it or choose another.
+  Type.Literal("REPOSITORY_EXISTS"),
   Type.Literal("REPOSITORY_CONFLICT"),
   Type.Literal("GITHUB_API_FAILED"),
   Type.Literal("CONFIGURATION_COMMIT_FAILED"),
@@ -75,6 +79,15 @@ export const SetupRequestSchema = Type.Object(
     // public when absent, because that is what every installation made before
     // this existed received.
     repositoryVisibility: Type.Optional(RepositoryVisibilitySchema),
+    /*
+     * Whether setup may delete a repository already using the name.
+     *
+     * Absent means no, and setup stops with REPOSITORY_EXISTS instead. The
+     * destructive reading is never the default and never inferred: it is a
+     * second request that says so, sent only after somebody has been told what
+     * they would lose.
+     */
+    replaceExistingRepository: Type.Optional(Type.Boolean()),
   },
   { additionalProperties: false },
 );
