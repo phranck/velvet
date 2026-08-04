@@ -238,6 +238,9 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "Incidents.svelte": ["configurator", "status page"],
   "ServiceRow.svelte": ["configurator", "status page"],
   "StatusHero.svelte": ["configurator", "status page"],
+  // Shown for the whole of an installation's first day and never again. The
+  // Configurator reaches it through the preview, which draws a status page.
+  "FirstRunNotice.svelte": ["configurator", "status page"],
   "StatusPage.svelte": ["configurator", "status page"],
   "UptimeBar.svelte": ["configurator", "status page"],
   service: ["configurator", "status page"],
