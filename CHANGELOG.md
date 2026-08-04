@@ -45,12 +45,21 @@ The configuration reference, the changelog, the theme gallery, and the
 references list are published there, and Velvet ships a complete set of man
 pages for the command-line configurator.
 
-### Upptime is gone
+### Velvet reads one configuration format
 
-Velvet no longer imports, converts, or reads anything an Upptime installation
-produced. The paths that handled imported data are removed from the monitor.
+`velvet.yml` is the only configuration Velvet accepts. The compatibility path
+that read a foreign format is gone, along with the branches in the generator
+that existed to translate it.
 
 ## Version 1.0.0
+
+**This release was published and then withdrawn, because it could not be
+installed.** The workflows it gave a new repository ran a Velvet from before
+the configuration that setup writes, and refused it, so the first run failed
+and the status page stayed empty. Its tag and GitHub release are removed, and
+1.1.0 is the first version anybody can install. The entry is kept because the
+description of the product below is accurate and because a version that
+disappears without explanation is worse than one that says what happened to it.
 
 The first public Velvet release. Everything before this was a prototype that
 was never published, so this entry describes the product rather than a change

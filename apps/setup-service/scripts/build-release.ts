@@ -110,10 +110,16 @@ async function templateSources(
  * Reads the manifest of the artefact currently in the repository.
  *
  * Using it as the predecessor makes the publication gate enforce forward
- * versioning and correct release classification automatically, so a mistyped
- * version or a feature released as a fix cannot be generated at all.
+ * versioning and correct release classification automatically, so a version
+ * that goes backwards or a feature released as a fix cannot be generated at
+ * all.
+ *
+ * An artefact already carrying the version being cut is not a predecessor but
+ * an earlier attempt at the same release, so it is discarded and its own
+ * predecessor takes its place. Without that, correcting anything in an
+ * unpublished release would cost a version number every time.
  */
-async function previousManifest(): Promise<VelvetReleaseManifest | undefined> {
+async function currentArtefact(): Promise<VelvetReleaseManifest | undefined> {
   let source: string;
   try {
     source = await readFile(outputPath, "utf8");
@@ -134,6 +140,38 @@ async function previousManifest(): Promise<VelvetReleaseManifest | undefined> {
   }
 }
 
+/**
+ * Rebuilds the predecessor of an artefact that is being cut again.
+ *
+ * A recut has to move forward from whatever the artefact it replaces moved
+ * forward from, which is the version recorded in `minimumInstalledVersion`,
+ * since that field is written from the predecessor when a release is cut.
+ *
+ * Only the version differs, and only when the artefact announced no migration.
+ * When it announced one, its predecessor carried different schema versions and
+ * cannot be reconstructed from what is left, so this stops rather than
+ * inventing a compatibility block.
+ *
+ * @param artefact - The unpublished artefact being replaced.
+ * @returns The manifest the recut has to be newer than.
+ */
+function recutPredecessor(
+  artefact: VelvetReleaseManifest,
+): VelvetReleaseManifest {
+  if (
+    artefact.compatibility.configurationMigrationRequired ||
+    artefact.compatibility.dataMigrationRequired
+  ) {
+    fail(
+      `The artefact already holding ${artefact.version} announces a migration, so its predecessor cannot be reconstructed. Raise the version instead of recutting.`,
+    );
+  }
+  return {
+    ...artefact,
+    version: artefact.compatibility.minimumInstalledVersion,
+  };
+}
+
 const version = await declaredVersion();
 const releaseTypeInput = argument("type") ?? fail("Pass --type <security|fix|feature>.");
 if (!RELEASE_TYPES.includes(releaseTypeInput as ReleaseType)) {
@@ -143,7 +181,19 @@ const releaseType = releaseTypeInput as ReleaseType;
 const notesPath = argument("notes") ?? fail("Pass --notes <path to markdown>.");
 const releaseNotes = await readFile(resolve(process.cwd(), notesPath), "utf8");
 const commit = argument("commit") ?? (await templateHeadCommit());
-const previous = await previousManifest();
+const current = await currentArtefact();
+/**
+ * What this release has to move forward from.
+ *
+ * Normally the artefact in the repository. When that artefact already carries
+ * this version, it is a recut of a release that has not been published, so its
+ * own predecessor is used instead. `minimumInstalledVersion` records that
+ * predecessor, because it is written from it when a release is cut.
+ */
+const previous =
+  current === undefined || current.version !== version
+    ? current
+    : recutPredecessor(current);
 const sources = await templateSources(commit);
 
 const built = buildReleaseManifest({

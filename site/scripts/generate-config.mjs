@@ -1,28 +1,25 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { load } from "js-yaml";
 
 import { parseVelvetConfiguration } from "@velvet/contracts";
 
 import { resolveTheme } from "../src/lib/theme.js";
 
 /**
- * Generate Velvet's runtime `config.json` from native `velvet.yml` or an
- * explicitly selected legacy compatibility configuration.
+ * Generates Velvet's runtime `config.json` from `velvet.yml`.
  *
- * Native input is validated through `@velvet/contracts` and reads public data
- * from the dedicated `velvet-data` branch. Compatibility input keeps the legacy
- * appearance and data-location behavior unchanged.
+ * The input is validated through `@velvet/contracts` before anything is
+ * written, and the page reads its public data from the `velvet-data` branch the
+ * monitor owns. A file that does not validate stops the build rather than
+ * producing a page from a configuration nobody checked.
  *
- * Usage: bun generate-config.mjs <config.yml> <out/config.json> [local-data-path]
+ * This used to accept a second, foreign format as well, and carried a branch at
+ * every field to translate it. Velvet reads one format.
+ *
+ * Usage: bun generate-config.mjs <velvet.yml> <out/config.json>
  */
-const [
-  ,
-  ,
-  inputPath = "velvet.yml",
-  outputPath = "public/config.json",
-  repositoryDataPath = "velvet-data/v1",
-] = process.argv;
+const [, , inputPath = "velvet.yml", outputPath = "public/config.json"] =
+  process.argv;
 
 /**
  * The installation's running number, read from the lock beside the
@@ -45,27 +42,17 @@ function readSerial(configurationPath) {
 
 const serial = readSerial(inputPath);
 const source = readFileSync(inputPath, "utf8");
-const rc = load(source) ?? {};
-const nativeResult = rc.schemaVersion === undefined
-  ? null
-  : parseVelvetConfiguration(source);
-if (nativeResult !== null && !nativeResult.success) {
+const parsed = parseVelvetConfiguration(source);
+if (!parsed.success) {
   throw new Error(
-    `Invalid velvet.yml:\n${nativeResult.errors
+    `Invalid velvet.yml:\n${parsed.errors
       .map((error) => `${error.code} at ${error.path}: ${error.message}`)
       .join("\n")}`,
   );
 }
-const native = nativeResult?.success ? nativeResult.data : null;
-const owner = native?.repository.owner ?? rc.owner;
-const repo = native?.repository.name ?? rc.repo;
-if (!owner || !repo) {
-  throw new Error(
-    nativeResult === null
-      ? "Legacy compatibility configuration must set `owner` and `repo`"
-      : "`velvet.yml` must set `repository.owner` and `repository.name`",
-  );
-}
+const configuration = parsed.data;
+const owner = configuration.repository.owner;
+const repo = configuration.repository.name;
 
 const nativeTheme = (theme) => {
   if (!theme) return {};
@@ -86,56 +73,38 @@ const nativeTheme = (theme) => {
   };
 };
 
-const sw = native === null
-  ? (rc["status-website"] ?? {})
-  : {
-      cname: native.statusPage.customDomain,
-      name: native.statusPage.name,
-      logoUrl: native.statusPage.logoUrl,
-      navbar: native.statusPage.navigation,
-    };
-const velvet = native === null
-  ? (sw.velvet ?? {})
-  : {
-      layout: native.statusPage.layout,
-      defaultRange: native.statusPage.defaultRange,
-      logoHeight: native.statusPage.logoHeight,
-      showPoweredBy: native.statusPage.showPoweredBy,
-      theme: nativeTheme(native.statusPage.theme),
-      fontSans: native.statusPage.fonts?.sans,
-      fontMono: native.statusPage.fonts?.mono,
-      icons: native.statusPage.icons,
-      seo: native.statusPage.seo,
-    };
+const sw = {
+  cname: configuration.statusPage.customDomain,
+  name: configuration.statusPage.name,
+  logoUrl: configuration.statusPage.logoUrl,
+  navbar: configuration.statusPage.navigation,
+};
+const velvet = {
+  layout: configuration.statusPage.layout,
+  defaultRange: configuration.statusPage.defaultRange,
+  logoHeight: configuration.statusPage.logoHeight,
+  showPoweredBy: configuration.statusPage.showPoweredBy,
+  theme: nativeTheme(configuration.statusPage.theme),
+  fontSans: configuration.statusPage.fonts?.sans,
+  fontMono: configuration.statusPage.fonts?.mono,
+  icons: configuration.statusPage.icons,
+  seo: configuration.statusPage.seo,
+};
 const themeInput = velvet.theme && typeof velvet.theme === "object" ? velvet.theme : {};
-const dataBranch = native === null ? (velvet.dataBranch ?? "main") : "velvet-data";
-const normalizedDataPath = repositoryDataPath.replaceAll("\\", "/").replace(/^\.\//, "");
-const dataPathSegments = normalizedDataPath.split("/").filter(Boolean);
-if (
-  normalizedDataPath.startsWith("/") ||
-  dataPathSegments.length === 0 ||
-  dataPathSegments.includes("..")
-) {
-  throw new Error("Velvet data must use a repository-relative path");
-}
-const publicDataPath = native === null ? normalizedDataPath : "velvet-data/v1";
-const encodedDataPath = publicDataPath
+/**
+ * Where a published page reads its data from.
+ *
+ * The branch and the path inside it are fixed, because the monitor owns that
+ * branch and writes nowhere else. They were configurable for the sake of the
+ * foreign format, which allowed data anywhere, and every value but this one
+ * described a repository Velvet does not produce.
+ */
+const dataBranch = "velvet-data";
+const dataPath = "velvet-data/v1";
+const dataBaseUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(dataBranch)}/${dataPath
   .split("/")
   .map(encodeURIComponent)
-  .join("/");
-const defaultDataBaseUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(dataBranch)}/${encodedDataPath}`;
-let dataBaseUrl = defaultDataBaseUrl;
-if (typeof velvet.dataBaseUrl === "string" && velvet.dataBaseUrl.trim()) {
-  const publicDataUrl = new URL(velvet.dataBaseUrl.trim());
-  if (
-    !["http:", "https:"].includes(publicDataUrl.protocol) ||
-    publicDataUrl.search ||
-    publicDataUrl.hash
-  ) {
-    throw new Error("Velvet dataBaseUrl must be an HTTP(S) base URL without query or fragment");
-  }
-  dataBaseUrl = publicDataUrl.href.replace(/\/+$/, "");
-}
+  .join("/")}`;
 
 const subst = (s) =>
   typeof s === "string" ? s.replaceAll("$OWNER", owner).replaceAll("$REPO", repo) : s;
