@@ -4,8 +4,10 @@
   import SiteHeader from "../components/SiteHeader.svelte";
   import {
     describeInstallation,
+    releaseDate,
     stateLabel,
-    watchingSince,
+    uptimeBreakdown,
+    uptimeDays,
     type Installation,
     type Reference,
   } from "./installation";
@@ -104,21 +106,35 @@
               <span class="details">
                 <span class="reference-name">{installation.statusPageName}</span>
                 <span class="host">{installation.host}</span>
-                <span class="state">
-                  <span
-                    class="dot"
-                    style="background: {installation.stateColour}"
-                    aria-hidden="true"
-                  ></span>
-                  <span>{stateLabel(installation.state)}</span>
-                  <span class="services">
-                    &middot; {installation.services}
+                <span class="facts">
+                  <span class="fact">
+                    <span
+                      class="dot"
+                      style="background: {installation.stateColour}"
+                      aria-hidden="true"
+                    ></span>
+                    {stateLabel(installation.state)}
+                  </span>
+                  <span class="fact">
+                    {installation.services}
                     {installation.services === 1 ? "service" : "services"}
                   </span>
+                  {#if releaseDate(installation.startedAt)}
+                    <span class="fact">
+                      <span class="label">Release:</span>
+                      {releaseDate(installation.startedAt)}
+                    </span>
+                  {/if}
+                  {#if uptimeDays(installation.startedAt)}
+                    <!-- The exact span is a hover away rather than in the chip,
+                         since the chip is compared against the one on the card
+                         beside it and a single unit is what compares. -->
+                    <span class="fact" title={uptimeBreakdown(installation.startedAt) ?? undefined}>
+                      <span class="label">Uptime:</span>
+                      {uptimeDays(installation.startedAt)}
+                    </span>
+                  {/if}
                 </span>
-                {#if watchingSince(installation.startedAt)}
-                  <span class="since">{watchingSince(installation.startedAt)}</span>
-                {/if}
               </span>
             </a>
           </Card.Root>
@@ -167,10 +183,20 @@
   .reference-list {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
     list-style: none;
     margin: 0 0 3rem;
     padding: 0;
+  }
+  /* Two layers rather than one, the same pair the onboarding card carries. A
+     single wide shadow dissolves into the board backdrop these pages sit on and
+     leaves the card looking pasted flat; the near layer draws its edge and the
+     far one carries the height. Softer than the onboarding's, since a gallery
+     shows several of these at once and that card is the size of a screen. */
+  .reference-list li > :global(*) {
+    box-shadow:
+      0 0.5rem 1rem rgba(0, 0, 0, 0.4),
+      0 1.25rem 3rem rgba(0, 0, 0, 0.45);
   }
   /* The entry is the site's card, and the link fills it, so the whole surface
      is the target rather than the words on it. The card states the surface, the
@@ -196,11 +222,17 @@
     display: block;
     padding: 1rem var(--velvet-card-text-inset) 0.75rem;
   }
+  /* The condensed face, as the site sets every name that titles something. It
+     also buys the width a long page name needs on a card this size. */
   .reference-name {
     display: block;
-    font-size: var(--velvet-text-copy);
+    font-family: var(--velvet-font-heading);
+    font-size: var(--velvet-text-heading);
     font-weight: 600;
-    line-height: 1.2;
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .host {
     color: var(--velvet-text-muted);
@@ -210,32 +242,40 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* One fact per chip, wrapping rather than running off the card, so two cards
+     side by side can be compared a fact at a time instead of a sentence at a
+     time. */
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.875rem;
+  }
+  /* A chip sits inside the card rather than against its curve, so it carries a
+     radius of its own. Taking the card's inner radius would tie it to a padding
+     it has nothing to do with. */
+  .fact {
+    align-items: center;
+    background: #1c1f29;
+    border-radius: 0.5rem;
+    display: flex;
+    font-size: var(--velvet-text-small);
+    gap: 0.375rem;
+    line-height: 1.4;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+  }
+  .fact .label {
+    color: var(--velvet-text-muted);
+  }
   /* The word carries the state and the dot repeats it. Colour alone would ask a
      reader to tell two tints apart, and the tints are the installation's own
      rather than a palette this page controls. */
-  .state {
-    align-items: center;
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
   .dot {
     border-radius: 50%;
     flex: none;
-    height: 0.625rem;
-    width: 0.625rem;
-  }
-  .services,
-  .since {
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-small);
-  }
-  .services {
-    margin-inline-start: -0.15rem;
-  }
-  .since {
-    display: block;
-    margin-top: 0.375rem;
+    height: 0.5rem;
+    width: 0.5rem;
   }
   /* Marked by the text, because the card it sits on draws no edge to mark. */
   .reference-list a:hover .reference-name,

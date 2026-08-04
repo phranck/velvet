@@ -84,6 +84,14 @@ function readEntries(nodes: Element[]) {
   }));
 }
 
+/** Reads each fact chip and whatever it carries on hover. */
+function readChips(nodes: Element[]) {
+  return nodes.map((node) => ({
+    text: (node.textContent ?? "").replace(/\s+/gu, " ").trim(),
+    title: node.getAttribute("title"),
+  }));
+}
+
 /**
  * Reads the card and its preview back as numbers.
  *
@@ -97,12 +105,15 @@ function readGeometry() {
   if (!card || !image) return null;
   const style = getComputedStyle(card);
   const padding = Number.parseFloat(style.padding);
+  const name = document.querySelector("[data-reference-entry] .reference-name");
   return {
     cardWidth: Math.round(card.getBoundingClientRect().width),
     imageWidth: Math.round(image.getBoundingClientRect().width),
     contentWidth: Math.round(card.getBoundingClientRect().width - 2 * padding),
     imageRadius: Number.parseFloat(getComputedStyle(image).borderRadius),
     expectedRadius: Number.parseFloat(style.borderRadius) - padding,
+    shadow: style.boxShadow,
+    nameFont: name ? getComputedStyle(name).fontFamily : "",
   };
 }
 
@@ -162,11 +173,25 @@ test("shows each installation as its own page, and leaves out one that has gone"
     assert.match(entries[0]?.text ?? "", /live\.example\.com/u);
     assert.match(entries[0]?.text ?? "", /All operational/u);
     assert.match(entries[0]?.text ?? "", /2 services/u);
-    assert.match(entries[0]?.text ?? "", /Watching since 5 January 2026/u);
+    assert.match(entries[0]?.text ?? "", /Release: 05\.01\.2026/u);
+    assert.match(entries[0]?.text ?? "", /Uptime: \d+ days/u);
     assert.equal(entries[0]?.image, `${LIVE}og.png`);
     // A gallery is otherwise a page of large pictures fetched before any of
     // them is on screen.
     assert.equal(entries[0]?.loading, "lazy");
+
+    // Each fact is its own chip, so two cards can be compared a fact at a time.
+    // The exact span is on the uptime chip rather than in it.
+    const chips = await page.$$eval("[data-reference-entry] .fact", readChips);
+    assert.equal(chips.length, 4, "state, services, release, and uptime");
+    const unit = String.raw`\d+ (?:years?|months?|weeks?|days?)`;
+    assert.match(
+      chips[3]?.title ?? "",
+      new RegExp(`^${unit}(?:, ${unit})*$`, "u"),
+      `the uptime chip carries no breakdown, only ${JSON.stringify(chips[3])}`,
+    );
+    // The point of the hover is that it says more than the chip does.
+    assert.notEqual(chips[3]?.title, chips[3]?.text);
 
     const geometry = await page.evaluate(readGeometry);
 
@@ -179,6 +204,15 @@ test("shows each installation as its own page, and leaves out one that has gone"
       geometry.cardWidth < 700,
       `a single entry spans ${geometry.cardWidth}px of the measure`,
     );
+    // Two layers, because one wide shadow dissolves into the board backdrop
+    // these pages sit on and leaves the card looking pasted flat.
+    assert.equal(
+      (geometry.shadow.match(/rgba?\(/gu) ?? []).length,
+      2,
+      `the card carries ${geometry.shadow}`,
+    );
+    // The condensed face, as the site sets every name that titles something.
+    assert.match(geometry.nameFont, /Barlow Condensed/u);
   } finally {
     await browser.close();
     site.close();

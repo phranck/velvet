@@ -3,8 +3,10 @@ import { test } from "bun:test";
 
 import {
   describeInstallation,
+  releaseDate,
   stateLabel,
-  watchingSince,
+  uptimeBreakdown,
+  uptimeDays,
 } from "../src/references/installation";
 
 /**
@@ -147,38 +149,47 @@ test("names each state in words as well as colour", () => {
   assert.equal(stateLabel("unknown"), "No data yet");
 });
 
-test("says since when a page has been watched, in units worth reading", () => {
+test("states the release day as digits", () => {
+  assert.equal(releaseDate("2026-01-05T08:00:00.000Z"), "05.01.2026");
+  // Padded, so a column of dates lines up.
+  assert.equal(releaseDate("2026-08-04T08:00:00.000Z"), "04.08.2026");
+});
+
+test("counts uptime in whole days, which is what compares between cards", () => {
   const now = new Date("2026-08-04T12:00:00.000Z");
 
-  // Set up today: the date alone, since "0 days" says less than nothing.
+  assert.equal(uptimeDays("2026-08-04T09:00:00.000Z", now), "0 days");
+  assert.equal(uptimeDays("2026-08-03T09:00:00.000Z", now), "1 day");
+  assert.equal(uptimeDays("2026-01-05T09:00:00.000Z", now), "211 days");
+});
+
+test("breaks the same span down for the hover, dropping empty units", () => {
+  const now = new Date("2026-08-04T12:00:00.000Z");
+
+  // The units that are zero are absent rather than printed as zero, which is
+  // what makes a young installation read as "3 days".
+  assert.equal(uptimeBreakdown("2026-08-01T09:00:00.000Z", now), "3 days");
+  // Twenty-one days exactly, so the days drop out and only the weeks remain.
+  assert.equal(uptimeBreakdown("2026-07-14T09:00:00.000Z", now), "3 weeks");
+  assert.equal(uptimeBreakdown("2026-07-12T09:00:00.000Z", now), "3 weeks, 2 days");
+  assert.equal(uptimeBreakdown("2026-05-04T09:00:00.000Z", now), "3 months");
   assert.equal(
-    watchingSince("2026-08-04T09:00:00.000Z", now),
-    "Watching since 4 August 2026",
+    uptimeBreakdown("2025-04-20T09:00:00.000Z", now),
+    "1 year, 3 months, 2 weeks, 1 day",
   );
-  assert.equal(
-    watchingSince("2026-08-03T09:00:00.000Z", now),
-    "Watching since 3 August 2026, a day",
-  );
-  assert.equal(
-    watchingSince("2026-07-20T09:00:00.000Z", now),
-    "Watching since 20 July 2026, 15 days",
-  );
-  assert.equal(
-    watchingSince("2026-03-18T09:00:00.000Z", now),
-    "Watching since 18 March 2026, 4 months",
-  );
-  // Beyond a year the count of months stops being the useful sentence.
-  assert.equal(
-    watchingSince("2025-06-01T09:00:00.000Z", now),
-    "Watching since 1 June 2025, over a year",
-  );
-  assert.equal(
-    watchingSince("2023-01-15T09:00:00.000Z", now),
-    "Watching since 15 January 2023, 3 years",
-  );
+  // Singular where the amount is one, in every unit.
+  assert.equal(uptimeBreakdown("2025-07-03T09:00:00.000Z", now), "1 year, 1 month, 1 day");
+  assert.equal(uptimeBreakdown("2026-08-04T09:00:00.000Z", now), "less than a day");
 });
 
 test("an unusable date says nothing rather than something wrong", () => {
-  assert.equal(watchingSince(null), null);
-  assert.equal(watchingSince("whenever"), null);
+  assert.equal(releaseDate(null), null);
+  assert.equal(releaseDate("whenever"), null);
+  assert.equal(uptimeDays(null), null);
+  assert.equal(uptimeBreakdown(null), null);
+  // A page claiming to have started tomorrow is not measured against.
+  assert.equal(
+    uptimeBreakdown("2026-08-05T09:00:00.000Z", new Date("2026-08-04T12:00:00.000Z")),
+    null,
+  );
 });
