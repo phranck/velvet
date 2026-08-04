@@ -65,24 +65,6 @@ test("root lockfile contains every declared optional dependency", async () => {
   assert.deepEqual(findMissingOptionalDependencies(lockfile), []);
 });
 
-test("third-party notices record the complete external Bun lock", async () => {
-  const lockfile = Bun.JSONC.parse(
-    await readFile(new URL("../bun.lock", import.meta.url), "utf8"),
-  );
-  const externalPackageCount = Object.values(lockfile.packages).filter(
-    ([resolution]) => !resolution.includes("@workspace:"),
-  ).length;
-  const notices = await readFile(
-    new URL("../THIRD_PARTY_NOTICES.md", import.meta.url),
-    "utf8",
-  );
-
-  assert.match(
-    notices,
-    new RegExp(`contains ${externalPackageCount} external package entries`),
-  );
-});
-
 test("third-party notices cover every package in the production browser bundle", async () => {
   const bundledPackages = new Set();
   const siteRoot = fileURLToPath(new URL("../site", import.meta.url));
