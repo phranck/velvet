@@ -565,6 +565,7 @@ test("records the claimed serial in the version lock", async () => {
       peek: async () => 1,
       claim: async () => 412,
       listed: async () => [],
+      listedRepositories: async () => [],
       setListed: async () => false,
     },
     operationId: () => "O".repeat(26),
@@ -623,6 +624,7 @@ test("claims a serial only once the page is published, and only once", async () 
   const serials = {
     peek: async () => 1,
     listed: async () => [],
+    listedRepositories: async () => [],
     setListed: async () => false,
     claim: async (installation: unknown) => {
       claims.push(installation);
@@ -675,6 +677,7 @@ test("a registry that will not answer does not fail a finished setup", async () 
     serials: {
       peek: async () => null,
       listed: async () => [],
+      listedRepositories: async () => [],
       setListed: async () => false,
       claim: async () => {
         throw new Error("registry unreachable");

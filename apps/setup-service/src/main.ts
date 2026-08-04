@@ -65,17 +65,33 @@ scheduleAutomaticSweeps({
     // Consent first, and independently of whether a release may install
     // itself. A withdrawal has to leave the gallery on the next pass rather
     // than waiting for whenever a security release next happens to exist.
-    void updates.automatic.reconcileGallery().catch((cause: unknown) => {
-      logger({
-        level: "error",
-        requestId: "gallery-reconcile",
-        route: "/api/references",
-        operation: "gallery-reconcile",
-        status: 500,
-        outcome: "failed",
-        cause,
+    void updates.automatic
+      .reconcileGallery()
+      .then((reconciliation) => {
+        // One line per pass, whatever it found. A pass that unlists an entry is
+        // taking somebody off a public page, and a pass that finds nothing is
+        // how a working schedule is told apart from a stopped one.
+        logger({
+          level: "info",
+          requestId: "gallery-reconcile",
+          route: "/api/references",
+          operation: "gallery-reconcile",
+          status: 200,
+          outcome: "succeeded",
+          context: { ...reconciliation },
+        });
+      })
+      .catch((cause: unknown) => {
+        logger({
+          level: "error",
+          requestId: "gallery-reconcile",
+          route: "/api/references",
+          operation: "gallery-reconcile",
+          status: 500,
+          outcome: "failed",
+          cause,
+        });
       });
-    });
     void updates.automatic.run().catch((cause: unknown) => {
       logger({
         level: "error",

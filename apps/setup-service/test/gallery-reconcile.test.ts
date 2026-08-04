@@ -30,8 +30,13 @@ function configuration(listed: boolean | null): string {
  * @param velvetYml - What the installation's configuration says, or `null` for
  *   a repository that has no `velvet.yml` at all.
  */
-function harness(velvetYml: string | null) {
+function harness(
+  velvetYml: string | null,
+  options: { listedRepositories?: string[]; covered?: boolean; readable?: boolean } = {},
+) {
   const written: { repository: string; listed: boolean }[] = [];
+  const covered = options.covered ?? true;
+  const readable = options.readable ?? true;
   const runner = createAutomaticUpdateRunner({
     app: {
       appId: "12345",
@@ -43,14 +48,17 @@ function harness(velvetYml: string | null) {
           return Response.json({ token: "installation-token" });
         }
         if (path === "/installation/repositories") {
+          // An app removed from a repository, or a repository deleted, simply
+          // stops appearing here. Nothing announces it.
           return Response.json({
-            total_count: 1,
-            repositories: [
-              { id: 9, name: "status", owner: { login: "example" } },
-            ],
+            total_count: covered ? 1 : 0,
+            repositories: covered
+              ? [{ id: 9, name: "status", owner: { login: "example" } }]
+              : [],
           });
         }
         if (path.endsWith("/contents/velvet.yml")) {
+          if (!readable) return new Response("{}", { status: 500 });
           if (velvetYml === null) return new Response("{}", { status: 404 });
           return Response.json({
             type: "file",
@@ -76,6 +84,7 @@ function harness(velvetYml: string | null) {
       peek: async () => 1,
       claim: async () => 1,
       listed: async () => [],
+      listedRepositories: async () => options.listedRepositories ?? [],
       async setListed(repository, listed) {
         written.push({ repository, listed });
         return true;
@@ -156,7 +165,51 @@ test("does nothing at all without a registry", async () => {
     installations: 0,
     repositories: 0,
     changed: 0,
+    unreachable: 0,
     failures: 0,
     truncated: false,
   });
+});
+
+test("unlists an installation the pass can no longer reach", async () => {
+  // A deleted repository, or one the app was removed from, is absent from the
+  // app's list rather than announced. Walking that list alone therefore never
+  // revisits it, and it would stay listed for good.
+  const { runner, written } = harness(null, {
+    covered: false,
+    listedRepositories: ["example/status"],
+  });
+
+  const result = await runner.reconcileGallery();
+
+  assert.deepEqual(written, [{ repository: "example/status", listed: false }]);
+  assert.equal(result.unreachable, 1);
+  assert.equal(result.repositories, 0);
+});
+
+test("leaves an entry alone when the pass reached it", async () => {
+  const { runner, written } = harness(configuration(true), {
+    listedRepositories: ["example/status"],
+  });
+
+  const result = await runner.reconcileGallery();
+
+  // Reached and consenting, so the only write is the one that says so.
+  assert.deepEqual(written, [{ repository: "example/status", listed: true }]);
+  assert.equal(result.unreachable, 0);
+});
+
+test("unlists nothing from a pass that could not read a repository", async () => {
+  // Absence from an incomplete list is no evidence at all. A bad afternoon at
+  // GitHub would otherwise empty the gallery.
+  const { runner, written } = harness(null, {
+    readable: false,
+    listedRepositories: ["example/other"],
+  });
+
+  const result = await runner.reconcileGallery();
+
+  assert.equal(result.failures, 1);
+  assert.equal(result.unreachable, 0);
+  assert.deepEqual(written, []);
 });
