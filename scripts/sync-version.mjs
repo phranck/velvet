@@ -14,7 +14,7 @@
  * `--check` reports what would change and exits non-zero instead of writing,
  * which is what a gate wants.
  */
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dirname, "..");
@@ -125,20 +125,37 @@ async function applyTo(path, version) {
  */
 async function synchroniseBackdrop(version) {
   const output = resolve(repositoryRoot, BACKDROP.output);
-  const printed = (await readFile(output, "utf8").catch(() => "")).match(
-    BACKDROP.revision,
-  )?.[1];
-  if (printed === version) return false;
-  if (checkOnly) return true;
+  const shipped = await readFile(output, "utf8").catch(() => "");
+  const printed = shipped.match(BACKDROP.revision)?.[1];
 
+  // Produced beside the shipped file and compared, rather than trusting the
+  // revision it prints. The version is one of several things the generator
+  // decides, and comparing only that would leave a change to the artwork out of
+  // the file it is drawn into.
+  const draft = `${output}.draft`;
   const result = Bun.spawnSync(
-    ["bun", resolve(repositoryRoot, BACKDROP.script)],
+    ["bun", resolve(repositoryRoot, BACKDROP.script), "--out", draft],
     { cwd: repositoryRoot, stdout: "pipe", stderr: "pipe" },
   );
   if (!result.success) {
     console.error(result.stderr.toString().trim());
     process.exit(1);
   }
+  const produced = await readFile(draft, "utf8");
+
+  // Everything but the copyright year, which the generator stamps from today
+  // and which would otherwise make this differ every first of January.
+  const comparable = (svg) => svg.replace(/Copyright © \d{4}/u, "Copyright ©");
+  if (comparable(produced) === comparable(shipped)) {
+    await rm(draft, { force: true });
+    return false;
+  }
+  if (checkOnly) {
+    await rm(draft, { force: true });
+    return printed !== version || true;
+  }
+  await writeFile(output, produced, "utf8");
+  await rm(draft, { force: true });
   return true;
 }
 

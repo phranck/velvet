@@ -88,7 +88,7 @@
     aspect-ratio: 16 / 10;
     overflow: hidden;
     border-radius: 0.52rem;
-    background: #0a0b0f;
+    background: var(--velvet-surface-sunken);
   }
   img {
     width: 100%;

@@ -25,13 +25,10 @@
     overflow: clip;
     border-radius: var(--step-card-radius);
     background: var(--setup-panel);
-    /* Two layers rather than one. A single wide shadow dissolved into the board
-       backdrop, leaving the card looking pasted on; the near layer draws its
-       edge and the far one carries the height. */
-    box-shadow:
-      0 0.75rem 1.5rem rgba(0, 0, 0, 0.45),
-      0 2rem 5rem rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(18px);
+    box-shadow: var(--velvet-card-shadow);
+    /* No backdrop filter. The surface is barely transparent so the board shows
+       through it, and a blur behind it averages the traces into an even fog,
+       which reads as an opaque card and undoes the transparency. */
     view-transition-name: onboarding-step-card-shell;
   }
 </style>

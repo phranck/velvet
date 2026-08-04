@@ -139,7 +139,7 @@
     margin: 0 0 2.5rem;
     padding: var(--velvet-card-padding);
     border-radius: var(--velvet-card-radius);
-    background: color-mix(in srgb, #d29922 12%, #14161d);
+    background: color-mix(in srgb, var(--velvet-degraded) 12%, var(--velvet-surface-card));
   }
   /* Text and headings take the further inset; nothing in this notice runs
      full width, so all of it does.

@@ -785,9 +785,9 @@
        onboarding.css. Anything that has to hide the board backdrop fills with
        this rather than inventing a shade. */
     --setup-base: var(--velvet-base);
-    --setup-panel: rgba(27, 29, 38, 0.9);
+    --setup-panel: var(--velvet-surface-card);
     --setup-panel-raised: var(--velvet-surface-raised);
-    --setup-card: #222530;
+    --setup-card: var(--velvet-rule);
     --setup-input: #11131a;
     --setup-input-border: 1px solid
       color-mix(in srgb, var(--setup-text) 14%, transparent);
@@ -1116,7 +1116,7 @@
     color: var(--setup-text);
   }
   .repository-conflict::backdrop {
-    background: rgba(10, 11, 15, 0.72);
+    background: var(--velvet-scrim);
   }
   /* Half the radius, in addition to the padding, because a surface stands
      beneath both of these. */

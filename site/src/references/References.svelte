@@ -4,11 +4,23 @@
   import SiteHeader from "../components/SiteHeader.svelte";
   import {
     describeInstallation,
+    releaseDate,
     stateLabel,
-    watchingSince,
+    uptimeBreakdown,
+    uptimeDays,
+    STATE_TOKENS,
     type Installation,
+    type InstallationState,
     type Reference,
   } from "./installation";
+
+  /** The legend, in the order a page moves through the states. */
+  const LEGEND: InstallationState[] = [
+    "operational",
+    "degraded",
+    "outage",
+    "unknown",
+  ];
 
   /**
    * Where the consenting installations are read from.
@@ -84,6 +96,26 @@
   </p>
 
   {#if installations && installations.length > 0}
+    <!-- The lamp on each card is a colour, and a colour on its own asks a
+         reader to work out what it means. This is where it is said, once, above
+         the cards it applies to. -->
+    <div class="legend-card">
+      <Card.Root>
+        <p class="legend" data-reference-legend>
+          {#each LEGEND as state (state)}
+            <span class="legend-item">
+              <span
+                class="dot"
+                style="background: var({STATE_TOKENS[state]})"
+                aria-hidden="true"
+              ></span>
+              {stateLabel(state)}
+            </span>
+          {/each}
+        </p>
+      </Card.Root>
+    </div>
+
     <ul class="reference-list" data-reference-list>
       {#each installations as installation (installation.url)}
         <li>
@@ -94,31 +126,46 @@
               rel="noopener noreferrer"
               data-reference-entry
             >
-              <img
-                class="preview"
-                src={installation.previewUrl}
-                alt="The {installation.statusPageName} page"
-                loading="lazy"
-                decoding="async"
-              />
+              <span class="preview-frame">
+                <img
+                  class="preview"
+                  src={installation.previewUrl}
+                  alt="The {installation.statusPageName} page"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <!-- The state as a lamp on the board, lit in its own colour.
+                     The legend above says what each colour means, and the title
+                     says it here for anybody reading one card alone. -->
+                <span
+                  class="led"
+                  style="--led: var({STATE_TOKENS[installation.state]})"
+                  title={stateLabel(installation.state)}
+                ></span>
+              </span>
               <span class="details">
                 <span class="reference-name">{installation.statusPageName}</span>
-                <span class="host">{installation.host}</span>
-                <span class="state">
-                  <span
-                    class="dot"
-                    style="background: {installation.stateColour}"
-                    aria-hidden="true"
-                  ></span>
-                  <span>{stateLabel(installation.state)}</span>
-                  <span class="services">
-                    &middot; {installation.services}
+                <span class="facts">
+                  <span class="fact">
+                    {installation.services}
                     {installation.services === 1 ? "service" : "services"}
                   </span>
+                  {#if releaseDate(installation.startedAt)}
+                    <span class="fact">
+                      <span class="label">Release:</span>
+                      {releaseDate(installation.startedAt)}
+                    </span>
+                  {/if}
+                  {#if uptimeDays(installation.startedAt)}
+                    <!-- The exact span is a hover away rather than in the chip,
+                         since the chip is compared against the one on the card
+                         beside it and a single unit is what compares. -->
+                    <span class="fact" title={uptimeBreakdown(installation.startedAt) ?? undefined}>
+                      <span class="label">Uptime:</span>
+                      {uptimeDays(installation.startedAt)}
+                    </span>
+                  {/if}
                 </span>
-                {#if watchingSince(installation.startedAt)}
-                  <span class="since">{watchingSince(installation.startedAt)}</span>
-                {/if}
               </span>
             </a>
           </Card.Root>
@@ -129,8 +176,11 @@
 
   <p class="consent-note">
     Appearing here is a choice, taken during setup and changeable at any time in
-    the Configurator. Only the page name and its address are ever shown, and
-    whether the repository behind it is public or private makes no difference.
+    the Configurator. Velvet discloses the page name and its address, and
+    nothing else. Everything a card shows beyond those, the preview, the state,
+    the services and the dates, your browser reads from the status page itself,
+    which publishes them to anybody. Whether the repository behind it is public
+    or private makes no difference.
   </p>
 </main>
 
@@ -167,7 +217,7 @@
   .reference-list {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
     list-style: none;
     margin: 0 0 3rem;
     padding: 0;
@@ -180,67 +230,116 @@
     display: block;
     text-decoration: none;
   }
-  /* The picture runs the full width of the card's content box, so it takes the
-     inner radius and no text inset: it has an edge of its own. Its ratio is the
-     social card's, stated so the space is held before the image arrives and the
-     grid does not jump as the gallery fills. */
-  .preview {
+  /* The picture reaches the card's own edge rather than sitting inside its
+     padding, so the card's padding is cancelled around it. It therefore forms
+     the card's top corners and takes the outer radius there, and is square
+     where the details meet it. */
+  .preview-frame {
     aspect-ratio: 1200 / 630;
-    background: #0e1017;
-    border-radius: var(--velvet-card-inner-radius);
+    background: var(--velvet-surface-sunken);
+    border-radius: var(--velvet-card-radius) var(--velvet-card-radius) 0 0;
     display: block;
+    margin: calc(-1 * var(--velvet-card-padding));
+    margin-bottom: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .preview {
+    display: block;
+    height: 100%;
     object-fit: cover;
     width: 100%;
   }
+  /* A lamp on the board, lit in the colour of the state. The ring is the glow
+     it throws rather than a border, so it reads as light rather than as a
+     second dot drawn around the first. */
+  .led {
+    background: var(--led);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 2px rgb(0 0 0 / 0.35),
+      0 0 0.375rem 0.0625rem var(--led),
+      0 0 1rem 0.125rem color-mix(in srgb, var(--led) 55%, transparent);
+    height: 0.625rem;
+    inset-block-start: 0.75rem;
+    inset-inline-start: 0.75rem;
+    position: absolute;
+    width: 0.625rem;
+  }
   .details {
     display: block;
-    padding: 1rem var(--velvet-card-text-inset) 0.75rem;
+    padding: 0.75rem 0.5rem 0.5rem;
   }
+  /* The condensed face, as the site sets every name that titles something. It
+     also buys the width a long page name needs on a card this size. */
   .reference-name {
     display: block;
+    font-family: var(--velvet-font-heading);
     font-size: var(--velvet-text-copy);
     font-weight: 600;
     line-height: 1.2;
-  }
-  .host {
-    color: var(--velvet-text-muted);
-    display: block;
-    font-size: var(--velvet-text-small);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  /* The word carries the state and the dot repeats it. Colour alone would ask a
-     reader to tell two tints apart, and the tints are the installation's own
-     rather than a palette this page controls. */
-  .state {
+  /* One fact per chip, wrapping rather than running off the card, so two cards
+     side by side can be compared a fact at a time instead of a sentence at a
+     time. */
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+  }
+  /* A chip sits inside the card rather than against its curve, so it carries a
+     radius of its own. Taking the card's inner radius would tie it to a padding
+     it has nothing to do with. */
+  .fact {
+    align-items: center;
+    background: var(--velvet-surface-raised);
+    border-radius: 0.5rem;
+    display: flex;
+    font-size: var(--velvet-text-small);
+    gap: 0.375rem;
+    line-height: 1.4;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+  }
+  .fact .label {
+    color: var(--velvet-text-muted);
+  }
+  /* Said once above the cards, because the lamp on a card is a colour and a
+     colour on its own says nothing until somebody has been told what it means.
+     On the site's own card, so it reads as belonging to the gallery beneath it
+     rather than to the paragraph above. */
+  .legend-card {
+    margin-bottom: 0.75rem;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem 1.5rem;
+    justify-content: center;
+    margin: 0;
+    padding: 0.625rem var(--velvet-card-text-inset);
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-small);
+  }
+  .legend-item {
     align-items: center;
     display: flex;
     gap: 0.5rem;
-    margin-top: 0.75rem;
   }
   .dot {
     border-radius: 50%;
     flex: none;
-    height: 0.625rem;
-    width: 0.625rem;
-  }
-  .services,
-  .since {
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-small);
-  }
-  .services {
-    margin-inline-start: -0.15rem;
-  }
-  .since {
-    display: block;
-    margin-top: 0.375rem;
+    height: 0.5rem;
+    width: 0.5rem;
   }
   /* Marked by the text, because the card it sits on draws no edge to mark. */
   .reference-list a:hover .reference-name,
   .reference-list a:focus-visible .reference-name {
-    color: var(--velvet-accent, #8ca5ff);
+    color: var(--velvet-accent);
   }
   /* Closes the page with nothing beneath it. There is no card here to line up
      with, so it takes no text inset, and its rule closes the page rather than
@@ -253,7 +352,7 @@
   .consent-note {
     width: 80%;
     margin-inline: auto;
-    border-top: 1px solid #222530;
+    border-top: 1px solid var(--velvet-rule);
     color: var(--velvet-text-muted);
     font-size: var(--velvet-text-small);
     padding-top: 1.5rem;

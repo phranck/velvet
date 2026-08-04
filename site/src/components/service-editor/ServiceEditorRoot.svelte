@@ -287,7 +287,7 @@
     gap: 1.35rem;
     padding: 1.15rem;
     border-radius: var(--service-editor-card-radius, 0.85rem);
-    background: var(--service-editor-card, #222530);
+    background: var(--service-editor-card, var(--velvet-rule));
     color: var(--service-editor-text, #efedf5);
   }
   header,

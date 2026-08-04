@@ -23,10 +23,33 @@
   --velvet-text: #efedf5;
   --velvet-text-muted: #979aa8;
   --velvet-surface-raised: #272a36;
-  /* The tone the tools mark something irreversible with. It is the same red a
-     status page shows an outage in, because a reader who has seen one should
-     read the other the same way. */
+  /* The four states a monitored thing is in, named once so a status page, a
+     tool, and the gallery all draw the same state in the same colour. The tools
+     also use the outage tone to mark something irreversible, because a reader
+     who has seen one should read the other the same way. */
+  --velvet-operational: #2ea043;
+  --velvet-degraded: #d29922;
   --velvet-outage: #f85149;
+  --velvet-no-data: #5a5e6b;
+
+  /* Surfaces, from the page's own backdrop upwards. A card is barely
+     transparent, so the board behind these pages shows through and a card sits
+     on it rather than over it. `sunken` is what a picture rests on until it
+     arrives, and `rule` draws a line or an edge. */
+  --velvet-surface-card: rgb(28 31 41 / 0.74);
+  --velvet-surface-sunken: #0e1017;
+  --velvet-rule: #222530;
+  /* What a dialog darkens the page with whilst it is open. */
+  --velvet-scrim: rgb(10 11 15 / 0.72);
+  /* The lamp a tool marks a live local state with, and the halo around it. */
+  --velvet-live: #75d8b2;
+
+  /* Two layers rather than one. A single wide shadow dissolves into the board
+     backdrop and leaves a card looking pasted flat; the near layer draws its
+     edge and the far one carries the height. */
+  --velvet-card-shadow:
+    0 0.5rem 1rem rgb(0 0 0 / 0.4),
+    0 1.25rem 3rem rgb(0 0 0 / 0.45);
 
   /* Shared by the onboarding and the website, which sit on the board. */
   --velvet-base: #0a0b0f;

@@ -107,7 +107,7 @@
     display: grid;
     place-items: center;
     padding: clamp(1rem, 5vw, 3rem);
-    background: rgb(0 0 0 / 0.5);
+    background: var(--velvet-scrim);
     backdrop-filter: blur(6px);
     animation: overlay-fade var(--overlay-motion) ease-in-out;
   }

@@ -4,7 +4,7 @@
  * The setup service discloses a name and an address and nothing else, which is
  * the whole of what an owner agreed to. Everything a card shows beyond that is
  * published by the installation itself, to anybody, and is read straight from
- * it by the browser: its colours, what its services are doing, and since when.
+ * it by the browser: what its services are doing, and since when.
  *
  * Reading it here rather than through the service keeps that boundary intact.
  * It also keeps the service from making requests to addresses its own users
@@ -17,7 +17,7 @@ export interface Reference {
   url: string;
 }
 
-/** How a status page is doing, in the terms its own theme uses. */
+/** How a status page is doing, worst service first. */
 export type InstallationState = "operational" | "degraded" | "outage" | "unknown";
 
 /** One entry of the gallery, ready to render. */
@@ -28,20 +28,29 @@ export interface Installation extends Reference {
   previewUrl: string;
   /** Worst state across every service the page watches. */
   state: InstallationState;
-  /** The colour that state is drawn in, taken from the page's own theme. */
-  stateColour: string;
   /** How many services the page watches. */
   services: number;
   /** When monitoring began, as an ISO timestamp, or `null` when unknown. */
   startedAt: string | null;
 }
 
-/** Colours a status page draws its states in, with Velvet's own as fallbacks. */
-const FALLBACK_COLOURS: Record<InstallationState, string> = {
-  operational: "#8ca5ff",
-  degraded: "#d29922",
-  outage: "#f85149",
-  unknown: "#3a3d4a",
+/**
+ * The token each state is drawn from across the gallery.
+ *
+ * A name rather than a colour, so the colour itself is stated once in
+ * `velvet-tokens.css` beside the other three and a change reaches the status
+ * page, the tools, and this gallery together.
+ *
+ * One set for every card rather than each installation's own, because the page
+ * carries a legend and a legend only means something whilst the same colour
+ * means the same thing on every card beneath it. An installation's own palette
+ * belongs to its own page, where it is the only one on screen.
+ */
+export const STATE_TOKENS: Record<InstallationState, string> = {
+  operational: "--velvet-operational",
+  degraded: "--velvet-degraded",
+  outage: "--velvet-outage",
+  unknown: "--velvet-no-data",
 };
 
 /** How long a single request may take before the installation counts as gone. */
@@ -58,7 +67,6 @@ interface StatusSnapshot {
 
 interface PageConfiguration {
   dataBaseUrl?: unknown;
-  theme?: { accent?: unknown; grid?: Record<string, unknown> };
 }
 
 /**
@@ -90,12 +98,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function colour(value: unknown, fallback: string): string {
-  return typeof value === "string" && /^#[0-9a-f]{6}$/iu.test(value)
-    ? value
-    : fallback;
-}
-
 /**
  * Reduces every service's state to the one the page is in.
  *
@@ -114,9 +116,9 @@ function worstState(services: ServiceSnapshot[]): InstallationState {
 /**
  * Asks one installation about itself.
  *
- * Two documents are read, and both have to answer. `config.json` says where the
- * data lives and which colours the page draws its states in; the snapshot says
- * what those states are. An installation that answers neither is one whose page
+ * Two documents are read. `config.json` says where the data lives, and the
+ * snapshot says what the services are doing. An installation that answers
+ * neither is one whose page
  * a visitor could not open either, so it is left out rather than shown as a card
  * that leads nowhere.
  *
@@ -133,7 +135,6 @@ export async function describeInstallation(
   if (!isRecord(configuration)) return null;
 
   const page = configuration as PageConfiguration;
-  const grid = isRecord(page.theme?.grid) ? page.theme.grid : {};
   const snapshot =
     typeof page.dataBaseUrl === "string"
       ? await readJson(`${page.dataBaseUrl}/status.json`, signal)
@@ -148,12 +149,6 @@ export async function describeInstallation(
     host: reference.url.replace(/^https?:\/\//u, "").replace(/\/$/u, ""),
     previewUrl: new URL("og.png", base).href,
     state,
-    stateColour: colour(
-      state === "unknown" ? grid.noData : grid[state],
-      state === "operational"
-        ? colour(page.theme?.accent, FALLBACK_COLOURS.operational)
-        : FALLBACK_COLOURS[state],
-    ),
     services: services.length,
     startedAt:
       typeof status?.monitoringStartedAt === "string"
@@ -172,42 +167,91 @@ export function stateLabel(state: InstallationState): string {
   }[state];
 }
 
+/** Parses a timestamp, or gives nothing when it cannot be read as a date. */
+function parseDate(value: string | null): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 /**
- * Says when monitoring began and how long ago that was.
+ * The day a status page went live, as digits.
  *
- * The span is rounded to the largest unit that still says something, because
- * "watching for 412 days" is arithmetic left to the reader whilst "over a year"
- * is the sentence they wanted. A page set up today gets the date alone, since
- * "0 days" says less than nothing.
+ * Digits rather than a written month, because this sits in a chip beside three
+ * other facts and is scanned rather than read.
  *
  * @param startedAt - ISO timestamp monitoring began at.
- * @param now - The moment to measure against, injectable so a test is not
- *   dated.
- * @returns The sentence for the card, or `null` when the date is unusable.
+ * @returns `DD.MM.YYYY`, or `null` when the date is unusable.
  */
-export function watchingSince(startedAt: string | null, now = new Date()): string | null {
-  if (!startedAt) return null;
-  const started = new Date(startedAt);
-  if (Number.isNaN(started.getTime())) return null;
+export function releaseDate(startedAt: string | null): string | null {
+  const started = parseDate(startedAt);
+  if (!started) return null;
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${pad(started.getDate())}.${pad(started.getMonth() + 1)}.${started.getFullYear()}`;
+}
 
-  const date = started.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const days = Math.floor((now.getTime() - started.getTime()) / 86_400_000);
-  if (days < 1) return `Watching since ${date}`;
+/**
+ * How long a status page has been running, in whole days.
+ *
+ * One unit, because the chip is compared against the same chip on the card
+ * beside it and days sort where "3 months" does not. The breakdown is a hover
+ * away for anybody who wants it.
+ *
+ * @param startedAt - ISO timestamp monitoring began at.
+ * @param now - The moment to measure against, injectable so a test is not dated.
+ * @returns Something like `213 days`, or `null` when the date is unusable.
+ */
+export function uptimeDays(startedAt: string | null, now = new Date()): string | null {
+  const started = parseDate(startedAt);
+  if (!started) return null;
+  const days = Math.max(0, Math.floor((now.getTime() - started.getTime()) / 86_400_000));
+  return `${days} ${days === 1 ? "day" : "days"}`;
+}
 
-  const years = Math.floor(days / 365);
-  const span =
-    years >= 2
-      ? `${years} years`
-      : days >= 365
-        ? "over a year"
-        : days >= 60
-          ? `${Math.floor(days / 30)} months`
-          : days === 1
-            ? "a day"
-            : `${days} days`;
-  return `Watching since ${date}, ${span}`;
+/**
+ * The same span written out, for the hover.
+ *
+ * Years, months, weeks, and days, dropping every unit that is zero so a page
+ * three days old says "3 days" rather than "0 years, 0 months, 0 weeks,
+ * 3 days". Months are counted by the calendar rather than as thirty-day blocks,
+ * because a reader checks this against a date they remember.
+ *
+ * @param startedAt - ISO timestamp monitoring began at.
+ * @param now - The moment to measure against.
+ * @returns Something like `1 year, 3 months, 2 weeks, 4 days`, or `null`.
+ */
+export function uptimeBreakdown(
+  startedAt: string | null,
+  now = new Date(),
+): string | null {
+  const started = parseDate(startedAt);
+  if (!started || started.getTime() > now.getTime()) return null;
+
+  let years = now.getFullYear() - started.getFullYear();
+  let months = now.getMonth() - started.getMonth();
+  let days = now.getDate() - started.getDate();
+  if (now.getHours() < started.getHours()) days -= 1;
+  if (days < 0) {
+    months -= 1;
+    // The length of the month that has just been borrowed from, which is what
+    // makes this a calendar count rather than an approximation.
+    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  const weeks = Math.floor(days / 7);
+  days -= weeks * 7;
+
+  const parts = [
+    [years, "year"],
+    [months, "month"],
+    [weeks, "week"],
+    [days, "day"],
+  ] as const;
+  const written = parts
+    .filter(([amount]) => amount > 0)
+    .map(([amount, unit]) => `${amount} ${unit}${amount === 1 ? "" : "s"}`);
+  return written.length > 0 ? written.join(", ") : "less than a day";
 }

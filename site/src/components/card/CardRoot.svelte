@@ -41,8 +41,9 @@
        inherits where a surface states none. Every card on the site is a reading
        surface, so it states the reading colour. */
     --tool-text: var(--velvet-text);
-    background: #14161d;
+    background: var(--velvet-surface-card);
     border-radius: var(--velvet-card-radius);
+    box-shadow: var(--velvet-card-shadow);
     padding: var(--velvet-card-padding);
     font-size: var(--velvet-text-body);
     line-height: 1.7;
