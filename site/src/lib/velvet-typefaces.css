@@ -44,6 +44,22 @@
     url("@fontsource/barlow/files/barlow-latin-700-normal.woff2") format("woff2");
 }
 
+/**
+ * The wordmark, which is drawn as text rather than as outlines.
+ *
+ * `optional` matters most here: Plaster looks like nothing else on the page, so
+ * a swap into it is the most visible change a reader can be shown. There is no
+ * metric-matched stand-in for a display face, so on a load slow enough to miss
+ * the window the wordmark reads in a plain face for that visit.
+ */
+@font-face {
+  font-family: "Plaster";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: url("@fontsource/plaster/files/plaster-latin-400-normal.woff2") format("woff2");
+}
+
 @font-face {
   font-family: "Barlow Condensed";
   font-style: normal;

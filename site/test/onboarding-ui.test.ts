@@ -121,7 +121,7 @@ test("uses the local Barlow family for onboarding typography", async () => {
   assert.doesNotMatch(declarations, /font-display:\s*swap/);
   assert.equal(
     (declarations.match(/font-display:\s*optional/g) ?? []).length,
-    4,
+    5,
     "every face is optional, or a heading changes shape after the first paint",
   );
   assert.match(tokens, /--velvet-font:\s*"Barlow"/);

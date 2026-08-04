@@ -1,4 +1,4 @@
-@import "@fontsource/plaster/400.css";
+@import "./lib/velvet-typefaces.css";
 
 :root {
   --accent: #6366f1;
