@@ -17,6 +17,55 @@
  * Velvet rather than to Velvet.
  */
 
+/**
+ * Stand-ins for the two faces, until the real ones arrive.
+ *
+ * The font files are declared with `font-display: swap`, so the browser draws
+ * the text in whatever the stack names next and draws it again once the real
+ * face has loaded. Left to a system face, that second drawing is a second
+ * layout: measured in the page, Helvetica sets the same words 6.6% wider than
+ * Barlow and on a shorter line, so the content visibly settles on every load.
+ *
+ * These two point at faces the reader already has and bend their metrics to
+ * Barlow's, so the first drawing takes exactly the space the second one will.
+ * The swap then changes the shapes of the letters and moves nothing.
+ *
+ * The figures come from measuring the same string in each face at 1000px:
+ * Barlow is 13613 wide against Helvetica's 14525, and Barlow Condensed 14530
+ * against Arial Narrow's 15365. Barlow's own ascent is 1.00em and its descent
+ * 0.20em, and the overrides below are those divided by the size adjustment,
+ * because a browser reads them against the adjusted em rather than the
+ * original one.
+ *
+ * A reader with none of the named faces gets no match here at all, and the
+ * stack falls through to the generic family exactly as it did before.
+ */
+@font-face {
+  font-family: "Barlow Fallback";
+  src:
+    local("Helvetica Neue"),
+    local("Arial"),
+    local("Liberation Sans"),
+    local("Segoe UI");
+  size-adjust: 93.75%;
+  ascent-override: 106.67%;
+  descent-override: 21.33%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Barlow Condensed Fallback";
+  src:
+    local("Arial Narrow"),
+    local("Liberation Sans Narrow"),
+    local("Helvetica Neue Condensed"),
+    local("Segoe UI");
+  size-adjust: 94.56%;
+  ascent-override: 105.75%;
+  descent-override: 21.15%;
+  line-gap-override: 0%;
+}
+
 :root {
   /* Shared by the onboarding, the configurator, and the website. */
   --velvet-accent: #8ca5ff;
@@ -26,8 +75,9 @@
 
   /* Shared by the onboarding and the website, which sit on the board. */
   --velvet-base: #0a0b0f;
-  --velvet-font: "Barlow", "Segoe UI", sans-serif;
-  --velvet-font-heading: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --velvet-font: "Barlow", "Barlow Fallback", "Segoe UI", sans-serif;
+  --velvet-font-heading:
+    "Barlow Condensed", "Barlow Condensed Fallback", "Arial Narrow", sans-serif;
   /* The type scale, in the order it grows. The start page is where it was set,
      and the rest of the site is measured against it rather than choosing sizes
      of its own. A page that names a size in rem here is a page that will drift

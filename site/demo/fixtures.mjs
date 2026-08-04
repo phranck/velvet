@@ -1,11 +1,42 @@
 /** Contract-valid Velvet data for the deterministic README screenshot. */
 
-export const FIXED_NOW = "2026-07-28T12:05:00.000Z";
-const STATUS_GENERATED_AT = "2026-07-28T12:00:00.000Z";
+/**
+ * The moment the demo page is photographed at.
+ *
+ * The eighth of August at 9:41, in the year the picture is taken. The time is
+ * the one every product photograph has shown since the first iPhone was held up
+ * in 2007, and it is here for the same reason: a picture of a page wants a time
+ * that reads as deliberate rather than as whenever the shutter happened to
+ * fall.
+ *
+ * The year comes from the calendar so that the picture on the start page never
+ * shows a date from a year gone by, which is the one part of it a reader checks
+ * against their own clock.
+ */
+const DEMO_YEAR = new Date().getUTCFullYear();
+const STATUS_GENERATED_AT = `${DEMO_YEAR}-08-08T09:41:00.000Z`;
+/**
+ * Five minutes after the data was written, which is where the clock stands
+ * whilst the picture is taken. The page prints the moment the data was
+ * generated rather than the clock, so it is that one which has to read 9:41.
+ */
+export const FIXED_NOW = `${DEMO_YEAR}-08-08T09:46:00.000Z`;
 
 const DAY_MS = 86_400_000;
 const RESPONSE_INTERVAL_MS = 6 * 60 * 60 * 1_000;
 const RESPONSE_SAMPLE_COUNT = 90 * 4 + 1;
+/**
+ * How much of the newest day had been monitored when the data was generated.
+ *
+ * Measured to the moment the status document states, not to the clock, because
+ * the contract refuses a day claiming more monitoring than had happened by the
+ * time the document was written.
+ */
+const SECONDS_ELAPSED_TODAY = Math.round(
+  (Date.parse(STATUS_GENERATED_AT) -
+    Date.parse(`${STATUS_GENERATED_AT.slice(0, 10)}T00:00:00.000Z`)) /
+    1000,
+);
 
 function daysAgo(count) {
   return new Date(new Date(FIXED_NOW).getTime() - count * DAY_MS)
@@ -22,7 +53,10 @@ function dailyAvailability(outages = []) {
     const date = daysAgo(count);
     return {
       date,
-      monitoredSeconds: count === 0 ? 43_200 : 86_400,
+      // Today has only run as far as the clock. It was half a day whilst the
+      // demo was fixed at noon; the instant moved to 09:41 and the contract
+      // refuses a day claiming more monitoring than has happened in it.
+      monitoredSeconds: count === 0 ? SECONDS_ELAPSED_TODAY : 86_400,
       unavailableSeconds: unavailable.get(date) ?? 0,
     };
   });
@@ -161,8 +195,8 @@ export const demoIncidents = {
       title: "Database upgrade in eu-west",
       summary: "Brief connection resets are expected while the primary fails over.",
       affectedServiceIds: ["database"],
-      startsAt: "2026-08-04T22:00:00.000Z",
-      endsAt: "2026-08-04T23:30:00.000Z",
+      startsAt: `${DEMO_YEAR}-08-15T22:00:00.000Z`,
+      endsAt: `${DEMO_YEAR}-08-15T23:30:00.000Z`,
     },
   ],
 };
