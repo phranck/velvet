@@ -21,8 +21,8 @@ import { buildReleaseManifest } from "@velvet/template-files";
  *
  * The version comes from the root `package.json`, which is where Velvet states
  * it. Passing it here as well would let an artefact be cut against a number
- * nobody had decided, and that is how the artefact and the repository came to
- * claim different versions on 2026-08-04.
+ * nobody decided, and leave the artefact and the repository claiming different
+ * versions.
  *
  * Usage:
  *   bun run scripts/build-release.ts --type feature \

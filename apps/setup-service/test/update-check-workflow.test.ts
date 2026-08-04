@@ -82,19 +82,17 @@ test("the workflow allows exactly the paths Velvet owns", () => {
 test("every Velvet action the release ships names one revision", () => {
   // An installation receives several workflows and each pins the Velvet it uses
   // independently. When they disagree, the run that fails is whichever pin is
-  // behind the configuration contract, which is how 1.0.1 shipped a repaired
-  // monitor beside a Pages workflow that still refused what onboarding wrote.
+  // behind the configuration contract, and the Pages workflow is the only one
+  // onboarding dispatches, so a disagreement there fails the very first run.
   //
-  // Every pin in the artefact is scanned rather than a listed few, because a
-  // maintained list is what let that through: the list named the two recurring
-  // monitor workflows and omitted the Pages workflow, which is the only one
-  // onboarding dispatches.
+  // Every pin in the artefact is scanned rather than a listed few, since a
+  // maintained list covers the workflows whoever wrote it thought of.
   //
   // Which revision they name is not decided here. That is a question about the
   // world outside this repository, and `scripts/check-template-drift.ts`
   // answers it by building the pinned revision's contracts and validating a
-  // configuration against them. This test used to hold a copy of the answer,
-  // and that copy is what went stale on 2026-08-04.
+  // configuration against them. A copy of the answer kept here would go stale
+  // without anything reporting it.
   const found = new Map<string, string[]>();
   for (const [path, source] of Object.entries(
     VELVET_RELEASE.sources as Record<string, string>,

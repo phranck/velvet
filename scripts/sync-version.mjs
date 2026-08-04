@@ -1,17 +1,12 @@
 /**
  * Writes the version stated in the root manifest into every place derived from it.
  *
- * Velvet used to state its version in six places and keep them in step by hand.
- * On 2026-08-04 they were three different numbers at once: the workspace
- * manifests said 1.0.0, the release artefact said 1.0.2, and the board backdrop
- * printed whichever of those the generator had last been run against. Nothing
- * reported it, because nothing compared them.
+ * The root `package.json` states Velvet's version. This writes it outwards, and
+ * `tests/version.test.mjs` fails when any derived place disagrees.
  *
- * The root `package.json` now states the version, this writes it outwards, and
- * `tests/version.test.mjs` fails when anything disagrees. The artefact is not
- * written here, because cutting one reads the template over the network and
- * needs release notes a person has written; the test is what makes a forgotten
- * artefact impossible to miss.
+ * The release artefact is not written here, because cutting one reads the
+ * template over the network and needs release notes a person has written. The
+ * test is what makes a forgotten artefact impossible to miss.
  *
  * Usage:
  *   bun run scripts/sync-version.mjs [--check]
@@ -45,10 +40,10 @@ const VERSIONED_MANIFESTS = [
 /**
  * Manifests that depend on a Velvet workspace.
  *
- * Their dependency ranges used to repeat the version, which put it in seven
- * more places to keep in step. Every Velvet package is private and none is
- * published, so a dependency on one is always the copy in this repository, and
- * `workspace:*` says exactly that whilst naming no version at all.
+ * Every Velvet package is private and none is published, so a dependency on one
+ * is always the copy in this repository. `workspace:*` says exactly that and
+ * names no version, which is why a dependency range is never a place the
+ * version has to be kept in step.
  */
 const DEPENDANT_MANIFESTS = [...VERSIONED_MANIFESTS, "site/package.json"];
 

@@ -296,8 +296,8 @@ test("a configuration Velvet does not define is refused, not translated", async 
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-foreign-config-"));
   const input = resolve(directory, "velvet.yml");
   const output = resolve(directory, "config.json");
-  // The shape another status-page generator uses. Velvet used to read it, with
-  // a branch at every field to translate it, and now reads one format.
+  // The shape another status-page generator uses. Velvet reads one format and
+  // refuses anything else rather than guessing at a translation.
   await writeFile(
     input,
     "owner: example\nrepo: status\nstatus-website:\n  velvet:\n    dataBranch: production\n",

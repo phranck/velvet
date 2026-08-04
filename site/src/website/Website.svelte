@@ -407,10 +407,10 @@
      edge to edge whilst the tint behind the picture dissolves before it
      reaches them. Both layers are stacked here rather than on the section for
      that reason. */
-  /* The tint the screenshot used to carry baked in, now supplied here so it can
-     run out to both edges whilst the picture stays the size it was. Partly
-     transparent, so the board backdrop keeps showing through rather than being
-     covered by a solid panel. */
+  /* The tint behind the screenshot, supplied here rather than baked into the
+     picture, so it runs out to both edges whilst the picture stays the size it
+     was. Partly transparent, so the board backdrop keeps showing through
+     rather than being covered by a solid panel. */
   .showcase-plate {
     display: grid;
     justify-items: center;

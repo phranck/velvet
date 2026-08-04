@@ -1,14 +1,10 @@
 # Contracts
 
-The configuration and document contracts every part of Velvet reads and writes, the boundaries between the layers, and how the schemas are
-generated and verified. What the package is is in
-[packages/contracts/README.md](../packages/contracts/README.md).
+The configuration and document contracts every part of Velvet reads and writes, the boundaries between the layers, and how the schemas are generated and verified. What the package is is in [packages/contracts/README.md](../packages/contracts/README.md).
 
 ## Velvet configuration
 
-`velvet.yml` is the canonical private repository configuration for the Velvet
-monitor, browser onboarding, setup service, template, and build scripts. Its
-schema is versioned independently from the public data documents.
+`velvet.yml` is the canonical private repository configuration for the Velvet monitor, browser onboarding, setup service, template, and build scripts. Its schema is versioned independently from the public data documents.
 
 The minimal service form needs only a display name and URL:
 
@@ -24,11 +20,7 @@ services:
     url: https://example.com
 ```
 
-`parseVelvetConfiguration` turns this into a normalized direct HTTP check. The
-default check uses IPv4, sends `GET`, follows at most five redirects, requires
-the final response to be exactly `200`, measures latency, and ignores the
-response body. A successful HTTP response therefore confirms endpoint
-availability, not application health represented inside HTML or JSON.
+`parseVelvetConfiguration` turns this into a normalized direct HTTP check. The default check uses IPv4, sends `GET`, follows at most five redirects, requires the final response to be exactly `200`, measures latency, and ignores the response body. A successful HTTP response therefore confirms endpoint availability, not application health represented inside HTML or JSON.
 
 JSON validation is an explicit advanced option for a health endpoint:
 
@@ -44,10 +36,7 @@ services:
             equals: ok
 ```
 
-Assertions use safe RFC 6901 JSON Pointers and scalar expected values. Advanced
-checks may also use `HEAD`, select final status codes, lower the redirect bound,
-set an absolute timeout from `100` through `60000` milliseconds, and reference
-request-header values by environment-variable name:
+Assertions use safe RFC 6901 JSON Pointers and scalar expected values. Advanced checks may also use `HEAD`, select final status codes, lower the redirect bound, set an absolute timeout from `100` through `60000` milliseconds, and reference request-header values by environment-variable name:
 
 ```yaml
 headers:
@@ -55,15 +44,9 @@ headers:
     secret: API_HEALTH_TOKEN
 ```
 
-Do not put a secret value, `$VARIABLE`, or `${VARIABLE}` expression in
-`velvet.yml`. Consumers resolve the named environment secret only while issuing
-the request and must redact it from output and logs. Request-routing, framing,
-and connection headers such as `Host`, `Content-Length`, and
-`Transfer-Encoding` cannot be configured.
+Do not put a secret value, `$VARIABLE`, or `${VARIABLE}` expression in `velvet.yml`. Consumers resolve the named environment secret only while issuing the request and must redact it from output and logs. Request-routing, framing, and connection headers such as `Host`, `Content-Length`, and `Transfer-Encoding` cannot be configured.
 
-The normalized configuration keeps endpoint URLs inside the monitor boundary.
-The public `velvet-data/v1` documents deliberately contain no endpoint URL,
-request header, or secret reference.
+The normalized configuration keeps endpoint URLs inside the monitor boundary. The public `velvet-data/v1` documents deliberately contain no endpoint URL, request header, or secret reference.
 
 ```ts
 import { parseVelvetConfiguration } from "@velvet/contracts";
@@ -74,39 +57,17 @@ if (!result.success) {
 }
 ```
 
-Valid examples cover a minimal website, multiple services, advanced status
-codes, JSON health assertions, incident policy, maintenance labeling, and one
-fully populated configuration under
-[`fixtures/valid/configuration`](../packages/contracts/fixtures/valid/configuration). Invalid examples
-under [`fixtures/invalid/configuration`](../packages/contracts/fixtures/invalid/configuration) pin the
-stable error code and JSON Pointer for every rejected class.
+Valid examples cover a minimal website, multiple services, advanced status codes, JSON health assertions, incident policy, maintenance labeling, and one fully populated configuration under [`fixtures/valid/configuration`](../packages/contracts/fixtures/valid/configuration). Invalid examples under [`fixtures/invalid/configuration`](../packages/contracts/fixtures/invalid/configuration) pin the stable error code and JSON Pointer for every rejected class.
 
 ## Managed update contracts
 
-`velvet.lock.json` records the installed semantic version, official template
-repository and immutable 40-character commit, plus the configuration and data
-schema versions. It contains no timestamps or user data, so the same installed
-release produces the same lock.
+`velvet.lock.json` records the installed semantic version, official template repository and immutable 40-character commit, plus the configuration and data schema versions. It contains no timestamps or user data, so the same installed release produces the same lock.
 
-Each release publishes a separate validated manifest with its release type,
-automatic-install eligibility, compatibility boundary, immutable template
-revision, Markdown release notes, and every Velvet-owned file it may change.
-The allowed destination set is closed. Every source must come from the
-identical path at the pinned template commit and match its SHA-256 digest.
-Configuration-dependent workflows and the maintenance Issue Form then use a
-registered deterministic generator; static files remain byte-identical. Every
-release also generates the new version lock.
+Each release publishes a separate validated manifest with its release type, automatic-install eligibility, compatibility boundary, immutable template revision, Markdown release notes, and every Velvet-owned file it may change. The allowed destination set is closed. Every source must come from the identical path at the pinned template commit and match its SHA-256 digest. Configuration-dependent workflows and the maintenance Issue Form then use a registered deterministic generator; static files remain byte-identical. Every release also generates the new version lock.
 
-The publication boundary additionally requires a complete snapshot of the
-closed managed-file set. It compares the candidate with the previous published
-manifest so versions only move forward, the previous release remains eligible
-to update, schema migrations are declared exactly when schema versions change,
-and semantic version changes match the release classification.
+The publication boundary additionally requires a complete snapshot of the closed managed-file set. It compares the candidate with the previous published manifest so versions only move forward, the previous release remains eligible to update, schema migrations are declared exactly when schema versions change, and semantic version changes match the release classification.
 
-Automatic eligibility is valid only for a security release without a
-configuration or data migration. The updater must additionally compare the
-manifest's schema versions and minimum version with the installed lock before
-opening an update pull request.
+Automatic eligibility is valid only for a security release without a configuration or data migration. The updater must additionally compare the manifest's schema versions and minimum version with the installed lock before opening an update pull request.
 
 ```ts
 import {
@@ -120,9 +81,7 @@ const release = parseVelvetReleaseManifest(manifestSource);
 
 ## Package boundaries
 
-Each runtime layer consumes the narrowest stable output below. Dependencies
-flow from product-specific layers toward contracts, never from contracts toward
-GitHub, the monitor, setup infrastructure, or Svelte.
+Each runtime layer consumes the narrowest stable output below. Dependencies flow from product-specific layers toward contracts, never from contracts toward GitHub, the monitor, setup infrastructure, or Svelte.
 
 | Boundary | Input | Output | Allowed dependencies |
 | --- | --- | --- | --- |
@@ -147,23 +106,13 @@ Daily availability contains only monitored dates. `monitoredSeconds` makes parti
 
 Maintenance state is relative to `generatedAt`: `scheduled` starts later, `active` contains the generation timestamp, and `completed` has already ended.
 
-The contract describes data shape, not data ownership. Using the schemas does
-not apply Velvet's MIT license to monitoring records or replace a source
-dataset's copyright, database-right, attribution, or privacy obligations. See
-the repository [licensing and provenance policy](../LICENSING.md).
+The contract describes data shape, not data ownership. Using the schemas does not apply Velvet's MIT license to monitoring records or replace a source dataset's copyright, database-right, attribution, or privacy obligations. See the repository [licensing and provenance policy](../LICENSING.md).
 
 ## Source of truth
 
-[`src/schemas.ts`](../packages/contracts/src/schemas.ts) is the single editable public-data schema
-source. [`src/configuration/schemas.ts`](../packages/contracts/src/configuration/schemas.ts) owns the
-private `velvet.yml` schema. [`src/updates/schemas.ts`](../packages/contracts/src/updates/schemas.ts)
-owns the installed-version lock and release-manifest schemas. Exported
-TypeScript input types are derived from these TypeBox schemas, and the validated
-configuration API returns the explicit `NormalizedVelvetConfiguration` type.
+[`src/schemas.ts`](../packages/contracts/src/schemas.ts) is the single editable public-data schema source. [`src/configuration/schemas.ts`](../packages/contracts/src/configuration/schemas.ts) owns the private `velvet.yml` schema. [`src/updates/schemas.ts`](../packages/contracts/src/updates/schemas.ts) owns the installed-version lock and release-manifest schemas. Exported TypeScript input types are derived from these TypeBox schemas, and the validated configuration API returns the explicit `NormalizedVelvetConfiguration` type.
 
-The standalone files under `schemas/velvet-data/v1`,
-`schemas/velvet-config/v1`, and `schemas/velvet-update/v1` are generated from
-the same sources:
+The standalone files under `schemas/velvet-data/v1`, `schemas/velvet-config/v1`, and `schemas/velvet-update/v1` are generated from the same sources:
 
 ```bash
 bun run --filter @velvet/contracts schemas
@@ -217,20 +166,13 @@ Configuration validation has its own stable codes:
 - `UNSUPPORTED_CONFIGURATION_STATUS_CODE`
 - `UNSUPPORTED_CONFIGURATION_VERSION`
 
-Managed-update validation has stable codes for malformed or unsupported locks
-and manifests, untrusted template sources, unsafe automatic eligibility,
-incompatible versions, duplicate or unknown file targets, mismatched static
-sources and generators, and a missing generated version lock.
+Managed-update validation has stable codes for malformed or unsupported locks and manifests, untrusted template sources, unsafe automatic eligibility, incompatible versions, duplicate or unknown file targets, mismatched static sources and generators, and a missing generated version lock.
 
 Codes and paths are suitable for programmatic handling. Messages are human-readable context and may be clarified without a schema-version change.
 
 ## Fixtures and verification
 
-Valid and invalid examples live under `fixtures`. Public-document examples cover
-dual-stack legacy data, IPv4-only services, partial and empty history,
-unavailable response samples, incidents, maintenance, and every required
-invariant. Configuration examples are IPv4-only and contain no provider-specific
-fields.
+Valid and invalid examples live under `fixtures`. Public-document examples cover dual-stack legacy data, IPv4-only services, partial and empty history, unavailable response samples, incidents, maintenance, and every required invariant. Configuration examples are IPv4-only and contain no provider-specific fields.
 
 ```bash
 bun run --filter @velvet/contracts test

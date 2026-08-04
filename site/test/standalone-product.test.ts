@@ -70,10 +70,9 @@ test("nothing in the repository names the products Velvet is not", async () => {
    * invites the next one: a comment explaining a compatibility path, then the
    * path itself, then a section of documentation about it.
    *
-   * Whole repository rather than the documents somebody thought of, because
-   * the mentions this replaced sat in a changelog entry, in release notes
-   * compiled into the setup service, and in a branch of the configuration
-   * generator, none of which any earlier check looked at.
+   * Whole repository rather than a list of documents, since a name can sit in
+   * a changelog entry, in release notes compiled into the setup service, or in
+   * a branch of a build script just as easily as in a README.
    */
   const forbidden = /Upptime|upptimerc|Globalping/iu;
   const listed = Bun.spawnSync(

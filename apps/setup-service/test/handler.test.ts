@@ -234,8 +234,8 @@ test("grants no third-party origin any script or connection", async () => {
       .find((part) => part.startsWith(`${name} `)) ?? "";
 
   // Velvet observes nobody, so no analytics origin appears here whatever the
-  // environment says. This used to grant one in both directives, and the pair
-  // of grants is what a reinstated tracker would need.
+  // environment says. A tracker would need a grant in both directives, which is
+  // why both are asserted rather than one.
   assert.equal(directive("script-src"), "script-src 'self'");
   // The one origin that is granted, and the reason it is: the Configurator
   // reads the community theme registry Velvet publishes on GitHub Pages.
@@ -1065,10 +1065,9 @@ test("an instance without a registry answers the gallery plainly", async () => {
 });
 
 test("only the gallery may be read from the website, and only by it", async () => {
-  // The list is served here and rendered by a page on velvet.li, so without
-  // this the browser discards a perfectly good answer and the page shows an
-  // empty gallery. It did exactly that from the day it was published until
-  // 2026-08-04, however many installations had consented.
+  // The list is served here and rendered by a page on another origin, so
+  // without this the browser discards a perfectly good answer and the page
+  // shows an empty gallery however many installations have consented.
   const { handler } = harness();
 
   const gallery = await handler(new Request(`${origin}/api/references`));

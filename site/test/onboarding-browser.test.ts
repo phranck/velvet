@@ -1060,8 +1060,8 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(await page.locator("[data-card-serial]").count(), 0);
     assert.equal(sessionCalls, 1);
     assert.equal(setupCalls, 1);
-    // The link that used to sit in the result is gone; the footer button is
-    // now the single way to the finished page, asserted above.
+    // The footer button is the single way to the finished page, asserted above.
+    // A second link in the result would give the same destination two controls.
     assert.equal(
       await page.getByRole("link", { name: "Open your status page" }).count(),
       0,

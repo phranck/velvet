@@ -5,15 +5,9 @@ import { test } from "bun:test";
 /**
  * Holds every place that states Velvet's version to the one that decides it.
  *
- * On 2026-08-04 the workspace manifests said 1.0.0, the release artefact said
- * 1.0.2, and the board backdrop printed 1.0.2 only because its generator had
- * last been run at that moment. Each was edited by hand at a different time and
- * nothing compared them, so the disagreement was invisible until somebody read
- * all six files in one sitting.
- *
  * The root manifest states the version. `scripts/sync-version.mjs` writes the
  * derived places, and these tests are what makes a place left behind fail the
- * gate rather than ship.
+ * gate rather than ship, since nothing else compares them.
  */
 
 /** Reads a file relative to the repository root. */
@@ -60,8 +54,8 @@ test("every versioned workspace states it", async () => {
 test("no workspace repeats it in a dependency range", async () => {
   // Every Velvet package is private and none is published, so a dependency on
   // one is always the copy in this repository. `workspace:*` says that and
-  // states no version at all, which removes seven places the number used to be
-  // written and could be left behind.
+  // states no version, so a dependency range is never a place the number has to
+  // be kept in step.
   for (const path of DEPENDANT_MANIFESTS) {
     const manifest = await readJson(path);
     for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
