@@ -149,6 +149,20 @@ export interface InstallationSerialCounter {
   listed(): Promise<GalleryEntry[] | null>;
 
   /**
+   * The repositories the counter currently lists, as `owner/name`.
+   *
+   * Named rather than described, because this answers a different question from
+   * {@link listed}: not what to show a visitor, but which installations Velvet
+   * believes have consented. A reconciliation compares that against the
+   * installations it can still reach, and one it cannot reach is one whose
+   * consent it can no longer verify.
+   *
+   * @returns The repositories, or `null` when the counter cannot be read, since
+   *   an unreadable counter is not an empty one.
+   */
+  listedRepositories(): Promise<string[] | null>;
+
+  /**
    * Records what an installation's own configuration says about the gallery.
    *
    * Writing only when the answer differs keeps a reconciliation that finds
@@ -438,6 +452,17 @@ export function createInstallationSerialCounter(
       } catch {
         // Unreadable is not the same as empty, and the caller shows nothing
         // rather than an empty gallery when it cannot tell which it is.
+        return null;
+      }
+    },
+
+    async listedRepositories() {
+      try {
+        const { state } = await readState(await repositoryToken());
+        return state.installations
+          .filter((installation) => installation.listed === true)
+          .map((installation) => installation.repository);
+      } catch {
         return null;
       }
     },

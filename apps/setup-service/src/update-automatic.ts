@@ -140,6 +140,14 @@ export interface GalleryReconciliation {
   repositories: number;
   /** Records whose consent differed from the installation and was corrected. */
   changed: number;
+  /**
+   * Records unlisted because the pass never reached them.
+   *
+   * A repository the app no longer covers is one whose consent Velvet cannot
+   * read, whether it was deleted or the app was removed from it, and consent
+   * that cannot be verified is not acted on.
+   */
+  unreachable: number;
   /** Repositories that could not be read at all. */
   failures: number;
   /** Whether the enumeration hit its page limit. */
@@ -318,6 +326,7 @@ export function createAutomaticUpdateRunner(
       installations: 0,
       repositories: 0,
       changed: 0,
+      unreachable: 0,
       failures: 0,
       truncated: false,
     };
@@ -327,6 +336,8 @@ export function createAutomaticUpdateRunner(
     const found = await installations();
     result.installations = found.ids.length;
     result.truncated = found.truncated;
+    /** Every repository this pass actually reached, to compare the registry against. */
+    const visited = new Set<string>();
 
     for (const installationId of found.ids) {
       const token = await createInstallationToken(
@@ -340,12 +351,11 @@ export function createAutomaticUpdateRunner(
 
       for (const repository of covered.entries) {
         result.repositories += 1;
+        const name = `${repository.owner}/${repository.name}`;
+        visited.add(name);
         try {
           const consented = await galleryConsent(token, repository);
-          const written = await serials.setListed(
-            `${repository.owner}/${repository.name}`,
-            consented,
-          );
+          const written = await serials.setListed(name, consented);
           if (written) result.changed += 1;
         } catch {
           // One unreadable repository is not a reason to leave every other
@@ -354,6 +364,29 @@ export function createAutomaticUpdateRunner(
         }
       }
     }
+
+    /*
+     * The other direction. Walking the app's repositories finds an installation
+     * that withdrew its consent, and never finds one that is gone: a deleted
+     * repository, or one the app was removed from, is simply absent from that
+     * list, so nothing about it is ever revisited and it stays listed forever.
+     *
+     * An entry the pass did not reach is one whose consent Velvet can no longer
+     * read, and consent that cannot be verified is not acted on.
+     *
+     * Only from a complete pass. A truncated enumeration or a repository that
+     * failed to be read means the list of what was reached is incomplete, and
+     * absence from an incomplete list is no evidence at all. A bad afternoon at
+     * GitHub would otherwise empty the gallery.
+     */
+    if (!result.truncated && result.failures === 0) {
+      const listed = await serials.listedRepositories();
+      for (const repository of listed ?? []) {
+        if (visited.has(repository)) continue;
+        if (await serials.setListed(repository, false)) result.unreachable += 1;
+      }
+    }
+
     return result;
   };
 
