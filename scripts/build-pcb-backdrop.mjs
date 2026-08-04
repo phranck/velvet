@@ -61,13 +61,19 @@ const SILKSCREEN = "#ffffff";
  * the one thing that surfaces, which is also true of a real board seen in low
  * light: the white print is what you make out first.
  */
+/**
+ * Per-layer opacities as shipped.
+ *
+ * The routing and the identity block are what the board is read by, so they
+ * carry the visible weight. The parts sit well below them: a page laid over
+ * this has text to read, and a field of pads and component outlines at the same
+ * strength as the traces turns into noise behind it.
+ */
 const SHIPPED_OPACITY = {
-  // Raised from 0.034 so the routing can be followed rather than merely sensed.
-  // Kept below copperFeature, so the parts still sit in front of the wiring
-  // rather than level with it.
   trace: 0.045,
-  copperFeature: 0.05,
-  silkscreen: 0.062,
+  copperFeature: 0.024,
+  silkscreen: 0.028,
+  identity: 0.062,
   wordmark: 0.078,
 };
 
@@ -75,6 +81,7 @@ const CONTRAST_OPACITY = {
   trace: 0.3,
   copperFeature: 0.45,
   silkscreen: 0.8,
+  identity: 0.85,
   wordmark: 0.9,
 };
 
@@ -536,7 +543,6 @@ function buildBoard(seed, opacity, version, wordmark, marks, year) {
     MARGIN + 80 + random() * (HEIGHT - MARGIN * 2 - identityHeight - 80),
   );
   const identity = identityBlock(random, identityX, identityY, version, wordmark, marks, year);
-  silkscreen.push(...identity.silkscreen);
   occupied.push([
     identityX + identityWidth / 2,
     identityY + identityHeight / 2 - 60,
@@ -688,6 +694,9 @@ function buildBoard(seed, opacity, version, wordmark, marks, year) {
   </g>
   <g fill="none" stroke="${SILKSCREEN}" stroke-opacity="${opacity.silkscreen}" fill-opacity="${opacity.silkscreen}" stroke-width="0.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="9" letter-spacing="0.4">
     ${silkscreen.map(withTextFill).join("\n    ")}
+  </g>
+  <g fill="none" stroke="${SILKSCREEN}" stroke-opacity="${opacity.identity}" fill-opacity="${opacity.identity}" stroke-width="0.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="9" letter-spacing="0.4">
+    ${identity.silkscreen.map(withTextFill).join("\n    ")}
   </g>
   <g fill="${SILKSCREEN}" fill-opacity="${opacity.wordmark}">
     ${identity.wordmark}

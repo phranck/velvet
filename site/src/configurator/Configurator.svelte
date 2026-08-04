@@ -1297,8 +1297,8 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #75d8b2;
-    box-shadow: 0 0 0 4px rgba(117, 216, 178, 0.1);
+    background: var(--velvet-live);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--velvet-live) 10%, transparent);
   }
   .configurator-brand {
     width: max-content;

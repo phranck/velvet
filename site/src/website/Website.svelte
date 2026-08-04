@@ -320,7 +320,7 @@
        into setup does not meet a second palette. */
     --setup-accent: var(--velvet-accent);
     --setup-base: var(--velvet-base);
-    --setup-panel: rgba(27, 29, 38, 0.9);
+    --setup-panel: var(--velvet-surface-card);
     --setup-panel-raised: var(--velvet-surface-raised);
     --setup-text: var(--velvet-text);
     --setup-muted: var(--velvet-text-muted);
@@ -510,7 +510,7 @@
     gap: 0.85rem;
     padding: 1rem;
     border-radius: var(--step-card-inner-radius);
-    background: #222530;
+    background: var(--velvet-rule);
   }
   .capabilities :global(svg) {
     color: var(--setup-accent);
@@ -562,7 +562,7 @@
        does. It is the ratio the four preview images are cut to. */
     aspect-ratio: 16 / 10;
     object-fit: cover;
-    background: #0a0b0f;
+    background: var(--velvet-surface-sunken);
   }
   .themes figcaption {
     text-align: center;

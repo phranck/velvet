@@ -18,7 +18,7 @@ body,
 
 body {
   overflow: hidden;
-  background: #101116;
+  background: var(--velvet-base);
   /* Velvet's own face. It took the status page's `body` rule from `app.css`
      before, and that names Inter, which this tool does not have. */
   font-family: var(--velvet-font);
