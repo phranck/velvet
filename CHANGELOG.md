@@ -50,7 +50,15 @@ pages for the command-line configurator.
 Velvet no longer imports, converts, or reads anything an Upptime installation
 produced. The paths that handled imported data are removed from the monitor.
 
-## Version 1.0.0
+## Version 1.0.0 (withdrawn)
+
+**This release was published and then withdrawn, because it could not be
+installed.** The workflows it gave a new repository ran a Velvet from before
+the configuration that setup writes, and refused it, so the first run failed
+and the status page stayed empty. Its tag and GitHub release are removed, and
+1.1.0 is the first version anybody can install. The entry is kept because the
+description of the product below is accurate and because a version that
+disappears without explanation is worse than one that says what happened to it.
 
 The first public Velvet release. Everything before this was a prototype that
 was never published, so this entry describes the product rather than a change
