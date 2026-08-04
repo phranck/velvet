@@ -86,7 +86,7 @@ status-website:
     {
       settings: parsed.settings,
       importedDocument: null,
-      importedFilename: ".upptimerc.yml",
+      importedFilename: "status-page.yml",
       selectedThemeId: "sunny-spring",
       loadedThemeName: "Sunny Spring",
       selectedBaseline: exportedSettingsFingerprint(parsed.settings),

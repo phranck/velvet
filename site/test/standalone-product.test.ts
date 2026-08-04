@@ -63,6 +63,42 @@ test("the public demo uses a valid IPv4-only native configuration", async () => 
   assert.doesNotMatch(screenshot, /\.upptimerc\.yml/u);
 });
 
+test("nothing in the repository names the products Velvet is not", async () => {
+  /*
+   * Velvet is its own product. Naming another status-page generator, anywhere,
+   * describes a lineage that is not part of what Velvet is, and every mention
+   * invites the next one: a comment explaining a compatibility path, then the
+   * path itself, then a section of documentation about it.
+   *
+   * Whole repository rather than the documents somebody thought of, because
+   * the mentions this replaced sat in a changelog entry, in release notes
+   * compiled into the setup service, and in a branch of the configuration
+   * generator, none of which any earlier check looked at.
+   */
+  const forbidden = /Upptime|upptimerc|Globalping/iu;
+  const listed = Bun.spawnSync(
+    ["git", "ls-files", "-z"],
+    { cwd: repositoryRoot, stdout: "pipe" },
+  );
+  const paths = listed.stdout
+    .toString()
+    .split("\0")
+    .filter((path) => path.length > 0)
+    // This file states the names in order to forbid them, which is the one
+    // place they can appear without describing Velvet as something it is not.
+    .filter((path) => path !== "site/test/standalone-product.test.ts")
+    // Binaries hold no prose, and reading them here would only be slow.
+    .filter((path) => !/\.(png|jpe?g|webp|ico|woff2?|ttf|otf|gz|pdf)$/iu.test(path));
+
+  const offenders: string[] = [];
+  for (const path of paths) {
+    const source = await read(path).catch(() => "");
+    if (forbidden.test(source)) offenders.push(path);
+  }
+
+  assert.deepEqual(offenders, []);
+});
+
 test("repository documentation has no broken local link targets", async () => {
   for (const path of ["README.md", "documentation/configuration.md", "LICENSING.md"]) {
     const source = await read(path);

@@ -35,7 +35,7 @@ runs:
         set -euo pipefail
         bun install --cwd "$VELVET_ROOT" --frozen-lockfile
         bun run --cwd "$VELVET_ROOT" --filter @velvet/contracts build
-        bun "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json" "$VELVET_DATA"
+        bun "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
         bun run --cwd "$VELVET_ROOT" --filter @velvet/site build
         bun "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist/og.png"
         bun "$VELVET_SITE/scripts/generate-seo.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist"

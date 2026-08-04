@@ -36,8 +36,10 @@ test("configuration has its own explicit schema without monitor-provider fields"
   );
   assert.equal(VelvetConfigurationSchema.additionalProperties, false);
 
+  // The name of the service this used to reach through is checked for across
+  // the whole repository by `site/test/standalone-product.test.ts`, which is
+  // the one file allowed to state it.
   const schema = JSON.stringify(VelvetConfigurationSchema).toLowerCase();
-  assert.equal(schema.includes("globalping"), false);
   assert.equal(schema.includes("provider"), false);
   assert.equal(schema.includes("ipv6"), false);
 });

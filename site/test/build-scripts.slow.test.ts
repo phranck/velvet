@@ -292,28 +292,28 @@ test("pins the deterministic screenshot browser to UTC", async () => {
   assert.match(themeScreenshots, /EMBEDDED_THEME_REGISTRY/);
 });
 
-test("generated runtime config points to Velvet repository data", async () => {
-  const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-"));
-  const input = resolve(directory, ".upptimerc.yml");
+test("a configuration Velvet does not define is refused, not translated", async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), "velvet-foreign-config-"));
+  const input = resolve(directory, "velvet.yml");
   const output = resolve(directory, "config.json");
+  // The shape another status-page generator uses. Velvet used to read it, with
+  // a branch at every field to translate it, and now reads one format.
   await writeFile(
     input,
-    "owner: example\nrepo: status\nstatus-website:\n  velvet:\n    dataBranch: production\n    showSubscribe: false\n",
+    "owner: example\nrepo: status\nstatus-website:\n  velvet:\n    dataBranch: production\n",
   );
 
-  await bun([
-    resolve(siteRoot, "scripts/generate-config.mjs"),
-    input,
-    output,
-    "snapshots/velvet-data/v1",
-  ]);
-
-  const config = JSON.parse(await readFile(output, "utf8"));
-  assert.equal(
-    config.dataBaseUrl,
-    "https://raw.githubusercontent.com/example/status/production/snapshots/velvet-data/v1",
+  await assert.rejects(
+    bun([resolve(siteRoot, "scripts/generate-config.mjs"), input, output]),
+    (error: Error & { stderr?: string }) => {
+      assert.match(error.stderr ?? "", /Invalid velvet\.yml/u);
+      return true;
+    },
   );
-  assert.equal("showSubscribe" in config, false);
+  await assert.rejects(
+    readFile(output, "utf8"),
+    (error: NodeJS.ErrnoException) => error.code === "ENOENT",
+  );
 });
 
 test("generated runtime config accepts native Velvet configuration", async () => {
@@ -489,70 +489,55 @@ test("invalid native configuration stops before writing runtime config", async (
   );
 });
 
-test("generated runtime config preserves an explicit public data URL", async () => {
-  const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-url-"));
-  const input = resolve(directory, ".upptimerc.yml");
-  const output = resolve(directory, "config.json");
-  await writeFile(
-    input,
-    "owner: example\nrepo: status\nstatus-website:\n  velvet:\n    dataBaseUrl: https://cdn.example/velvet/v1/\n",
-  );
-
-  await bun([
-    resolve(siteRoot, "scripts/generate-config.mjs"),
-    input,
-    output,
-    "snapshots/velvet-data/v1",
-  ]);
-
-  const config = JSON.parse(await readFile(output, "utf8"));
-  assert.equal(config.dataBaseUrl, "https://cdn.example/velvet/v1");
-});
-
 test("generated runtime config resolves the semantic Velvet theme", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-theme-"));
-  const input = resolve(directory, ".upptimerc.yml");
+  const input = resolve(directory, "velvet.yml");
   const output = resolve(directory, "config.json");
+  // The parts of a theme no other test reaches: the backdrop blobs, the card
+  // geometry, and the headline gradient, each of which names palette entries
+  // rather than colours and has to come out resolved.
   await writeFile(
     input,
     [
-      "owner: example",
-      "repo: status",
-      "status-website:",
-      "  velvet:",
-      "    accentDeg: '#aabbcc'",
-      "    fontSans: Example Sans",
-      "    theme:",
-      "      name: Cloudy Autumn",
-      "      palette:",
-      "        canvas: '#090909'",
-      "        foreground: '#f5f5f5'",
-      "        accent: '#123456'",
-      "        alternate: '#fedcba'",
-      "        warning: '#d29922'",
-      "        danger: '#f85149'",
-      "      grid:",
-      "        operational: '#abcdef'",
-      "      protocol:",
-      "        ipv4: accent",
-      "        ipv6: alternate",
-      "      chart:",
-      "        ipv4LineStyle: dotted",
-      "        ipv6LineStyle: solid",
-      "        fill: true",
-      "      background:",
-      "        blobs:",
-      "          count: 4",
-      "          colors:",
-      "            - '#111111'",
-      "            - '#222222'",
-      "      card:",
-      "        borderEnabled: false",
-      "        radius: 20",
-      "        padding: 18",
-      "      headline:",
-      "        start: foreground",
-      "        end: alternate",
+      "schemaVersion: 1",
+      "repository:",
+      "  owner: example",
+      "  name: status",
+      "statusPage:",
+      "  name: Example Status",
+      "  fonts:",
+      "    sans: Example Sans",
+      "  theme:",
+      "    name: Cloudy Autumn",
+      "    palette:",
+      "      canvas: '#090909'",
+      "      foreground: '#f5f5f5'",
+      "      accent: '#123456'",
+      "      alternate: '#fedcba'",
+      "      warning: '#d29922'",
+      "      danger: '#f85149'",
+      "    grid:",
+      "      operational: '#abcdef'",
+      "    chart:",
+      "      line: accent",
+      "      lineStyle: dotted",
+      "      fill: true",
+      "    background:",
+      "      blobs:",
+      "        count: 4",
+      "        colors:",
+      "          - '#111111'",
+      "          - '#222222'",
+      "    card:",
+      "      borderEnabled: false",
+      "      radius: 20",
+      "      padding: 18",
+      "    headline:",
+      "      start: foreground",
+      "      end: alternate",
+      "services:",
+      "  - name: Website",
+      "    url: https://example.com",
       "",
     ].join("\n"),
   );
@@ -567,16 +552,9 @@ test("generated runtime config resolves the semantic Velvet theme", async () => 
   assert.equal(config.theme.name, "Cloudy Autumn");
   assert.equal(config.theme.accent, "#123456");
   assert.equal(config.theme.grid.operational, "#abcdef");
-  assert.equal(config.theme.grid.degraded, "#aabbcc");
   assert.equal(config.theme.protocol.ipv4, "#123456");
-  assert.equal(config.theme.protocol.ipv6, "#fedcba");
-  assert.deepEqual(config.theme.chart, {
-    ipv4LineStyle: "dotted",
-    ipv6LineStyle: "solid",
-    fill: true,
-    background: "#090909",
-    backgroundOpacity: 0,
-  });
+  assert.equal(config.theme.chart.ipv4LineStyle, "dotted");
+  assert.equal(config.theme.chart.fill, true);
   assert.equal(config.theme.background.blobs.count, 4);
   assert.deepEqual(config.theme.background.blobs.colors, ["#111111", "#222222"]);
   assert.equal(config.theme.card.borderEnabled, false);

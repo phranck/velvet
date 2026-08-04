@@ -11,10 +11,10 @@ test("status-page action builds exclusively from Velvet v1 data", async () => {
   assert.match(source, /config:\n[\s\S]*?default: "velvet\.yml"/);
   assert.match(source, /data:\n[\s\S]*?default: "\.velvet-data\/velvet-data\/v1"/);
   assert.match(source, /VELVET_DATA\/status\.json/);
-  assert.match(
-    source,
-    /generate-config\.mjs[^\n]+VELVET_DATA/,
-  );
+  // The configuration generator is not given the data path. It used to take
+  // one, because a foreign format allowed data to live anywhere; Velvet's data
+  // lives on the branch the monitor owns, and the generator names it itself.
+  assert.doesNotMatch(source, /generate-config\.mjs[^\n]+VELVET_DATA/);
   assert.doesNotMatch(source, /history\/summary\.json|api\.github\.com/);
   assert.doesNotMatch(source, /generate-feed|incidents\.atom/);
   assert.match(source, /uses: oven-sh\/setup-bun@v2/);
