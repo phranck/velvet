@@ -793,9 +793,16 @@ test("publishes the changelog where GitHub Pages will find it, and without a scr
 
   // The releases the repository's own changelog names, rendered rather than
   // copied. A page that lost its content would still pass every check above.
+  // A heading may end in a bracketed release date, which the page renders apart
+  // from the title rather than inside it, so the two are checked separately.
+  // Looking for the heading whole passed only for as long as no entry carried a
+  // date, and failed on the first one that did.
   const changelog = await readFile(resolve(repositoryRoot, "CHANGELOG.md"), "utf8");
-  for (const [, title] of changelog.matchAll(/^##\s+(.+?)\s*$/gmu)) {
-    assert.ok(html.includes(title!), `the page does not name ${title}`);
+  for (const [, heading] of changelog.matchAll(/^##\s+(.+?)\s*$/gmu)) {
+    const dated = /^(.*?)\s*\((\d{4}-\d{2}-\d{2})\)$/u.exec(heading!);
+    for (const part of dated ? [dated[1]!, dated[2]!] : [heading!]) {
+      assert.ok(html.includes(part), `the page does not name ${part}`);
+    }
   }
 
   // Written as `LICENSING.md` in the changelog, which resolves inside the

@@ -1,5 +1,55 @@
 # Changelog
 
+## Version 1.1.0 (2026-08-04)
+
+The first release anybody can install and have work. Version 1.0.0 shipped a
+status page that stayed empty, because the workflows it installed ran a Velvet
+from before the configuration it was handed, and refused it. That is fixed, and
+the two halves are now compared by a check rather than kept in step by memory.
+
+### A new installation runs on its first try
+
+Every Velvet action an installation receives is pinned to a revision that
+understands the configuration the setup service writes. A check compares the
+two on every change and once a day, by validating a configuration the service
+can produce against the contracts of the pinned revision, so the next time they
+part company it is reported here rather than discovered by somebody installing
+Velvet.
+
+### Velvet collects nothing about the people who use it
+
+The analytics setting is gone from the configuration, and with it the last way
+a status page could load a third-party script. Nothing on velvet.li,
+setup.velvet.li, or a published status page reports a visit to anybody.
+
+The configuration refuses fields it does not know, so a `velvet.yml` still
+carrying an `analytics` block has to have it removed. No installation created
+through browser onboarding has one, because the setting was gone before the
+first installation existed.
+
+### An installation can appear in the public list
+
+Browser onboarding asks whether the status page may be listed at
+[velvet.li/references](https://velvet.li/references/), and the Configurator can
+change that answer later. Nothing is listed without being asked, and a listing
+carries the page's name, its address, and nothing else.
+
+### The status page names its installation
+
+Each installation is issued a number when it is created, and keeps it across
+managed updates. The page shows it in its footer.
+
+### velvet.li is now the documentation
+
+The configuration reference, the changelog, the theme gallery, and the
+references list are published there, and Velvet ships a complete set of man
+pages for the command-line configurator.
+
+### Upptime is gone
+
+Velvet no longer imports, converts, or reads anything an Upptime installation
+produced. The paths that handled imported data are removed from the monitor.
+
 ## Version 1.0.0
 
 The first public Velvet release. Everything before this was a prototype that

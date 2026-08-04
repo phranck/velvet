@@ -704,23 +704,23 @@ function argument(name, fallback) {
 /**
  * Reads the Velvet version the identity block prints.
  *
- * It comes from the generated release artefact, the one place that knows which
- * version installations receive, so the silkscreen cannot claim a revision that
- * was never released. Regenerating the backdrop after a release keeps it
- * current.
+ * It comes from the root manifest, which is where Velvet states its version and
+ * what every other place is written from. It used to be read from the generated
+ * release artefact, and that put the silkscreen one step downstream of the
+ * source: the backdrop then printed whichever version the artefact had last
+ * been cut against, which on 2026-08-04 was not the version the repository
+ * itself claimed.
  *
- * @returns The version, or `null` when the artefact cannot be read.
+ * `scripts/sync-version.mjs` reruns this whenever that number moves.
+ *
+ * @returns The version, or `null` when the manifest cannot be read.
  */
-async function releaseVersion() {
+async function declaredVersion() {
   try {
-    const source = await readFile(
-      resolve(
-        import.meta.dirname,
-        "../apps/setup-service/src/velvet-release.generated.ts",
-      ),
-      "utf8",
+    const manifest = JSON.parse(
+      await readFile(resolve(import.meta.dirname, "../package.json"), "utf8"),
     );
-    return source.match(/^\/\/ Velvet (\d+\.\d+\.\d+) from /mu)?.[1] ?? null;
+    return typeof manifest.version === "string" ? manifest.version : null;
   } catch {
     return null;
   }
@@ -767,10 +767,10 @@ if (!Number.isInteger(year) || year < 2000 || year > 2999) {
   console.error("--year must be a four-digit year.");
   process.exit(1);
 }
-const version = argument("release", await releaseVersion());
+const version = argument("release", await declaredVersion());
 if (!version) {
   console.error(
-    "Could not read the release version. Pass --release <semver> to set it.",
+    "package.json states no version. Pass --release <semver> to set it.",
   );
   process.exit(1);
 }

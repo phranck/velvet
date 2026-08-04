@@ -19,9 +19,14 @@ import { buildReleaseManifest } from "@velvet/template-files";
  * reviewed bytes rather than from whatever the template happens to contain when
  * the update runs.
  *
+ * The version comes from the root `package.json`, which is where Velvet states
+ * it. Passing it here as well would let an artefact be cut against a number
+ * nobody had decided, and that is how the artefact and the repository came to
+ * claim different versions on 2026-08-04.
+ *
  * Usage:
- *   bun run scripts/build-release.ts --version 2.0.0 --type feature \
- *     --notes ../../CHANGELOG.md [--commit <sha>] [--automatic]
+ *   bun run scripts/build-release.ts --type feature \
+ *     --notes scripts/release-notes.md [--commit <sha>] [--automatic]
  */
 
 const RELEASE_TYPES = ["security", "fix", "feature"] as const;
@@ -44,6 +49,28 @@ function flag(name: string): boolean {
 function fail(message: string): never {
   console.error(message);
   process.exit(1);
+}
+
+/**
+ * Reads the version this artefact is cut as.
+ *
+ * The root manifest is the one place Velvet states its version, and
+ * `scripts/sync-version.mjs` writes every other place from it.
+ *
+ * @returns The semantic version stated there.
+ */
+async function declaredVersion(): Promise<string> {
+  const manifestPath = resolve(import.meta.dirname, "../../../package.json");
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+    version?: unknown;
+  };
+  if (
+    typeof manifest.version !== "string" ||
+    !/^\d+\.\d+\.\d+$/u.test(manifest.version)
+  ) {
+    fail(`${manifestPath} must state a semantic version, such as 1.1.0.`);
+  }
+  return manifest.version;
 }
 
 async function templateHeadCommit(): Promise<string> {
@@ -107,7 +134,7 @@ async function previousManifest(): Promise<VelvetReleaseManifest | undefined> {
   }
 }
 
-const version = argument("version") ?? fail("Pass --version <semver>.");
+const version = await declaredVersion();
 const releaseTypeInput = argument("type") ?? fail("Pass --type <security|fix|feature>.");
 if (!RELEASE_TYPES.includes(releaseTypeInput as ReleaseType)) {
   fail(`--type must be one of ${RELEASE_TYPES.join(", ")}.`);
