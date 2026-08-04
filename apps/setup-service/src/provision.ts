@@ -149,6 +149,22 @@ export async function provisionVelvet(
         state.target = target;
         throw installationRequired(false);
       }
+      // Asked before anything is created, and before the approval GitHub would
+      // otherwise demand first. Finding out that a name is taken after two
+      // approvals and a redirect is a worse way to learn it.
+      if (await input.github.repositoryExists(userToken, owner, repositoryName)) {
+        if (input.request.replaceExistingRepository !== true) {
+          throw new SetupServiceError(
+            "REPOSITORY_EXISTS",
+            `${owner}/${repositoryName} already exists.`,
+            { status: 409, recoverable: true },
+          );
+        }
+        // Only here, and only because a second request said so by name. What
+        // goes with the repository cannot be brought back by anything in this
+        // product.
+        await input.github.deleteRepository(userToken, owner, repositoryName);
+      }
       const repository = await input.github.createRepositoryFromTemplate(
         userToken,
         owner,

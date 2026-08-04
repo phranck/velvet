@@ -68,6 +68,8 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
       return { id: 255_022_500, login: "example", type: "User" };
     },
     async listInstallations() { throw new Error("unused"); },
+    async repositoryExists() { return false; },
+    async deleteRepository() {},
     async createRepositoryFromTemplate() {
       calls.push("create-repository");
       return {
@@ -303,6 +305,8 @@ test("waits until the installation token can read the generated configuration", 
 test("maps a GitHub rate limit to a safe retryable setup error", async () => {
   const session = authenticatedSession();
   const { client } = successfulGitHub({
+    async repositoryExists() { return false; },
+    async deleteRepository() {},
     async createRepositoryFromTemplate() {
       throw new GitHubApiError(
         new Response(null, { status: 403, headers: { "Retry-After": "60" } }),
@@ -683,4 +687,58 @@ test("a registry that will not answer does not fail a finished setup", async () 
   assert.equal(result.type, "success");
   assert.equal(result.serial, undefined);
   assert.equal(result.installationUrl, "https://example.github.io/status/");
+});
+
+test("stops when the name is taken, and never deletes without being asked", async () => {
+  // The whole point of asking first: nobody is walked through two GitHub
+  // approvals to be told at the end that the name was never free.
+  const deletions: string[] = [];
+  const { client } = successfulGitHub({
+    async repositoryExists() {
+      return true;
+    },
+    async deleteRepository(_token: string, owner: string, name: string) {
+      deletions.push(`${owner}/${name}`);
+    },
+  });
+
+  await assert.rejects(
+    provisionVelvet({
+      session: authenticatedSession(),
+      request: normalizedRequest,
+      github: client,
+      onEvent: () => {},
+      operationId: () => "O".repeat(26),
+      sleep: async () => {},
+    }),
+    (error: unknown) =>
+      error instanceof SetupServiceError && error.code === "REPOSITORY_EXISTS",
+  );
+
+  // The destructive reading is never inferred from the name being taken.
+  assert.deepEqual(deletions, []);
+});
+
+test("deletes and recreates only when the request says so by name", async () => {
+  const deletions: string[] = [];
+  const { client, calls } = successfulGitHub({
+    async repositoryExists() {
+      return true;
+    },
+    async deleteRepository(_token: string, owner: string, name: string) {
+      deletions.push(`${owner}/${name}`);
+    },
+  });
+
+  await provisionVelvet({
+    session: authenticatedSession(),
+    request: { ...normalizedRequest, replaceExistingRepository: true },
+    github: client,
+    onEvent: () => {},
+    operationId: () => "O".repeat(26),
+    sleep: async () => {},
+  });
+
+  assert.equal(deletions.length, 1);
+  assert.ok(calls.includes("create-repository"), "and then creates it again");
 });

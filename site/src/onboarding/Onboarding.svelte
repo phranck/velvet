@@ -10,6 +10,7 @@
   import {
     STEP_CARD_CONTENT_INSET,
     STEP_CARD_INNER_RADIUS,
+    STEP_CARD_RADIUS,
   } from "../components/step-card/geometry.js";
   import * as ThemeCard from "../components/theme-card";
   import {
@@ -71,6 +72,15 @@
   let workflowUrl = $state("");
   let setupErrorId = $state("");
   let retryAvailable = $state(false);
+  /**
+   * The repository setup refused to overwrite, or empty when there is none.
+   *
+   * Holding the name rather than a flag lets the question name what it is
+   * about, which is the difference between agreeing to something and agreeing
+   * to anything.
+   */
+  let existingRepository = $state("");
+  let existingRepositoryDialog = $state<HTMLDialogElement | null>(null);
   let submissionState = $state<"idle" | "permission-required" | "failed" | "success">("idle");
   let stepTransitionController: ViewTransitionController | null = null;
   /**
@@ -116,6 +126,20 @@
 
   $effect(() => {
     persistOnboardingDraft($state.snapshot(draft), SESSION_STORAGE);
+  });
+
+  /**
+   * Opens the conflict question modally, which is what moves the focus into it
+   * and makes Escape mean something. `showModal` throws on a dialog that is
+   * already open, so the current state is checked rather than assumed.
+   */
+  $effect(() => {
+    if (!existingRepositoryDialog) return;
+    if (existingRepository) {
+      if (!existingRepositoryDialog.open) existingRepositoryDialog.showModal();
+    } else if (existingRepositoryDialog.open) {
+      existingRepositoryDialog.close();
+    }
   });
 
   onMount(() => {
@@ -243,7 +267,15 @@
     changeStep(Math.max(0, step - 1));
   }
 
-  async function publish(): Promise<void> {
+  /**
+   * Runs the installation and turns its outcome into what the last step shows.
+   *
+   * @param replaceExistingRepository - Passed only after somebody has been
+   *   shown the repository that is in the way and has agreed to it being
+   *   deleted. It is never remembered between attempts, so a second run that
+   *   meets the same name asks again.
+   */
+  async function publish(replaceExistingRepository = false): Promise<void> {
     if (step !== INSTALL_STEP) changeStep(INSTALL_STEP);
     submitting = true;
     progress = [];
@@ -253,6 +285,7 @@
     workflowUrl = "";
     setupErrorId = "";
     retryAvailable = false;
+    existingRepository = "";
     submissionState = "idle";
     const result = await submitOnboarding(
       draft,
@@ -260,6 +293,7 @@
       (stage) => {
         if (!progress.includes(stage)) progress = [...progress, stage];
       },
+      replaceExistingRepository ? { replaceExistingRepository: true } : {},
     );
     submitting = false;
     if (result.state === "invalid") {
@@ -282,12 +316,32 @@
       resultMessage = result.message;
       return;
     }
+    if (result.code === "REPOSITORY_EXISTS") {
+      // Asked as a question rather than reported as a failure, because the
+      // name being taken is something the person installing can settle, and
+      // both ways out are one click away.
+      existingRepository = `${draft.repositoryOwner.trim()}/${draft.repositoryName.trim()}`;
+      return;
+    }
     submissionState = "failed";
     resultMessage = result.message;
     repositoryUrl = result.repositoryUrl ?? "";
     workflowUrl = result.workflowUrl ?? "";
     setupErrorId = result.errorId;
     retryAvailable = result.recoverable;
+  }
+
+  /**
+   * Takes back the request to publish and sends the visitor to the name field.
+   *
+   * The name is the only thing worth changing after this answer, so the step
+   * that holds it is opened and the field is focused rather than merely shown.
+   */
+  async function chooseAnotherName(): Promise<void> {
+    existingRepository = "";
+    changeStep(0);
+    await tick();
+    document.getElementById("repository-name")?.focus();
   }
 </script>
 
@@ -298,7 +352,7 @@
 
 <div
   class="onboarding-shell"
-  style={`--step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px`}
+  style={`--step-card-radius: ${STEP_CARD_RADIUS}px; --step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px`}
 >
   <main>
     <section class="intro">
@@ -363,6 +417,7 @@
             <input
               required
               autocomplete="off"
+              id="repository-name"
               bind:value={draft.repositoryName}
               aria-describedby="repository-name-help"
               aria-invalid={errors.repositoryName ? "true" : undefined}
@@ -676,6 +731,51 @@
     <PageFooter.Credit />
     <PageFooter.Serial label={serialLabel} />
   </PageFooter.Root>
+
+  <!-- Modal on purpose. Deleting a repository is not a choice to leave open
+       beside the form whilst something else is clicked. Dismissing it counts
+       as declining, so the destructive answer is only ever given deliberately. -->
+  <dialog
+    bind:this={existingRepositoryDialog}
+    class="repository-conflict"
+    data-repository-conflict
+    aria-labelledby="repository-conflict-title"
+    onclose={() => {
+      if (existingRepository) void chooseAnotherName();
+    }}
+  >
+    <h2 id="repository-conflict-title">That repository already exists</h2>
+    <p>
+      <code>{existingRepository}</code> is already on GitHub, so Velvet has not created
+      anything. Choose a different name, or let Velvet delete that repository and
+      create it again.
+    </p>
+    <p class="repository-conflict-warning">
+      Deleting it removes everything in it, including its history, issues, and any
+      status page published from it. This cannot be undone.
+    </p>
+    <div class="repository-conflict-actions">
+      <button
+        class="velvet-button velvet-button--secondary"
+        type="button"
+        data-choose-another-name
+        onclick={chooseAnotherName}
+      >
+        <span data-step-card-button-label>Change the name</span>
+      </button>
+      <button
+        class="velvet-button velvet-button--danger"
+        type="button"
+        data-replace-repository
+        onclick={() => {
+          existingRepository = "";
+          void publish(true);
+        }}
+      >
+        <span data-step-card-button-label>Delete and create it again</span>
+      </button>
+    </div>
+  </dialog>
 </div>
 
 <style>
@@ -1002,6 +1102,62 @@
     color: #d29922;
     font-size: var(--setup-card-copy);
     line-height: 1.5;
+  }
+  /* A step card that happens to be a dialog, so it takes the step card's own
+     radius and inset rather than numbers of its own. */
+  .repository-conflict {
+    max-width: 32rem;
+    /* The fallback matches STEP_CARD_CONTENT_INSET, the way StepCardBody
+       states it, because a dialog is rendered before onMount publishes it. */
+    padding: var(--step-card-content-inset, 10px);
+    border: 0;
+    border-radius: var(--step-card-radius);
+    background: var(--setup-card);
+    color: var(--setup-text);
+  }
+  .repository-conflict::backdrop {
+    background: rgba(10, 11, 15, 0.72);
+  }
+  /* Half the radius, in addition to the padding, because a surface stands
+     beneath both of these. */
+  .repository-conflict h2,
+  .repository-conflict p {
+    margin-inline: calc(var(--step-card-radius) / 2);
+  }
+  .repository-conflict h2 {
+    margin-block: 0.4rem 0.8rem;
+    font-family: var(--velvet-font-heading);
+    font-size: var(--velvet-text-heading);
+    line-height: 1.1;
+  }
+  .repository-conflict p {
+    margin-block: 0 0.8rem;
+    font-size: var(--setup-card-copy);
+    line-height: 1.55;
+  }
+  /* No text inset: this block has an edge of its own, so it sits at the card's
+     content edge like a code block or a table would. */
+  .repository-conflict-warning {
+    margin-inline: 0;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--step-card-inner-radius);
+    background: color-mix(in srgb, var(--velvet-outage) 12%, transparent);
+    color: var(--velvet-outage);
+  }
+  .repository-conflict-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: flex-end;
+    margin-top: 1.2rem;
+  }
+  .repository-conflict-actions .velvet-button {
+    /* Matching the card footer's buttons, which is where every other pair of
+       answers on this page sits. The secondary variant gives itself an
+       automatic left margin there to hold the footer's two ends apart, and
+       here the two answers belong together. */
+    margin-right: 0;
+    padding: 0 1.1rem;
   }
   .github-permission-note {
     margin: 1rem 1rem 0;

@@ -2,6 +2,7 @@ import {
   validateSetupEvent,
   validateSetupSession,
   validateSetupStatus,
+  type SetupErrorCode,
   type SetupEvent,
 } from "@velvet/contracts";
 
@@ -147,7 +148,7 @@ async function pollSetupStatus(
 }
 
 function setupClientError(input: {
-  error: { message: string; errorId: string };
+  error: { code?: SetupErrorCode; message: string; errorId: string };
   recoverable: boolean;
   repositoryUrl?: string;
   workflowRunId?: number;
@@ -159,6 +160,7 @@ function setupClientError(input: {
     message: input.error.message,
     errorId: input.error.errorId,
     recoverable: input.recoverable,
+    ...(input.error.code ? { code: input.error.code } : {}),
     ...(repositoryUrl ? { repositoryUrl } : {}),
     ...(repositoryUrl && input.workflowRunId
       ? { workflowUrl: `${repositoryUrl}/actions/runs/${input.workflowRunId}` }

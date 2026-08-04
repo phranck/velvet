@@ -123,6 +123,8 @@ export interface GitHubSetupClient {
   viewer(userToken: string): Promise<GitHubViewer>;
   account(userToken: string, login: string): Promise<GitHubAccount>;
   listInstallations(userToken: string): Promise<GitHubInstallation[]>;
+  repositoryExists(userToken: string, owner: string, name: string): Promise<boolean>;
+  deleteRepository(userToken: string, owner: string, name: string): Promise<void>;
   createRepositoryFromTemplate(
     userToken: string,
     owner: string,
@@ -265,6 +267,31 @@ export function createGitHubSetupClient(
         throw new Error("GitHub installations response was invalid.");
       }
       return body.installations.map(parseInstallation);
+    },
+
+    async repositoryExists(userToken, owner, name) {
+      // A 404 is the answer rather than a failure here, so it is read as one
+      // instead of being thrown. Anything else is a real failure and is left to
+      // the caller, because "GitHub did not answer" must never be mistaken for
+      // "the name is free" by something about to create a repository.
+      try {
+        await githubRequest<unknown>(
+          `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
+          userToken,
+        );
+        return true;
+      } catch (error) {
+        if (error instanceof GitHubApiError && error.status === 404) return false;
+        throw error;
+      }
+    },
+
+    async deleteRepository(userToken, owner, name) {
+      await githubRequest<unknown>(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
+        userToken,
+        { method: "DELETE" },
+      );
     },
 
     async createRepositoryFromTemplate(userToken, owner, name, visibility) {

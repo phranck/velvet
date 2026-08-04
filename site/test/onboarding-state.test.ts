@@ -5,6 +5,7 @@ import {
   buildSetupRequest,
   createOnboardingDraft,
   createServiceDraft,
+  SetupClientError,
   submitOnboarding,
   validateBasicsStep,
   validateServicesStep,
@@ -389,3 +390,53 @@ test("carries a ticked gallery consent into the written configuration", () => {
   if (!result.success) return;
   assert.deepEqual(result.request.configuration.gallery, { listed: true });
 });
+
+test("reports a taken repository name as an answerable failure", async () => {
+  const draft = completeDraft();
+
+  const result = await submitOnboarding(draft, {
+    async provision() {
+      throw new SetupClientError({
+        code: "REPOSITORY_EXISTS",
+        message: "velvet-user/status already exists.",
+        errorId: "0123456789abcdef",
+        recoverable: true,
+      });
+    },
+  });
+
+  assert.equal(result.state, "failed");
+  if (result.state !== "failed") return;
+  // The code is what lets the interface ask a question rather than print a
+  // failure, so it has to survive the trip through the client.
+  assert.equal(result.code, "REPOSITORY_EXISTS");
+});
+
+test("asks GitHub to replace a repository only when somebody has said so", async () => {
+  const draft = completeDraft();
+  const requests: (boolean | undefined)[] = [];
+  const client: SetupClient = {
+    async provision(request) {
+      requests.push(request.replaceExistingRepository);
+      return { installationUrl: "https://velvet-user.github.io/status/" };
+    },
+  };
+
+  await submitOnboarding(draft, client);
+  await submitOnboarding(draft, client, undefined, {
+    replaceExistingRepository: true,
+  });
+
+  assert.deepEqual(requests, [undefined, true]);
+});
+
+/** A draft filled in far enough to reach the setup client. */
+function completeDraft(): OnboardingDraft {
+  const draft = createOnboardingDraft();
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.services[0].name = "Website";
+  draft.services[0].url = "https://example.com";
+  return draft;
+}
