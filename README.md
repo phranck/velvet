@@ -139,9 +139,9 @@ Security releases that need no migration can install themselves, which is on by 
 The same material is available offline as man pages. `velvet(7)` covers the architecture, `velvet-config(1)` the local Configurator, and `velvet.yml(5)` every configuration option. They install into your own home directory and need no administrator rights:
 
 ```bash
-curl -LO https://velvet.li/velvet-man-pages.tar.gz
-tar -xzf velvet-man-pages.tar.gz
-./velvet-man-pages/install.sh
+velvet=$(mktemp -d)
+curl -sL https://velvet.li/velvet-man-pages.tar.gz | tar -xz -C "$velvet"
+"$velvet"/velvet-man-pages/install.sh && rm -rf "$velvet"
 ```
 
 ## Develop

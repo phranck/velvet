@@ -72,6 +72,9 @@ Optional. The retention policy for generated history.
 .TP
 .B updates
 Optional. The preference for compatible managed security updates.
+.TP
+.B gallery
+Optional. Whether this installation is named on the Velvet website.
 .SH SERVICES AND CHECKS
 A service takes exactly one of two forms. The compact form names a single
 .B url
@@ -529,6 +532,25 @@ stay visible past it, and historical GitHub Issues are never deleted.
 Once retained Git history exceeds the configured period, the current complete
 snapshot becomes a new root, taken with an exact lease against the branch head
 that was read. The default branch is never force-pushed.
+.SH BEING NAMED ON THE VELVET WEBSITE
+Off unless you say otherwise.
+.PP
+.RS
+.nf
+gallery:
+  listed: true
+.fi
+.RE
+.PP
+With
+.B listed
+on, the status page is named at velvet.li/references. The browser setup asks
+during its first step, so nothing is listed without being asked, and the
+Configurator changes the answer at any time. Withdrawing takes effect within the
+hour.
+.PP
+Velvet discloses the page name and its address, and nothing else. Whether the
+repository behind it is public or private makes no difference.
 .SH UPDATES
 .RS 4
 .nf

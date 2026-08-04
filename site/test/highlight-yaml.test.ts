@@ -98,7 +98,10 @@ test("spells every line of the reference back exactly as written", async () => {
   // that dropped or invented a character would put something in the clipboard
   // that is not what the document says.
   const blocks = [...reference.matchAll(/```yaml\n([\s\S]*?)```/gu)];
-  assert.equal(blocks.length, 14);
+  // Enough of them that the loop below is exercising something, rather than an
+  // exact count, which would report every addition to the reference as a
+  // failure and say nothing about whether the tokeniser is right.
+  assert.ok(blocks.length > 10, `the reference has ${blocks.length} yaml blocks`);
 
   for (const [, code] of blocks) {
     const lines = code!.replace(/\n$/u, "").split("\n");

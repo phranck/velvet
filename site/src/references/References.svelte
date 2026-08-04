@@ -176,11 +176,9 @@
 
   <p class="consent-note">
     Appearing here is a choice, taken during setup and changeable at any time in
-    the Configurator. Velvet discloses the page name and its address, and
-    nothing else. Everything a card shows beyond those, the preview, the state,
-    the services and the dates, your browser reads from the status page itself,
-    which publishes them to anybody. Whether the repository behind it is public
-    or private makes no difference.
+    the Configurator. Velvet discloses the page name and its address. Everything
+    else on a card your browser reads from the status page itself, which
+    publishes it to anybody.
   </p>
 </main>
 
