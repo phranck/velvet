@@ -1,0 +1,111 @@
+/**
+ * The faces Velvet's own surfaces are set in.
+ *
+ * Declared here rather than through the stylesheets `@fontsource` ships, for one
+ * reason: those state `font-display: swap`, and swap is what makes a heading
+ * appear in one face and then change to another. `optional` does not swap. The
+ * browser gives the file a moment, uses it if it arrived, and otherwise keeps
+ * the stand-in for the whole of that load and swaps nothing.
+ *
+ * Pairing it with the preloads each page carries is what makes the file arrive
+ * in that moment on any ordinary connection, and with the metric-matched
+ * stand-ins below it means neither the shapes nor the layout change after the
+ * first paint. The cost is that a first visit on a slow line reads in the
+ * stand-in throughout, which is the trade `optional` is for: no reader watches
+ * the page correct itself.
+ *
+ * The files are the ones `@fontsource` ships. Only the declaration is ours.
+ */
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src:
+    url("@fontsource/barlow/files/barlow-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src:
+    url("@fontsource/barlow/files/barlow-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+  src:
+    url("@fontsource/barlow/files/barlow-latin-700-normal.woff2") format("woff2");
+}
+
+/**
+ * The wordmark, which is drawn as text rather than as outlines.
+ *
+ * `optional` matters most here: Plaster looks like nothing else on the page, so
+ * a swap into it is the most visible change a reader can be shown. There is no
+ * metric-matched stand-in for a display face, so on a load slow enough to miss
+ * the window the wordmark reads in a plain face for that visit.
+ */
+@font-face {
+  font-family: "Plaster";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: url("@fontsource/plaster/files/plaster-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src:
+    url("@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2")
+    format("woff2");
+}
+
+/**
+ * Stand-ins for the two faces, for the moment before the real ones arrive and
+ * for the whole of a load slow enough that they do not.
+ *
+ * Each points at a face the reader already has and bends its metrics to
+ * Barlow's, so the text occupies exactly the same space either way. Measured at
+ * 1000px: Barlow sets a test string 13613 wide against Helvetica's 14525, and
+ * Barlow Condensed 14530 against Arial Narrow's 15365. Barlow's own ascent is
+ * 1.00em and its descent 0.20em, and the overrides are those divided by the
+ * size adjustment, because a browser reads them against the adjusted em.
+ *
+ * A reader with none of the named faces matches nothing here, and the stack
+ * falls through to the generic family.
+ */
+@font-face {
+  font-family: "Barlow Fallback";
+  src:
+    local("Helvetica Neue"),
+    local("Arial"),
+    local("Liberation Sans"),
+    local("Segoe UI");
+  size-adjust: 93.75%;
+  ascent-override: 106.67%;
+  descent-override: 21.33%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Barlow Condensed Fallback";
+  src:
+    local("Arial Narrow"),
+    local("Liberation Sans Narrow"),
+    local("Helvetica Neue Condensed"),
+    local("Segoe UI");
+  size-adjust: 94.56%;
+  ascent-override: 105.75%;
+  descent-override: 21.15%;
+  line-gap-override: 0%;
+}

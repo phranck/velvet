@@ -229,10 +229,13 @@ test("gives the website everything a search engine and a social platform read", 
   assert.equal(application.license, "https://layered.mit-license.org");
   assert.equal(application.codeRepository, "https://github.com/phranck/velvet");
 
-  // The faces are declared with font-display: swap, so without this the page
-  // paints in a fallback and reflows, which is a layout shift Google counts
-  // against the page. Only the three that set the first screenful are listed;
-  // adding the heading face measured no better and only competed for bandwidth.
+  // The faces are declared `font-display: optional`, which means a file that
+  // does not arrive in the browser's short window is not used for that load at
+  // all. Preloading is therefore what decides whether a reader sees Barlow or
+  // the metric-matched stand-in, rather than only how soon. All four are
+  // listed, the heading face included: under the previous `swap` a late file
+  // still arrived and swapped, so preloading it bought nothing and this test
+  // recorded that.
   const preloaded = [
     ...html.matchAll(/<link rel="preload" as="font"[^>]*href="\.\/assets\/([^"]+)"/g),
   ].map(([, file]) => file);
@@ -242,13 +245,14 @@ test("gives the website everything a search engine and a social platform read", 
     "plaster-latin-400-normal-",
     "barlow-latin-400-normal-",
     "barlow-latin-600-normal-",
+    "barlow-condensed-latin-600-normal-",
   ]) {
     assert.ok(
       preloaded.some((file) => file.startsWith(face)),
       `${face} is not preloaded`,
     );
   }
-  assert.equal(preloaded.length, 3, "only the first-screenful faces are preloaded");
+  assert.equal(preloaded.length, 4, "only the faces the page is set in are preloaded");
 
   const emitted = await readdir(resolve(outDir, "assets"));
   for (const file of preloaded) {

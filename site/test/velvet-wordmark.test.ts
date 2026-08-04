@@ -44,6 +44,9 @@ test("loads the locally bundled Plaster font under its shared wordmark", async (
     "utf8",
   );
 
-  assert.match(globalStyles, /@import "@fontsource\/plaster\/400\.css"/);
+  // Through Velvet's own declaration rather than the stylesheet `@fontsource`
+  // ships, which states `font-display: swap` and would let the wordmark change
+  // shape after the page has drawn.
+  assert.match(globalStyles, /@import "\.\/lib\/velvet-typefaces\.css"/);
   assert.match(wordmark, /font-family:\s*"Plaster"/);
 });
