@@ -12,9 +12,11 @@ import { createSessionStore } from "../src/session.js";
 import { SetupServiceError } from "../src/setup-error.js";
 
 const origin = "https://setup.velvet.dev";
+const website = "https://velvet.dev";
 const config = {
   environment: "test",
   publicOrigin: origin,
+  websiteOrigin: website,
   port: 3_000,
   secureCookies: true,
   github: {
@@ -1060,4 +1062,56 @@ test("an instance without a registry answers the gallery plainly", async () => {
 
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { entries: null });
+});
+
+test("only the gallery may be read from the website, and only by it", async () => {
+  // The list is served here and rendered by a page on velvet.li, so without
+  // this the browser discards a perfectly good answer and the page shows an
+  // empty gallery. It did exactly that from the day it was published until
+  // 2026-08-04, however many installations had consented.
+  const { handler } = harness();
+
+  const gallery = await handler(new Request(`${origin}/api/references`));
+  assert.equal(gallery.headers.get("Access-Control-Allow-Origin"), website);
+  // The second lock behind the first. Granting one and not the other refuses
+  // the same read again, with an error that looks like the original.
+  assert.equal(gallery.headers.get("Cross-Origin-Resource-Policy"), "cross-origin");
+  // The answer now depends on who asked, and a shared cache that missed that
+  // would hand this body to somebody else.
+  assert.equal(gallery.headers.get("Vary"), "Origin");
+  // Named rather than opened to everybody, since a wildcard would let any page
+  // anywhere read it.
+  assert.notEqual(gallery.headers.get("Access-Control-Allow-Origin"), "*");
+
+  // Every other route stays shut, including the two that also need no session.
+  for (const route of ["/api/serial", "/healthz", "/api/session"]) {
+    const response = await handler(new Request(`${origin}${route}`));
+    assert.equal(
+      response.headers.get("Access-Control-Allow-Origin"),
+      null,
+      `${route} may not be read from another origin`,
+    );
+    assert.equal(
+      response.headers.get("Cross-Origin-Resource-Policy"),
+      "same-origin",
+      `${route} kept its resource policy`,
+    );
+  }
+});
+
+test("an instance serving no website grants the gallery to nobody", async () => {
+  const handler = createSetupHandler({
+    config: { ...config, websiteOrigin: null },
+    sessions: createSessionStore({ secret: config.sessionSecret }),
+    github: githubClient(),
+    logger: () => {},
+  });
+
+  const response = await handler(new Request(`${origin}/api/references`));
+
+  // Somebody running their own copy without a website of their own is not
+  // guessed at. The list still answers; nothing may read it from elsewhere.
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
+  assert.equal(response.headers.get("Cross-Origin-Resource-Policy"), "same-origin");
 });
