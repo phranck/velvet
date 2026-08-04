@@ -569,9 +569,10 @@
             configuration and your monitoring history.
           </ConsentCheckbox>
           <!-- Marked out rather than set as fine print, because it decides
-               whether the page appears at all. Somebody on a free plan who
-               ticks the box above and reads past this gets a repository that
-               works and a page that never publishes. -->
+               whether the page appears at all. This is also why the box starts
+               unticked: a default of private would hand anybody on a free
+               account a repository that works and a page that never
+               publishes. -->
           <p class="visibility-requirement">
             A private repository needs a paid GitHub plan. GitHub publishes
             Pages from a private repository only on GitHub Pro and above, so on

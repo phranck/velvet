@@ -54,9 +54,11 @@ export interface OnboardingDraft {
   /**
    * Whether GitHub should create the repository private.
    *
-   * On by default, because a status page is a public thing and its repository
-   * need not be. Publishing GitHub Pages from a private repository needs a paid
-   * plan, though, so the step that offers this says so where it is offered.
+   * Off by default, and deliberately so. Publishing GitHub Pages from a private
+   * repository needs a paid plan, so a default of private would hand anybody on
+   * a free account a repository that works and a status page that never
+   * appears. A setting that depends on something Velvet cannot check is one the
+   * reader has to choose rather than one they have to notice and undo.
    */
   privateRepository: boolean;
 }
@@ -113,7 +115,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     themeId: SYSTEM_THEMES[0].id,
     services: [createServiceDraft()],
     listInGallery: false,
-    privateRepository: true,
+    privateRepository: false,
   };
 }
 
