@@ -163,8 +163,16 @@ Set these non-secret runtime values separately:
 | Variable | Value |
 | --- | --- |
 | `PUBLIC_ORIGIN` | Exact HTTPS origin without a trailing path, query, or fragment |
+| `WEBSITE_ORIGIN` | Origin of the Velvet website, which may read `/api/references` from its own pages. Optional, and without it that route is readable from this origin alone |
 | `GITHUB_APP_SLUG` | Public slug from the GitHub App URL |
 | `AUTOMATIC_UPDATE_INTERVAL_MINUTES` | How often eligible security releases are swept for, from 0 through 1440. Defaults to 60, and 0 turns the sweep off |
+
+`WEBSITE_ORIGIN` exists because the references list is served here and rendered
+by a page hosted elsewhere. `/api/references` answers a browser on that origin
+with `Access-Control-Allow-Origin` and a relaxed resource policy, and every
+other route keeps refusing every origin but this one. Leaving it unset is what
+an instance without a website of its own wants: the route still answers, and no
+page on another host can read it.
 
 The service collects nothing about the people who use it. It serves the
 documents it was built with, unchanged, and its Content Security Policy grants

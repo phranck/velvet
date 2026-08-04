@@ -168,13 +168,33 @@ export function createSetupHandler(
          */
         const entries = (await options.serials?.listed()) ?? null;
         return finish(
-          jsonResponse(
-            { entries },
-            200,
+          jsonResponse({ entries }, 200, {
             // Short enough that a withdrawal disappears promptly, long enough
             // that the page does not read the registry on every visit.
-            { "Cache-Control": "public, max-age=300" },
-          ),
+            "Cache-Control": "public, max-age=300",
+            /*
+             * The one route this service answers to another origin, because it
+             * is the one written to be read by a page that is not ours to
+             * serve. velvet.li is static on GitHub Pages and the registry is
+             * private, so without this the page shows an empty list however
+             * many installations have consented, which is what it did from the
+             * day it was published until 2026-08-04.
+             *
+             * A single origin is named rather than `*`, and only when one is
+             * configured. `secureResponse` reads this header back and relaxes
+             * the resource policy to match, so the exception is stated once,
+             * here, on the route it belongs to.
+             *
+             * `Vary` because the answer now depends on who asked, and a cache
+             * that missed that would serve this body to somebody else.
+             */
+            ...(options.config.websiteOrigin
+              ? {
+                  "Access-Control-Allow-Origin": options.config.websiteOrigin,
+                  Vary: "Origin",
+                }
+              : {}),
+          }),
         );
       }
 
@@ -800,7 +820,17 @@ function secureResponse(
     `default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  /*
+   * The resource policy follows the route's own decision rather than being
+   * decided twice. A route that named an origin in `Access-Control-Allow-Origin`
+   * has already said it may be read from elsewhere, and leaving `same-origin`
+   * here would refuse the same read a second time, which is a failure that
+   * looks exactly like the first one and is fixed in a different file.
+   */
+  headers.set(
+    "Cross-Origin-Resource-Policy",
+    headers.has("Access-Control-Allow-Origin") ? "cross-origin" : "same-origin",
+  );
   headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   headers.set("Referrer-Policy", "no-referrer");
   headers.set("X-Content-Type-Options", "nosniff");

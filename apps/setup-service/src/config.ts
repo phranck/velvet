@@ -5,6 +5,19 @@ import { parseSerialRepository } from "./serial.js";
 export interface SetupServiceConfig {
   environment: "development" | "production" | "test";
   publicOrigin: string;
+  /**
+   * Origin of the Velvet website, which may read the public references list.
+   *
+   * The list is served from this service and rendered by a page on another
+   * host, so the browser needs the service to name that host before it hands
+   * the answer over. It is configuration rather than a constant because the
+   * service already takes its own origin that way, and a second hostname
+   * written into the code is the next one to fall out of step.
+   *
+   * `null` on an instance that does not serve a website, and the exception is
+   * then not granted at all rather than granted to a guess.
+   */
+  websiteOrigin: string | null;
   port: number;
   secureCookies: boolean;
   github: {
@@ -50,10 +63,15 @@ export function loadSetupServiceConfig(
     throw new TypeError("NODE_ENV must be development, production, or test.");
   }
 
-  const publicOrigin = parsePublicOrigin(
+  const publicOrigin = parseOrigin(
     required(environment, "PUBLIC_ORIGIN"),
+    "PUBLIC_ORIGIN",
     nodeEnvironment,
   );
+  const websiteOriginSource = environment.WEBSITE_ORIGIN?.trim();
+  const websiteOrigin = websiteOriginSource
+    ? parseOrigin(websiteOriginSource, "WEBSITE_ORIGIN", nodeEnvironment)
+    : null;
   const appId = required(environment, "GITHUB_APP_ID");
   if (!/^\d+$/.test(appId)) {
     throw new TypeError("GITHUB_APP_ID must be numeric.");
@@ -118,6 +136,7 @@ export function loadSetupServiceConfig(
   return {
     environment: nodeEnvironment,
     publicOrigin,
+    websiteOrigin,
     port,
     secureCookies: new URL(publicOrigin).protocol === "https:",
     github: { appId, appSlug, clientId, clientSecret, privateKey },
@@ -138,15 +157,29 @@ function required(
   return value;
 }
 
-function parsePublicOrigin(
+/**
+ * Reads a value that must name an origin and nothing else.
+ *
+ * Shared by every origin the service is configured with, because each one ends
+ * up in a header or a redirect where a stray path, query, or credential would
+ * be carried along.
+ *
+ * @param source - The configured value.
+ * @param name - The variable it came from, for the error message.
+ * @param environment - Which environment this is, since plain HTTP on localhost
+ *   is allowed outside production and nowhere else.
+ * @returns The origin, without a trailing slash.
+ */
+function parseOrigin(
   source: string,
+  name: string,
   environment: SetupServiceConfig["environment"],
 ): string {
   let url: URL;
   try {
     url = new URL(source);
   } catch (error) {
-    throw new TypeError("PUBLIC_ORIGIN must be an absolute URL.", { cause: error });
+    throw new TypeError(`${name} must be an absolute URL.`, { cause: error });
   }
   if (
     url.username ||
@@ -155,14 +188,14 @@ function parsePublicOrigin(
     url.search ||
     url.hash
   ) {
-    throw new TypeError("PUBLIC_ORIGIN must contain only an origin.");
+    throw new TypeError(`${name} must contain only an origin.`);
   }
   const localDevelopment =
     environment !== "production" &&
     url.protocol === "http:" &&
     (url.hostname === "localhost" || url.hostname === "127.0.0.1");
   if (url.protocol !== "https:" && !localDevelopment) {
-    throw new TypeError("PUBLIC_ORIGIN must use HTTPS outside local development.");
+    throw new TypeError(`${name} must use HTTPS outside local development.`);
   }
   return url.origin;
 }
