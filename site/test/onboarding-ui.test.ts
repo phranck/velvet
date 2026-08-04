@@ -98,9 +98,32 @@ test("uses the local Barlow family for onboarding typography", async () => {
 
   assert.match(styles, /@import "\.\.\/lib\/velvet-tokens\.css"/);
   assert.match(styles, /@import "\.\.\/lib\/velvet-board-shell\.css"/);
-  assert.match(shell, /@fontsource\/barlow\/latin-400\.css/);
-  assert.match(shell, /@fontsource\/barlow\/latin-600\.css/);
-  assert.match(shell, /@fontsource\/barlow-condensed\/latin-600\.css/);
+  assert.match(shell, /@import "\.\/velvet-typefaces\.css"/);
+
+  // Declared here rather than taken from the stylesheets `@fontsource` ships,
+  // because those state `font-display: swap`, which is what makes a heading
+  // appear in one face and then change to another.
+  const typefaces = await readFile(
+    resolve(import.meta.dirname, "../src/lib/velvet-typefaces.css"),
+    "utf8",
+  );
+  for (const file of [
+    "barlow-latin-400-normal.woff2",
+    "barlow-latin-600-normal.woff2",
+    "barlow-latin-700-normal.woff2",
+    "barlow-condensed-latin-600-normal.woff2",
+  ]) {
+    assert.ok(typefaces.includes(file), `${file} is not declared`);
+  }
+  // Read past the comments, which name `swap` in order to explain why it is not
+  // used here.
+  const declarations = typefaces.replaceAll(/\/\*[\s\S]*?\*\//g, "");
+  assert.doesNotMatch(declarations, /font-display:\s*swap/);
+  assert.equal(
+    (declarations.match(/font-display:\s*optional/g) ?? []).length,
+    4,
+    "every face is optional, or a heading changes shape after the first paint",
+  );
   assert.match(tokens, /--velvet-font:\s*"Barlow"/);
   assert.match(tokens, /--velvet-text-small:\s*0\.9375rem/);
   assert.match(tokens, /--velvet-text-body:\s*1rem/);

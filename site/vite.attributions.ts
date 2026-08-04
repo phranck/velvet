@@ -41,13 +41,15 @@ export default defineConfig({
       root: import.meta.dirname,
       component: "/src/attributions/Attributions.svelte",
       mountId: "attributions",
-      // The same three the start page preloads, which it had and these did not.
-      // The heading face is deliberately not among them: preloading it measured
-      // no better there and only competed for bandwidth.
+      // The faces the page is set in, the heading face included. These
+      // preloaded nothing at all before, and under `font-display: optional` a
+      // file that arrives late is not used for this load, so preloading is what
+      // decides whether the real face is seen.
       preloadFonts: [
         /^plaster-latin-400-normal-.*\.woff2$/,
         /^barlow-latin-400-normal-.*\.woff2$/,
         /^barlow-latin-600-normal-.*\.woff2$/,
+        /^barlow-condensed-latin-600-normal-.*\.woff2$/,
       ],
     }),
   ],

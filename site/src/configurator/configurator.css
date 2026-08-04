@@ -2,10 +2,7 @@
 /* The faces this tool sets its text in. It drew in one machine's own interface
    face before, so it needed none, and its preview reached for the status page's
    Inter without ever loading it. */
-@import "@fontsource/barlow/latin-400.css";
-@import "@fontsource/barlow/latin-600.css";
-@import "@fontsource/barlow/latin-700.css";
-@import "@fontsource/barlow-condensed/latin-600.css";
+@import "../lib/velvet-typefaces.css";
 html,
 body,
 #configurator {
