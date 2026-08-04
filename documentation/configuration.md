@@ -349,6 +349,17 @@ When the branch history grows past your retention window, Velvet starts it again
 
 Your default branch is never force-pushed.
 
+## Being named on the Velvet website
+
+```yaml
+gallery:
+  listed: true
+```
+
+Off unless you say otherwise. With it on, your status page is named at [velvet.li/references](https://velvet.li/references/), and the browser setup asks you this during the first step so nothing is listed without being asked. The Configurator changes the answer at any time, and withdrawing takes effect within the hour.
+
+Velvet discloses your page name and its address, and nothing else. Whether the repository behind it is public or private makes no difference.
+
 ## Managed updates
 
 ```yaml

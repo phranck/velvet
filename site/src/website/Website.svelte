@@ -35,11 +35,16 @@
    * How the archive is installed. Every line runs as an ordinary user and
    * writes only inside the home directory, which is the point of offering it
    * this way rather than as a package.
+   *
+   * It unpacks into a temporary directory and removes it afterwards, so
+   * following these three lines leaves nothing behind. Downloading the archive
+   * into the current directory and unpacking it there left both sitting where
+   * somebody ran it.
    */
   const MAN_PAGES_INSTALL = [
-    `curl -LO https://velvet.li${MAN_PAGES_ARCHIVE}`,
-    "tar -xzf velvet-man-pages.tar.gz",
-    "./velvet-man-pages/install.sh",
+    "velvet=$(mktemp -d)",
+    `curl -sL https://velvet.li${MAN_PAGES_ARCHIVE} | tar -xz -C "$velvet"`,
+    '"$velvet"/velvet-man-pages/install.sh && rm -rf "$velvet"',
   ].join("\n");
 
   /**

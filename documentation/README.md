@@ -13,9 +13,9 @@ Reference material that a README should point at rather than contain. Each READM
 The man pages are the same material read offline. They are written by hand rather than converted, and a test keeps them from drifting: every page has to render without a roff diagnostic, `velvet-config(1)` has to document every command the `config` script accepts, and `velvet.yml(5)` has to name every field [configuration.md](configuration.md) names. Install them with:
 
 ```bash
-curl -LO https://velvet.li/velvet-man-pages.tar.gz
-tar -xzf velvet-man-pages.tar.gz
-./velvet-man-pages/install.sh
+velvet=$(mktemp -d)
+curl -sL https://velvet.li/velvet-man-pages.tar.gz | tar -xz -C "$velvet"
+"$velvet"/velvet-man-pages/install.sh && rm -rf "$velvet"
 ```
 
 Two documents stay at the repository root, because that is where both are looked for by convention and by licence obligation: [LICENSING.md](../LICENSING.md) and [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
