@@ -1,11 +1,15 @@
-# Reports whether the template's pinned Velvet can still read what Velvet writes.
+# Reports whether the Velvet an installation receives can read what Velvet writes.
 #
 # An installation runs two halves versioned separately. The setup service writes
 # `velvet.yml` from this repository, and the workflows it installs run the
-# monitor from whatever commit the template pins. Nothing made them agree, and
-# on 2026-08-04 they did not: the first run of a real installation failed with
+# monitor from whatever commit they pin. Nothing made them agree, and on
+# 2026-08-04 they did not: the first run of a real installation failed with
 # INVALID_CONFIGURATION because the service wrote a field the pin had never
 # heard of.
+#
+# Both places those workflows come from are judged: the template a repository is
+# created from, and the release artefact whose copy is written over it. Checking
+# only the template is what left the repaired pin in one and not the other.
 #
 # This deliberately does not move the pin. That is a change to another
 # repository and belongs under a person's hand, and a check that corrected the
