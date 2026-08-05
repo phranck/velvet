@@ -70,6 +70,17 @@
   .service-icon-option {
     position: relative;
     min-width: 0;
+    /* Both, or the icon inside sets the height on a narrow screen where the
+       option is smaller than the glyph, and the square the outline is drawn on
+       stops being square. */
+    min-height: 0;
+    /* Narrower than the column it sits in, and square, so the outline stands
+       closer around the icon and the rows come nearer each other. The column
+       keeps its width, so the icons stay on their grid. */
+    inline-size: 84%;
+    /* Centred in its cell and not stretched by it, so the square the outline
+       is drawn on stays square whatever the row's height turns out to be. */
+    place-self: center;
     aspect-ratio: 1;
     display: grid;
     place-items: center;
