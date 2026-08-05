@@ -1,8 +1,6 @@
 # Notice
 
-This repository was created by [Velvet](https://github.com/phranck/velvet). Its
-configuration, its recorded history, and its Issues belong to the account that
-owns it.
+This repository was created by [Velvet](https://github.com/phranck/velvet). Its configuration, its recorded history, and its Issues belong to the account that owns it.
 
 These files come from Velvet and are covered by the licence below:
 
@@ -17,8 +15,7 @@ These files come from Velvet and are covered by the licence below:
 - `.github/workflows/velvet.yml`
 - `velvet.lock.json`
 
-Everything else in this repository is the owner's, including `velvet.yml`, this
-notice, and anything published from it.
+Everything else in this repository is the owner's, including `velvet.yml`, this notice, and anything published from it.
 
 ## MIT License
 
