@@ -298,6 +298,71 @@ test("accepts a newly requested workflow run as still in progress", async () => 
   );
 });
 
+test("creates the configuration where the repository holds none", async () => {
+  // What a first setup meets: Velvet creates the repository with a README and
+  // nothing else, so there is no blob to replace and GitHub refuses a SHA that
+  // names a file which does not exist.
+  const requests: Request[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async (request) => {
+      requests.push(request.clone());
+      if (request.method === "GET") {
+        return Response.json({ message: "Not Found" }, { status: 404 });
+      }
+      return Response.json({ content: { sha: "written-sha" } });
+    },
+  });
+
+  assert.equal(
+    await client.getConfigurationSha("installation-token", "example", "status"),
+    null,
+    "a missing configuration is an answer rather than a failure",
+  );
+  await client.writeConfiguration(
+    "installation-token",
+    "example",
+    "status",
+    "schemaVersion: 1\n",
+    null,
+  );
+
+  assert.deepEqual(await requests[1]!.json(), {
+    message: "Configure Velvet [skip ci]",
+    content: Buffer.from("schemaVersion: 1\n").toString("base64"),
+    branch: "main",
+  });
+});
+
+test("reports whether the installation token can read the repository yet", async () => {
+  let answered = 0;
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async () => {
+      answered += 1;
+      return answered === 1
+        ? Response.json({ message: "Not Found" }, { status: 404 })
+        : Response.json({ id: 99, name: "status", owner: { login: "example", id: 7 } });
+    },
+  });
+
+  assert.equal(
+    await client.repositoryReadable("installation-token", "example", "status"),
+    false,
+    "GitHub has not granted the access yet",
+  );
+  assert.equal(
+    await client.repositoryReadable("installation-token", "example", "status"),
+    true,
+  );
+});
+
 test("returns bounded GitHub errors without response bodies or credentials", async () => {
   const client = createGitHubSetupClient({
     appId: "12345",

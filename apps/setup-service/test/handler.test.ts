@@ -57,6 +57,7 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
         repositorySelection: "selected",
       }];
     },
+    async repositoryReadable() { return true; },
     async findRepository() { return null; },
     async repositoryInstallationId() { return null; },
     async deleteRepository() {},

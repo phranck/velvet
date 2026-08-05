@@ -97,9 +97,13 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
       return { token: "installation-token", canWriteWorkflows: true };
     },
     async deleteInstallation() { calls.push("delete-installation"); },
+    async repositoryReadable() {
+      calls.push("repository-readable");
+      return true;
+    },
     async getConfigurationSha() {
       calls.push("get-configuration");
-      return "template-sha";
+      return null;
     },
     async writeConfiguration(_token, _owner, _repository, source) {
       calls.push("write-configuration");
@@ -167,6 +171,9 @@ test("creates, configures, enables, dispatches, and verifies one repository", as
   assert.deepEqual(calls, [
     "create-repository",
     "create-installation-token",
+    // Asked of the repository, because the file the next call reads does not
+    // exist until the one after that writes it.
+    "repository-readable",
     "get-configuration",
     "write-configuration",
     "write-managed-files",
@@ -281,18 +288,15 @@ test("removes a temporary all-repository installation immediately after reposito
   assert.equal(session.provisioning?.repository?.id, 99);
 });
 
-test("waits until the installation token can read the generated configuration", async () => {
+test("waits until the installation token can read the new repository", async () => {
   const session = authenticatedSession();
   let accessChecks = 0;
   let sleeps = 0;
   const { client, calls } = successfulGitHub({
-    async getConfigurationSha() {
-      calls.push("get-configuration");
+    async repositoryReadable() {
+      calls.push("repository-readable");
       accessChecks += 1;
-      if (accessChecks === 1) {
-        throw new GitHubApiError(new Response(null, { status: 404 }));
-      }
-      return "template-sha";
+      return accessChecks > 1;
     },
   });
 
@@ -308,9 +312,78 @@ test("waits until the installation token can read the generated configuration", 
   assert.equal(accessChecks, 2);
   assert.equal(sleeps, 1);
   assert.ok(
-    calls.lastIndexOf("get-configuration") <
+    calls.lastIndexOf("repository-readable") <
       calls.indexOf("write-configuration"),
   );
+});
+
+test("writes the configuration into a repository that holds none", async () => {
+  // What a first setup meets: Velvet creates the repository with a README and
+  // nothing else, so the file it is about to write cannot be read beforehand.
+  // Waiting for it was the fault that stopped every setup at this step.
+  let sentSha: string | null | undefined;
+  const { client } = successfulGitHub({
+    async repositoryReadable() {
+      return true;
+    },
+    async getConfigurationSha() {
+      return null;
+    },
+    async writeConfiguration(
+      _token: string,
+      _owner: string,
+      _repository: string,
+      _source: string,
+      sha: string | null,
+    ) {
+      sentSha = sha;
+    },
+  });
+
+  const result = await provisionVelvet({
+    session: authenticatedSession(),
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(result.type, "success");
+  // No SHA, because there is no blob to replace. GitHub refuses one that names
+  // a file which does not exist.
+  assert.equal(sentSha, null);
+});
+
+test("replaces the configuration a previous attempt left behind", async () => {
+  let sentSha: string | null | undefined;
+  const { client } = successfulGitHub({
+    async repositoryReadable() {
+      return true;
+    },
+    async getConfigurationSha() {
+      return "previous-sha";
+    },
+    async writeConfiguration(
+      _token: string,
+      _owner: string,
+      _repository: string,
+      _source: string,
+      sha: string | null,
+    ) {
+      sentSha = sha;
+    },
+  });
+
+  const result = await provisionVelvet({
+    session: authenticatedSession(),
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(result.type, "success");
+  assert.equal(sentSha, "previous-sha");
 });
 
 test("maps a GitHub rate limit to a safe retryable setup error", async () => {

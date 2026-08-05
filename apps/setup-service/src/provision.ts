@@ -251,7 +251,7 @@ export async function provisionVelvet(
 
     if (!state.configurationCommitted) {
       progress("writing-configuration");
-      const configurationSha = await waitForConfigurationAccess({
+      await waitForRepositoryAccess({
         github: input.github,
         installationToken,
         owner: state.repository.owner,
@@ -259,6 +259,13 @@ export async function provisionVelvet(
         sleep,
         maxChecks: input.maxConfigurationAccessChecks ?? 20,
       });
+      // Null on a first setup, where Velvet creates this file, and a SHA on a
+      // repeated one, where it replaces what the previous attempt left.
+      const configurationSha = await input.github.getConfigurationSha(
+        installationToken,
+        state.repository.owner,
+        state.repository.name,
+      );
       await input.github.writeConfiguration(
         installationToken,
         state.repository.owner,
@@ -589,23 +596,31 @@ function deploymentStageForJobs(
   return monitor ? "checking-services" : null;
 }
 
-async function waitForConfigurationAccess(input: {
+/**
+ * Waits until the installation token can read the new repository.
+ *
+ * GitHub takes a moment to grant a token access to a repository created a
+ * second earlier, and every write that follows needs that access. The check
+ * asks for the repository itself: the first file Velvet writes does not exist
+ * until after this returns, so waiting for one would wait forever.
+ */
+async function waitForRepositoryAccess(input: {
   github: GitHubSetupClient;
   installationToken: string;
   owner: string;
   repository: string;
   sleep: (milliseconds: number) => Promise<void>;
   maxChecks: number;
-}): Promise<string> {
+}): Promise<void> {
   for (let check = 0; check < input.maxChecks; check += 1) {
-    try {
-      return await input.github.getConfigurationSha(
+    if (
+      await input.github.repositoryReadable(
         input.installationToken,
         input.owner,
         input.repository,
-      );
-    } catch (error) {
-      if (!(error instanceof GitHubApiError) || error.status !== 404) throw error;
+      )
+    ) {
+      return;
     }
     if (check + 1 < input.maxChecks) await input.sleep(500);
   }
