@@ -620,6 +620,38 @@ test("social card uses the semantic Velvet theme", async () => {
   );
 });
 
+test("draws a card for a page whose name holds an ampersand", async () => {
+  // Escaping and uppercasing in the wrong order turned `&amp;` into `&AMP;`,
+  // which XML does not define, and resvg refused the whole card. The build step
+  // failed with it, so nothing was published at all.
+  const directory = await mkdtemp(resolve(tmpdir(), "velvet-build-"));
+  const configPath = resolve(directory, "config.json");
+  const statusPath = resolve(directory, "status.json");
+  const ogPath = resolve(directory, "og.png");
+
+  await writeFile(
+    configPath,
+    JSON.stringify({
+      owner: "example",
+      repo: "status",
+      name: "musiccloud status & uptime",
+      url: "https://status.example/",
+      defaultRange: "month",
+    }),
+  );
+  await writeFile(statusPath, await fixture("status/dual-stack.json"));
+
+  await bun([
+    resolve(siteRoot, "scripts/generate-og.ts"),
+    configPath,
+    statusPath,
+    ogPath,
+  ]);
+
+  const card = await readFile(ogPath);
+  assert.ok(card.byteLength > 1_000, "a card was drawn");
+});
+
 test("social card and SEO consume validated Velvet documents", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-build-"));
   const configPath = resolve(directory, "config.json");
