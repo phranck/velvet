@@ -25,14 +25,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  /*
-   * Barlow's capitals sit below the middle of its own metrics, so a line box
-   * centred inside the button leaves the word looking low. The shift is half
-   * the difference between the ascender and the descender, less half the cap
-   * height, which for this face comes to 0.039em; applied as block padding it
-   * lifts the whole row, icon included, rather than the text alone.
-   */
-  padding-block: 0 0.078em;
+  /* Lifts the whole row, icon included, rather than the text alone. */
+  padding-block: 0 var(--velvet-cap-shift, 0.078em);
   border: 0;
   border-radius: var(--step-card-inner-radius, 12px);
   outline: none;

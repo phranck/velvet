@@ -14,7 +14,7 @@
 
 {#if label}
   <p class="serial" aria-live="polite" data-footer-serial>
-    <span>Serial Nr.:</span>
+    <span>Serial #</span>
     <span class="number">{label}</span>
   </p>
 {/if}
