@@ -110,6 +110,13 @@
    * that replaces this.
    */
   let serial = $state<number | null>(null);
+  /**
+   * The GitHub account this browser is connected as, or null when it is not.
+   *
+   * Held so the way out can name what somebody is leaving. A button saying
+   * only "sign out" leaves them guessing which of their accounts it means.
+   */
+  let connectedAccount = $state<string | null>(null);
 
   /**
    * The most a logo may weigh, in bytes of the file itself.
@@ -282,6 +289,60 @@
     } catch {
       return null;
     }
+  }
+
+  /**
+   * The GitHub account this browser is connected as, or null when it is not.
+   *
+   * Every failure is swallowed. The account is shown so somebody can leave it,
+   * and a page that cannot say which one simply offers nothing.
+   */
+  async function readConnectedAccount(): Promise<string | null> {
+    try {
+      const response = await fetch("/api/session", {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return null;
+      const body = (await response.json()) as {
+        authenticated?: unknown;
+        user?: { login?: unknown };
+      };
+      return body.authenticated === true && typeof body.user?.login === "string"
+        ? body.user.login
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Signs out of GitHub and starts the page over.
+   *
+   * The session carries the state of a setup that has begun, so leaving it is
+   * the way past a setup that cannot be continued. The draft in this browser
+   * is kept: the entries are still worth having on the next attempt.
+   */
+  async function signOut(): Promise<void> {
+    try {
+      const session = await fetch("/api/session", {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      const body = session.ok
+        ? ((await session.json()) as { csrfToken?: unknown })
+        : {};
+      if (typeof body.csrfToken !== "string") return;
+      await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: { "X-Velvet-CSRF": body.csrfToken },
+      });
+    } catch {
+      // Reloading is worth doing either way: a session the service has already
+      // forgotten leaves this page holding a state that no longer exists.
+    }
+    globalThis.location.assign("/onboarding/");
   }
 
   function browserSessionStorage(): Storage | null {
@@ -457,6 +518,9 @@
     workflowUrl = result.workflowUrl ?? "";
     setupErrorId = result.errorId;
     retryAvailable = result.recoverable;
+    // Asked for only now, because the way out of a session is offered only
+    // here and a page that succeeds never needs to name the account.
+    connectedAccount = await readConnectedAccount();
   }
 
   /**
@@ -842,6 +906,21 @@
             </div>
           {/if}
           {#if setupErrorId}<small>Reference: <code>{setupErrorId}</code></small>{/if}
+          {#if connectedAccount && submissionState === "failed"}
+            <!-- Named, because a session holds the setup it began and leaving
+                 it is the way past one that cannot be continued. A button
+                 saying only "sign out" leaves somebody guessing which of their
+                 accounts it means. -->
+            <button
+              class="sign-out"
+              type="button"
+              data-sign-out
+              onclick={() => void signOut()}
+            >
+              <i class="ph-duotone ph-sign-out" aria-hidden="true"></i>
+              <span>Sign out of GitHub as {connectedAccount} and start over</span>
+            </button>
+          {/if}
         </div>
       </StepCard.Body>
       </div>
@@ -1473,6 +1552,26 @@
     color: var(--setup-text);
     font-size: var(--setup-card-copy);
   }
+  /*
+   * A failure gets a surface of its own in the outage tone, which is the colour
+   * every other part of the product draws trouble in. Before this it was a
+   * sentence in the same grey as the rest, indistinguishable from a note.
+   */
+  .result[data-setup-state="failed"],
+  .result[data-setup-state="permission-required"] {
+    padding: var(--step-card-content-inset);
+    border-radius: var(--step-card-inner-radius);
+    background: color-mix(in srgb, var(--setup-error) 12%, transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--setup-error) 40%, transparent);
+  }
+  /* Something to answer rather than something that went wrong, so it carries
+     the accent instead of the outage tone. */
+  .result[data-setup-state="permission-required"] {
+    background: color-mix(in srgb, var(--setup-accent) 12%, transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--setup-accent) 40%, transparent);
+  }
   .result p {
     margin: 0;
   }
@@ -1496,6 +1595,23 @@
   .result code {
     color: var(--setup-text);
     font-family: inherit;
+  }
+  .sign-out {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    padding: 0;
+    background: transparent;
+    color: var(--setup-muted);
+    cursor: pointer;
+    font-size: var(--setup-text-small);
+    font-weight: 650;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .sign-out:hover {
+    color: var(--setup-text);
   }
   .velvet-button {
     min-width: 7rem;
