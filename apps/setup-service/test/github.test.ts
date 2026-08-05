@@ -476,7 +476,7 @@ test("sends a stateless token whole in the Authorization header", async () => {
 
 test("creates a public repository when the request asks for one", async () => {
   // The default every installation made before the choice existed received,
-  // and what the onboarding sends when the box is left unticked.
+  // and what the onboarding sends when the box is left unchecked.
   const requests: Request[] = [];
   const client = createGitHubSetupClient({
     appId: "12345",

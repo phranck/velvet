@@ -149,7 +149,7 @@ The fingerprint covers `apps/setup-service/src`, `packages/contracts/src`, `pack
 
 ## Repository creation
 
-The onboarding decides whether the repository is created public or private, and sends that answer as `repositoryVisibility`. A request that omits it receives a public repository, which is what every installation made before the choice existed received. Publishing GitHub Pages from a private repository requires a paid GitHub plan, so the onboarding leaves the box unticked and says so beside it rather than choosing privacy on somebody's behalf. Velvet neither reads nor maintains the setting afterwards, and it is not part of `velvet.yml`.
+The onboarding decides whether the repository is created public or private, and sends that answer as `repositoryVisibility`. A request that omits it receives a public repository, which is what every installation made before the choice existed received. Publishing GitHub Pages from a private repository requires a paid GitHub plan, so the onboarding leaves the box unchecked and says so beside it rather than choosing privacy on somebody's behalf. Velvet neither reads nor maintains the setting afterwards, and it is not part of `velvet.yml`.
 
 ## Partial setup recovery
 
