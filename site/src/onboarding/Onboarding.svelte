@@ -1548,7 +1548,10 @@
   }
   .result {
     min-height: 2rem;
-    margin: 1rem 1rem 0;
+    /* No inset of its own. It stands where the progress list above it stands,
+       and once it draws a surface an inset here would sit on top of the card's
+       own padding and hold it further in than everything around it. */
+    margin: 1rem 0 0;
     color: var(--setup-text);
     font-size: var(--setup-card-copy);
   }
