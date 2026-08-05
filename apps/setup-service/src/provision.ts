@@ -95,13 +95,31 @@ export async function provisionVelvet(
     : input.request.configuration;
   const source = serializeVelvetConfiguration(configuration);
   const configurationHash = createHash("sha256").update(source).digest("hex");
-  const existing = input.session.provisioning;
-  if (existing && existing.configurationHash !== configurationHash) {
-    throw new SetupServiceError(
-      "SETUP_PARTIAL",
-      "This session already started a different setup. Sign out before starting another one.",
-      { status: 409 },
-    );
+  /*
+   * A session holds the state of the setup it started. Where a different
+   * configuration arrives, that state belongs to something else and cannot be
+   * continued.
+   *
+   * It only has to be defended where a repository exists, because that is the
+   * thing a second setup could damage. An attempt that created nothing leaves
+   * nothing to protect, and refusing there stranded anybody who corrected a
+   * name after a failure: the message asked them to sign out, and the
+   * onboarding offers no way to.
+   */
+  const existing =
+    input.session.provisioning?.configurationHash === configurationHash
+      ? input.session.provisioning
+      : undefined;
+  if (input.session.provisioning && !existing) {
+    const stranded = input.session.provisioning.repository;
+    if (stranded) {
+      throw new SetupServiceError(
+        "SETUP_PARTIAL",
+        `This session already created ${stranded.owner}/${stranded.name}. Sign out before starting another setup.`,
+        { status: 409 },
+      );
+    }
+    delete input.session.provisioning;
   }
   if (
     existing?.installationUrl &&

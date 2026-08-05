@@ -1750,9 +1750,24 @@ history:
       route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ authenticated: true, csrfToken: "S".repeat(43) }),
+        body: JSON.stringify({
+          authenticated: true,
+          csrfToken: "S".repeat(43),
+          user: {
+            login: "velvet-user",
+            avatarUrl: "https://avatars.githubusercontent.com/u/1",
+          },
+        }),
       }),
     );
+    let logoutCalls = 0;
+    await conflictPage.route("**/api/logout", async (route) => {
+      logoutCalls += 1;
+      await route.fulfill({ status: 204, body: "" });
+    });
+    // Flipped once the replace paths have been walked, to reach the state the
+    // way out exists for.
+    let setupFails = false;
     const replaceRequests: (boolean | undefined)[] = [];
     // Flipped once the deletable path has been walked, so the same page then
     // meets a repository Velvet has no say over.
@@ -1762,6 +1777,22 @@ history:
         replaceExistingRepository?: boolean;
       };
       replaceRequests.push(request.replaceExistingRepository);
+      if (setupFails) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/x-ndjson",
+          body: JSON.stringify({
+            type: "error",
+            error: {
+              code: "SETUP_PARTIAL",
+              message: "This session already created velvet-user/status.",
+              errorId: "P".repeat(26),
+            },
+            recoverable: false,
+          }),
+        });
+        return;
+      }
       const refusal = (code: string, message: string) =>
         JSON.stringify({
           type: "error",
@@ -1896,6 +1927,32 @@ history:
       (await conflictDialog.textContent()) ?? "",
       /Delete it on GitHub yourself/,
     );
+    // A setup that cannot be continued needs a way out of the session holding
+    // it, and the way out has to say which account it leaves. Before this the
+    // service asked people to sign out and the page offered nothing to do it
+    // with.
+    notDeletable = false;
+    setupFails = true;
+    await conflictPage.evaluate(
+      ([key, session]) => {
+        sessionStorage.setItem(key as string, session as string);
+      },
+      [ONBOARDING_SESSION_STORAGE_KEY, JSON.stringify(conflictDraft)] as const,
+    );
+    await conflictPage.goto(
+      `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
+    );
+    const signOut = conflictPage.locator("[data-sign-out]");
+    await signOut.waitFor({ state: "visible" });
+    assert.match(
+      (await signOut.textContent()) ?? "",
+      /velvet-user/,
+      "the way out names the account it leaves",
+    );
+    await signOut.click();
+    await conflictPage.waitForFunction(() => logoutCalls > 0).catch(() => {});
+    assert.equal(logoutCalls, 1, "signing out reaches the service");
+
     await conflictContext.close();
   } finally {
     await browser.close();

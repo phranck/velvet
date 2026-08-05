@@ -193,7 +193,10 @@ const blobs = theme.background.blobs.enabled
 
 // Brand: render the actual logo when `logoUrl` is set (fetched + embedded at its
 // configured height), else the uppercased name as text. Any fetch problem falls back.
-let brand = `<text x="${W / 2}" y="92" text-anchor="middle" font-family="${FONT}" font-size="28" font-weight="600" letter-spacing="1.5" fill="${theme.text.secondary}">${esc(name).toUpperCase()}</text>`;
+// Uppercased first and escaped after, because escaping last is the only order
+// that survives it: `&amp;` uppercased is `&AMP;`, which XML does not define,
+// and a name holding an ampersand then took the whole build down with it.
+let brand = `<text x="${W / 2}" y="92" text-anchor="middle" font-family="${FONT}" font-size="28" font-weight="600" letter-spacing="1.5" fill="${theme.text.secondary}">${esc(name.toUpperCase())}</text>`;
 if (config.logoUrl) {
   try {
     const res = await fetch(config.logoUrl);

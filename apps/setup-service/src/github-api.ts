@@ -16,17 +16,62 @@ export type GitHubInstallationPermissions = Readonly<
   Record<string, "read" | "write">
 >;
 
+/** How many of GitHub's own validation reasons are kept. */
+const MAX_GITHUB_REASONS = 4;
+
 export class GitHubApiError extends Error {
   readonly status: number;
   readonly requestId: string | null;
   readonly retryAfterSeconds: number | null;
+  /**
+   * Which fields GitHub refused and why, as `field:code` pairs.
+   *
+   * Empty unless GitHub returned a validation error. Only the field name and
+   * the reason code are kept, never the message beside them: those two are
+   * GitHub's own vocabulary, whilst a message can quote what was sent to it.
+   * Without them a 422 is a number, and telling a name that is taken from one
+   * that is invalid means guessing.
+   */
+  readonly reasons: readonly string[];
 
-  constructor(response: Response) {
+  constructor(response: Response, reasons: readonly string[] = []) {
     super("GitHub API request failed.");
     this.name = "GitHubApiError";
     this.status = response.status;
     this.requestId = response.headers.get("X-GitHub-Request-Id");
     this.retryAfterSeconds = parseRetryAfter(response.headers.get("Retry-After"));
+    this.reasons = reasons;
+  }
+}
+
+/**
+ * Reads GitHub's validation reasons out of a refused request.
+ *
+ * Only from a 422, which is the status that carries them, and only the field
+ * and code of each. The body is consumed either way, so nothing is left open
+ * when it holds something else.
+ *
+ * @param response - The failed response, whose body this consumes.
+ * @returns The reasons as `field:code`, or empty where there are none.
+ */
+async function readGitHubReasons(response: Response): Promise<string[]> {
+  if (response.status !== 422) {
+    await response.body?.cancel();
+    return [];
+  }
+  try {
+    const body: unknown = await response.json();
+    if (!isRecord(body) || !Array.isArray(body.errors)) return [];
+    return body.errors
+      .filter((entry): entry is Record<string, unknown> => isRecord(entry))
+      .slice(0, MAX_GITHUB_REASONS)
+      .map((entry) => {
+        const field = typeof entry.field === "string" ? entry.field : "unknown";
+        const code = typeof entry.code === "string" ? entry.code : "unknown";
+        return `${field}:${code}`;
+      });
+  } catch {
+    return [];
   }
 }
 
@@ -69,8 +114,7 @@ export function createGitHubRequest(
       }),
     );
     if (!response.ok) {
-      await response.body?.cancel();
-      throw new GitHubApiError(response);
+      throw new GitHubApiError(response, await readGitHubReasons(response));
     }
     return readBoundedJson<T>(response);
   };

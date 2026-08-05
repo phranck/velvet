@@ -58,6 +58,7 @@ function redactedCause(
       status: cause.status,
       githubRequestId: cause.requestId,
       retryAfterSeconds: cause.retryAfterSeconds,
+      ...(cause.reasons.length > 0 ? { githubReasons: cause.reasons } : {}),
     };
   }
   if (cause instanceof Error) {
