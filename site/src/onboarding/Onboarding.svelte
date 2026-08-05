@@ -690,7 +690,7 @@
             onchange={(listed) => (draft.listInGallery = listed)}
           >
             By checking this box, you allow Velvet to display your status page
-            as a reference on an
+            as a reference on our
             <!-- Inside the label, so a click on it would otherwise toggle the
                  box on the way past. Opening the page and answering the
                  question are separate intentions. -->
@@ -699,8 +699,7 @@
               target="_blank"
               rel="noopener noreferrer"
               onclick={(event) => event.stopPropagation()}
-            >overview page</a>
-            on the Velvet website. Only the page itself is shown, never the
+            >references overview</a>. Only the page itself is shown, never the
             repository behind it, so a private repository makes no difference.
             You can change this setting at any time in your status page's
             configurator.
@@ -717,13 +716,13 @@
           </ConsentCheckbox>
           <!-- Marked out rather than set as fine print, because it decides
                whether the page appears at all. This is also why the box starts
-               unticked: a default of private would hand anybody on a free
+               unchecked: a default of private would hand anybody on a free
                account a repository that works and a page that never
                publishes. -->
           <p class="visibility-requirement">
             A private repository needs a paid GitHub plan. GitHub publishes
             Pages from a private repository only on GitHub Pro and above, so on
-            a free account leave this unticked or your status page will not
+            a free account leave this unchecked or your status page will not
             appear.
           </p>
         </div>
