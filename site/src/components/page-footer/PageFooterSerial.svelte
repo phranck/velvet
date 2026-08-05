@@ -14,8 +14,8 @@
 
 {#if label}
   <p class="serial" aria-live="polite" data-footer-serial>
-    <span>Serial</span>
-    <span class="number">#{label}</span>
+    <span>Serial #</span>
+    <span class="number">{label}</span>
   </p>
 {/if}
 
@@ -25,7 +25,9 @@
     justify-self: end;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    /* None, so the hash stands against the figure it belongs to. The word
+       keeps its own space inside the label. */
+    gap: 0;
     margin: 0;
     color: var(--velvet-text-muted);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
