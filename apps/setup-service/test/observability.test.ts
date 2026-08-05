@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "bun:test";
 
 import { GitHubApiError } from "../src/github.js";
+import { createGitHubRequest } from "../src/github-api.js";
 import { createAuditLogger } from "../src/observability.js";
 import { createRateLimiter } from "../src/rate-limit.js";
 import { SetupServiceError } from "../src/setup-error.js";
@@ -150,4 +151,52 @@ test("keeps a stateless installation token out of the log", () => {
     "Error",
     "the cause is still reported, just without its payload",
   );
+});
+
+test("keeps GitHub's validation reasons and not the message beside them", async () => {
+  // A 422 without them is a number: a name that is taken and a name that is
+  // invalid arrive identically. The field and the code are GitHub's own
+  // vocabulary, whilst the message can quote what was sent to it.
+  const lines: string[] = [];
+  const logger = createAuditLogger({ write: (line) => lines.push(line) });
+  const githubRequest = createGitHubRequest(
+    async () =>
+      Response.json(
+        {
+          message: "Repository creation failed.",
+          errors: [
+            {
+              resource: "Repository",
+              code: "custom",
+              field: "name",
+              message: "secret-token already exists on this account",
+            },
+          ],
+        },
+        { status: 422 },
+      ),
+    "velvet-test",
+  );
+
+  let raised: unknown;
+  try {
+    await githubRequest("/user/repos", "secret-token", { method: "POST" });
+  } catch (error) {
+    raised = error;
+  }
+
+  logger({
+    level: "error",
+    requestId: "request-id",
+    route: "/api/setup",
+    operation: "provision",
+    status: 409,
+    outcome: "failed",
+    code: "REPOSITORY_CONFLICT",
+    errorId: "error-id",
+    cause: raised,
+  });
+
+  assert.deepEqual(JSON.parse(lines[0]!).cause.githubReasons, ["name:custom"]);
+  assert.doesNotMatch(lines[0]!, /secret-token|already exists/);
 });
