@@ -1329,7 +1329,7 @@
        automatic left margin there to hold the footer's two ends apart, and
        here the two answers belong together. */
     margin-right: 0;
-    padding: 0 1.1rem;
+    padding-inline: 1.1rem;
   }
   .github-permission-note {
     margin: 1rem 1rem 0;
@@ -1404,7 +1404,8 @@
   }
   .velvet-button {
     min-width: 7rem;
-    padding: 0 0.75rem;
+    /* Inline only, so the optical shift the shared button carries survives. */
+    padding-inline: 0.75rem;
   }
   /* Pushed to the far end of the card footer, away from the primary action. */
   .velvet-button--secondary {

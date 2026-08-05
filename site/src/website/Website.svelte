@@ -392,7 +392,7 @@
      rather than sitting in a card footer, so they are roomier. */
   .velvet-button {
     min-width: 7rem;
-    padding: 0 1.1rem;
+    padding-inline: 1.1rem;
   }
   .velvet-button i {
     font-size: 1.25em;

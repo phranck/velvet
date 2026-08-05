@@ -728,13 +728,29 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         paddingInline: ["12px", "12px"],
       },
     );
+    // The capitals sit on the button's middle, not the line box. Barlow's
+    // capitals sit below the middle of its own metrics, so a box centred by its
+    // edges leaves the word looking low, and the shared button lifts the row to
+    // answer that.
     assert.ok(
       await page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) => {
         const button = element.getBoundingClientRect();
-        const label = element.querySelector("[data-step-card-button-label]")
-          ?.getBoundingClientRect();
+        const label = element.querySelector("[data-step-card-button-label]");
         if (!label) return false;
-        return Math.abs((button.top + button.bottom - label.top - label.bottom) / 2) < 0.5;
+        const labelBox = label.getBoundingClientRect();
+        const style = getComputedStyle(label);
+        const context = document.createElement("canvas").getContext("2d");
+        if (!context) return false;
+        context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        const cap = context.measureText("H");
+        const baseline =
+          labelBox.top +
+          (labelBox.height -
+            (cap.fontBoundingBoxAscent + cap.fontBoundingBoxDescent)) /
+            2 +
+          cap.fontBoundingBoxAscent;
+        const capMiddle = baseline - cap.actualBoundingBoxAscent / 2;
+        return Math.abs(capMiddle - (button.top + button.height / 2)) < 0.5;
       }),
     );
     assert.deepEqual(
