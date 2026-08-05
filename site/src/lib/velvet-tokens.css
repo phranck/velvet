@@ -20,6 +20,12 @@
 :root {
   /* Shared by the onboarding, the configurator, and the website. */
   --velvet-accent: #8ca5ff;
+  /* The two colours the mark is drawn in, one per half of its V. They are the
+     brand's own pair rather than the accent, which is what an interface points
+     with. `site/scripts/generate-mark.ts` reads them from here, so the mark and
+     the icon follow whatever these say. */
+  --velvet-mark-blue: #778edd;
+  --velvet-mark-apricot: #faa785;
   --velvet-text: #efedf5;
   --velvet-text-muted: #979aa8;
   --velvet-surface-raised: #272a36;
