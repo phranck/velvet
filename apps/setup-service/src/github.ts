@@ -130,7 +130,20 @@ export interface GitHubSetupClient {
   viewer(userToken: string): Promise<GitHubViewer>;
   account(userToken: string, login: string): Promise<GitHubAccount>;
   listInstallations(userToken: string): Promise<GitHubInstallation[]>;
-  repositoryExists(userToken: string, owner: string, name: string): Promise<boolean>;
+  /** The repository under this name, or null when the name is free. */
+  findRepository(
+    userToken: string,
+    owner: string,
+    name: string,
+  ): Promise<GitHubRepository | null>;
+  /**
+   * The installation Velvet holds on a repository, or null when it holds none.
+   *
+   * A user token reaches every public repository, so setup can see one it has
+   * no say over. Deleting it needs an installation, and this is what says
+   * whether there is one.
+   */
+  repositoryInstallationId(owner: string, name: string): Promise<number | null>;
   deleteRepository(userToken: string, owner: string, name: string): Promise<void>;
   /**
    * Creates the repository an installation lives in, with a first commit.
@@ -288,19 +301,44 @@ export function createGitHubSetupClient(
       return body.installations.map(parseInstallation);
     },
 
-    async repositoryExists(userToken, owner, name) {
+    async findRepository(userToken, owner, name) {
       // A 404 is the answer rather than a failure here, so it is read as one
       // instead of being thrown. Anything else is a real failure and is left to
       // the caller, because "GitHub did not answer" must never be mistaken for
       // "the name is free" by something about to create a repository.
       try {
-        await githubRequest<unknown>(
-          `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
-          userToken,
+        return parseRepository(
+          await githubRequest<unknown>(
+            `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
+            userToken,
+          ),
         );
-        return true;
       } catch (error) {
-        if (error instanceof GitHubApiError && error.status === 404) return false;
+        if (error instanceof GitHubApiError && error.status === 404) return null;
+        throw error;
+      }
+    },
+
+    async repositoryInstallationId(owner, name) {
+      // Asked as the app itself, because a user token only reports what that
+      // user can see. What matters here is which installation, if any, Velvet
+      // holds on this repository, and a 404 is GitHub saying "none".
+      const appJwt = createGitHubAppJwt(
+        options.appId,
+        options.privateKey,
+        nowSeconds,
+      );
+      try {
+        const body = await githubRequest<unknown>(
+          `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/installation`,
+          appJwt,
+        );
+        if (!isRecord(body) || typeof body.id !== "number") {
+          throw new Error("GitHub installation response was invalid.");
+        }
+        return body.id;
+      } catch (error) {
+        if (error instanceof GitHubApiError && error.status === 404) return null;
         throw error;
       }
     },

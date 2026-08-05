@@ -169,23 +169,46 @@ export async function provisionVelvet(
           );
         }
         state.target = target;
-        throw installationRequired(false);
+        throw installationRequired("create");
       }
       // Asked before anything is created, and before the approval GitHub would
       // otherwise demand first. Finding out that a name is taken after two
       // approvals and a redirect is a worse way to learn it.
-      if (await input.github.repositoryExists(userToken, owner, repositoryName)) {
-        if (input.request.replaceExistingRepository !== true) {
+      const taken = await input.github.findRepository(
+        userToken,
+        owner,
+        repositoryName,
+      );
+      if (taken) {
+        state.replaceApproved ||= input.request.replaceExistingRepository === true;
+        if (!state.replaceApproved) {
           throw new SetupServiceError(
             "REPOSITORY_EXISTS",
             `${owner}/${repositoryName} already exists.`,
             { status: 409, recoverable: true },
           );
         }
-        // Only here, and only because a second request said so by name. What
-        // goes with the repository cannot be brought back by anything in this
-        // product.
+        // A user token reaches every public repository, so setup can see one it
+        // is not installed on and could not delete. Asked before the deletion
+        // rather than discovered by attempting it, because GitHub's refusal
+        // arrives as a bare 403 that says nothing about what to do next.
+        const managing = await input.github.repositoryInstallationId(
+          owner,
+          repositoryName,
+        );
+        if (managing !== installation.id) {
+          state.replacing = {
+            id: taken.id,
+            owner: taken.owner,
+            ownerId: taken.ownerId,
+            name: taken.name,
+          };
+          throw installationRequired("replace");
+        }
+        // Only here, and only because a request said so by name. What goes with
+        // the repository cannot be brought back by anything in this product.
         await input.github.deleteRepository(userToken, owner, repositoryName);
+        delete state.replacing;
       }
       const repository = await input.github.createRepository(
         userToken,
@@ -217,12 +240,12 @@ export async function provisionVelvet(
 
     const installation = installationForOwner(input.session, owner);
     if (!installation) {
-      throw installationRequired(true);
+      throw installationRequired("use");
     }
     if (installation.repositorySelection === "all") {
       await input.github.deleteInstallation(installation.id);
       delete input.session.installation;
-      throw installationRequired(true);
+      throw installationRequired("use");
     }
     const setupToken = await input.github.createInstallationToken(
       installation.id,
@@ -607,12 +630,20 @@ function installationForOwner(
     : undefined;
 }
 
-function installationRequired(repositoryCreated: boolean): SetupServiceError {
+/** What the missing installation is needed for, which is what somebody is told. */
+type InstallationPurpose = "create" | "use" | "replace";
+
+const INSTALLATION_MESSAGES: Record<InstallationPurpose, string> = {
+  create: "Temporarily install Velvet so it can create the selected repository.",
+  use: "Install Velvet for the selected repository before continuing.",
+  replace:
+    "Add the existing repository to your Velvet installation so it can be replaced.",
+};
+
+function installationRequired(purpose: InstallationPurpose): SetupServiceError {
   return new SetupServiceError(
     "INSTALLATION_REQUIRED",
-    repositoryCreated
-      ? "Install Velvet for the selected repository before continuing."
-      : "Temporarily install Velvet so it can create the selected repository.",
+    INSTALLATION_MESSAGES[purpose],
     { status: 403, recoverable: true },
   );
 }

@@ -590,7 +590,13 @@ function setupStreamResponse(input: {
               cause instanceof SetupServiceError &&
               cause.code === "INSTALLATION_REQUIRED"
             ) {
-              const target = repository ?? input.session.provisioning?.target;
+              // The repository setup created, or the one it is waiting for the
+              // access to replace. Either way it is the repository the visitor
+              // is about to be asked to grant Velvet on, so it names the
+              // request that takes them to GitHub.
+              const grantOn =
+                repository ?? input.session.provisioning?.replacing;
+              const target = grantOn ?? input.session.provisioning?.target;
               if (!target) throw cause;
               const state = input.randomToken();
               input.session.installState = state;
@@ -612,17 +618,17 @@ function setupStreamResponse(input: {
                   error: publicError,
                 };
               }
-              const access = repository ? "repository" : "temporary-account";
+              const access = grantOn ? "repository" : "temporary-account";
               emit({
                 type: "permission-required",
                 access,
                 error: publicError,
-                installationUrl: repository
+                installationUrl: grantOn
                   ? createGitHubInstallationUrl(
                       input.appSlug,
                       state,
-                      repository.ownerId,
-                      repository.id,
+                      grantOn.ownerId,
+                      grantOn.id,
                     )
                   : createGitHubBootstrapInstallationUrl(
                       input.appSlug,

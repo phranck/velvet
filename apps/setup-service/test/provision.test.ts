@@ -41,6 +41,16 @@ const customDomainRequest = (() => {
   return result.data;
 })();
 
+/** A repository already holding the name the request asks for. */
+const takenRepository = {
+  id: 4_242,
+  name: "status",
+  owner: "example",
+  ownerId: 255_022_500,
+  htmlUrl: "https://github.com/example/status",
+  defaultBranch: "main",
+};
+
 function authenticatedSession() {
   let index = 0;
   const session = createSessionStore({
@@ -68,7 +78,8 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
       return { id: 255_022_500, login: "example", type: "User" };
     },
     async listInstallations() { throw new Error("unused"); },
-    async repositoryExists() { return false; },
+    async findRepository() { return null; },
+    async repositoryInstallationId() { return null; },
     async deleteRepository() {},
     async createRepository() {
       calls.push("create-repository");
@@ -305,7 +316,8 @@ test("waits until the installation token can read the generated configuration", 
 test("maps a GitHub rate limit to a safe retryable setup error", async () => {
   const session = authenticatedSession();
   const { client } = successfulGitHub({
-    async repositoryExists() { return false; },
+    async findRepository() { return null; },
+    async repositoryInstallationId() { return null; },
     async deleteRepository() {},
     async createRepository() {
       throw new GitHubApiError(
@@ -706,8 +718,8 @@ test("stops when the name is taken, and never deletes without being asked", asyn
   // approvals to be told at the end that the name was never free.
   const deletions: string[] = [];
   const { client } = successfulGitHub({
-    async repositoryExists() {
-      return true;
+    async findRepository() {
+      return takenRepository;
     },
     async deleteRepository(_token: string, owner: string, name: string) {
       deletions.push(`${owner}/${name}`);
@@ -734,8 +746,11 @@ test("stops when the name is taken, and never deletes without being asked", asyn
 test("deletes and recreates only when the request says so by name", async () => {
   const deletions: string[] = [];
   const { client, calls } = successfulGitHub({
-    async repositoryExists() {
-      return true;
+    async findRepository() {
+      return takenRepository;
+    },
+    async repositoryInstallationId() {
+      return 7;
     },
     async deleteRepository(_token: string, owner: string, name: string) {
       deletions.push(`${owner}/${name}`);
@@ -753,6 +768,97 @@ test("deletes and recreates only when the request says so by name", async () => 
 
   assert.equal(deletions.length, 1);
   assert.ok(calls.includes("create-repository"), "and then creates it again");
+});
+
+test("asks for access before deleting a repository Velvet is not installed on", async () => {
+  // A user token reaches every public repository, so setup can see one it has
+  // no say over. Attempting the deletion would earn a bare 403 that says
+  // nothing about what to do next.
+  const deletions: string[] = [];
+  const { client, calls } = successfulGitHub({
+    async findRepository() {
+      return takenRepository;
+    },
+    async repositoryInstallationId() {
+      return null;
+    },
+    async deleteRepository(_token: string, owner: string, name: string) {
+      deletions.push(`${owner}/${name}`);
+    },
+  });
+  const session = authenticatedSession();
+
+  await assert.rejects(
+    provisionVelvet({
+      session,
+      request: { ...normalizedRequest, replaceExistingRepository: true },
+      github: client,
+      onEvent: () => {},
+      operationId: () => "O".repeat(26),
+      sleep: async () => {},
+    }),
+    (error: unknown) =>
+      error instanceof SetupServiceError &&
+      error.code === "INSTALLATION_REQUIRED",
+  );
+
+  assert.deepEqual(deletions, []);
+  assert.ok(!calls.includes("create-repository"), "and creates nothing");
+  // Recorded so the installation somebody is sent to names this repository.
+  assert.deepEqual(session.provisioning?.replacing, {
+    id: takenRepository.id,
+    owner: takenRepository.owner,
+    ownerId: takenRepository.ownerId,
+    name: takenRepository.name,
+  });
+});
+
+test("keeps the agreement to replace across the installation it sends somebody to", async () => {
+  // Asking a second time for a decision already made teaches somebody to click
+  // through the one question in this product that must not be clicked through.
+  const deletions: string[] = [];
+  const session = authenticatedSession();
+  let installed = false;
+  const { client } = successfulGitHub({
+    async findRepository() {
+      return takenRepository;
+    },
+    async repositoryInstallationId() {
+      return installed ? 7 : null;
+    },
+    async deleteRepository(_token: string, owner: string, name: string) {
+      deletions.push(`${owner}/${name}`);
+    },
+  });
+
+  await assert.rejects(
+    provisionVelvet({
+      session,
+      request: { ...normalizedRequest, replaceExistingRepository: true },
+      github: client,
+      onEvent: () => {},
+      operationId: () => "O".repeat(26),
+      sleep: async () => {},
+    }),
+    (error: unknown) =>
+      error instanceof SetupServiceError &&
+      error.code === "INSTALLATION_REQUIRED",
+  );
+
+  installed = true;
+  await provisionVelvet({
+    session,
+    // The second request carries no agreement, because the visitor was sent to
+    // GitHub and back rather than asked again.
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    operationId: () => "O".repeat(26),
+    sleep: async () => {},
+  });
+
+  assert.deepEqual(deletions, ["example/status"]);
+  assert.equal(session.provisioning?.replacing, undefined);
 });
 
 test("writes an uploaded logo into the repository and names it in the configuration", async () => {

@@ -57,7 +57,8 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
         repositorySelection: "selected",
       }];
     },
-    async repositoryExists() { return false; },
+    async findRepository() { return null; },
+    async repositoryInstallationId() { return null; },
     async deleteRepository() {},
     async createRepository() { throw new Error("unused"); },
     async createInstallationToken() { throw new Error("unused"); },
@@ -459,7 +460,8 @@ test("returns safe repository and workflow recovery targets after setup fails", 
 test("explains missing installation and organization approval without claiming success", async () => {
   const github = githubClient({
     async listInstallations() { return []; },
-    async repositoryExists() { return false; },
+    async findRepository() { return null; },
+    async repositoryInstallationId() { return null; },
     async deleteRepository() {},
     async createRepository() {
       return {
@@ -533,7 +535,8 @@ test("uses a temporary installation only to create the repository, then offers r
             repositorySelection: installationMode,
           }];
     },
-    async repositoryExists() { return false; },
+    async findRepository() { return null; },
+    async repositoryInstallationId() { return null; },
     async deleteRepository() {},
     async createRepository() {
       return {
@@ -602,6 +605,60 @@ test("uses a temporary installation only to create the repository, then offers r
   assert.equal(session.installState, installationUrl.searchParams.get("state"));
 });
 
+test("sends somebody to the repository it is waiting for access to replace", async () => {
+  const github = githubClient({
+    async findRepository() {
+      return {
+        id: 4_242,
+        name: "status",
+        owner: "example",
+        ownerId: 255_022_500,
+        htmlUrl: "https://github.com/example/status",
+        defaultBranch: "main",
+      };
+    },
+    async repositoryInstallationId() { return null; },
+    async deleteRepository() {
+      throw new Error("The deletion must not be attempted without access.");
+    },
+    async createRepository() {
+      throw new Error("Nothing is created whilst the name is still taken.");
+    },
+  });
+  const { handler, sessions } = realProvisionHarness(github);
+  const browser = await authenticate(handler, sessions);
+
+  const response = await handler(
+    new Request(`${origin}/api/setup`, {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-velvet_session=${browser.cookie}`,
+        Origin: origin,
+        "Content-Type": "application/json",
+        "X-Velvet-CSRF": browser.csrfToken,
+      },
+      body: JSON.stringify({
+        ...JSON.parse(setupBody),
+        replaceExistingRepository: true,
+      }),
+    }),
+  );
+  const events = (await response.text())
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+
+  assert.equal(events.at(-1).type, "permission-required");
+  assert.equal(events.at(-1).access, "repository");
+  const installationUrl = new URL(events.at(-1).installationUrl);
+  // The existing repository, named so GitHub offers exactly it rather than
+  // asking somebody to find it in a list of their own.
+  assert.deepEqual(installationUrl.searchParams.getAll("repository_ids[]"), [
+    "4242",
+  ]);
+  assert.equal(installationUrl.searchParams.get("suggested_target_id"), "255022500");
+});
+
 test("rejects an installation id that GitHub did not grant to the authenticated user", async () => {
   let installationChecks = 0;
   const github = githubClient({
@@ -616,7 +673,8 @@ test("rejects an installation id that GitHub did not grant to the authenticated 
             repositorySelection: "selected",
           }];
     },
-    async repositoryExists() { return false; },
+    async findRepository() { return null; },
+    async repositoryInstallationId() { return null; },
     async deleteRepository() {},
     async createRepository() {
       return {
