@@ -77,7 +77,7 @@ function release(
     },
     releaseNotes: `# Velvet ${version}\n`,
     source: {
-      repository: "phranck/velvet-template",
+      repository: "phranck/velvet",
       commit: TEMPLATE_COMMIT,
       files: sources,
     },
@@ -97,7 +97,7 @@ function releases(entry: ManagedUpdateRelease): ManagedUpdateReleaseProvider {
 const LOCK = {
   schemaVersion: 1,
   installedVersion: "2.0.0",
-  template: { repository: "phranck/velvet-template", commit: TEMPLATE_COMMIT },
+  template: { repository: "phranck/velvet", commit: TEMPLATE_COMMIT },
   configurationSchemaVersion: 1,
   dataSchemaVersion: 1,
 };

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Velvet support
+    url: https://github.com/phranck/velvet/issues
+    about: Report problems with the monitor or status page.

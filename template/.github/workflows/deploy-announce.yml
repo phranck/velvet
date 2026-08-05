@@ -1,0 +1,119 @@
+# Application repositories may announce deploy_start and deploy_end events.
+# The service slug must match a service ID in velvet.yml.
+name: Deploy announce
+
+on:
+  repository_dispatch:
+    types: [deploy_start, deploy_end]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: velvet-status-data
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update deploy maintenance
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        with:
+          script: |
+            const type = context.payload.action;
+            const payload = context.payload.client_payload || {};
+            const service = String(payload.service || "Service")
+              .replace(/\s+/gu, " ")
+              .trim()
+              .slice(0, 128);
+            const slug = String(payload.slug || service)
+              .trim()
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "");
+            if (!service) {
+              core.setFailed("The deploy service name is required.");
+              return;
+            }
+            if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(slug) || slug.length > 64) {
+              core.setFailed("The deploy service slug is invalid.");
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const marker = `<!-- deploy-maintenance:${slug} -->`;
+
+            if (type === "deploy_start") {
+              const label = "maintenance";
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: label });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                try {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: label,
+                    color: "fbca04",
+                    description: "Velvet planned maintenance",
+                  });
+                } catch (createError) {
+                  if (createError.status !== 422) throw createError;
+                }
+              }
+              const requestedMinutes = Number(payload.minutes);
+              const minutes = Number.isFinite(requestedMinutes) && requestedMinutes > 0
+                ? Math.min(1440, Math.floor(requestedMinutes))
+                : 15;
+              const start = new Date();
+              const end = new Date(start.getTime() + minutes * 60000);
+              const body = [
+                "### Affected services and checks",
+                "",
+                `- ${service} (all checks) [${slug}/*]`,
+                "",
+                "### Starts at",
+                "",
+                start.toISOString(),
+                "",
+                "### Ends at",
+                "",
+                end.toISOString(),
+                "",
+                "### Summary",
+                "",
+                `Automated deploy in progress for **${service}**.`,
+                "",
+                marker,
+              ].join("\n");
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title: `[Maintenance] Deploying ${service}`,
+                labels: [label],
+                body,
+              });
+            } else {
+              const openIssues = await github.paginate(
+                github.rest.issues.listForRepo,
+                { owner, repo, state: "open", labels: "maintenance", per_page: 100 },
+              );
+              for (const issue of openIssues) {
+                if ((issue.body || "").includes(marker)) {
+                  await github.rest.issues.update({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    state: "closed",
+                  });
+                }
+              }
+            }
+
+            await github.rest.repos.createDispatchEvent({
+              owner,
+              repo,
+              event_type: "velvet-monitor",
+            });

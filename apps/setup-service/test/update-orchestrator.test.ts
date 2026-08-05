@@ -119,7 +119,7 @@ function release(
     releaseType: "feature",
     automaticInstallEligible: false,
     template: {
-      repository: "phranck/velvet-template",
+      repository: "phranck/velvet",
       commit: templateCommit,
     },
     compatibility: {
@@ -165,7 +165,7 @@ const previousLock: VelvetVersionLock = {
   schemaVersion: 1,
   installedVersion: "2.0.0",
   template: {
-    repository: "phranck/velvet-template",
+    repository: "phranck/velvet",
     commit: "b".repeat(40),
   },
   configurationSchemaVersion: 1,

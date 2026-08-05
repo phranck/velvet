@@ -87,7 +87,7 @@ function release(version: string, commit: string, overrides: Record<string, unkn
       dataMigrationRequired: false,
     },
     releaseNotes: `# Velvet ${version}\n`,
-    source: { repository: "phranck/velvet-template", commit, files: sources },
+    source: { repository: "phranck/velvet", commit, files: sources },
     ...overrides,
   });
   assert.equal(built.success, true, `release ${version} must be publishable`);
@@ -161,7 +161,7 @@ function setupClient(repository: Repository): GitHubSetupClient {
     },
     async repositoryExists() { return false; },
     async deleteRepository() {},
-    async createRepositoryFromTemplate() {
+    async createRepository() {
       // GitHub copies the template verbatim, placeholders included.
       for (const [path, content] of Object.entries(sources)) {
         repository.files.set(path, content);
@@ -400,7 +400,7 @@ test("refuses to touch a repository whose default branch holds generated data", 
     `${JSON.stringify({
       schemaVersion: 1,
       installedVersion: "2.0.0",
-      template: { repository: "phranck/velvet-template", commit: TEMPLATE_COMMIT_ONE },
+      template: { repository: "phranck/velvet", commit: TEMPLATE_COMMIT_ONE },
       configurationSchemaVersion: 1,
       dataSchemaVersion: 1,
     })}\n`,

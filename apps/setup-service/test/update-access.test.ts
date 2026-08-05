@@ -12,7 +12,7 @@ const LOCK = {
   schemaVersion: 1,
   installedVersion: "2.0.0",
   template: {
-    repository: "phranck/velvet-template",
+    repository: "phranck/velvet",
     commit: "a".repeat(40),
   },
   configurationSchemaVersion: 1,

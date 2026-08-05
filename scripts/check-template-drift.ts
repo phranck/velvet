@@ -1,16 +1,13 @@
 /**
  * Reports whether the Velvet an installation receives can read what Velvet writes.
  *
- * An installation runs two halves that are versioned separately. The setup
- * service writes `velvet.yml` from this repository's contracts, and the
- * workflows it installs run the monitor from whatever commit they pin. A pin
- * older than the configuration contract refuses a field the service writes, and
- * the installation's first run fails with `INVALID_CONFIGURATION`.
+ * The setup service writes `velvet.yml` from this repository's contracts, and
+ * the workflows it installs run the monitor from whatever revision they pin. A
+ * pin older than the configuration contract refuses a field the service writes,
+ * and the installation's first run fails with `INVALID_CONFIGURATION`.
  *
- * Those workflows arrive from two places, so both are judged. A new repository
- * is created from `phranck/velvet-template`, and the release artefact's own
- * copy of the same files is written over it whenever the installation token may
- * write workflows.
+ * There is one place to judge. An installation receives the release artefact's
+ * files and nothing else, and the artefact pins the version it was cut as.
  *
  * The invariant is narrow and worth stating exactly: every configuration this
  * repository can produce has to validate against the contracts each pinned
@@ -18,28 +15,25 @@
  * contracts rather than by comparing version numbers, because a version number
  * says nothing about which fields a schema accepts.
  *
- * It reports rather than repairs. Moving the template's pin is a change to
- * another repository and belongs under a person's hand, and a check that
- * silently corrected the drift would hide how often it happens.
+ * It reports rather than repairs, because a check that corrected the drift
+ * silently would hide how often it happens.
  */
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
-/** Where the workflows an installation runs are published from. */
-const TEMPLATE_REPOSITORY = "phranck/velvet-template";
-/** The workflow that pins the monitor, and the shape of the pin inside it. */
-const PINNING_WORKFLOW = ".github/workflows/velvet.yml";
-const PIN = /phranck\/velvet\/actions\/monitor@([a-f0-9]{40})/u;
 /** The artefact the setup service installs and updates from. */
 const ARTEFACT = "apps/setup-service/src/velvet-release.generated.ts";
 /**
  * Any Velvet action inside the artefact, whether the monitor or the site build
- * at the repository root. The negative lookahead keeps `phranck/velvet-template`
- * out, since every workflow names it in its repository guard.
+ * at the repository root, and whether it names a tag or a commit.
+ *
+ * Anchored on `uses:`, because the file also opens with a comment naming the
+ * revision it was cut from, and that is a provenance note rather than something
+ * an installation runs.
  */
 const ARTEFACT_PIN =
-  /phranck\/velvet(?![-\w])(?:\\?\/[^@\s\\"]+)?@([a-f0-9]{40})/gu;
+  /uses:\s*phranck\/velvet(?![-\w])(?:\\?\/[^@\s\\"]+)?@([^\s\\"']+)/gu;
 
 /** A place an installation's Velvet pin comes from. */
 interface Source {
@@ -72,28 +66,6 @@ function run(command: readonly string[], cwd: string): string | null {
 }
 
 /**
- * Reads the commit the template pins the monitor to.
- *
- * Read from the published file rather than from a checkout, because what an
- * installation receives is what GitHub serves and not what a clone happens to
- * have.
- *
- * @returns The forty-character commit, or a reason it could not be read.
- */
-async function templatePin(): Promise<string | { reason: string }> {
-  const url = `https://raw.githubusercontent.com/${TEMPLATE_REPOSITORY}/main/${PINNING_WORKFLOW}`;
-  let response: Response;
-  try {
-    response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
-  } catch (error) {
-    return { reason: `${url} could not be reached: ${String(error)}` };
-  }
-  if (!response.ok) return { reason: `${url} answered ${response.status}` };
-  const pin = PIN.exec(await response.text());
-  return pin ? pin[1]! : { reason: `${PINNING_WORKFLOW} pins no monitor action` };
-}
-
-/**
  * Reads the revision the compiled release artefact pins its actions to.
  *
  * The artefact holds the workflow sources as JSON string literals, so the pins
@@ -117,7 +89,7 @@ async function artefactPin(): Promise<string | { reason: string }> {
   if (pins.size > 1) {
     return {
       reason: `it pins ${pins.size} different Velvet revisions: ${[...pins]
-        .map((pin) => pin.slice(0, 12))
+        .map((pin) => pin)
         .join(", ")}`,
     };
   }
@@ -191,10 +163,15 @@ async function judge(source: Source, configuration: unknown): Promise<Outcome> {
   if (typeof source.pin !== "string") {
     return { kind: "unreachable", reason: source.pin.reason };
   }
-  if (run(["git", "cat-file", "-e", `${source.pin}^{commit}`], repositoryRoot) === null) {
+  // A pin names the version tag the artefact was cut as. Between cutting one
+  // and publishing it the tag still points at the release before, which is a
+  // revision this same check passed for, so judging it says nothing wrong. A
+  // tag that does not exist at all is a pin nobody can resolve, and that is
+  // worth reporting.
+  if (run(["git", "rev-parse", "--verify", `${source.pin}^{commit}`], repositoryRoot) === null) {
     return {
       kind: "unreachable",
-      reason: `${source.pin} is not a commit in this repository`,
+      reason: `${source.pin} resolves to nothing in this repository`,
     };
   }
   const refused = await validateAgainst(source.pin, configuration);
@@ -205,13 +182,6 @@ async function judge(source: Source, configuration: unknown): Promise<Outcome> {
 
 const configuration = await currentConfiguration();
 const sources: Source[] = [
-  {
-    name: `${TEMPLATE_REPOSITORY}/${PINNING_WORKFLOW}`,
-    // Somebody else's outage is not this repository's drift, so an unreachable
-    // template reports and passes.
-    fatalWhenUnreadable: false,
-    pin: await templatePin(),
-  },
   { name: ARTEFACT, fatalWhenUnreadable: true, pin: await artefactPin() },
 ];
 
@@ -233,7 +203,7 @@ for (const source of sources) {
   if (outcome.kind === "drifted") {
     failed = true;
     console.error(
-      `${source.name} pins ${outcome.pin.slice(0, 12)}, whose contracts refuse a configuration this repository can write.`,
+      `${source.name} pins ${outcome.pin}, whose contracts refuse a configuration this repository can write.`,
     );
     console.error(JSON.stringify(outcome.errors, null, 2));
     continue;
@@ -242,16 +212,13 @@ for (const source of sources) {
   accepted.set(outcome.pin, [...(accepted.get(outcome.pin) ?? []), source.name]);
 }
 
-// Both are right on their own and still disagree. Which Velvet an installation
-// then runs depends on whether setup could write workflow files, which is not
-// something a release should leave to chance.
+// One artefact naming two revisions would give an installation workflows that
+// disagree with each other, and the run that fails is whichever is behind.
 if (accepted.size > 1) {
   failed = true;
-  console.error(
-    "The two places an installation receives its workflows from pin different Velvet revisions:",
-  );
+  console.error("The artefact pins more than one Velvet revision:");
   for (const [pin, where] of accepted) {
-    console.error(`  ${pin.slice(0, 12)} in ${where.join(", ")}`);
+    console.error(`  ${pin} in ${where.join(", ")}`);
   }
 }
 
@@ -260,13 +227,13 @@ if (failed) {
     "\nAn installation created now could fail its first run with INVALID_CONFIGURATION.",
   );
   console.error(
-    `Move the pin in ${TEMPLATE_REPOSITORY}/${PINNING_WORKFLOW} to a commit whose contracts accept it, then cut a new artefact so the two agree.`,
+    `Raise the pin in template/.github/workflows and cut a new artefact from ${ARTEFACT}.`,
   );
   process.exit(1);
 }
 
 for (const [pin, where] of accepted) {
   console.log(
-    `${where.join(" and ")} pin ${pin.slice(0, 12)}, whose contracts accept everything this repository can write.`,
+    `${where.join(" and ")} pin ${pin}, whose contracts accept everything this repository can write.`,
   );
 }

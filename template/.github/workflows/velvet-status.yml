@@ -1,0 +1,40 @@
+name: Velvet status
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "velvet.yml"
+      - ".github/workflows/velvet-status.yml"
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [velvet-monitor]
+  issues:
+    types: [opened, closed, reopened, edited, labeled, unlabeled]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: velvet-status-data
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    if: (github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000') && (github.event_name != 'issues' || github.event.label.name == 'maintenance' || contains(github.event.issue.labels.*.name, 'maintenance'))
+    name: Check services
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out status repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Publish Velvet status
+        uses: phranck/velvet/actions/monitor@v1
+        with:
+          mode: status
+        # Map only explicitly configured header secrets here, for example:
+        # env:
+        #   API_HEALTH_TOKEN: ${{ secrets.API_HEALTH_TOKEN }}
+

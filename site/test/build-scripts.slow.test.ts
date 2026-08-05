@@ -713,7 +713,7 @@ test("carries the installation serial from the lock into the generated config", 
     `${JSON.stringify({
       schemaVersion: 1,
       installedVersion: "2.0.0",
-      template: { repository: "phranck/velvet-template", commit: "a".repeat(40) },
+      template: { repository: "phranck/velvet", commit: "a".repeat(40) },
       configurationSchemaVersion: 1,
       dataSchemaVersion: 1,
       serial: 412,

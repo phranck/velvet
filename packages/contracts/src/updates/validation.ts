@@ -19,7 +19,30 @@ import type {
 
 type UnknownRecord = Record<string, unknown>;
 
-export const VELVET_TEMPLATE_REPOSITORY = "phranck/velvet-template" as const;
+/**
+ * Where the files an installation receives are published from.
+ *
+ * Velvet's own repository, because that is where they are written and
+ * reviewed. They used to live in a repository of their own, which meant two
+ * places stated what an installation gets and nothing made them agree.
+ */
+export const VELVET_TEMPLATE_REPOSITORY = "phranck/velvet" as const;
+
+/**
+ * Files a new installation is given once and then owns.
+ *
+ * Written when the repository is created and never touched again, which is
+ * what separates them from {@link MANAGED_TEMPLATE_PATHS}. A README somebody
+ * rewrote, or a licence they changed, is theirs; an update that replaced
+ * either would be taking back something Velvet gave them.
+ */
+export const INITIAL_TEMPLATE_PATHS = [
+  ".gitattributes",
+  "LICENSE",
+  "README.md",
+] as const;
+
+export type InitialTemplatePath = (typeof INITIAL_TEMPLATE_PATHS)[number];
 
 export const MANAGED_TEMPLATE_PATHS = [
   ".github/ISSUE_TEMPLATE/config.yml",

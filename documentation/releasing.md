@@ -6,9 +6,8 @@ Velvet states its version once, in the root `package.json`. Everything else is w
 
 - [ ] Raise the version in the root `package.json`, then run `bun run version:sync`. That writes the workspace manifests and reprints the board backdrop's silkscreen.
 - [ ] Write the entry for the new version at the top of `CHANGELOG.md`, and the update notes in `apps/setup-service/scripts/release-notes.md`. Both are checked against the version, because the first is what the GitHub release is published from and the second is what the Configurator shows.
-- [ ] Move the Velvet pins in `phranck/velvet-template` to a commit whose contracts accept what the setup service writes, through that repository's own pull request.
 - [ ] Cut the release artefact from `apps/setup-service` with `bun run scripts/build-release.ts --type <security|fix|feature> --notes scripts/release-notes.md`, and commit the regenerated `src/velvet-release.generated.ts`. Add `--automatic` only for a migration-free security release, which is the one category eligible for unattended installation.
-- [ ] Run `bun scripts/check-template-drift.ts`. It judges the template and the artefact together, and passing means an installation receives a Velvet that can read what Velvet writes whichever of the two it gets its workflows from.
+- [ ] Run `bun scripts/check-template-drift.ts`. It builds the contracts of the revision the artefact pins and validates a configuration against them, so passing means an installation receives a Velvet that can read what Velvet writes.
 
 ## Verify
 

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import {
   CONFIGURATION_SCHEMA_VERSION,
   CONTRACT_SCHEMA_VERSION,
+  INITIAL_TEMPLATE_PATHS,
   MANAGED_TEMPLATE_PATHS,
   VELVET_TEMPLATE_REPOSITORY,
   validateVelvetReleaseManifest,
@@ -34,6 +35,7 @@ const outputPath = resolve(
   import.meta.dirname,
   "../src/velvet-release.generated.ts",
 );
+const repositoryRoot = resolve(import.meta.dirname, "../../..");
 
 type ReleaseType = (typeof RELEASE_TYPES)[number];
 
@@ -73,35 +75,56 @@ async function declaredVersion(): Promise<string> {
   return manifest.version;
 }
 
-async function templateHeadCommit(): Promise<string> {
-  const response = await fetch(
-    `https://api.github.com/repos/${VELVET_TEMPLATE_REPOSITORY}/commits/HEAD`,
-    { headers: { Accept: "application/vnd.github+json" } },
-  );
-  if (!response.ok) {
-    fail(`Could not read the template head commit: ${response.status}`);
+/**
+ * The commit these files are cut from, which is this repository's own head.
+ *
+ * They live here now, so the revision an installation is built from is the
+ * revision of the code that builds it. There is no second repository whose
+ * head could be something else.
+ */
+function sourceCommit(): string {
+  const result = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
+    cwd: repositoryRoot,
+    stdout: "pipe",
+  });
+  const sha = result.success ? result.stdout.toString().trim() : "";
+  if (!/^[a-f0-9]{40}$/u.test(sha)) {
+    fail("Could not read this repository's head commit.");
   }
-  const body = (await response.json()) as { sha?: unknown };
-  if (typeof body.sha !== "string" || !/^[a-f0-9]{40}$/u.test(body.sha)) {
-    fail("The template head commit response was invalid.");
-  }
-  return body.sha;
+  return sha;
 }
 
-async function templateSources(
-  commit: string,
-): Promise<Record<string, string>> {
+/**
+ * Reads the files an installation is given, from the directory beside the code.
+ *
+ * The workflows name the supported major tag, `@v1`, because a pin to a commit
+ * of this repository written inside this repository is a number nobody can keep
+ * current. Cutting a release replaces it with the version being published, so
+ * an installation runs the exact revision it was given rather than whatever the
+ * major tag points at later.
+ *
+ * @param version - The version being cut, which the pins are rewritten to.
+ * @returns Every path an installation receives, mapped to its contents.
+ */
+async function templateSources(version: string): Promise<Record<string, string>> {
+  const paths = [
+    ...MANAGED_TEMPLATE_PATHS.filter((path) => path !== "velvet.lock.json"),
+    ...INITIAL_TEMPLATE_PATHS,
+  ];
   const entries = await Promise.all(
-    MANAGED_TEMPLATE_PATHS.filter((path) => path !== "velvet.lock.json").map(
-      async (path) => {
-        const url = `https://raw.githubusercontent.com/${VELVET_TEMPLATE_REPOSITORY}/${commit}/${path}`;
-        const response = await fetch(url);
-        if (!response.ok) {
-          fail(`Could not read ${path} at ${commit}: ${response.status}`);
-        }
-        return [path, await response.text()] as const;
-      },
-    ),
+    paths.map(async (path) => {
+      const file = resolve(repositoryRoot, "template", path);
+      const contents = await readFile(file, "utf8").catch(() => {
+        fail(`Could not read template/${path}.`);
+      });
+      return [
+        path,
+        (contents as string).replaceAll(
+          /(phranck\/velvet(?:\/[^@\s]+)?)@v\d+(?![\w.])/gu,
+          `$1@v${version}`,
+        ),
+      ] as const;
+    }),
   );
   return Object.fromEntries(entries);
 }
@@ -157,7 +180,13 @@ async function currentArtefact(): Promise<VelvetReleaseManifest | undefined> {
  */
 function recutPredecessor(
   artefact: VelvetReleaseManifest,
-): VelvetReleaseManifest {
+): VelvetReleaseManifest | undefined {
+  // A first release records itself as its own minimum, having had nothing to
+  // move forward from. Recutting one therefore has no predecessor either,
+  // rather than a predecessor that happens to be itself.
+  if (artefact.compatibility.minimumInstalledVersion === artefact.version) {
+    return undefined;
+  }
   if (
     artefact.compatibility.configurationMigrationRequired ||
     artefact.compatibility.dataMigrationRequired
@@ -180,7 +209,7 @@ if (!RELEASE_TYPES.includes(releaseTypeInput as ReleaseType)) {
 const releaseType = releaseTypeInput as ReleaseType;
 const notesPath = argument("notes") ?? fail("Pass --notes <path to markdown>.");
 const releaseNotes = await readFile(resolve(process.cwd(), notesPath), "utf8");
-const commit = argument("commit") ?? (await templateHeadCommit());
+const commit = argument("commit") ?? sourceCommit();
 const current = await currentArtefact();
 /**
  * What this release has to move forward from.
@@ -194,7 +223,7 @@ const previous =
   current === undefined || current.version !== version
     ? current
     : recutPredecessor(current);
-const sources = await templateSources(commit);
+const sources = await templateSources(version);
 
 const built = buildReleaseManifest({
   version,

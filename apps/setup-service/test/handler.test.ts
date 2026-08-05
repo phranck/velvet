@@ -59,7 +59,7 @@ function githubClient(overrides: Partial<GitHubSetupClient> = {}): GitHubSetupCl
     },
     async repositoryExists() { return false; },
     async deleteRepository() {},
-    async createRepositoryFromTemplate() { throw new Error("unused"); },
+    async createRepository() { throw new Error("unused"); },
     async createInstallationToken() { throw new Error("unused"); },
     async deleteInstallation() { throw new Error("unused"); },
     async getConfigurationSha() { throw new Error("unused"); },
@@ -461,7 +461,7 @@ test("explains missing installation and organization approval without claiming s
     async listInstallations() { return []; },
     async repositoryExists() { return false; },
     async deleteRepository() {},
-    async createRepositoryFromTemplate() {
+    async createRepository() {
       return {
         id: 123_456_789,
         name: "status",
@@ -535,7 +535,7 @@ test("uses a temporary installation only to create the repository, then offers r
     },
     async repositoryExists() { return false; },
     async deleteRepository() {},
-    async createRepositoryFromTemplate() {
+    async createRepository() {
       return {
         id: 123_456_789,
         name: "status",
@@ -618,7 +618,7 @@ test("rejects an installation id that GitHub did not grant to the authenticated 
     },
     async repositoryExists() { return false; },
     async deleteRepository() {},
-    async createRepositoryFromTemplate() {
+    async createRepository() {
       return {
         id: 123_456_789,
         name: "status",

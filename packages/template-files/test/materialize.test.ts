@@ -122,7 +122,7 @@ function manifest(files: VelvetManagedFile[]): VelvetReleaseManifest {
     releaseType: "feature",
     automaticInstallEligible: false,
     template: {
-      repository: "phranck/velvet-template",
+      repository: "phranck/velvet",
       commit: templateCommit,
     },
     compatibility: {
@@ -259,7 +259,7 @@ test("generates a stable installed-version lock from the release", () => {
       schemaVersion: 1,
       installedVersion: "2.0.0",
       template: {
-        repository: "phranck/velvet-template",
+        repository: "phranck/velvet",
         commit: templateCommit,
       },
       configurationSchemaVersion: 1,

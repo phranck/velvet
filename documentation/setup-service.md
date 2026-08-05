@@ -15,7 +15,7 @@ bun run scripts/build-release.ts --type <security|fix|feature> \
 
 The version is not passed here. It comes from the root `package.json`, which is the one place Velvet states it, so an artefact cannot be cut against a number nobody decided. Raise it there first and run `bun run version:sync` from the repository root.
 
-The tool reads the current head of `phranck/velvet-template`, or an explicit `--commit`, downloads every Velvet-owned path at that exact revision, and hands the result to the shared publication rules. It also reads the artefact already in the repository and uses it as the predecessor, so forward versioning, release classification, and schema-migration flags are enforced automatically. A version that goes backwards or a feature published as a fix cannot be generated at all.
+The tool reads the files from `template/` in this repository, records the commit they are cut from, and hands the result to the shared publication rules. The workflows there name the supported major tag, and cutting a release rewrites that to the version being published, so an installation runs the exact revision it was given. It also reads the artefact already in the repository and uses it as the predecessor, so forward versioning, release classification, and schema-migration flags are enforced automatically. A version that goes backwards or a feature published as a fix cannot be generated at all.
 
 Add `--automatic` only for a migration-free security release, which is the sole category eligible for unattended installation.
 

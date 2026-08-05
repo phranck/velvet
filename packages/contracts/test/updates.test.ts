@@ -18,7 +18,7 @@ const validLock = {
   schemaVersion: 1,
   installedVersion: "2.0.0",
   template: {
-    repository: "phranck/velvet-template",
+    repository: "phranck/velvet",
     commit: templateCommit,
   },
   configurationSchemaVersion: 1,
@@ -31,7 +31,7 @@ const validManifest = {
   releaseType: "security",
   automaticInstallEligible: true,
   template: {
-    repository: "phranck/velvet-template",
+    repository: "phranck/velvet",
     commit: templateCommit,
   },
   compatibility: {

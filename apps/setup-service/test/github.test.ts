@@ -122,11 +122,12 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     token: "installation-token",
     canWriteWorkflows: true,
   });
-  const repository = await client.createRepositoryFromTemplate(
+  const repository = await client.createRepository(
     "user-token",
     "example",
     "status",
     "private",
+    true,
   );
   assert.equal(repository.id, 99);
   assert.equal(repository.ownerId, 255_022_500);
@@ -168,15 +169,22 @@ test("restricts installation tokens and repository changes to the Velvet setup f
   });
   assert.equal(
     requests[1]!.url,
-    "https://api.github.com/repos/phranck/velvet-template/generate",
+    "https://api.github.com/user/repos",
   );
   // Asked for privately above, and asked of GitHub privately here. The choice
   // reaches the request rather than being decided in the service.
+  //
+  // `auto_init` is what gives the new repository a default branch, which the
+  // write that follows needs a parent on. Issues are on because incidents and
+  // maintenance are GitHub Issues; the wiki and projects are not part of Velvet
+  // and are left off rather than created and ignored.
   assert.deepEqual(await requests[1]!.json(), {
-    owner: "example",
     name: "status",
-    include_all_branches: false,
     private: true,
+    auto_init: true,
+    has_issues: true,
+    has_wiki: false,
+    has_projects: false,
   });
   assert.equal(
     requests[2]!.url,
@@ -481,7 +489,7 @@ test("creates a public repository when the request asks for one", async () => {
     },
   });
 
-  await client.createRepositoryFromTemplate("user-token", "example", "status", "public");
+  await client.createRepository("user-token", "example", "status", "public", true);
 
   assert.equal((await requests[0]!.json()).private, false);
 });

@@ -70,7 +70,7 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
     async listInstallations() { throw new Error("unused"); },
     async repositoryExists() { return false; },
     async deleteRepository() {},
-    async createRepositoryFromTemplate() {
+    async createRepository() {
       calls.push("create-repository");
       return {
         id: 99,
@@ -307,7 +307,7 @@ test("maps a GitHub rate limit to a safe retryable setup error", async () => {
   const { client } = successfulGitHub({
     async repositoryExists() { return false; },
     async deleteRepository() {},
-    async createRepositoryFromTemplate() {
+    async createRepository() {
       throw new GitHubApiError(
         new Response(null, { status: 403, headers: { "Retry-After": "60" } }),
       );
@@ -461,7 +461,7 @@ test("writes a version lock recording the release the installation starts on", a
   const parsed = parseVelvetVersionLock(lock.content);
   assert.equal(parsed.success, true);
   if (!parsed.success) return;
-  assert.equal(parsed.data.template.repository, "phranck/velvet-template");
+  assert.equal(parsed.data.template.repository, "phranck/velvet");
   assert.match(parsed.data.template.commit, /^[a-f0-9]{40}$/u);
   assert.equal(parsed.data.schemaVersion, 1);
   assert.equal(
