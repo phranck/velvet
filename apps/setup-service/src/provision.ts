@@ -410,6 +410,9 @@ export async function provisionVelvet(
         statusPageName: input.request.configuration.statusPage.name,
         url: installationUrl,
         ...(customDomain ? { customDomain } : {}),
+        // From the configuration this setup has just written, so a page that
+        // consented is in the gallery as soon as it is live.
+        listed: configuration.gallery?.listed === true,
       });
       if (claimed !== undefined) state.serial = claimed;
       // Written a second time, because the lock went in at the
