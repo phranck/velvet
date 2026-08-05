@@ -118,10 +118,7 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     },
   });
 
-  assert.deepEqual(await client.createInstallationToken(7, 99), {
-    token: "installation-token",
-    canWriteWorkflows: true,
-  });
+  assert.equal(await client.createInstallationToken(7, 99), "installation-token");
   const repository = await client.createRepository(
     "user-token",
     "example",
@@ -511,11 +508,7 @@ test("carries a stateless installation token through unchanged", async () => {
 
   const issued = await client.createInstallationToken(7, 99);
 
-  assert.equal(
-    issued.token,
-    token,
-    "nothing truncates or rewrites a token this long",
-  );
+  assert.equal(issued, token, "nothing truncates or rewrites a token this long");
   assert.equal(requests.length, 1);
 });
 
@@ -537,6 +530,40 @@ test("sends a stateless token whole in the Authorization header", async () => {
   await client.getConfigurationSha(token, "example", "status");
 
   assert.equal(seen[0], `Bearer ${token}`);
+});
+
+test("asks once for the token setup needs and does not settle for less", async () => {
+  // GitHub refuses a token asking for more than the App was granted. Minting a
+  // lesser one instead left a repository with a configuration and a version
+  // lock, no workflows, and therefore nothing that monitors or publishes.
+  const requests: Request[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async (request) => {
+      requests.push(request.clone());
+      return Response.json(
+        { message: "Not accessible by integration" },
+        { status: 422 },
+      );
+    },
+  });
+
+  await assert.rejects(
+    () => client.createInstallationToken(7, 99),
+    (error: unknown) =>
+      error instanceof GitHubApiError && error.status === 422,
+  );
+  assert.equal(requests.length, 1, "one attempt, not a second with less");
+  assert.deepEqual((await requests[0]!.json()).permissions, {
+    actions: "write",
+    administration: "write",
+    contents: "write",
+    pages: "write",
+    workflows: "write",
+  });
 });
 
 test("creates a public repository when the request asks for one", async () => {

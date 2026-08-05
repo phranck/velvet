@@ -178,7 +178,7 @@ function setupClient(repository: Repository): GitHubSetupClient {
       };
     },
     async createInstallationToken() {
-      return { token: "setup-token", canWriteWorkflows: true };
+      return "setup-token";
     },
     async deleteInstallation() {},
     async getConfigurationSha() {

@@ -94,7 +94,7 @@ function successfulGitHub(overrides: Partial<GitHubSetupClient> = {}) {
     },
     async createInstallationToken() {
       calls.push("create-installation-token");
-      return { token: "installation-token", canWriteWorkflows: true };
+      return "installation-token";
     },
     async deleteInstallation() { calls.push("delete-installation"); },
     async repositoryReadable() {
@@ -595,34 +595,32 @@ test("does not rewrite the version lock when a partial setup is retried", async 
   );
 });
 
-test("still completes setup when the app cannot write workflow files", async () => {
-  const session = authenticatedSession();
+test("fails rather than build half a repository the token cannot finish", async () => {
+  // GitHub refuses a token asking for more than the App was granted. Setup
+  // used to mint a lesser one and carry on, which left a repository holding a
+  // configuration and a version lock, no workflows, and therefore no
+  // monitoring and no page. The failure only surfaced two steps later, as a
+  // 404 from the workflow dispatch.
   const written: { path: string; content: string }[] = [];
-  const { client, calls } = successfulGitHub({
+  const { client } = successfulGitHub({
     async createInstallationToken() {
-      calls.push("create-installation-token");
-      return { token: "installation-token", canWriteWorkflows: false };
+      throw new GitHubApiError(new Response(null, { status: 422 }));
     },
     async writeManagedFiles(_token, _owner, _repository, files) {
-      calls.push("write-managed-files");
       written.push(...files);
     },
   });
 
-  const result = await provisionVelvet({
-    session,
-    request: normalizedRequest,
-    github: client,
-    onEvent: () => {},
-    sleep: async () => {},
-  });
-
-  assert.equal(result.type, "success");
-  assert.deepEqual(
-    written.map((file) => file.path),
-    ["velvet.lock.json"],
-    "only the lock is written, because a workflow write would be refused",
+  await assert.rejects(
+    provisionVelvet({
+      session: authenticatedSession(),
+      request: normalizedRequest,
+      github: client,
+      onEvent: () => {},
+      sleep: async () => {},
+    }),
   );
+  assert.deepEqual(written, [], "nothing is written into it");
 });
 
 test("records the claimed serial in the version lock", async () => {
