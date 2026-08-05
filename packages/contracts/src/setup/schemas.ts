@@ -35,6 +35,10 @@ export const SetupErrorCodeSchema = Type.Union([
   // the repository for a reason setup cannot name. This one is answerable: the
   // name is taken, and whoever is installing can free it or choose another.
   Type.Literal("REPOSITORY_EXISTS"),
+  // The name is taken by a repository Velvet has no say over, so the offer to
+  // replace it cannot be honoured. Whoever is installing deletes it themselves
+  // or picks another name.
+  Type.Literal("REPOSITORY_NOT_DELETABLE"),
   Type.Literal("REPOSITORY_CONFLICT"),
   Type.Literal("GITHUB_API_FAILED"),
   Type.Literal("CONFIGURATION_COMMIT_FAILED"),

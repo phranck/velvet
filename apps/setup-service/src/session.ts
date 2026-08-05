@@ -39,28 +39,6 @@ export interface SetupServerSession {
       name: string;
       htmlUrl: string;
     };
-    /**
-     * A repository already holding the chosen name, which setup is to replace.
-     *
-     * Present whilst Velvet still lacks the access to delete it, so the
-     * installation it sends somebody to can name the repository they are being
-     * asked to grant it on.
-     */
-    replacing?: {
-      id: number;
-      owner: string;
-      ownerId: number;
-      name: string;
-    };
-    /**
-     * Whether somebody has agreed to that repository being deleted.
-     *
-     * Kept here because granting the access takes them to GitHub and back, and
-     * asking a second time for a decision they have already made teaches them
-     * to click through the one question in this product that must not be
-     * clicked through.
-     */
-    replaceApproved?: boolean;
     configurationCommitted?: boolean;
     versionLockCommitted?: boolean;
     pagesEnabled?: boolean;
