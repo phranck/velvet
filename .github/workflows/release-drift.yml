@@ -1,0 +1,47 @@
+# Reports whether this repository holds code that no installation runs.
+#
+# An installation builds its page with `phranck/velvet@<version>` and checks its
+# services with `phranck/velvet/actions/monitor@<version>`, both pinned to a
+# tag. A fix merged here reaches nobody until that tag moves, and nothing said
+# so: the same fix was merged twice in one evening whilst the installation went
+# on failing on the code the tag still pointed at.
+#
+# This deliberately does not move the tag. Moving it publishes, and publishing
+# belongs under a person's hand, following documentation/releasing.md.
+#
+# It reads no event payload, so there is nothing here an outsider can write into
+# a command.
+name: Release drift
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Once a day, so a release left uncut is still reported when nobody is
+    # merging.
+    - cron: "17 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: velvet-release-drift
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      # Tags as well as history, because the comparison is against the tag
+      # installations run.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - name: Compare the published tag against this repository
+        run: bun run --filter @velvet/site release-drift

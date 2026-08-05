@@ -2,6 +2,12 @@
 
 Velvet states its version once, in the root `package.json`. Everything else is written from it, and `bun run test:version` fails when any place is left behind, so the first step below is what makes the rest of the release consistent rather than something to remember.
 
+## When a release is due
+
+An installation runs Velvet from a tag. It builds its page with `phranck/velvet@<version>` and checks its services with `phranck/velvet/actions/monitor@<version>`. Merging a fix into `main` therefore changes nothing for anybody until that tag moves.
+
+A fix to code an installation runs is finished when it is tagged, not when it is merged. `bun run --filter @velvet/site release-drift` answers whether anything is waiting: it builds the status page, reads back which files went into it, and compares them against the tag. The `Release drift` workflow runs the same check on every push to `main` and once a day, so a release left uncut is loud rather than invisible.
+
 ## Prepare
 
 - [ ] Raise the version in the root `package.json`, then run `bun run version:sync`. That writes the workspace manifests and reprints the board backdrop's silkscreen.
