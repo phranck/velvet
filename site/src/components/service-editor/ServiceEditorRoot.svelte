@@ -313,6 +313,9 @@
     color: var(--service-editor-accent, #8ca5ff);
     font-size: calc(var(--service-editor-title-font-size, 1.35rem) * 1.1);
     line-height: 1;
+    /* A pixel down. Box-centred already, but a glyph carries its weight above
+       its own middle and reads as sitting high beside a line of type. */
+    transform: translateY(1px);
   }
   .service-title strong {
     overflow: hidden;
