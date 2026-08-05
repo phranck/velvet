@@ -72,6 +72,8 @@
    * and can no longer see.
    */
   let logoPreview = $state<string | null>(null);
+  /** The chosen file's name, shown beside the button that chose it. */
+  let logoName = $state<string | null>(null);
   let submitting = $state(false);
   let progress = $state<SetupProgressStage[]>([]);
   let resultMessage = $state("");
@@ -136,6 +138,7 @@
     if (!file) {
       delete draft.logo;
       logoPreview = null;
+      logoName = null;
       return;
     }
     if (!LOGO_TYPES.includes(file.type)) {
@@ -159,6 +162,7 @@
       content: btoa(binary),
     };
     logoPreview = `data:${file.type};base64,${draft.logo.content}`;
+    logoName = file.name;
   }
 
   /**
@@ -572,15 +576,31 @@
             </small>
             {#if errors.customDomain}<small class="field-error">{errors.customDomain}</small>{/if}
           </label>
-          <label class="full-width">
-            <span>Logo (optional)</span>
+          <!--
+            A field rather than a label, because the control it holds is opened
+            by a label of its own. The browser's own file control draws a system
+            button and its own wording, which is the one thing on this page that
+            does not look like the rest of it.
+          -->
+          <div class="field full-width">
+            <span id="logo-label">Logo (optional)</span>
             <input
+              id="logo-file"
+              class="file-input"
               type="file"
               accept="image/svg+xml,image/png,image/webp,image/jpeg"
               onchange={chooseLogo}
+              aria-labelledby="logo-label"
               aria-describedby="logo-help"
               aria-invalid={errors.logo ? "true" : undefined}
             />
+            <div class="file-row">
+              <label class="velvet-button velvet-button--secondary" for="logo-file">
+                <i class="ph-duotone ph-upload-simple" aria-hidden="true"></i>
+                <span data-step-card-button-label>Choose a file</span>
+              </label>
+              <span class="file-name">{logoName ?? "No file chosen"}</span>
+            </div>
             <small id="logo-help" class="field-hint">
               Shown in the header of your status page instead of its name. SVG,
               PNG, WebP, or JPEG, up to 350 kB. The file is written into your own
@@ -590,7 +610,7 @@
             {#if logoPreview}
               <img class="logo-preview" src={logoPreview} alt="The logo you chose" />
             {/if}
-          </label>
+          </div>
           <label class="full-width">
             <span>Description (optional)</span>
             <textarea
@@ -935,10 +955,50 @@
      appear rather than as a thumbnail. */
   .logo-preview {
     display: block;
-    margin-top: 0.5rem;
+    /* Centred, because a logo is shown here to be looked at rather than read
+       along the column the fields above it stand in. */
+    margin: 0.5rem auto 0;
     max-height: 4.5rem;
     max-width: 100%;
     object-fit: contain;
+  }
+  /*
+   * Kept in the page rather than hidden with `display: none`, so it can still
+   * be reached by keyboard and still announce itself. The label beside it is
+   * what anybody sees and clicks.
+   */
+  .file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-inline: var(--setup-control-radius);
+  }
+  .file-row > label {
+    flex: none;
+    /* The secondary variant pushes itself away from its neighbour in a card's
+       footer, which is not what it is doing here. */
+    margin: 0;
+  }
+  .file-input:focus-visible + .file-row > label {
+    outline: 2px solid var(--setup-accent);
+    outline-offset: 2px;
+  }
+  .file-name {
+    overflow: hidden;
+    color: var(--setup-muted);
+    font-size: var(--setup-card-copy);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .onboarding-shell {
@@ -1155,13 +1215,19 @@
   .full-width {
     grid-column: 1 / -1;
   }
-  label {
+  /* A field's own label, and the field that stands in for one where the
+     control is opened by a label of its own. A label that is a button is
+     neither, and laying it out as a field would stack its icon above its
+     word. */
+  label:not(.velvet-button),
+  .field {
     min-width: 0;
     display: grid;
     align-content: start;
     gap: 0.42rem;
   }
-  label > span {
+  label:not(.velvet-button) > span,
+  .field > span {
     margin-inline: var(--setup-control-radius);
     color: var(--setup-text);
     font-size: var(--setup-text-body);
@@ -1173,6 +1239,10 @@
     height: var(--setup-control-height);
     min-width: 0;
     padding: 0 0.75rem;
+    /* A single line centred in the control reads low for the same reason a
+       button's word does. A textarea stacks from the top and takes its own
+       padding below. */
+    padding-block: 0 var(--velvet-cap-shift, 0.078em);
     border: var(--setup-input-border);
     border-radius: var(--setup-control-radius);
     outline: none;
@@ -1182,13 +1252,14 @@
     font: inherit;
   }
   /* Three lines of room, so a sentence that runs on stays readable whilst it
-     is being written. Resizing stays vertical, because a wider box would
-     break out of the two-column grid the fields sit in. */
+     is being written. Fixed at that, because the field holds one sentence and
+     a box somebody has dragged taller sits oddly in a row of controls that all
+     stand at the same height. */
   textarea {
     height: auto;
     padding: 0.55rem 0.75rem;
     line-height: 1.45;
-    resize: vertical;
+    resize: none;
   }
   input::placeholder,
   textarea::placeholder {

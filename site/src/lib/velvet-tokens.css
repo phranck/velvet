@@ -47,6 +47,12 @@
      the operational green, so a choice reads as a choice rather than as a
      service reporting itself healthy. */
   --velvet-selection: #c9f47f;
+  /* Barlow's capitals sit below the middle of its own metrics, so a word
+     centred by its box reads low. This is twice the correction, meant to be
+     used as block padding on a control that centres its own line: half the
+     difference between the ascender and the descender, less half the cap
+     height, which for this face is 0.039em. */
+  --velvet-cap-shift: 0.078em;
 
   /* Two layers rather than one. A single wide shadow dissolves into the board
      backdrop and leaves a card looking pasted flat; the near layer draws its

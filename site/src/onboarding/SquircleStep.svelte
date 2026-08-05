@@ -152,6 +152,10 @@
   }
   .label {
     overflow: hidden;
+    /* Sized from the tile rather than the page, so a name still has room
+       inside it on a phone, where the tile is two thirds of what it is on a
+       desktop. */
+    font-size: clamp(0.625rem, calc(var(--step-size, 5.5rem) * 0.19), 1rem);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
