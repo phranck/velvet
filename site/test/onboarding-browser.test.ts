@@ -1104,7 +1104,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(
       await page.locator("[data-footer-serial]").textContent()
         .then((text) => text?.replace(/\s+/g, " ").trim()),
-      "Serial # 00007",
+      "Serial #00007",
     );
     assert.equal(await page.locator("[data-board-serial]").count(), 0);
     assert.equal(await page.locator("[data-card-serial]").count(), 0);
