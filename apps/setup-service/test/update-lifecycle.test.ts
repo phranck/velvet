@@ -159,7 +159,8 @@ function setupClient(repository: Repository): GitHubSetupClient {
     async account() {
       return { id: 42, login: "example", type: "User" };
     },
-    async repositoryExists() { return false; },
+    async findRepository() { return null; },
+    async repositoryInstallationId() { return null; },
     async deleteRepository() {},
     async createRepository() {
       // GitHub copies the template verbatim, placeholders included.
