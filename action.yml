@@ -36,6 +36,14 @@ runs:
         bun install --cwd "$VELVET_ROOT" --frozen-lockfile
         bun run --cwd "$VELVET_ROOT" --filter @velvet/contracts build
         bun "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
+        # A logo beside velvet.yml is copied into the published site, where the
+        # relative path the configuration names resolves. It belongs to whoever
+        # installed Velvet, so none of the four names is required to be there.
+        for logo in logo.svg logo.png logo.webp logo.jpg; do
+          if [ -f "$logo" ]; then
+            cp "$logo" "$VELVET_SITE/public/$logo"
+          fi
+        done
         bun run --cwd "$VELVET_ROOT" --filter @velvet/site build
         bun "$VELVET_SITE/scripts/generate-og.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist/og.png"
         bun "$VELVET_SITE/scripts/generate-seo.ts" "$VELVET_SITE/public/config.json" "$VELVET_DATA/status.json" "$VELVET_SITE/dist"

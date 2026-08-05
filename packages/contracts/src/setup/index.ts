@@ -22,6 +22,7 @@ export type {
   SetupContractValidationResult,
   RepositoryVisibility,
   SetupRequest,
+  SetupLogo,
 } from "./types.js";
 export {
   validateSetupEvent,

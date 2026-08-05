@@ -170,7 +170,7 @@ statusPage:
 | --- | --- | --- | --- |
 | `name` | yes | none | Public page name and default document title. |
 | `customDomain` | no | GitHub Pages URL | Hostname only, without scheme, path, port, credentials, or wildcard. |
-| `logoUrl` | no | none | Absolute HTTP(S) logo URL. |
+| `logoUrl` | no | none | The logo shown instead of the page name. Either an absolute HTTP(S) address, or a file in this repository written as `./logo.svg`. The browser setup uploads one for you and writes it here. |
 | `logoHeight` | no | `72` | Display height from `16` through `256` px. |
 | `showPoweredBy` | no | `true` | Shows the centered Powered by Velvet credit. |
 | `layout` | no | `grouped` | `grouped` for one shared service card or `cards` for one card per service. |

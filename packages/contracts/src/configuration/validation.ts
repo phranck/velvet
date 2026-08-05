@@ -114,6 +114,17 @@ function parseHttpUrl(value: string): string | null {
   }
 }
 
+/**
+ * A logo held in the installation's own repository, beside `velvet.yml`.
+ *
+ * Written as `./name.ext`, which resolves against the published page wherever
+ * that page lives, so a custom domain added later needs no change here. A
+ * single segment with no slash in it, because anything else is a path leaving
+ * the repository or reaching into it, and the only thing this addresses is a
+ * file the installation owns.
+ */
+const OWN_FILE = /^\.\/[A-Za-z0-9][A-Za-z0-9._-]*$/u;
+
 function inspectUrl(
   value: unknown,
   path: string,
@@ -124,6 +135,28 @@ function inspectUrl(
       "INVALID_CONFIGURATION_URL",
       path,
       "URL must be an absolute HTTP(S) URL without credentials or a fragment.",
+    ),
+  ];
+}
+
+/**
+ * Accepts either an absolute address or a file the installation owns.
+ *
+ * @param value - What the configuration says.
+ * @param path - Where it says it, for the error.
+ * @returns The errors, empty when it is one of the two.
+ */
+function inspectUrlOrOwnFile(
+  value: unknown,
+  path: string,
+): ConfigurationValidationError[] {
+  if (typeof value !== "string") return [];
+  if (OWN_FILE.test(value) || parseHttpUrl(value) !== null) return [];
+  return [
+    configurationError(
+      "INVALID_CONFIGURATION_URL",
+      path,
+      "Must be an absolute HTTP(S) URL, or a file in this repository written as ./name.ext.",
     ),
   ];
 }
@@ -286,7 +319,9 @@ function inspectConfiguration(value: unknown): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
   const statusPage = value.statusPage;
   if (isRecord(statusPage)) {
-    errors.push(...inspectUrl(statusPage.logoUrl, "/statusPage/logoUrl"));
+    // A logo may be a file the installation holds as well as an address
+    // elsewhere, and the two are the only forms it takes.
+    errors.push(...inspectUrlOrOwnFile(statusPage.logoUrl, "/statusPage/logoUrl"));
     if (Array.isArray(statusPage.navigation)) {
       statusPage.navigation.forEach((entry, index) => {
         if (!isRecord(entry) || typeof entry.href !== "string") return;
@@ -500,7 +535,13 @@ function normalizeConfiguration(
           ? { customDomain: statusPage.customDomain.toLowerCase() }
           : {}),
         ...(statusPage.logoUrl
-          ? { logoUrl: parseHttpUrl(statusPage.logoUrl)! }
+          ? {
+              // Kept as written when it names a file here, since normalising it
+              // as a URL would make it absolute against nothing.
+              logoUrl: OWN_FILE.test(statusPage.logoUrl)
+                ? statusPage.logoUrl
+                : parseHttpUrl(statusPage.logoUrl)!,
+            }
           : {}),
         ...(statusPage.theme ? { theme: structuredClone(statusPage.theme) } : {}),
         ...(statusPage.fonts ? { fonts: { ...statusPage.fonts } } : {}),
