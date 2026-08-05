@@ -1039,6 +1039,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       0,
       "a reached stage must not render the pending icon",
     );
+    // Waited for rather than read straight away: the entry carries the accent
+    // until it is complete, and reading between the two states measured a
+    // colour that was on its way out.
+    await page
+      .locator(".deployment-progress li:first-child i.ph-check-circle")
+      .waitFor();
     assert.equal(
       await page.locator(".deployment-progress li.complete i").first()
         .evaluate((element) => getComputedStyle(element).color),
@@ -1950,7 +1956,12 @@ history:
       "the way out names the account it leaves",
     );
     await signOut.click();
-    await conflictPage.waitForFunction(() => logoutCalls > 0).catch(() => {});
+    // Counted here rather than in the page, which cannot see this variable.
+    // Signing out reads the session before it posts, so the request arrives a
+    // moment after the click.
+    for (let waited = 0; waited < 50 && logoutCalls === 0; waited += 1) {
+      await new Promise((settle) => setTimeout(settle, 100));
+    }
     assert.equal(logoutCalls, 1, "signing out reaches the service");
 
     await conflictContext.close();
