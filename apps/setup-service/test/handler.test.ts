@@ -605,7 +605,7 @@ test("uses a temporary installation only to create the repository, then offers r
   assert.equal(session.installState, installationUrl.searchParams.get("state"));
 });
 
-test("sends somebody to the repository it is waiting for access to replace", async () => {
+test("reports plainly that it cannot delete the repository in the way", async () => {
   const github = githubClient({
     async findRepository() {
       return {
@@ -648,15 +648,12 @@ test("sends somebody to the repository it is waiting for access to replace", asy
     .split("\n")
     .map((line) => JSON.parse(line));
 
-  assert.equal(events.at(-1).type, "permission-required");
-  assert.equal(events.at(-1).access, "repository");
-  const installationUrl = new URL(events.at(-1).installationUrl);
-  // The existing repository, named so GitHub offers exactly it rather than
-  // asking somebody to find it in a list of their own.
-  assert.deepEqual(installationUrl.searchParams.getAll("repository_ids[]"), [
-    "4242",
-  ]);
-  assert.equal(installationUrl.searchParams.get("suggested_target_id"), "255022500");
+  // An answerable stop rather than a redirect: the repository is theirs to
+  // delete, or the name is theirs to change.
+  assert.equal(events.at(-1).type, "error");
+  assert.equal(events.at(-1).error.code, "REPOSITORY_NOT_DELETABLE");
+  assert.equal(events.at(-1).recoverable, true);
+  assert.match(events.at(-1).error.message, /Delete it on GitHub yourself/u);
 });
 
 test("rejects an installation id that GitHub did not grant to the authenticated user", async () => {

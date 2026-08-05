@@ -770,7 +770,7 @@ test("deletes and recreates only when the request says so by name", async () => 
   assert.ok(calls.includes("create-repository"), "and then creates it again");
 });
 
-test("asks for access before deleting a repository Velvet is not installed on", async () => {
+test("says so rather than trying, when it cannot delete the repository in the way", async () => {
   // A user token reaches every public repository, so setup can see one it has
   // no say over. Attempting the deletion would earn a bare 403 that says
   // nothing about what to do next.
@@ -786,11 +786,10 @@ test("asks for access before deleting a repository Velvet is not installed on", 
       deletions.push(`${owner}/${name}`);
     },
   });
-  const session = authenticatedSession();
 
   await assert.rejects(
     provisionVelvet({
-      session,
+      session: authenticatedSession(),
       request: { ...normalizedRequest, replaceExistingRepository: true },
       github: client,
       onEvent: () => {},
@@ -799,32 +798,25 @@ test("asks for access before deleting a repository Velvet is not installed on", 
     }),
     (error: unknown) =>
       error instanceof SetupServiceError &&
-      error.code === "INSTALLATION_REQUIRED",
+      error.code === "REPOSITORY_NOT_DELETABLE" &&
+      error.recoverable,
   );
 
   assert.deepEqual(deletions, []);
   assert.ok(!calls.includes("create-repository"), "and creates nothing");
-  // Recorded so the installation somebody is sent to names this repository.
-  assert.deepEqual(session.provisioning?.replacing, {
-    id: takenRepository.id,
-    owner: takenRepository.owner,
-    ownerId: takenRepository.ownerId,
-    name: takenRepository.name,
-  });
 });
 
-test("keeps the agreement to replace across the installation it sends somebody to", async () => {
-  // Asking a second time for a decision already made teaches somebody to click
-  // through the one question in this product that must not be clicked through.
+test("never carries an agreement to delete beyond the attempt it was given for", async () => {
+  // A second name entered after a refusal must not inherit the reading that
+  // the first one may be destroyed.
   const deletions: string[] = [];
   const session = authenticatedSession();
-  let installed = false;
   const { client } = successfulGitHub({
     async findRepository() {
       return takenRepository;
     },
     async repositoryInstallationId() {
-      return installed ? 7 : null;
+      return 7;
     },
     async deleteRepository(_token: string, owner: string, name: string) {
       deletions.push(`${owner}/${name}`);
@@ -834,31 +826,29 @@ test("keeps the agreement to replace across the installation it sends somebody t
   await assert.rejects(
     provisionVelvet({
       session,
-      request: { ...normalizedRequest, replaceExistingRepository: true },
+      request: normalizedRequest,
       github: client,
       onEvent: () => {},
       operationId: () => "O".repeat(26),
       sleep: async () => {},
     }),
     (error: unknown) =>
-      error instanceof SetupServiceError &&
-      error.code === "INSTALLATION_REQUIRED",
+      error instanceof SetupServiceError && error.code === "REPOSITORY_EXISTS",
+  );
+  await assert.rejects(
+    provisionVelvet({
+      session,
+      request: normalizedRequest,
+      github: client,
+      onEvent: () => {},
+      operationId: () => "O".repeat(26),
+      sleep: async () => {},
+    }),
+    (error: unknown) =>
+      error instanceof SetupServiceError && error.code === "REPOSITORY_EXISTS",
   );
 
-  installed = true;
-  await provisionVelvet({
-    session,
-    // The second request carries no agreement, because the visitor was sent to
-    // GitHub and back rather than asked again.
-    request: normalizedRequest,
-    github: client,
-    onEvent: () => {},
-    operationId: () => "O".repeat(26),
-    sleep: async () => {},
-  });
-
-  assert.deepEqual(deletions, ["example/status"]);
-  assert.equal(session.provisioning?.replacing, undefined);
+  assert.deepEqual(deletions, []);
 });
 
 test("writes an uploaded logo into the repository and names it in the configuration", async () => {

@@ -180,8 +180,7 @@ export async function provisionVelvet(
         repositoryName,
       );
       if (taken) {
-        state.replaceApproved ||= input.request.replaceExistingRepository === true;
-        if (!state.replaceApproved) {
+        if (input.request.replaceExistingRepository !== true) {
           throw new SetupServiceError(
             "REPOSITORY_EXISTS",
             `${owner}/${repositoryName} already exists.`,
@@ -197,18 +196,15 @@ export async function provisionVelvet(
           repositoryName,
         );
         if (managing !== installation.id) {
-          state.replacing = {
-            id: taken.id,
-            owner: taken.owner,
-            ownerId: taken.ownerId,
-            name: taken.name,
-          };
-          throw installationRequired("replace");
+          throw new SetupServiceError(
+            "REPOSITORY_NOT_DELETABLE",
+            `Velvet cannot delete ${owner}/${repositoryName}, because it does not manage it. Delete it on GitHub yourself, or choose another name.`,
+            { status: 409, recoverable: true },
+          );
         }
         // Only here, and only because a request said so by name. What goes with
         // the repository cannot be brought back by anything in this product.
         await input.github.deleteRepository(userToken, owner, repositoryName);
-        delete state.replacing;
       }
       const repository = await input.github.createRepository(
         userToken,
@@ -631,13 +627,11 @@ function installationForOwner(
 }
 
 /** What the missing installation is needed for, which is what somebody is told. */
-type InstallationPurpose = "create" | "use" | "replace";
+type InstallationPurpose = "create" | "use";
 
 const INSTALLATION_MESSAGES: Record<InstallationPurpose, string> = {
   create: "Temporarily install Velvet so it can create the selected repository.",
   use: "Install Velvet for the selected repository before continuing.",
-  replace:
-    "Add the existing repository to your Velvet installation so it can be replaced.",
 };
 
 function installationRequired(purpose: InstallationPurpose): SetupServiceError {

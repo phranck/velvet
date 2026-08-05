@@ -1716,29 +1716,35 @@ history:
       }),
     );
     const replaceRequests: (boolean | undefined)[] = [];
+    // Flipped once the deletable path has been walked, so the same page then
+    // meets a repository Velvet has no say over.
+    let notDeletable = false;
     await conflictPage.route("**/api/setup", async (route) => {
       const request = JSON.parse(route.request().postData() ?? "null") as {
         replaceExistingRepository?: boolean;
       };
       replaceRequests.push(request.replaceExistingRepository);
+      const refusal = (code: string, message: string) =>
+        JSON.stringify({
+          type: "error",
+          error: { code, message, errorId: "R".repeat(26) },
+          recoverable: true,
+        });
       await route.fulfill({
         status: 200,
         contentType: "application/x-ndjson",
         body: request.replaceExistingRepository
-          ? JSON.stringify({
-              type: "success",
-              installationUrl: "https://velvet-user.github.io/status/",
-              repositoryUrl: "https://github.com/velvet-user/status",
-            })
-          : JSON.stringify({
-              type: "error",
-              error: {
-                code: "REPOSITORY_EXISTS",
-                message: "velvet-user/status already exists.",
-                errorId: "R".repeat(26),
-              },
-              recoverable: true,
-            }),
+          ? notDeletable
+            ? refusal(
+                "REPOSITORY_NOT_DELETABLE",
+                "Velvet cannot delete velvet-user/status, because it does not manage it. Delete it on GitHub yourself, or choose another name.",
+              )
+            : JSON.stringify({
+                type: "success",
+                installationUrl: "https://velvet-user.github.io/status/",
+                repositoryUrl: "https://github.com/velvet-user/status",
+              })
+          : refusal("REPOSITORY_EXISTS", "velvet-user/status already exists."),
       });
     });
 
@@ -1819,6 +1825,39 @@ history:
     await conflictPage.locator("[data-replace-repository]").click();
     await conflictPage.locator("[data-open-status-page]").waitFor();
     assert.deepEqual(replaceRequests, [undefined, undefined, true]);
+
+    // A repository Velvet does not manage cannot be deleted by it, so the
+    // question stops offering that and points at the repository instead.
+    notDeletable = true;
+    // The successful run above cleared the draft, so it is put back before the
+    // same page meets the same name again.
+    await conflictPage.evaluate(
+      ([key, session]) => {
+        sessionStorage.setItem(key as string, session as string);
+      },
+      [ONBOARDING_SESSION_STORAGE_KEY, JSON.stringify(conflictDraft)] as const,
+    );
+    await conflictPage.goto(
+      `http://127.0.0.1:${address.port}/onboarding.html?github=connected`,
+    );
+    await conflictDialog.waitFor({ state: "visible" });
+    await conflictPage.locator("[data-replace-repository]").click();
+    await conflictDialog.waitFor({ state: "visible" });
+    assert.equal(
+      await conflictPage.locator("[data-replace-repository]").count(),
+      0,
+      "the destructive answer is withdrawn once it is known to be impossible",
+    );
+    assert.equal(
+      await conflictPage
+        .locator("[data-open-existing-repository]")
+        .getAttribute("href"),
+      "https://github.com/velvet-user/status",
+    );
+    assert.match(
+      (await conflictDialog.textContent()) ?? "",
+      /Delete it on GitHub yourself/,
+    );
     await conflictContext.close();
   } finally {
     await browser.close();

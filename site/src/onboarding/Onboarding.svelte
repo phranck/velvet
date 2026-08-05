@@ -88,6 +88,14 @@
    * to anything.
    */
   let existingRepository = $state("");
+  /**
+   * Whether Velvet could delete that repository if it were asked to.
+   *
+   * False where Velvet does not manage it, which is every repository somebody
+   * made themselves. The question then has only one honest answer to offer, so
+   * it stops offering the other one.
+   */
+  let existingRepositoryDeletable = $state(true);
   let existingRepositoryDialog = $state<HTMLDialogElement | null>(null);
   let submissionState = $state<"idle" | "permission-required" | "failed" | "success">("idle");
   let stepTransitionController: ViewTransitionController | null = null;
@@ -377,10 +385,14 @@
       resultMessage = result.message;
       return;
     }
-    if (result.code === "REPOSITORY_EXISTS") {
+    if (
+      result.code === "REPOSITORY_EXISTS" ||
+      result.code === "REPOSITORY_NOT_DELETABLE"
+    ) {
       // Asked as a question rather than reported as a failure, because the
       // name being taken is something the person installing can settle, and
-      // both ways out are one click away.
+      // every way out is one click away.
+      existingRepositoryDeletable = result.code === "REPOSITORY_EXISTS";
       existingRepository = `${draft.repositoryOwner.trim()}/${draft.repositoryName.trim()}`;
       return;
     }
@@ -825,15 +837,23 @@
     }}
   >
     <h2 id="repository-conflict-title">That repository already exists</h2>
-    <p>
-      <code>{existingRepository}</code> is already on GitHub, so Velvet has not created
-      anything. Choose a different name, or let Velvet delete that repository and
-      create it again.
-    </p>
-    <p class="repository-conflict-warning">
-      Deleting it removes everything in it, including its history, issues, and any
-      status page published from it. This cannot be undone.
-    </p>
+    {#if existingRepositoryDeletable}
+      <p>
+        <code>{existingRepository}</code> is already on GitHub, so Velvet has not created
+        anything. Choose a different name, or let Velvet delete that repository and
+        create it again.
+      </p>
+      <p class="repository-conflict-warning">
+        Deleting it removes everything in it, including its history, issues, and any
+        status page published from it. This cannot be undone.
+      </p>
+    {:else}
+      <p>
+        <code>{existingRepository}</code> is already on GitHub, and Velvet does not
+        manage it, so it cannot delete it for you. Delete it on GitHub yourself and
+        start again, or choose a different name.
+      </p>
+    {/if}
     <div class="repository-conflict-actions">
       <button
         class="velvet-button velvet-button--secondary"
@@ -843,17 +863,29 @@
       >
         <span data-step-card-button-label>Change the name</span>
       </button>
-      <button
-        class="velvet-button velvet-button--danger"
-        type="button"
-        data-replace-repository
-        onclick={() => {
-          existingRepository = "";
-          void publish(true);
-        }}
-      >
-        <span data-step-card-button-label>Delete and create it again</span>
-      </button>
+      {#if existingRepositoryDeletable}
+        <button
+          class="velvet-button velvet-button--danger"
+          type="button"
+          data-replace-repository
+          onclick={() => {
+            existingRepository = "";
+            void publish(true);
+          }}
+        >
+          <span data-step-card-button-label>Delete and create it again</span>
+        </button>
+      {:else}
+        <a
+          class="velvet-button velvet-button--primary"
+          href={`https://github.com/${existingRepository}`}
+          target="_blank"
+          rel="noreferrer noopener"
+          data-open-existing-repository
+        >
+          <span data-step-card-button-label>Open it on GitHub</span>
+        </a>
+      {/if}
     </div>
   </dialog>
 </div>
