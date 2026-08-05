@@ -64,6 +64,14 @@
     loadOnboardingDraft(SESSION_STORAGE) ?? createOnboardingDraft(),
   );
   let errors = $state<Record<string, string>>({});
+  /**
+   * The chosen logo, as something the browser can show.
+   *
+   * Held apart from the draft so it is never written to session storage: a
+   * restored draft would otherwise carry a file somebody picked an hour ago
+   * and can no longer see.
+   */
+  let logoPreview = $state<string | null>(null);
   let submitting = $state(false);
   let progress = $state<SetupProgressStage[]>([]);
   let resultMessage = $state("");
@@ -92,6 +100,59 @@
    * that replaces this.
    */
   let serial = $state<number | null>(null);
+
+  /**
+   * The most a logo may weigh, in bytes of the file itself.
+   *
+   * The service caps the base64 it accepts, and base64 is a third larger than
+   * what it encodes, so this is that limit read back in the units somebody
+   * choosing a file thinks in.
+   */
+  const MAX_LOGO_BYTES = 350_000;
+
+  /** What the header can show, and what the page build knows to copy. */
+  const LOGO_TYPES = ["image/svg+xml", "image/png", "image/webp", "image/jpeg"];
+
+  /**
+   * Reads the chosen file into the draft, or says why it cannot be used.
+   *
+   * The file travels with the setup request rather than as a URL, so it is
+   * read here and carried as base64. Anything the service would refuse is
+   * refused here instead, where the person choosing it is still looking at the
+   * field.
+   */
+  async function chooseLogo(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    delete errors.logo;
+    if (!file) {
+      delete draft.logo;
+      logoPreview = null;
+      return;
+    }
+    if (!LOGO_TYPES.includes(file.type)) {
+      errors = { ...errors, logo: "Choose an SVG, PNG, WebP, or JPEG file." };
+      input.value = "";
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      errors = {
+        ...errors,
+        logo: `That file is ${Math.round(file.size / 1_000)} kB. The most a logo may weigh is ${Math.round(MAX_LOGO_BYTES / 1_000)} kB.`,
+      };
+      input.value = "";
+      return;
+    }
+    const buffer = await file.arrayBuffer();
+    let binary = "";
+    for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
+    draft.logo = {
+      type: file.type as NonNullable<typeof draft.logo>["type"],
+      content: btoa(binary),
+    };
+    logoPreview = `data:${file.type};base64,${draft.logo.content}`;
+  }
+
   /**
    * How far setup has got, as an index into `PROGRESS_ORDER`, or `-1` before
    * anything is reported.
@@ -459,6 +520,25 @@
             {#if errors.customDomain}<small class="field-error">{errors.customDomain}</small>{/if}
           </label>
           <label class="full-width">
+            <span>Logo (optional)</span>
+            <input
+              type="file"
+              accept="image/svg+xml,image/png,image/webp,image/jpeg"
+              onchange={chooseLogo}
+              aria-describedby="logo-help"
+              aria-invalid={errors.logo ? "true" : undefined}
+            />
+            <small id="logo-help" class="field-hint">
+              Shown in the header of your status page instead of its name. SVG,
+              PNG, WebP, or JPEG, up to 350 kB. The file is written into your own
+              repository and served from your own page.
+            </small>
+            {#if errors.logo}<small class="field-error">{errors.logo}</small>{/if}
+            {#if logoPreview}
+              <img class="logo-preview" src={logoPreview} alt="The logo you chose" />
+            {/if}
+          </label>
+          <label class="full-width">
             <span>Description (optional)</span>
             <textarea
               autocomplete="off"
@@ -779,6 +859,16 @@
 </div>
 
 <style>
+  /* Shown at the size the header shows it, so the choice is judged as it will
+     appear rather than as a thumbnail. */
+  .logo-preview {
+    display: block;
+    margin-top: 0.5rem;
+    max-height: 4.5rem;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
   .onboarding-shell {
     --setup-accent: var(--velvet-accent);
     /* The page's own base tone, matching the last background layer in

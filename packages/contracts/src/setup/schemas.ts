@@ -88,6 +88,34 @@ export const SetupRequestSchema = Type.Object(
      * they would lose.
      */
     replaceExistingRepository: Type.Optional(Type.Boolean()),
+    /*
+     * A logo to show in the status page's header.
+     *
+     * The file travels with the request rather than as a URL, because a URL
+     * would put somebody's status page at the mercy of whatever host it names.
+     * It is written into their own repository, where it is theirs, and served
+     * from their own page.
+     *
+     * The base64 length is capped rather than the decoded size, since that is
+     * what a boundary can check before decoding anything. Three quarters of it
+     * is the real limit, so roughly 384 kB of image.
+     */
+    logo: Type.Optional(
+      Type.Object(
+        {
+          /** What the file is, which decides the name it is written under. */
+          type: Type.Union([
+            Type.Literal("image/svg+xml"),
+            Type.Literal("image/png"),
+            Type.Literal("image/webp"),
+            Type.Literal("image/jpeg"),
+          ]),
+          /** The file itself, base64 without a data-URL prefix. */
+          content: Type.String({ minLength: 1, maxLength: 512_000 }),
+        },
+        { additionalProperties: false },
+      ),
+    ),
   },
   { additionalProperties: false },
 );

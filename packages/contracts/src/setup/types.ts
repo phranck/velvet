@@ -23,6 +23,22 @@ export interface SetupRequest {
    * after somebody has been told what they would lose.
    */
   replaceExistingRepository?: boolean;
+  /**
+   * A logo for the status page's header.
+   *
+   * The file itself rather than a URL, because a URL would put somebody's
+   * status page at the mercy of whatever host it names. It is written into
+   * their own repository and served from their own page.
+   */
+  logo?: SetupLogo;
+}
+
+/** A logo as it travels with a setup request. */
+export interface SetupLogo {
+  /** What the file is, which decides the name it is written under. */
+  type: "image/svg+xml" | "image/png" | "image/webp" | "image/jpeg";
+  /** The file itself, base64 without a data-URL prefix. */
+  content: string;
 }
 
 export interface SetupContractError {

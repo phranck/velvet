@@ -754,3 +754,67 @@ test("deletes and recreates only when the request says so by name", async () => 
   assert.equal(deletions.length, 1);
   assert.ok(calls.includes("create-repository"), "and then creates it again");
 });
+
+test("writes an uploaded logo into the repository and names it in the configuration", async () => {
+  const written: { path: string; content: string; encoding?: string }[] = [];
+  let configuration = "";
+  const { client } = successfulGitHub({
+    async writeConfiguration(_token, _owner, _repository, source) {
+      configuration = source;
+    },
+    async writeManagedFiles(_token, _owner, _repository, files) {
+      written.push(...files);
+    },
+  });
+  const session = authenticatedSession();
+
+  await provisionVelvet({
+    session,
+    request: {
+      ...normalizedRequest,
+      // A one-pixel PNG, which is a real image and small enough to read here.
+      logo: {
+        type: "image/png",
+        content:
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      },
+    },
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  // Beside velvet.yml, under a name that comes from the format rather than
+  // from anything somebody typed.
+  const logo = written.find((file) => file.path === "logo.png");
+  assert.ok(logo, `no logo among ${written.map((file) => file.path).join(", ")}`);
+  assert.equal(logo.encoding, "base64");
+  // The configuration points at it relatively, so it resolves against the
+  // published page rather than against a host somebody else controls.
+  assert.match(configuration, /logoUrl: \.\/logo\.png/u);
+});
+
+test("an installation without a logo names none", async () => {
+  const written: { path: string }[] = [];
+  let configuration = "";
+  const { client } = successfulGitHub({
+    async writeConfiguration(_token, _owner, _repository, source) {
+      configuration = source;
+    },
+    async writeManagedFiles(_token, _owner, _repository, files) {
+      written.push(...files);
+    },
+  });
+  const session = authenticatedSession();
+
+  await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(written.some((file) => file.path.startsWith("logo.")), false);
+  assert.doesNotMatch(configuration, /logoUrl/u);
+});

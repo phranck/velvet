@@ -3,6 +3,7 @@ import {
   validateVelvetConfiguration,
   type NormalizedVelvetConfiguration,
   type SetupErrorCode,
+  type SetupLogo,
   type SetupProgressStage as ContractSetupProgressStage,
   type VelvetConfigurationInput,
 } from "@velvet/contracts";
@@ -62,11 +63,21 @@ export interface OnboardingDraft {
    * reader has to choose rather than one they have to notice and undo.
    */
   privateRepository: boolean;
+  /**
+   * A logo for the status page's header, as the visitor chose it.
+   *
+   * Kept out of session storage with the rest of the draft, because a restored
+   * draft would otherwise carry a file somebody picked an hour ago and no
+   * longer has in front of them. Absent means the page shows its name.
+   */
+  logo?: SetupLogo;
 }
 
 export interface SetupRequest {
   configuration: NormalizedVelvetConfiguration;
   repositoryVisibility: "public" | "private";
+  /** The chosen logo, written into the new repository and served from it. */
+  logo?: SetupLogo;
   /**
    * Permission to delete a repository of that name that already exists.
    *
@@ -198,6 +209,7 @@ export function buildSetupRequest(
     request: {
       configuration: finalResult.data,
       repositoryVisibility: draft.privateRepository ? "private" : "public",
+      ...(draft.logo ? { logo: draft.logo } : {}),
     },
   };
 }

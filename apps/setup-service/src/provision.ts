@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   INITIAL_TEMPLATE_PATHS,
   serializeVelvetConfiguration,
+  type SetupLogo,
   type NormalizedVelvetConfiguration,
   type SetupEvent,
   type SetupProgressStage,
@@ -13,6 +14,7 @@ import { materializeManagedTemplateFiles } from "@velvet/template-files";
 import {
   GitHubApiError,
   VERSION_LOCK_PATH,
+  type GitHubManagedSetupFile,
   type GitHubSetupClient,
   type GitHubWorkflowJob,
 } from "./github.js";
@@ -72,7 +74,26 @@ export async function provisionVelvet(
   const owner = input.request.configuration.repository.owner;
   const repositoryName = input.request.configuration.repository.name;
   const customDomain = input.request.configuration.statusPage.customDomain;
-  const source = serializeVelvetConfiguration(input.request.configuration);
+  /*
+   * A logo travels with the request as a file and is written into the
+   * installation's own repository, so the configuration names a path beside
+   * `velvet.yml` rather than a host somebody else controls. The page build
+   * copies it into the published output, where that same relative path
+   * resolves.
+   */
+  const logo = input.request.logo
+    ? { path: logoPath(input.request.logo.type), content: input.request.logo.content }
+    : null;
+  const configuration = logo
+    ? {
+        ...input.request.configuration,
+        statusPage: {
+          ...input.request.configuration.statusPage,
+          logoUrl: `./${logo.path}`,
+        },
+      }
+    : input.request.configuration;
+  const source = serializeVelvetConfiguration(configuration);
   const configurationHash = createHash("sha256").update(source).digest("hex");
   const existing = input.session.provisioning;
   if (existing && existing.configurationHash !== configurationHash) {
@@ -236,10 +257,11 @@ export async function provisionVelvet(
         state.repository.name,
         await managedSetupFiles(
           input.releases ?? embeddedVelvetReleases(),
-          input.request.configuration,
+          configuration,
           setupToken.canWriteWorkflows,
           undefined,
           true,
+          logo,
         ),
       );
       state.versionLockCommitted = true;
@@ -364,7 +386,7 @@ export async function provisionVelvet(
             state.repository.name,
             await managedSetupFiles(
               input.releases ?? embeddedVelvetReleases(),
-              input.request.configuration,
+              configuration,
               false,
               state.serial,
             ),
@@ -463,7 +485,8 @@ async function managedSetupFiles(
   canWriteWorkflows: boolean,
   serial?: number,
   includeInitial = false,
-): Promise<{ path: string; content: string }[]> {
+  logo: { path: string; content: string } | null = null,
+): Promise<GitHubManagedSetupFile[]> {
   const release = await releases.get(releases.latest());
   const materialized = materializeManagedTemplateFiles({
     manifest: release.manifest,
@@ -478,10 +501,9 @@ async function managedSetupFiles(
       { recoverable: true },
     );
   }
-  const files = materialized.data.files.map(({ path, content }) => ({
-    path,
-    content,
-  }));
+  const files: GitHubManagedSetupFile[] = materialized.data.files.map(
+    ({ path, content }) => ({ path, content }),
+  );
   /*
    * The files a new repository is given once and then owns: its licence, its
    * README, its `.gitattributes`. They travel in the same artefact as the
@@ -494,6 +516,9 @@ async function managedSetupFiles(
       const content = (release.sources as Record<string, string>)[path];
       if (typeof content === "string") files.push({ path, content });
     }
+    // Written once, with the rest of what a repository starts with. An update
+    // never touches it, so a logo replaced later stays replaced.
+    if (logo) files.push({ path: logo.path, content: logo.content, encoding: "base64" });
   }
   const lock = files.find((file) => file.path === VERSION_LOCK_PATH);
   if (!lock) {
@@ -504,6 +529,26 @@ async function managedSetupFiles(
     );
   }
   return canWriteWorkflows ? files : [lock];
+}
+
+/**
+ * The name a logo is written under, from what the file is.
+ *
+ * One name per format rather than the name it was uploaded with, so nothing a
+ * person typed becomes a path in their repository, and so the page build knows
+ * what to look for without being told.
+ *
+ * @param type - The media type the request declared.
+ * @returns The path, beside `velvet.yml` in the repository root.
+ */
+function logoPath(type: SetupLogo["type"]): string {
+  const names: Record<SetupLogo["type"], string> = {
+    "image/svg+xml": "logo.svg",
+    "image/png": "logo.png",
+    "image/webp": "logo.webp",
+    "image/jpeg": "logo.jpg",
+  };
+  return names[type];
 }
 
 function deploymentStageForJobs(

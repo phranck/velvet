@@ -105,6 +105,14 @@ export interface GitHubWorkflowJob {
 export interface GitHubManagedSetupFile {
   path: string;
   content: string;
+  /**
+   * How `content` is encoded, where it is not text.
+   *
+   * A tree entry's `content` is always text, so a file that is not becomes a
+   * blob of its own first and the tree names its SHA. Absent means text, which
+   * every Velvet-owned file is.
+   */
+  encoding?: "base64";
 }
 
 export interface GitHubSetupToken {
@@ -409,6 +417,27 @@ export function createGitHubSetupClient(
       // parent that is already behind. The push is then not a fast-forward and
       // GitHub answers 422. Reading the head again is what resolves it, and a
       // real conflict still fails once the attempts run out.
+      /*
+       * A base64 file becomes a blob of its own first, and the tree names its
+       * SHA. A tree entry's `content` is text, so an image sent that way would
+       * be committed as the letters of its encoding rather than as the image.
+       */
+      const blobs = await Promise.all(
+        files.map(async (file) => {
+          if (file.encoding !== "base64") {
+            return { path: file.path, content: file.content };
+          }
+          const blob = await githubRequest<unknown>(`${root}/git/blobs`, installationToken, {
+            method: "POST",
+            body: JSON.stringify({ content: file.content, encoding: "base64" }),
+          });
+          if (!isRecord(blob) || typeof blob.sha !== "string") {
+            throw new Error("GitHub blob response was invalid.");
+          }
+          return { path: file.path, sha: blob.sha };
+        }),
+      );
+
       for (let attempt = 1; attempt <= MANAGED_WRITE_ATTEMPTS; attempt += 1) {
         const reference = await githubRequest<unknown>(
           `${root}/git/ref/heads/main`,
@@ -437,11 +466,11 @@ export function createGitHubSetupClient(
           method: "POST",
           body: JSON.stringify({
             base_tree: parent.tree.sha,
-            tree: files.map((file) => ({
+            tree: blobs.map((file) => ({
               path: file.path,
               mode: "100644",
               type: "blob",
-              content: file.content,
+              ...("sha" in file ? { sha: file.sha } : { content: file.content }),
             })),
           }),
         });
