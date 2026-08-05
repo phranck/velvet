@@ -1039,12 +1039,19 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       0,
       "a reached stage must not render the pending icon",
     );
-    // Waited for rather than read straight away: the entry carries the accent
-    // until it is complete, and reading between the two states measured a
-    // colour that was on its way out.
-    await page
-      .locator(".deployment-progress li:first-child i.ph-check-circle")
-      .waitFor();
+    // Read once the run has settled, and the class and the colour together, so
+    // the two come from the same moment. Reading them across two calls caught
+    // the entry mid-update and measured the accent it carries until it is
+    // complete.
+    await page.locator('.result[data-setup-state="success"]').waitFor();
+    // Read once the step has finished arriving. Whilst a view transition runs,
+    // the browser computes styles from its snapshot, so an entry already
+    // carrying `complete` still measured the accent it has before it.
+    await page.evaluate(() =>
+      Promise.all(
+        document.getAnimations().map((animation) => animation.finished.catch(() => {})),
+      ),
+    );
     assert.equal(
       await page.locator(".deployment-progress li.complete i").first()
         .evaluate((element) => getComputedStyle(element).color),

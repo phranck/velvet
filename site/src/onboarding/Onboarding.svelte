@@ -1556,24 +1556,30 @@
     font-size: var(--setup-card-copy);
   }
   /*
-   * A failure gets a surface of its own in the outage tone, which is the colour
-   * every other part of the product draws trouble in. Before this it was a
-   * sentence in the same grey as the rest, indistinguishable from a note.
+   * An outcome gets a surface of its own, in the tone the rest of the product
+   * draws that outcome in. Before this all three were sentences in the same
+   * grey, indistinguishable from a note.
    */
   .result[data-setup-state="failed"],
-  .result[data-setup-state="permission-required"] {
+  .result[data-setup-state="permission-required"],
+  .result[data-setup-state="success"] {
     padding: var(--step-card-content-inset);
     border-radius: var(--step-card-inner-radius);
-    background: color-mix(in srgb, var(--setup-error) 12%, transparent);
+    background: color-mix(in srgb, var(--result-tone) 12%, transparent);
     box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--setup-error) 40%, transparent);
+      color-mix(in srgb, var(--result-tone) 40%, transparent);
+  }
+  .result[data-setup-state="failed"] {
+    --result-tone: var(--setup-error);
   }
   /* Something to answer rather than something that went wrong, so it carries
      the accent instead of the outage tone. */
   .result[data-setup-state="permission-required"] {
-    background: color-mix(in srgb, var(--setup-accent) 12%, transparent);
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--setup-accent) 40%, transparent);
+    --result-tone: var(--setup-accent);
+  }
+  /* The green the finished steps above it are ticked in. */
+  .result[data-setup-state="success"] {
+    --result-tone: var(--setup-success);
   }
   .result p {
     margin: 0;
