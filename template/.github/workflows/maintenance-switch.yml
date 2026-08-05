@@ -1,0 +1,125 @@
+# The planned-maintenance Issue Form is the normal path. This manual Action is
+# a compact fallback for opening a maintenance window from the Actions tab.
+name: Maintenance switch
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "What is happening"
+        required: true
+      services:
+        description: "Service IDs, comma-separated"
+        required: true
+        default: "website"
+      minutes:
+        description: "Expected duration in minutes"
+        required: false
+        default: "30"
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: velvet-status-data
+  cancel-in-progress: false
+
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open planned maintenance
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        with:
+          script: |
+            const inputs = context.payload.inputs || {};
+            const selected = [...new Set(
+              String(inputs.services || "")
+                .split(",")
+                .map((value) => value.trim().toLowerCase())
+                .filter(Boolean),
+            )];
+            const invalid = selected.filter(
+              (serviceId) =>
+                serviceId.length > 64 ||
+                !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(serviceId),
+            );
+            if (selected.length === 0 || selected.length > 32 || invalid.length > 0) {
+              core.setFailed(
+                selected.length > 32
+                  ? "Select no more than 32 service IDs."
+                  : invalid.length > 0
+                  ? `Invalid service IDs: ${invalid.join(", ")}`
+                  : "Select at least one service ID.",
+              );
+              return;
+            }
+
+            const requestedMinutes = Number(inputs.minutes);
+            const minutes = Number.isFinite(requestedMinutes) && requestedMinutes > 0
+              ? Math.min(1440, Math.floor(requestedMinutes))
+              : 30;
+            const message = String(inputs.message || "")
+              .replace(/\s+/gu, " ")
+              .trim()
+              .slice(0, 200);
+            if (!message) {
+              core.setFailed("A maintenance message is required.");
+              return;
+            }
+
+            const start = new Date();
+            const end = new Date(start.getTime() + minutes * 60000);
+            const targets = selected.map(
+              (serviceId) => `- ${serviceId} (all checks) [${serviceId}/*]`,
+            );
+            const body = [
+              "### Affected services and checks",
+              "",
+              ...targets,
+              "",
+              "### Starts at",
+              "",
+              start.toISOString(),
+              "",
+              "### Ends at",
+              "",
+              end.toISOString(),
+              "",
+              "### Summary",
+              "",
+              message,
+              "",
+              "Close this issue to end the maintenance window early.",
+            ].join("\n");
+            const { owner, repo } = context.repo;
+            const label = "maintenance";
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: label });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              try {
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: label,
+                  color: "fbca04",
+                  description: "Velvet planned maintenance",
+                });
+              } catch (createError) {
+                if (createError.status !== 422) throw createError;
+              }
+            }
+            await github.rest.issues.create({
+              owner,
+              repo,
+              title: `[Maintenance] ${message}`,
+              labels: [label],
+              body,
+            });
+            await github.rest.repos.createDispatchEvent({
+              owner,
+              repo,
+              event_type: "velvet-monitor",
+            });

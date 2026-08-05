@@ -16,7 +16,6 @@ export {
   GitHubApiError,
   createGitHubAppJwt,
 } from "./github-api.js";
-export const TEMPLATE_REPOSITORY = "phranck/velvet-template";
 export const SETUP_WORKFLOW = "velvet.yml";
 
 /**
@@ -125,11 +124,23 @@ export interface GitHubSetupClient {
   listInstallations(userToken: string): Promise<GitHubInstallation[]>;
   repositoryExists(userToken: string, owner: string, name: string): Promise<boolean>;
   deleteRepository(userToken: string, owner: string, name: string): Promise<void>;
-  createRepositoryFromTemplate(
+  /**
+   * Creates the repository an installation lives in, with a first commit.
+   *
+   * Empty of everything but that commit. What an installation receives is
+   * written from the release artefact immediately afterwards, so it comes from
+   * the reviewed bytes the service carries rather than from whatever another
+   * repository holds at the moment somebody presses the button.
+   *
+   * `auto_init` is what gives it a default branch, which the write needs a
+   * parent on. Its README is replaced by Velvet's in that same write.
+   */
+  createRepository(
     userToken: string,
     owner: string,
     name: string,
     visibility: RepositoryVisibility,
+    ownerIsViewer: boolean,
   ): Promise<GitHubRepository>;
   createInstallationToken(
     installationId: number,
@@ -294,20 +305,24 @@ export function createGitHubSetupClient(
       );
     },
 
-    async createRepositoryFromTemplate(userToken, owner, name, visibility) {
-      const body = await githubRequest<unknown>(
-        "/repos/phranck/velvet-template/generate",
-        userToken,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            owner,
-            name,
-            include_all_branches: false,
-            private: visibility === "private",
-          }),
-        },
-      );
+    async createRepository(userToken, owner, name, visibility, ownerIsViewer) {
+      // Creating under one's own account and creating under an organisation are
+      // different routes on GitHub. Which it is comes from the caller, which
+      // already knows who signed in, rather than from another request here.
+      const path = ownerIsViewer
+        ? "/user/repos"
+        : `/orgs/${encodeURIComponent(owner)}/repos`;
+      const body = await githubRequest<unknown>(path, userToken, {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          private: visibility === "private",
+          auto_init: true,
+          has_issues: true,
+          has_wiki: false,
+          has_projects: false,
+        }),
+      });
       return parseRepository(body);
     },
 

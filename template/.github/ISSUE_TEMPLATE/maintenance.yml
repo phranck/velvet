@@ -1,0 +1,44 @@
+name: Planned maintenance
+description: Schedule maintenance and show it in the status history.
+title: "[Maintenance] "
+labels:
+  - maintenance
+body:
+  - type: markdown
+    attributes:
+      value: Velvet keeps monitoring during maintenance. Select only the services and checks covered by this work.
+  - type: dropdown
+    id: affected-targets
+    attributes:
+      label: Affected services and checks
+      description: Update these choices when you add or rename services in velvet.yml.
+      multiple: true
+      options:
+        - Website (all checks) [website/*]
+        - Website / Website [website/website]
+    validations:
+      required: true
+  - type: input
+    id: starts-at
+    attributes:
+      label: Starts at
+      description: Use an ISO 8601 timestamp with a time zone, for example 2026-08-01T22:00:00+02:00.
+      placeholder: "2026-08-01T22:00:00+02:00"
+    validations:
+      required: true
+  - type: input
+    id: ends-at
+    attributes:
+      label: Ends at
+      description: Use an ISO 8601 timestamp with a time zone, for example 2026-08-01T23:30:00+02:00.
+      placeholder: "2026-08-01T23:30:00+02:00"
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the planned work.
+      placeholder: Application and database updates.
+    validations:
+      required: true

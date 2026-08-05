@@ -17,6 +17,7 @@ export {
   compareVelvetSemanticVersions,
   MANAGED_TEMPLATE_GENERATORS,
   MANAGED_TEMPLATE_PATHS,
+  INITIAL_TEMPLATE_PATHS,
   VELVET_TEMPLATE_REPOSITORY,
   parseVelvetReleaseManifest,
   parseVelvetVersionLock,

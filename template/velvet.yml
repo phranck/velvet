@@ -1,0 +1,17 @@
+# Replace the repository identity and service URL before the first run.
+# A name and URL are enough for a direct IPv4 GET check. HTTP 200 is healthy.
+schemaVersion: 1
+
+repository:
+  owner: your-username
+  name: your-status-repo
+
+statusPage:
+  name: Example Status
+
+services:
+  - name: Website
+    url: https://example.com
+
+history:
+  retentionDays: 365

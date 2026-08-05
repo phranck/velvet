@@ -1,0 +1,92 @@
+# Verifies a managed Velvet update in the repository it will change, before the
+# update service is allowed to merge it. The service proves the same ownership
+# rules on its side; this runs in your repository, on your own runner, so the
+# guarantee holds even if the service is wrong about what it is merging.
+name: Velvet update check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    # Only Velvet's own update branches are judged here, so an unrelated pull
+    # request in this repository is never affected by these rules.
+    if: startsWith(github.head_ref, 'velvet/update/')
+    # This name is what the update service waits for. Changing it stops every
+    # update from merging rather than failing, so it must stay as it is.
+    name: Velvet update check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the merge result
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Verify the update changes only Velvet-owned files
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+
+          # Velvet owns exactly these paths. Everything else in this repository
+          # belongs to you, including velvet.yml, README.md, and LICENSE.
+          owned=$(cat <<'PATHS'
+          .github/ISSUE_TEMPLATE/config.yml
+          .github/ISSUE_TEMPLATE/maintenance.yml
+          .github/workflows/deploy-announce.yml
+          .github/workflows/maintenance-switch.yml
+          .github/workflows/velvet-response-times.yml
+          .github/workflows/velvet-status.yml
+          .github/workflows/velvet-update-check.yml
+          .github/workflows/velvet.yml
+          velvet.lock.json
+          PATHS
+          )
+
+          # HEAD is the merge result GitHub built, and its first parent is the
+          # branch being merged into, so this diff is exactly what merging would
+          # change here.
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          if [ -z "$changed" ]; then
+            echo "::error::This update changes nothing."
+            exit 1
+          fi
+
+          failed=0
+          while IFS= read -r path; do
+            [ -n "$path" ] || continue
+            if printf '%s\n' "$owned" | grep -Fxq -- "$path"; then
+              echo "  ok        $path"
+            else
+              echo "::error file=$path::Velvet does not own this file and must not change it."
+              failed=1
+            fi
+          done <<< "$changed"
+          [ "$failed" -eq 0 ]
+
+          version="${HEAD_REF#velvet/update/}"
+          locked=$(jq -r '.installedVersion' velvet.lock.json)
+          repository=$(jq -r '.template.repository' velvet.lock.json)
+          schema=$(jq -r '.schemaVersion' velvet.lock.json)
+          commit=$(jq -r '.template.commit' velvet.lock.json)
+
+          if [ "$schema" != "1" ]; then
+            echo "::error::velvet.lock.json declares an unsupported schema version: $schema"
+            exit 1
+          fi
+          if [ "$repository" != "phranck/velvet" ]; then
+            echo "::error::velvet.lock.json points at an untrusted template: $repository"
+            exit 1
+          fi
+          if ! printf '%s' "$commit" | grep -Eq '^[a-f0-9]{40}$'; then
+            echo "::error::velvet.lock.json does not pin an immutable template revision."
+            exit 1
+          fi
+          if [ "$locked" != "$version" ]; then
+            echo "::error::This branch installs $version but the lock records $locked."
+            exit 1
+          fi
+
+          echo "Velvet $version verified against $repository@$commit."

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 
-import { MANAGED_TEMPLATE_PATHS } from "@velvet/contracts";
+import {
+  INITIAL_TEMPLATE_PATHS,
+  MANAGED_TEMPLATE_PATHS,
+} from "@velvet/contracts";
 import { buildReleaseManifest } from "@velvet/template-files";
 
 import {
@@ -34,7 +37,7 @@ function embeddedRelease(
     },
     releaseNotes: "# Velvet 2.0.0\n",
     source: {
-      repository: "phranck/velvet-template",
+      repository: "phranck/velvet",
       commit: templateCommit,
       files: sources,
     },
@@ -95,16 +98,20 @@ test("ships a release artefact that passes the publication rules", async () => {
   const releases = embeddedVelvetReleases();
 
   const release = await releases.get(releases.latest());
-  assert.equal(release.manifest.template.repository, "phranck/velvet-template");
+  assert.equal(release.manifest.template.repository, "phranck/velvet");
   assert.match(release.manifest.template.commit, /^[a-f0-9]{40}$/u);
   assert.deepEqual(
     release.manifest.managedFiles.map((file) => file.path),
     [...MANAGED_TEMPLATE_PATHS],
   );
-  assert.equal(
-    Object.keys(release.sources).length,
-    MANAGED_TEMPLATE_PATHS.length - 1,
-    "every managed path except the generated version lock has a source",
+  // The managed paths, less the version lock which is generated rather than
+  // copied, plus the files a new installation is given once and then owns.
+  assert.deepEqual(
+    Object.keys(release.sources).sort(),
+    [
+      ...MANAGED_TEMPLATE_PATHS.filter((path) => path !== "velvet.lock.json"),
+      ...INITIAL_TEMPLATE_PATHS,
+    ].sort(),
   );
   assert.equal(release.manifest.releaseNotes.length > 0, true);
 });

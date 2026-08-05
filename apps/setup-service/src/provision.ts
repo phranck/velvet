@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import {
+  INITIAL_TEMPLATE_PATHS,
   serializeVelvetConfiguration,
   type NormalizedVelvetConfiguration,
   type SetupEvent,
@@ -165,13 +166,14 @@ export async function provisionVelvet(
         // product.
         await input.github.deleteRepository(userToken, owner, repositoryName);
       }
-      const repository = await input.github.createRepositoryFromTemplate(
+      const repository = await input.github.createRepository(
         userToken,
         owner,
         repositoryName,
         // Public unless asked otherwise, which is what every installation made
         // before the choice existed received.
         input.request.repositoryVisibility ?? "public",
+        input.session.user?.login.toLowerCase() === owner.toLowerCase(),
       );
       if (
         repository.owner.toLowerCase() !== owner.toLowerCase() ||
@@ -236,6 +238,8 @@ export async function provisionVelvet(
           input.releases ?? embeddedVelvetReleases(),
           input.request.configuration,
           setupToken.canWriteWorkflows,
+          undefined,
+          true,
         ),
       );
       state.versionLockCommitted = true;
@@ -458,6 +462,7 @@ async function managedSetupFiles(
   configuration: NormalizedVelvetConfiguration,
   canWriteWorkflows: boolean,
   serial?: number,
+  includeInitial = false,
 ): Promise<{ path: string; content: string }[]> {
   const release = await releases.get(releases.latest());
   const materialized = materializeManagedTemplateFiles({
@@ -477,6 +482,19 @@ async function managedSetupFiles(
     path,
     content,
   }));
+  /*
+   * The files a new repository is given once and then owns: its licence, its
+   * README, its `.gitattributes`. They travel in the same artefact as the
+   * managed ones and are written only here, at creation, because an update
+   * that replaced somebody's README would be taking back something Velvet
+   * gave them.
+   */
+  if (includeInitial) {
+    for (const path of INITIAL_TEMPLATE_PATHS) {
+      const content = (release.sources as Record<string, string>)[path];
+      if (typeof content === "string") files.push({ path, content });
+    }
+  }
   const lock = files.find((file) => file.path === VERSION_LOCK_PATH);
   if (!lock) {
     throw new SetupServiceError(

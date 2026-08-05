@@ -37,7 +37,7 @@ function input(
     },
     releaseNotes: "# Velvet 2.1.0\n",
     source: {
-      repository: "phranck/velvet-template",
+      repository: "phranck/velvet",
       commit: templateCommit,
       files: sourceFiles,
     },
@@ -88,7 +88,7 @@ test("refuses to build a manifest when the template source is incomplete", () =>
   const result = buildReleaseManifest(
     input({
       source: {
-        repository: "phranck/velvet-template",
+        repository: "phranck/velvet",
         commit: templateCommit,
         files,
       },

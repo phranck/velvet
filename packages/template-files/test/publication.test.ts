@@ -70,7 +70,7 @@ function manifest(
     releaseType: "feature",
     automaticInstallEligible: false,
     template: {
-      repository: "phranck/velvet-template",
+      repository: "phranck/velvet",
       commit: candidateCommit,
     },
     compatibility: {
@@ -90,7 +90,7 @@ const previousManifest = manifest({
   version: "2.0.5",
   releaseType: "fix",
   template: {
-    repository: "phranck/velvet-template",
+    repository: "phranck/velvet",
     commit: previousCommit,
   },
   releaseNotes: "# Velvet 2.0.5\n\nFixes.\n",
@@ -104,7 +104,7 @@ function validate(
     manifest: candidate,
     previousManifest: previous,
     source: {
-      repository: "phranck/velvet-template",
+      repository: "phranck/velvet",
       commit: candidateCommit,
       files: sourceFiles,
     },
@@ -138,7 +138,7 @@ test("rejects sources from a different repository or commit", () => {
       files: sourceFiles,
     },
     {
-      repository: "phranck/velvet-template",
+      repository: "phranck/velvet",
       commit: previousCommit,
       files: sourceFiles,
     },
@@ -167,7 +167,7 @@ test("rejects missing or changed content at the immutable source", () => {
       manifest: manifest(),
       previousManifest,
       source: {
-        repository: "phranck/velvet-template",
+        repository: "phranck/velvet",
         commit: candidateCommit,
         files,
       },

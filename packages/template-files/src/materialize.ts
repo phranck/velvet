@@ -135,11 +135,22 @@ function renderMonitorWorkflow(
   const monitor = isRecord(jobs) ? jobs.monitor : undefined;
   const steps = isRecord(monitor) ? monitor.steps : undefined;
   if (!Array.isArray(steps)) return invalidStructure(path);
+  /*
+   * The one step that runs Velvet's monitor, found by what it uses rather than
+   * by its position, so a step added above or below it does not change which
+   * one the secret mapping is written into.
+   *
+   * A pin is the version tag the release was cut as. It used to be a commit,
+   * from when these files lived in a repository of their own and could not name
+   * a tag of this one.
+   */
   const actionSteps = steps.filter(
     (step) =>
       isRecord(step) &&
       typeof step.uses === "string" &&
-      /^phranck\/velvet\/actions\/monitor@[a-f0-9]{40}$/u.test(step.uses),
+      /^phranck\/velvet\/actions\/monitor@(?:v\d+\.\d+\.\d+|[a-f0-9]{40})$/u.test(
+        step.uses,
+      ),
   );
   if (actionSteps.length !== 1 || !isRecord(actionSteps[0])) {
     return invalidStructure(path);

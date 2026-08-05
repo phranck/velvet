@@ -25,11 +25,11 @@ const WORKFLOW_PATH = ".github/workflows/velvet-update-check.yml";
 /**
  * Matches a step that uses an action from this repository, whether that is the
  * monitor at `phranck/velvet/actions/monitor` or the site build at the root.
- * The negative lookahead keeps `phranck/velvet-template`, which appears in
+ * The negative lookahead keeps `phranck/velvet`, which appears in
  * every workflow's repository guard, out of the results.
  */
 const VELVET_PIN =
-  /uses:\s*(phranck\/velvet(?![-\w])(?:\/[^@\s]+)?)@([a-f0-9]{40})/gu;
+  /uses:\s*(phranck\/velvet(?![-\w])(?:\/[^@\s]+)?)@(v\d+\.\d+\.\d+|[a-f0-9]{40})/gu;
 
 const MENTIONS_VELVET_ACTION = /uses:\s*phranck\/velvet(?![-\w])/u;
 
@@ -102,7 +102,7 @@ test("every Velvet action the release ships names one revision", () => {
       assert.notEqual(
         pins.length,
         0,
-        `${path} uses a Velvet action without pinning it to a commit`,
+        `${path} uses a Velvet action without pinning it to a revision`,
       );
     }
     for (const [, action, commit] of pins) {

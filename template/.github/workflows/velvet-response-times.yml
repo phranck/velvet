@@ -1,0 +1,27 @@
+name: Velvet response times
+
+on:
+  schedule:
+    - cron: "0 0,6,12,18 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: velvet-status-data
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    name: Sample response times
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out status repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Publish Velvet response times
+        uses: phranck/velvet/actions/monitor@v1
+        with:
+          mode: response
+        # Map the same explicitly configured header secrets as the status job.
+
