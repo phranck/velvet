@@ -261,11 +261,10 @@ export async function provisionVelvet(
       delete input.session.installation;
       throw installationRequired("use");
     }
-    const setupToken = await input.github.createInstallationToken(
+    const installationToken = await input.github.createInstallationToken(
       installation.id,
       state.repository.id,
     );
-    const installationToken = setupToken.token;
 
     if (!state.configurationCommitted) {
       progress("writing-configuration");
@@ -302,7 +301,6 @@ export async function provisionVelvet(
         await managedSetupFiles(
           input.releases ?? embeddedVelvetReleases(),
           configuration,
-          setupToken.canWriteWorkflows,
           undefined,
           true,
           logo,
@@ -424,16 +422,18 @@ export async function provisionVelvet(
       // succeeded.
       if (state.serial !== undefined && !state.serialRecorded) {
         try {
+          // The lock alone, because everything else is already in place and
+          // the only thing this write adds is the number.
+          const withSerial = await managedSetupFiles(
+            input.releases ?? embeddedVelvetReleases(),
+            configuration,
+            state.serial,
+          );
           await input.github.writeManagedFiles(
             installationToken,
             state.repository.owner,
             state.repository.name,
-            await managedSetupFiles(
-              input.releases ?? embeddedVelvetReleases(),
-              configuration,
-              false,
-              state.serial,
-            ),
+            withSerial.filter((file) => file.path === VERSION_LOCK_PATH),
           );
           state.serialRecorded = true;
         } catch {
@@ -516,9 +516,6 @@ async function claimSerial(
  *
  * @param releases - Source describing the release being installed.
  * @param configuration - Validated configuration for the new repository.
- * @param canWriteWorkflows - Whether the token may write workflow files. When
- *   it may not, only the version lock is written, so setup still completes on
- *   an installation whose app grant predates that permission.
  * @returns The files to commit, always including the version lock.
  * @throws When the release cannot produce them, because an installation
  *   without a lock could never be updated.
@@ -526,7 +523,6 @@ async function claimSerial(
 async function managedSetupFiles(
   releases: ManagedUpdateReleaseProvider,
   configuration: NormalizedVelvetConfiguration,
-  canWriteWorkflows: boolean,
   serial?: number,
   includeInitial = false,
   logo: { path: string; content: string } | null = null,
@@ -577,7 +573,7 @@ async function managedSetupFiles(
       { recoverable: true },
     );
   }
-  return canWriteWorkflows ? files : [lock];
+  return files;
 }
 
 /**

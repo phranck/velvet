@@ -66,14 +66,6 @@ const REPOSITORY_FEATURES = {
   delete_branch_on_merge: true,
 } as const;
 
-/** The set granted before workflow tailoring existed. */
-const LEGACY_SETUP_PERMISSIONS: GitHubInstallationPermissions = {
-  actions: "write",
-  administration: "write",
-  contents: "write",
-  pages: "write",
-};
-
 export interface GitHubViewer {
   login: string;
   avatarUrl: string;
@@ -114,13 +106,6 @@ export interface GitHubWorkflowJob {
   conclusion: string | null;
 }
 
-/**
- * A setup token plus what it is actually permitted to do.
- *
- * `canWriteWorkflows` is false when the app installation predates the workflow
- * permission, so callers can degrade deliberately instead of failing a write
- * they cannot perform.
- */
 /** One file written during setup, addressed by its repository path. */
 export interface GitHubManagedSetupFile {
   path: string;
@@ -133,11 +118,6 @@ export interface GitHubManagedSetupFile {
    * every Velvet-owned file is.
    */
   encoding?: "base64";
-}
-
-export interface GitHubSetupToken {
-  token: string;
-  canWriteWorkflows: boolean;
 }
 
 export interface GitHubPagesSite {
@@ -183,10 +163,17 @@ export interface GitHubSetupClient {
     visibility: RepositoryVisibility,
     ownerIsViewer: boolean,
   ): Promise<GitHubRepository>;
+  /**
+   * A token carrying everything setup writes with, for one repository.
+   *
+   * There is no lesser token to fall back to. Every permission it asks for is
+   * needed by something setup does, and a repository missing any of them is a
+   * repository that cannot monitor or publish.
+   */
   createInstallationToken(
     installationId: number,
     repositoryId: number,
-  ): Promise<GitHubSetupToken>;
+  ): Promise<string>;
   deleteInstallation(installationId: number): Promise<void>;
   /**
    * Whether the installation token can read the repository at all.
@@ -411,27 +398,13 @@ export function createGitHubSetupClient(
     },
 
     async createInstallationToken(installationId, repositoryId) {
-      const mint = (permissions: GitHubInstallationPermissions) =>
-        createRepositoryInstallationToken(
-          { ...options, fetch: fetchImplementation, nowSeconds },
-          installationId,
-          repositoryId,
-          permissions,
-          "velvet-setup-service",
-        );
-      try {
-        return { token: await mint(SETUP_PERMISSIONS), canWriteWorkflows: true };
-      } catch (error) {
-        // GitHub refuses a token requesting more than the app was granted. The
-        // workflow permission is newer than some installations, so falling back
-        // keeps setup working on those whilst reporting that the generated
-        // workflows cannot be tailored to the configuration.
-        if (!(error instanceof GitHubApiError) || error.status !== 422) throw error;
-        return {
-          token: await mint(LEGACY_SETUP_PERMISSIONS),
-          canWriteWorkflows: false,
-        };
-      }
+      return createRepositoryInstallationToken(
+        { ...options, fetch: fetchImplementation, nowSeconds },
+        installationId,
+        repositoryId,
+        SETUP_PERMISSIONS,
+        "velvet-setup-service",
+      );
     },
 
     async deleteInstallation(installationId) {
