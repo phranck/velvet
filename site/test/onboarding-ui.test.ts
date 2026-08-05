@@ -326,7 +326,7 @@ test("uses the shared theme and icon components in onboarding and configurator",
   assert.doesNotMatch(configurator, /import RainbowScale|import VelvetWordmark/);
   assert.match(
     onboarding,
-    /--theme-card-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/,
+    /--theme-card-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/,
   );
   assert.match(
     themeCardRoot,
@@ -551,7 +551,6 @@ test("derives normal onboarding card and button radii from the StepCard geometry
   assert.match(onboarding, /--service-editor-control-radius:\s*var\(--step-card-inner-radius\)/);
   assert.match(onboarding, /--picker-popover-radius:\s*var\(--step-card-inner-radius\)/);
   assert.doesNotMatch(onboarding, /--picker-option-radius/);
-  assert.match(onboarding, /--theme-card-option-radius:\s*var\(--step-card-inner-radius\)/);
   assert.match(onboarding, /--review-card-radius:\s*var\(--step-card-inner-radius\)/);
   assert.match(onboarding, /\.dns-guidance\s*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s);
   assert.match(onboarding, /\.deployment-progress\s*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s);
@@ -562,14 +561,16 @@ test("derives normal onboarding card and button radii from the StepCard geometry
   assert.match(iconPicker, /\.options\s*\{[^}]*border-radius:\s*var\(--picker-popover-radius/s);
   assert.match(iconOption, /createSquirclePath/);
   assert.doesNotMatch(iconOption, /button\s*\{[^}]*border-radius/s);
-  assert.match(themeOption, /label\s*\{[^}]*border-radius:\s*var\(--theme-card-option-radius/s);
+  // A theme option is cut to the same squircle rather than to a radius, so it
+  // must not carry one either.
+  assert.match(themeOption, /createSquirclePath/);
+  assert.doesNotMatch(themeOption, /label\s*\{[^}]*border-radius/s);
   assert.match(reviewItem, /\.review-card\s*\{[^}]*border-radius:\s*var\(--review-card-radius/s);
   assert.doesNotMatch(serviceEditor, /<SquircleSurface/);
   assert.doesNotMatch(serviceList, /<SquircleSurface/);
   assert.doesNotMatch(iconPicker, /<SquircleSurface/);
   assert.doesNotMatch(themeOption, /<SquircleSurface/);
   assert.doesNotMatch(reviewItem, /<SquircleSurface/);
-  assert.match(themeOption, /--theme-card-option-radius/);
   assert.match(reviewItem, /--review-card-radius/);
   assert.match(iconPicker, /--picker-popover-radius/);
 });
@@ -726,10 +727,10 @@ test("defers the theme previews and reserves the space they will take", async ()
   // change: all four were fetched whilst the first step was on screen.
   assert.match(option, /<img[^>]*\bloading="lazy"/);
 
-  // Deferring is only safe whilst the box is claimed in advance. Without this
-  // the step would jump as each preview lands, which is the fault #193 fixed on
-  // the website.
-  assert.match(option, /\.image-shell\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*10/s);
+  // Deferring is only safe whilst the box is claimed in advance. The option is
+  // square whatever it holds, so the preview lands in a space that already
+  // exists rather than pushing the step about as each one arrives.
+  assert.match(option, /label\s*\{[^}]*aspect-ratio:\s*1\b/s);
 });
 
 test("offers an optional description that becomes the page's SEO copy", async () => {

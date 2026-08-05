@@ -762,11 +762,13 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByRole("button", { name: "Theme", exact: true }).click();
 
     await page.setViewportSize({ width: 1280, height: 800 });
+    // All four included themes in one row, which is what makes them comparable
+    // without scrolling between them.
     assert.equal(
       await page.locator("[data-theme-card-group] .options").evaluate((element) =>
         getComputedStyle(element).gridTemplateColumns.split(" ").length,
       ),
-      3,
+      4,
     );
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(
@@ -804,11 +806,28 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
+    // Square, and cut to a squircle rather than to a radius, which is the
+    // shape the steps above it carry. The path is derived from the option's
+    // measured width, so it lands on the frame after the step opens.
+    await page
+      .locator("[data-theme-card-option] .body")
+      .first()
+      .evaluate((element) =>
+        new Promise<void>((settle) => {
+          const check = () => {
+            if (getComputedStyle(element).clipPath.startsWith("path(")) settle();
+            else requestAnimationFrame(check);
+          };
+          check();
+        }),
+      );
     assert.equal(
-      await page.locator("[data-theme-card-option]").first().evaluate((element) =>
-        getComputedStyle(element).borderTopLeftRadius,
-      ),
-      `${STEP_CARD_INNER_RADIUS}px`,
+      await page.locator("[data-theme-card-option]").first().evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return Math.round(box.width) === Math.round(box.height);
+      }),
+      true,
+      "a theme option is square",
     );
     await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");

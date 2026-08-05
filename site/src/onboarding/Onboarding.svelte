@@ -970,9 +970,8 @@
     --theme-card-font-size: var(--setup-text-body);
     --theme-card-heading-font: var(--setup-heading-font);
     --theme-card-heading-font-size: 1.25rem;
-    --theme-card-columns: repeat(3, minmax(0, 1fr));
+    --theme-card-columns: repeat(4, minmax(0, 1fr));
     --theme-card-gap: 0.7rem;
-    --theme-card-option-radius: var(--step-card-inner-radius);
     --theme-card-option-text-inset: 0.52rem;
     --theme-card-text-inset: 0.75rem;
     --review-card-radius: var(--step-card-inner-radius);

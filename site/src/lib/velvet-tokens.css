@@ -43,6 +43,10 @@
   --velvet-scrim: rgb(10 11 15 / 0.72);
   /* The lamp a tool marks a live local state with, and the halo around it. */
   --velvet-live: #75d8b2;
+  /* What a tool draws around the one option somebody has chosen. Brighter than
+     the operational green, so a choice reads as a choice rather than as a
+     service reporting itself healthy. */
+  --velvet-selection: #c9f47f;
 
   /* Two layers rather than one. A single wide shadow dissolves into the board
      backdrop and leaves a card looking pasted flat; the near layer draws its

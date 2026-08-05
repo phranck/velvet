@@ -40,15 +40,23 @@ test("offers exactly the four embedded system themes as complete canonical theme
  * The two sets of theme pictures, and what each has to be showing.
  *
  * Both come from one run of `theme-screenshots`, photographed from the real
- * Configurator preview. They differ in one thing on purpose: the picker shows a
- * degraded page, because somebody choosing colours has to see what a theme does
- * with its warning and danger ones, and the start page's gallery shows a well
- * one, because four status pages reporting trouble is the wrong first thing to
- * show a visitor.
+ * Configurator preview, and both show a well page: four status pages reporting
+ * trouble is the wrong thing to show anybody, whether they are visiting or
+ * installing. They differ in shape, which each manifest records as its own
+ * viewport.
  */
 const SCREENSHOT_SETS = [
-  { directory: "../src/components/theme-card/assets", health: "degraded" },
-  { directory: "../src/website/assets/themes", health: "operational" },
+  {
+    directory: "../src/components/theme-card/assets",
+    health: "operational",
+    // Nearly square, because each option in the picker is.
+    viewport: { width: 640, height: 480 },
+  },
+  {
+    directory: "../src/website/assets/themes",
+    health: "operational",
+    viewport: { width: 640, height: 400 },
+  },
 ];
 
 test("both sets of theme pictures match the current themes and assets", async () => {
@@ -67,6 +75,7 @@ test("both sets of theme pictures match the current themes and assets", async ()
     // regenerated from the same state and nobody would see it in the pictures
     // until the start page reported trouble again.
     assert.equal(manifest.health, set.health, set.directory);
+    assert.deepEqual(manifest.viewport, set.viewport, set.directory);
   }
 });
 
