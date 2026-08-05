@@ -159,6 +159,7 @@ function setupClient(repository: Repository): GitHubSetupClient {
     async account() {
       return { id: 42, login: "example", type: "User" };
     },
+    async repositoryReadable() { return true; },
     async findRepository() { return null; },
     async repositoryInstallationId() { return null; },
     async deleteRepository() {},

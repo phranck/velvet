@@ -188,17 +188,37 @@ export interface GitHubSetupClient {
     repositoryId: number,
   ): Promise<GitHubSetupToken>;
   deleteInstallation(installationId: number): Promise<void>;
+  /**
+   * Whether the installation token can read the repository at all.
+   *
+   * GitHub takes a moment to grant a token access to a repository that has
+   * just been created, and this is what says when it has. Asked of the
+   * repository itself rather than of a file, because the first file Velvet
+   * writes does not exist until after this answers.
+   */
+  repositoryReadable(
+    installationToken: string,
+    owner: string,
+    repository: string,
+  ): Promise<boolean>;
+  /**
+   * The configuration's blob SHA, or null where the file is not there yet.
+   *
+   * Null on a first setup, because Velvet creates the repository empty and
+   * writes this file itself. A repeated run finds the previous one and needs
+   * its SHA to replace it.
+   */
   getConfigurationSha(
     installationToken: string,
     owner: string,
     repository: string,
-  ): Promise<string>;
+  ): Promise<string | null>;
   writeConfiguration(
     installationToken: string,
     owner: string,
     repository: string,
     source: string,
-    sha: string,
+    sha: string | null,
   ): Promise<void>;
   writeManagedFiles(
     installationToken: string,
@@ -427,11 +447,32 @@ export function createGitHubSetupClient(
       );
     },
 
+    async repositoryReadable(installationToken, owner, repository) {
+      // A 404 is GitHub saying "not yet" whilst it grants the token its
+      // access, so it is read as an answer. Anything else is a real failure.
+      try {
+        await githubRequest<unknown>(
+          `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}`,
+          installationToken,
+        );
+        return true;
+      } catch (error) {
+        if (error instanceof GitHubApiError && error.status === 404) return false;
+        throw error;
+      }
+    },
+
     async getConfigurationSha(installationToken, owner, repository) {
-      const body = await githubRequest<unknown>(
-        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/contents/${CONFIGURATION_PATH}`,
-        installationToken,
-      );
+      let body: unknown;
+      try {
+        body = await githubRequest<unknown>(
+          `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/contents/${CONFIGURATION_PATH}`,
+          installationToken,
+        );
+      } catch (error) {
+        if (error instanceof GitHubApiError && error.status === 404) return null;
+        throw error;
+      }
       if (!isRecord(body) || typeof body.sha !== "string") {
         throw new Error("GitHub configuration response was invalid.");
       }
@@ -450,10 +491,12 @@ export function createGitHubSetupClient(
         installationToken,
         {
           method: "PUT",
+          // The SHA says which blob is being replaced, so it is sent only when
+          // there is one. Sending it for a file that does not exist is refused.
           body: JSON.stringify({
             message: "Configure Velvet [skip ci]",
             content: Buffer.from(source).toString("base64"),
-            sha,
+            ...(sha === null ? {} : { sha }),
             branch: "main",
           }),
         },

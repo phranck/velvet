@@ -183,6 +183,16 @@
       -1,
     ),
   );
+  /**
+   * What each stage is working on, where naming it tells somebody something.
+   *
+   * Only the repository step, because that is the one where a name and an
+   * account were entered several steps earlier and seeing them again confirms
+   * what is about to be created.
+   */
+  const progressDetail = $derived<Partial<Record<SetupProgressStage, string>>>({
+    "creating-repository": `${draft.repositoryOwner.trim()}/${draft.repositoryName.trim()}`,
+  });
   const selectedTheme = $derived(systemThemeById(draft.themeId));
   const previousStepLabel = $derived(step > 0 ? STEPS[step - 1] : "");
   const nextStepLabel = $derived(
@@ -814,7 +824,10 @@
                   class={`ph-duotone ${done ? "ph-check-circle" : running ? "ph-spinner-ball" : "ph-circle"}`}
                   aria-hidden="true"
                 ></i>
-                {label}
+                <span>{label}</span>
+                {#if progressDetail[stage as SetupProgressStage]}
+                  <code>{progressDetail[stage as SetupProgressStage]}</code>
+                {/if}
               </li>
             {/each}
           </ol>
@@ -1431,6 +1444,17 @@
     flex: none;
     color: var(--setup-accent);
     font-size: 1.625rem;
+  }
+  /* The repository this step is creating, set apart from the sentence around
+     it the way a name is everywhere else in the product. */
+  .deployment-progress code {
+    overflow: hidden;
+    padding: var(--velvet-code-inset);
+    border-radius: var(--velvet-code-radius);
+    background: var(--velvet-code-tint);
+    font-size: var(--setup-text-body);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .deployment-progress li.complete i {
     color: var(--setup-success);
