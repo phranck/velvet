@@ -2,7 +2,9 @@
 
 `velvet-wordmark.json` holds the Velvet wordmark as a single SVG path, together with the width it advances by. The board backdrop draws it from there rather than as text, because an SVG used as a CSS background renders in isolation and never resolves the page's web fonts. Outlines are the only way it looks like the real logo.
 
-The path is generated from the Plaster face that ships with `@fontsource/plaster`, and the extraction needs a font library rather than a browser. That is the one step in this repository that runs Python, which is why it lives here as a recipe rather than as a script in the build: the wordmark changes when the brand does, and nothing else depends on it.
+The path is generated from the Plaster face that ships with `@fontsource/plaster`, and the extraction needs a font library rather than a browser. That is the one step in this repository that runs Python, which is why it lives here as a recipe rather than as a script in the build. It runs when the brand changes, and nothing else does.
+
+Two things read the file afterwards. The board backdrop draws the whole word from it, and `site/scripts/generate-mark.ts` takes the first two contours, which are the V, and builds the Velvet mark and the browser icon out of them.
 
 ## What the numbers mean
 
@@ -57,6 +59,8 @@ with open("scripts/velvet-wordmark.json", "w") as handle:
 ```
 
 Then redraw the board with `bun scripts/build-pcb-backdrop.mjs`, and check the result with `--contrast`, which raises every layer to a strength the artwork can be judged at and is never shipped.
+
+Redraw the mark as well, from the `site` directory, with `bun scripts/generate-mark.ts` followed by `bun scripts/generate-favicons.ts`. The first writes the mark and the icon, and the second rasterises the icon into the sizes a browser and a home screen need.
 
 ## Licensing
 
