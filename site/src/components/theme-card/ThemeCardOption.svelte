@@ -1,4 +1,22 @@
 <script lang="ts">
+  import { createSquirclePath } from "../../lib/squircle.js";
+
+  /**
+   * The two outlines a step carries, in the same order and at the same insets,
+   * because this is the same shape rather than one that resembles it.
+   */
+  const OUTER_PATH_INSET = 1;
+  const INNER_PATH_INSET = 5.5;
+  const INNER_STROKE_WIDTH = 4;
+  /**
+   * Where the thick inner line stops and the option's own surface begins.
+   *
+   * A stroke straddles its path, so half of it lies inside the inset the path
+   * was drawn at. Derived rather than stated, so moving the line moves what it
+   * contains with it.
+   */
+  const CONTENT_INSET = INNER_PATH_INSET + INNER_STROKE_WIDTH / 2;
+
   let {
     name,
     value,
@@ -14,9 +32,21 @@
     radioName: string;
     onSelect: (value: string) => void;
   } = $props();
+
+  let size = $state(0);
+  const outerPath = $derived(createSquirclePath(size, OUTER_PATH_INSET));
+  const innerPath = $derived(createSquirclePath(size, INNER_PATH_INSET));
+  const contentPath = $derived(createSquirclePath(size, CONTENT_INSET));
+  /**
+   * Clips the option to the inner edge of that line, so the preview meets it
+   * on the left, the right, and the top and is cut by the curve rather than
+   * held away from it. A squircle is not a radius, so nothing but a path can
+   * do this.
+   */
+  const clip = $derived(contentPath ? `path("${contentPath}")` : "none");
 </script>
 
-<label class:selected data-theme-card-option={value}>
+<label class:selected data-theme-card-option={value} bind:clientWidth={size}>
   <input
     type="radio"
     name={radioName}
@@ -24,7 +54,7 @@
     checked={selected}
     onchange={() => onSelect(value)}
   />
-  <span class="image-shell">
+  <span class="body" style:clip-path={clip}>
     <!--
       Deferred on purpose, which is the opposite of the picture on the website
       and right for the same reason. These four previews weigh 360 KB together,
@@ -32,104 +62,108 @@
       behind two forms. Measured before this: all four were fetched whilst the
       first step was on screen.
 
-      Nothing moves when they arrive, because the shell around them states its
-      own aspect ratio.
+      Nothing moves when they arrive, because the option is square and the
+      preview holds a fixed share of it.
     -->
     <img src={screenshot} alt="" loading="lazy" decoding="async" />
-    <span class="check" aria-hidden="true">
-      <i class="ph-duotone ph-check-circle"></i>
-    </span>
+    <strong>{name}</strong>
   </span>
-  <strong>{name}</strong>
+  <svg
+    class="outline"
+    data-theme-card-squircle
+    viewBox={`0 0 ${Math.max(size, 1)} ${Math.max(size, 1)}`}
+    aria-hidden="true"
+  >
+    <path
+      d={outerPath}
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1"
+      stroke-linejoin="round"
+    ></path>
+    <path
+      d={innerPath}
+      fill="none"
+      stroke="currentColor"
+      stroke-width="4"
+      stroke-linejoin="round"
+    ></path>
+  </svg>
 </label>
 
 <style>
   label {
+    position: relative;
     min-width: 0;
-    display: grid;
-    gap: 0.55rem;
-    padding: 0.38rem;
+    aspect-ratio: 1;
+    display: block;
+    padding: 0;
     border: 0;
-    border-radius: var(--theme-card-option-radius, 0.75rem);
-    background: var(--picker-surface, #ffffff);
-    color: var(--picker-text, #171922);
+    /* What a completed step draws its outline in, so an option somebody has
+       not chosen sits at the same weight as a step already behind them. */
+    color: color-mix(in srgb, var(--picker-accent, #6366f1) 55%, transparent);
     cursor: pointer;
     transition:
-      background 160ms ease,
-      transform 160ms ease;
+      color 200ms ease-in-out,
+      transform 200ms ease-in-out;
   }
   label:hover {
-    background: color-mix(
-      in srgb,
-      var(--picker-accent, #6366f1) 7%,
-      var(--picker-surface, #ffffff)
-    );
-    transform: translateY(-1px);
+    transform: scale(1.03);
   }
   label.selected {
-    background: color-mix(
-      in srgb,
-      var(--picker-accent, #6366f1) 16%,
-      var(--picker-surface, #ffffff)
-    );
+    color: var(--velvet-selection);
   }
   input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
   }
-  label:has(input:focus-visible) {
-    outline: 3px solid
-      color-mix(in srgb, var(--picker-accent, #6366f1) 45%, transparent);
-    outline-offset: 2px;
-  }
-  .image-shell {
-    position: relative;
-    aspect-ratio: 16 / 10;
-    overflow: hidden;
-    border-radius: 0.52rem;
-    background: var(--velvet-surface-sunken);
+  .body {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    /* The name takes the height its one line needs and the preview takes the
+       rest, so the picture is what the option is mostly made of. */
+    grid-template-rows: 1fr auto;
+    background: var(--picker-surface, #ffffff);
   }
   img {
     width: 100%;
     height: 100%;
     display: block;
-    object-fit: cover;
-  }
-  .check {
-    position: absolute;
-    top: 0.45rem;
-    right: 0.45rem;
-    width: 1.55rem;
-    height: 1.55rem;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: var(--picker-accent, #6366f1);
-    color: #fff;
-    font-size: 1.2rem;
-    opacity: 0;
-    transform: scale(0.8);
-    transition:
-      opacity 160ms ease,
-      transform 160ms ease;
-  }
-  label.selected .check {
-    opacity: 1;
-    transform: scale(1);
+    /* Fitted rather than filled. These previews are wider than the space is,
+       and filling it cut the page's own headings in half at both edges, which
+       reads as a broken picture rather than a cropped one. */
+    object-fit: contain;
+    object-position: top center;
   }
   strong {
-    padding: 0 var(--theme-card-option-text-inset, 0.25rem) 0.18rem;
     overflow: hidden;
+    /* Enough below the line to clear the bottom curve, which is why the two
+       are not equal. */
+    padding: 0.85rem var(--theme-card-option-text-inset, 0.5rem) 1.35rem;
+    color: var(--picker-text, #171922);
     font-size: var(--theme-card-font-size, 0.85rem);
     line-height: 1.25;
+    text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .outline {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+    pointer-events: none;
+  }
+  label:has(input:focus-visible) .outline {
+    filter: drop-shadow(0 0 4px currentColor);
+  }
 
   @media (prefers-reduced-motion: reduce) {
-    label,
-    .check {
+    label {
       transition: none;
     }
     label:hover {

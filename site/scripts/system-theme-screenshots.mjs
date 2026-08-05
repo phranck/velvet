@@ -5,11 +5,11 @@
  * StatusPage component deployed sites use, so a picture here cannot drift from
  * what an installation actually looks like.
  *
- * Two sets, from one run. The picker in the browser setup and the Configurator
- * shows a degraded page, because somebody choosing colours has to see what a
- * theme does with the warning and danger ones. The gallery on velvet.li shows a
- * well one, because the first thing a visitor sees of Velvet should not be four
- * status pages reporting trouble.
+ * Two sets, from one run, both showing a well page. Nothing a visitor or
+ * somebody installing sees of Velvet should be four status pages reporting
+ * trouble. They differ in shape: the picker's options are square, so its
+ * pictures are cut to four by three, whilst the gallery's sit in a row and keep
+ * the wider frame.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -29,17 +29,20 @@ const DISTRIBUTION = resolve(SITE, "../configurator");
 /** Where each set is written, and what the page has to be showing for it. */
 const SETS = [
   {
-    // The picker, in the browser setup and in the Configurator.
+    // The picker, in the browser setup and in the Configurator. Nearly square,
+    // because each option is, and a wider picture would leave a band of empty
+    // card under it.
     directory: resolve(SITE, "src/components/theme-card/assets"),
-    health: "degraded",
+    health: "operational",
+    viewport: { width: 640, height: 480 },
   },
   {
     // The gallery on the start page.
     directory: resolve(SITE, "src/website/assets/themes"),
     health: "operational",
+    viewport: { width: 640, height: 400 },
   },
 ];
-const VIEWPORT = { width: 640, height: 400 };
 const MIME = {
   ".css": "text/css",
   ".html": "text/html",
@@ -110,10 +113,10 @@ async function main() {
       route.abort(),
     );
 
-    for (const { directory, health } of SETS) {
+    for (const { directory, health, viewport } of SETS) {
       const manifest = {
         schemaVersion: 1,
-        viewport: VIEWPORT,
+        viewport,
         health,
         themes: {},
       };
@@ -137,8 +140,8 @@ async function main() {
         await page.locator(`#theme-registry-option-${theme.id}`).click();
         await page.addStyleTag({
           content: `.status-page {
-            width: ${VIEWPORT.width}px !important;
-            max-width: ${VIEWPORT.width}px !important;
+            width: ${viewport.width}px !important;
+            max-width: ${viewport.width}px !important;
           }`,
         });
         await page.evaluate(() => globalThis.document.fonts.ready);
@@ -149,8 +152,8 @@ async function main() {
         const clip = {
           x: Math.round(statusPage.x),
           y: Math.round(statusPage.y),
-          width: VIEWPORT.width,
-          height: VIEWPORT.height,
+          width: viewport.width,
+          height: viewport.height,
         };
         const image = await page.screenshot({ type: "png", clip });
         const file = `${theme.id}.png`;

@@ -13,7 +13,7 @@
 
 <p class="required-legend" data-required-legend>
   <RequiredMark />
-  <span>Fields marked this way are needed before you can continue.</span>
+  <span>Fields marked like this are mandatory before you can continue.</span>
 </p>
 
 <style>

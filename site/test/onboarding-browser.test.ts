@@ -548,15 +548,18 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           ?.getAttribute("d")
           ?.startsWith("M") === true,
     );
-    assert.equal(
+    assert.deepEqual(
       await setupIconOptions.first().locator("[data-service-icon-squircle]").evaluate(
         (element) => {
           const path = element.querySelector("path")?.getAttribute("d") ?? "";
           const rect = element.getBoundingClientRect();
-          return path.startsWith("M") && Math.round(rect.width) === Math.round(rect.height);
+          return {
+            drawn: path.startsWith("M"),
+            square: Math.round(rect.width) === Math.round(rect.height),
+          };
         },
       ),
-      true,
+      { drawn: true, square: true },
     );
     assert.deepEqual(
       await setupIconPicker.getByRole("listbox").evaluate((element) => {
@@ -725,13 +728,29 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         paddingInline: ["12px", "12px"],
       },
     );
+    // The capitals sit on the button's middle, not the line box. Barlow's
+    // capitals sit below the middle of its own metrics, so a box centred by its
+    // edges leaves the word looking low, and the shared button lifts the row to
+    // answer that.
     assert.ok(
       await page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) => {
         const button = element.getBoundingClientRect();
-        const label = element.querySelector("[data-step-card-button-label]")
-          ?.getBoundingClientRect();
+        const label = element.querySelector("[data-step-card-button-label]");
         if (!label) return false;
-        return Math.abs((button.top + button.bottom - label.top - label.bottom) / 2) < 0.5;
+        const labelBox = label.getBoundingClientRect();
+        const style = getComputedStyle(label);
+        const context = document.createElement("canvas").getContext("2d");
+        if (!context) return false;
+        context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        const cap = context.measureText("H");
+        const baseline =
+          labelBox.top +
+          (labelBox.height -
+            (cap.fontBoundingBoxAscent + cap.fontBoundingBoxDescent)) /
+            2 +
+          cap.fontBoundingBoxAscent;
+        const capMiddle = baseline - cap.actualBoundingBoxAscent / 2;
+        return Math.abs(capMiddle - (button.top + button.height / 2)) < 0.5;
       }),
     );
     assert.deepEqual(
@@ -762,11 +781,13 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByRole("button", { name: "Theme", exact: true }).click();
 
     await page.setViewportSize({ width: 1280, height: 800 });
+    // All four included themes in one row, which is what makes them comparable
+    // without scrolling between them.
     assert.equal(
       await page.locator("[data-theme-card-group] .options").evaluate((element) =>
         getComputedStyle(element).gridTemplateColumns.split(" ").length,
       ),
-      3,
+      4,
     );
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(
@@ -804,11 +825,28 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "0px",
     );
+    // Square, and cut to a squircle rather than to a radius, which is the
+    // shape the steps above it carry. The path is derived from the option's
+    // measured width, so it lands on the frame after the step opens.
+    await page
+      .locator("[data-theme-card-option] .body")
+      .first()
+      .evaluate((element) =>
+        new Promise<void>((settle) => {
+          const check = () => {
+            if (getComputedStyle(element).clipPath.startsWith("path(")) settle();
+            else requestAnimationFrame(check);
+          };
+          check();
+        }),
+      );
     assert.equal(
-      await page.locator("[data-theme-card-option]").first().evaluate((element) =>
-        getComputedStyle(element).borderTopLeftRadius,
-      ),
-      `${STEP_CARD_INNER_RADIUS}px`,
+      await page.locator("[data-theme-card-option]").first().evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return Math.round(box.width) === Math.round(box.height);
+      }),
+      true,
+      "a theme option is square",
     );
     await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");

@@ -2,28 +2,28 @@
   "schemaVersion": 1,
   "viewport": {
     "width": 640,
-    "height": 400
+    "height": 480
   },
-  "health": "degraded",
+  "health": "operational",
   "themes": {
     "velvet-default": {
       "file": "velvet-default.png",
-      "imageSha256": "aa524277389eebdfbe9dfb875107045c59e379b10b8d1ef18326f13a3e74b92d",
+      "imageSha256": "fa39fb0f0c58685d11c058cfba7d178bed5b30db44113ae483508a24b21706e1",
       "themeSha256": "e70370bf3be512b89266b6046d216d3dfd1ef2f031fde7b2c20cef1c5745f991"
     },
     "cloudy-autumn": {
       "file": "cloudy-autumn.png",
-      "imageSha256": "3e2a28b9e743159f1378c2b89b21c0f46e4ce512d7d908aa3e4ec6dc5aaa81b1",
+      "imageSha256": "32597a3b203b6efef4a03489c477509c160a1f452cdd41144947bb46c173e671",
       "themeSha256": "4eadea455e49bc4ec9579d587d3ef305bfc82624dd68fd9d07fd282e0577573e"
     },
     "sunny-spring": {
       "file": "sunny-spring.png",
-      "imageSha256": "c15257bfc0c09473e0220bc28bb0452285f8649aa35661d608c18f68f7f12da2",
+      "imageSha256": "dc9212df2435db2829421279f37620292b482cd32a288ce1b784d193b156bc95",
       "themeSha256": "ace416a426dbe83557c848a4cfdf22aa0ea5253108b3122e6a95d6178016c207"
     },
     "violet-velvet": {
       "file": "violet-velvet.png",
-      "imageSha256": "261758dc475a5444a3e24b19ed35e7e64748e396d1c6d82123590ee6aa8223ad",
+      "imageSha256": "5f767569fa7749d8e074b319c2a0f73616da22981bbbfc389b3b1f1a9e442131",
       "themeSha256": "6a5c189f69fdc33e7b0852d947a9d7e1fc84ad1593a15c76d021cfa79e13bbda"
     }
   }
