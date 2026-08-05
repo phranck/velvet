@@ -987,3 +987,86 @@ test("an installation without a logo names none", async () => {
   assert.equal(written.some((file) => file.path.startsWith("logo.")), false);
   assert.doesNotMatch(configuration, /logoUrl/u);
 });
+
+test("starts over when the previous attempt created nothing", async () => {
+  // Somebody who corrects a repository name after a failure was told to sign
+  // out, which the onboarding offers no way to do. Nothing was created, so
+  // there is nothing the second attempt could damage.
+  const session = authenticatedSession();
+  const { client } = successfulGitHub({
+    async createRepository() {
+      throw new GitHubApiError(new Response(null, { status: 422 }));
+    },
+  });
+
+  await assert.rejects(
+    provisionVelvet({
+      session,
+      request: normalizedRequest,
+      github: client,
+      onEvent: () => {},
+      sleep: async () => {},
+    }),
+  );
+  assert.ok(session.provisioning, "the failed attempt left its state behind");
+
+  const renamed = validateSetupRequest({
+    configuration: {
+      schemaVersion: 1,
+      repository: { owner: "example", name: "status" },
+      statusPage: { name: "A Different Status" },
+      services: [{ name: "Website", url: "https://example.com" }],
+    },
+  });
+  assert.equal(renamed.success, true);
+  if (!renamed.success) return;
+
+  const result = await provisionVelvet({
+    session,
+    request: renamed.data,
+    github: successfulGitHub().client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(result.type, "success");
+});
+
+test("refuses a different setup once a repository exists", async () => {
+  const session = authenticatedSession();
+  const { client } = successfulGitHub();
+
+  await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  const renamed = validateSetupRequest({
+    configuration: {
+      schemaVersion: 1,
+      repository: { owner: "example", name: "status" },
+      statusPage: { name: "A Different Status" },
+      services: [{ name: "Website", url: "https://example.com" }],
+    },
+  });
+  assert.equal(renamed.success, true);
+  if (!renamed.success) return;
+
+  await assert.rejects(
+    provisionVelvet({
+      session,
+      request: renamed.data,
+      github: successfulGitHub().client,
+      onEvent: () => {},
+      sleep: async () => {},
+    }),
+    (error: unknown) =>
+      error instanceof SetupServiceError &&
+      error.code === "SETUP_PARTIAL" &&
+      // Named, so somebody knows which repository is in the way.
+      error.message.includes("example/status"),
+  );
+});
