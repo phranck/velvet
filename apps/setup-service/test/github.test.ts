@@ -175,9 +175,10 @@ test("restricts installation tokens and repository changes to the Velvet setup f
   // reaches the request rather than being decided in the service.
   //
   // `auto_init` is what gives the new repository a default branch, which the
-  // write that follows needs a parent on. Issues are on because incidents and
-  // maintenance are GitHub Issues; the wiki and projects are not part of Velvet
-  // and are left off rather than created and ignored.
+  // write that follows needs a parent on. Every feature is stated rather than
+  // left to a default, so the repository offers what Velvet uses and nothing
+  // else: Issues because incidents and maintenance are Issues, and squash
+  // because that is how an update pull request is merged.
   assert.deepEqual(await requests[1]!.json(), {
     name: "status",
     private: true,
@@ -185,6 +186,11 @@ test("restricts installation tokens and repository changes to the Velvet setup f
     has_issues: true,
     has_wiki: false,
     has_projects: false,
+    has_downloads: false,
+    allow_squash_merge: true,
+    allow_merge_commit: false,
+    allow_rebase_merge: false,
+    delete_branch_on_merge: true,
   });
   assert.equal(
     requests[2]!.url,

@@ -46,6 +46,26 @@ const SETUP_PERMISSIONS: GitHubInstallationPermissions = {
   workflows: "write",
 };
 
+/**
+ * Every repository feature stated at creation, on or off.
+ *
+ * Stated in full rather than left to GitHub's defaults, so a status page
+ * repository offers what Velvet uses and nothing else. Issues carry incidents
+ * and maintenance, and updates arrive as pull requests that are squashed, so
+ * the other two merge methods would only ever produce a history Velvet does not
+ * write. A merged update branch is removed with its pull request.
+ */
+const REPOSITORY_FEATURES = {
+  has_issues: true,
+  has_wiki: false,
+  has_projects: false,
+  has_downloads: false,
+  allow_squash_merge: true,
+  allow_merge_commit: false,
+  allow_rebase_merge: false,
+  delete_branch_on_merge: true,
+} as const;
+
 /** The set granted before workflow tailoring existed. */
 const LEGACY_SETUP_PERMISSIONS: GitHubInstallationPermissions = {
   actions: "write",
@@ -364,9 +384,7 @@ export function createGitHubSetupClient(
           name,
           private: visibility === "private",
           auto_init: true,
-          has_issues: true,
-          has_wiki: false,
-          has_projects: false,
+          ...REPOSITORY_FEATURES,
         }),
       });
       return parseRepository(body);
