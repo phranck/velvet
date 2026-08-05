@@ -31,7 +31,7 @@ jobs:
           set -euo pipefail
 
           # Velvet owns exactly these paths. Everything else in this repository
-          # belongs to you, including velvet.yml, README.md, and LICENSE.
+          # belongs to you, including velvet.yml, README.md, and NOTICE.
           owned=$(cat <<'PATHS'
           .github/ISSUE_TEMPLATE/config.yml
           .github/ISSUE_TEMPLATE/maintenance.yml

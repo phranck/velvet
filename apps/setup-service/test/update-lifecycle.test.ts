@@ -131,7 +131,7 @@ const configuration = ((): NormalizedVelvetConfiguration => {
 class Repository {
   files = new Map<string, string>([
     ["README.md", "# My status page\n"],
-    ["LICENSE", "MIT\n"],
+    ["NOTICE", "MIT\n"],
   ]);
   dataBranch: string | null = "9".repeat(40);
   defaultHead = "1".repeat(40);

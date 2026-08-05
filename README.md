@@ -126,7 +126,7 @@ It is available at `http://127.0.0.1:2342` while running. Because it knows no in
 
 ## Updates
 
-Velvet installs new versions for you. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. Your `velvet.yml`, the whole `velvet-data` branch, your incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `LICENSE` are never part of one.
+Velvet installs new versions for you. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. Your `velvet.yml`, the whole `velvet-data` branch, your incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `NOTICE` are never part of one.
 
 That promise is checked twice. The service proves it from GitHub's own view of the change before merging, and a workflow in your repository proves it again against the merge GitHub actually built. An update that touched anything else would fail its check and never reach your default branch.
 

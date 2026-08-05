@@ -1,4 +1,26 @@
-MIT License
+# Notice
+
+This repository was created by [Velvet](https://github.com/phranck/velvet). Its
+configuration, its recorded history, and its Issues belong to the account that
+owns it.
+
+These files come from Velvet and are covered by the licence below:
+
+- `.gitattributes`
+- `.github/ISSUE_TEMPLATE/config.yml`
+- `.github/ISSUE_TEMPLATE/maintenance.yml`
+- `.github/workflows/deploy-announce.yml`
+- `.github/workflows/maintenance-switch.yml`
+- `.github/workflows/velvet-response-times.yml`
+- `.github/workflows/velvet-status.yml`
+- `.github/workflows/velvet-update-check.yml`
+- `.github/workflows/velvet.yml`
+- `velvet.lock.json`
+
+Everything else in this repository is the owner's, including `velvet.yml`, this
+notice, and anything published from it.
+
+## MIT License
 
 Copyright (c) 2026 phranck
 

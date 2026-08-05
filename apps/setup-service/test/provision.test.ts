@@ -1070,3 +1070,63 @@ test("refuses a different setup once a repository exists", async () => {
       error.message.includes("example/status"),
   );
 });
+
+test("gives the repository a README about the installation in it", async () => {
+  // Written once and never touched again, so it says what this repository is
+  // and nothing that `velvet.yml` decides: a count of services or a retention
+  // written here would be wrong the first time either changes.
+  const written: { path: string; content: string }[] = [];
+  const { client } = successfulGitHub({
+    async writeManagedFiles(
+      _token: string,
+      _owner: string,
+      _repository: string,
+      files: readonly { path: string; content: string }[],
+    ) {
+      written.push(...files);
+    },
+  });
+
+  await provisionVelvet({
+    session: authenticatedSession(),
+    request: customDomainRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  const readme = written.find((file) => file.path === "README.md");
+  assert.ok(readme, "a README is written");
+  assert.match(readme.content, /# Example Status/);
+  assert.match(readme.content, /status\.example\.com/);
+  assert.doesNotMatch(readme.content, /\{\{/, "no placeholder survives");
+  // The notice travels with it, because MIT asks for its text beside the files
+  // it covers and those files are the workflows.
+  assert.ok(written.some((file) => file.path === "NOTICE"));
+});
+
+test("points the README at GitHub Pages where no domain is set", async () => {
+  const written: { path: string; content: string }[] = [];
+  const { client } = successfulGitHub({
+    async writeManagedFiles(
+      _token: string,
+      _owner: string,
+      _repository: string,
+      files: readonly { path: string; content: string }[],
+    ) {
+      written.push(...files);
+    },
+  });
+
+  await provisionVelvet({
+    session: authenticatedSession(),
+    request: normalizedRequest,
+    github: client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  const readme = written.find((file) => file.path === "README.md");
+  assert.ok(readme);
+  assert.match(readme.content, /example\.github\.io\/status/);
+});
