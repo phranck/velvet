@@ -193,7 +193,7 @@ check(
   lockAfterSeed.lock.installedVersion,
 );
 
-const protectedBefore = await snapshot(["README.md", "LICENSE", "velvet.yml"]);
+const protectedBefore = await snapshot(["README.md", "NOTICE", "velvet.yml"]);
 const dataBranchBefore = await repository.dataBranchHead();
 
 const next = seedRelease(templateCommit, NEXT_VERSION);
@@ -250,7 +250,7 @@ check(
   `${settled.state}${settled.reason ? ` (${settled.reason})` : ""}`,
 );
 
-const protectedAfter = await snapshot(["README.md", "LICENSE", "velvet.yml"]);
+const protectedAfter = await snapshot(["README.md", "NOTICE", "velvet.yml"]);
 check(
   "protected files are byte-identical after the merge",
   JSON.stringify(protectedBefore) === JSON.stringify(protectedAfter),
@@ -296,7 +296,7 @@ check(
 );
 const protectedAfterPublication = await snapshot([
   "README.md",
-  "LICENSE",
+  "NOTICE",
   "velvet.yml",
 ]);
 check(

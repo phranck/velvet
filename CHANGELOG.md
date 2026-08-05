@@ -27,7 +27,7 @@ The [Configurator](https://setup.velvet.li/configurator/) is the supported way t
 
 ### Updating
 
-Velvet installs new versions for you, from the Configurator, without anyone opening a repository or acting on a pull request. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. `velvet.yml`, the generated data branch, incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `LICENSE` are never part of one.
+Velvet installs new versions for you, from the Configurator, without anyone opening a repository or acting on a pull request. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. `velvet.yml`, the generated data branch, incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `NOTICE` are never part of one.
 
 That promise is proven twice: by the service from GitHub's own view of the change before merging, and by a check running in the installation's repository against the merge GitHub actually built. A failed check leaves the installation untouched, and a failed publication restores and republishes the previous version without rewriting history.
 

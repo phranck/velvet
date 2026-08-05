@@ -38,7 +38,7 @@ export const VELVET_TEMPLATE_REPOSITORY = "phranck/velvet" as const;
  */
 export const INITIAL_TEMPLATE_PATHS = [
   ".gitattributes",
-  "LICENSE",
+  "NOTICE",
   "README.md",
 ] as const;
 

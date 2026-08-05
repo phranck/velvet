@@ -558,7 +558,12 @@ async function managedSetupFiles(
   if (includeInitial) {
     for (const path of INITIAL_TEMPLATE_PATHS) {
       const content = (release.sources as Record<string, string>)[path];
-      if (typeof content === "string") files.push({ path, content });
+      if (typeof content !== "string") continue;
+      files.push({
+        path,
+        content:
+          path === "README.md" ? renderReadme(content, configuration) : content,
+      });
     }
     // Written once, with the rest of what a repository starts with. An update
     // never touches it, so a logo replaced later stays replaced.
@@ -573,6 +578,33 @@ async function managedSetupFiles(
     );
   }
   return canWriteWorkflows ? files : [lock];
+}
+
+/**
+ * Fills the README with what this installation is.
+ *
+ * Only its name and where it is published, both of which say what the
+ * repository is for. Nothing countable goes in: the file is written once and
+ * never touched again, whilst the services, the intervals, and the retention
+ * live in `velvet.yml` and change without it.
+ *
+ * @param template - The README as the release carries it, with its placeholders.
+ * @param configuration - The installation's own validated configuration.
+ * @returns The README this repository keeps.
+ */
+function renderReadme(
+  template: string,
+  configuration: NormalizedVelvetConfiguration,
+): string {
+  const { owner, name } = configuration.repository;
+  const domain = configuration.statusPage.customDomain;
+  const url = domain
+    ? `https://${domain}`
+    : `https://${owner}.github.io/${name}/`;
+  const link = `[${domain ?? `${owner}.github.io/${name}`}](${url})`;
+  return template
+    .replaceAll("{{statusPageName}}", configuration.statusPage.name)
+    .replaceAll("{{statusPageUrl}}", link);
 }
 
 /**

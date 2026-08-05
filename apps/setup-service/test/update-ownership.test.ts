@@ -20,7 +20,7 @@ test("reports every changed path that belongs to the user", () => {
       ".github/workflows/velvet.yml",
       "velvet.yml",
       "README.md",
-      "LICENSE",
+      "NOTICE",
       "velvet-data/v1/status.json",
       ".velvet/monitor-state.json",
       ".github/workflows/release.yml",
@@ -28,7 +28,7 @@ test("reports every changed path that belongs to the user", () => {
     [
       "velvet.yml",
       "README.md",
-      "LICENSE",
+      "NOTICE",
       "velvet-data/v1/status.json",
       ".velvet/monitor-state.json",
       ".github/workflows/release.yml",
