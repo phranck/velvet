@@ -307,12 +307,18 @@
     gap: 0.65rem;
   }
   .service-title i {
+    /* Drawn a little above the name's own size, which is what makes a glyph
+       and a line of type read as the same weight rather than the glyph as the
+       smaller of the two. */
     color: var(--service-editor-accent, #8ca5ff);
-    font-size: 1.35rem;
+    font-size: calc(var(--service-editor-title-font-size, 1.35rem) * 1.1);
+    line-height: 1;
   }
   .service-title strong {
     overflow: hidden;
-    font-size: var(--service-editor-font-size, 1rem);
+    font-family: var(--service-editor-heading-font, var(--velvet-font-heading));
+    font-size: var(--service-editor-title-font-size, 1.35rem);
+    line-height: 1;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -337,6 +343,11 @@
   label {
     min-width: 0;
     display: grid;
+    /* Rows take the height they need and nothing more. Left to stretch, a
+       label whose hint runs to one line spread the surplus across its rows and
+       its field sat lower than its neighbour's, which shares the row and has a
+       hint of two. */
+    align-content: start;
     gap: 0.42rem;
   }
   /* Sharing the parent's rows is what stops a wrapped label pushing its own
@@ -432,7 +443,16 @@
     justify-content: space-between;
     gap: 0.75rem;
     margin-inline: var(--service-editor-card-text-inset, 0);
-    padding: 1rem 0 0;
+    /* The end inset is half the difference between the remove button's box and
+       the glyph inside it, which puts this caret on the same centre line as
+       that glyph without giving it a box of its own. A box would make it a
+       grid container and move the two layers a duotone icon is drawn from. */
+    padding: 1rem
+      calc(
+        (var(--service-editor-control-height, 2.5rem) -
+              var(--service-editor-icon-size, 1.5rem)) / 2
+      )
+      0 0;
     color: var(--service-editor-muted, #979aa8);
     cursor: pointer;
     font-size: var(--service-editor-font-size, 0.82rem);
@@ -445,12 +465,16 @@
   summary:hover {
     color: var(--service-editor-text, #efedf5);
   }
-  .advanced-caret {
-    width: 1.25rem;
-    height: 1.25rem;
-    flex: none;
-    font-size: 1.25rem;
+  /* The size both of the card's two glyphs are drawn at, so the one that opens
+     the advanced settings and the one that removes the service read as a pair
+     rather than as two unrelated marks. */
+  .advanced-caret,
+  .icon-button > i {
+    font-size: var(--service-editor-icon-size, 1.5rem);
     line-height: 1;
+  }
+  .advanced-caret {
+    flex: none;
     transition: transform 200ms ease-in-out;
   }
   details[data-advanced-open="true"] .advanced-caret {

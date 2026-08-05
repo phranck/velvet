@@ -548,15 +548,18 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           ?.getAttribute("d")
           ?.startsWith("M") === true,
     );
-    assert.equal(
+    assert.deepEqual(
       await setupIconOptions.first().locator("[data-service-icon-squircle]").evaluate(
         (element) => {
           const path = element.querySelector("path")?.getAttribute("d") ?? "";
           const rect = element.getBoundingClientRect();
-          return path.startsWith("M") && Math.round(rect.width) === Math.round(rect.height);
+          return {
+            drawn: path.startsWith("M"),
+            square: Math.round(rect.width) === Math.round(rect.height),
+          };
         },
       ),
-      true,
+      { drawn: true, square: true },
     );
     assert.deepEqual(
       await setupIconPicker.getByRole("listbox").evaluate((element) => {

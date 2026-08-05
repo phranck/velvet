@@ -416,8 +416,11 @@ test("uses reusable squircle steps and directional card motion", async () => {
     /grid-template-columns:\s*repeat\(var\(--step-count, 4\), var\(--step-size\)\)/,
   );
   assert.match(onboarding, /--step-count: \$\{STEPS\.length\}/);
-  assert.match(onboarding, /--step-size:\s*clamp\(4\.5rem, 18vw, 5\.5rem\)/);
-  assert.match(onboarding, /--step-gap:\s*clamp\(0\.9rem, 4vw, 2\.625rem\)/);
+  // The rates matter rather than the figures: five tiles and four gaps come to
+  // under the window's width at every size, so the row needs no breakpoint to
+  // stop it overflowing a phone.
+  assert.match(onboarding, /--step-size:\s*clamp\(2\.75rem, 14vw, 5\.5rem\)/);
+  assert.match(onboarding, /--step-gap:\s*clamp\(0\.4rem, 4vw, 2\.625rem\)/);
   assert.match(onboarding, /left:\s*calc\(100% \+ 5px\)/);
   assert.match(onboarding, /width:\s*calc\(var\(--step-gap\) - 10px\)/);
   assert.match(
@@ -493,10 +496,17 @@ test("exposes the reusable StepCard compound component", async () => {
   assert.match(root, /background:\s*var\(--setup-panel\)/);
   assert.match(root, /box-shadow:/);
   assert.match(root, /view-transition-name:\s*onboarding-step-card-shell/);
+  // The footer's fallback names the same figure the body's does, and the row
+  // sits at the bottom of the reserved height rather than in the middle of it,
+  // because centring leaves the buttons further from the card's edge below
+  // than beside.
   assert.match(
     footer,
-    /padding:\s*0 var\(--step-card-content-inset, 20px\)\s+var\(--step-card-content-inset, 20px\)/,
+    new RegExp(
+      `padding:\\s*0 var\\(--step-card-content-inset, ${inset[1]}px\\)\\s+var\\(--step-card-content-inset, ${inset[1]}px\\)`,
+    ),
   );
+  assert.match(footer, /align-items:\s*flex-end/);
   assert.match(
     onboarding,
     /--step-card-inner-radius:\s*\$\{STEP_CARD_INNER_RADIUS\}px/,

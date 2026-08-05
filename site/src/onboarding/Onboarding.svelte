@@ -297,8 +297,46 @@
     globalThis.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
-  function addService(): void {
+  /**
+   * Adds a service and puts the visitor in it.
+   *
+   * A new service appears below everything already entered, which on a full
+   * step is off the bottom of the window. Bringing it into view and focusing
+   * its first field means adding one costs a click rather than a click, a
+   * scroll, and a second click.
+   */
+  async function addService(): Promise<void> {
     draft.services.push(createServiceDraft());
+    await tick();
+    const items = document.querySelectorAll("[data-service-editor-item]");
+    const added = items[items.length - 1];
+    added?.scrollIntoView({ behavior: scrollBehaviour(), block: "start" });
+    focusFirstField(added ?? undefined);
+  }
+
+  /** Whether motion is welcome, asked of the browser rather than assumed. */
+  function scrollBehaviour(): "auto" | "smooth" {
+    return globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth";
+  }
+
+  /**
+   * Focuses the first field somebody would type in, within `scope`.
+   *
+   * Scrolling is left to the caller, which either has just moved the page
+   * itself or does not want it moved at all, so focusing must not move it a
+   * second time.
+   *
+   * @param scope - Where to look, defaulting to the step on screen.
+   */
+  function focusFirstField(scope?: Element): void {
+    const root =
+      scope ?? document.querySelector("[data-step-card-body]:not([hidden])");
+    const field = root?.querySelector<HTMLElement>(
+      "input:not([type='checkbox']):not([type='radio']):not([type='file']), textarea",
+    );
+    field?.focus({ preventScroll: true });
   }
 
   function removeService(index: number): void {
@@ -315,6 +353,9 @@
     stepTransitionController?.update(async () => {
       step = nextStep;
       await tick();
+      // Inside the update, where the new step is already in the document. A
+      // step with nothing to type in leaves the focus where it was.
+      focusFirstField();
     }, reducedMotion);
   }
 
@@ -600,7 +641,7 @@
           <p>Add every website, API, or endpoint you want to show. A name and URL are enough; Velvet considers a final HTTP 200 response healthy.</p>
         </div>
 
-        <ServiceEditor.List onAdd={addService}>
+        <ServiceEditor.List onAdd={() => void addService()}>
           {#each draft.services as service, serviceIndex (service.id)}
             <ServiceEditor.Item id={service.id}>
               <ServiceEditor.Root
@@ -962,6 +1003,8 @@
     --service-editor-muted: var(--setup-muted);
     --service-editor-raised: var(--setup-panel-raised);
     --service-editor-caption-font-size: var(--setup-text-caption);
+    --service-editor-heading-font: var(--setup-heading-font);
+    --service-editor-title-font-size: 1.5rem;
     --service-editor-copy-font-size: var(--setup-card-copy);
     --service-editor-small-font-size: var(--setup-text-small);
     --service-editor-text: var(--setup-text);
@@ -979,11 +1022,16 @@
     font-family: var(--setup-font);
     font-size: var(--setup-text-body);
   }
-  .onboarding-shell :global(button) {
+  /* Every button that stands in a form row. An icon option is not one: it is
+     square and sized by its column, and a control height would stretch it out
+     of square on a narrow screen. */
+  .onboarding-shell :global(button:not([role="option"])) {
     min-height: var(--setup-control-height);
+    font-size: var(--setup-button-font-size);
+  }
+  .onboarding-shell :global(button) {
     border: 0;
     outline: none;
-    font-size: var(--setup-button-font-size);
   }
   main {
     width: min(100% - 2rem, 960px);
@@ -1025,8 +1073,12 @@
     line-height: 1.3;
   }
   .steps {
-    --step-size: clamp(4.5rem, 18vw, 5.5rem);
-    --step-gap: clamp(0.9rem, 4vw, 2.625rem);
+    /* Five tiles and four gaps come to 86% of the window at these rates, so the
+       row fits at every width rather than needing a breakpoint to rescue it on
+       a phone. Both reach their ceiling well before a desktop, where the row
+       keeps the size and spacing it has always had. */
+    --step-size: clamp(2.75rem, 14vw, 5.5rem);
+    --step-gap: clamp(0.4rem, 4vw, 2.625rem);
 
     display: grid;
     /* Driven by the number of steps, so adding one does not wrap the row as it
@@ -1230,7 +1282,7 @@
     max-width: 32rem;
     /* The fallback matches STEP_CARD_CONTENT_INSET, the way StepCardBody
        states it, because a dialog is rendered before onMount publishes it. */
-    padding: var(--step-card-content-inset, 10px);
+    padding: var(--step-card-content-inset, 16px);
     border: 0;
     border-radius: var(--step-card-radius);
     background: var(--setup-card);
@@ -1462,15 +1514,6 @@
        is left to wrap on its own instead. */
     .intro > p:last-child br {
       display: none;
-    }
-  }
-
-  @media (max-width: 480px) {
-    /* Five tiles at the full size overflow a phone. Nothing wider needs this,
-       since the step card is wider than the row. */
-    .steps {
-      --step-size: clamp(3.2rem, 15vw, 4.5rem);
-      --step-gap: clamp(0.4rem, 2.5vw, 0.9rem);
     }
   }
 

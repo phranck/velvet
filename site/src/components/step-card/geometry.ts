@@ -29,7 +29,7 @@ function deriveNestedCornerRadius(
 export const STEP_CARD_RADIUS = 28;
 
 /** How far a step card holds its content in from its own edge, on all sides. */
-export const STEP_CARD_CONTENT_INSET = 10;
+export const STEP_CARD_CONTENT_INSET = 16;
 
 /** The footer's inset, kept equal to the body's so the two columns line up. */
 export const STEP_CARD_FOOTER_INSET = STEP_CARD_CONTENT_INSET;

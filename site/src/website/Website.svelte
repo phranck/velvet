@@ -475,7 +475,7 @@
     aspect-ratio: 2010 / 1536;
   }
   .card-inset {
-    padding: var(--step-card-content-inset, 20px);
+    padding: var(--step-card-content-inset, 16px);
   }
 
   .marker {
