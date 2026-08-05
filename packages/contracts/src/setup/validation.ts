@@ -43,7 +43,22 @@ export function validateSetupRequest(
       })),
     };
   }
-  return { success: true, data: { configuration: configuration.data } };
+  // The configuration is rebuilt because validating it normalizes it. The rest
+  // of the request is carried across field by field, so a field the request did
+  // not state stays absent rather than arriving as undefined.
+  return {
+    success: true,
+    data: {
+      configuration: configuration.data,
+      ...(value.repositoryVisibility === undefined
+        ? {}
+        : { repositoryVisibility: value.repositoryVisibility }),
+      ...(value.replaceExistingRepository === undefined
+        ? {}
+        : { replaceExistingRepository: value.replaceExistingRepository }),
+      ...(value.logo === undefined ? {} : { logo: value.logo }),
+    },
+  };
 }
 
 export const validateSetupEvent = (

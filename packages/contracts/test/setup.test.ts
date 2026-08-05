@@ -30,6 +30,29 @@ test("validates and normalizes the only accepted setup request", () => {
   );
 });
 
+test("carries every field of the request through validation", () => {
+  const result = validateSetupRequest({
+    configuration,
+    repositoryVisibility: "private",
+    replaceExistingRepository: true,
+    logo: { type: "image/png", content: "AAAA" },
+  });
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.equal(result.data.repositoryVisibility, "private");
+  assert.equal(result.data.replaceExistingRepository, true);
+  assert.deepEqual(result.data.logo, { type: "image/png", content: "AAAA" });
+});
+
+test("leaves out the fields the request did not state", () => {
+  const result = validateSetupRequest({ configuration });
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.deepEqual(Object.keys(result.data), ["configuration"]);
+});
+
 test("normalizes a custom domain and rejects non-hostname input", () => {
   const valid = validateSetupRequest({
     configuration: {
