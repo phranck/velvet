@@ -20,7 +20,10 @@ import {
 } from "./github.js";
 import { embeddedVelvetReleases } from "./update-releases.js";
 import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.js";
-import type { InstallationSerialCounter } from "./serial.js";
+import type {
+  ClaimedInstallation,
+  InstallationSerialCounter,
+} from "./serial.js";
 import type { SetupServerSession } from "./session.js";
 import { publicSetupError, SetupServiceError } from "./setup-error.js";
 
@@ -410,6 +413,9 @@ export async function provisionVelvet(
         statusPageName: input.request.configuration.statusPage.name,
         url: installationUrl,
         ...(customDomain ? { customDomain } : {}),
+        // From the configuration this setup has just written, so a page that
+        // consented is in the gallery as soon as it is live.
+        listed: configuration.gallery?.listed === true,
       });
       if (claimed !== undefined) state.serial = claimed;
       // Written a second time, because the lock went in at the
@@ -490,12 +496,7 @@ export async function provisionVelvet(
  */
 async function claimSerial(
   input: ProvisionVelvetInput,
-  installation: {
-    repository: string;
-    statusPageName: string;
-    url: string;
-    customDomain?: string;
-  },
+  installation: ClaimedInstallation,
 ): Promise<number | undefined> {
   if (!input.serials) return undefined;
   try {

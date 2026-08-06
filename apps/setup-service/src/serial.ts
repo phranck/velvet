@@ -92,6 +92,18 @@ export type SerialInstallationDetails = Omit<
 >;
 
 /**
+ * What onboarding knows about an installation the moment it records it.
+ *
+ * `listed` comes with it because setup has just written that answer into the
+ * installation's own configuration and therefore knows it. Waiting for the
+ * hourly pass to read it back left a page that had consented absent from the
+ * gallery for up to an hour after it went live.
+ */
+export type ClaimedInstallation = SerialInstallationDetails & {
+  listed: boolean;
+};
+
+/**
  * The shape stored in the counter file.
  *
  * `issued` is kept alongside the list rather than derived from its length,
@@ -143,7 +155,7 @@ export interface InstallationSerialCounter {
    *   the caller decides whether an installation without a serial is acceptable
    *   rather than having that decided here.
    */
-  claim(installation: SerialInstallationDetails): Promise<number>;
+  claim(installation: ClaimedInstallation): Promise<number>;
 
   /**
    * The installations whose owners agreed to appear publicly.
@@ -519,6 +531,10 @@ export function createInstallationSerialCounter(
               ...(installation.customDomain
                 ? { customDomain: installation.customDomain }
                 : {}),
+              // Recorded here rather than read back an hour later by the pass
+              // that visits every installation. Setup wrote this answer into
+              // the configuration a moment ago and knows it.
+              ...(installation.listed ? { listed: true } : {}),
               issuedAt: new Date(nowSeconds() * 1_000).toISOString(),
             },
           ],

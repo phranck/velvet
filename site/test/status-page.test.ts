@@ -410,3 +410,31 @@ test("says an empty page is expected, and stops once a day exists", async () => 
   const settled = await renderStatusPage("grouped");
   assert.doesNotMatch(settled, /Nothing has gone wrong/u);
 });
+
+test("the first-run notice is as wide as the cards beneath it", async () => {
+  // It read a custom property nothing sets and fell back to a figure of its
+  // own, so on any page whose theme names another width the notice ran wider
+  // than everything under it.
+  const [notice, page] = await Promise.all([
+    readFile(
+      resolve(import.meta.dirname, "../src/components/FirstRunNotice.svelte"),
+      "utf8",
+    ),
+    readFile(
+      resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
+      "utf8",
+    ),
+  ]);
+
+  const width = /max-width:\s*var\((--[\w-]+)\)/u;
+  assert.equal(
+    notice.match(width)?.[1],
+    page.match(width)?.[1],
+    "both read the same width",
+  );
+  assert.doesNotMatch(
+    notice,
+    /max-width:[^;]*\d+px/u,
+    "and neither carries a width of its own",
+  );
+});

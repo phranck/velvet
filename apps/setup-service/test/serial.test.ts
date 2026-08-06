@@ -55,6 +55,7 @@ const INSTALLATION = {
   repository: "example/status",
   statusPageName: "Example Status",
   url: "https://example.github.io/status/",
+  listed: false,
 };
 
 interface Recorded {
@@ -400,4 +401,50 @@ test("the repository identity is resolved once and reused across claims", async 
   assert.equal(await counter.claim(INSTALLATION), 1);
   assert.equal(await counter.claim(INSTALLATION), 2);
   assert.equal(identityLookups, 1);
+});
+
+test("records consent with the number rather than an hour later", async () => {
+  // Setup writes `gallery.listed` into the installation's own configuration
+  // and therefore knows the answer. Leaving it to the pass that visits every
+  // installation left a page that had consented out of the gallery until that
+  // pass next ran, which is up to an hour after it went live.
+  let written: { installations: Record<string, unknown>[] } | null = null;
+  const counter = createInstallationSerialCounter({
+    ...OPTIONS,
+    nowSeconds: () => 1_000,
+    fetch: async (request) => {
+      const identity = identityResponse(request.url);
+      if (identity) return identity;
+      if (request.method === "GET") return contentsResponse(0, "blob-sha", []);
+      const payload = JSON.parse(await request.text()) as { content: string };
+      written = JSON.parse(Buffer.from(payload.content, "base64").toString("utf8"));
+      return jsonResponse({ commit: { sha: "commit-sha" } });
+    },
+  });
+
+  assert.equal(await counter.claim({ ...INSTALLATION, listed: true }), 1);
+  assert.equal(written!.installations[0]!.listed, true);
+});
+
+test("records no consent where none was given", async () => {
+  let written: { installations: Record<string, unknown>[] } | null = null;
+  const counter = createInstallationSerialCounter({
+    ...OPTIONS,
+    nowSeconds: () => 1_000,
+    fetch: async (request) => {
+      const identity = identityResponse(request.url);
+      if (identity) return identity;
+      if (request.method === "GET") return contentsResponse(0, "blob-sha", []);
+      const payload = JSON.parse(await request.text()) as { content: string };
+      written = JSON.parse(Buffer.from(payload.content, "base64").toString("utf8"));
+      return jsonResponse({ commit: { sha: "commit-sha" } });
+    },
+  });
+
+  await counter.claim(INSTALLATION);
+  assert.equal(
+    "listed" in written!.installations[0]!,
+    false,
+    "silence is not consent, and is not written as one",
+  );
 });

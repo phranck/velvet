@@ -45,7 +45,11 @@
   .first-run {
     margin: 0 auto 1.25rem;
     padding: 0.9rem 1.1rem;
-    max-width: var(--card-max-width, 760px);
+    /* The width the page's cards are held to, which this notice stands above.
+       It read a name nothing sets and fell back to a figure of its own, so it
+       ran wider than everything beneath it on any page whose theme says
+       otherwise. */
+    max-width: var(--service-card-max-width);
     border-radius: var(--card-radius, 14px);
     background: color-mix(in srgb, var(--accent) 12%, transparent);
     color: var(--text);

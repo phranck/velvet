@@ -737,6 +737,9 @@ test("claims a serial only once the page is published, and only once", async () 
     repository: "example/status",
     statusPageName: "Example Status",
     url: "https://example.github.io/status/",
+    // From the configuration this setup wrote, so a page that consented is in
+    // the gallery as soon as it is live rather than an hour later.
+    listed: false,
   });
 
   // A resumed setup reports the number it already has rather than taking a
