@@ -45,6 +45,10 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: site/dist-website
+          # Without this the action adds --exclude=.[^/]* to its tar call and
+          # drops every dot directory, which is where /.well-known/security.txt
+          # lives. RFC 9116 section 3 fixes that path, so it cannot move.
+          include-hidden-files: true
 
   deploy:
     needs: build
