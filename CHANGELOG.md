@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 1.1.4
+
+### Security
+
+A forged incident can no longer be published by someone without write access. Velvet marks its own issues with a comment in the body, and that marker was trusted wherever it appeared. On a public repository anyone can open an issue through the maintenance form, which applies its own label, so anyone could write that marker into the body and have an invented outage published on the page as an official incident. Velvet now checks who wrote an issue at the point it reads them, so an issue from anyone without write access is ignored completely: never parsed, never commented on, never published. Your own issues are unaffected.
+
+### Also
+
+The reference now explains why a custom domain should be verified on your GitHub account, and the browser setup says so where you enter one. An unverified domain can be claimed by another account during any gap where no repository holds it, which is what happens if you rebuild an installation.
+
 ## Version 1.1.3
 
 ### Security
