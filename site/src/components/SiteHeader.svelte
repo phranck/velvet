@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { VELVET_VERSION } from "../lib/velvet-version.generated.js";
   import Icon from "./Icon.svelte";
   import RainbowScale from "./RainbowScale.svelte";
   import VelvetWordmark from "./VelvetWordmark.svelte";
@@ -57,17 +58,34 @@
 -->
 <div class="band">
   <header class="site-header velvet-page">
-    <a class="home" href="/" aria-label="Velvet, back to the start page">
-      <VelvetWordmark />
-      <!--
-        The same scale the start page draws beneath the mark, in a bar-sized
-        version of itself. Drawn from the one component rather than written out
-        again here, so the nine colours and their order exist in one place.
-      -->
-      <span class="scale" aria-hidden="true">
-        <RainbowScale />
+    <!--
+      The version stands beside the mark rather than inside the link, because it
+      says which Velvet this is and pressing it should not go anywhere. The link
+      keeps the mark and its scale alone, so the scale still takes its width
+      from the word above it rather than from the wider row.
+    -->
+    <div class="brand">
+      <a class="home" href="/" aria-label="Velvet, back to the start page">
+        <VelvetWordmark />
+        <!--
+          The same scale the start page draws beneath the mark, in a bar-sized
+          version of itself. Drawn from the one component rather than written out
+          again here, so the nine colours and their order exist in one place.
+        -->
+        <span class="scale" aria-hidden="true">
+          <RainbowScale />
+        </span>
+      </a>
+      <span class="version">
+        <!--
+          The same double slash the onboarding sets before a step title, hidden
+          from a reader using a screen reader, who would otherwise hear two
+          slashes read out before the number.
+        -->
+        <span aria-hidden="true">//</span>
+        v{VELVET_VERSION}
       </span>
-    </a>
+    </div>
 
     <nav aria-label="Main">
       <ul>
@@ -108,6 +126,14 @@
     gap: 0.5rem 1.5rem;
     padding: 1.25rem 0;
   }
+  /* The mark and the version sit on one row, aligned along the baseline of the
+     word rather than centred, so the number reads as a subtext of the mark
+     instead of floating beside it. */
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem;
+  }
   /* The mark is sized by the brand rather than by the text scale, because it is
      a mark and not a heading. Everything else in this bar takes a token. */
   .home {
@@ -115,6 +141,34 @@
     color: inherit;
     font-size: 1.5rem;
     text-decoration: none;
+  }
+  /* Drawn as a gradient across the line rather than in one colour, the way the
+     status hero draws its headline: the text carries the gradient through
+     `background-clip`, so `color` is transparent and only the letters are
+     painted. It runs from the page's own text colour into the muted one, so it
+     fades away from the mark it follows rather than towards an arbitrary
+     shade. */
+  .version {
+    background: linear-gradient(
+      90deg,
+      var(--velvet-text) 0%,
+      var(--velvet-text-muted) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* The same face the site sets code in, because a version is a literal
+       rather than prose. It brings even figures with it, so the number does not
+       shift as it changes. */
+    font-family: var(--font-mono);
+    font-size: var(--velvet-text-caption);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  /* The slashes lead the eye from the mark to the number, so they carry the
+     weight rather than the number they introduce. */
+  .version span {
+    font-weight: 700;
   }
   /* Thinner than the start page's, which stands at 5px under a mark four times
      this size. Its width follows the mark above it rather than being set, so
