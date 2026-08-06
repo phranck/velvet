@@ -58,17 +58,34 @@ interface NormalizedMaintenanceIssue {
 /**
  * The author relationships that carry write access to a repository.
  *
- * A maintenance issue is honoured only from one of these, because a maintenance
- * window suppresses incident reporting and a public repository lets anyone open
- * an issue. The workflow gates on the same set before the monitor even runs;
- * this is the second line, in case a maintenance issue reaches the reconciler
- * by another path. Everyone else reads as `CONTRIBUTOR`, `NONE`, or similar.
+ * Every issue Velvet reads is filtered by this before anything else looks at
+ * it, because a public repository lets anyone open one and an issue template
+ * applies its own labels whatever the author's rights. Two separate abuses
+ * follow from trusting one: a maintenance window suppresses incident
+ * reporting, and a body carrying a Velvet metadata marker is published as an
+ * incident. The marker is an unsigned comment, so it is trustworthy only for as
+ * long as only trusted authors can place one.
+ *
+ * Everyone else reads as `CONTRIBUTOR`, `NONE`, or similar. Velvet's own issues
+ * are written with the repository token and read as `OWNER`.
  */
-const MAINTENANCE_AUTHOR_ASSOCIATIONS = new Set([
-  "OWNER",
-  "MEMBER",
-  "COLLABORATOR",
-]);
+const TRUSTED_ISSUE_AUTHORS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+
+/**
+ * Keeps only the issues whose author has write access.
+ *
+ * Applied where issues are loaded rather than at each use, so every later
+ * consumer inherits it, including the published incidents document and
+ * anything added afterwards.
+ *
+ * @param issues - Issues exactly as GitHub listed them.
+ * @returns Those Velvet is willing to act on.
+ */
+function fromTrustedAuthors(issues: GitHubIssue[]): GitHubIssue[] {
+  return issues.filter((issue) =>
+    TRUSTED_ISSUE_AUTHORS.has(issue.authorAssociation),
+  );
+}
 
 function actionTimestamp(value: string): string {
   return value
@@ -160,11 +177,16 @@ export async function reconcileGitHubIncidents(
     }),
   );
 
-  const listedIncidents = await perform("list-issues", () =>
-    client.listIssues(input.incidentLabel),
+  // Filtered here, at the door, so nothing downstream has to remember to. An
+  // issue from an untrusted author never enters the map, is never parsed, is
+  // never commented on, and cannot reach the published document.
+  const listedIncidents = fromTrustedAuthors(
+    await perform("list-issues", () => client.listIssues(input.incidentLabel)),
   );
-  const listedMaintenance = await perform("list-issues", () =>
-    client.listIssues(input.maintenanceLabel),
+  const listedMaintenance = fromTrustedAuthors(
+    await perform("list-issues", () =>
+      client.listIssues(input.maintenanceLabel),
+    ),
   );
   const issues = new Map<number, GitHubIssue>();
   [...listedIncidents, ...listedMaintenance].forEach((issue) => {
@@ -214,10 +236,9 @@ export async function reconcileGitHubIncidents(
   const maintenanceIssues: NormalizedMaintenanceIssue[] = [];
   for (const listedIssue of listedMaintenance) {
     let issue = issues.get(listedIssue.number)!;
-    // A stranger's maintenance issue is ignored entirely: not parsed, not
-    // commented on, and never turned into a window. Honouring it would let
-    // anyone with read access open one and suppress a real outage.
-    if (!MAINTENANCE_AUTHOR_ASSOCIATIONS.has(issue.authorAssociation)) continue;
+    // Already excluded at the door, kept as a second line so that removing the
+    // filter above cannot silently re-open maintenance to strangers.
+    if (!TRUSTED_ISSUE_AUTHORS.has(issue.authorAssociation)) continue;
     let metadata = parseVelvetMetadata(issue.body);
     if (issue.state === "open") {
       const humanBody = removeVelvetMetadata(issue.body);
