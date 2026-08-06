@@ -458,9 +458,34 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "1 Basics",
     );
     await customDomainInput.fill("STATUS.Example.COM");
+    // The whole block rather than one word, since the record types now stand in
+    // their own elements and matching on `CNAME` alone would be ambiguous.
     assert.match(
-      await page.getByText(/CNAME/).textContent() ?? "",
+      await page.locator(".dns-guidance").textContent() ?? "",
       /velvet-user\.github\.io/,
+    );
+    // Verification is the one step here with a security consequence, so it is
+    // asked for first and carries the warning tone rather than the accent.
+    const verification = page.locator(".domain-verification");
+    await verification.waitFor();
+    assert.match(
+      await verification.textContent() ?? "",
+      /Verify this domain on GitHub/,
+    );
+    assert.equal(
+      await page.evaluate(() => {
+        const notices = [...document.querySelectorAll(".domain-verification, .dns-guidance")];
+        return notices[0]?.className.includes("domain-verification") ?? false;
+      }),
+      true,
+      "the verification notice stands before the DNS one",
+    );
+    assert.notEqual(
+      await verification.evaluate((element) => getComputedStyle(element).backgroundColor),
+      await page.locator(".dns-guidance").evaluate((element) =>
+        getComputedStyle(element).backgroundColor,
+      ),
+      "the two notices are told apart by colour",
     );
     assert.equal(
       await page.locator(".dns-guidance").evaluate((element) =>

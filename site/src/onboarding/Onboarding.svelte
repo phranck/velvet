@@ -704,6 +704,27 @@
             {#if errors.description}<small class="field-error">{errors.description}</small>{/if}
           </label>
           {#if draft.customDomain.trim()}
+            <!--
+              Verification comes first because it is the one step with a
+              security consequence: an unverified domain can be claimed by
+              another GitHub account during any gap where no repository holds
+              it, which is exactly what a rebuilt installation creates. The DNS
+              records below only decide whether the page answers.
+            -->
+            <aside
+              class="domain-verification full-width"
+              aria-label="Verify this domain on GitHub"
+            >
+              <strong>Verify this domain on GitHub</strong>
+              <p>
+                Do this in your GitHub account, under Settings, Pages. GitHub gives you a
+                <code>TXT</code> record to add beside the records below.
+              </p>
+              <p>
+                Until the domain is verified, another GitHub account can claim it during any gap
+                where no repository holds it, and serve their own content on your address.
+              </p>
+            </aside>
             <aside
               class="dns-guidance full-width"
               aria-label="Required DNS change"
@@ -713,24 +734,24 @@
                 DNS changes happen outside Velvet and may take time to propagate. After publishing,
                 update the records at your DNS provider.
               </p>
-              <ul>
-                <li><b>Subdomain:</b> CNAME to <code>{pagesDnsTarget}</code></li>
-                <li>
-                  <b>Root domain:</b> ALIAS or ANAME to <code>{pagesDnsTarget}</code>, or A records
-                  to <code>185.199.108.153</code>, <code>185.199.109.153</code>,
-                  <code>185.199.110.153</code>, and <code>185.199.111.153</code>
-                </li>
-              </ul>
-              <!--
-                An unverified domain can be claimed by another GitHub account
-                whenever no repository holds it, which is the case for as long
-                as it takes to rebuild an installation. Said here because this
-                is where somebody is deciding to use their own domain.
-              -->
-              <p>
-                Verify this domain on your GitHub account as well, under Settings, Pages. Until you
-                do, another account can claim it during any gap where no repository holds it.
-              </p>
+              <dl>
+                <dt>For a subdomain, such as <code>status.example.com</code></dt>
+                <dd>
+                  One <code>CNAME</code> record pointing to <code>{pagesDnsTarget}</code>
+                </dd>
+                <dt>For a root domain, such as <code>example.com</code></dt>
+                <dd>
+                  One <code>ALIAS</code> or <code>ANAME</code> record pointing to
+                  <code>{pagesDnsTarget}</code>, or, where your provider offers neither, these four
+                  <code>A</code> records:
+                  <ul>
+                    <li><code>185.199.108.153</code></li>
+                    <li><code>185.199.109.153</code></li>
+                    <li><code>185.199.110.153</code></li>
+                    <li><code>185.199.111.153</code></li>
+                  </ul>
+                </dd>
+              </dl>
             </aside>
           {/if}
         </div>
@@ -1394,33 +1415,68 @@
     font-size: var(--setup-text-caption);
     line-height: 1.45;
   }
-  .dns-guidance {
+  /* The two notices a custom domain brings with it, tinted the way the rest of
+     the setup tints a surface: the accent for what has to be done for the page
+     to answer, and the warning tone for the one step with a security
+     consequence. Both share their geometry, so only the colour separates
+     them. */
+  .dns-guidance,
+  .domain-verification {
     padding: 0.9rem 1rem;
     border-radius: var(--step-card-inner-radius);
-    background: var(--setup-card);
-    color: var(--setup-muted);
     font-size: var(--setup-text-lead);
     line-height: 1.5;
   }
+  .dns-guidance {
+    background: color-mix(in srgb, var(--setup-accent) 12%, transparent);
+    color: var(--setup-muted);
+  }
+  .domain-verification {
+    background: color-mix(in srgb, var(--velvet-degraded) 12%, transparent);
+    color: var(--velvet-degraded);
+  }
   .dns-guidance > strong,
   .dns-guidance > p,
-  .dns-guidance > ul {
+  .dns-guidance > dl,
+  .domain-verification > strong,
+  .domain-verification > p {
     margin-inline: 0.7rem;
   }
   .dns-guidance strong,
-  .dns-guidance b,
-  .dns-guidance code {
+  .dns-guidance code,
+  .dns-guidance dt {
     color: var(--setup-text);
   }
-  .dns-guidance p {
+  .domain-verification strong,
+  .domain-verification code {
+    color: var(--setup-text);
+  }
+  .dns-guidance p,
+  .domain-verification p {
     margin-top: 0.3rem;
     margin-bottom: 0;
     font-size: var(--setup-card-copy);
   }
+  .dns-guidance dl {
+    margin-top: 0.65rem;
+    margin-bottom: 0;
+    font-size: var(--setup-card-copy);
+  }
+  .dns-guidance dt {
+    margin-top: 0.7rem;
+    font-weight: 600;
+  }
+  .dns-guidance dt:first-child {
+    margin-top: 0;
+  }
+  .dns-guidance dd {
+    margin-left: 0;
+    margin-top: 0.2rem;
+  }
   .dns-guidance ul {
     display: grid;
-    gap: 0.35rem;
-    margin-top: 0.65rem;
+    gap: 0.25rem;
+    margin-top: 0.4rem;
     margin-bottom: 0;
     padding-left: 1.2rem;
   }

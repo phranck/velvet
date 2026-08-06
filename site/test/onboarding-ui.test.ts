@@ -562,7 +562,12 @@ test("derives normal onboarding card and button radii from the StepCard geometry
   assert.match(onboarding, /--picker-popover-radius:\s*var\(--step-card-inner-radius\)/);
   assert.doesNotMatch(onboarding, /--picker-option-radius/);
   assert.match(onboarding, /--review-card-radius:\s*var\(--step-card-inner-radius\)/);
-  assert.match(onboarding, /\.dns-guidance\s*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s);
+  // The two custom-domain notices share one geometry rule and differ only in
+  // colour, so the radius is asserted on the rule that carries both.
+  assert.match(
+    onboarding,
+    /\.dns-guidance,\s*\.domain-verification\s*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s,
+  );
   assert.match(onboarding, /\.deployment-progress\s*\{[^}]*border-radius:\s*var\(--step-card-inner-radius\)/s);
 
   assert.match(serviceEditor, /\.service-editor\s*\{[^}]*border-radius:\s*var\(--service-editor-card-radius/s);
