@@ -1,5 +1,27 @@
 # Changelog
 
+## Version 1.1.0
+
+Velvet has a mark of its own, and a finished setup now says so in colour.
+
+### The Velvet mark
+
+The V of the Velvet wordmark, drawn with its two halves in different colours and a status lamp on its right shoulder. Plaster splits the letter into two contours by itself, so the halves are the shapes the typeface already gives, and the lamp is the same mint an installation uses to mark something live.
+
+The browser icon is drawn from that mark and ships at 96, 128, 180, and 256 pixels alongside the vector, so a tab, a home screen, and anything that wants the mark as a picture each get a size that fits. The mark itself is available as `velvet-mark.svg` with a transparent background.
+
+Both the mark and the icon are derived from the wordmark outlines rather than drawn separately, so the letter exists once and everything that shows it follows.
+
+### A finished setup reads as finished
+
+The three outcomes of browser onboarding each carry a tone of their own. A completed setup is drawn in the green its ticks are drawn in, rather than staying a sentence in the grey around it, so the difference between finished, refused, and failed is visible before the words are read.
+
+### Fixed
+
+A logo chosen during setup was lost on the way back from GitHub and the page was published without it. Setup leaves for GitHub and returns to a fresh page, and the draft restored at that point rebuilt every field except the logo. Every installation makes that round trip, so every logo was discarded.
+
+The logo field also accepted files the service could never take. It allowed 350 kB whilst a whole setup request may weigh 256 kB, and a file travels as base64, which is a third larger than the file itself. Both ends now read one figure, derived from the request limit rather than written out twice.
+
 ## Version 1.0.0
 
 The first Velvet release. This entry describes the product rather than a change to one.

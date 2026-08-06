@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 
-import type { SetupEvent } from "@velvet/contracts";
+import {
+  MAX_SETUP_LOGO_BASE64_BYTES,
+  MAX_SETUP_REQUEST_BYTES,
+  type SetupEvent,
+} from "@velvet/contracts";
 
 import type { SetupServiceConfig } from "../src/config.js";
 import type { GitHubSetupClient } from "../src/github.js";
@@ -1185,4 +1189,26 @@ test("an instance serving no website grants the gallery to nobody", async () => 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
   assert.equal(response.headers.get("Cross-Origin-Resource-Policy"), "same-origin");
+});
+
+test("the largest logo the browser offers still fits inside a setup request", () => {
+  // The browser sizes a file against MAX_SETUP_LOGO_BYTES and this service
+  // refuses a body over MAX_SETUP_REQUEST_BYTES. Anything the field accepts has
+  // to survive the door, or somebody watches setup fail on a file they were
+  // just told was fine.
+  const body = JSON.stringify({
+    configuration: {
+      schemaVersion: 1,
+      repository: { owner: "example", name: "status" },
+      statusPage: { name: "Example Status" },
+      services: [{ name: "Website", url: "https://example.com" }],
+    },
+    repositoryVisibility: "public",
+    logo: { type: "image/png", content: "A".repeat(MAX_SETUP_LOGO_BASE64_BYTES) },
+  });
+
+  assert.ok(
+    Buffer.byteLength(body, "utf8") <= MAX_SETUP_REQUEST_BYTES,
+    `a maximum logo produces ${Buffer.byteLength(body, "utf8")} bytes against a limit of ${MAX_SETUP_REQUEST_BYTES}`,
+  );
 });

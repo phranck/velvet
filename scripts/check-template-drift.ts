@@ -49,6 +49,7 @@ interface Source {
 type Outcome =
   | { kind: "aligned"; pin: string }
   | { kind: "drifted"; pin: string; errors: unknown }
+  | { kind: "unpublished"; pin: string }
   | { kind: "unreachable"; reason: string };
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -153,6 +154,29 @@ async function currentConfiguration(): Promise<unknown> {
 }
 
 /**
+ * The version this repository states it is, from the one place it states it.
+ *
+ * Read so that a pin naming a tag which does not exist yet can be told from one
+ * naming a tag that never will. The first is a release between cutting its
+ * artefact and publishing its tag, and there is nothing wrong with it.
+ *
+ * @returns The version in the root manifest.
+ */
+async function declaredVersion(): Promise<string> {
+  const manifest: unknown = JSON.parse(
+    await readFile(resolve(repositoryRoot, "package.json"), "utf8"),
+  );
+  const version =
+    typeof manifest === "object" && manifest !== null
+      ? (manifest as { version?: unknown }).version
+      : undefined;
+  if (typeof version !== "string") {
+    throw new Error("The root package.json states no version.");
+  }
+  return version;
+}
+
+/**
  * Judges one source's pin.
  *
  * @param source - Where the pin came from and what it is.
@@ -163,16 +187,18 @@ async function judge(source: Source, configuration: unknown): Promise<Outcome> {
   if (typeof source.pin !== "string") {
     return { kind: "unreachable", reason: source.pin.reason };
   }
-  // A pin names the version tag the artefact was cut as. Between cutting one
-  // and publishing it the tag still points at the release before, which is a
-  // revision this same check passed for, so judging it says nothing wrong. A
-  // tag that does not exist at all is a pin nobody can resolve, and that is
-  // worth reporting.
+  // A pin names the version tag the artefact was cut as, and publishing is what
+  // creates that tag. Between the two there is nothing to resolve, which is a
+  // release part-way through rather than a fault. A pin naming any other
+  // version that does not exist is one nobody can resolve, and that is worth
+  // reporting.
   if (run(["git", "rev-parse", "--verify", `${source.pin}^{commit}`], repositoryRoot) === null) {
-    return {
-      kind: "unreachable",
-      reason: `${source.pin} resolves to nothing in this repository`,
-    };
+    return source.pin === `v${await declaredVersion()}`
+      ? { kind: "unpublished", pin: source.pin }
+      : {
+          kind: "unreachable",
+          reason: `${source.pin} resolves to nothing in this repository`,
+        };
   }
   const refused = await validateAgainst(source.pin, configuration);
   return refused
@@ -191,6 +217,14 @@ let failed = false;
 
 for (const source of sources) {
   const outcome = await judge(source, configuration);
+
+  if (outcome.kind === "unpublished") {
+    console.log(
+      `${source.name} pins ${outcome.pin}, the version this repository is preparing. Its tag is created by publishing, so there is nothing to judge yet.`,
+    );
+    console.log("Run this again after the tag exists, per documentation/releasing.md.");
+    continue;
+  }
 
   if (outcome.kind === "unreachable") {
     const report = source.fatalWhenUnreadable ? console.error : console.log;

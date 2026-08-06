@@ -1,3 +1,8 @@
+import {
+  MAX_SETUP_LOGO_BASE64_BYTES,
+  type SetupLogo,
+} from "@velvet/contracts";
+
 import type {
   AssertionValueType,
   OnboardingDraft,
@@ -5,7 +10,24 @@ import type {
 } from "./state.js";
 
 export const ONBOARDING_SESSION_STORAGE_KEY = "velvet.onboarding.session.v1";
-const MAX_STORED_BYTES = 256 * 1_024;
+
+/**
+ * The most a stored draft may weigh.
+ *
+ * A draft over this is not stored at all, and silently, so it has to clear the
+ * largest logo the field accepts with room left for the configuration around
+ * it. Derived from the logo bound for that reason rather than stated as a round
+ * number that would stop covering it the moment the logo bound moved.
+ */
+const MAX_STORED_BYTES = MAX_SETUP_LOGO_BASE64_BYTES + 64 * 1_024;
+
+/** What a logo may be, matching the four the page build knows to copy. */
+const LOGO_TYPES: readonly SetupLogo["type"][] = [
+  "image/svg+xml",
+  "image/png",
+  "image/webp",
+  "image/jpeg",
+];
 
 export interface OnboardingSessionStorage {
   getItem(key: string): string | null;
@@ -86,6 +108,7 @@ function parseDraft(value: unknown): OnboardingDraft {
   ) {
     throw new Error("Invalid setup session.");
   }
+  const logo = parseLogo(value.logo);
   return {
     repositoryOwner: value.repositoryOwner,
     repositoryName: value.repositoryName,
@@ -100,7 +123,28 @@ function parseDraft(value: unknown): OnboardingDraft {
     privateRepository: value.privateRepository ?? false,
     themeId: value.themeId,
     services: value.services.map(parseService),
+    // Setup leaves the page for GitHub and returns to a fresh load, so a logo
+    // that did not survive this is a logo the request never carries.
+    ...(logo ? { logo } : {}),
   };
+}
+
+/**
+ * Reads a stored logo back, or nothing when it is not one Velvet can write.
+ *
+ * A logo that cannot be used is dropped on its own rather than by rejecting the
+ * session, because everything else somebody filled in is still worth keeping
+ * and a missing logo is visible to them whilst a lost draft is not.
+ *
+ * @param value - The `logo` field as it came out of storage.
+ * @returns The logo, or `undefined` when there is none to restore.
+ */
+function parseLogo(value: unknown): SetupLogo | undefined {
+  if (!isRecord(value)) return undefined;
+  const { type, content } = value;
+  if (typeof content !== "string" || content === "") return undefined;
+  if (!LOGO_TYPES.includes(type as SetupLogo["type"])) return undefined;
+  return { type: type as SetupLogo["type"], content };
 }
 
 function parseService(value: unknown): ServiceDraft {
