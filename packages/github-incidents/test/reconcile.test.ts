@@ -755,3 +755,41 @@ test("logs GitHub failures safely without changing monitor input", async () => {
   ]);
   assert.equal(JSON.stringify(logs).includes("secret-token"), false);
 });
+
+test("a service with one check named after it says its name once", async () => {
+  const { reconcileGitHubIncidents } = await reconciliationFunctions();
+  const client = new MemoryGitHubIssuesClient([]);
+
+  // A service given a single `url` takes its check's name from itself, at
+  // packages/contracts/src/configuration/validation.ts:479, and that is the
+  // commonest configuration there is. Naming both produced "Docs / Docs".
+  await reconcileGitHubIncidents(
+    {
+      generatedAt: "2026-07-29T12:30:00.000Z",
+      retentionDays: 365,
+      services: [{ id: "docs", name: "Docs", checks: [{ id: "docs", name: "Docs" }] }],
+      checkStates: [checkState("docs", "docs", "down", "2026-07-29T12:01:00.000Z")],
+      incidentLabel: "incident",
+      maintenanceLabel: "maintenance",
+    },
+    { client },
+  );
+
+  assert.equal(client.issues.length, 1);
+  assert.equal(client.issues[0]?.title, "Docs is unavailable");
+});
+
+test("a service whose checks are named separately still names both", async () => {
+  const { reconcileGitHubIncidents } = await reconciliationFunctions();
+  const client = new MemoryGitHubIssuesClient([]);
+
+  await reconcileGitHubIncidents(
+    input(
+      [checkState("api", "readiness", "down", "2026-07-29T12:01:00.000Z")],
+      "2026-07-29T12:30:00.000Z",
+    ),
+    { client },
+  );
+
+  assert.equal(client.issues[0]?.title, "Public API / Readiness is unavailable");
+});

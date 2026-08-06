@@ -70,11 +70,20 @@ function targetIdentity(serviceId: string, checkId: string): string {
   return `${serviceId}\u0000${checkId}`;
 }
 
+/**
+ * Names what is down, in the words somebody reads in their issue list.
+ *
+ * A service given a single `url` takes its check's name from itself, so naming
+ * both repeats the same word twice. The check is named only where it says
+ * something the service has not already said.
+ */
 function incidentTitle(
   service: MaintenanceService,
   check: { id: string; name: string },
 ): string {
-  return `${service.name} / ${check.name} is unavailable`;
+  const subject =
+    check.name === service.name ? service.name : `${service.name} / ${check.name}`;
+  return `${subject} is unavailable`;
 }
 
 function incidentBody(
