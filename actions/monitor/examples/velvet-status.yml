@@ -35,7 +35,20 @@ concurrency:
 
 jobs:
   monitor:
-    if: (github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000') && (github.event_name != 'issues' || github.event.label.name == 'maintenance' || contains(github.event.issue.labels.*.name, 'maintenance'))
+    # An issues event only runs the monitor when the issue carries the
+    # maintenance label AND its author has write access to this repository. The
+    # label alone is not enough: a public repository lets anyone open an issue,
+    # a template applies its own labels whatever the author's rights, and a
+    # maintenance window suppresses incident reporting. Without the author gate
+    # a stranger could hide a real outage. author_association is OWNER on a
+    # personal repository, MEMBER or OWNER on an organisation one, and
+    # COLLABORATOR for an invited collaborator; everyone with only read access
+    # reads as NONE or CONTRIBUTOR and is refused.
+    if: >-
+      (github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000')
+      && (github.event_name != 'issues'
+          || ((github.event.label.name == 'maintenance' || contains(github.event.issue.labels.*.name, 'maintenance'))
+              && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association)))
     name: Check services
     runs-on: ubuntu-latest
     steps:

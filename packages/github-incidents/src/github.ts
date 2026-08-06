@@ -66,6 +66,12 @@ function parseIssue(value: unknown): GitHubIssue | null {
     updatedAt,
     closedAt,
     labels,
+    // Absent or non-string is read as no relationship, which has no write
+    // access, so a missing field fails closed rather than open.
+    authorAssociation:
+      typeof value.author_association === "string"
+        ? value.author_association
+        : "NONE",
   };
 }
 

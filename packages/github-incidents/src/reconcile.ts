@@ -55,6 +55,21 @@ interface NormalizedMaintenanceIssue {
   metadata: MaintenanceMetadata;
 }
 
+/**
+ * The author relationships that carry write access to a repository.
+ *
+ * A maintenance issue is honoured only from one of these, because a maintenance
+ * window suppresses incident reporting and a public repository lets anyone open
+ * an issue. The workflow gates on the same set before the monitor even runs;
+ * this is the second line, in case a maintenance issue reaches the reconciler
+ * by another path. Everyone else reads as `CONTRIBUTOR`, `NONE`, or similar.
+ */
+const MAINTENANCE_AUTHOR_ASSOCIATIONS = new Set([
+  "OWNER",
+  "MEMBER",
+  "COLLABORATOR",
+]);
+
 function actionTimestamp(value: string): string {
   return value
     .toLowerCase()
@@ -199,6 +214,10 @@ export async function reconcileGitHubIncidents(
   const maintenanceIssues: NormalizedMaintenanceIssue[] = [];
   for (const listedIssue of listedMaintenance) {
     let issue = issues.get(listedIssue.number)!;
+    // A stranger's maintenance issue is ignored entirely: not parsed, not
+    // commented on, and never turned into a window. Honouring it would let
+    // anyone with read access open one and suppress a real outage.
+    if (!MAINTENANCE_AUTHOR_ASSOCIATIONS.has(issue.authorAssociation)) continue;
     let metadata = parseVelvetMetadata(issue.body);
     if (issue.state === "open") {
       const humanBody = removeVelvetMetadata(issue.body);
