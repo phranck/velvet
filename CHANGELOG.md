@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 1.1.1
+
+Three corrections found by walking a fresh installation.
+
+### Fixed
+
+The first-run notice ran wider than the cards beneath it. It read a custom property nothing sets and fell back to a width of its own, so on any page whose theme names another it stood proud of everything under it. It now reads the same width the cards do.
+
+A service checked through a single `url` takes its check's name from itself, so an incident opened for one read `Website / Website is unavailable`. The check is now named only where it says something the service has not.
+
+A status page that agreed to be listed at [velvet.li/references](https://velvet.li/references/) stayed out of the gallery until the hourly pass next ran, which could be an hour after it went live. Setup knows the answer when it records the installation number, and records it there instead.
+
 ## Version 1.1.0
 
 Velvet has a mark of its own, and a finished setup now says so in colour.
