@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 1.1.3
+
+### Security
+
+A maintenance window is now honoured only from someone with write access to the repository. A status repository that is public lets anyone open an issue, its maintenance template applies the maintenance label whatever the author's rights, and a maintenance window suppresses incident reporting. Any GitHub user could therefore open a window over every service and hide a real outage. The status workflow now gates a maintenance issue on the author's access before the monitor runs, and the monitor ignores one from an author without write access as a second line.
+
+A header secret can no longer name a variable the runner owns. Names beginning with `GITHUB_`, `ACTIONS_`, or `RUNNER_` are refused, so a check can never be pointed at `GITHUB_TOKEN` to send it to the endpoint it calls. GitHub does not let you create a repository secret under those prefixes, so this refuses nothing you could use.
+
+The configuration reference now records the header posture of the published page. It is served by GitHub Pages, which sets no `Content-Security-Policy` or `X-Frame-Options`, so it can be framed. The note says plainly how a proxy closes that if it matters to you.
+
 ## Version 1.1.2
 
 ### Fixed
