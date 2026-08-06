@@ -256,6 +256,17 @@
 
 <style>
   .status-page {
+    /*
+      How far everything inside the page stands in from its edge: the cards,
+      the incidents above them, and any notice above those.
+
+      Stated once and inherited, because the page is held to the width somebody
+      configures whilst a card is that width less this inset twice. Anything
+      that reads the configured width directly ends up as wide as the page and
+      therefore wider than the cards it introduces, which is what a notice did
+      until it read this instead.
+    */
+    --status-content-inset: 18px;
     max-width: var(--service-card-max-width);
     min-height: var(--status-page-min-height, 100vh);
     display: flex;
@@ -297,7 +308,7 @@
     font-size: 15px;
   }
   .card {
-    margin: 6px 18px;
+    margin: 6px var(--status-content-inset);
     border: var(--card-border-width) solid var(--card-border);
     border-radius: var(--card-radius);
     background: color-mix(

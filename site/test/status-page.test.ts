@@ -411,30 +411,31 @@ test("says an empty page is expected, and stops once a day exists", async () => 
   assert.doesNotMatch(settled, /Nothing has gone wrong/u);
 });
 
-test("the first-run notice is as wide as the cards beneath it", async () => {
-  // It read a custom property nothing sets and fell back to a figure of its
-  // own, so on any page whose theme names another width the notice ran wider
-  // than everything under it.
-  const [notice, page] = await Promise.all([
-    readFile(
-      resolve(import.meta.dirname, "../src/components/FirstRunNotice.svelte"),
-      "utf8",
+test("nothing above the cards states a width of its own", async () => {
+  // The page carries the configured measure and the cards sit one inset inside
+  // it, so an element that names a width ends up wider than they are. Taking
+  // the shared inset is the only way to match them, and the geometry itself is
+  // measured in status-page-width-browser.test.ts.
+  const above = ["FirstRunNotice", "Incidents"];
+  const sources = await Promise.all(
+    above.map((name) =>
+      readFile(
+        resolve(import.meta.dirname, `../src/components/${name}.svelte`),
+        "utf8",
+      ),
     ),
-    readFile(
-      resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
-      "utf8",
-    ),
-  ]);
+  );
 
-  const width = /max-width:\s*var\((--[\w-]+)\)/u;
-  assert.equal(
-    notice.match(width)?.[1],
-    page.match(width)?.[1],
-    "both read the same width",
-  );
-  assert.doesNotMatch(
-    notice,
-    /max-width:[^;]*\d+px/u,
-    "and neither carries a width of its own",
-  );
+  for (const [index, source] of sources.entries()) {
+    assert.doesNotMatch(
+      source,
+      /max-width:/u,
+      `${above[index]} must take the page's width rather than name one`,
+    );
+    assert.match(
+      source,
+      /margin:[^;]*var\(--status-content-inset\)/u,
+      `${above[index]} must take the inset the cards take`,
+    );
+  }
 });
