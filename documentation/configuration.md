@@ -478,6 +478,18 @@ Before this step, the workflow has to check out two things: your default branch,
 
 The Action then checks the configuration and the data, builds the site, makes the SEO files and the social image, and copies the licence notices into the output directory.
 
+## Security of the published page
+
+Your status page is a set of static files served by GitHub Pages. Pages does not let a repository set response headers, so the page carries the headers Pages provides and no others.
+
+What it does carry is HTTPS with HSTS, and a redirect from HTTP to HTTPS. What it does not carry is a `Content-Security-Policy`, an `X-Frame-Options`, or an `X-Content-Type-Options` header, because there is nowhere to set them.
+
+The practical effect is narrow. The page loads no third-party script, embeds no third-party frame, and renders every value as text rather than as markup, so there is no script-injection path for a policy to catch. The one thing the missing headers leave open is framing: another site can load your status page inside a frame. For a public status page that is a small risk, and it is the price of running with no server.
+
+If that risk matters to you, the way to close it is to serve the page through a CDN or reverse proxy of your own and set the headers there. Adding `X-Frame-Options: DENY` or a `Content-Security-Policy` with `frame-ancestors 'none'` at the proxy stops the framing. A `<meta>` tag in the page cannot: browsers ignore `frame-ancestors` in a meta policy, so only a real response header prevents it.
+
+The setup and configuration site at `setup.velvet.li` is a different matter. It runs on a server Velvet controls and carries a full `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and a strict referrer and permissions policy on every response.
+
 ## Licensing and generated-data policy
 
 Velvet's MIT licence covers Velvet: its code, its schemas, and the assets it ships.
