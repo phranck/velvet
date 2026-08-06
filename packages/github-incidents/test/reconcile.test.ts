@@ -717,6 +717,71 @@ test("a maintenance issue from an author without write access is ignored entirel
   assert.equal(client.comments.get(40), undefined);
 });
 
+test("a forged incident marker from an untrusted author is never published", async () => {
+  const { reconcileGitHubIncidents, serializeVelvetMetadata } =
+    await reconciliationFunctions();
+  // Exactly what a stranger can create on a public repository: the maintenance
+  // template applies its label for any author, and the body is free text. The
+  // Velvet marker is an unsigned HTML comment, so anyone can type one claiming
+  // to be an incident. Without the author filter this was published verbatim.
+  const forged = issue(
+    99,
+    "TOTAL OUTAGE: customer data lost",
+    `Nothing to see here.\n\n${serializeVelvetMetadata({
+      schemaVersion: 1,
+      kind: "incident",
+      serviceId: "website",
+      checkId: "homepage",
+      transitionAt: "2026-07-29T12:00:00.000Z",
+      startedAt: "2026-07-29T12:00:00.000Z",
+    })}`,
+    "maintenance",
+    { authorAssociation: "NONE" },
+  );
+  const client = new MemoryGitHubIssuesClient([forged]);
+
+  const result = await reconcileGitHubIncidents(
+    input([], "2026-07-29T12:30:00.000Z"),
+    { client },
+  );
+
+  assert.equal(
+    result.document.events.some(({ id }) => id === "incident-99"),
+    false,
+    "a stranger's forged incident must never be published",
+  );
+  assert.deepEqual(result.document.events, []);
+  // It is not touched either: no comment, no rewritten body.
+  assert.equal(client.comments.get(99), undefined);
+  assert.equal(client.issues.find(({ number }) => number === 99)?.body, forged.body);
+});
+
+test("Velvet's own incidents are still published", async () => {
+  const { reconcileGitHubIncidents } = await reconciliationFunctions();
+  const client = new MemoryGitHubIssuesClient([]);
+
+  // The repository token writes as OWNER, so the ordinary path must survive
+  // the filter that refuses strangers.
+  await reconcileGitHubIncidents(
+    input(
+      [checkState("api", "readiness", "down", "2026-07-29T12:01:00.000Z")],
+      "2026-07-29T12:30:00.000Z",
+    ),
+    { client },
+  );
+  const second = await reconcileGitHubIncidents(
+    input(
+      [checkState("api", "readiness", "down", "2026-07-29T12:01:00.000Z")],
+      "2026-07-29T12:35:00.000Z",
+    ),
+    { client },
+  );
+
+  assert.equal(client.issues.length, 1);
+  assert.equal(second.document.events.length, 1);
+  assert.equal(second.document.events[0]?.kind, "incident");
+});
+
 test("invalid maintenance never suppresses incidents and receives one useful comment", async () => {
   const { reconcileGitHubIncidents } = await reconciliationFunctions();
   const maintenance = issue(
