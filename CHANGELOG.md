@@ -1,5 +1,21 @@
 # Changelog
 
+## Version 1.1.0
+
+Velvet has a mark of its own, and a finished setup now says so in colour.
+
+### The Velvet mark
+
+The V of the Velvet wordmark, drawn with its two halves in different colours and a status lamp on its right shoulder. Plaster splits the letter into two contours by itself, so the halves are the shapes the typeface already gives, and the lamp is the same mint an installation uses to mark something live.
+
+The browser icon is drawn from that mark and ships at 96, 128, 180, and 256 pixels alongside the vector, so a tab, a home screen, and anything that wants the mark as a picture each get a size that fits. The mark itself is available as `velvet-mark.svg` with a transparent background.
+
+Both the mark and the icon are derived from the wordmark outlines rather than drawn separately, so the letter exists once and everything that shows it follows.
+
+### A finished setup reads as finished
+
+The three outcomes of browser onboarding each carry a tone of their own. A completed setup is drawn in the green its ticks are drawn in, rather than staying a sentence in the grey around it, so the difference between finished, refused, and failed is visible before the words are read.
+
 ## Version 1.0.0
 
 The first Velvet release. This entry describes the product rather than a change to one.

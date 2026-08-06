@@ -1,10 +1,14 @@
-# Velvet 1.0.0
+# Velvet 1.1.0
 
-The first Velvet release.
+Velvet has a mark of its own.
 
-## What you get
+## The mark
 
-A status page published through GitHub Pages, built from `velvet.yml` and from data your own repository collects. Every configured endpoint is checked over IPv4 every five minutes, with separate response-time samples four times a day. Incidents and planned maintenance are GitHub Issues, opened after confirmed failures and closed after confirmed recoveries. Up to 365 days of history live on a branch the monitor owns alone.
+The V of the Velvet wordmark, with its two halves in different colours and a status lamp on its right shoulder. Your status page carries it as its browser icon, at whatever size a tab, a home screen, or a bookmark asks for.
+
+## A finished setup reads as finished
+
+The three outcomes of browser onboarding each carry a tone of their own, so a completed setup is drawn in the green its ticks are drawn in rather than staying a sentence in the grey around it.
 
 ## What stays yours
 
