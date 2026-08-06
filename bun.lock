@@ -15,7 +15,7 @@
     },
     "actions/monitor": {
       "name": "@velvet/monitor-action",
-      "version": "1.0.0",
+      "version": "1.1.4",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/github-incidents": "1.0.0",
@@ -29,7 +29,7 @@
     },
     "apps/setup-service": {
       "name": "@velvet/setup-service",
-      "version": "1.0.0",
+      "version": "1.1.4",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/template-files": "1.0.0",
@@ -42,7 +42,7 @@
     },
     "packages/contracts": {
       "name": "@velvet/contracts",
-      "version": "1.0.0",
+      "version": "1.1.4",
       "dependencies": {
         "@sinclair/typebox": "^0.34.52",
         "js-yaml": "^4.1.0",
@@ -56,7 +56,7 @@
     },
     "packages/github-incidents": {
       "name": "@velvet/github-incidents",
-      "version": "1.0.0",
+      "version": "1.1.4",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/monitor": "1.0.0",
@@ -71,7 +71,7 @@
     },
     "packages/monitor": {
       "name": "@velvet/monitor",
-      "version": "1.0.0",
+      "version": "1.1.4",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
       },
@@ -83,7 +83,7 @@
     },
     "packages/template-files": {
       "name": "@velvet/template-files",
-      "version": "1.0.0",
+      "version": "1.1.4",
       "dependencies": {
         "@velvet/contracts": "workspace:*",
         "js-yaml": "^4.1.0",
@@ -100,8 +100,9 @@
       "dependencies": {
         "@fontsource/barlow": "^5.3.0",
         "@fontsource/barlow-condensed": "^5.3.0",
+        "@fontsource/fira-code": "^5.3.0",
         "@fontsource/plaster": "^5.3.0",
-        "@velvet/contracts": "1.0.0",
+        "@velvet/contracts": "workspace:*",
       },
       "devDependencies": {
         "@phosphor-icons/core": "^2.1.1",
@@ -195,6 +196,8 @@
     "@fontsource/barlow": ["@fontsource/barlow@5.3.0", "", {}, "sha512-tGR0y6QObRtKv71MOth44222+mdNFM/ZWFWDV1VLzNbG4oK9PNRlyJzmkck4vHAi9ibHBXgt4SlY51amFP55CA=="],
 
     "@fontsource/barlow-condensed": ["@fontsource/barlow-condensed@5.3.0", "", {}, "sha512-RA7MmIx0v3eQ6Gcf74qLVLOwLB0GpPOzx+eU9iG/AmCnSJGcIWYeU8y6CEMGZ210MGwGg5CZhzLkkvyZdTTk1g=="],
+
+    "@fontsource/fira-code": ["@fontsource/fira-code@5.3.0", "", {}, "sha512-EJL968RJRkakubAj/coU8pSUaeTE5UNoRjtzAr6kGiSZ3jWuN8/AKWHwym/PFUaQL1q7IL/H+EXs4358YhrTBQ=="],
 
     "@fontsource/plaster": ["@fontsource/plaster@5.3.0", "", {}, "sha512-1+b9GtPe6HuFZkaBxqGtjhcLdPDyHBhXTJ8CqeFHxx5WNdkHBVEM17m0MFuJepNSKBLQKGOHvuzTG9eVIRcCkw=="],
 

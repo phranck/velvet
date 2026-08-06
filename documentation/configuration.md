@@ -180,7 +180,7 @@ statusPage:
 | `navigation` | no | `[]` | Up to 16 links with `title` and `href`. |
 | `theme` | no | Velvet Default | Theme name plus optional semantic visual overrides. |
 | `fonts.sans` | no | `Inter` | CSS font-family for normal interface text. |
-| `fonts.mono` | no | `JetBrains Mono` | CSS font-family for times, values, and labels. |
+| `fonts.mono` | no | `Fira Code` | CSS font-family for times, values, and labels. Velvet ships this one, so leaving it unset needs no external request. |
 | `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
 | `seo` | no | generated | Optional title, description, and social-image overrides. |
 

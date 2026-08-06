@@ -18,7 +18,7 @@ The generated static site combines Velvet code with the consumer's data. Velvet'
 
 ## Bundled and externally loaded third-party materials
 
-The generated browser JavaScript includes Svelte runtime code, the `esm-env` environment helper, and TypeBox validation code. Generated social images can embed Phosphor SVG data. The page also loads Phosphor Web, Inter, and JetBrains Mono from external providers. Versions, license identifiers, use, and required notices are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The generated browser JavaScript includes Svelte runtime code, the `esm-env` environment helper, and TypeBox validation code. Generated social images can embed Phosphor SVG data. The page also loads Phosphor Web and Inter from external providers, and carries Fira Code as a bundled file. Versions, license identifiers, use, and required notices are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 The GitHub Action copies both Velvet's `LICENSE` and `THIRD_PARTY_NOTICES.md` into every generated site output. Build-only tools such as Vite, TypeScript, js-yaml, and resvg run on the Action or development runner but are not copied into `velvet-dist`; their package license files remain in the installed dependency tree.
 
