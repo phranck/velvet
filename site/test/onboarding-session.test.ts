@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 
+import { MAX_SETUP_LOGO_BYTES } from "@velvet/contracts";
+
 import {
   ONBOARDING_SESSION_STORAGE_KEY,
   clearOnboardingDraft,
@@ -107,4 +109,62 @@ test("reads a session stored before the gallery question as a no", () => {
   );
 
   assert.equal(loadOnboardingDraft(storage)?.listInGallery, false);
+});
+
+test("carries a chosen logo through the return from GitHub", () => {
+  const storage = new MemoryStorage();
+  const draft = createOnboardingDraft();
+  draft.logo = { type: "image/png", content: "aGVsbG8=" };
+
+  // Setup leaves the page for GitHub and comes back to a fresh load, which
+  // restores the draft. A logo dropped here is a logo the request never
+  // carries, and every installation makes that round trip.
+  assert.equal(persistOnboardingDraft(draft, storage), true);
+  assert.deepEqual(loadOnboardingDraft(storage)?.logo, {
+    type: "image/png",
+    content: "aGVsbG8=",
+  });
+});
+
+test("restores a session stored without a logo as having none", () => {
+  const storage = new MemoryStorage();
+  const draft = createOnboardingDraft();
+  storage.setItem(
+    ONBOARDING_SESSION_STORAGE_KEY,
+    JSON.stringify({ version: 1, draft }),
+  );
+
+  assert.equal(loadOnboardingDraft(storage)?.logo, undefined);
+});
+
+test("discards a stored logo that is not one of the four accepted files", () => {
+  const storage = new MemoryStorage();
+  const draft = createOnboardingDraft();
+  storage.setItem(
+    ONBOARDING_SESSION_STORAGE_KEY,
+    JSON.stringify({
+      version: 1,
+      draft: { ...draft, logo: { type: "image/gif", content: "aGVsbG8=" } },
+    }),
+  );
+
+  // The rest of the draft is worth keeping, so a logo nobody can write is
+  // dropped on its own rather than taking the whole session with it.
+  const restored = loadOnboardingDraft(storage);
+  assert.notEqual(restored, null);
+  assert.equal(restored?.logo, undefined);
+});
+
+test("keeps a draft holding the largest logo the service accepts", () => {
+  const storage = new MemoryStorage();
+  const draft = createOnboardingDraft();
+  draft.logo = {
+    type: "image/png",
+    content: "A".repeat(Math.ceil((MAX_SETUP_LOGO_BYTES * 4) / 3)),
+  };
+
+  // A draft too large is not stored at all, silently, so the bound has to
+  // clear what the logo field itself allows.
+  assert.equal(persistOnboardingDraft(draft, storage), true);
+  assert.equal(loadOnboardingDraft(storage)?.logo?.content.length, draft.logo.content.length);
 });

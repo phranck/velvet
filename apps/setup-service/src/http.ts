@@ -5,9 +5,16 @@
  * once. A second copy of either is how one route quietly stops enforcing what
  * the others do.
  */
+import { MAX_SETUP_REQUEST_BYTES } from "@velvet/contracts";
 
-/** Largest request body any route accepts. */
-export const MAX_REQUEST_BYTES = 256 * 1_024;
+/**
+ * Largest request body any route accepts.
+ *
+ * Read from the contract rather than stated here, because the browser sizes a
+ * logo against the same number. Two copies drift, and the way that drift
+ * surfaces is a file the field accepted and this then refused.
+ */
+export const MAX_REQUEST_BYTES = MAX_SETUP_REQUEST_BYTES;
 
 /** Thrown when a body exceeds {@link MAX_REQUEST_BYTES}. */
 export class RequestTooLargeError extends Error {}

@@ -16,6 +16,12 @@ Both the mark and the icon are derived from the wordmark outlines rather than dr
 
 The three outcomes of browser onboarding each carry a tone of their own. A completed setup is drawn in the green its ticks are drawn in, rather than staying a sentence in the grey around it, so the difference between finished, refused, and failed is visible before the words are read.
 
+### Fixed
+
+A logo chosen during setup was lost on the way back from GitHub and the page was published without it. Setup leaves for GitHub and returns to a fresh page, and the draft restored at that point rebuilt every field except the logo. Every installation makes that round trip, so every logo was discarded.
+
+The logo field also accepted files the service could never take. It allowed 350 kB whilst a whole setup request may weigh 256 kB, and a file travels as base64, which is a third larger than the file itself. Both ends now read one figure, derived from the request limit rather than written out twice.
+
 ## Version 1.0.0
 
 The first Velvet release. This entry describes the product rather than a change to one.
