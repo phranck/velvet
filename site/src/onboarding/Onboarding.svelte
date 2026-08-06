@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { MAX_SETUP_LOGO_BYTES } from "@velvet/contracts";
   import { onMount, tick } from "svelte";
   import ConsentCheckbox from "../components/ConsentCheckbox.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
@@ -121,11 +122,12 @@
   /**
    * The most a logo may weigh, in bytes of the file itself.
    *
-   * The service caps the base64 it accepts, and base64 is a third larger than
-   * what it encodes, so this is that limit read back in the units somebody
-   * choosing a file thinks in.
+   * Taken from the contract both ends read, where it is derived from the
+   * largest request the service accepts. Stating it here instead would state it
+   * twice, and the two would only be found to disagree by somebody watching
+   * setup fail on a file this field had just accepted.
    */
-  const MAX_LOGO_BYTES = 350_000;
+  const MAX_LOGO_BYTES = MAX_SETUP_LOGO_BYTES;
 
   /** What the header can show, and what the page build knows to copy. */
   const LOGO_TYPES = ["image/svg+xml", "image/png", "image/webp", "image/jpeg"];

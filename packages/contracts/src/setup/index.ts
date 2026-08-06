@@ -16,6 +16,11 @@ export type {
   SetupSession,
   SetupStatus,
 } from "./schemas.js";
+export {
+  MAX_SETUP_LOGO_BASE64_BYTES,
+  MAX_SETUP_LOGO_BYTES,
+  MAX_SETUP_REQUEST_BYTES,
+} from "./limits.js";
 export { serializeVelvetConfiguration } from "./serialization.js";
 export type {
   SetupContractError,
