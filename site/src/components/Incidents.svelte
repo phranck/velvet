@@ -37,7 +37,9 @@
 
 <style>
   .block {
-    margin: 0 18px 8px;
+    /* The inset the status page gives everything inside it, so this stands
+       exactly as wide as the cards beneath it. */
+    margin: 0 var(--status-content-inset) 8px;
   }
   h2 {
     font-size: 15px;

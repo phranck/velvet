@@ -43,13 +43,13 @@
      and a reader who has just finished setting Velvet up should not meet
      something that reads as an incident. */
   .first-run {
-    margin: 0 auto 1.25rem;
+    /* The inset the status page gives everything inside it, which is what
+       makes this exactly as wide as the cards it introduces. It states no
+       width of its own: the page already carries the configured measure, and a
+       notice that read that measure directly came out a whole inset wider than
+       the cards on both sides. */
+    margin: 0 var(--status-content-inset) 1.25rem;
     padding: 0.9rem 1.1rem;
-    /* The width the page's cards are held to, which this notice stands above.
-       It read a name nothing sets and fell back to a figure of its own, so it
-       ran wider than everything beneath it on any page whose theme says
-       otherwise. */
-    max-width: var(--service-card-max-width);
     border-radius: var(--card-radius, 14px);
     background: color-mix(in srgb, var(--accent) 12%, transparent);
     color: var(--text);
