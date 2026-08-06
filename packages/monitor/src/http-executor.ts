@@ -1,4 +1,4 @@
-import type { NormalizedHttpCheck } from "@velvet/contracts";
+import { isReservedSecretName, type NormalizedHttpCheck } from "@velvet/contracts";
 import { lookup as dnsLookup } from "node:dns";
 import type {
   IncomingMessage,
@@ -62,8 +62,16 @@ type BodyOutcome =
 
 type Lookup = NonNullable<RequestOptions["lookup"]>;
 
+/**
+ * Reads a header secret from the environment, refusing the runner's own.
+ *
+ * Configuration validation already rejects a header naming a runner variable,
+ * so this is the second line: a name reserved to the runner resolves to
+ * nothing here even if a check reached this point unvalidated, so `GITHUB_TOKEN`
+ * and its kind can never be sent to a checked endpoint.
+ */
 const defaultResolveSecret = (name: string): string | undefined =>
-  process.env[name];
+  isReservedSecretName(name) ? undefined : process.env[name];
 
 const forceIpv4Lookup = (resolver: Lookup): Lookup =>
   (hostname, options, callback) =>

@@ -416,6 +416,55 @@ services:
   }
 });
 
+test("rejects a header secret naming a runner-provided variable", () => {
+  // A header secret's value is sent to the checked endpoint. The runner exposes
+  // its own credentials under these prefixes, GITHUB_TOKEN among them, so a
+  // check naming one would exfiltrate it. GitHub refuses to create a repository
+  // secret under GITHUB_, so this refuses nothing an installation could use.
+  for (const name of [
+    "GITHUB_TOKEN",
+    "GITHUB_REPOSITORY",
+    "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
+    "RUNNER_TEMP",
+  ]) {
+    const result = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - name: API
+    checks:
+      - name: Health
+        url: https://api.example.com/health
+        headers:
+          - { name: Authorization, secret: ${name} }
+`);
+
+    assertConfigurationError(
+      result,
+      "RESERVED_SECRET_REFERENCE",
+      "/services/0/checks/0/headers/0/secret",
+    );
+  }
+});
+
+test("accepts a header secret named as the installation's own", () => {
+  const result = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status }
+services:
+  - name: API
+    checks:
+      - name: Health
+        url: https://api.example.com/health
+        headers:
+          - { name: Authorization, secret: API_HEALTH_TOKEN }
+`);
+
+  assert.equal(result.success, true);
+});
+
 test("rejects environment-variable interpolation in configuration strings", () => {
   const result = parse(`
 schemaVersion: 1

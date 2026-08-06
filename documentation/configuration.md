@@ -144,6 +144,8 @@ Pass only the secrets a check needs, not all of them.
 
 Writing a value into `velvet.yml`, in any form, is refused. That includes `$TOKEN` and `${TOKEN}`: the file holds the name of an environment variable and nothing else.
 
+A header secret cannot name a variable the runner owns. Names beginning with `GITHUB_`, `ACTIONS_`, or `RUNNER_` are refused, so a check can never be pointed at `GITHUB_TOKEN` to send it to the endpoint it calls. Name your own repository secret instead, which GitHub itself does not let you create under those prefixes.
+
 Some headers cannot be set at all, because they decide how the request itself is routed and framed. `Host`, `Content-Length`, and `Transfer-Encoding` are the ones you are most likely to reach for.
 
 If a check follows a redirect to another origin, Velvet drops your headers before sending the next request, so a token cannot travel to a host you did not name.

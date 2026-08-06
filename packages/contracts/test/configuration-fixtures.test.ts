@@ -64,6 +64,11 @@ const invalidFixtures: Array<
     "FORBIDDEN_SECRET_INTERPOLATION",
     "/services/0/checks/0/headers/0/secret",
   ],
+  [
+    "reserved-secret",
+    "RESERVED_SECRET_REFERENCE",
+    "/services/0/checks/0/headers/0/secret",
+  ],
   ["unknown-field", "INVALID_CONFIGURATION", "/services/0/remoteProbe"],
   ["mixed-service-forms", "INVALID_SERVICE_CHECKS", "/services/0"],
 ];
