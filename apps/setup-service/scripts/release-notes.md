@@ -1,14 +1,8 @@
-# Velvet 1.1.1
-
-Three corrections found by walking a fresh installation.
+# Velvet 1.1.2
 
 ## Fixed
 
-The notice a page shows on its first day ran wider than the cards beneath it. It now takes the same width they do.
-
-An incident opened for a service checked through a single address said that service's name twice, as `Website / Website is unavailable`. It says it once.
-
-A page that agreed to be listed at [velvet.li/references](https://velvet.li/references/) could wait up to an hour to appear there. It is listed as soon as it goes live.
+Everything standing above your status cards now takes exactly their width. A notice or an incident shown above them used to run a little wider than the cards themselves, whatever width you had set. All of them now end where the cards end.
 
 ## What stays yours
 

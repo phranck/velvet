@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.1.2
+
+### Fixed
+
+Everything standing above the status cards now takes exactly their width. The page is held to the width set in the Configurator whilst the cards sit a little inside it, so a notice reading that width directly came out wider than the cards it introduced. The inset is now stated once and taken by the cards, by any incident shown above them, and by the first-day notice alike, so all of them end where the cards end at whatever width is configured.
+
 ## Version 1.1.1
 
 Three corrections found by walking a fresh installation.
