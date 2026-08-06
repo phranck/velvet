@@ -356,6 +356,39 @@ test("secret headers are resolved before timing and never returned", async () =>
   }
 });
 
+test("the default resolver never sends a runner-provided variable", async () => {
+  // Configuration validation already refuses a header naming a runner variable.
+  // This is the second line: even with GITHUB_TOKEN present in the environment
+  // and named directly, the default resolver returns nothing, so the token is
+  // never sent and the check fails rather than leaking it.
+  let receivedAuthorization: string | null = "not-called";
+  const fixture = startServer((request) => {
+    receivedAuthorization = request.headers.get("authorization");
+    return new Response(null, { status: 200 });
+  });
+  const hadToken = "GITHUB_TOKEN" in process.env;
+  const previousToken = process.env.GITHUB_TOKEN;
+  process.env.GITHUB_TOKEN = "Bearer must-not-leak";
+  try {
+    const executeHttpCheck = await executor();
+    const result = await executeHttpCheck(
+      // No resolveSecret dependency, so the default resolver is exercised.
+      check(fixture.url, {
+        headers: [{ name: "Authorization", secret: "GITHUB_TOKEN" }],
+      }),
+      {},
+    );
+
+    assert.equal(receivedAuthorization, "not-called");
+    assert.equal(result.outcome, "failure");
+    assert.equal(JSON.stringify(result).includes("must-not-leak"), false);
+  } finally {
+    if (hadToken) process.env.GITHUB_TOKEN = previousToken;
+    else delete process.env.GITHUB_TOKEN;
+    await stopServer(fixture.server);
+  }
+});
+
 test("cross-origin redirects do not forward configured secret headers", async () => {
   let targetAuthorization: string | null = "not-called";
   const target = startServer((request) => {

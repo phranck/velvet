@@ -8,6 +8,7 @@ export type {
 } from "./schemas.js";
 export {
   configurationIdentifierFromName,
+  isReservedSecretName,
   normalizeCustomDomain,
   parseVelvetConfiguration,
   validateVelvetConfiguration,

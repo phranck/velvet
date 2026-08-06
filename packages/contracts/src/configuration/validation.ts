@@ -20,6 +20,33 @@ type UnknownRecord = Record<string, unknown>;
 
 const SECRET_INTERPOLATION = /\$(?:\{[A-Z_][A-Z0-9_]*\}|[A-Z_][A-Z0-9_]*)/;
 const ENVIRONMENT_VARIABLE = /^[A-Z_][A-Z0-9_]*$/;
+/**
+ * Environment-variable name prefixes the runner owns, never an installation's
+ * own secret.
+ *
+ * A header secret names an environment variable whose value is sent to the
+ * checked endpoint. The runner exposes its own credentials under these
+ * prefixes, `GITHUB_TOKEN` among them, and a check must not be able to name one
+ * and exfiltrate it. GitHub itself refuses to create a repository secret whose
+ * name begins with `GITHUB_`, so a legitimate header secret can never sit under
+ * these prefixes and denying them refuses nothing an installation could use.
+ */
+const RESERVED_SECRET_PREFIXES = ["GITHUB_", "ACTIONS_", "RUNNER_"] as const;
+
+/**
+ * Whether a header secret names a runner-provided variable rather than the
+ * installation's own.
+ *
+ * Shared with the monitor so the value is refused both when the configuration
+ * is validated and again when a header is resolved, in case a check ever
+ * reaches the resolver without having been validated.
+ *
+ * @param name - The environment-variable name a header secret references.
+ * @returns `true` when the name is reserved to the runner and must not be sent.
+ */
+export function isReservedSecretName(name: string): boolean {
+  return RESERVED_SECRET_PREFIXES.some((prefix) => name.startsWith(prefix));
+}
 const HEADER_NAME = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
 const UNSAFE_REQUEST_HEADERS = new Set([
   "connection",
@@ -275,17 +302,24 @@ function inspectCheck(
           );
         }
       }
-      if (
-        typeof header.secret === "string" &&
-        !ENVIRONMENT_VARIABLE.test(header.secret)
-      ) {
-        errors.push(
-          configurationError(
-            "INVALID_SECRET_REFERENCE",
-            `${path}/headers/${index}/secret`,
-            "Header secrets must reference an uppercase environment-variable name without a dollar sign.",
-          ),
-        );
+      if (typeof header.secret === "string") {
+        if (!ENVIRONMENT_VARIABLE.test(header.secret)) {
+          errors.push(
+            configurationError(
+              "INVALID_SECRET_REFERENCE",
+              `${path}/headers/${index}/secret`,
+              "Header secrets must reference an uppercase environment-variable name without a dollar sign.",
+            ),
+          );
+        } else if (isReservedSecretName(header.secret)) {
+          errors.push(
+            configurationError(
+              "RESERVED_SECRET_REFERENCE",
+              `${path}/headers/${index}/secret`,
+              "Header secrets must not reference a runner-provided variable such as GITHUB_TOKEN.",
+            ),
+          );
+        }
       }
     });
   }
