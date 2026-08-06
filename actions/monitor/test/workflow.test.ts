@@ -12,6 +12,7 @@ type Workflow = {
   jobs: Record<
     string,
     {
+      if?: string;
       steps: Array<{
         uses?: string;
         with?: Record<string, unknown>;
@@ -93,6 +94,41 @@ test("provides a pinned five-minute status workflow", async () => {
   });
   assert.equal(actionStep(document).with?.mode, "status");
   assertPinnedActions(document);
+});
+
+test("runs a maintenance issue only when its author has write access", async () => {
+  // A maintenance window suppresses incident reporting, and a public repository
+  // lets anyone open an issue whose template applies the maintenance label. The
+  // job must therefore gate an issues event on the author's write access, or a
+  // stranger could hide a real outage. Both the copy an installation receives
+  // and the copy a person copies by hand carry the same gate.
+  const templatePath = resolve(
+    import.meta.dirname,
+    "../../../template/.github/workflows/velvet-status.yml",
+  );
+  const sources = {
+    example: await workflow("velvet-status.yml"),
+    template: Bun.YAML.parse(
+      await readFile(templatePath, "utf8"),
+    ) as Workflow,
+  };
+
+  for (const [name, document] of Object.entries(sources)) {
+    const condition = document.jobs.monitor?.if ?? "";
+    assert.match(
+      condition,
+      /author_association/u,
+      `${name} must gate an issues event on the author's association`,
+    );
+    assert.match(
+      condition,
+      /OWNER"?,\s*"?MEMBER"?,\s*"?COLLABORATOR/u,
+      `${name} must trust only write-access associations`,
+    );
+    // The gate is an addition to the label check, not a replacement, so a
+    // legitimate maintenance issue still runs.
+    assert.match(condition, /maintenance/u, `${name} keeps the label check`);
+  }
 });
 
 test("provides a pinned four-times-daily response workflow", async () => {

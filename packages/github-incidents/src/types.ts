@@ -76,6 +76,16 @@ export interface GitHubIssue {
   updatedAt: string;
   closedAt: string | null;
   labels: string[];
+  /**
+   * How the author relates to the repository, as GitHub reports it.
+   *
+   * One of `OWNER`, `MEMBER`, `COLLABORATOR`, `CONTRIBUTOR`, `FIRST_TIMER`,
+   * `FIRST_TIME_CONTRIBUTOR`, `MANNEQUIN`, or `NONE`. The first three have write
+   * access; the rest do not. A maintenance issue is only honoured from an author
+   * with write access, because a maintenance window suppresses incident
+   * reporting and a public repository lets anyone open an issue.
+   */
+  authorAssociation: string;
 }
 
 export interface GitHubComment {

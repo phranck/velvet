@@ -10,6 +10,7 @@ type GitHubIssue = {
   updatedAt: string;
   closedAt: string | null;
   labels: string[];
+  authorAssociation: string;
 };
 
 type GitHubComment = {
@@ -160,6 +161,8 @@ class MemoryGitHubIssuesClient implements GitHubIssuesClient {
       updatedAt: this.now,
       closedAt: null,
       labels: [...input.labels],
+      // Velvet's own issues, written with the repository token.
+      authorAssociation: "OWNER",
     };
     this.issues.push(issue);
     return structuredClone(issue);
@@ -253,6 +256,9 @@ function issue(
     updatedAt: "2026-07-29T12:01:00.000Z",
     closedAt: null,
     labels: [label],
+    // The default models a legitimate maintenance issue, opened by the owner.
+    // A test that needs a stranger overrides this.
+    authorAssociation: "OWNER",
     ...overrides,
   };
 }
@@ -666,6 +672,49 @@ test("suppresses exact maintenance targets, expires them, and preserves history"
     completed.document.events.find(({ kind }) => kind === "maintenance")?.state,
     "completed",
   );
+});
+
+test("a maintenance issue from an author without write access is ignored entirely", async () => {
+  const { parseVelvetMetadata, reconcileGitHubIncidents } =
+    await reconciliationFunctions();
+  // A well-formed maintenance issue that would suppress the Readiness and
+  // Version incidents, but opened by somebody with only read access. A public
+  // repository lets anyone open one, and its template applies the label, so
+  // the author is the only thing that separates a real window from an attack.
+  const stranger = issue(
+    40,
+    "[Maintenance] Fake window to hide an outage",
+    maintenanceBody(),
+    "maintenance",
+    { authorAssociation: "NONE" },
+  );
+  const client = new MemoryGitHubIssuesClient([stranger]);
+  const states = [
+    checkState("api", "readiness", "down", "2026-07-29T12:15:00.000Z"),
+    checkState("api", "version", "down", "2026-07-29T12:15:00.000Z"),
+  ];
+
+  const result = await reconcileGitHubIncidents(
+    input(states, "2026-07-29T12:30:00.000Z"),
+    { client },
+  );
+
+  // The outage is reported despite the fake window.
+  assert.equal(
+    client.issues.some(({ title }) => title.includes("Readiness is unavailable")),
+    true,
+    "the incident must be opened, not suppressed",
+  );
+  assert.equal(
+    result.document.events.some(({ kind }) => kind === "maintenance"),
+    false,
+    "no maintenance window is published",
+  );
+  // The stranger's issue is left untouched: no Velvet metadata written into it,
+  // and no comment added to it.
+  const untouched = client.issues.find(({ number }) => number === 40)!;
+  assert.equal(parseVelvetMetadata(untouched.body), null);
+  assert.equal(client.comments.get(40), undefined);
 });
 
 test("invalid maintenance never suppresses incidents and receives one useful comment", async () => {
