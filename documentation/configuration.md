@@ -188,6 +188,12 @@ Setting `customDomain` puts a `CNAME` file into every build. That is all it does
 
 Keep the GitHub Pages address working until your own domain answers and its certificate is live. Removing it earlier takes your page offline in between.
 
+**Verify the domain on your GitHub account.** An unverified custom domain can be claimed by a different GitHub account the moment no repository holds it, because your DNS record keeps pointing at GitHub either way. That window opens whenever you delete the repository or remove the domain from it, which is exactly what happens if you ever rebuild your installation from scratch. Whoever claims it next serves their own content on your hostname.
+
+Verifying closes the window for good: GitHub then refuses the domain to every account except yours, whether or not a repository currently holds it. It is a one-off step in your account settings, under Pages, where GitHub gives you a `TXT` record to add beside the record you already made. GitHub's [verification documentation](https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site/verifying-your-custom-domain-for-github-pages) walks through it.
+
+Velvet cannot do this for you, because it belongs to your GitHub account and your DNS rather than to the repository.
+
 ## Themes
 
 The browser setup shows the four system themes as cards you can pick from. The Configurator offers the same four and lets you change every field below afterwards.

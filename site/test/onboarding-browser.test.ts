@@ -468,8 +468,10 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ),
       "18px",
     );
+    // The block holds more than one paragraph, and the size is a rule for all
+    // of them, so the first one answers for the rule.
     assert.equal(
-      await page.locator(".dns-guidance p").evaluate((element) =>
+      await page.locator(".dns-guidance p").first().evaluate((element) =>
         getComputedStyle(element).fontSize,
       ),
       "20px",
