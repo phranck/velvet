@@ -1443,7 +1443,6 @@
     margin-inline: 0.7rem;
   }
   .dns-guidance strong,
-  .dns-guidance b,
   .dns-guidance code,
   .dns-guidance dt {
     color: var(--setup-text);
