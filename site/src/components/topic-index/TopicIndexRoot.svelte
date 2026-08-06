@@ -50,8 +50,14 @@
     /* Its own geometry rather than the page's, and stated here so the entries
        below derive from what actually applies to them. A panel of short links
        reads as a lighter surface than a card of prose, so it is rounded less
-       and holds its content closer in. */
-    --topic-index-radius: 28px;
+       and holds its content closer in.
+
+       24 rather than 28, so the entries keep the curve this panel derives for
+       them. An entry stands 34px tall, so anything above 17px is clamped to a
+       full pill by the browser and the concentric rounding is lost: the gap
+       between the two curves stops being constant. At 24 the entries take 16,
+       which is under that ceiling and therefore actually drawn. */
+    --topic-index-radius: 24px;
     --topic-index-padding: 8px;
     --topic-index-inner-radius: max(
       calc(var(--topic-index-radius) - var(--topic-index-padding)),
@@ -60,6 +66,9 @@
     padding: var(--topic-index-padding);
     border-radius: var(--topic-index-radius);
     background: var(--velvet-surface-card);
+    /* The same shadow a card carries, from the same token, so the panel stands
+       off the board exactly as far as the notes beside it do. */
+    box-shadow: var(--velvet-card-shadow);
   }
   @media (min-width: 960px) {
     .topic-index {
@@ -82,8 +91,14 @@
      the panel's content stands in from the panel, and takes half the entry's
      radius on top of that to clear the curve. The panel states that one
      distance and both readings of it follow. */
+  /* One row, with whatever detail an entry carries pushed to the far end. An
+     entry without one holds a single child, which `space-between` leaves at the
+     start, so the topic index reads exactly as it did before. */
   a {
-    display: block;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
     padding: 0.25rem
       calc(var(--topic-index-padding) + var(--topic-index-inner-radius) / 2);
     border-radius: var(--topic-index-inner-radius);
@@ -92,9 +107,14 @@
     line-height: 1.45;
     text-decoration: none;
   }
+  /* A surface under the pointer, not only a brighter label, so the whole entry
+     answers rather than the word alone. No transition: the tint belongs to
+     where the pointer is now, and fading it in leaves it trailing behind a
+     reader running down the list. */
   a:hover,
   a:focus-visible {
     color: var(--velvet-text);
+    background: color-mix(in srgb, currentColor 8%, transparent);
   }
   /* The entry a reader has reached. Marked by a script in the page, so the rule
      is global or Svelte finds no element carrying the attribute and removes it
@@ -103,16 +123,28 @@
     color: var(--velvet-accent);
     background: color-mix(in srgb, var(--velvet-accent) 10%, transparent);
   }
+  /* Hovering the entry a reader is already on must not wash its tint away,
+     which the neutral rule above would do by replacing the background. It
+     deepens instead, so the entry still reads as the current one. */
+  a:global([data-current]):hover,
+  a:global([data-current]):focus-visible {
+    color: var(--velvet-accent);
+    background: color-mix(in srgb, var(--velvet-accent) 16%, transparent);
+  }
+  /* Takes the room the detail does not, so a long topic wraps rather than
+     pushing the date out of the panel. */
   .label {
-    display: block;
+    min-width: 0;
   }
   /* Quieter and smaller than the label, because it answers a question the
-     reader has only after they have found the entry. */
+     reader has only after they have found the entry. Kept on one line and
+     stopped from shrinking, so it stays legible at the end of the row. */
   .detail {
-    display: block;
+    flex-shrink: 0;
     color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-small);
+    font-size: var(--velvet-text-caption);
     line-height: 1.3;
     opacity: 0.75;
+    white-space: nowrap;
   }
 </style>
