@@ -721,6 +721,16 @@
                   <code>185.199.110.153</code>, and <code>185.199.111.153</code>
                 </li>
               </ul>
+              <!--
+                An unverified domain can be claimed by another GitHub account
+                whenever no repository holds it, which is the case for as long
+                as it takes to rebuild an installation. Said here because this
+                is where somebody is deciding to use their own domain.
+              -->
+              <p>
+                Verify this domain on your GitHub account as well, under Settings, Pages. Until you
+                do, another account can claim it during any gap where no repository holds it.
+              </p>
             </aside>
           {/if}
         </div>
