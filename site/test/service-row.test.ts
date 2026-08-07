@@ -192,18 +192,65 @@ test("reuses the response chart inside service details", async () => {
   assert.match(html, /Response time history for Website/);
 });
 
-test("changes service details immediately without animating live height", async () => {
-  const source = await readFile(
+test("opens a service through the shared disclosure, and captures nothing", async () => {
+  // Two things are held here, and both are measurements rather than taste.
+  //
+  // The panel is opened by one action that animates one element's height, and
+  // the browser's animation timeline plays it, so no script runs per frame. On
+  // a production build in WebKit, eight expand-all cycles over six services
+  // produce two frames longer than 32ms out of roughly 250. That is what the
+  // same page produces with no animation at all.
+  //
+  // Nothing here may name a view-transition area. Capturing the card, its head
+  // and every row produced 40 animations for a single service, and 13 to 18
+  // long frames over the same run. Turning off the blend mode, the group's size
+  // animation, or any subset of the names changed none of it: the cost is the
+  // capture, not what is animated.
+  const details = await readFile(
     resolve(import.meta.dirname, "../src/components/service/ServiceDetails.svelte"),
     "utf8",
   );
+  const row = await readFile(
+    resolve(import.meta.dirname, "../src/components/ServiceRow.svelte"),
+    "utf8",
+  );
+  const page = await readFile(
+    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
+    "utf8",
+  );
 
-  assert.match(source, /hidden=\{!open\}/);
-  assert.match(source, /inert=\{!open\}/);
-  assert.doesNotMatch(source, /createHiddenDisclosureMotion/);
-  assert.doesNotMatch(source, /\.animate\(/);
-  assert.doesNotMatch(source, /height:\s*`?\$\{/);
-  assert.doesNotMatch(source, /grid-template-rows/);
+  assert.match(details, /use:disclosure=\{open\}/);
+  assert.doesNotMatch(details, /hidden=\{!open\}/);
+  assert.doesNotMatch(details, /\.animate\(/);
+  assert.doesNotMatch(details, /grid-template-rows/);
+
+  for (const [name, source] of [
+    ["ServiceDetails.svelte", details],
+    ["ServiceRow.svelte", row],
+    ["StatusPage.svelte", page],
+  ] as const) {
+    assert.doesNotMatch(source, /view-transition/, `${name} names a view-transition area`);
+    assert.doesNotMatch(source, /startViewTransition/, `${name} starts a view transition`);
+  }
+});
+
+test("the disclosure animates one height and reads its duration from a token", async () => {
+  const source = await readFile(
+    resolve(import.meta.dirname, "../src/lib/disclosure.ts"),
+    "utf8",
+  );
+
+  // Height rather than anything the compositor owns, because the panel has to
+  // take up space for the rows below it to move at all. It is the only element
+  // whose size changes, so everything under it follows by ordinary layout.
+  assert.match(source, /node\.animate\(/);
+  assert.match(source, /height:\s*`\$\{current\}px`/);
+  assert.match(source, /--velvet-disclosure-duration/);
+  // The panel leaves the layout only once a collapse has finished, since an
+  // element already removed from it cannot be animated out of it.
+  assert.match(source, /node\.hidden = !next;/);
+  assert.match(source, /node\.inert = !next;/);
+  assert.match(source, /prefersReducedMotion/);
 });
 
 test("uses one shared theme color for every service icon", async () => {
@@ -228,9 +275,10 @@ test("uses the centered section disclosure icon for service cards", async () => 
     source,
     /\.chevron\s*\{[^}]*width:\s*22px[^}]*height:\s*22px[^}]*display:\s*inline-block[^}]*font-size:\s*22px/s,
   );
+  // The same token the panel below it opens in, so the two turn together.
   assert.match(
     source,
-    /\.chevron\s*\{[^}]*transform 200ms ease-in-out/s,
+    /\.chevron\s*\{[^}]*transform var\(--velvet-disclosure-duration\) ease-in-out/s,
   );
   assert.match(source, /\.chevron\s*\{[^}]*color:\s*var\(--service-icon\)/s);
   assert.doesNotMatch(source, /\.summary:hover \.chevron/);

@@ -50,6 +50,10 @@
   --popover-bg: color-mix(in srgb, var(--card-background), var(--text-primary) 9%);
   --popover-border: color-mix(in srgb, var(--card-border), var(--text-primary) 16%);
   --logo-height: 72px;
+  /* How long a service panel takes to open or close. The chevron above it and
+     the expand-all control turn in the same time, so the three read as one
+     movement. */
+  --velvet-disclosure-duration: 200ms;
 
   --text: var(--text-primary);
   --text-muted: var(--text-secondary);

@@ -173,42 +173,17 @@ test("renders the existing cards layout through the same page component", async 
   assert.equal(html.match(/<section class="card(?:\s|")/g)?.length, 1);
 });
 
-test("gives all five cards stable browser transition identities", async () => {
+test("names no view-transition areas, in either layout", async () => {
+  // Capturing the card, its head and every row cost 13 to 18 frames longer
+  // than 32ms over eight expand-all cycles on a production build in WebKit,
+  // against 2 with nothing captured. Opening one service alone started 40
+  // animations across all eight areas, five of which did not change. Removing
+  // the blend mode, the group's size animation, or any subset of the names
+  // moved none of it, so what costs is the capture itself.
+  //
+  // The panel animates its own height instead, through src/lib/disclosure.ts.
   const serviceIds = ["backend", "dashboard", "database", "storage", "website"];
   const fiveServices: StatusDocument = {
-    ...statusDocument,
-    services: serviceIds.map((id) => ({
-      ...statusDocument.services[0]!,
-      id,
-      name: id,
-      checks: [
-        {
-          ...statusDocument.services[0]!.checks[0]!,
-          id,
-        },
-      ],
-    })),
-  };
-  const html = await renderStatusPage(
-    "cards",
-    false,
-    incidentsDocument,
-    fiveServices,
-  );
-
-  for (const serviceId of serviceIds) {
-    assert.match(html, new RegExp(`view-transition-name: service-${serviceId}`));
-  }
-  assert.equal(html.match(/view-transition-name: service-/g)?.length, 5);
-});
-
-test("gives every part of the grouped layout its own transition identity", async () => {
-  // One name for the whole group meant the browser had a single image of every
-  // service to stretch, which is what made expanding all of them look wrong
-  // whilst the same action in separate cards looked right. Naming the rows and
-  // the header lifts them out of that image, so each one moves on its own.
-  const serviceIds = ["backend", "website"];
-  const twoServices: StatusDocument = {
     ...statusDocument,
     services: serviceIds.map((id) => ({
       ...statusDocument.services[0]!,
@@ -218,19 +193,19 @@ test("gives every part of the grouped layout its own transition identity", async
     })),
   };
 
-  const html = await renderStatusPage(
-    "grouped",
-    false,
-    incidentsDocument,
-    twoServices,
-  );
-
-  assert.deepEqual(
-    [...html.matchAll(/view-transition-name: ([a-z-]+)/g)]
-      .map((match) => match[1])
-      .sort(),
-    ["service-backend", "service-group", "service-group-head", "service-website"],
-  );
+  for (const layout of ["cards", "grouped"] as const) {
+    const html = await renderStatusPage(
+      layout,
+      false,
+      incidentsDocument,
+      fiveServices,
+    );
+    assert.doesNotMatch(
+      html,
+      /view-transition-name/,
+      `the ${layout} layout still names a view-transition area`,
+    );
+  }
 });
 
 test("renders completed maintenance in the affected service history", async () => {
@@ -354,22 +329,23 @@ test("places the Velvet credit directly after the service cards", async () => {
   assert.doesNotMatch(page, /incidents\.atom/);
 });
 
-test("uses browser view transitions without live height animation", async () => {
+test("toggles without starting a view transition, and states its timing once", async () => {
   const page = await readFile(
     resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
     "utf8",
   );
 
-  assert.match(page, /createViewTransitionController/);
-  assert.match(page, /transitionState\(\(\) => onToggleAll\(!allOpen\)\)/);
+  assert.doesNotMatch(page, /createViewTransitionController/);
+  assert.doesNotMatch(page, /transitionState/);
+  assert.doesNotMatch(page, /view-transition/);
+  assert.match(page, /onclick=\{\(\) => onToggleAll\(!allOpen\)\}/);
+  assert.match(page, /onToggle=\{\(\) => onToggleService\(service\.id\)\}/);
+  // The expand-all control turns in the same time the panels open in, which is
+  // the one place that time is stated.
   assert.match(
     page,
-    /transitionState\(\(\) => onToggleService\(service\.id\)\)/,
+    /\.toggle-all i\s*\{[^}]*transform var\(--velvet-disclosure-duration\) ease-in-out/s,
   );
-  assert.match(page, /html:active-view-transition/);
-  assert.match(page, /::view-transition-group\(\*\)/);
-  assert.match(page, /animation-duration:\s*200ms/);
-  assert.match(page, /\.toggle-all i\s*\{[^}]*transform 200ms ease-in-out/s);
   assert.doesNotMatch(page, /\.animate\(/);
 });
 
