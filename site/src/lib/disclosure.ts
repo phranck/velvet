@@ -54,9 +54,9 @@ function prefersReducedMotion(): boolean {
  * a closing panel has to stay in the layout until its animation has finished,
  * and only this knows when that is.
  *
- * @param node The panel wrapper. Its overflow is clipped for the duration of an
- *   animation and released afterwards, so a focus ring inside an open panel is
- *   not cut off.
+ * @param node The panel wrapper, which clips its own overflow at all times. It
+ *   has to: the clip is what contains the panel's top margin, and a height
+ *   measured without it is short by exactly that margin.
  * @param open Whether the panel should be shown.
  * @returns The action handle Svelte calls when `open` changes.
  */
@@ -69,7 +69,6 @@ export function disclosure(node: HTMLElement, open: boolean) {
   /** Clears what an animation left on the element. */
   function settle(): void {
     node.style.removeProperty("height");
-    node.style.removeProperty("overflow");
     animation = null;
   }
 
@@ -106,7 +105,6 @@ export function disclosure(node: HTMLElement, open: boolean) {
       return;
     }
 
-    node.style.overflow = "hidden";
     animation = node.animate(
       [{ height: `${current}px` }, { height: `${target}px` }],
       { duration, easing: "ease-in-out" },

@@ -20,8 +20,14 @@ export const bar = {
   gap: 2,
   /** Corner radius (px) of a single-day segment in the default view. */
   radius: 2,
-  /** Fully-rounded radius for the 90-day ("quarter") view; any large value reads as a capsule. */
-  radiusFull: 999,
+  /**
+   * Corner radius (px) of a segment in the 90-day view.
+   *
+   * That view packs the same strip with three times as many segments, so each
+   * one is about a quarter as wide as a single day is elsewhere, and any value
+   * past half that width reads as a capsule.
+   */
+  narrowRadius: 999,
 } as const;
 
 /**
@@ -86,7 +92,7 @@ export function tokenCssVars(): Record<string, string> {
     "--bar-height": `${bar.height}px`,
     "--bar-gap": `${bar.gap}px`,
     "--bar-radius": `${bar.radius}px`,
-    "--bar-radius-full": `${bar.radiusFull}px`,
+    "--bar-radius-narrow": `${bar.narrowRadius}px`,
     "--seg-gloss": segGlossCss(),
     "--svc-name-size": `${typeScale.serviceName}px`,
     "--uptime-size": `${typeScale.uptime}px`,
