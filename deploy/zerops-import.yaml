@@ -1,6 +1,6 @@
 #yamlPreprocessor=on
 project:
-  name: velvet-setup
+  name: velvet.li
 
 services:
   - hostname: setup
