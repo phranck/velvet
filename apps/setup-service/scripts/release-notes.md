@@ -1,10 +1,12 @@
-# Velvet 1.2.2
+# Velvet 1.2.3
 
 ## Fixed
 
-Opening and closing a service is smooth again, and the page moves as one piece.
+Your status page publishes again.
 
-The panel now grows and shrinks on its own, so the services below it, the card around them, and the notice underneath travel with it instead of jumping straight to their new place. Safari stuttered noticeably here, and it no longer does: frames dropped during an expand-all fell from 61 to 21 over the same test.
+It was being rebuilt every time the monitor finished, and then thrown away. The step that hands the finished page to GitHub Pages was skipped on every scheduled run, so only a run you started by hand ever published anything. A page that has looked frozen whilst its checks kept passing was doing exactly this, and installing this update ends it.
+
+Nothing was lost. Every measurement taken in the meantime is in your `velvet-data` branch, and your page shows all of it as soon as it publishes again.
 
 ## What stays yours
 
