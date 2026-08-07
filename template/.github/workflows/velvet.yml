@@ -66,7 +66,12 @@ jobs:
 
   deploy:
     needs: build
-    if: needs.build.result == 'success'
+    # `always()` is what keeps this job alive. The monitor above it runs only on
+    # a manual start, so on the ordinary path it is skipped, and a condition
+    # without a status function keeps its implicit success check and inherits
+    # that skip. The build already says this; without it here, every scheduled
+    # run built a page and published none of it.
+    if: always() && needs.build.result == 'success'
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     permissions:
