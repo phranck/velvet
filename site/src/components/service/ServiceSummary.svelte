@@ -34,7 +34,7 @@
       {/each}
     </span>
   {/if}
-  <span class="uptime mono">{uptime}</span>
+  <span class="uptime mono">{uptime} uptime</span>
   <i class="ph-duotone ph-caret-circle-down chevron" class:open aria-hidden="true"></i>
 </button>
 

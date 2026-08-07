@@ -8,6 +8,7 @@
     visibleIncidentEvents,
   } from "../lib/data";
   import { iconFor } from "../lib/icons";
+  import { VELVET_VERSION } from "../lib/velvet-version.generated.js";
   import type {
     IncidentsDocument,
     RangeKey,
@@ -192,6 +193,15 @@
     </section>
   {/if}
 
+  <!--
+    The Velvet an installation is running, printed where a build stamp belongs.
+
+    Taken from the module the release writes rather than from the repository,
+    because a published page has no repository to read: it is a static build,
+    and the version that built it is the version it runs.
+  -->
+  <p class="build mono" data-velvet-version>v{VELVET_VERSION}</p>
+
   {#if config.showPoweredBy}
     <div class="powered">
       <span class="powered-label">powered by</span>
@@ -352,6 +362,17 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
+    user-select: none;
+  }
+  .build {
+    position: fixed;
+    left: 10px;
+    bottom: 8px;
+    margin: 0;
+    color: var(--text-faint);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    pointer-events: none;
     user-select: none;
   }
   .powered {

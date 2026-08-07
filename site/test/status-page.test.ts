@@ -417,3 +417,14 @@ test("nothing above the cards states a width of its own", async () => {
     );
   }
 });
+
+test("prints the Velvet that built the page", async () => {
+  // Taken from the module the release writes, not from the repository: a
+  // published page is a static build with nothing to read at runtime, so the
+  // version that built it is the version it runs. #423.
+  const { VELVET_VERSION } = await import("../src/lib/velvet-version.generated.js");
+  const html = await renderStatusPage("grouped", false);
+
+  assert.match(html, /data-velvet-version/);
+  assert.match(html, new RegExp(`v${VELVET_VERSION.replace(/\./gu, "\\.")}`));
+});
