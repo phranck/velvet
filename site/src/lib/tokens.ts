@@ -16,6 +16,8 @@
 export const bar = {
   /** Bar-strip height in px. */
   height: 32,
+  /** Height in px of the day under the pointer. */
+  hoverHeight: 38,
   /** Gap between segments in px. */
   gap: 2,
   /** Corner radius (px) of a single-day segment in the default view. */

@@ -28,8 +28,18 @@
     timeStyle: "short",
   });
 
-  /** How much taller the day under the pointer is drawn. */
-  const HOVER_SCALE = 1.12;
+  /**
+   * Height of the drawing surface.
+   *
+   * Taller than the strip, because the day under the pointer stands past it and
+   * a canvas clips at its own edge. The surface carries that height plus a pixel
+   * either side, so the softened edge of a raised day is not cut by the
+   * boundary. It spills evenly above and below the strip, which is what the
+   * strip did when each day was its own element.
+   */
+  const SURFACE_HEIGHT = bar.hoverHeight + 2;
+  /** How far the surface reaches above the strip. */
+  const SURFACE_OFFSET = (bar.height - SURFACE_HEIGHT) / 2;
 
   let host = $state<HTMLDivElement | undefined>();
   let canvas = $state<HTMLCanvasElement | undefined>();
@@ -160,11 +170,16 @@
 
     const height = bar.height;
     element.width = Math.round(stripWidth * pixelRatio);
-    element.height = Math.round(height * pixelRatio);
+    element.height = Math.round(SURFACE_HEIGHT * pixelRatio);
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    context.clearRect(0, 0, stripWidth, height);
+    context.clearRect(0, 0, stripWidth, SURFACE_HEIGHT);
 
-    const gloss = context.createLinearGradient(0, 0, 0, height);
+    const gloss = context.createLinearGradient(
+      0,
+      (SURFACE_HEIGHT - height) / 2,
+      0,
+      (SURFACE_HEIGHT + height) / 2,
+    );
     for (const stop of segGloss) {
       gloss.addColorStop(stop.offset, `rgba(${stop.rgb}, ${stop.opacity})`);
     }
@@ -175,8 +190,8 @@
       const { x, width } = slot(index, days.length, stripWidth);
       const lifted = index === hovered;
 
-      const drawnHeight = height * (lifted ? HOVER_SCALE : 1);
-      const y = (height - drawnHeight) / 2;
+      const drawnHeight = lifted ? bar.hoverHeight : height;
+      const y = (SURFACE_HEIGHT - drawnHeight) / 2;
       const fitted = Math.min(radius, width / 2, drawnHeight / 2);
 
       // A day nothing was measured on is flat, and carries an edge instead of
@@ -270,7 +285,11 @@
   onpointermove={trackPointer}
   onpointerleave={() => (hovered = null)}
 >
-  <canvas bind:this={canvas} style:height={`${bar.height}px`} aria-hidden="true"
+  <canvas
+    bind:this={canvas}
+    style:height={`${SURFACE_HEIGHT}px`}
+    style:top={`${SURFACE_OFFSET}px`}
+    aria-hidden="true"
   ></canvas>
   <div class="probes" bind:this={probes} aria-hidden="true">
     <div data-probe="--grid-operational"></div>
@@ -314,6 +333,8 @@
     margin-top: 11px;
   }
   canvas {
+    position: absolute;
+    left: 0;
     display: block;
     width: 100%;
   }
