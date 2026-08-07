@@ -1,14 +1,8 @@
-# Velvet 1.2.0
+# Velvet 1.2.1
 
-## Changed
+## Fixed
 
-Everything on your status page that is set in a monospaced face now uses Fira Code, and Velvet ships the font with your page rather than fetching it. Your page no longer asks Google Fonts for a monospace at all.
-
-If you set `fonts.mono` yourself, that still wins. Only the default changed.
-
-## Also
-
-The velvet.li pages show which version they were built from, every release in the changelog carries its date, and a few controls that could be pressed now show it.
+Links on your status page now show the hand when you point at them. Safari was drawing the ordinary arrow, because nothing in the page said what a link should do and each browser answered that differently. Two places on your page are affected: your logo at the top, and the Velvet notice at the foot.
 
 ## What stays yours
 
