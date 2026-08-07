@@ -1,12 +1,14 @@
-# Velvet 1.2.3
+# Velvet 1.3.0
 
-## Fixed
+## Changed
 
-Your status page publishes again.
+Opening and closing a service on your status page is smooth, and it stays smooth on the longer ranges.
 
-It was being rebuilt every time the monitor finished, and then thrown away. The step that hands the finished page to GitHub Pages was skipped on every scheduled run, so only a run you started by hand ever published anything. A page that has looked frozen whilst its checks kept passing was doing exactly this, and installing this update ends it.
+Four things were making the page redraw far more than it needed to, and all four are gone. The backdrop is a layer of its own now, painted once rather than on every frame. Each service's uptime strip is drawn in one piece instead of as one element per day, which is what made the 90-day view heavier than the 30-day one. Every date is formatted through one formatter rather than one per day. And a panel no longer jumps on its last frame.
 
-Nothing was lost. Every measurement taken in the meantime is in your `velvet-data` branch, and your page shows all of it as soon as it publishes again.
+Measured during an expand-all: the work your browser does per frame fell from 231 per cent of what a 60Hz screen allows to 19 per cent. Above 100 per cent a page cannot keep up, which is what a stutter is.
+
+Nothing looks different, and everything you set in the Configurator still decides what is drawn.
 
 ## What stays yours
 

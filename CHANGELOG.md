@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 1.3.0 (2026-08-08)
+
+### Changed
+
+Opening and closing a service is smooth, and it stays smooth on the longer ranges. Four things were making your page redraw far more than it needed to, and all four are gone.
+
+The backdrop is now a layer of its own, painted once instead of on every frame. The uptime strip is drawn in one piece for each service rather than as one element per day, which is what made the 90-day view heavier than the 30-day one. Every date is formatted through one formatter instead of one per day. And a panel no longer jumps on its last frame.
+
+Measured on a published page during an expand-all: the work per frame fell from 231 per cent of what a 60Hz screen allows to 19 per cent.
+
+Nothing about the page looks different, and everything the Configurator sets still decides what is drawn.
+
 ## Version 1.2.3 (2026-08-07)
 
 ### Fixed
