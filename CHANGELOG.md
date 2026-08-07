@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.2.2 (2026-08-07)
+
+### Fixed
+
+Opening a service is smooth again, and the page moves as one. The panel now grows and shrinks on its own, so the services below it, the card around them and the notice underneath travel with it instead of jumping to their new place. Safari stuttered noticeably here; it no longer does.
+
 ## Version 1.2.1 (2026-08-07)
 
 ### Fixed
