@@ -65,16 +65,24 @@ export function disclosure(node: HTMLElement, open: boolean) {
   const duration = millisecondsFrom(declared) ?? FALLBACK_DURATION_MS;
   let shown = open;
   let animation: Animation | null = null;
+  let fade: Animation | null = null;
+
+  /** The element inside the panel, which is what fades. */
+  function contents(): HTMLElement | null {
+    return node.firstElementChild as HTMLElement | null;
+  }
 
   /** Clears what an animation left on the element. */
   function settle(): void {
     node.style.removeProperty("height");
     animation = null;
+    fade = null;
   }
 
   /** Puts the element into its final state without moving anything. */
   function snap(next: boolean): void {
     animation?.cancel();
+    fade?.cancel();
     settle();
     node.hidden = !next;
     node.inert = !next;
@@ -86,7 +94,13 @@ export function disclosure(node: HTMLElement, open: boolean) {
     // previous run is still playing, so an interrupted panel carries on from
     // where it is rather than jumping first.
     const current = node.hidden ? 0 : node.getBoundingClientRect().height;
+    // Where the contents stand right now, so an interrupted panel carries on
+    // from the opacity it reached rather than restarting.
+    const inner = contents();
+    const showing =
+      fade && inner ? Number(getComputedStyle(inner).opacity) : next ? 0 : 1;
     animation?.cancel();
+    fade?.cancel();
     settle();
 
     // Not focusable whilst it closes, though it stays visible until the
@@ -109,6 +123,16 @@ export function disclosure(node: HTMLElement, open: boolean) {
       [{ height: `${current}px` }, { height: `${target}px` }],
       { duration, easing: "ease-in-out" },
     );
+
+    // The contents fade with the movement rather than appearing whole at its
+    // start. Opacity is one of the properties a compositor animates on its own,
+    // so this costs nothing beyond the height already being animated.
+    if (inner) {
+      fade = inner.animate(
+        [{ opacity: `${showing}` }, { opacity: next ? "1" : "0" }],
+        { duration, easing: "ease-in-out" },
+      );
+    }
     animation.finished.then(
       () => {
         node.hidden = !next;
