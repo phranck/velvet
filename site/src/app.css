@@ -103,6 +103,14 @@ a {
   text-decoration: none;
 }
 
+/* States the hand rather than leaving it to the engine, which is where the two
+   disagree: Chromium's own stylesheet gives a link `pointer` and WebKit's gives
+   it `auto`, so an unstated link draws the arrow in Safari. Matched on `href`
+   because an anchor without one is a target rather than something to press. */
+a[href] {
+  cursor: pointer;
+}
+
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
