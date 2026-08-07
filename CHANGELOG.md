@@ -1,5 +1,21 @@
 # Changelog
 
+## Version 1.2.0 (2026-08-07)
+
+### Changed
+
+Everything set in a monospaced face now uses Fira Code, and Velvet ships the font rather than fetching it. Your status page no longer asks Google Fonts for a monospace at all. If you set `fonts.mono` yourself, that still wins.
+
+The velvet.li pages show the version they were built from, beside the wordmark.
+
+### Fixed
+
+Every release in the changelog carries its date, which the page could always display but no entry had provided.
+
+The release list and the documentation index read better: the date sits on the same line as the version, the whole row answers to the pointer, the panel carries the same shadow as the cards beside it, and its corners are rounded so the entries inside actually keep the curve derived for them.
+
+Two controls now show a pointer when you can press them: the method and value-type menus, and the checkbox asking whether your page may be listed.
+
 ## Version 1.1.4 (2026-08-06)
 
 ### Security

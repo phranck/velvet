@@ -1,14 +1,14 @@
-# Velvet 1.1.4
+# Velvet 1.2.0
 
-## Security
+## Changed
 
-A forged incident can no longer be published by someone without write access to your repository. On a public status repository anyone can open an issue, and Velvet trusted the marker it writes into an issue body wherever that marker appeared. That let a stranger have an invented outage published on your page as an official incident.
+Everything on your status page that is set in a monospaced face now uses Fira Code, and Velvet ships the font with your page rather than fetching it. Your page no longer asks Google Fonts for a monospace at all.
 
-Velvet now checks who wrote an issue at the point it reads them. An issue from anyone without write access is ignored completely: never parsed, never commented on, never published. Your own incidents and maintenance windows are unaffected.
+If you set `fonts.mono` yourself, that still wins. Only the default changed.
 
 ## Also
 
-The reference explains why a custom domain should be verified on your GitHub account, and the browser setup says so where you enter one.
+The velvet.li pages show which version they were built from, every release in the changelog carries its date, and a few controls that could be pressed now show it.
 
 ## What stays yours
 
