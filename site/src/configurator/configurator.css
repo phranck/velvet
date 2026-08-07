@@ -17,6 +17,14 @@ body {
   font-family: var(--velvet-font);
 }
 
+/* app.css puts the status page's backdrop on a layer of its own behind the
+   content, and this tool loads that file for its palette. The tool draws its
+   own surface, and its preview paints the status page's backdrop inside itself,
+   so the layer has nothing to cover here. */
+body::before {
+  display: none;
+}
+
 button,
 input {
   font: inherit;

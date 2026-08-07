@@ -74,9 +74,36 @@ body {
   padding: 0;
 }
 
-body {
-  min-height: 100vh;
+/* The base colour sits here rather than on the body, because the layer below
+   paints behind the body's own background and would be hidden by it. */
+html {
   background-color: var(--background-end);
+}
+
+/*
+  The backdrop the status page stands on, as a layer of its own behind the
+  content.
+
+  A layer, rather than the body's own background, because a background belongs
+  to the paint of the element carrying it: everything that repaints the page
+  repaints all four of these gradients across the whole window. Opening a
+  service reflows the page on every frame, so the page paid that bill sixty
+  times a second. Traced on a published page, eight expand-all cycles cost
+  5809ms of rasterisation this way and 485ms as a layer, against 12ms of layout
+  either way.
+
+  `background-attachment: fixed` is not the same thing and does not help. It
+  decides where the backdrop sits, not which layer it is rasterised into; the
+  same trace measured 7127ms with it and 5809ms without.
+
+  board-backdrop.css does this for the website and the onboarding, which load it
+  in place of this one.
+*/
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background-image:
     var(--cloudy-blobs),
     linear-gradient(
@@ -84,8 +111,11 @@ body {
       var(--background-start) 0%,
       var(--background-end) 100%
     );
-  background-attachment: fixed;
   background-repeat: no-repeat;
+}
+
+body {
+  min-height: 100vh;
   color: var(--text);
   font-size: 18px;
   /* The status page's face, and only the status page's. `--font-sans` holds
