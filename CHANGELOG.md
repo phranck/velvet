@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.2.1 (2026-08-07)
+
+### Fixed
+
+Links now show the hand when you point at them. Safari was drawing the ordinary arrow, because no rule said what a link should do and each browser answered that differently. On your status page this is the logo at the top and the Velvet notice at the foot.
+
 ## Version 1.2.0 (2026-08-07)
 
 ### Changed
