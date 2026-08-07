@@ -84,6 +84,16 @@ test("the release artefact was cut as it", async () => {
   assert.equal(manifest, version, `the artefact's manifest states ${manifest}`);
 });
 
+test("the website states it in the module its header reads", async () => {
+  // The bar on every velvet.li page shows this. It is generated rather than
+  // read at runtime, because the site is a static build with no repository to
+  // read, so nothing but this check would notice it going stale.
+  const module = await read("site/src/lib/velvet-version.generated.ts");
+  const stated = module.match(/VELVET_VERSION = "(\d+\.\d+\.\d+)"/u)?.[1];
+
+  assert.equal(stated, version, `the website states ${stated}`);
+});
+
 test("the board backdrop prints it on its silkscreen", async () => {
   // Only the revision is compared, not the whole file. The generator stamps the
   // current year into the copyright line, so comparing bytes would turn every

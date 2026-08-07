@@ -385,6 +385,12 @@
   input {
     border: var(--service-editor-input-border, 0);
   }
+  /* A select opens a list rather than taking typing, so it answers like the
+     other controls that do something when pressed. The inputs beside it keep
+     the text cursor, which is what a field to type in should show. */
+  select {
+    cursor: pointer;
+  }
   input::placeholder {
     color: var(--service-editor-placeholder, #747887);
   }

@@ -9,13 +9,6 @@ body,
   min-height: 100%;
 }
 
-:root {
-  /* The reader's own monospace face, for the same reason as the board shell:
-     `app.css` names JetBrains Mono for the status page, which fetches it, and
-     this tool does not. */
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
 body {
   overflow: hidden;
   background: var(--velvet-base);

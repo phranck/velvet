@@ -1147,7 +1147,7 @@
     --setup-text-small: var(--velvet-text-small);
     --setup-text-body: var(--velvet-text-body);
     --setup-text-lead: 1.125rem;
-    --setup-text-caption: 0.8125rem;
+    --setup-text-caption: var(--velvet-text-caption);
     --setup-text-intro: var(--velvet-text-intro);
     --setup-text-copy: var(--velvet-text-copy);
     --setup-card-copy: var(--setup-text-copy);

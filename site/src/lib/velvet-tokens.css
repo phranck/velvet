@@ -76,6 +76,10 @@
      and the rest of the site is measured against it rather than choosing sizes
      of its own. A page that names a size in rem here is a page that will drift
      the next time one of these moves. */
+  /* Below the body scale: a legend, a serial, a version beside the wordmark.
+     The tools already set their own captions at this size, so it is stated
+     here once and reached from there rather than repeated. */
+  --velvet-text-caption: 0.8125rem;
   --velvet-text-code: 0.9375rem;
   --velvet-text-small: 0.9375rem;
   --velvet-text-body: 1rem;

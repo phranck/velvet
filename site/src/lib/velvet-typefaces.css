@@ -71,6 +71,55 @@
 }
 
 /**
+ * The one face every monospaced thing is set in, across every surface.
+ *
+ * Shipped with Velvet rather than fetched, which is what lets a published
+ * status page stop asking Google Fonts for a monospace. Two weights, matching
+ * what the surfaces actually use: ordinary text and the one badge that sets
+ * itself bolder.
+ *
+ * `optional` for the same reason as the faces above, with one difference worth
+ * knowing: monospace stand-ins are already fixed-width, so a load that misses
+ * the window changes the shapes but not the column, and nothing shifts.
+ */
+@font-face {
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src:
+    url("@fontsource/fira-code/files/fira-code-latin-400-normal.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src:
+    url("@fontsource/fira-code/files/fira-code-latin-600-normal.woff2")
+    format("woff2");
+}
+
+/**
+ * The monospace stack, stated once for every surface.
+ *
+ * Here rather than in `velvet-tokens.css`, because a status page carries its
+ * own themed tokens and does not read that file, whilst all three surfaces do
+ * read this one. Declaring the face and naming the stack it stands in belong
+ * together anyway.
+ *
+ * Before this the value existed three times, once per surface, and two of them
+ * named no real face at all whilst a third fetched JetBrains Mono from Google
+ * Fonts. Ligatures need no declaration: `calt` is on by default, and nothing
+ * here switches it off.
+ */
+:root {
+  --font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/**
  * Stand-ins for the two faces, for the moment before the real ones arrive and
  * for the whole of a load slow enough that they do not.
  *

@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.1.4
+## Version 1.1.4 (2026-08-06)
 
 ### Security
 
@@ -10,7 +10,7 @@ A forged incident can no longer be published by someone without write access. Ve
 
 The reference now explains why a custom domain should be verified on your GitHub account, and the browser setup says so where you enter one. An unverified domain can be claimed by another account during any gap where no repository holds it, which is what happens if you rebuild an installation.
 
-## Version 1.1.3
+## Version 1.1.3 (2026-08-06)
 
 ### Security
 
@@ -20,13 +20,13 @@ A header secret can no longer name a variable the runner owns. Names beginning w
 
 The configuration reference now records the header posture of the published page. It is served by GitHub Pages, which sets no `Content-Security-Policy` or `X-Frame-Options`, so it can be framed. The note says plainly how a proxy closes that if it matters to you.
 
-## Version 1.1.2
+## Version 1.1.2 (2026-08-06)
 
 ### Fixed
 
 Everything standing above the status cards now takes exactly their width. The page is held to the width set in the Configurator whilst the cards sit a little inside it, so a notice reading that width directly came out wider than the cards it introduced. The inset is now stated once and taken by the cards, by any incident shown above them, and by the first-day notice alike, so all of them end where the cards end at whatever width is configured.
 
-## Version 1.1.1
+## Version 1.1.1 (2026-08-06)
 
 Three corrections found by walking a fresh installation.
 
@@ -38,7 +38,7 @@ A service checked through a single `url` takes its check's name from itself, so 
 
 A status page that agreed to be listed at [velvet.li/references](https://velvet.li/references/) stayed out of the gallery until the hourly pass next ran, which could be an hour after it went live. Setup knows the answer when it records the installation number, and records it there instead.
 
-## Version 1.1.0
+## Version 1.1.0 (2026-08-06)
 
 Velvet has a mark of its own, and a finished setup now says so in colour.
 
@@ -60,7 +60,7 @@ A logo chosen during setup was lost on the way back from GitHub and the page was
 
 The logo field also accepted files the service could never take. It allowed 350 kB whilst a whole setup request may weigh 256 kB, and a file travels as base64, which is a third larger than the file itself. Both ends now read one figure, derived from the request limit rather than written out twice.
 
-## Version 1.0.0
+## Version 1.0.0 (2026-08-04)
 
 The first Velvet release. This entry describes the product rather than a change to one.
 

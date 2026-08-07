@@ -94,6 +94,11 @@
     color: var(--consent-text, inherit);
     font-size: var(--consent-font-size, 1rem);
     line-height: 1.4;
+    /* The whole label toggles the box, wording included, so the pointer says so
+       across all of it rather than over the drawn shape alone. The input itself
+       is transparent but not click-through, so it inherits this and the two
+       agree wherever the pointer lands. */
+    cursor: pointer;
   }
   .consent small {
     display: block;

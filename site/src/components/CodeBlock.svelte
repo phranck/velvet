@@ -122,7 +122,7 @@
   pre > code {
     /* Its own size rather than a fraction of the prose around it, so a page
        reading a step larger does not carry the code with it. */
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: var(--velvet-text-code, 0.9375rem);
     line-height: 1.7;
   }

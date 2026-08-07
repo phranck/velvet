@@ -56,7 +56,8 @@
   --text-faint: var(--text-tertiary);
 
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* `--font-mono` is not named here. It comes from velvet-typefaces.css, which
+     this file imports, so every surface sets its monospace in one face. */
 }
 
 * {

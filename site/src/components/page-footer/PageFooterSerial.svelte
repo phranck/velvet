@@ -30,7 +30,7 @@
     gap: 0;
     margin: 0;
     color: var(--velvet-text-muted);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: var(--font-mono);
     font-size: var(--setup-text-caption, 0.8125rem);
     font-weight: 700;
     letter-spacing: 0.06em;

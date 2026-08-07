@@ -11,10 +11,6 @@
   color-scheme: dark;
   font-family: var(--velvet-font);
   background: var(--velvet-base);
-  /* The reader's own monospace face. `app.css` names JetBrains Mono here for
-     the status page, which fetches it; nothing on the board does, so every code
-     block was set in this face already whilst the stylesheet said otherwise. */
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 html,

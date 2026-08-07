@@ -19,7 +19,7 @@ This file records third-party components and assets used by Velvet. The status p
 | [Conformité Européenne logo](https://commons.wikimedia.org/wiki/File:Conformit%C3%A9_Europ%C3%A9enne_(logo).svg) | Retrieved 2026-08-01 | Public domain | Path data is embedded in the onboarding backdrop, drawn to the geometry in Regulation 765/2008 Annex II and recorded in `scripts/compliance-marks.json`. |
 | RoHS compliant mark | [iconlogovector.com](https://iconlogovector.com), retrieved 2026-08-01 | No terms stated by the provider | Path data is embedded in the onboarding backdrop, recorded in `scripts/compliance-marks.json`. RoHS is not an official mark, and a tick with the wording in a ring is the industry-conventional arrangement rather than a proprietary design. |
 | [Inter](https://github.com/rsms/inter/blob/master/LICENSE.txt) | Google Fonts service | OFL-1.1 | Font files are loaded by the browser from Google Fonts and are not bundled by Velvet. |
-| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt) | Google Fonts service | OFL-1.1 | Font files are loaded by the browser from Google Fonts and are not bundled by Velvet. |
+| [Fira Code](https://github.com/tonsky/FiraCode/blob/master/LICENSE) | `@fontsource/fira-code` 5.3.0 | OFL-1.1 | Font files are bundled with every Velvet surface and with a published status page, which sets all monospaced text in this face. |
 
 The external font URL does not pin font-file versions; Google Fonts selects the served files. The family licenses above still apply to those files. Browser onboarding includes the complete Barlow, Barlow Condensed, and Plaster license text as a linked build asset.
 

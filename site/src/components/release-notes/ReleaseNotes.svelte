@@ -179,7 +179,7 @@
   code {
     /* The token already carries its own fallbacks, so nothing is repeated
        after it. The fallback here is for a surface that defines no token. */
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 0.875em;
     padding: var(--velvet-code-inset, 0.125em 0.375em);
     border-radius: var(--velvet-code-radius, 0.25rem);

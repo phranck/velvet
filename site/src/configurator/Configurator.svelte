@@ -1180,7 +1180,9 @@
     --service-editor-placeholder: var(--tool-faint);
     --service-editor-raised: var(--tool-panel);
     --service-editor-text: var(--tool-text);
-    --tool-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    /* The tool's namespace keeps its name, but the value is the one every
+       surface shares rather than a stack of its own. */
+    --tool-mono: var(--font-mono);
     min-height: 100vh;
     display: grid;
     grid-template-columns: minmax(720px, 1fr) auto;

@@ -112,6 +112,8 @@ test("uses the local Barlow family for onboarding typography", async () => {
     "barlow-latin-600-normal.woff2",
     "barlow-latin-700-normal.woff2",
     "barlow-condensed-latin-600-normal.woff2",
+    "fira-code-latin-400-normal.woff2",
+    "fira-code-latin-600-normal.woff2",
   ]) {
     assert.ok(typefaces.includes(file), `${file} is not declared`);
   }
@@ -119,18 +121,25 @@ test("uses the local Barlow family for onboarding typography", async () => {
   // used here.
   const declarations = typefaces.replaceAll(/\/\*[\s\S]*?\*\//g, "");
   assert.doesNotMatch(declarations, /font-display:\s*swap/);
+  // Counted against the faces that actually fetch a file rather than against a
+  // fixed number, so adding one cannot quietly ship without `optional`. The
+  // metric-matched stand-ins declare no `src: url()` and are not among them.
+  const fetched = (declarations.match(/@font-face\s*\{[^}]*url\(/g) ?? []).length;
   assert.equal(
     (declarations.match(/font-display:\s*optional/g) ?? []).length,
-    5,
-    "every face is optional, or a heading changes shape after the first paint",
+    fetched,
+    "every fetched face is optional, or a heading changes shape after the first paint",
   );
   assert.match(tokens, /--velvet-font:\s*"Barlow"/);
+  assert.match(tokens, /--velvet-text-caption:\s*0\.8125rem/);
   assert.match(tokens, /--velvet-text-small:\s*0\.9375rem/);
   assert.match(tokens, /--velvet-text-body:\s*1rem/);
   assert.match(onboarding, /--setup-text-small:\s*var\(--velvet-text-small\)/);
   assert.match(onboarding, /--setup-text-body:\s*var\(--velvet-text-body\)/);
   assert.match(onboarding, /--setup-text-lead:\s*1\.125rem/);
-  assert.match(onboarding, /--setup-text-caption:\s*0\.8125rem/);
+  // The caption size is shared with the website, which sets a version at it, so
+  // the value is stated once and reached from here.
+  assert.match(onboarding, /--setup-text-caption:\s*var\(--velvet-text-caption\)/);
   assert.match(onboarding, /--setup-text-intro:\s*var\(--velvet-text-intro\)/);
   assert.match(onboarding, /--setup-text-copy:\s*var\(--velvet-text-copy\)/);
   assert.match(onboarding, /--setup-card-copy:\s*var\(--setup-text-copy\)/);
