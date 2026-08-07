@@ -18,6 +18,9 @@
  * The base colour sits on the root rather than on the body, because the layer
  * below paints behind the body's own background and would be hidden by it.
  *
+ * app.css declares a layer of its own for the status page, and every surface
+ * loads it. The rule below replaces that one wholesale for these two surfaces.
+ *
  * Import this after velvet-tokens.css, which supplies --velvet-base.
  */
 html {
@@ -26,11 +29,6 @@ html {
 
 body {
   min-width: 320px;
-  /* Cleared rather than overridden. app.css gives the body a gradient with
-     fixed attachment for the status page, and every surface loads it. The
-     layer below replaces that here, and leaving the gradient in place would
-     keep the per-frame repositioning this change exists to remove. */
-  background: none;
   color: #e8eaed;
 }
 

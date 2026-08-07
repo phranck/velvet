@@ -54,6 +54,20 @@
 </div>
 
 <style>
+  /*
+    Clipped at all times, not only whilst it animates.
+
+    `overflow` other than `visible` gives this a formatting context of its own,
+    which contains the panel's own top margin instead of letting it collapse
+    through and act above the panel. That changes the height by exactly that
+    margin, so a panel measured without the clip and animated with it arrives 13
+    pixels short, and everything below it jumps by that much on the last frame.
+    Clipping throughout makes the height before, during and after the same
+    number.
+  */
+  .detail-wrap {
+    overflow: hidden;
+  }
   .detail {
     margin-top: 13px;
     padding: 12px 14px;

@@ -5,6 +5,17 @@
 
   const maintenance = $derived(incidents.filter((event) => event.kind === "maintenance"));
   const active = $derived(incidents.filter((event) => event.kind === "incident"));
+
+  /*
+   * Built once rather than per event.
+   *
+   * Each of these renders inside a loop over every incident and maintenance
+   * window a page is showing, and constructing a formatter is what costs.
+   */
+  const EVENT_TIME = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 </script>
 
 {#if maintenance.length}
@@ -16,7 +27,7 @@
           <span class="title">{m.title}</span>
           {#if m.summary}<span class="summary">{m.summary}</span>{/if}
         </span>
-        <span class="meta mono">{m.state} · {new Date(m.startsAt).toLocaleString()}</span>
+        <span class="meta mono">{m.state} · {EVENT_TIME.format(new Date(m.startsAt))}</span>
       </div>
     {/each}
   </section>
@@ -29,7 +40,7 @@
       <div class="card inc">
         <span class="title">{i.title}</span>
         {#if i.summary}<span class="summary">{i.summary}</span>{/if}
-        <span class="meta mono">Started {new Date(i.startsAt).toLocaleString()}</span>
+        <span class="meta mono">Started {EVENT_TIME.format(new Date(i.startsAt))}</span>
       </div>
     {/each}
   </section>

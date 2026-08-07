@@ -226,9 +226,11 @@ test("renders completed maintenance in the affected service history", async () =
     ],
   });
 
-  assert.match(html, /data-maintenance="true"/);
-  assert.match(html, /data-tip="[^"]*Website maintenance/);
-  assert.match(html, /class="[^"]*seg[^"]*maintenance/);
+  // The strip is drawn on a canvas, so the day itself carries no markup and no
+  // label. What has to survive that is the information: the window is named in
+  // the text beside the drawing, and the drawing says how many days it covers.
+  assert.match(html, /Maintenance: Website maintenance/);
+  assert.match(html, /aria-label="Availability history:[^"]*under maintenance/);
   assert.doesNotMatch(html, /class="[^"]*card maint/);
 });
 

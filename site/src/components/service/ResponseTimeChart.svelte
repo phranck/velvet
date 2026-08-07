@@ -221,13 +221,22 @@
     activeTimestamp = hoverTimestamps[nextIndex] ?? null;
   }
 
+  /*
+   * Built once rather than per call.
+   *
+   * This labels the hover tooltip, and the tooltip follows the pointer, so a
+   * formatter constructed inside the function is constructed on every pointer
+   * move. Constructing one is what costs; formatting through it does not.
+   */
+  const HOVER_TIME = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   function tooltipTimestamp(timestamp: string): string {
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(timestamp));
+    return HOVER_TIME.format(new Date(timestamp));
   }
 </script>
 
