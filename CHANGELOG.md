@@ -1,5 +1,21 @@
 # Changelog
 
+## Version 1.3.0 (2026-08-08)
+
+### Changed
+
+Opening and closing a service is smooth, and it stays smooth on the longer ranges. Four things were making your page redraw far more than it needed to, and all four are gone. The backdrop is a layer of its own now, painted once instead of on every frame. Each service's uptime strip is drawn in one piece rather than as one element per day, which is what made the 90-day view heavier than the 30-day one. Every date is formatted through one formatter instead of one per day. And a panel no longer jumps on its last frame.
+
+Measured during an expand-all: the work your browser does per frame fell from 231 per cent of what a 60Hz screen allows to 19 per cent.
+
+The contents of a panel now fade in and out with the movement that reveals them, and the day under your pointer stands a little taller than before.
+
+### Added
+
+Your page states which version of Velvet built it, in its lower left corner.
+
+The availability figure reads "100.00% uptime" rather than the bare number.
+
 ## Version 1.2.3 (2026-08-07)
 
 ### Fixed
