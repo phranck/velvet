@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
   import type { VelvetConfig } from "../lib/config";
   import {
     barsForRange,
@@ -9,10 +8,6 @@
     visibleIncidentEvents,
   } from "../lib/data";
   import { iconFor } from "../lib/icons";
-  import {
-    createViewTransitionController,
-    type ViewTransitionController,
-  } from "../lib/view-transition";
   import type {
     IncidentsDocument,
     RangeKey,
@@ -90,31 +85,6 @@
   const allOpen = $derived(
     services.length > 0 && services.every((service) => openMap[service.id]),
   );
-  let viewTransitions: ViewTransitionController | null = null;
-
-  function reducedMotion(): boolean {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }
-
-  function transitionState(update: () => void): void {
-    if (!viewTransitions) {
-      update();
-      return;
-    }
-
-    viewTransitions.update(
-      async () => {
-        update();
-        await tick();
-      },
-      reducedMotion(),
-    );
-  }
-
-  onMount(() => {
-    viewTransitions = createViewTransitionController(document);
-    return () => viewTransitions?.destroy();
-  });
   /** Padded to five digits, the way a board prints a unit number. */
   const serialLabel = $derived(
     typeof config.serial === "number" ? String(config.serial).padStart(5, "0") : "",
@@ -157,7 +127,7 @@
   {#snippet toggleAllButton()}
     <button
       class="toggle-all"
-      onclick={() => transitionState(() => onToggleAll(!allOpen))}
+      onclick={() => onToggleAll(!allOpen)}
       title={allOpen ? "Collapse all" : "Expand all"}
       aria-label={allOpen ? "Collapse all" : "Expand all"}
     >
@@ -169,13 +139,9 @@
     </button>
   {/snippet}
 
-  {#snippet serviceRow(
-    service: StatusDocument["services"][number],
-    transitionName?: string,
-  )}
+  {#snippet serviceRow(service: StatusDocument["services"][number])}
     <ServiceRow
       {service}
-      {transitionName}
       icon={iconFor(service.id, config.icons)}
       days={barsForRange(
         service,
@@ -197,7 +163,7 @@
         ({ serviceId }) => serviceId === service.id,
       )}
       open={openMap[service.id] === true}
-      onToggle={() => transitionState(() => onToggleService(service.id))}
+      onToggle={() => onToggleService(service.id)}
       chart={config.theme.chart}
     />
   {/snippet}
@@ -209,26 +175,19 @@
       {@render toggleAllButton()}
     </div>
     {#each services as service (service.id)}
-      <section
-        class="card"
-        style={`view-transition-name: service-${service.id}`}
-      >
+      <section class="card">
         {@render serviceRow(service)}
       </section>
     {/each}
   {:else}
-    <!-- Every part that keeps its own shape is named separately, so the browser
-         moves each one whilst only the card behind them is stretched. Naming
-         the card alone made one image of the whole group stretch, which is
-         what the grouped layout looked wrong doing. -->
-    <section class="card" style="view-transition-name: service-group">
-      <div class="group-head" style="view-transition-name: service-group-head">
+    <section class="card">
+      <div class="group-head">
         <span class="group-name">{config.name.toUpperCase()}</span>
         {@render rangeButtons()}
         {@render toggleAllButton()}
       </div>
       {#each services as service (service.id)}
-        {@render serviceRow(service, `service-${service.id}`)}
+        {@render serviceRow(service)}
       {/each}
     </section>
   {/if}
@@ -273,13 +232,6 @@
     flex-direction: column;
     margin: 0 auto;
     padding: 0;
-  }
-  :global(html:active-view-transition) {
-    view-transition-name: none;
-  }
-  :global(::view-transition-group(*)) {
-    animation-duration: 200ms;
-    animation-timing-function: ease-in-out;
   }
   .nav {
     display: flex;
@@ -386,7 +338,7 @@
     flex: none;
     font-size: 22px;
     line-height: 1;
-    transition: transform 200ms ease-in-out;
+    transition: transform var(--velvet-disclosure-duration) ease-in-out;
   }
   .toggle-all i.expanded {
     transform: rotate(180deg);

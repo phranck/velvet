@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { disclosure } from "../../lib/disclosure";
   import type {
     RangeKey,
     ResponseTimesDocument,
@@ -31,7 +32,7 @@
   } = $props();
 </script>
 
-<div class="detail-wrap" {id} hidden={!open} inert={!open}>
+<div class="detail-wrap" {id} use:disclosure={open}>
   <div class="detail">
     <div class="protocol-grid" role="list" aria-label="Protocol status">
       {#each checks as check, index (check.id)}
