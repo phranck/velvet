@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.2.3 (2026-08-07)
+
+### Fixed
+
+Your status page publishes again. It was being rebuilt every time the monitor finished and then thrown away, because the step that hands the page to GitHub Pages was skipped on every scheduled run. Only a run you started by hand ever published. If your page has looked frozen, this is why, and installing this update ends it.
+
 ## Version 1.2.2 (2026-08-07)
 
 ### Fixed
