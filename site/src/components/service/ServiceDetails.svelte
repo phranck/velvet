@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { disclosure } from "../../lib/disclosure";
   import type {
     RangeKey,
@@ -30,9 +31,29 @@
     id: string;
     chart: VelvetTheme["chart"];
   } = $props();
+
+  /**
+   * Whether the panel starts closed, read once and never again.
+   *
+   * The prerendered document carries no script, so without this every panel
+   * would stand open in it until hydration closed them, and a reader without
+   * JavaScript would never be able to close one.
+   *
+   * Read untracked deliberately. The action owns `hidden` and `inert` from the
+   * moment it runs, and an attribute that followed `open` would remove a
+   * closing panel from the layout before its animation had played, which is the
+   * whole reason the action owns them.
+   */
+  const startsClosed = untrack(() => !open);
 </script>
 
-<div class="detail-wrap" {id} use:disclosure={open}>
+<div
+  class="detail-wrap"
+  {id}
+  hidden={startsClosed}
+  inert={startsClosed}
+  use:disclosure={open}
+>
   <div class="detail">
     <div class="protocol-grid" role="list" aria-label="Protocol status">
       {#each checks as check, index (check.id)}

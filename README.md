@@ -34,8 +34,8 @@ GitHub is part of the platform. Every installation uses GitHub Actions for sched
 1. `velvet.yml` defines the repository, page, services, and optional advanced checks.
 2. The Velvet monitor checks every configured endpoint over IPv4. The status workflow runs every five minutes; the response workflow runs four times per day.
 3. Successful runs publish one validated snapshot to the dedicated `velvet-data` branch. The monitor never rewrites the default branch.
-4. The Pages workflow builds the site, social card, and SEO files from that snapshot.
-5. The browser validates `status.json`, `response-times.json`, and `incidents.json` before rendering them. Endpoint URLs and secrets never enter these public documents.
+4. The Pages workflow builds the site, social card, and SEO files from that snapshot. The page is rendered during that build, so what is published is readable before any script has run, which matters most on the connection somebody reaches for when something is already broken.
+5. The browser adopts that rendered page and keeps it current, validating `status.json`, `response-times.json`, and `incidents.json` before rendering them. Endpoint URLs and secrets never enter these public documents.
 
 Invalid configuration, an unavailable configured secret, unsafe request setup, invalid stored data, or a GitHub write conflict leaves the last valid public snapshot untouched.
 
