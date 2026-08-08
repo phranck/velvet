@@ -27,6 +27,21 @@ export const SETUP_WORKFLOW = "velvet.yml";
  */
 const MANAGED_WRITE_ATTEMPTS = 6;
 const MANAGED_WRITE_DELAY_MS = 500;
+
+/**
+ * Attempts to dispatch a workflow GitHub has not finished registering.
+ *
+ * A workflow file becomes dispatchable some seconds after the push that wrote
+ * it, and GitHub answers 404 until then. That 404 means "not yet" rather than
+ * "not there", because the setup wrote the file itself moments earlier.
+ *
+ * The failure this covers came seven seconds after the repository was created,
+ * so the window is longer than that. Ten attempts a second and a half apart
+ * carry it to roughly fifteen seconds, whilst the ceiling still surfaces a
+ * genuine permission failure rather than looping on it.
+ */
+const DISPATCH_ATTEMPTS = 10;
+const DISPATCH_DELAY_MS = 1_500;
 export const CONFIGURATION_PATH = "velvet.yml";
 export const VERSION_LOCK_PATH = "velvet.lock.json";
 
@@ -609,15 +624,29 @@ export function createGitHubSetupClient(
     },
 
     async dispatchWorkflow(installationToken, owner, repository) {
-      const body = await githubRequest<unknown>(
-        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/${SETUP_WORKFLOW}/dispatches`,
-        installationToken,
-        { method: "POST", body: JSON.stringify({ ref: "main" }) },
-      );
-      if (!isRecord(body) || !positiveInteger(body.workflow_run_id)) {
-        throw new Error("GitHub workflow dispatch response was invalid.");
+      for (let attempt = 1; attempt <= DISPATCH_ATTEMPTS; attempt += 1) {
+        try {
+          const body = await githubRequest<unknown>(
+            `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/actions/workflows/${SETUP_WORKFLOW}/dispatches`,
+            installationToken,
+            { method: "POST", body: JSON.stringify({ ref: "main" }) },
+          );
+          if (!isRecord(body) || !positiveInteger(body.workflow_run_id)) {
+            throw new Error("GitHub workflow dispatch response was invalid.");
+          }
+          return body.workflow_run_id;
+        } catch (error) {
+          const unregistered =
+            error instanceof GitHubApiError &&
+            error.status === 404 &&
+            attempt < DISPATCH_ATTEMPTS;
+          if (!unregistered) throw error;
+          await Bun.sleep(DISPATCH_DELAY_MS);
+        }
       }
-      return body.workflow_run_id;
+      // The final attempt rethrows rather than sleeping, so the loop is left
+      // only by a return or a throw above.
+      throw new Error("GitHub workflow dispatch exhausted its attempts.");
     },
 
     async workflowJobs(installationToken, owner, repository, runId) {
