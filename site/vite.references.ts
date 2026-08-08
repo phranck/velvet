@@ -28,6 +28,21 @@ export default defineConfig({
   // whatever belongs at the root.
   publicDir: false,
   plugins: [phosphorWoff2Only, svelte(), renameHtmlEntry("references.html")],
+  /*
+    The gallery is read from the setup service, which sends no CORS header for
+    an unknown origin. That is right for a public endpoint and it means a
+    browser on localhost is refused, so the page could not be worked on with the
+    data it actually shows. Proxied here, the request is same-origin. Only the
+    dev server reads this; a published page calls the service directly.
+  */
+  server: {
+    proxy: {
+      "/api/references": {
+        target: "https://setup.velvet.li",
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: referencesOutDir,
     // The website build owns this directory and has already cleared it.
