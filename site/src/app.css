@@ -53,7 +53,7 @@
   /* How long a service panel takes to open or close. The chevron above it and
      the expand-all control turn in the same time, so the three read as one
      movement. */
-  --velvet-disclosure-duration: 200ms;
+  --velvet-disclosure-duration: 400ms;
 
   --text: var(--text-primary);
   --text-muted: var(--text-secondary);
