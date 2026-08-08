@@ -1,5 +1,19 @@
 # Changelog
 
+## Version 1.4.0 (2026-08-08)
+
+### Added
+
+Your status page now arrives readable. It used to be an empty document that fetched three files and assembled itself in the browser, which is the wrong shape for a page people open when something is already broken, often on the connection that is part of what is broken. The page is now rendered whilst it is built, so it carries its content on arrival. The browser picks it up from there and keeps it current as before. It also stands in your own colours from the first moment rather than after a repaint.
+
+The installation serial now sits in the bottom right corner of the page, opposite the version, instead of under the Velvet mark. Turning the Velvet mark off no longer takes the number with it, the mark being ours whilst the number is your installation's own.
+
+### Fixed
+
+An installation that missed a release can be updated again. Every release from 1.1.1 onwards accepted only the release immediately before it, so a page that skipped one was refused with "Cannot install this version" and had no way forward. A release now carries forward the oldest version its predecessor accepted, and raises that floor only where it genuinely changes a schema.
+
+Setting up a new installation no longer reports a failure that did not happen. GitHub registers a workflow file a few seconds after the push that writes it, and the first attempt to start it could arrive before that and be refused. Velvet now waits and tries again, so the setup finishes the way it always did behind the scenes.
+
 ## Version 1.3.1 (2026-08-08)
 
 ### Fixed
