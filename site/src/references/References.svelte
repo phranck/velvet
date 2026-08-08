@@ -296,9 +296,14 @@
   }
   /* Stated rather than left to the engine: WebKit gives an anchor the arrow
      unless it is told otherwise, which is what #397 was about. */
+  /* Stated on the card and everything in it, because the parts a reader points
+     at are the picture and the text rather than the anchor's own background.
+     Selection is off for the same reason: the whole card is one target, and a
+     drag across its text turned the pointer into a text caret. */
   .reference-card,
   .reference-card * {
     cursor: pointer;
+    user-select: none;
   }
   .reference-card:hover,
   .reference-card:focus-visible {
@@ -336,8 +341,9 @@
     flex-direction: column;
     height: 100%;
     background: var(--velvet-surface-card);
-    /* No padding of its own: the picture fills the shape to the inner edge of
-       the thick line, and the details below carry their own inset. */
+    /* No inset: the picture reaches the inner edge of the thick line on three
+       sides and is cut by the curve there, which is what makes it the card's
+       own surface rather than a picture sitting on one. */
     padding: 0;
     font-size: var(--velvet-text-body);
     line-height: 1.5;
@@ -354,6 +360,20 @@
   /* Fills the shape to the inner edge of the thick line, so the page being
      shown is what fills the card rather than sitting in a frame inside it. The
      clip on the body is what rounds it, since the curve forms these corners. */
+  /* Takes every row the details leave, so the picture is what fills the shape
+     and the lower part stays as short as its own content. No radius of its own:
+     the clip on the body is what rounds these corners, and a radius here would
+     draw a second, rounder corner just inside the first. */
+  /*
+    The picture's own proportion, so it fills the width with nothing above or
+    below it.
+
+    The card would rather give this two thirds of its height and the details the
+    last third, which is what #439 is about. That needs a square preview: the
+    published picture is the social card at 1200×630, and a wide picture cannot
+    fill a taller box and stay whole at the same time. Until one exists, the
+    picture decides its own share rather than being cropped or letterboxed.
+  */
   .preview-frame {
     aspect-ratio: 1200 / 630;
     background: var(--velvet-surface-sunken);
@@ -362,10 +382,12 @@
     overflow: hidden;
     position: relative;
   }
+  /* `contain` rather than `cover`: the frame carries the picture's own
+     proportion, so nothing is cropped and nothing is stretched. */
   .preview {
     display: block;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     width: 100%;
   }
   /* A lamp on the board, lit in the colour of the state. The ring is the glow
@@ -381,18 +403,26 @@
     height: 0.625rem;
     /* Far enough in that the squircle's curve does not cut it, which it did at
        the inset a rectangular corner allowed. */
-    inset-block-start: 1.5rem;
-    inset-inline-start: 1.5rem;
+    inset-block-start: 0.75rem;
+    inset-inline-start: 0.75rem;
     position: absolute;
     width: 0.625rem;
   }
   /* The inset the body no longer carries, plus room for the curve, which cuts
      deepest at the corners the text sits nearest to. */
   .details {
-    padding: 0.75rem calc(var(--velvet-card-padding) + 1.25rem)
-      calc(var(--velvet-card-padding) + 1.25rem);
+    /* The last third. The horizontal inset clears the curve, which cuts deepest
+       at the corners the chips sit nearest to. */
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
     display: block;
-    padding: 0.75rem 0.5rem 0.5rem;
+    padding: 0.875rem calc(var(--velvet-card-padding) + 1rem)
+      calc(var(--velvet-card-padding) + 0.75rem);
+    text-align: center;
   }
   /* The condensed face, as the site sets every name that titles something. It
      also buys the width a long page name needs on a card this size. */
@@ -409,9 +439,12 @@
   /* One fact per chip, wrapping rather than running off the card, so two cards
      side by side can be compared a fact at a time instead of a sentence at a
      time. */
+  /* Centred, which also keeps the chips clear of the corners the curve cuts
+     deepest into. */
   .facts {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 0.375rem;
     margin-top: 0.5rem;
   }
