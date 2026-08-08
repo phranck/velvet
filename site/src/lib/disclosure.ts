@@ -20,13 +20,18 @@
 
 /** How long a panel takes to open or close, read from the stylesheet. */
 const DURATION_PROPERTY = "--velvet-disclosure-duration";
-/** Used when the property is absent, which happens in a bare test document. */
-const FALLBACK_DURATION_MS = 200;
+/**
+ * Used when the property is absent, which happens in a bare test document.
+ *
+ * The same figure the stylesheet declares, so a document without the stylesheet
+ * opens a panel in the time the product does.
+ */
+const FALLBACK_DURATION_MS = 400;
 
 /**
  * Reads a CSS time value in milliseconds.
  *
- * @param value The declared value, such as `200ms` or `0.2s`.
+ * @param value The declared value, such as `400ms` or `0.4s`.
  * @returns The duration in milliseconds, or null when it is not a time.
  */
 function millisecondsFrom(value: string): number | null {
