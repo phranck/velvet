@@ -102,3 +102,12 @@ export const SQUIRCLE_INNER_STROKE_WIDTH = 4;
  */
 export const SQUIRCLE_CONTENT_INSET =
   SQUIRCLE_INNER_PATH_INSET + SQUIRCLE_INNER_STROKE_WIDTH / 2;
+
+/**
+ * The tick Velvet draws inside a squircle, across the middle third of the
+ * shape, in the hundred-unit space the paths above use.
+ *
+ * Stated here rather than in the components that draw it, because a tick that
+ * differs between the checkbox and the status page is two ticks.
+ */
+export const SQUIRCLE_TICK_PATH = "M30 51 L44 66 L71 35";

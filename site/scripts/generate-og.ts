@@ -9,6 +9,7 @@ import {
   uptimeForRange,
 } from "../src/lib/data";
 import { iconFor } from "../src/lib/icons";
+import { SQUIRCLE_TICK_PATH, createSquirclePath } from "../src/lib/squircle";
 import { cloudyBlobLayout, resolveTheme } from "../src/lib/theme.js";
 import { OG_SCALE, bar, pill, segGloss, typeScale } from "../src/lib/tokens";
 import type { DayStatus, RangeKey } from "../src/lib/types";
@@ -103,6 +104,29 @@ function icon(phClass: string, x: number, y: number, size: number, colour: strin
     // Keep the empty icon fallback.
   }
   return `<g transform="translate(${x},${y}) scale(${(size / 256).toFixed(4)})" fill="${colour}">${inner}</g>`;
+}
+
+/**
+ * Velvet's own tick, in its own shape, drawn the way the page draws it.
+ *
+ * The paths come from `lib/squircle`, so this card and the status page cannot
+ * show two different marks for the same state.
+ *
+ * @param x - Left edge of the box the mark spans.
+ * @param y - Top edge of that box.
+ * @param size - Width and height it spans.
+ * @param colour - The colour both tones are drawn in.
+ * @returns The mark as SVG, ready to place in the card.
+ */
+function squircleCheck(x: number, y: number, size: number, colour: string): string {
+  const outline = createSquirclePath(100, 5);
+  return [
+    `<g transform="translate(${x},${y}) scale(${(size / 100).toFixed(4)})">`,
+    `<path d="${outline}" fill="${colour}" fill-opacity="0.2"/>`,
+    `<path d="${outline}" fill="none" stroke="${colour}" stroke-width="7" stroke-linejoin="round"/>`,
+    `<path d="${SQUIRCLE_TICK_PATH}" fill="none" stroke="${colour}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>`,
+    `</g>`,
+  ].join("");
 }
 
 // ── Sizes derived once from the shared tokens × the card's scale factor ──────────
@@ -250,7 +274,11 @@ const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http
 
   ${brand}
 
-  ${icon(hero.icon, W / 2 - heroIconSize / 2, 124, heroIconSize, colourFor(overall))}
+  ${
+    overall === "operational"
+      ? squircleCheck(W / 2 - heroIconSize / 2, 124, heroIconSize, colourFor(overall))
+      : icon(hero.icon, W / 2 - heroIconSize / 2, 124, heroIconSize, colourFor(overall))
+  }
   <text x="${W / 2}" y="255" text-anchor="middle" font-family="${FONT}" font-size="${headlineSize.toFixed(1)}" font-weight="700" fill="${theme.text.primary}">${esc(hero.text)}</text>
 
   <rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="22" fill="${theme.card.background}" stroke="${theme.card.border}" stroke-width="${theme.card.borderEnabled ? 1 : 0}"/>

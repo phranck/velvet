@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { createSquirclePath } from "../../lib/squircle.js";
+  import {
+    SQUIRCLE_INNER_PATH_INSET,
+    SQUIRCLE_OUTER_PATH_INSET,
+    createSquirclePath,
+  } from "../../lib/squircle.js";
 
-  const OUTER_PATH_INSET = 1;
-  const INNER_PATH_INSET = 5.5;
 
   let {
     label,
@@ -21,8 +23,8 @@
   } = $props();
 
   let size = $state(0);
-  const outerPath = $derived(createSquirclePath(size, OUTER_PATH_INSET));
-  const innerPath = $derived(createSquirclePath(size, INNER_PATH_INSET));
+  const outerPath = $derived(createSquirclePath(size, SQUIRCLE_OUTER_PATH_INSET));
+  const innerPath = $derived(createSquirclePath(size, SQUIRCLE_INNER_PATH_INSET));
   const focusPath = $derived(createSquirclePath(size, 3));
 </script>
 
