@@ -834,3 +834,64 @@ test("finishes an update whose merged pull request names no commit", async () =>
 
   assert.notEqual(result.reason, "update_closed");
 });
+
+test("prepares a fresh attempt after an update somebody closed", async () => {
+  // A closed pull request describes an earlier attempt, not this one. Treated
+  // as an outcome it left the version permanently uninstallable: the interface
+  // reported `update_closed` on every further press, and reopening the pull
+  // request would only have restored the state that had already failed.
+  const repository = new FakeRepository();
+  repository.pullRequest = {
+    number: 12,
+    state: "closed",
+    htmlUrl: "https://github.com/example/status/pull/12",
+    headRef: "velvet/update/2.1.0",
+    headSha: updateSha,
+    baseRef: "main",
+    baseSha,
+    mergedAt: null,
+    mergeCommitSha: null,
+  };
+  repository.branchHead = null;
+  const managed = orchestrator(repository, release(), { sleep: async () => {} });
+
+  const result = await managed.reconcile(manualRequest);
+
+  assert.notEqual(result.reason, "update_closed");
+  assert.deepEqual(repository.mutations, [
+    "create-branch",
+    "commit-update",
+    "create-pr",
+  ]);
+});
+
+test("starts over when the default branch moved under an open update", async () => {
+  // Anything writing to the default branch whilst an update is open leaves the
+  // pull request cut from a commit that is no longer the head, and this service
+  // writes its own preferences there. Failing was unrecoverable, because the
+  // pull request could then neither be reconciled nor replaced.
+  const repository = new FakeRepository();
+  repository.pullRequest = {
+    number: 12,
+    state: "open",
+    htmlUrl: "https://github.com/example/status/pull/12",
+    headRef: "velvet/update/2.1.0",
+    headSha: updateSha,
+    baseRef: "main",
+    baseSha: "0000000000000000000000000000000000000000",
+    mergedAt: null,
+    mergeCommitSha: null,
+  };
+  // The branch this pull request carries holds what the release ships, so the
+  // only thing wrong with it is the commit it was cut from.
+  repository.updateFiles = structuredClone(previousFiles);
+  const managed = orchestrator(repository, release(), { sleep: async () => {} });
+
+  const result = await managed.reconcile(manualRequest);
+
+  assert.notEqual(result.reason, "repository_changed");
+  // The stale branch goes first, which closes its pull request with it, and the
+  // attempt is built again from where the repository actually stands.
+  assert.equal(repository.mutations[0], "delete-branch");
+  assert.equal(repository.mutations.includes("create-pr"), true);
+});
