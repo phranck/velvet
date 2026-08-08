@@ -4,7 +4,7 @@
     SQUIRCLE_INNER_STROKE_WIDTH,
     SQUIRCLE_OUTER_PATH_INSET,
     SQUIRCLE_OUTER_STROKE_WIDTH,
-    createSquirclePath,
+    createSquircleRectPath,
   } from "../../lib/squircle.js";
 
   /**
@@ -22,26 +22,36 @@
    * Colour comes from `currentColor`, so whoever places this decides it and can
    * change it on hover or on selection without this knowing about either.
    *
-   * @param size - The width and height the frame spans, in pixels. The caller
-   *   measures its own element and passes it, because the path is computed at
-   *   the size it is drawn at rather than scaled by the browser, which is what
-   *   keeps the stroke even. The shape is square: a squircle stretched to a
-   *   rectangle stops being one and reads as a capsule.
+   * @param width - The width the frame spans, in pixels.
+   * @param height - The height it spans. The caller measures its own element
+   *   and passes both, because the path is computed at the size it is drawn at
+   *   rather than scaled by the browser, which is what keeps the stroke even.
+   *   Keep the two within reach of each other: the further a squircle is from
+   *   square, the more it reads as a capsule.
    * @param filled - Whether the shape carries an opaque fill in its own outline.
    *   A surface over artwork needs one, since the shape is not a background the
    *   element itself can hold.
    */
-  let { size, filled = false }: { size: number; filled?: boolean } = $props();
+  let {
+    width,
+    height,
+    filled = false,
+  }: { width: number; height: number; filled?: boolean } = $props();
 
-  const outerPath = $derived(createSquirclePath(size, SQUIRCLE_OUTER_PATH_INSET));
-  const innerPath = $derived(createSquirclePath(size, SQUIRCLE_INNER_PATH_INSET));
+  const outerPath = $derived(
+    createSquircleRectPath(width, height, SQUIRCLE_OUTER_PATH_INSET),
+  );
+  const innerPath = $derived(
+    createSquircleRectPath(width, height, SQUIRCLE_INNER_PATH_INSET),
+  );
 </script>
 
 <svg
   class="outline"
   data-squircle-frame
-  viewBox={`0 0 ${Math.max(size, 1)} ${Math.max(size, 1)}`}
+  viewBox={`0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`}
   aria-hidden="true"
+  {...{ "pointer-events": "none" }}
 >
   {#if filled}
     <path d={outerPath} class="fill" stroke="none"></path>

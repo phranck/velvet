@@ -17,18 +17,37 @@ function point(x: number, y: number): string {
  * @param segments - How many points the curve is drawn with.
  * @returns An SVG path, or an empty string where the box leaves no room.
  */
-export function createSquirclePath(
-  size: number,
+/**
+ * A squircle spanning a rectangle.
+ *
+ * The superellipse takes a radius per axis, so a surface wider than it is tall
+ * curves by the same amount at every corner. Drawing the square path and
+ * letting the browser stretch it would thin the stroke along whichever axis was
+ * stretched further.
+ *
+ * @param width - Width of the box the shape spans.
+ * @param height - Height of that box.
+ * @param inset - How far inside the box the path is drawn, so a stroke on it
+ *   stays within the element.
+ * @param segments - How many points the curve is drawn with.
+ * @returns An SVG path, or an empty string where the box leaves no room.
+ */
+export function createSquircleRectPath(
+  width: number,
+  height: number,
   inset = 0,
   segments = SQUIRCLE_SEGMENTS,
 ): string {
-  if (!Number.isFinite(size) || size <= 0) return "";
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return "";
+  if (width <= 0 || height <= 0) return "";
 
   const safeInset = Math.max(Number.isFinite(inset) ? inset : 0, 0);
-  const radius = size / 2 - safeInset;
-  if (radius <= 0) return "";
+  const radiusX = width / 2 - safeInset;
+  const radiusY = height / 2 - safeInset;
+  if (radiusX <= 0 || radiusY <= 0) return "";
 
-  const centre = size / 2;
+  const centreX = width / 2;
+  const centreY = height / 2;
   const segmentCount = Math.max(
     4,
     Math.floor(Number.isFinite(segments) ? segments : SQUIRCLE_SEGMENTS),
@@ -38,10 +57,26 @@ export function createSquirclePath(
     const angle = (index / segmentCount) * Math.PI * 2;
     const cosine = Math.cos(angle);
     const sine = Math.sin(angle);
-    const x = centre + radius * Math.sign(cosine) * Math.sqrt(Math.abs(cosine));
-    const y = centre + radius * Math.sign(sine) * Math.sqrt(Math.abs(sine));
+    const x = centreX + radiusX * Math.sign(cosine) * Math.sqrt(Math.abs(cosine));
+    const y = centreY + radiusY * Math.sign(sine) * Math.sqrt(Math.abs(sine));
     return `${index === 0 ? "M" : "L"}${point(x, y)}`;
   }).join(" ")} Z`;
+}
+
+/**
+ * A squircle spanning a square.
+ *
+ * @param size - Width and height of the box the shape spans.
+ * @param inset - How far inside the box the path is drawn.
+ * @param segments - How many points the curve is drawn with.
+ * @returns An SVG path, or an empty string where the box leaves no room.
+ */
+export function createSquirclePath(
+  size: number,
+  inset = 0,
+  segments = SQUIRCLE_SEGMENTS,
+): string {
+  return createSquircleRectPath(size, size, inset, segments);
 }
 
 export const SQUIRCLE_PATH = createSquirclePath(100, 3);

@@ -1,7 +1,10 @@
 <script lang="ts">
   import * as Card from "../components/card";
   import * as SquircleFrame from "../components/squircle-frame";
-  import { SQUIRCLE_CONTENT_INSET, createSquirclePath } from "../lib/squircle.js";
+  import {
+    SQUIRCLE_CONTENT_INSET,
+    createSquircleRectPath,
+  } from "../lib/squircle.js";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import {
@@ -62,15 +65,16 @@
    * every one in the grid is the same size, so one measurement drives all of
    * them.
    */
-  let cardSize = $state(0);
+  let cardWidth = $state(0);
+  let cardHeight = $state(0);
 
   /**
    * Clips a card's contents to the inner edge of its thick outline, so the
    * preview is cut by the curve rather than sitting in a rectangle inside it.
    */
   const cardClip = $derived(
-    cardSize > 0
-      ? `path("${createSquirclePath(cardSize, SQUIRCLE_CONTENT_INSET)}")`
+    cardWidth > 0 && cardHeight > 0
+      ? `path("${createSquircleRectPath(cardWidth, cardHeight, SQUIRCLE_CONTENT_INSET)}")`
       : "none",
   );
 
@@ -150,7 +154,7 @@
 
     <ul class="reference-list" data-reference-list>
       {#each installations as installation (installation.url)}
-        <li bind:clientWidth={cardSize}>
+        <li bind:clientWidth={cardWidth} bind:clientHeight={cardHeight}>
           <!--
             The double outline every Velvet surface carries, drawn as squircle
             paths rather than as a border, because a squircle is not a
@@ -165,7 +169,7 @@
             rel="noopener noreferrer"
             data-reference-entry
           >
-            <SquircleFrame.Outline size={cardSize} />
+            <SquircleFrame.Outline width={cardWidth} height={cardHeight} />
             <span class="reference-card-body" style:clip-path={cardClip}>
               <span class="preview-frame">
                 <img
@@ -266,8 +270,11 @@
      radius, and the padding. */
   /* Square, because the shape is a squircle and a squircle stretched to a
      rectangle stops being one. */
+  /* No fixed proportion. The card is as tall as the picture and the details
+     make it, which keeps the picture whole and the lower part as short as what
+     it holds. Wider than it is tall, and not by much, so the shape still reads
+     as a squircle rather than a capsule. */
   .reference-list li {
-    aspect-ratio: 1;
     position: relative;
   }
   /*
@@ -413,8 +420,7 @@
   .details {
     /* The last third. The horizontal inset clears the curve, which cuts deepest
        at the corners the chips sit nearest to. */
-    flex: 1;
-    min-height: 0;
+    flex: none;
     display: flex;
     flex-direction: column;
     justify-content: center;
