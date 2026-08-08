@@ -259,23 +259,27 @@ async function reconcileManagedUpdate(
     sleep: runtime.sleep,
   };
   const pullRequests = await read(() => repository.pullRequests(request.version));
-  if (pullRequests.length > 1) {
+  // Whether one merged is decided by `mergedAt` alone. GitHub omits
+  // `merge_commit_sha` from the list representation, and the merge commit is
+  // not needed here anyway: what follows compares the default branch against
+  // the pull request's base.
+  const merged = pullRequests.find((entry) => entry.mergedAt);
+  if (merged) {
+    return reconcileMergedUpdate(context, merged);
+  }
+  const open = pullRequests.filter((entry) => entry.state === "open");
+  if (open.length > 1) {
     return result(request, "failed", "repository_changed");
   }
-  const pullRequest = pullRequests[0];
-  if (pullRequest) {
-    if (pullRequest.state === "open") {
-      return reconcileOpenPullRequest(context, pullRequest);
-    }
-    // Whether it merged is decided by `mergedAt` alone. GitHub omits
-    // `merge_commit_sha` from the list representation, and the merge commit is
-    // not needed here anyway: what follows compares the default branch against
-    // the pull request's base.
-    if (pullRequest.mergedAt) {
-      return reconcileMergedUpdate(context, pullRequest);
-    }
-    return result(request, "failed", "update_closed", pullRequest);
+  if (open[0]) {
+    return reconcileOpenPullRequest(context, open[0]);
   }
+  // A closed pull request that never merged is a fact about an earlier attempt,
+  // not a statement about this one. Treating it as an outcome left a version
+  // permanently uninstallable on this repository, with no way forward from the
+  // interface and none from GitHub either, since reopening it would only
+  // restore the state that had already failed. It is passed over, and a fresh
+  // attempt is prepared below.
 
   if (direction === 0) {
     return result(request, "succeeded", "already_installed");
@@ -353,7 +357,20 @@ async function reconcileOpenPullRequest(
     defaultHead !== pullRequest.baseSha ||
     !sameFiles(branchFiles, context.files)
   ) {
-    return result(request, "failed", "repository_changed", pullRequest);
+    // The branch this pull request carries was cut from a commit that is no
+    // longer the head, or holds files this release no longer ships. Merging it
+    // would put a stale tree on the default branch, so it is discarded and the
+    // update is prepared again from where the repository actually stands.
+    //
+    // Failing here instead is what made an update unrecoverable: anything
+    // touching the default branch whilst an update was open, including this
+    // service writing its own preferences, left a pull request that could never
+    // be reconciled and never be replaced.
+    //
+    // Deleting the branch closes the pull request with it, and a closed one is
+    // passed over on the next pass rather than treated as an outcome.
+    await repository.deleteUpdateBranch(request.version, pullRequest.headSha);
+    return prepareUpdate(context);
   }
   const checks = await read(() => repository.checkRuns(pullRequest.headSha));
   const checkState = requiredChecksState(checks, context.requiredCheckNames);

@@ -145,16 +145,19 @@
     letter-spacing: -0.01em;
   }
 
-  /* The panel the Configurator shows these in is small, so its headings are
-     too. A page rendering a whole document states the scale it reads at, and
-     both fall back to the panel's sizes where it does not. */
+  /* Relative to the text they introduce, not to a size of their own. These
+     notes are rendered on two surfaces which set different body sizes, and a
+     heading fixed in pixels beside text sized elsewhere ends up smaller than
+     its own paragraphs, which is what it did in the Configurator's overlay.
+     A page rendering a whole document states its scale through the two
+     properties and takes these only where it does not. */
   h2 {
-    font-size: var(--notes-heading-size, 15px);
+    font-size: var(--notes-heading-size, 1.35em);
     font-weight: 650;
   }
 
   h3 {
-    font-size: var(--notes-subheading-size, 14px);
+    font-size: var(--notes-subheading-size, 1.1em);
     font-weight: 650;
   }
 
