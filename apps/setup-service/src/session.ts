@@ -13,7 +13,19 @@ export interface SetupServerSession {
   csrfToken: string;
   createdAt: number;
   expiresAt: number;
-  oauth?: { state: string; codeVerifier: string };
+  /**
+   * The sign-in in flight, and where to return once it finishes.
+   *
+   * `returnTo` is one of the tools this service serves, decided when the
+   * sign-in starts and read when GitHub sends the visitor back. Held here
+   * rather than passed through the round trip, because anything travelling
+   * through the browser is a redirect target somebody else could choose.
+   */
+  oauth?: {
+    state: string;
+    codeVerifier: string;
+    returnTo?: "onboarding" | "configurator";
+  };
   installState?: string;
   githubUserToken?: string;
   user?: { login: string; avatarUrl: string };

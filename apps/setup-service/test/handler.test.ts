@@ -1212,3 +1212,43 @@ test("the largest logo the browser offers still fits inside a setup request", ()
     `a maximum logo produces ${Buffer.byteLength(body, "utf8")} bytes against a limit of ${MAX_SETUP_REQUEST_BYTES}`,
   );
 });
+
+test("returns a sign-in to the tool that started it", async () => {
+  // The callback used to send everybody to the onboarding, whichever tool had
+  // asked, and the onboarding then resumed at its last step with an empty
+  // draft and complained about entries nobody had made. Which tool asked is
+  // decided here and kept on the session, never carried through the browser,
+  // because a redirect target taken from a request is one somebody else chose.
+  for (const [asked, expected] of [
+    ["configurator", "/configurator/"],
+    ["onboarding", "/onboarding/"],
+    [undefined, "/onboarding/"],
+    ["https://example.invalid/", "/onboarding/"],
+    ["../../etc", "/onboarding/"],
+  ] as const) {
+    const { handler, sessions } = harness();
+    const browser = await createBrowserSession(handler);
+    const query = asked === undefined ? "" : `?return=${encodeURIComponent(asked)}`;
+    const start = await handler(
+      new Request(`${origin}/api/auth/start${query}`, {
+        headers: { Cookie: `__Host-velvet_session=${browser.cookie}` },
+      }),
+    );
+    assert.equal(start.status, 302);
+
+    const session = sessions.fromCookie(browser.cookie)!;
+    assert.ok(session.oauth);
+    const callback = await handler(
+      new Request(
+        `${origin}/api/auth/callback?code=oauth-code&state=${session.oauth.state}`,
+        { headers: { Cookie: `__Host-velvet_session=${browser.cookie}` } },
+      ),
+    );
+    assert.equal(callback.status, 302);
+    const location = callback.headers.get("Location")!;
+    assert.ok(
+      location.endsWith(`${expected}?github=connected`),
+      `asking for ${String(asked)} returned ${location}`,
+    );
+  }
+});

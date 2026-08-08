@@ -797,3 +797,17 @@ test("asks before deleting a repository, and renders the question as a modal", a
   // And it is the only place either tool offers the danger variant.
   assert.equal(onboarding.match(/velvet-button--danger/g)?.length, 1);
 });
+
+test("resumes at the last step only when there is a draft to publish", async () => {
+  // Coming back from GitHub used to jump to the publish step whatever the
+  // visitor had entered. Somebody who signed in from the Configurator was sent
+  // here with nothing entered, landed in the last step, and was told to check
+  // entries they had never made. #406.
+  const source = await readFile(
+    resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
+    "utf8",
+  );
+
+  assert.match(source, /GITHUB_RETURN && RESTORED_DRAFT \? INSTALL_STEP : 0/);
+  assert.doesNotMatch(source, /GITHUB_RETURN \? INSTALL_STEP : 0/);
+});
