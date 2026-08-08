@@ -231,6 +231,10 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "references",
     "website",
   ],
+  // The double outline every Velvet surface carries. The onboarding steps and
+  // the theme cards still draw it themselves; this is the component the
+  // references gallery uses, and the one the other two should move onto.
+  "squircle-frame": ["references"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],
   "service-icon-picker": ["configurator", "onboarding"],
