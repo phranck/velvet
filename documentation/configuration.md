@@ -184,6 +184,8 @@ statusPage:
 | `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
 | `seo` | no | generated | Optional title, description, and social-image overrides. |
 
+Below the credit, every page names where it is configured. That line is not a setting and `showPoweredBy` does not turn it off, because the credit decides whether Velvet shows its name whilst this is your own way back to the Configurator weeks after you set the page up. It is worded so a visitor reads past it.
+
 Setting `customDomain` puts a `CNAME` file into every build. That is all it does. Your domain still has to point at GitHub, which means adding a DNS record at whoever you bought the domain from. GitHub's [custom-domain documentation](https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages) explains which record.
 
 Keep the GitHub Pages address working until your own domain answers and its certificate is live. Removing it earlier takes your page offline in between.

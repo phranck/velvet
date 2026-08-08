@@ -332,6 +332,43 @@ test("places the Velvet credit directly after the service cards", async () => {
   assert.doesNotMatch(page, /incidents\.atom/);
 });
 
+test("names the Configurator on every page, whichever way the credit is set", async () => {
+  // The page is public and nearly everybody reading it is one of the operator's
+  // users, so the line says who configures the page rather than inviting anybody
+  // to press it. It stands apart from the credit, because that setting decides
+  // whether Velvet shows its name whilst this is the operator's own way back to
+  // their configuration. #375.
+  const withCredit = await renderStatusPage("grouped");
+  const withoutCredit = await renderStatusPage(
+    "grouped",
+    true,
+    incidentsDocument,
+    statusDocument,
+    undefined,
+    false,
+  );
+
+  for (const html of [withCredit, withoutCredit]) {
+    assert.match(html, /Configured by its operator at/);
+    assert.match(
+      html,
+      /href="https:\/\/setup\.velvet\.li\/configurator\/"[^>]*>setup\.velvet\.li\/configurator</,
+    );
+  }
+  assert.doesNotMatch(withoutCredit, /powered by/);
+});
+
+test("writes the Configurator address once and reads its label from it", async () => {
+  // Two spellings of one address drift apart the first time either moves, so the
+  // label the reader sees is derived from the address the link points at. #375.
+  const page = await readFile(
+    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
+    "utf8",
+  );
+
+  assert.equal(page.match(/setup\.velvet\.li/gu)?.length, 1);
+});
+
 test("toggles without starting a view transition, and states its timing once", async () => {
   const page = await readFile(
     resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
