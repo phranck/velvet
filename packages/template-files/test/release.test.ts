@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { test } from "bun:test";
 
-import { MANAGED_TEMPLATE_PATHS } from "@velvet/contracts";
+import {
+  MANAGED_TEMPLATE_PATHS,
+  type VelvetReleaseManifest,
+} from "@velvet/contracts";
 
-import { buildReleaseManifest } from "../src/index.js";
+import { buildReleaseManifest, compatibilityFloor } from "../src/index.js";
 import type { BuildReleaseManifestInput } from "../src/index.js";
 
 const templateCommit = "b".repeat(40);
@@ -123,4 +126,63 @@ test("rejects an automatic release that is not a migration-free security fix", (
   assert.equal(result.success, false);
   if (result.success) return;
   assert.equal(result.errors[0]?.code, "INVALID_RELEASE_MANIFEST");
+});
+
+/**
+ * A predecessor declaring a floor of its own, used by the floor tests below.
+ *
+ * @param overrides - The fields the individual test varies.
+ * @returns A manifest standing in for the release being followed.
+ */
+function predecessor(
+  overrides: Partial<VelvetReleaseManifest> = {},
+): VelvetReleaseManifest {
+  const built = buildReleaseManifest(
+    input({
+      version: "1.3.1",
+      compatibility: {
+        minimumInstalledVersion: "1.0.0",
+        configurationSchemaVersion: 1,
+        dataSchemaVersion: 1,
+        configurationMigrationRequired: false,
+        dataMigrationRequired: false,
+      },
+      releaseNotes: "# Velvet 1.3.1\n",
+    }),
+  );
+  assert.equal(built.success, true);
+  if (!built.success) throw new Error("the predecessor could not be built");
+  return { ...built.data, ...overrides };
+}
+
+test("carries the predecessor's floor forward when no schema changes", () => {
+  assert.equal(compatibilityFloor(predecessor(), "1.3.2", false), "1.0.0");
+});
+
+test("raises the floor to the predecessor when a schema changes", () => {
+  assert.equal(compatibilityFloor(predecessor(), "2.0.0", true), "1.3.1");
+});
+
+test("a first release declares itself as its own floor", () => {
+  assert.equal(compatibilityFloor(undefined, "1.0.0", false), "1.0.0");
+});
+
+test("a chain of releases that change nothing keeps the original floor", () => {
+  // Each release is cut against the one before it, and none announces a
+  // migration, which is what every Velvet release since 1.0.0 has done.
+  let floor = compatibilityFloor(undefined, "1.0.0", false);
+  for (const version of ["1.1.0", "1.1.1", "1.2.0", "1.3.0", "1.3.1"]) {
+    floor = compatibilityFloor(
+      predecessor({
+        version,
+        compatibility: {
+          ...predecessor().compatibility,
+          minimumInstalledVersion: floor,
+        },
+      }),
+      version,
+      false,
+    );
+  }
+  assert.equal(floor, "1.0.0");
 });

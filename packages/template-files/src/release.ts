@@ -3,6 +3,7 @@ import {
   MANAGED_TEMPLATE_PATHS,
   RELEASE_MANIFEST_SCHEMA_VERSION,
   type VelvetManagedFile,
+  type VelvetReleaseManifest,
 } from "@velvet/contracts";
 
 import { validateReleasePublication } from "./publication.js";
@@ -13,6 +14,36 @@ import type {
 } from "./types.js";
 
 const VERSION_LOCK_PATH = "velvet.lock.json";
+
+/**
+ * The oldest installed version a release may be applied to.
+ *
+ * A release inherits the floor its predecessor declared rather than raising it
+ * to the predecessor's own version. Raising it every time would mean each
+ * release accepts only the one before it, so an installation that missed a
+ * single release could never be updated again through the Configurator.
+ *
+ * The floor rises only where a release changes a schema an installation already
+ * holds. The migration is carried by the release that introduces it, so an
+ * installation older than that one would skip it, and the floor is therefore
+ * the predecessor's version.
+ *
+ * @param previous - The release this one follows, absent for a first release.
+ * @param version - The version being cut. A first release declares itself,
+ *   having no earlier installation it could be applied to.
+ * @param migrationRequired - Whether this release changes the configuration
+ *   schema or the data schema.
+ * @returns The version to record as `minimumInstalledVersion`.
+ */
+export function compatibilityFloor(
+  previous: VelvetReleaseManifest | undefined,
+  version: string,
+  migrationRequired: boolean,
+): string {
+  if (previous === undefined) return version;
+  if (migrationRequired) return previous.version;
+  return previous.compatibility.minimumInstalledVersion;
+}
 
 /**
  * Derives a complete release manifest from an immutable template revision and
