@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { generateKeyPairSync, verify } from "node:crypto";
-import { test } from "bun:test";
+import { spyOn, test } from "bun:test";
 
 import {
   GITHUB_API_VERSION,
@@ -590,4 +590,87 @@ test("creates a public repository when the request asks for one", async () => {
   await client.createRepository("user-token", "example", "status", "public", true);
 
   assert.equal((await requests[0]!.json()).private, false);
+});
+
+/**
+ * Drives a dispatch against a sequence of replies, without waiting for real
+ * delays.
+ *
+ * The retry sleeps for a second and a half between attempts, which a test
+ * cannot spend, so the sleep is recorded rather than served.
+ *
+ * @param reply - Answers the nth dispatch request, counted from one.
+ * @returns What the dispatch returned or threw, the number of requests it made,
+ *   and the delays it asked for.
+ */
+async function dispatchAgainst(reply: (attempt: number) => Response): Promise<{
+  outcome: number | unknown;
+  attempts: number;
+  delays: number[];
+}> {
+  const delays: number[] = [];
+  const sleep = spyOn(Bun, "sleep").mockImplementation(
+    async (ms: number | Date) => {
+      // The retry asks in milliseconds. A Date would leave the count short and
+      // fail the assertion below rather than being recorded as something else.
+      if (typeof ms === "number") delays.push(ms);
+    },
+  );
+  let attempts = 0;
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret",
+    privateKey: privateKeyPem,
+    fetch: async () => {
+      attempts += 1;
+      return reply(attempts);
+    },
+  });
+  try {
+    const outcome = await client
+      .dispatchWorkflow("installation-token", "example", "status")
+      .catch((error: unknown) => error);
+    return { outcome, attempts, delays };
+  } finally {
+    sleep.mockRestore();
+  }
+}
+
+test("retries a workflow dispatch GitHub has not registered yet", async () => {
+  // GitHub indexes a workflow file asynchronously after the push that wrote it,
+  // so the first dispatches answer 404 for a file the setup has just written.
+  const { outcome, attempts, delays } = await dispatchAgainst((attempt) =>
+    attempt < 3
+      ? Response.json({ message: "Not Found" }, { status: 404 })
+      : Response.json({ workflow_run_id: 777 }),
+  );
+
+  assert.equal(outcome, 777);
+  assert.equal(attempts, 3);
+  assert.deepEqual(delays, [1_500, 1_500]);
+});
+
+test("does not retry a dispatch refused for a reason that will not change", async () => {
+  const { outcome, attempts, delays } = await dispatchAgainst(() =>
+    Response.json({ message: "Forbidden" }, { status: 403 }),
+  );
+
+  assert.equal(
+    outcome instanceof GitHubApiError && outcome.status,
+    403,
+    "a permission failure is reported rather than retried",
+  );
+  assert.equal(attempts, 1);
+  assert.deepEqual(delays, []);
+});
+
+test("gives up on a dispatch that answers 404 indefinitely", async () => {
+  const { outcome, attempts, delays } = await dispatchAgainst(() =>
+    Response.json({ message: "Not Found" }, { status: 404 }),
+  );
+
+  assert.equal(outcome instanceof GitHubApiError && outcome.status, 404);
+  assert.equal(attempts, 10, "the ceiling holds");
+  assert.equal(delays.length, 9);
 });

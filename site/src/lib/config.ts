@@ -126,6 +126,33 @@ export async function loadConfig(
 }
 
 /**
+ * Every custom property a configuration contributes to the page.
+ *
+ * Stated once, because two things need them and at different times: the browser
+ * sets them on the document root, whilst the build writes them into a stylesheet
+ * so a prerendered page is themed before any script has run. A page that had to
+ * wait for JavaScript to learn its own colours would arrive in the fallback
+ * palette and repaint, which is most of what prerendering it was meant to avoid.
+ *
+ * @param config - The configuration the page is rendered from.
+ * @returns Property names mapped to their values, ready to be set or written.
+ */
+export function themeCustomProperties(
+  config: VelvetConfig,
+): Record<string, string> {
+  return {
+    ...themeCssVariables(config.theme, `${config.owner}/${config.repo}`),
+    ...(config.theme.fontSans ? { "--font-sans": config.theme.fontSans } : {}),
+    ...(config.theme.fontMono ? { "--font-mono": config.theme.fontMono } : {}),
+    "--logo-height": `${config.logoHeight}px`,
+    // Shared layout tokens (bar geometry, type scale, pill styling) — the very
+    // values the OG card reads from `lib/tokens`, so the page and the social
+    // card render from one definition.
+    ...tokenCssVars(),
+  };
+}
+
+/**
  * Apply theme colours and fonts as CSS custom properties on the document root
  * or an isolated preview surface.
  */
@@ -133,18 +160,7 @@ export function applyTheme(
   config: VelvetConfig,
   root: Pick<HTMLElement, "style"> = document.documentElement,
 ): void {
-  for (const [name, value] of Object.entries(
-    themeCssVariables(config.theme, `${config.owner}/${config.repo}`),
-  )) {
-    root.style.setProperty(name, value);
-  }
-  if (config.theme.fontSans) root.style.setProperty("--font-sans", config.theme.fontSans);
-  if (config.theme.fontMono) root.style.setProperty("--font-mono", config.theme.fontMono);
-  root.style.setProperty("--logo-height", `${config.logoHeight}px`);
-  // Shared layout tokens (bar geometry, type scale, pill styling) — the very values
-  // the OG card reads from `lib/tokens`, applied here as CSS custom properties so the
-  // page and the social card render from one definition.
-  for (const [name, value] of Object.entries(tokenCssVars())) {
+  for (const [name, value] of Object.entries(themeCustomProperties(config))) {
     root.style.setProperty(name, value);
   }
 }

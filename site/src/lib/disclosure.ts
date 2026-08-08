@@ -20,13 +20,18 @@
 
 /** How long a panel takes to open or close, read from the stylesheet. */
 const DURATION_PROPERTY = "--velvet-disclosure-duration";
-/** Used when the property is absent, which happens in a bare test document. */
-const FALLBACK_DURATION_MS = 200;
+/**
+ * Used when the property is absent, which happens in a bare test document.
+ *
+ * The same figure the stylesheet declares, so a document without the stylesheet
+ * opens a panel in the time the product does.
+ */
+const FALLBACK_DURATION_MS = 400;
 
 /**
  * Reads a CSS time value in milliseconds.
  *
- * @param value The declared value, such as `200ms` or `0.2s`.
+ * @param value The declared value, such as `400ms` or `0.4s`.
  * @returns The duration in milliseconds, or null when it is not a time.
  */
 function millisecondsFrom(value: string): number | null {
@@ -50,9 +55,11 @@ function prefersReducedMotion(): boolean {
  * Presents a panel as open or closed, animating the change in height.
  *
  * Applied with `use:disclosure={open}`. The element it is applied to owns the
- * `hidden` and `inert` attributes from then on, so nothing else may set them:
- * a closing panel has to stay in the layout until its animation has finished,
- * and only this knows when that is.
+ * `hidden` and `inert` attributes from the moment this runs, so nothing else
+ * may set them afterwards: a closing panel has to stay in the layout until its
+ * animation has finished, and only this knows when that is. The markup states
+ * both for the prerendered document, which has no script yet, and this starts
+ * from the same values rather than against them.
  *
  * @param node The panel wrapper, which clips its own overflow at all times. It
  *   has to: the clip is what contains the panel's top margin, and a height

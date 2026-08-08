@@ -200,7 +200,20 @@
     because a published page has no repository to read: it is a static build,
     and the version that built it is the version it runs.
   -->
-  <p class="build mono" data-velvet-version>v{VELVET_VERSION}</p>
+  <p class="stamp build mono" data-velvet-version>v{VELVET_VERSION}</p>
+
+  {#if serialLabel}
+    <!--
+      The number this installation was issued, printed the way a board prints a
+      unit number and standing opposite the version, because both stamp the
+      installation rather than say anything about its services.
+
+      Shown only where there is one: an installation from before serials existed
+      has no number, and inventing a placeholder would claim something untrue
+      about it.
+    -->
+    <p class="stamp serial" data-status-serial>{serialLabel}</p>
+  {/if}
 
   {#if config.showPoweredBy}
     <div class="powered">
@@ -210,15 +223,6 @@
         target="_blank"
         rel="noopener noreferrer"
       />
-      {#if serialLabel}
-        <!--
-          The number this installation was issued, printed the way a board
-          prints a unit number. Shown only where there is one: an installation
-          from before serials existed has no number, and inventing a placeholder
-          would claim something untrue about it.
-        -->
-        <span class="serial" data-status-serial>{serialLabel}</span>
-      {/if}
     </div>
   {/if}
 </main>
@@ -236,6 +240,13 @@
       until it read this instead.
     */
     --status-content-inset: 18px;
+
+    /*
+      How far the version and the serial stand from the window's bottom
+      corners. One pair for both, so the two stamps cannot drift apart.
+    */
+    --page-stamp-inset-inline: 10px;
+    --page-stamp-inset-block: 8px;
     max-width: var(--service-card-max-width);
     min-height: var(--status-page-min-height, 100vh);
     display: flex;
@@ -353,27 +364,36 @@
   .toggle-all i.expanded {
     transform: rotate(180deg);
   }
+  /*
+    What stamps the installation itself rather than describing its services:
+    the version on the left, the serial on the right. Both are held to the
+    window's bottom corners, so they stay opposite each other however long the
+    page runs, and both read from the one pair of insets below.
+  */
+  .stamp {
+    position: fixed;
+    bottom: var(--page-stamp-inset-block);
+    margin: 0;
+    font-size: 11px;
+    pointer-events: none;
+    user-select: none;
+  }
+  .build {
+    left: var(--page-stamp-inset-inline);
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+  }
+  /* Inverted, the way a board prints a value meant to be read rather than
+     skimmed. */
   .serial {
+    right: var(--page-stamp-inset-inline);
     padding: 0.05rem 0.3rem;
     border-radius: 0.15rem;
     background: color-mix(in srgb, var(--text-tertiary) 60%, transparent);
     color: var(--canvas);
     font-family: var(--font-mono);
-    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
-    user-select: none;
-  }
-  .build {
-    position: fixed;
-    left: 10px;
-    bottom: 8px;
-    margin: 0;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    pointer-events: none;
-    user-select: none;
   }
   .powered {
     --velvet-wordmark-size: 24px;

@@ -220,7 +220,19 @@ test("opens a service through the shared disclosure, and captures nothing", asyn
   );
 
   assert.match(details, /use:disclosure=\{open\}/);
+  // `hidden` must never follow `open`. A closing panel has to stay in the
+  // layout until its animation has finished, and the action is the only thing
+  // that knows when that is; an attribute tracking `open` would take the panel
+  // out of the layout on the first frame instead.
+  //
+  // The prerendered document still needs both attributes set once, because it
+  // carries no script and would otherwise stand open. That is what
+  // `startsClosed` is, and reading it untracked is what keeps it from becoming
+  // the binding this forbids.
   assert.doesNotMatch(details, /hidden=\{!open\}/);
+  assert.match(details, /const startsClosed = untrack\(\(\) => !open\)/);
+  assert.match(details, /hidden=\{startsClosed\}/);
+  assert.match(details, /inert=\{startsClosed\}/);
   assert.doesNotMatch(details, /\.animate\(/);
   assert.doesNotMatch(details, /grid-template-rows/);
 

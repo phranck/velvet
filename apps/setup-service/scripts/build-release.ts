@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import {
+  compareVelvetSemanticVersions,
   CONFIGURATION_SCHEMA_VERSION,
   CONTRACT_SCHEMA_VERSION,
   INITIAL_TEMPLATE_PATHS,
@@ -10,7 +11,7 @@ import {
   validateVelvetReleaseManifest,
   type VelvetReleaseManifest,
 } from "@velvet/contracts";
-import { buildReleaseManifest } from "@velvet/template-files";
+import { buildReleaseManifest, compatibilityFloor } from "@velvet/template-files";
 
 /**
  * Regenerates the release artefact compiled into the setup service.
@@ -25,9 +26,16 @@ import { buildReleaseManifest } from "@velvet/template-files";
  * nobody decided, and leave the artefact and the repository claiming different
  * versions.
  *
+ * The compatibility floor is derived rather than passed. A release inherits the
+ * floor its predecessor declared and raises it only where it changes a schema,
+ * so an installation that missed a release is still offered the next one.
+ * `--minimum` overrides that derivation and exists for repairing an artefact
+ * whose floor was recorded wrongly.
+ *
  * Usage:
  *   bun run scripts/build-release.ts --type feature \
- *     --notes scripts/release-notes.md [--commit <sha>] [--automatic]
+ *     --notes scripts/release-notes.md \
+ *     [--commit <sha>] [--minimum <version>] [--automatic]
  */
 
 const RELEASE_TYPES = ["security", "fix", "feature"] as const;
@@ -164,29 +172,54 @@ async function currentArtefact(): Promise<VelvetReleaseManifest | undefined> {
 }
 
 /**
+ * The newest version published before the one being cut.
+ *
+ * Read from the release tags rather than from the artefact, because an artefact
+ * records the oldest version it installs onto and that is the version it
+ * follows only where a release raised the floor itself.
+ *
+ * @param before - The version being cut, which is excluded from the search so a
+ *   release that has already been tagged does not find itself.
+ * @returns The version of the last release published before it, or undefined
+ *   when nothing was.
+ */
+function lastPublishedVersion(before: string): string | undefined {
+  const result = Bun.spawnSync(["git", "tag", "--list", "v*"], {
+    cwd: repositoryRoot,
+    stdout: "pipe",
+  });
+  if (!result.success) return undefined;
+  return result.stdout
+    .toString()
+    .split("\n")
+    .map((tag) => tag.trim().replace(/^v/u, ""))
+    .filter((candidate) => /^\d+\.\d+\.\d+$/u.test(candidate))
+    .filter((candidate) => compareVelvetSemanticVersions(candidate, before) < 0)
+    .sort(compareVelvetSemanticVersions)
+    .at(-1);
+}
+
+/**
  * Rebuilds the predecessor of an artefact that is being cut again.
  *
  * A recut has to move forward from whatever the artefact it replaces moved
- * forward from, which is the version recorded in `minimumInstalledVersion`,
- * since that field is written from the predecessor when a release is cut.
+ * forward from. That version comes from the release tags, because the artefact
+ * itself records only the floor it inherited.
  *
- * Only the version differs, and only when the artefact announced no migration.
- * When it announced one, its predecessor carried different schema versions and
- * cannot be reconstructed from what is left, so this stops rather than
- * inventing a compatibility block.
+ * Its compatibility block is the artefact's own, which holds only whilst the
+ * artefact announced no migration. When it announced one, its predecessor
+ * carried different schema versions and cannot be reconstructed from what is
+ * left, so this stops rather than inventing a compatibility block.
  *
  * @param artefact - The unpublished artefact being replaced.
- * @returns The manifest the recut has to be newer than.
+ * @returns The manifest the recut has to be newer than, or undefined when the
+ *   artefact is a first release and has no predecessor.
  */
 function recutPredecessor(
   artefact: VelvetReleaseManifest,
 ): VelvetReleaseManifest | undefined {
-  // A first release records itself as its own minimum, having had nothing to
-  // move forward from. Recutting one therefore has no predecessor either,
-  // rather than a predecessor that happens to be itself.
-  if (artefact.compatibility.minimumInstalledVersion === artefact.version) {
-    return undefined;
-  }
+  const version = lastPublishedVersion(artefact.version);
+  if (version === undefined) return undefined;
   if (
     artefact.compatibility.configurationMigrationRequired ||
     artefact.compatibility.dataMigrationRequired
@@ -195,10 +228,7 @@ function recutPredecessor(
       `The artefact already holding ${artefact.version} announces a migration, so its predecessor cannot be reconstructed. Raise the version instead of recutting.`,
     );
   }
-  return {
-    ...artefact,
-    version: artefact.compatibility.minimumInstalledVersion,
-  };
+  return { ...artefact, version };
 }
 
 const version = await declaredVersion();
@@ -216,8 +246,7 @@ const current = await currentArtefact();
  *
  * Normally the artefact in the repository. When that artefact already carries
  * this version, it is a recut of a release that has not been published, so its
- * own predecessor is used instead. `minimumInstalledVersion` records that
- * predecessor, because it is written from it when a release is cut.
+ * own predecessor is used instead and is read from the release tags.
  */
 const previous =
   current === undefined || current.version !== version
@@ -225,21 +254,31 @@ const previous =
     : recutPredecessor(current);
 const sources = await templateSources(version);
 
+/** Whether this release changes a schema an installation already holds. */
+const configurationMigrationRequired =
+  previous !== undefined &&
+  previous.compatibility.configurationSchemaVersion !==
+    CONFIGURATION_SCHEMA_VERSION;
+const dataMigrationRequired =
+  previous !== undefined &&
+  previous.compatibility.dataSchemaVersion !== CONTRACT_SCHEMA_VERSION;
+
 const built = buildReleaseManifest({
   version,
   releaseType,
   automaticInstallEligible: flag("automatic"),
   compatibility: {
-    minimumInstalledVersion: argument("minimum") ?? previous?.version ?? version,
+    minimumInstalledVersion:
+      argument("minimum") ??
+      compatibilityFloor(
+        previous,
+        version,
+        configurationMigrationRequired || dataMigrationRequired,
+      ),
     configurationSchemaVersion: CONFIGURATION_SCHEMA_VERSION,
     dataSchemaVersion: CONTRACT_SCHEMA_VERSION,
-    configurationMigrationRequired:
-      previous !== undefined &&
-      previous.compatibility.configurationSchemaVersion !==
-        CONFIGURATION_SCHEMA_VERSION,
-    dataMigrationRequired:
-      previous !== undefined &&
-      previous.compatibility.dataSchemaVersion !== CONTRACT_SCHEMA_VERSION,
+    configurationMigrationRequired,
+    dataMigrationRequired,
   },
   releaseNotes,
   source: {

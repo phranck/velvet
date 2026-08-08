@@ -157,6 +157,8 @@ The current browser session records each completed step. On the first setup for 
 
 The setup configuration commit deliberately contains GitHub's `[skip ci]` marker. This prevents the template's normal push trigger from racing the manually dispatched first-deployment workflow. Later configuration commits made directly by the repository owner continue to trigger normal monitoring.
 
+Dispatching that first workflow is retried whilst GitHub answers 404. A workflow file becomes dispatchable a few seconds after the push that wrote it, so a 404 here means the file is not registered yet rather than absent. The service tries ten times, a second and a half apart, and reports `WORKFLOW_DISPATCH_FAILED` once that ceiling is reached or the refusal is anything other than a 404.
+
 If the service restarted after repository creation, inspect the named repository before cleanup. A generated repository containing only the untouched template can be removed by its owner and setup can be retried with the same name. If `velvet.yml` was already committed, the owner can run the `Velvet Pages` workflow manually or retry with a new repository name. The service never silently overwrites an unrelated existing repository.
 
 Before creating anything, the service checks whether a repository of that name already exists. When one does, setup stops with `REPOSITORY_EXISTS` and creates nothing at all, so the name can be changed and the setup retried. Deleting the repository that is in the way is possible, but only when the request asks for it explicitly. The onboarding sends that permission after the person installing has been shown the repository by name and told what deleting it removes.

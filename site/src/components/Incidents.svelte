@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { IncidentEvent } from "../lib/types";
+  import { readingLocale } from "../lib/locale.svelte";
 
   let { incidents }: { incidents: IncidentEvent[] } = $props();
 
@@ -7,15 +8,22 @@
   const active = $derived(incidents.filter((event) => event.kind === "incident"));
 
   /*
-   * Built once rather than per event.
+   * Built once per locale rather than per event.
    *
    * Each of these renders inside a loop over every incident and maintenance
    * window a page is showing, and constructing a formatter is what costs.
+   *
+   * The locale is read rather than left to the system, because the build
+   * renders this page too and its system locale is not the reader's. Both
+   * renders have to agree for hydration to adopt the markup, so both start from
+   * the build's locale and the reader's is adopted once that is done.
    */
-  const EVENT_TIME = new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  const EVENT_TIME = $derived(
+    new Intl.DateTimeFormat(readingLocale(), {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }),
+  );
 </script>
 
 {#if maintenance.length}

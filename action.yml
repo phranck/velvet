@@ -33,6 +33,22 @@ runs:
         VELVET_SITE: ${{ github.action_path }}/site
       run: |
         set -euo pipefail
+        # The data path is given relative to the repository being built, whilst
+        # the site build runs with its working directory inside the Action. It
+        # is made absolute here, where the working directory is still the
+        # repository, so the build can read the documents it renders from.
+        #
+        # A repository whose first check has not run yet has no such directory.
+        # It is then left exactly as given, the build finds nothing to render
+        # from, and the page fetches its own data as it did before it rendered
+        # any. The steps below read this path too, and are unaffected either
+        # way, an absolute path naming the same directory.
+        if [ -d "$VELVET_DATA" ]; then
+          VELVET_DATA="$(cd "$VELVET_DATA" && pwd)"
+        else
+          echo "velvet: no data at $VELVET_DATA, publishing without a prerender"
+        fi
+        export VELVET_DATA
         bun install --cwd "$VELVET_ROOT" --frozen-lockfile
         bun run --cwd "$VELVET_ROOT" --filter @velvet/contracts build
         bun "$VELVET_SITE/scripts/generate-config.mjs" "$VELVET_CONFIG" "$VELVET_SITE/public/config.json"
