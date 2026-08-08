@@ -20,6 +20,7 @@
     automaticSecurityUpdates,
     updateState,
     updateReason,
+    starting = false,
     onInstall,
     onAutomaticChange,
     listedAsReference,
@@ -30,6 +31,16 @@
     automaticSecurityUpdates: boolean;
     updateState?: ManagedUpdateState;
     updateReason?: ManagedUpdateReason;
+    /**
+     * Whether an install has been asked for and nothing has come back yet.
+     *
+     * `updateState` only exists once the service has answered, and the call
+     * that answers it is the one doing the work, so until then there is nothing
+     * for `outcome` to describe. Without this the interface stands completely
+     * still through the longest part of the operation, which reads as a button
+     * that did nothing.
+     */
+    starting?: boolean;
     onInstall: () => void;
     onAutomaticChange: (enabled: boolean) => void;
     /** Whether the owner agrees, or `null` when the service does not say. */
@@ -42,7 +53,7 @@
   const outcome = $derived(
     updateState ? describeUpdate(updateState, updateReason) : null,
   );
-  const busy = $derived(outcome !== null && isUpdateRunning(outcome));
+  const busy = $derived(starting || (outcome !== null && isUpdateRunning(outcome)));
   // An update is only offered when the service reports a different version, so
   // an installation already on the newest release shows no call to action.
   const updateAvailable = $derived(
@@ -92,7 +103,13 @@
     </p>
   {/if}
 
-  {#if outcome}
+  {#if starting && !outcome}
+    <p class="outcome" data-tone="progress" role="status">
+      <strong>Starting the update</strong>
+      Velvet is writing the files it owns and opening a pull request. This takes
+      a few seconds.
+    </p>
+  {:else if outcome}
     <p class="outcome" data-tone={outcome.tone} role="status">
       <strong>{outcome.title}</strong>
       {outcome.detail}
@@ -116,8 +133,11 @@
           onclick={onInstall}
           disabled={busy}
         >
-          <i class="ph-duotone ph-download-simple" aria-hidden="true"></i>
-          Install update
+          <i
+            class="ph-duotone {busy ? 'ph-circle-notch spinning' : 'ph-download-simple'}"
+            aria-hidden="true"
+          ></i>
+          {busy ? "Installing…" : "Install update"}
         </button>
       {/if}
     </div>
@@ -291,6 +311,33 @@
 
   .outcome[data-tone="warning"] strong {
     color: var(--tool-error);
+  }
+
+  .outcome[data-tone="progress"] strong {
+    color: var(--tool-accent);
+  }
+
+  /*
+    Turns whilst the update runs, so the interface is visibly doing something
+    through the seconds the service spends writing files and opening a pull
+    request. `transform` is one of the three properties a compositor animates on
+    its own, so this costs nothing measurable.
+  */
+  .spinning {
+    display: inline-block;
+    animation: spin 900ms linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinning {
+      animation: none;
+    }
   }
 
   /* Matches the file actions at the top of the Configurator, where paired

@@ -204,15 +204,17 @@
 
   {#if serialLabel}
     <!--
-      The number this installation was issued, printed the way a board prints a
-      unit number and standing opposite the version, because both stamp the
-      installation rather than say anything about its services.
+      The number this installation was issued, labelled the way the onboarding
+      footer labels it and standing opposite the version. Both stamp the
+      installation rather than saying anything about its services, so both are
+      dimmed to the same degree: what a reader came for is the services, and a
+      stamp that competed with them would be the wrong way round.
 
       Shown only where there is one: an installation from before serials existed
       has no number, and inventing a placeholder would claim something untrue
       about it.
     -->
-    <p class="stamp serial" data-status-serial>{serialLabel}</p>
+    <p class="stamp serial mono" data-status-serial>Serial #{serialLabel}</p>
   {/if}
 
   {#if config.showPoweredBy}
@@ -370,30 +372,26 @@
     window's bottom corners, so they stay opposite each other however long the
     page runs, and both read from the one pair of insets below.
   */
+  /*
+    Both stamps read alike, so only the corner they sit in differs. Everything
+    else is stated here once rather than twice, which is what keeps them looking
+    like a pair when either is changed.
+  */
   .stamp {
     position: fixed;
     bottom: var(--page-stamp-inset-block);
     margin: 0;
+    color: var(--text-faint);
     font-size: 11px;
+    letter-spacing: 0.04em;
     pointer-events: none;
     user-select: none;
   }
   .build {
     left: var(--page-stamp-inset-inline);
-    color: var(--text-faint);
-    letter-spacing: 0.04em;
   }
-  /* Inverted, the way a board prints a value meant to be read rather than
-     skimmed. */
   .serial {
     right: var(--page-stamp-inset-inline);
-    padding: 0.05rem 0.3rem;
-    border-radius: 0.15rem;
-    background: color-mix(in srgb, var(--text-tertiary) 60%, transparent);
-    color: var(--canvas);
-    font-family: var(--font-mono);
-    font-weight: 700;
-    letter-spacing: 0.06em;
   }
   .powered {
     --velvet-wordmark-size: 24px;

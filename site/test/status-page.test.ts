@@ -360,7 +360,9 @@ test("stamps the installation serial opposite the version, when there is one", a
     statusDocument,
     412,
   );
-  assert.match(withSerial, /data-status-serial[^>]*>00412</);
+  // Labelled the way the onboarding footer labels it, so the number is not left
+  // standing on its own with nothing saying what it counts.
+  assert.match(withSerial, /data-status-serial[^>]*>Serial #00412</);
 
   // Opposite the version rather than under the Velvet mark: both stamp the
   // installation, so both are held to the window's bottom corners and read
@@ -384,6 +386,13 @@ test("stamps the installation serial opposite the version, when there is one", a
     /\.serial\s*\{[^}]*right:\s*var\(--page-stamp-inset-inline\)/s,
   );
 
+  // Both stamps are dimmed to the same degree, which is what makes them read as
+  // a pair rather than one announcing itself. The colour is stated once, on the
+  // shared class, so neither can drift from the other.
+  assert.match(page, /\.stamp\s*\{[^}]*color:\s*var\(--text-faint\)/s);
+  assert.doesNotMatch(page, /\.serial\s*\{[^}]*background/s);
+  assert.doesNotMatch(page, /\.serial\s*\{[^}]*color:/s);
+
   // An installation made before serials existed has none, and inventing a
   // placeholder would claim something untrue about it.
   const withoutSerial = await renderStatusPage("grouped");
@@ -403,7 +412,7 @@ test("keeps the serial when the Velvet mark is turned off", async () => {
   );
 
   assert.doesNotMatch(html, /powered by/);
-  assert.match(html, /data-status-serial[^>]*>00412</);
+  assert.match(html, /data-status-serial[^>]*>Serial #00412</);
 });
 
 test("says an empty page is expected, and stops once a day exists", async () => {

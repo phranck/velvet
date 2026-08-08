@@ -93,8 +93,11 @@ test("prevents a second install whilst one is still running", async () => {
 
   assert.match(html, /data-tone="progress"/);
   assert.match(html, /Publishing your page/);
-  assert.match(html, /Install update<\/button>/);
   assert.match(html, /disabled/);
+  // The button says what is happening rather than repeating the invitation it
+  // is no longer accepting.
+  assert.match(html, /Installing…<\/button>/);
+  assert.doesNotMatch(html, /Install update<\/button>/);
 });
 
 test("still offers a manual install for a normal release, automatic or not", async () => {
@@ -189,4 +192,30 @@ test("leaves the heading to its container and hides decorative icons", async () 
   );
   assert.match(announced, /role="status"/);
   assert.match(announced, /Update installed/);
+});
+
+test("says an update is starting before the service has reported anything", async () => {
+  // The call that starts an update is the one that does the work, and the
+  // service reports a state only by being asked again, so there is nothing to
+  // describe until that first call returns. Left to `updateState` alone the
+  // section stands completely still through the slowest part of the operation,
+  // which reads as a button that did nothing.
+  const html = elements(await renderer.render(COMPONENT, props({ starting: true })));
+
+  assert.match(html, /Starting the update/);
+  assert.match(html, /Installing…/);
+  assert.match(html, /ph-circle-notch spinning/);
+  assert.match(html, /disabled/);
+});
+
+test("hands over to the service's own report once it arrives", async () => {
+  const html = elements(
+    await renderer.render(
+      COMPONENT,
+      props({ starting: false, updateState: "completed" }),
+    ),
+  );
+
+  assert.doesNotMatch(html, /Starting the update/);
+  assert.doesNotMatch(html, /spinning/);
 });
