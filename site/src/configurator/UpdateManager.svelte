@@ -53,6 +53,14 @@
   let managed = $state<ManagedInstallation[]>([]);
   let selectedId = $state<string>("");
   let installation = $state<InstallationUpdate | null>(null);
+  /**
+   * Whether an install has been asked for and the first call has not answered.
+   *
+   * The service reports an update's state by being asked again, so there is
+   * nothing to report until the first call returns, and that call is the slow
+   * one. Without this the interface would stand still for the seconds it takes.
+   */
+  let starting = $state(false);
   let operation = $state<UpdateOperation | null>(null);
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -143,6 +151,9 @@
     const target = selected;
     if (!target || !installation) return;
     const result = await client.start(target, installation.availableVersion);
+    // The call has answered, so whatever it reports is now what the section
+    // describes, and the interim message stands down.
+    starting = false;
     if (result.status !== "ok") {
       report(result);
       return;
@@ -160,6 +171,10 @@
 
   function install(): void {
     stopPolling();
+    // Set before the request rather than from its answer. The first call is the
+    // one that does the work, and it is the only part of an update during which
+    // the service reports nothing, so this is what the section has to show.
+    starting = true;
     void follow(Date.now() + MAX_POLL_MS);
   }
 
@@ -279,6 +294,7 @@
       automaticSecurityUpdates={installation.automaticSecurityUpdates}
       updateState={operation?.state}
       updateReason={operation?.reason}
+      {starting}
       onInstall={install}
       onAutomaticChange={setAutomatic}
       listedAsReference={installation.listedAsReference}
