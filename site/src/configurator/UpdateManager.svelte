@@ -237,7 +237,7 @@
   </p>
   <!-- A full page load, because signing in leaves this origin for GitHub and
        comes back to it. -->
-  <a class="button primary" href="/api/auth/start">
+  <a class="button primary" href="/api/auth/start?return=configurator">
     <i class="ph-duotone ph-github-logo" aria-hidden="true"></i>
     Sign in with GitHub
   </a>

@@ -225,9 +225,14 @@ export function createSetupHandler(
           });
         }
         const authorization = createPkceAuthorization(randomToken);
+        // Matched against the two tools rather than used as an address. A
+        // redirect target taken from a request is a redirect somebody else
+        // chose, so an unknown value falls back to the onboarding.
+        const asked = url.searchParams.get("return");
         activeSession.oauth = {
           state: authorization.state,
           codeVerifier: authorization.codeVerifier,
+          returnTo: asked === "configurator" ? "configurator" : "onboarding",
         };
         const location = createGitHubAuthorizationUrl({
           clientId: options.config.github.clientId,
@@ -261,6 +266,7 @@ export function createSetupHandler(
           return reject(authenticationFailed(), "oauth-callback");
         }
         const codeVerifier = session.oauth.codeVerifier;
+        const returnTo = session.oauth.returnTo ?? "onboarding";
         delete session.oauth;
         let userToken: string | undefined;
         try {
@@ -270,7 +276,7 @@ export function createSetupHandler(
           authenticatedSession.githubUserToken = userToken;
           authenticatedSession.user = viewer;
           return finish(
-            redirectResponse(`${options.config.publicOrigin}/onboarding/?github=connected`, {
+            redirectResponse(`${options.config.publicOrigin}/${returnTo}/?github=connected`, {
               "Set-Cookie": createSessionCookie(
                 options.sessions.cookieValue(authenticatedSession.id),
                 options.config.secureCookies,

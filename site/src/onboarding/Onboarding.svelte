@@ -60,10 +60,15 @@
    */
   const PROGRESS_ORDER = Object.keys(PROGRESS_LABELS) as SetupProgressStage[];
 
-  let step = $state(GITHUB_RETURN ? INSTALL_STEP : 0);
-  let draft = $state(
-    loadOnboardingDraft(SESSION_STORAGE) ?? createOnboardingDraft(),
-  );
+  const RESTORED_DRAFT = loadOnboardingDraft(SESSION_STORAGE);
+  /*
+   * Coming back from GitHub resumes at the last step, but only where there is
+   * a draft to publish. Without one the visitor never filled the four steps
+   * before it, and landing there showed them a complaint about entries they
+   * had never made.
+   */
+  let step = $state(GITHUB_RETURN && RESTORED_DRAFT ? INSTALL_STEP : 0);
+  let draft = $state(RESTORED_DRAFT ?? createOnboardingDraft());
   let errors = $state<Record<string, string>>({});
   /**
    * The chosen logo, as something the browser can show.
