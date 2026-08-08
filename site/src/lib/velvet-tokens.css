@@ -101,3 +101,16 @@
   --velvet-code-radius: 0.25rem;
   --velvet-code-inset: 0.125em 0.375em;
 }
+
+/* States the hand rather than leaving it to the engine, which is where the two
+   disagree: Chromium's own stylesheet gives a link `pointer` and WebKit's gives
+   it `auto`, so an unstated link draws the arrow in Safari. Matched on `href`
+   because an anchor without one is a target rather than something to press.
+
+   Here rather than in one surface's own stylesheet, because every Velvet
+   surface loads this file and the arrow turned up on all of them. It was fixed
+   for the status page as #397 and stayed broken on velvet.li, the Configurator
+   and the onboarding, which is what one rule in one place prevents. */
+a[href] {
+  cursor: pointer;
+}
