@@ -1,20 +1,12 @@
-# Velvet 1.4.0
-
-## Added
-
-Your status page now arrives readable.
-
-It used to be an empty document that fetched three files and assembled itself in the browser. That is the wrong shape for a page people open when something is already broken, often on the connection that is part of what is broken. The page is now rendered whilst it is built, so it carries its content on arrival, and it stands in your own colours from the first moment rather than after a repaint. The browser picks it up from there and keeps it current exactly as before.
-
-The installation serial has moved to the bottom right corner of the page, opposite the version. Turning the Velvet mark off no longer takes the number with it: the mark is ours, whilst the number belongs to your installation.
+# Velvet 1.4.1
 
 ## Fixed
 
-An installation that missed a release can be updated again.
+The installation serial on your status page reads `Serial #00001` again, with its label, and is dimmed to the same degree as the version number in the opposite corner.
 
-Every release from 1.1.1 onwards accepted only the release immediately before it, so a page that skipped one was refused with "Cannot install this version" and had no way forward from the Configurator. A release now carries forward the oldest version its predecessor accepted, and raises that floor only where it genuinely changes a schema. No release ever has.
+It arrived in 1.4.0 as a bare figure in an inverted box, which drew more attention than the services the page is about. The two corner stamps now read as a pair.
 
-Setting up a new installation no longer reports a failure that did not happen. GitHub registers a workflow file a few seconds after the push that writes it, and the first attempt to start it could arrive before that and be refused. Velvet now waits and tries again.
+Installing an update from the Configurator says that it is doing so. The button turns and reads "Installing…" from the moment it is pressed, and the section explains what is happening. Until now nothing on screen changed during the slowest part of the operation, so there was no way to tell whether the update had started at all.
 
 ## What stays yours
 

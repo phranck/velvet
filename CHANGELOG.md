@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 1.4.1 (2026-08-08)
+
+### Fixed
+
+The installation serial on your status page reads `Serial #00001` again, with its label, and is dimmed to the same degree as the version number in the opposite corner. It arrived in 1.4.0 as a bare figure in a box that drew more attention than the services the page is about.
+
+Installing an update from the Configurator now says that it is doing so. The button turns and reads "Installing…" from the moment it is pressed, and the section explains what is happening. Until now nothing changed on screen during the slowest part of the operation, so there was no way to tell whether the update had started at all.
+
 ## Version 1.4.0 (2026-08-08)
 
 ### Added
