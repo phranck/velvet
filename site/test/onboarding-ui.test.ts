@@ -268,10 +268,12 @@ test("uses the shared theme and icon components in onboarding and configurator",
   );
   assert.match(iconPicker, /\.options\s*\{[^}]*width:\s*100%/s);
   assert.match(iconPicker, /\.options\s*\{[^}]*box-shadow:\s*none/s);
-  assert.match(
-    iconOption,
-    /import \{ createSquirclePath \} from "\.\.\/\.\.\/lib\/squircle\.js"/,
-  );
+  // The shape and its insets come from `lib/squircle`, so this option cannot
+  // drift from the onboarding steps and the theme cards that draw the same one.
+  assert.match(iconOption, /createSquirclePath,?\s*\n?\s*\} from "\.\.\/\.\.\/lib\/squircle\.js"/);
+  assert.match(iconOption, /SQUIRCLE_OUTER_PATH_INSET/);
+  assert.match(iconOption, /SQUIRCLE_INNER_PATH_INSET/);
+  assert.doesNotMatch(iconOption, /const OUTER_PATH_INSET/);
   assert.match(iconOption, /data-service-icon-squircle/);
   assert.match(iconOption, /class="selection-outline outer"[^>]*d=\{outerPath\}/);
   assert.match(iconOption, /class="selection-outline inner"[^>]*d=\{innerPath\}/);

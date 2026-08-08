@@ -231,10 +231,12 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "references",
     "website",
   ],
-  // The double outline every Velvet surface carries. The onboarding steps and
-  // the theme cards still draw it themselves; this is the component the
-  // references gallery uses, and the one the other two should move onto.
-  "squircle-frame": ["references"],
+  // Velvet's own shape: the double outline the gallery frames a card with, and
+  // the tick a status page says "all systems operational" with. The onboarding
+  // steps, the theme cards and the icon picker draw the outline themselves and
+  // read its insets from `lib/squircle`, so the geometry is stated once even
+  // where the markup is not.
+  "squircle-frame": ["configurator", "references", "status page"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],
   "service-icon-picker": ["configurator", "onboarding"],

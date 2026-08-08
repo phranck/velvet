@@ -476,3 +476,13 @@ test("prints the Velvet that built the page", async () => {
   assert.match(html, /data-velvet-version/);
   assert.match(html, new RegExp(`v${VELVET_VERSION.replace(/\./gu, "\\.")}`));
 });
+
+test("says everything is fine in Velvet's own mark", async () => {
+  // The shape Velvet is built from, drawn where a borrowed circle used to be.
+  // A status page spends nearly all its life in this state, so it is the one
+  // the product should say in its own hand.
+  const html = await renderStatusPage("grouped");
+
+  assert.match(html, /class="squircle-check/);
+  assert.doesNotMatch(html, /ph-check-circle/);
+});

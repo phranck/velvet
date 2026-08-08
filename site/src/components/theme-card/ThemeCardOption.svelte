@@ -1,21 +1,15 @@
 <script lang="ts">
-  import { createSquirclePath } from "../../lib/squircle.js";
+  import {
+    SQUIRCLE_CONTENT_INSET,
+    SQUIRCLE_INNER_PATH_INSET,
+    SQUIRCLE_OUTER_PATH_INSET,
+    createSquirclePath,
+  } from "../../lib/squircle.js";
 
   /**
    * The two outlines a step carries, in the same order and at the same insets,
    * because this is the same shape rather than one that resembles it.
    */
-  const OUTER_PATH_INSET = 1;
-  const INNER_PATH_INSET = 5.5;
-  const INNER_STROKE_WIDTH = 4;
-  /**
-   * Where the thick inner line stops and the option's own surface begins.
-   *
-   * A stroke straddles its path, so half of it lies inside the inset the path
-   * was drawn at. Derived rather than stated, so moving the line moves what it
-   * contains with it.
-   */
-  const CONTENT_INSET = INNER_PATH_INSET + INNER_STROKE_WIDTH / 2;
 
   let {
     name,
@@ -34,9 +28,9 @@
   } = $props();
 
   let size = $state(0);
-  const outerPath = $derived(createSquirclePath(size, OUTER_PATH_INSET));
-  const innerPath = $derived(createSquirclePath(size, INNER_PATH_INSET));
-  const contentPath = $derived(createSquirclePath(size, CONTENT_INSET));
+  const outerPath = $derived(createSquirclePath(size, SQUIRCLE_OUTER_PATH_INSET));
+  const innerPath = $derived(createSquirclePath(size, SQUIRCLE_INNER_PATH_INSET));
+  const contentPath = $derived(createSquirclePath(size, SQUIRCLE_CONTENT_INSET));
   /**
    * Clips the option to the inner edge of that line, so the preview meets it
    * on the left, the right, and the top and is cut by the curve rather than

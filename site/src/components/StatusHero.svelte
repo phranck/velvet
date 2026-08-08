@@ -1,5 +1,6 @@
 <script lang="ts">
   import { STATUS_HERO } from "../lib/data";
+  import * as SquircleFrame from "./squircle-frame";
   import type { ServiceStatus } from "../lib/types";
 
   let { status, updated }: { status: ServiceStatus; updated: string } = $props();
@@ -16,7 +17,16 @@
 
 <div class="hero">
   <span class="ico" style:color={c.color}>
-    <i class="ph-duotone {c.icon}" aria-hidden="true"></i>
+    {#if status === "operational"}
+      <!--
+        Velvet's own mark rather than a borrowed circle. Everything being fine
+        is the state a page spends nearly all its life in, so it is the one the
+        product should say in its own shape.
+      -->
+      <SquircleFrame.Check size="1em" />
+    {:else}
+      <i class="ph-duotone {c.icon}" aria-hidden="true"></i>
+    {/if}
   </span>
   <h1>{c.text}</h1>
   <p class="updated mono">Last updated {updated}</p>
