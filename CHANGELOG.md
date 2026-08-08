@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 1.4.2 (2026-08-08)
+
+### Changed
+
+Your status page now says "all systems operational" in Velvet's own mark: a tick inside the rounded square the product is built from, drawn in the status colour, in place of the borrowed circle it used until now. The social card your page publishes shows the same mark, so a link preview and the page it points at can no longer disagree about what they are showing.
+
+The gallery at velvet.li/references shows each page on a card carrying that same shape, with the picture reaching the frame and lifting slightly under the pointer.
+
 ## Version 1.4.1 (2026-08-08)
 
 ### Fixed
