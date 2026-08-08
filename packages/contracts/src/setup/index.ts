@@ -1,4 +1,5 @@
 export {
+  NotifyRequestSchema,
   SetupErrorCodeSchema,
   SetupEventSchema,
   SetupProgressStageSchema,
@@ -9,6 +10,7 @@ export {
   SetupStatusSchema,
 } from "./schemas.js";
 export type {
+  NotifyRequest,
   SetupErrorCode,
   SetupEvent,
   SetupProgressStage,
@@ -30,6 +32,7 @@ export type {
   SetupLogo,
 } from "./types.js";
 export {
+  validateNotifyRequest,
   validateSetupEvent,
   validateSetupRequest,
   validateSetupSession,
