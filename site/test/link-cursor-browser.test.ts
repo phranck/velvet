@@ -5,6 +5,8 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { chromium, webkit } from "playwright";
 import { createServer } from "vite";
 
+import { readFile } from "node:fs/promises";
+
 import { refuseOffsiteRequests } from "./offline.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
@@ -18,14 +20,43 @@ import { createViteTestCache } from "./vite-test-cache.js";
  * in one browser and wrong in the other, and only the browser that reads `auto`
  * can show that the page never said anything.
  *
- * The rule this holds lives in `src/app.css`, which every entry point imports,
- * so one assertion per engine covers the site, both tools, and the status page.
+ * The rule lives in `src/lib/velvet-tokens.css`, which every surface loads. It
+ * lived in `src/app.css` until 2026-08-08, which only the status page loads, so
+ * velvet.li, the Configurator and the onboarding all drew the arrow whilst this
+ * test stayed green: it drives a dev server, where `app.css` reaches the module
+ * graph regardless, and the production build of those pages never included it.
+ *
+ * That is why the file the rule sits in is asserted below as well as the
+ * behaviour. A browser check against a dev server proves what the dev server
+ * serves, and the two are not the same document.
  */
 
 const BROWSER_TIMEOUT_MS = 240_000;
 
 /** Pages carrying links, one from the site and one from a board-backed tool. */
 const PAGES = ["/website.html", "/onboarding.html"] as const;
+
+test("states the hand where every surface reads it, not in one surface's own stylesheet", async () => {
+  // The defect this guards was invisible to the browser check below, because a
+  // dev server resolves stylesheets the production build does not include.
+  const shared = await readFile(
+    resolve(import.meta.dirname, "../src/lib/velvet-tokens.css"),
+    "utf8",
+  );
+  assert.match(shared, /a\[href\]\s*\{[^}]*cursor:\s*pointer/s);
+
+  for (const surface of ["app.css", "website/website.css"]) {
+    const source = await readFile(
+      resolve(import.meta.dirname, "../src", surface),
+      "utf8",
+    );
+    assert.doesNotMatch(
+      source,
+      /a\[href\]\s*\{[^}]*cursor:\s*pointer/s,
+      `${surface} states the cursor itself, so the other surfaces go without`,
+    );
+  }
+});
 
 test(
   "every link states the hand, in WebKit as well as in Chromium",
