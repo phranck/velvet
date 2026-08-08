@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { test } from "bun:test";
 
 import { parseReleaseNotes } from "../src/lib/release-notes.js";
@@ -213,4 +215,28 @@ test("bounds a hostile document instead of rendering it", () => {
   const blocks = parseReleaseNotes("word\n\n".repeat(5_000));
 
   assert.equal(blocks.length <= 500, true, "block count stays bounded");
+});
+
+test("sizes headings against the text they introduce, not against a fixed scale", async () => {
+  // These notes are rendered on two surfaces which set different body sizes.
+  // A heading fixed in pixels beside text sized elsewhere ends up smaller than
+  // its own paragraphs, which is what happened in the Configurator's overlay.
+  const source = await readFile(
+    resolve(import.meta.dirname, "../src/components/release-notes/ReleaseNotes.svelte"),
+    "utf8",
+  );
+
+  const heading = /--notes-heading-size,\s*([^)]+)\)/.exec(source)?.[1]?.trim();
+  const subheading = /--notes-subheading-size,\s*([^)]+)\)/.exec(source)?.[1]?.trim();
+
+  assert.match(heading ?? "", /em$/, "the heading fallback is relative");
+  assert.match(subheading ?? "", /em$/, "the subheading fallback is relative");
+  assert.ok(
+    Number.parseFloat(heading ?? "0") > 1,
+    `a heading is larger than its paragraphs, got ${heading}`,
+  );
+  assert.ok(
+    Number.parseFloat(subheading ?? "0") > 1,
+    `a subheading is larger than its paragraphs, got ${subheading}`,
+  );
 });
