@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.3.1 (2026-08-08)
+
+### Fixed
+
+Signing in with GitHub from the Configurator now comes back to the Configurator. It used to land in the onboarding, at its last step, complaining about entries nobody had made.
+
 ## Version 1.3.0 (2026-08-08)
 
 ### Changed
