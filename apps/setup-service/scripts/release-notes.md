@@ -1,12 +1,12 @@
-# Velvet 1.4.1
+# Velvet 1.4.2
 
-## Fixed
+## Changed
 
-The installation serial on your status page reads `Serial #00001` again, with its label, and is dimmed to the same degree as the version number in the opposite corner.
+Your status page says "all systems operational" in Velvet's own mark now: a tick inside the rounded square the product is built from, drawn in the status colour, in place of the borrowed circle it used until now.
 
-It arrived in 1.4.0 as a bare figure in an inverted box, which drew more attention than the services the page is about. The two corner stamps now read as a pair.
+The social card your page publishes shows the same mark, from the same drawing, so a link preview and the page it points at cannot disagree about the state they are showing.
 
-Installing an update from the Configurator says that it is doing so. The button turns and reads "Installing…" from the moment it is pressed, and the section explains what is happening. Until now nothing on screen changed during the slowest part of the operation, so there was no way to tell whether the update had started at all.
+Nothing else about your page changes, and nothing you own is touched.
 
 ## What stays yours
 
