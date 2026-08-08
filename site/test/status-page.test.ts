@@ -101,6 +101,7 @@ async function renderStatusPage(
   incidents: IncidentsDocument = incidentsDocument,
   renderedStatus: StatusDocument = statusDocument,
   serial?: number,
+  showPoweredBy = true,
 ): Promise<string> {
   const config: VelvetConfig = {
     owner: "example",
@@ -110,7 +111,7 @@ async function renderStatusPage(
     dataBaseUrl: "https://example.invalid/velvet-data/v1",
     name: "Velvet Configurator",
     logoHeight: 72,
-    showPoweredBy: true,
+    showPoweredBy,
     navbar: [
       { title: "Status", href: "/" },
       { title: "History", href: "/history" },
@@ -351,7 +352,7 @@ test("toggles without starting a view transition, and states its timing once", a
   assert.doesNotMatch(page, /\.animate\(/);
 });
 
-test("prints the installation serial beside the Velvet mark, when there is one", async () => {
+test("stamps the installation serial opposite the version, when there is one", async () => {
   const withSerial = await renderStatusPage(
     "grouped",
     true,
@@ -361,10 +362,48 @@ test("prints the installation serial beside the Velvet mark, when there is one",
   );
   assert.match(withSerial, /data-status-serial[^>]*>00412</);
 
+  // Opposite the version rather than under the Velvet mark: both stamp the
+  // installation, so both are held to the window's bottom corners and read
+  // their inset from the one pair of properties.
+  assert.doesNotMatch(withSerial, /class="powered[^"]*"[^]*?data-status-serial/);
+  const page = await readFile(
+    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
+    "utf8",
+  );
+  assert.match(page, /\.stamp\s*\{[^}]*position:\s*fixed/s);
+  assert.match(
+    page,
+    /\.stamp\s*\{[^}]*bottom:\s*var\(--page-stamp-inset-block\)/s,
+  );
+  assert.match(
+    page,
+    /\.build\s*\{[^}]*left:\s*var\(--page-stamp-inset-inline\)/s,
+  );
+  assert.match(
+    page,
+    /\.serial\s*\{[^}]*right:\s*var\(--page-stamp-inset-inline\)/s,
+  );
+
   // An installation made before serials existed has none, and inventing a
   // placeholder would claim something untrue about it.
   const withoutSerial = await renderStatusPage("grouped");
   assert.doesNotMatch(withoutSerial, /data-status-serial/);
+});
+
+test("keeps the serial when the Velvet mark is turned off", async () => {
+  // The mark is Velvet's; the serial is this installation's own number, and
+  // turning off the one does not withdraw the other.
+  const html = await renderStatusPage(
+    "grouped",
+    true,
+    incidentsDocument,
+    statusDocument,
+    412,
+    false,
+  );
+
+  assert.doesNotMatch(html, /powered by/);
+  assert.match(html, /data-status-serial[^>]*>00412</);
 });
 
 test("says an empty page is expected, and stops once a day exists", async () => {
