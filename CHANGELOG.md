@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.5.2 (2026-08-09)
+
+### Fixed
+
+The hand over links and controls no longer depends on one selector every browser has to understand. The rule listing what you can press stood in a single selector list together with a newer selector, and a browser that cannot parse any one selector discards the whole list, which would leave every link drawing the arrow.
+
 ## Version 1.5.1 (2026-08-09)
 
 ### Fixed
