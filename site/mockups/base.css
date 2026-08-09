@@ -334,6 +334,14 @@ body::after {
 .status-hero-title {
   grid-area: title;
   margin: 0;
+  /*
+    Pulled out by its own trailing tracking where a design ranges it right.
+    Tracking is added after the last letter as well as between them, so the box
+    ends flush whilst the letters stop short of it: measured at 2.04px of
+    tracking, the headline's glyphs ended at 1032 against the time's 1034.7,
+    both boxes ending at 1034.
+  */
+  margin-inline-end: var(--hero-title-trail);
   color: var(--hero-title-colour);
   font-family: var(--font-display);
   font-size: var(--text-size-headline);
@@ -1243,7 +1251,10 @@ body::after {
 @keyframes velvet-strip-change {
   from {
     opacity: 0;
-    transform: scaleY(var(--strip-change-scale));
+    transform: scale(
+      var(--strip-change-scale-x),
+      var(--strip-change-scale-y)
+    );
   }
 }
 

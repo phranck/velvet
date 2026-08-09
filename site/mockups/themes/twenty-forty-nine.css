@@ -277,7 +277,8 @@
      can read half of it at a glance. No gloss, because this is emitted light
      rather than a reflective surface. */
   --strip-change-animation: none;
-  --strip-change-scale: 1;
+  --strip-change-scale-x: 1;
+  --strip-change-scale-y: 1;
   --strip-change-origin: center;
   --bar-align: bottom;
   --bar-pieces: 2;
@@ -386,6 +387,7 @@
   --hero-bar-fill: transparent;
   --hero-bar-radius: 0px;
   --hero-gap: var(--space-tight) var(--space-row);
+  --hero-title-trail: 0px;
   --hero-title-trim: normal;
   --hero-updated-trim: normal;
   --hero-rail-margin: 0px;

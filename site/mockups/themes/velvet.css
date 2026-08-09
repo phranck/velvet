@@ -205,7 +205,8 @@
   /* `bar` from `tokens.ts`, exactly: 32 tall, 38 hovered, 2 apart, 2 rounded,
      and a capsule in the 90-day view. The gloss is the one in `segGloss`. */
   --strip-change-animation: none;
-  --strip-change-scale: 1;
+  --strip-change-scale-x: 1;
+  --strip-change-scale-y: 1;
   --strip-change-origin: center;
   --bar-align: center;
   --bar-pieces: 1;
@@ -288,6 +289,7 @@
   --hero-bar-fill: transparent;
   --hero-bar-radius: 0px;
   --hero-gap: var(--space-tight) var(--space-row);
+  --hero-title-trail: 0px;
   --hero-title-trim: normal;
   --hero-updated-trim: normal;
   --hero-rail-margin: 0px;

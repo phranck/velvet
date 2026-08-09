@@ -152,7 +152,8 @@
   /* One solid capsule per day. The shape is the whole idea, so it is not
      divided. */
   --strip-change-animation: none;
-  --strip-change-scale: 1;
+  --strip-change-scale-x: 1;
+  --strip-change-scale-y: 1;
   --strip-change-origin: center;
   --bar-align: center;
   --bar-pieces: 1;
@@ -276,6 +277,7 @@
   --hero-bar-fill: transparent;
   --hero-bar-radius: 0px;
   --hero-gap: var(--space-tight) var(--space-row);
+  --hero-title-trail: 0px;
   --hero-title-trim: normal;
   --hero-updated-trim: normal;
   --hero-rail-margin: 0px;

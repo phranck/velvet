@@ -339,12 +339,15 @@
     segments by narrow gaps, so the row holds together and the divisions read
     as divisions rather than as items.
   */
-  /* The days arrive rather than appear when the range changes: the whole run
-     grows out of its own baseline over one motion step. */
-  --strip-change-animation: velvet-strip-change var(--motion-range)
+  /* The days arrive rather than appear when the range changes: the run draws
+     itself in from its trailing edge. Width only, because the bars say how much
+     time was lost by their height and a height that moves says something the
+     data did not. */
+  --strip-change-animation: velvet-strip-change calc(var(--motion-range) * 1.6)
     var(--motion-ease) both;
-  --strip-change-scale: 0.55;
-  --strip-change-origin: bottom;
+  --strip-change-scale-x: 0.82;
+  --strip-change-scale-y: 1;
+  --strip-change-origin: right;
   --bar-align: center;
   --bar-pieces: 1;
   --bar-piece-gap: 0px;
@@ -444,6 +447,7 @@
   --hero-throat: var(--lcars-throat);
   /* Trimmed to the capitals, so the blocks either side stand on the same top
      and bottom edge as the letters. */
+  --hero-title-trail: calc(-1 * var(--display-tracking));
   --hero-title-trim: trim-both cap alphabetic;
   /* To the text edge below rather than the baseline, so the descenders in
      the date are inside the bar rather than hanging under it. */

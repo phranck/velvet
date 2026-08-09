@@ -169,7 +169,8 @@
   /* Standing on a baseline rather than centred, because a vector display draws
      from an origin and everything grows away from it. */
   --strip-change-animation: none;
-  --strip-change-scale: 1;
+  --strip-change-scale-x: 1;
+  --strip-change-scale-y: 1;
   --strip-change-origin: center;
   --bar-align: bottom;
   --bar-pieces: 1;
@@ -298,6 +299,7 @@
   --hero-bar-fill: transparent;
   --hero-bar-radius: 0px;
   --hero-gap: var(--space-tight) var(--space-row);
+  --hero-title-trail: 0px;
   --hero-title-trim: normal;
   --hero-updated-trim: normal;
   --hero-rail-margin: 0px;
