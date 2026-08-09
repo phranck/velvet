@@ -11,40 +11,80 @@ import { refuseOffsiteRequests } from "./offline.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
 /**
- * Reads back that a link asks the pointer to become a hand.
+ * Reads back that everything pressable asks the pointer to become a hand.
  *
  * Driven in WebKit as well as in Chromium, because the two engines supply
- * different defaults for a link that states nothing: Chromium's own stylesheet
- * gives `pointer` and WebKit's gives `auto`, which leaves the shape to the
- * engine and draws the arrow. A page that says nothing therefore looks correct
- * in one browser and wrong in the other, and only the browser that reads `auto`
- * can show that the page never said anything.
+ * different defaults for a control that states nothing: Chromium's own
+ * stylesheet gives a link `pointer` and WebKit's gives it `auto`, which leaves
+ * the shape to the engine and draws the arrow. A page that says nothing
+ * therefore looks correct in one browser and wrong in the other, and only the
+ * browser that reads `auto` can show that the page never said anything.
  *
- * The rule lives in `src/lib/velvet-tokens.css`, which every surface loads. It
- * lived in `src/app.css` until 2026-08-08, which only the status page loads, so
- * velvet.li, the Configurator and the onboarding all drew the arrow whilst this
- * test stayed green: it drives a dev server, where `app.css` reaches the module
- * graph regardless, and the production build of those pages never included it.
+ * Two things are asserted rather than one, and each covers a way the other can
+ * pass whilst the product is wrong.
  *
- * That is why the file the rule sits in is asserted below as well as the
- * behaviour. A browser check against a dev server proves what the dev server
- * serves, and the two are not the same document.
+ * The file the rule sits in is asserted, because this drives a dev server and a
+ * dev server resolves stylesheets a production build does not include. A rule
+ * in one surface's own stylesheet therefore reads as correct here and ships
+ * only to that surface.
+ *
+ * Every kind of control is measured rather than links alone, because a rule
+ * naming one element type leaves every other control to the engine, and that is
+ * invisible to a check that only ever looks at links.
  */
 
 const BROWSER_TIMEOUT_MS = 240_000;
 
-/** Pages carrying links, one from the site and one from a board-backed tool. */
-const PAGES = ["/website.html", "/onboarding.html"] as const;
+/**
+ * The pages measured: the site, and the two board-backed tools.
+ *
+ * The Configurator earns its place by carrying the checkboxes and radios, which
+ * are the controls a link-only rule leaves behind.
+ */
+const PAGES = ["/website.html", "/onboarding.html", "/configurator.html"] as const;
 
-test("states the hand where every surface reads it, not in one surface's own stylesheet", async () => {
-  // The defect this guards was invisible to the browser check below, because a
-  // dev server resolves stylesheets the production build does not include.
+/**
+ * What Velvet treats as pressable.
+ *
+ * A label is in here only where it carries a checkbox or a radio, because
+ * pressing one of those is what the label does. A label in front of a text
+ * field puts the caret in the field, and the arrow is right there.
+ */
+const PRESSABLE = [
+  "a[href]",
+  "summary",
+  "button:not(:disabled)",
+  '[role="button"]:not([aria-disabled="true"])',
+  'input:is([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]):not(:disabled)',
+  'label:has(input:is([type="checkbox"], [type="radio"]):not(:disabled))',
+].join(",");
+
+test("states the hand for every control, where every surface reads it", async () => {
   const shared = await readFile(
     resolve(import.meta.dirname, "../src/lib/velvet-tokens.css"),
     "utf8",
   );
-  assert.match(shared, /a\[href\]\s*\{[^}]*cursor:\s*pointer/s);
 
+  // Each kind named in the one rule. A control the rule does not name is one
+  // that depends on somebody having declared the cursor beside it, which is
+  // what left the Configurator's checkboxes and radios drawing the arrow. #454.
+  for (const control of [
+    "a\\[href\\]",
+    "summary",
+    "button:not\\(:disabled\\)",
+    'input:is\\(\\s*\\[type="checkbox"\\]',
+    "label:has\\(",
+  ]) {
+    assert.match(
+      shared,
+      new RegExp(`${control}[\\s\\S]*?cursor:\\s*pointer`),
+      `the shared rule names no ${control}, so that control takes the engine's default`,
+    );
+  }
+
+  // A surface stating it for itself is how the other surfaces go without, and
+  // the browser check below cannot see that, because a dev server serves what a
+  // production build leaves out.
   for (const surface of ["app.css", "website/website.css"]) {
     const source = await readFile(
       resolve(import.meta.dirname, "../src", surface),
@@ -59,7 +99,7 @@ test("states the hand where every surface reads it, not in one surface's own sty
 });
 
 test(
-  "every link states the hand, in WebKit as well as in Chromium",
+  "every pressable control draws the hand, in WebKit as well as in Chromium",
   async () => {
     const cache = await createViteTestCache("link-cursor");
     const server = await createServer({
@@ -85,45 +125,47 @@ test(
           await refuseOffsiteRequests(page);
           await page.goto(`http://127.0.0.1:${address.port}${path}`);
           // Waited for by measuring rather than by locator, because the first
-          // link in document order belongs to a later step on the onboarding
+          // control in document order belongs to a later step on the onboarding
           // and never becomes visible at all.
           await page.waitForFunction(
-            () =>
-              [...document.querySelectorAll("a[href]")].some((link) => {
-                const box = link.getBoundingClientRect();
+            (selector: string) =>
+              [...document.querySelectorAll(selector)].some((node) => {
+                const box = node.getBoundingClientRect();
                 return box.width > 0 && box.height > 0;
               }),
-            undefined,
+            PRESSABLE,
             { timeout: 60_000 },
           );
 
-          const measured = await page.evaluate(() =>
-            [...document.querySelectorAll("a[href]")]
-              .filter((link) => {
-                const box = link.getBoundingClientRect();
-                return box.width > 0 && box.height > 0;
-              })
-              .map((link) => ({
-                label:
-                  (link.textContent ?? "").trim().slice(0, 30) ||
-                  link.getAttribute("href") ||
-                  "(no text)",
-                cursor: getComputedStyle(link).cursor,
-              })),
+          const measured = await page.evaluate(
+            (selector: string) =>
+              [...document.querySelectorAll(selector)]
+                .filter((node) => {
+                  const box = node.getBoundingClientRect();
+                  return box.width > 0 && box.height > 0;
+                })
+                .map((node) => ({
+                  label:
+                    (node.textContent ?? "").trim().slice(0, 30) ||
+                    node.getAttribute("href") ||
+                    `${node.tagName.toLowerCase()}[${node.getAttribute("type") ?? ""}]`,
+                  cursor: getComputedStyle(node).cursor,
+                })),
+            PRESSABLE,
           );
 
-          // A page whose links never rendered would pass every assertion below
-          // whilst comparing nothing at all.
+          // A page whose controls never rendered would pass every assertion
+          // below whilst comparing nothing at all.
           assert.ok(
             measured.length > 0,
-            `${path} rendered no visible link in ${engineName}`,
+            `${path} rendered no visible control in ${engineName}`,
           );
 
-          for (const link of measured) {
+          for (const control of measured) {
             assert.equal(
-              link.cursor,
+              control.cursor,
               "pointer",
-              `in ${engineName}, ${path} leaves "${link.label}" at ${link.cursor}`,
+              `in ${engineName}, ${path} leaves "${control.label}" at ${control.cursor}`,
             );
           }
 
