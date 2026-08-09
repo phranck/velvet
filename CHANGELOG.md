@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 1.5.1 (2026-08-09)
+
+### Fixed
+
+Every control on every Velvet surface now shows the hand when you point at it. Links already did. What did not were the controls that are neither a link nor a button: the checkboxes and radios in the Configurator's theme panel, the labels that carry them, and the field the onboarding takes your logo through. All of them drew the arrow, which reads as something you cannot press.
+
+A control you genuinely cannot press still draws the arrow. The onboarding's steps stay that way until you reach them.
+
 ## Version 1.5.0 (2026-08-09)
 
 ### Added
