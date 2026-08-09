@@ -522,6 +522,45 @@ export function mountStatusPage(
   }
 
   /**
+   * Where the mark has to end up once the row has settled.
+   *
+   * Measured on a copy of the row rather than on the row itself. A theme may
+   * set the chosen label larger than the others, and that size is on a
+   * transition, so the row read during a change reports the geometry it is
+   * passing through rather than the one it is going to. The copy carries no
+   * transition and has never been in any other state, so it reports the
+   * destination.
+   *
+   * @param key - The range that is about to be chosen.
+   * @returns Its offset and width inside the row, or null when the row is not
+   *   laid out yet.
+   */
+  function chosenRangeBox(key: RangeKey): { left: number; width: number } | null {
+    const index = RANGES.findIndex((entry) => entry.key === key);
+    if (index < 0) return null;
+    const copy = rangeButtons.cloneNode(true) as HTMLElement;
+    // Laid over the row it copies, so an offset inside it is an offset inside
+    // the row.
+    copy.style.position = "absolute";
+    copy.style.insetInline = "0";
+    copy.style.insetBlockStart = "0";
+    copy.style.visibility = "hidden";
+    copy.style.pointerEvents = "none";
+    const buttons = [...copy.querySelectorAll("button")];
+    for (const [at, button] of buttons.entries()) {
+      button.style.transition = "none";
+      button.setAttribute("aria-pressed", String(at === index));
+    }
+    rangeButtons.append(copy);
+    const chosen = buttons[index];
+    const box = chosen
+      ? { left: chosen.offsetLeft, width: chosen.offsetWidth }
+      : null;
+    copy.remove();
+    return box;
+  }
+
+  /**
    * Puts the mark under the selected range.
    *
    * Measured rather than calculated from the labels, because the buttons are
@@ -531,14 +570,13 @@ export function mountStatusPage(
    *   in from the left edge when the page opens.
    */
   function placeRangeMark(animate: boolean): void {
-    const button = rangeControls.get(range);
-    if (!button) return;
     const track = rangeButtons.getBoundingClientRect();
-    const box = button.getBoundingClientRect();
     if (track.width === 0) return;
+    const box = chosenRangeBox(range);
+    if (!box) return;
     rangeMark.style.transition = animate ? "" : "none";
     rangeMark.style.width = `${box.width}px`;
-    rangeMark.style.transform = `translateX(${box.left - track.left}px)`;
+    rangeMark.style.transform = `translateX(${box.left}px)`;
     if (!animate) {
       // Forces the browser to take the un-animated position before the
       // transition is handed back, so the next change animates from here.

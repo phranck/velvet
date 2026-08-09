@@ -801,10 +801,18 @@ body::after {
   pointer-events: none;
 }
 
+/*
+  Tracking is added after the last letter as well as between them, so a centred
+  label carries half a step of empty space on its right and its glyphs sit that
+  far left of the box they are centred in. Indenting by half a step puts them
+  back. Measured at 2.2px of tracking: the box centre and the ink centre both
+  read 975.06, whilst the letters ended 1.1px before it.
+*/
 .range-button {
   font-family: var(--control-font);
   font-weight: var(--control-weight);
   letter-spacing: var(--control-tracking);
+  text-indent: calc(var(--control-tracking) / 2);
   text-transform: var(--control-transform);
   padding: var(--control-padding-block) var(--control-padding-inline);
   border: var(--control-border-width) var(--rule-style) var(--control-idle-edge);
@@ -813,7 +821,6 @@ body::after {
   color: var(--range-button-colour);
   font-size: var(--text-size-control);
   cursor: pointer;
-  transition: color var(--motion-hover), background var(--motion-hover);
 }
 
 /* Not the chosen one. It already carries the mark, and a neutral hover tint
@@ -827,9 +834,25 @@ body::after {
   position: relative;
 }
 
-/* The chosen range may be set larger than the others. Where a design cuts it
-   through the bar rather than marking it with a fill, size is what says which
-   one is chosen. */
+/*
+  The chosen range may be set larger than the others, and where a design cuts it
+  through the bar rather than laying a filled pill under it, size is most of
+  what says which one is chosen.
+
+  It is a real size rather than a `transform`, and that is deliberate. Scaling
+  leaves every label occupying the space of its largest form, which spreads the
+  row out and leaves gaps that belong to nothing. The size therefore changes on
+  two elements at a time, which `web-app-ui.md` allows where it is spent
+  deliberately, and the mark is given its destination rather than reading it
+  mid-flight.
+*/
+.range-button {
+  transition:
+    color var(--motion-hover),
+    background var(--motion-hover),
+    font-size var(--motion-range) var(--motion-ease);
+}
+
 .range-button[aria-pressed="true"] {
   color: var(--control-active-text);
   font-size: var(--text-size-control-active);
