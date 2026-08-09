@@ -48,7 +48,6 @@
     border: 0;
     background: none;
     color: inherit;
-    cursor: pointer;
     font: inherit;
   }
   .summary:focus-visible {

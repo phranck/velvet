@@ -362,7 +362,6 @@
     border-radius: 6px;
     background: none;
     color: var(--text-faint);
-    cursor: pointer;
     font: inherit;
     font-size: 13.5px;
   }
@@ -380,7 +379,6 @@
     border-radius: 6px;
     background: none;
     color: var(--text-faint);
-    cursor: pointer;
     font-size: 18px;
     line-height: 1;
     transition:
