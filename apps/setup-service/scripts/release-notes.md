@@ -1,10 +1,8 @@
-# Velvet 1.5.1
+# Velvet 1.5.2
 
 ## Fixed
 
-Every control on your page and in Velvet's own tools shows the hand when you point at it. Links already did; the checkboxes, the choices and the file field did not, and drew the arrow instead, which reads as something you cannot press.
-
-A control you genuinely cannot press still draws the arrow, which is what it should say.
+The hand over links and controls no longer depends on one selector every browser has to understand.
 
 ## What stays yours
 
