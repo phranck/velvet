@@ -77,7 +77,6 @@ export const PREVIEW_CONFIG: VelvetConfig = {
   dataBaseUrl: "",
   name: "Velvet Preview",
   logoHeight: 72,
-  showPoweredBy: true,
   /**
    * A stand-in, because the preview has no installation behind it.
    *

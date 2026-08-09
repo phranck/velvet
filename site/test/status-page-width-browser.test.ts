@@ -102,7 +102,6 @@ test(
               dataBaseUrl: "https://example.invalid/velvet-data/v1",
               name: "Example",
               logoHeight: 72,
-              showPoweredBy: true,
               navbar: [],
               layout: "grouped",
               defaultRange: "month",

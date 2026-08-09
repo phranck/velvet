@@ -102,7 +102,6 @@ status-website:
   name: Example Status
   velvet:
     layout: cards
-    showPoweredBy: false
     accent: "#123456"
     accentDeg: "#abcdef"
     accentDown: "#fedcba"
@@ -156,7 +155,6 @@ status-website:
   assert.equal(statusWebsite.name, "Example Status");
   const velvet = statusWebsite.velvet as Record<string, unknown>;
   assert.equal(velvet.layout, "grouped");
-  assert.equal(velvet.showPoweredBy, false);
   assert.deepEqual(velvet.icons, { website: "ph-globe" });
   assert.equal("accentDeg" in velvet, false);
   assert.equal(
