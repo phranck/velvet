@@ -104,13 +104,29 @@
 
 /* States the hand rather than leaving it to the engine, which is where the two
    disagree: Chromium's own stylesheet gives a link `pointer` and WebKit's gives
-   it `auto`, so an unstated link draws the arrow in Safari. Matched on `href`
-   because an anchor without one is a target rather than something to press.
+   it `auto`, so an unstated control draws the arrow in Safari.
 
    Here rather than in one surface's own stylesheet, because every Velvet
-   surface loads this file and the arrow turned up on all of them. It was fixed
-   for the status page as #397 and stayed broken on velvet.li, the Configurator
-   and the onboarding, which is what one rule in one place prevents. */
-a[href] {
+   surface loads this file, and every kind of control rather than only a link,
+   because a control this rule does not name is one that depends on somebody
+   having declared the cursor beside it.
+
+   An anchor is matched on `href`, since one without it is a target rather than
+   something to press. A disabled control keeps the arrow, which is what
+   disabled means. A label is named only where it carries a checkbox or a radio,
+   because pressing one of those is what that label does; a label in front of a
+   text field puts the caret in the field, and the arrow belongs there. */
+a[href],
+summary,
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+input:is(
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="color"],
+    [type="file"]
+  ):not(:disabled),
+label:has(input:is([type="checkbox"], [type="radio"]):not(:disabled)) {
   cursor: pointer;
 }
