@@ -95,9 +95,10 @@ function readChips(nodes: Element[]) {
 /**
  * Reads the card and its preview back as numbers.
  *
- * The preview runs the full width of the card's content box, so it takes the
- * inner radius rather than the outer one. A wrong radius there looks almost
- * right, which is why this is measured instead of looked at.
+ * The preview reaches the card's own edge, and the corner it meets there is cut
+ * by the card body's squircle path rather than drawn by a border radius. A
+ * wrong shape looks almost right, which is why this is measured instead of
+ * looked at.
  */
 function readGeometry() {
   const card = document.querySelector("[data-reference-list] li > *");
@@ -107,9 +108,12 @@ function readGeometry() {
   const padding = Number.parseFloat(style.padding);
   const name = document.querySelector("[data-reference-entry] .reference-name");
   const frame = document.querySelector("[data-reference-entry] .preview-frame");
+  const body = document.querySelector(
+    "[data-reference-entry] .reference-card-body",
+  );
   return {
     frameWidth: frame ? Math.round(frame.getBoundingClientRect().width) : 0,
-    frameRadius: frame ? getComputedStyle(frame).borderRadius : "",
+    bodyClip: body ? getComputedStyle(body).clipPath : "",
     cardWidth: Math.round(card.getBoundingClientRect().width),
     imageWidth: Math.round(image.getBoundingClientRect().width),
     contentWidth: Math.round(card.getBoundingClientRect().width - 2 * padding),
@@ -242,22 +246,50 @@ test("shows each installation as its own page, and leaves out one that has gone"
 
     assert.ok(geometry);
     // The preview reaches the card's own edge rather than sitting inside its
-    // padding, so it is wider than the content box and forms the top corners
-    // itself. Square where the details meet it.
+    // padding, so it is as wide as the card and is cut by the corner rather
+    // than stopping short of it.
     assert.equal(geometry.frameWidth, geometry.cardWidth);
-    assert.match(geometry.frameRadius, /^28px 28px 0px 0px$/u);
+    // What forms that corner is the card body's squircle path, built from the
+    // card's own measured size. A border radius here would be the rounded
+    // corner the squircle replaced, and the two part company most visibly at
+    // exactly this edge.
+    //
+    // The shape is drawn as a closed polyline of 64 segments rather than with
+    // curve commands, so what proves it is a squircle rather than a rectangle
+    // is how many points it has: four would be a box.
+    assert.match(geometry.bodyClip, /^path\(/u);
+    assert.ok(
+      (geometry.bodyClip.match(/L/gu) ?? []).length > 32,
+      `the card body is clipped to ${geometry.bodyClip.slice(0, 80)}`,
+    );
     // One entry occupies one cell of the grid rather than a row the width of
     // the page, which is what a full-width row got wrong.
     assert.ok(
       geometry.cardWidth < 700,
       `a single entry spans ${geometry.cardWidth}px of the measure`,
     );
-    // Two layers, because one wide shadow dissolves into the board backdrop
-    // these pages sit on and leaves the card looking pasted flat.
+    // At rest the card casts nothing, because what draws its edge is the
+    // squircle outline rather than a shadow under a rounded box.
     assert.equal(
       (geometry.shadow.match(/rgba?\(/gu) ?? []).length,
+      0,
+      `the card carries ${geometry.shadow} before anybody points at it`,
+    );
+    // Pointing at one lifts it, and that lift is two layers: one wide shadow
+    // dissolves into the board backdrop these pages sit on and leaves the card
+    // looking pasted flat, so the near layer draws its edge and the far one
+    // carries the height.
+    await page.hover("[data-reference-entry]");
+    const raised = await page.evaluate(() => {
+      const body = document.querySelector(
+        "[data-reference-entry] .reference-card-body",
+      );
+      return body ? getComputedStyle(body).boxShadow : "";
+    });
+    assert.equal(
+      (raised.match(/rgba?\(/gu) ?? []).length,
       2,
-      `the card carries ${geometry.shadow}`,
+      `a pointed-at card carries ${raised}`,
     );
     // The condensed face, as the site sets every name that titles something.
     assert.match(geometry.nameFont, /Barlow Condensed/u);
