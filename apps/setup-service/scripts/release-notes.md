@@ -1,12 +1,14 @@
-# Velvet 1.4.2
+# Velvet 1.5.0
+
+## Added
+
+Your status page now says where it is configured. A line at the foot names `setup.velvet.li/configurator`, worded so a visitor reads past it whilst you recognise the address. Until now the page carried one outbound link, to Velvet's repository, and there was no way back to your own configuration from the page itself.
 
 ## Changed
 
-Your status page says "all systems operational" in Velvet's own mark now: a tick inside the rounded square the product is built from, drawn in the status colour, in place of the borrowed circle it used until now.
+The Powered by Velvet credit is no longer a setting. `showPoweredBy` is gone, and a `velvet.yml` naming it is refused rather than quietly ignored, so if you have that line, remove it. A status page is Velvet's work as much as yours, and whether the product says its own name is not something an installation decides.
 
-The social card your page publishes shows the same mark, from the same drawing, so a link preview and the page it points at cannot disagree about the state they are showing.
-
-Nothing else about your page changes, and nothing you own is touched.
+Nothing else about your page changes.
 
 ## What stays yours
 
