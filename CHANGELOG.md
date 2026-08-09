@@ -1,5 +1,19 @@
 # Changelog
 
+## Version 1.5.0 (2026-08-09)
+
+### Added
+
+Every status page now says where it is configured. A line at the foot names `setup.velvet.li/configurator`, worded in the third person so a visitor reads past it and the operator recognises the address. Until now a published page carried one outbound link, to Velvet's repository, and somebody who had set their page up weeks earlier had no way back to it from the page itself.
+
+The README a new installation is given says the same thing, and says what the Configurator does with `velvet.yml`. That file is written once, at setup, and no update ever touches it, so it reaches whoever opens the repository and nobody else.
+
+The setup service can forward an alarm to Pushover for an installation, at `POST /api/notify`. Nothing sends one yet, because subscribing is its own piece of work. What is in place is the part that has to be right before anything can: GitHub proves which repository is calling, a grant Velvet signed proves the recipient belongs to that repository, and the two have to name the same repository. So nobody can ever be sent an alarm about a status page that is not theirs.
+
+### Changed
+
+The Powered by Velvet credit is no longer something a configuration can switch off. `showPoweredBy` is gone, and a `velvet.yml` naming it is refused rather than quietly ignored. A status page is Velvet's work as much as its operator's, and whether the product says its own name is not an installation's decision.
+
 ## Version 1.4.2 (2026-08-08)
 
 ### Changed

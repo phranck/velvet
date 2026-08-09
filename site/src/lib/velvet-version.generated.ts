@@ -8,4 +8,4 @@
  * config, because five separate builds share the header that shows it and
  * stating it five times is the drift `sync-version.mjs` exists to prevent.
  */
-export const VELVET_VERSION = "1.4.2";
+export const VELVET_VERSION = "1.5.0";
