@@ -562,7 +562,6 @@ function normalizeConfiguration(
         layout: statusPage.layout ?? "grouped",
         defaultRange: statusPage.defaultRange ?? "30d",
         logoHeight: statusPage.logoHeight ?? 72,
-        showPoweredBy: statusPage.showPoweredBy ?? true,
         navigation: (statusPage.navigation ?? []).map((entry) => ({ ...entry })),
         icons: { ...(statusPage.icons ?? {}) },
         ...(statusPage.customDomain
