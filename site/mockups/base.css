@@ -267,7 +267,7 @@ body::after {
   justify-content: var(--hero-align);
   justify-items: var(--hero-align);
   align-items: center;
-  gap: var(--space-tight) var(--space-row);
+  gap: var(--hero-gap);
   /* Two longhands rather than one shorthand, so a theme may set the block edges
      apart. One does: its hero ends flush against the block below it, because
      the two together are one shape. */
@@ -341,7 +341,7 @@ body::after {
   /*
     Where a design sets a bar beside the headline, the two have to meet at the
     same top and bottom edge, and a line box does not end where the letters do:
-    at 44px this face leaves 3.5px of leading above the capitals and below the
+    at 34px this face leaves 7px of leading above the capitals and below the
     baseline. Trimming to the cap height and the baseline makes the box the
     letters themselves, so a bar stretched to the same row matches them.
 
@@ -358,6 +358,14 @@ body::after {
   font-family: var(--font-meta);
   font-size: var(--text-size-caption);
   font-style: var(--meta-style);
+  /*
+    Trimmed with the headline, because a design may set the two as one block
+    inside a bar. It trims to the text edge below rather than to the baseline:
+    this line carries descenders, and a box ending at the baseline leaves them
+    hanging over whatever comes next. Measured before this: 2.6px of "p" and
+    comma across the first notice.
+  */
+  text-box: var(--hero-updated-trim);
 }
 
 /*
@@ -375,12 +383,18 @@ body::after {
   the headline exactly as tall as the headline's own box, which is what puts
   their edges on its edges.
 */
+/*
+  The column's margin is how it reaches past the hero's own bottom padding. A
+  design that runs it on into whatever follows needs that padding for the space
+  under the words, and the column has to cross it rather than stop at it.
+*/
 .status-hero::before {
   content: "";
   grid-area: rail;
   display: var(--hero-rail-display);
   align-self: stretch;
   justify-self: stretch;
+  margin: var(--hero-rail-margin);
   border-radius: var(--hero-rail-radius);
   background: var(--hero-rail-fill);
 }

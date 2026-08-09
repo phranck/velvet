@@ -24,7 +24,7 @@
  * The faces are fetched here rather than self-hosted; see `cassette.css`.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Antonio:wght@400;600;700&family=Jura:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Big+Shoulders:opsz,wght@10..72,400..900&family=Jura:wght@400;500;600;700&display=swap");
 
 :root {
   /* ── Identity ─────────────────────────────────────────────────────────── */
@@ -79,23 +79,27 @@
 
   /* ── Typography ───────────────────────────────────────────────────────── */
   /*
-    Antonio, which is what thelcars.com itself uses.
+    Big Shoulders, under the SIL Open Font License.
 
     The original is Helvetica Ultra Compressed, with Letraset Compacta beside
-    it, and neither is free. thelcars.com/fonts.php names Antonio as its
-    current substitute, self-hosted rather than fetched, and says it "closely
-    matched the LCARS style". It carries the display type and the figures here,
-    because every label and every reading on these panels is condensed.
+    it, and neither is free. Okuda, the fan face cut from the same lettering,
+    is licensed for personal use only, so a theme that ships to other people's
+    installations cannot carry it.
 
-    Jura stays for anything read as a sentence. Antonio at paragraph length is
-    a wall, and the incident summaries are prose.
+    This one is narrower than Antonio, which is what thelcars.com substitutes,
+    and it runs to weight 900 where Antonio stops at 700. Both matter on these
+    panels: every label and every reading is condensed, and the names in the
+    column are set as heavy as the face allows.
+
+    Jura stays for anything read as a sentence. A compressed face at paragraph
+    length is a wall, and the incident summaries are prose.
   */
-  --font-display: "Antonio", "Arial Narrow", sans-serif;
+  --font-display: "Big Shoulders", "Arial Narrow", sans-serif;
   --font-body: "Jura", ui-sans-serif, system-ui, sans-serif;
-  --font-meta: "Antonio", "Arial Narrow", sans-serif;
+  --font-meta: "Big Shoulders", "Arial Narrow", sans-serif;
   --display-transform: uppercase;
   --display-tracking: 0.06em;
-  --display-weight: 600;
+  --display-weight: 700;
   --label-transform: uppercase;
   --label-tracking: 0.18em;
   --meta-style: normal;
@@ -114,12 +118,14 @@
     It shares its row with the column, the bar and the cap, and it sets their
     height, so its size is the depth of the upper arm.
 
-    This face puts its capitals at 0.9 of the size, so 56px gives a 50px arm
-    against the lower arm's 44px, which is the difference that reads as the
-    upper one carrying something. It gives way on a narrow window rather than
-    wrapping into a block three lines deep.
+    The headline and the time stand one above the other inside the bar, and
+    together they are the upper arm's depth. This face puts its capitals at 0.8
+    of the size, so a 34px headline gives 27.2px of capitals, and with a 5px
+    gap and the 13.4px line of time under it the arm is 45.6px deep against the
+    lower arm's 44px. It gives way on a narrow
+    window rather than wrapping into a block three lines deep.
   */
-  --text-size-headline: clamp(28px, 4.1vw, 52px);
+  --text-size-headline: clamp(24px, 2.7vw, 34px);
   --text-size-service-icon: 22px;
   --text-size-ornament: 22px;
   --text-size-chart-label: 12px;
@@ -288,7 +294,7 @@
   --nav-padding-inline: 0px;
   /* Nothing below, because the hero's column runs on into the notices without
      a break. The two are one limb. */
-  --hero-padding-block: 30px 0;
+  --hero-padding-block: 30px 12px;
   --hero-padding-inline: 0px;
   --control-padding-block: 4px;
   /* Zero, so the expand control's glyph lands on the same vertical as the
@@ -383,10 +389,12 @@
     The upper arm is deeper than the lower one because it has to hold the
     headline. The lower one holds nothing and is the plain depth of an arm.
 
-    The time sits in the second row of the headline's own column, so it ends
-    where the headline ends rather than at the page edge.
+    The time sits under the headline, inside the same bar, and ends where the
+    headline ends. Both rows are the headline's own column, so the column, the
+    bar and the cap all span the pair and the arm is as deep as the two lines
+    together.
   */
-  --hero-areas: "rail bar title arm" "rail . updated .";
+  --hero-areas: "rail bar title arm" "rail bar updated arm";
   /*
     The bar takes what the headline leaves, but never less than its floor. A
     plain `1fr` beside a content-width headline is nothing at all once the
@@ -399,6 +407,9 @@
   --hero-rail-display: block;
   --hero-rail-fill: var(--status-colour);
   --hero-rail-radius: var(--lcars-outer-radius) 0 0 0;
+  /* Across the bottom padding, which is the air under the words rather
+     than a break in the column. */
+  --hero-rail-margin: 0 0 -12px 0;
   --hero-bar-display: block;
   --hero-bar-fill: var(--status-colour);
   --hero-bar-radius: 0px;
@@ -409,6 +420,12 @@
   /* Trimmed to the capitals, so the blocks either side stand on the same top
      and bottom edge as the letters. */
   --hero-title-trim: trim-both cap alphabetic;
+  /* To the text edge below rather than the baseline, so the descenders in
+     the date are inside the bar rather than hanging under it. */
+  --hero-updated-trim: trim-both cap text;
+  /* Tighter than the page's own, because this gap is part of the arm's
+     depth rather than space between two blocks. */
+  --hero-gap: 5px var(--space-row);
   --hero-arm-display: block;
   --hero-arm-fill: var(--status-colour);
   /* No floor. The headline is what decides the row's height, and every block
@@ -494,7 +511,7 @@
   --service-columns: var(--lcars-rail-width) 1fr;
   --service-rail-display: flex;
   --service-rail-justify: flex-end;
-  --service-rail-weight: 700;
+  --service-rail-weight: 900;
   --control-font: var(--font-display);
   --control-weight: 700;
   --control-tracking: 0.1em;

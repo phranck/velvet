@@ -283,7 +283,10 @@
   --hero-bar-display: none;
   --hero-bar-fill: transparent;
   --hero-bar-radius: 0px;
+  --hero-gap: var(--space-tight) var(--space-row);
   --hero-title-trim: normal;
+  --hero-updated-trim: normal;
+  --hero-rail-margin: 0px;
   --hero-rail-display: none;
   --hero-rail-fill: transparent;
   --hero-rail-radius: 0px;
