@@ -451,6 +451,11 @@
   --range-label-colour: rgb(0 0 0 / 0.62);
   --range-button-colour: #000000;
   --range-button-hover-colour: #000000;
+  /* The chosen range is a gap cut through the arm rather than a pill on it,
+     so the mark is square and as tall as the arm itself. */
+  --range-align: stretch;
+  --range-mark-radius: 0px;
+  --text-size-control: 16px;
   --range-bar-height: var(--lcars-arm-depth);
   --range-bar-space: calc(var(--range-bar-stem-height) + var(--service-gap));
   --range-bar-padding: 0 0 0 clamp(10px, 3vw, 20px);

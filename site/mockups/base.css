@@ -771,19 +771,28 @@ body::after {
   position: relative;
   display: flex;
   flex: 1;
+  align-self: var(--range-align);
+  align-items: center;
   justify-content: var(--range-justify);
   gap: var(--space-hair);
 }
 
-/* The travelling mark. `transform` and `width` only, so nothing around it is
-   laid out again, and it sits behind the labels rather than over them. */
+/*
+  The travelling mark. `transform` and `width` only, so nothing around it is
+  laid out again, and it sits behind the labels rather than over them.
+
+  It carries a radius of its own rather than the general control radius. In
+  most designs it is a capsule under the chosen label; in one it is square and
+  as tall as the bar it sits in, so the chosen range reads as a gap cut through
+  the bar rather than as a button laid on top of it.
+*/
 .range-mark {
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;
   border: var(--control-border-width) var(--rule-style)
     var(--control-active-edge);
-  border-radius: var(--control-radius);
+  border-radius: var(--range-mark-radius);
   background: var(--control-active-fill);
   box-shadow: var(--control-active-glow);
   transition:
@@ -802,7 +811,7 @@ body::after {
   border-radius: var(--control-radius);
   background: none;
   color: var(--range-button-colour);
-  font-size: var(--text-size-caption);
+  font-size: var(--text-size-control);
   cursor: pointer;
   transition: color var(--motion-hover), background var(--motion-hover);
 }
