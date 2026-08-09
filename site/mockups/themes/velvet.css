@@ -307,6 +307,7 @@
   --range-button-hover-colour: var(--text-1);
   --range-align: center;
   --range-mark-radius: var(--control-radius);
+  --control-min-width: auto;
   --text-size-control: var(--text-size-caption);
   --text-size-control-active: var(--text-size-caption);
   --range-bar-height: auto;

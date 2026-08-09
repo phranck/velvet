@@ -815,6 +815,13 @@ body::after {
   text-indent: calc(var(--control-tracking) / 2);
   text-transform: var(--control-transform);
   padding: var(--control-padding-block) var(--control-padding-inline);
+  /*
+    A floor under every label's width, so a design that sets the chosen one
+    larger does not push its neighbours aside when the choice moves. Wide
+    enough for the longest label at its chosen size, every segment is then the
+    same width and only the mark travels.
+  */
+  min-width: var(--control-min-width);
   border: var(--control-border-width) var(--rule-style) var(--control-idle-edge);
   border-radius: var(--control-radius);
   background: none;
