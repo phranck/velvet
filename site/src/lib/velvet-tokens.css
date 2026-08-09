@@ -118,15 +118,26 @@
    text field puts the caret in the field, and the arrow belongs there. */
 a[href],
 summary,
-button:not(:disabled),
-[role="button"]:not([aria-disabled="true"]),
-input:is(
-    [type="checkbox"],
-    [type="radio"],
-    [type="range"],
-    [type="color"],
-    [type="file"]
-  ):not(:disabled),
-label:has(input:is([type="checkbox"], [type="radio"]):not(:disabled)) {
+button,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+input[type="color"],
+input[type="file"] {
   cursor: pointer;
+}
+
+/* Its own rule, never in the list above. One unparsable selector discards the
+   whole list it stands in, so `:has()` sharing a list with `a[href]` would take
+   links down with it wherever it is not understood. */
+label:has(input[type="checkbox"]),
+label:has(input[type="radio"]) {
+  cursor: pointer;
+}
+
+/* After the two above, so it wins. A control that cannot be pressed says so. */
+:disabled,
+[aria-disabled="true"] {
+  cursor: default;
 }
