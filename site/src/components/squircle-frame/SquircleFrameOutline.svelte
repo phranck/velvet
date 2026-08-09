@@ -22,12 +22,17 @@
    * Colour comes from `currentColor`, so whoever places this decides it and can
    * change it on hover or on selection without this knowing about either.
    *
-   * @param width - The width the frame spans, in pixels.
-   * @param height - The height it spans. The caller measures its own element
-   *   and passes both, because the path is computed at the size it is drawn at
-   *   rather than scaled by the browser, which is what keeps the stroke even.
-   *   Keep the two within reach of each other: the further a squircle is from
-   *   square, the more it reads as a capsule.
+   * @param width - The width the frame spans, in pixels. Optional: a caller
+   *   that cannot measure its element leaves both out and gets the normalised
+   *   frame instead, which is drawn in a square and stretched to whatever box
+   *   it is placed in, with the two lines held to the widths declared here. A
+   *   page that ships prerendered and loads no script has nothing to measure
+   *   with, so that is the form it takes.
+   * @param height - The height it spans. Given together with the width, the
+   *   path is computed at the size it is drawn at rather than scaled by the
+   *   browser, which is what keeps the stroke even. Keep the two within reach of
+   *   each other: the further a squircle is from square, the more it reads as a
+   *   capsule.
    * @param filled - Whether the shape carries an opaque fill in its own outline.
    *   A surface over artwork needs one, since the shape is not a background the
    *   element itself can hold.
@@ -36,20 +41,27 @@
     width,
     height,
     filled = false,
-  }: { width: number; height: number; filled?: boolean } = $props();
+  }: { width?: number; height?: number; filled?: boolean } = $props();
 
+  /** The square the normalised frame is drawn in before it is stretched. */
+  const NORMALISED_SIDE = 100;
+  const measured = $derived(width !== undefined && height !== undefined);
+  const boxWidth = $derived(measured ? width! : NORMALISED_SIDE);
+  const boxHeight = $derived(measured ? height! : NORMALISED_SIDE);
   const outerPath = $derived(
-    createSquircleRectPath(width, height, SQUIRCLE_OUTER_PATH_INSET),
+    createSquircleRectPath(boxWidth, boxHeight, SQUIRCLE_OUTER_PATH_INSET),
   );
   const innerPath = $derived(
-    createSquircleRectPath(width, height, SQUIRCLE_INNER_PATH_INSET),
+    createSquircleRectPath(boxWidth, boxHeight, SQUIRCLE_INNER_PATH_INSET),
   );
 </script>
 
 <svg
   class="outline"
   data-squircle-frame
-  viewBox={`0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`}
+  data-squircle-normalised={measured ? undefined : ""}
+  viewBox={`0 0 ${Math.max(boxWidth, 1)} ${Math.max(boxHeight, 1)}`}
+  preserveAspectRatio={measured ? undefined : "none"}
   aria-hidden="true"
   {...{ "pointer-events": "none" }}
 >
@@ -62,6 +74,7 @@
     stroke="currentColor"
     stroke-width={SQUIRCLE_OUTER_STROKE_WIDTH}
     stroke-linejoin="round"
+    vector-effect={measured ? undefined : "non-scaling-stroke"}
   ></path>
   <path
     d={innerPath}
@@ -69,6 +82,7 @@
     stroke="currentColor"
     stroke-width={SQUIRCLE_INNER_STROKE_WIDTH}
     stroke-linejoin="round"
+    vector-effect={measured ? undefined : "non-scaling-stroke"}
   ></path>
 </svg>
 

@@ -4,6 +4,7 @@
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
+  import * as SquircleCard from "../components/squircle-card";
   import * as StepCard from "../components/step-card";
   import {
     STEP_CARD_CONTENT_INSET,
@@ -202,8 +203,7 @@
     </section>
 
     <section class="column" aria-labelledby="capabilities-title">
-      <StepCard.Root>
-        <div class="card-inset">
+      <div class="card-inset">
           <div class="velvet-section-heading">
             <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
@@ -218,21 +218,25 @@
           <ul class="capabilities">
             {#each CAPABILITIES as capability (capability.title)}
               <li>
-                <Icon name={capability.icon} />
-                <div>
-                  <h3>{capability.title}</h3>
-                  <p>{capability.description}</p>
-                </div>
+                <SquircleCard.Root>
+                  <SquircleCard.Body>
+                    <div class="entry">
+                      <Icon name={capability.icon} />
+                      <div>
+                        <h3>{capability.title}</h3>
+                        <p>{capability.description}</p>
+                      </div>
+                    </div>
+                  </SquircleCard.Body>
+                </SquircleCard.Root>
               </li>
             {/each}
           </ul>
-        </div>
-      </StepCard.Root>
+      </div>
     </section>
 
     <section class="column" aria-labelledby="pipeline-title">
-      <StepCard.Root>
-        <div class="card-inset">
+      <div class="card-inset">
           <div class="velvet-section-heading">
             <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
@@ -247,23 +251,27 @@
           <ol class="pipeline">
             {#each PIPELINE as stage, index (stage.title)}
               <li>
-                <span class="pipeline-number" aria-hidden="true">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <h3>{stage.title}</h3>
-                  <p>{stage.description}</p>
-                </div>
+                <SquircleCard.Root>
+                  <SquircleCard.Body>
+                    <div class="entry">
+                      <span class="pipeline-number" aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <h3>{stage.title}</h3>
+                        <p>{stage.description}</p>
+                      </div>
+                    </div>
+                  </SquircleCard.Body>
+                </SquircleCard.Root>
               </li>
             {/each}
           </ol>
-        </div>
-      </StepCard.Root>
+      </div>
     </section>
 
     <section class="column" aria-labelledby="themes-title">
-      <StepCard.Root>
-        <div class="card-inset">
+      <div class="card-inset">
           <div class="velvet-section-heading">
             <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
@@ -306,8 +314,7 @@
               </li>
             {/each}
           </ul>
-        </div>
-      </StepCard.Root>
+      </div>
     </section>
 
     <section class="column" aria-labelledby="manual-title">
@@ -552,14 +559,46 @@
     padding: 0;
     list-style: none;
   }
+  /* Three across rather than two, so each card is nearer square. A squircle far
+     from square reads as a capsule, and these are the shortest cards on the
+     page. Narrower cards need a wider share of themselves kept clear, because
+     the icon sits at the left where the curve has already begun to pull in. */
+  .capabilities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /*
+    A card inside a card. It lifts itself off the one behind it with the raised
+    surface, and takes a smaller safe inset than the outer card because it is
+    wide and shallow: the curve pulls in hardest towards the corners, and on a
+    box far from square the vertical share of a percentage inset is already
+    generous. The minimum height keeps it from flattening into a capsule, which
+    is what a squircle becomes when its box is.
+  */
   .capabilities li,
   .pipeline li {
+    /* Lifted off the card behind it, and translucent to the same degree, so the
+       board shows through both rather than through one of them. */
+    --squircle-card-surface: color-mix(
+      in srgb,
+      var(--velvet-surface-raised) 74%,
+      transparent
+    );
+    /* Turned down, because a card inside another does not need to cast as far
+       as the one it sits in. */
+    --squircle-card-shadow-strength: 0.16;
+    --squircle-card-safe-inset: 7.5%;
+    display: grid;
+    min-height: 14rem;
+  }
+  /* The narrower of the two, and its icon sits at the left where the curve has
+     already begun to pull in, so it keeps a wider share of itself clear. */
+  .capabilities li {
+    --squircle-card-safe-inset: 10.5%;
+  }
+  .entry {
     display: flex;
     align-items: start;
     gap: 0.85rem;
-    padding: 1rem;
-    border-radius: var(--step-card-inner-radius);
-    background: var(--velvet-rule);
   }
   .capabilities :global(svg) {
     color: var(--setup-accent);
@@ -580,11 +619,19 @@
     font-size: var(--setup-text-body);
     font-weight: 650;
   }
+  /* One step up the scale from the text beneath it, so the title of a card
+     leads rather than merely starting the paragraph. */
+  .capabilities h3,
+  .pipeline h3 {
+    font-size: var(--velvet-text-copy);
+  }
+  /* A step up from the site's small text, because these paragraphs carry the
+     substance of both sections rather than annotating something else. */
   .capabilities p,
   .pipeline p {
     margin: 0;
     color: var(--setup-muted);
-    font-size: var(--setup-text-small);
+    font-size: var(--velvet-text-body);
     line-height: 1.5;
   }
   /* Two across, because a status page in a quarter of this card is too small

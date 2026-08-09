@@ -237,6 +237,7 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // read its insets from `lib/squircle`, so the geometry is stated once even
   // where the markup is not.
   "squircle-frame": ["configurator", "references", "status page", "website"],
+  "squircle-card": ["website"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],
   "service-icon-picker": ["configurator", "onboarding"],
