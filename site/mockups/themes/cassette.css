@@ -1,0 +1,372 @@
+/**
+ * Cassette, 1979.
+ *
+ * Not a terminal with an amber accent. A cassette, and the deck it sits in.
+ *
+ * The design is built from what the object actually has, and each of these is
+ * a real element on the page rather than an allusion:
+ *
+ *   - The shell. A warm charcoal, the colour of moulded ABS that has aged for
+ *     forty years, with a fine moulding grain across it.
+ *   - The label. Every service name sits on a cream write-on panel with a
+ *     ruled line under it, which is what the name field on a cassette is.
+ *   - The two hubs. A pair of toothed rings at the top of the panel, drawn as
+ *     the ornament, exactly where the reels sit behind the window.
+ *   - The tape. The availability strip is oxide brown, in four stacked lamps,
+ *     which is both the tape's own colour and the way a deck's meter reads.
+ *   - The type plate. Labels are set the way a cassette prints its
+ *     specification: small capitals, widely tracked, in one weight.
+ *
+ * The palette is the object's, not a screen's: shell charcoal, label cream,
+ * oxide brown, and the amber of a deck's indicator lamp. The green is the one
+ * borrowed thing, and it is borrowed from the same deck's record lamp.
+ *
+ * The faces are fetched here rather than self-hosted, which is the one respect
+ * in which a mockup differs from a theme that would ship. A published status
+ * page must not wait on a font host to report on its own availability.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap");
+
+:root {
+  /* ── Identity ─────────────────────────────────────────────────────────── */
+  --theme-name: "Cassette Futurism";
+  --theme-era: "1979";
+  --theme-scheme: dark;
+
+  /* ── Surface ──────────────────────────────────────────────────────────── */
+  --surface-base: #191714;
+  --surface-sunken: #100f0c;
+  --surface-card: #14120f;
+  --surface-rule: #3b342a;
+  --surface-popover: #0d0b09;
+
+  /* ── Text ─────────────────────────────────────────────────────────────── */
+  --text-1: #e6dcc4;
+  --text-2: #a89a7c;
+  --text-3: #7d735c;
+  --popover-text: #e6dcc4;
+  --popover-text-muted: #a89a7c;
+  --popover-edge: #e8a33d;
+
+  /* ── Brand and accent ─────────────────────────────────────────────────── */
+  --brand-primary: #e8a33d;
+  --accent: #e8a33d;
+  --accent-quiet: rgb(232 163 61 / 0.16);
+
+  /* ── State ────────────────────────────────────────────────────────────── */
+  /* Olive for a working system, amber for a slow one, and a red that leaves
+     the amber family entirely so a failure cannot be read as a warning. */
+  --state-operational: #8fae5a;
+  --state-degraded: #d99a2e;
+  --state-outage: #c9463f;
+  --state-no-data: #3d2c1d;
+  --state-maintenance: #6f8794;
+  --state-maintenance-edge: #9fb4c0;
+  --state-ghost-edge: #8d8770;
+  --protocol-ipv4: #e8a33d;
+  --protocol-ipv6: #8fae5a;
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  /* One face throughout, because a machine of this period had one printer and
+     one character generator. The hierarchy is carried by size, weight and
+     letter-spacing instead. */
+  --font-display: "IBM Plex Mono", ui-monospace, monospace;
+  --font-body: "IBM Plex Mono", ui-monospace, monospace;
+  --font-meta: "IBM Plex Mono", ui-monospace, monospace;
+  --display-transform: uppercase;
+  --display-tracking: 0.1em;
+  --display-weight: 500;
+  --label-transform: uppercase;
+  --label-tracking: 0.14em;
+  --meta-style: normal;
+  --meta-weight: 600;
+
+  --text-size-body: 15px;
+  --text-size-small: 14px;
+  --text-size-caption: 12px;
+  --text-size-badge: 11px;
+  --text-size-lead: 16px;
+  --text-size-section: 14px;
+  --text-size-service: 16px;
+  --text-size-brand: 17px;
+  --text-size-headline: 30px;
+  --text-size-hero-glyph: 44px;
+  --text-size-service-icon: 21px;
+  --text-size-ornament: 20px;
+  --text-size-chart-label: 11px;
+  --text-size-chart-caption: 10px;
+  --text-leading-body: 1.55;
+  --text-leading-display: 1.15;
+  --text-leading-tight: 1.45;
+
+  /* ── Shape ────────────────────────────────────────────────────────────── */
+  /* No radius anywhere. The corner cut is a chamfer, which is a polygon rather
+     than a radius, so the two properties are stated side by side and each
+     surface uses the one that applies. */
+  --detail-space-after: 0px;
+  --detail-padding: var(--card-padding);
+  --card-radius-base: 0px;
+  --card-radius: 0px;
+  --card-clip: polygon(
+    0 0,
+    calc(100% - 14px) 0,
+    100% 14px,
+    100% 100%,
+    14px 100%,
+    0 calc(100% - 14px)
+  );
+  --card-border-width: 1px;
+  --card-shadow: none;
+  --control-radius: 0px;
+  --control-border-width: 1px;
+  --badge-border-width: 1px;
+  --badge-radius: 0px;
+  --tooltip-radius: 0px;
+  --tooltip-clip: none;
+  --dot-radius: 0px;
+  --rule-width: 1px;
+  --rule-style: solid;
+  --summary-hover-fill: var(--accent-quiet);
+  --focus-width: 2px;
+  --focus-offset: 3px;
+
+  /* ── Measure ──────────────────────────────────────────────────────────── */
+  --page-min-width: 320px;
+  --page-width: 920px;
+  --page-inset: clamp(12px, 4vw, 32px);
+  --row-inset: var(--card-text-inset);
+  --card-padding: 16px;
+  /* Clears the label head printed across the top. */
+  --card-padding-top: 48px;
+  --card-gap: 10px;
+  --space-hair: 5px;
+  --space-tight: 9px;
+  --space-row: 12px;
+  --space-block: 16px;
+  --space-section: 28px;
+  --nav-padding-block: 16px;
+  --nav-padding-inline: 4px;
+  --hero-padding-block: 30px;
+  --hero-padding-inline: 4px;
+  --control-padding-block: 3px;
+  --toggle-padding-inline: var(--control-padding-inline);
+  --control-padding-inline: 9px;
+  --badge-padding-block: 2px;
+  --badge-padding-inline: 6px;
+  --tooltip-padding-block: 7px;
+  --tooltip-padding-inline: 11px;
+  --stamp-inset-block: 8px;
+  --stamp-inset-inline: 10px;
+  --dot-size: 7px;
+
+  /* ── Availability strip ───────────────────────────────────────────────── */
+  /* Square ticks, evenly spaced, like the segments of a bar-graph meter. The
+     gloss stays, because a segment on such a meter is a lit window with a
+     curved cover over it. */
+  /* Four stacked lamps per day, which is how a deck without a display showed
+     a level, over the oxide brown of the tape itself. */
+  --bar-align: center;
+  --bar-pieces: 4;
+  --bar-piece-gap: 2px;
+  --bar-height: 30px;
+  --bar-hover-height: 36px;
+  --bar-gap: 3px;
+  --bar-radius: 0px;
+  --bar-track-radius: var(--bar-radius);
+  --bar-radius-narrow: 0px;
+  --seg-gloss: on;
+
+  /* ── Chart ────────────────────────────────────────────────────────────── */
+  --chart-head-space: var(--space-tight);
+  --chart-height: 150px;
+  --chart-inset-inline: 12px;
+  --chart-inset-block: 12px;
+  --chart-grid-lines: 3;
+  --chart-grid-dash: 3 4;
+  --chart-line-width: 2px;
+  --chart-line-cap: butt;
+  --chart-ipv4-dash: none;
+  --chart-ipv6-dash: 7 4;
+  --chart-fill: 0;
+  --chart-point-radius: 3px;
+  --chart-tooltip-width: 140px;
+  --chart-crosshair-dash: 2 4;
+  --chart-key-width: 16px;
+
+  /* ── Backdrop ─────────────────────────────────────────────────────────── */
+  /* The scan lines of a monitor, over a warm grey the colour of a painted
+     steel enclosure. Both are layers rather than backgrounds, so neither is
+     repainted when the page scrolls. */
+  --backdrop-layer: radial-gradient(
+      ellipse 90% 60% at 50% 0%,
+      rgb(232 163 61 / 0.07),
+      transparent 70%
+    ),
+    #1b1a15;
+  --backdrop-texture: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0.22) 0 1px,
+    transparent 1px 3px
+  );
+  --backdrop-texture-size: auto;
+  --backdrop-texture-opacity: 1;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  /* `--velvet-disclosure-duration` is read by `site/src/lib/disclosure.ts`,
+     which the mockups use unchanged, so it carries the same value as the token
+     beside it rather than being a second number. */
+  /* The scan lines creep, which is what an unsynchronised tube does. Nine
+     seconds for three pixels: visible only if somebody stares at it. */
+  --backdrop-motion: velvet-drift 9s linear infinite;
+  --backdrop-drift: 3px;
+  --motion-disclosure: 320ms;
+  --velvet-disclosure-duration: 320ms;
+  --motion-ease: ease-in-out;
+  --motion-range: 260ms;
+  --motion-hover: 110ms;
+
+  /* ── Arrangement ──────────────────────────────────────────────────────── */
+  --nav-rule-height: 1px;
+  --nav-rule-colour: var(--surface-rule);
+  --nav-rule-radius: 0px;
+  --nav-rule-inset: 0px;
+  /* Moulding grain across the shell, fine enough to be felt rather than
+     seen. */
+  --card-texture: repeating-linear-gradient(
+    to bottom,
+    rgb(232 220 196 / 0.022) 0 1px,
+    transparent 1px 4px
+  );
+  --card-texture-size: auto;
+  /*
+    The label head.
+
+    A cassette's inlay is a printed band across the top of the card, and every
+    make had its own: TDK a broad stripe over a hairline, BASF two rules in
+    sequence, Maxell a gold band on black. It is the one graphic that names the
+    make before a word is read, and it is what this design is built on.
+
+    Four layers: the broad band, a hairline under it, a second hairline further
+    down, and the trim strip at the very top. All of them are horizontal, all
+    of them run the full width, and none of them is decoration for its own
+    sake: this is what the object prints on itself.
+  */
+  --card-ornament-display: block;
+  --card-ornament-inset: 0px;
+  --card-ornament-height: auto;
+  --card-ornament-radius: 0px;
+  --card-ornament-fill: transparent;
+  --card-ornament-throat: 0px;
+  --card-ornament-throat-offset: 0px;
+  --card-ornament-image: linear-gradient(#c8752a 0 0),
+    linear-gradient(#e8dcc4 0 0), linear-gradient(#7d5a33 0 0),
+    linear-gradient(#3b342a 0 0);
+  --card-ornament-size: 100% 3px, 100% 1px, 100% 1px, 100% 22px;
+  --card-ornament-position: left top 22px, left top 27px, left top 31px,
+    left top;
+  --notices-gap: var(--space-tight);
+  --notices-arm-space: 0px;
+  --notices-arm-inset: 0px;
+  --notices-arm-image: none;
+  --notices-arm-size: auto;
+  --notices-arm-position: left bottom;
+  --notices-throat: 0px;
+  --notices-throat-offset: 0px;
+  --notice-glyph-display: inline-block;
+  --notices-rail-width: 0px;
+  --notices-rail-gap: 0px;
+  --notices-rail-radius: 0px;
+  --notices-rail-fill: transparent;
+  --notice-align: center;
+  --notice-areas-maintenance: "glyph title meta" "glyph summary summary";
+  --notice-areas-incident: "title meta" "summary summary";
+  --notice-columns-maintenance: auto 1fr auto;
+  --notice-columns-incident: 1fr auto;
+  --notice-fill: color-mix(in srgb, currentColor 12%, var(--surface-card));
+  --notice-padding: var(--card-padding);
+  --notice-radius: var(--card-radius);
+  --notice-border-width: var(--card-border-width);
+  --card-rail-width: 0px;
+  --card-rail-colour: transparent;
+  --card-rail-radius: 0px;
+  --card-rail-inset: 0px;
+  --nav-gap: 16px;
+  --nav-justify: space-between;
+  --nav-fill: transparent;
+  --nav-brand-colour: var(--brand-primary);
+  --nav-link-colour: #a29a7e;
+  --hero-align: center;
+  --hero-text-align: center;
+  --hero-fill: transparent;
+  /* Centred, so the mark stands above the words: anything beside a
+     centred line stops the line being centred. */
+  --hero-areas: "mark" "title" "updated";
+  --hero-columns: auto;
+  --hero-mark-size: var(--text-size-hero-glyph);
+  --hero-mark-display: inline-block;
+  --hero-mark-glow: drop-shadow(
+    0 0 14px color-mix(in srgb, currentColor 35%, transparent)
+  );
+  --hero-title-colour: var(--text-1);
+  --hero-updated-colour: var(--text-3);
+  --range-label-display: block;
+  --range-label-colour: var(--text-2);
+  --range-button-colour: var(--text-3);
+  --range-button-hover-colour: var(--text-1);
+  --range-bar-height: auto;
+  --range-bar-space: var(--space-tight);
+  --range-bar-padding: 0;
+  --range-bar-radius: 0px;
+  --range-bar-fill: transparent;
+  --range-bar-colour: currentColor;
+  --range-bar-stem-width: 0px;
+  --range-bar-stem-height: 0px;
+  --range-bar-throat: 0px;
+  --range-bar-throat-offset: 0px;
+  --range-justify: flex-end;
+  --footer-align: center;
+  --footer-text-align: center;
+  /* One column: the name stays inside the summary and no rail is drawn. */
+  --service-areas: "summary" "strip" "axis" "details";
+  --service-columns: 1fr;
+  --service-rail-display: none;
+  --service-rail-justify: center;
+  --service-rail-weight: var(--display-weight);
+  --control-font: var(--font-meta);
+  --control-weight: var(--meta-weight);
+  --control-tracking: 0em;
+  --control-transform: none;
+  --service-rail-align: center;
+  --service-rail-padding: 0;
+  --service-rail-radius: 0px;
+  --service-rail-fill: transparent;
+  --service-rail-colour: currentColor;
+  --service-rail-gap: 0px;
+  --service-gap: var(--space-block);
+  --service-divider-space: var(--space-block);
+  --service-divider-width: var(--rule-width);
+  --service-icon-display: inline-block;
+  /* The write-on label. Cream card stock, a hairline rule under the name, and
+     square corners, which is the panel a cassette prints for its title. */
+  --service-name-display: inline-block;
+  --service-name-flex: 0 1 auto;
+  --service-name-padding: 3px 12px 4px;
+  --service-name-radius: 1px;
+  --service-name-fill: linear-gradient(
+    to bottom,
+    #e8e0cb 0 calc(100% - 3px),
+    #b9ae92 calc(100% - 3px) calc(100% - 2px),
+    #e8e0cb calc(100% - 2px) 100%
+  );
+  --service-name-colour: #23201a;
+  --layout-cards: auto;
+  --service-icon-colour: var(--accent);
+
+  /* ── Controls ─────────────────────────────────────────────────────────── */
+  --control-idle-edge: transparent;
+  --control-active-fill: var(--accent);
+  --control-active-edge: transparent;
+  --control-active-text: #12120e;
+  --control-active-glow: none;
+}

@@ -238,6 +238,7 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // where the markup is not.
   "squircle-frame": ["configurator", "references", "status page", "website"],
   "squircle-card": ["website"],
+  "crt-squircle": ["website"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],
   "service-icon-picker": ["configurator", "onboarding"],

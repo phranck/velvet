@@ -4,6 +4,7 @@
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
+  import * as CRTSquircle from "../components/crt-squircle";
   import * as SquircleCard from "../components/squircle-card";
   import * as StepCard from "../components/step-card";
   import {
@@ -12,7 +13,10 @@
   } from "../components/step-card/geometry.js";
   // The README's screenshot, imported from where it already lives rather than
   // copied here, so the page and the repository can never show different ones.
-  import screenshotUrl from "../../../docs/screenshot.png";
+  // The same capture without a window around it, because the tube below is
+  // the frame. `docs/screenshot.png` keeps its window for the README, which is
+  // read on a page that has none.
+  import screenshotUrl from "./assets/screenshot-screen.png";
   // The four themes an installation can be set to, read from the registry the
   // browser setup and the Configurator read, so the page cannot advertise a
   // theme that is not offered or miss one that is.
@@ -190,14 +194,16 @@
     <section class="showcase" aria-label="A published Velvet status page">
       <div class="showcase-plate">
         <a href={ONBOARDING_URL} tabindex="-1" aria-hidden="true">
-          <img
-            src={screenshotUrl}
-            alt="A Velvet status page showing services, uptime bars, and a response-time chart"
-            width="2010"
-            height="1536"
-            fetchpriority="high"
-            decoding="async"
-          />
+          <CRTSquircle.Root>
+            <img
+              src={screenshotUrl}
+              alt="A Velvet status page showing services, uptime bars, and a response-time chart"
+              width="1770"
+              height="1328"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </CRTSquircle.Root>
         </a>
       </div>
     </section>
@@ -510,10 +516,11 @@
      arrives. Measured at 208px short on a desktop width before this. */
   .showcase-plate a {
     width: 100%;
-    /* Wider than the window inside it by exactly the transparent margin the
-       picture carries, so the window itself lands at the size it had when the
-       frame was still baked in. */
-    max-width: 830px;
+    /* The tube is its own frame now, so this is the width of the screen itself
+       rather than of a window plus the transparent margin around it. Smaller
+       than that window was, because a screen showing a page reads at a size a
+       screen would be rather than at the size of a picture of one. */
+    max-width: 720px;
   }
   .showcase img {
     width: 100%;
@@ -523,7 +530,7 @@
        left to the width and height attributes, because the picture loads
        lazily and the ratio has to hold whilst it is still absent. It is the
        file's own, 2010 by 1536. */
-    aspect-ratio: 2010 / 1536;
+    aspect-ratio: 4 / 3;
   }
   .card-inset {
     padding: var(--step-card-content-inset, 16px);
