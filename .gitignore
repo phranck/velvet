@@ -18,9 +18,12 @@ apps/setup-service/src/deployment-fingerprint.generated.ts
 .codex/
 .serena/
 
-# Local credentials for verification runs, never committed
-.env.local
-.env
+# Local credentials for verification runs, never committed.
+# The wildcard is load-bearing: an editor that appends .txt on save produces a
+# file that .env.local alone does not match, leaving a private key untracked but
+# not ignored, and one `git add -A` from being committed.
+.env.local*
+.env*
 
 # Cut from the Phosphor face at build time to the icons Velvet names.
 site/src/assets/phosphor-duotone-subset.woff2

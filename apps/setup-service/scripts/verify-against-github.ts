@@ -35,8 +35,10 @@ import type {
  * against a repository a previous run left behind proves nothing, because the
  * second run finds the first one's branch and commit already in place.
  *
- * Credentials come from `.env.local` in the repository root, which Bun loads
- * on its own and which is git-ignored. See `.env.local.example` for what to
+ * Credentials come from `.env.local` in `apps/setup-service`, which is where
+ * this runs from and which is git-ignored. Bun reads that file from the
+ * directory a command runs in and does not look upwards, so a copy at the
+ * repository root is never read. See `.env.local.example` beside it for what to
  * put in it. Passing `GITHUB_TOKEN` on the command line works too.
  *
  * Usage:
