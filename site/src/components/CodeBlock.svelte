@@ -161,7 +161,6 @@
     border: 0;
     background: none;
     color: var(--velvet-text-muted, #979aa8);
-    cursor: pointer;
     /* The way back from the copied colour, and only that way. The rule below
        turns the transition off whilst the mark is being set, so the green
        arrives at once and drains away afterwards. */
