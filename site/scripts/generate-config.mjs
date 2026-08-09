@@ -81,7 +81,6 @@ const velvet = {
   layout: configuration.statusPage.layout,
   defaultRange: configuration.statusPage.defaultRange,
   logoHeight: configuration.statusPage.logoHeight,
-  showPoweredBy: configuration.statusPage.showPoweredBy,
   theme: nativeTheme(configuration.statusPage.theme),
   fontSans: configuration.statusPage.fonts?.sans,
   fontMono: configuration.statusPage.fonts?.mono,
@@ -151,7 +150,6 @@ const config = {
   layout: velvet.layout === "cards" ? "cards" : "grouped",
   defaultRange: normalizeRange(velvet.defaultRange),
   logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 72,
-  showPoweredBy: velvet.showPoweredBy !== false,
   theme: {
     ...resolveTheme({
       ...themeInput,

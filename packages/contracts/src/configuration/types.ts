@@ -68,7 +68,6 @@ export interface NormalizedVelvetConfiguration {
     layout: "grouped" | "cards";
     defaultRange: "24h" | "7d" | "30d" | "90d" | "1yr";
     logoHeight: number;
-    showPoweredBy: boolean;
     navigation: Array<{ title: string; href: string }>;
     icons: Record<string, string>;
     customDomain?: string;

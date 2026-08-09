@@ -158,7 +158,6 @@ statusPage:
   customDomain: status.example.com
   logoUrl: https://example.com/logo.svg
   logoHeight: 72
-  showPoweredBy: true
   layout: grouped
   defaultRange: 30d
   navigation:
@@ -174,7 +173,6 @@ statusPage:
 | `customDomain` | no | GitHub Pages URL | Hostname only, without scheme, path, port, credentials, or wildcard. |
 | `logoUrl` | no | none | The logo shown instead of the page name. Either an absolute HTTP(S) address, or a file in this repository written as `./logo.svg`. The browser setup uploads one for you and writes it here. |
 | `logoHeight` | no | `72` | Display height from `16` through `256` px. |
-| `showPoweredBy` | no | `true` | Shows the centered Powered by Velvet credit. |
 | `layout` | no | `grouped` | `grouped` for one shared service card or `cards` for one card per service. |
 | `defaultRange` | no | `30d` | Initial range: `24h`, `7d`, `30d`, `90d`, or `1yr`. A visitor's saved choice wins later. |
 | `navigation` | no | `[]` | Up to 16 links with `title` and `href`. |
@@ -184,7 +182,9 @@ statusPage:
 | `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
 | `seo` | no | generated | Optional title, description, and social-image overrides. |
 
-Below the credit, every page names where it is configured. That line is not a setting and `showPoweredBy` does not turn it off, because the credit decides whether Velvet shows its name whilst this is your own way back to the Configurator weeks after you set the page up. It is worded so a visitor reads past it.
+Every page carries the Powered by Velvet credit, and there is no setting that changes it. A status page is Velvet's work as much as yours, so whether the product says its own name is not something an installation decides. A configuration naming `showPoweredBy` is refused, because a field that is accepted and ignored is one the next reader believes.
+
+Below that credit, every page also names where it is configured. That line is not a setting either. It is your own way back to the Configurator weeks after you set the page up, and it is worded so a visitor reads past it.
 
 Setting `customDomain` puts a `CNAME` file into every build. That is all it does. Your domain still has to point at GitHub, which means adding a DNS record at whoever you bought the domain from. GitHub's [custom-domain documentation](https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages) explains which record.
 

@@ -230,16 +230,21 @@
     <p class="stamp serial mono" data-status-serial>Serial #{serialLabel}</p>
   {/if}
 
-  {#if config.showPoweredBy}
-    <div class="powered">
-      <span class="powered-label">powered by</span>
-      <VelvetWordmark
-        href="https://github.com/phranck/velvet"
-        target="_blank"
-        rel="noopener noreferrer"
-      />
-    </div>
-  {/if}
+  <!--
+    Velvet's own mark, on every page it builds.
+
+    Not a setting. A status page is Velvet's work as much as its operator's, and
+    whether the product says its own name is not a decision an installation
+    makes.
+  -->
+  <div class="powered">
+    <span class="powered-label">powered by</span>
+    <VelvetWordmark
+      href="https://github.com/phranck/velvet"
+      target="_blank"
+      rel="noopener noreferrer"
+    />
+  </div>
 
   <!--
     Where this page is changed, stated rather than offered.
@@ -249,9 +254,8 @@
     operator in the third person lets a visitor read past the line whilst the
     operator recognises the address they came looking for.
 
-    It stands outside the credit above, because that setting decides whether
-    Velvet shows its name whilst this is the operator's own way back to their
-    configuration.
+    It stands apart from the credit above: that one is Velvet naming itself,
+    whilst this is the operator's own way back to their configuration.
   -->
   <p class="configured">
     Configured by its operator at <a

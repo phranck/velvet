@@ -101,7 +101,6 @@ async function renderStatusPage(
   incidents: IncidentsDocument = incidentsDocument,
   renderedStatus: StatusDocument = statusDocument,
   serial?: number,
-  showPoweredBy = true,
 ): Promise<string> {
   const config: VelvetConfig = {
     owner: "example",
@@ -111,7 +110,6 @@ async function renderStatusPage(
     dataBaseUrl: "https://example.invalid/velvet-data/v1",
     name: "Velvet Configurator",
     logoHeight: 72,
-    showPoweredBy,
     navbar: [
       { title: "Status", href: "/" },
       { title: "History", href: "/history" },
@@ -316,10 +314,10 @@ test("places the Velvet credit directly after the service cards", async () => {
     "utf8",
   );
 
-  assert.match(
-    page,
-    /\{#if config\.showPoweredBy\}\s*<div class="powered">/,
-  );
+  // Rendered outright rather than behind a condition: whether Velvet says its
+  // own name on a page it built is not an installation's decision.
+  assert.match(page, /<div class="powered">/);
+  assert.doesNotMatch(page, /showPoweredBy/);
   assert.match(page, /<span class="powered-label">powered by<\/span>/);
   assert.match(page, /<VelvetWordmark[\s\S]*href="https:\/\/github\.com\/phranck\/velvet"/);
   assert.match(
@@ -332,30 +330,21 @@ test("places the Velvet credit directly after the service cards", async () => {
   assert.doesNotMatch(page, /incidents\.atom/);
 });
 
-test("names the Configurator on every page, whichever way the credit is set", async () => {
+test("names the Configurator on every page, beside Velvet's own mark", async () => {
   // The page is public and nearly everybody reading it is one of the operator's
   // users, so the line says who configures the page rather than inviting anybody
-  // to press it. It stands apart from the credit, because that setting decides
-  // whether Velvet shows its name whilst this is the operator's own way back to
-  // their configuration. #375.
-  const withCredit = await renderStatusPage("grouped");
-  const withoutCredit = await renderStatusPage(
-    "grouped",
-    true,
-    incidentsDocument,
-    statusDocument,
-    undefined,
-    false,
-  );
+  // to press it. It stands apart from the credit: that one is Velvet naming
+  // itself, whilst this is the operator's own way back in. #375.
+  const html = await renderStatusPage("grouped");
 
-  for (const html of [withCredit, withoutCredit]) {
-    assert.match(html, /Configured by its operator at/);
-    assert.match(
-      html,
-      /href="https:\/\/setup\.velvet\.li\/configurator\/"[^>]*>setup\.velvet\.li\/configurator</,
-    );
-  }
-  assert.doesNotMatch(withoutCredit, /powered by/);
+  assert.match(html, /Configured by its operator at/);
+  assert.match(
+    html,
+    /href="https:\/\/setup\.velvet\.li\/configurator\/"[^>]*>setup\.velvet\.li\/configurator</,
+  );
+  // Both appear, and in this order, because the credit closes what Velvet built
+  // and the line beneath it addresses the one reader who can act on it.
+  assert.match(html, /powered by[\s\S]*Configured by its operator at/);
 });
 
 test("writes the Configurator address once and reads its label from it", async () => {
@@ -436,19 +425,19 @@ test("stamps the installation serial opposite the version, when there is one", a
   assert.doesNotMatch(withoutSerial, /data-status-serial/);
 });
 
-test("keeps the serial when the Velvet mark is turned off", async () => {
-  // The mark is Velvet's; the serial is this installation's own number, and
-  // turning off the one does not withdraw the other.
+test("shows the Velvet mark on every page, whatever a configuration says", async () => {
+  // There is no setting for this. A configuration that tried to name one is
+  // refused by the contract, so the only thing left to hold is that the mark
+  // is there, beside the installation's own number.
   const html = await renderStatusPage(
     "grouped",
     true,
     incidentsDocument,
     statusDocument,
     412,
-    false,
   );
 
-  assert.doesNotMatch(html, /powered by/);
+  assert.match(html, /powered by/);
   assert.match(html, /data-status-serial[^>]*>Serial #00412</);
 });
 

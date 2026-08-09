@@ -370,7 +370,6 @@ test("generated runtime config preserves native appearance and custom domain", a
       "  customDomain: status.example.com",
       "  logoUrl: https://example.com/logo.svg",
       "  logoHeight: 64",
-      "  showPoweredBy: false",
       "  layout: cards",
       "  defaultRange: 90d",
       "  navigation:",
@@ -422,7 +421,6 @@ test("generated runtime config preserves native appearance and custom domain", a
   assert.equal(config.url, "https://status.example.com/");
   assert.equal(config.logoUrl, "https://example.com/logo.svg");
   assert.equal(config.logoHeight, 64);
-  assert.equal(config.showPoweredBy, false);
   assert.equal(config.layout, "cards");
   assert.equal(config.defaultRange, "quarter");
   assert.deepEqual(config.navbar, [{ title: "History", href: "/history" }]);

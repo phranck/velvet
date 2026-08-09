@@ -69,7 +69,6 @@ services:
       layout: "grouped",
       defaultRange: "30d",
       logoHeight: 72,
-      showPoweredBy: true,
       navigation: [],
       icons: {},
     },
@@ -506,5 +505,28 @@ services:
     versionResult,
     "UNSUPPORTED_CONFIGURATION_VERSION",
     "/schemaVersion",
+  );
+});
+
+test("refuses a configuration that tries to turn off the Velvet credit", () => {
+  // There is no setting for it, and a field that were accepted and ignored is
+  // one the next reader believes. Refusing says what is true.
+  const result = parse(`
+schemaVersion: 1
+repository:
+  owner: example
+  name: status
+statusPage:
+  name: Example Status
+  showPoweredBy: false
+services:
+  - name: Website
+    url: https://example.com
+`);
+
+  assertConfigurationError(
+    result,
+    "INVALID_CONFIGURATION",
+    "/statusPage/showPoweredBy",
   );
 });

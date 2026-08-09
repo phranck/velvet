@@ -275,7 +275,6 @@ const StatusPageSchema = Type.Object(
     ),
     logoUrl: Type.Optional(UrlSchema),
     logoHeight: Type.Optional(Type.Integer({ minimum: 16, maximum: 256 })),
-    showPoweredBy: Type.Optional(Type.Boolean()),
     layout: Type.Optional(
       Type.Union([Type.Literal("grouped"), Type.Literal("cards")]),
     ),

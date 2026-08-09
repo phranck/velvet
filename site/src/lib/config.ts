@@ -42,7 +42,6 @@ export interface VelvetConfig {
   /** Logo height in pixels (width scales proportionally). */
   logoHeight: number;
   /** Show the "Powered by Velvet" credit in the footer. */
-  showPoweredBy: boolean;
   /**
    * The running number this installation was issued, if it has one.
    *
@@ -77,7 +76,6 @@ const DEFAULTS: Omit<VelvetConfig, "owner" | "repo" | "dataBaseUrl"> = {
   layout: "grouped",
   defaultRange: "month",
   logoHeight: 72,
-  showPoweredBy: true,
   theme: resolveTheme(),
   icons: {},
 };
