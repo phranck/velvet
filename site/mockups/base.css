@@ -619,14 +619,10 @@ body::after {
   display: grid;
   align-items: var(--notice-align);
   gap: var(--notice-gap);
-  /*
-    The same on all four sides, with the text standing in by half the radius on
-    top of it. That inset is what keeps a line of type from reading as though it
-    collides with the curve beside it, and it is derived from the radius rather
-    than chosen, so a theme states one number and the rest follows.
-  */
-  padding: var(--notice-padding)
-    calc(var(--notice-padding) + var(--notice-text-inset));
+  /* The same on all four sides. A theme that carries a large corner sets this
+     to the text inset derived from it, so the words clear the curve and the
+     padding stays even the whole way round. */
+  padding: var(--notice-padding);
   border-radius: var(--notice-radius);
   background: var(--notice-fill);
 }

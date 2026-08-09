@@ -249,7 +249,9 @@
      is read from the shape rather than from a glyph beside the headline. */
   --notices-rail-fill: var(--status-colour);
   --notice-align: center;
-  --notice-padding: 12px;
+  /* The text inset its own corner derives, so the words clear the curve and
+     the padding is the same the whole way round. */
+  --notice-padding: var(--notice-text-inset);
   /*
     Nested inside the region the limb encloses, so its corner is the limb's
     outer radius less the distance from the column: 68px less the 14px gap is
@@ -260,8 +262,13 @@
     calc(var(--lcars-outer-radius) - var(--notices-rail-gap)),
     0px
   );
-  --notice-radius: var(--notice-radius-base) 999px 999px
-    var(--notice-radius-base);
+  /*
+    One corner on all four, not a capsule at the trailing end. Where two radii
+    along an edge exceed it, the browser scales every corner of the box by the
+    same factor: a 999px capsule against a 104px box gave a factor of 0.05, and
+    the 54px corners came out at 2.8px, which is why they looked square.
+  */
+  --notice-radius: var(--notice-radius-base);
   --notice-gap: 4px var(--space-row);
   --notice-border-width: 0px;
   --notice-areas-maintenance: "glyph title meta" "glyph summary summary";
