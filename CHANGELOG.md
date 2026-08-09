@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 1.5.4 (2026-08-09)
+
+### Changed
+
+velvet.li shows Velvet's own shape throughout. The cards describing what an installation gives you and how it works are squircles now, the four theme pictures sit in one, and the banner has traded its window frame for a green phosphor monitor.
+
+Nothing about your own status page changes. The one file this release touches that an installation runs is the squircle frame, which gained a second way of being drawn and behaves exactly as before for everything already using it.
+
 ## Version 1.5.3 (2026-08-09)
 
 ### Changed
