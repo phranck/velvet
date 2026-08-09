@@ -70,10 +70,29 @@
     0.135) without going to a signal red. It measures 5.19:1 on black.
   */
   --state-outage: #dc4a5f;
-  --state-no-data: #2b2b3d;
+  /*
+    The palette's taupe, taken down until it carries itself.
+
+    This design draws an unrecorded day as a block with no outline, so the fill
+    is the only thing saying the day is there. The old slate measured 1.52:1 on
+    black and said nothing; the taupe at full strength measured 1.67:1 against
+    the operational blue, so an empty day looked like a working one.
+
+    60 per cent is as dim as it goes: 3.14:1 on black, against a floor of 3:1
+    for anything that has to be seen, and 3.96:1 against that blue. 58 per cent
+    already computes to 2.998:1 and fails, and anything darker than that is not
+    a day at all.
+  */
+  --state-no-data: color-mix(in srgb, #b1957a 60%, #000000);
   --state-maintenance: #cc99cc;
   --state-maintenance-edge: color-mix(in srgb, #cc99cc 60%, #ffffcc);
-  --state-ghost-edge: #646dcc;
+  /* Announcing that nothing is known. Named apart from the strip's own edge,
+     which this design does not draw. */
+  --state-unknown-mark: #646dcc;
+  /* The fill itself, so an unrecorded day carries no outline. This interface
+     draws blocks rather than outlined shapes, and an edge in the fill's own
+     colour is how a block says it has none. */
+  --state-ghost-edge: var(--state-no-data);
   --protocol-ipv4: #ff9c00;
   --protocol-ipv6: #cc99cc;
 
@@ -320,6 +339,12 @@
     segments by narrow gaps, so the row holds together and the divisions read
     as divisions rather than as items.
   */
+  /* The days arrive rather than appear when the range changes: the whole run
+     grows out of its own baseline over one motion step. */
+  --strip-change-animation: velvet-strip-change var(--motion-range)
+    var(--motion-ease) both;
+  --strip-change-scale: 0.55;
+  --strip-change-origin: bottom;
   --bar-align: center;
   --bar-pieces: 1;
   --bar-piece-gap: 0px;

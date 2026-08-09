@@ -63,6 +63,7 @@
   --state-no-data: #3d2c1d;
   --state-maintenance: #6f8794;
   --state-maintenance-edge: #9fb4c0;
+  --state-unknown-mark: var(--state-ghost-edge);
   --state-ghost-edge: #8d8770;
   --protocol-ipv4: #e8a33d;
   --protocol-ipv6: #8fae5a;
@@ -166,6 +167,9 @@
      curved cover over it. */
   /* Four stacked lamps per day, which is how a deck without a display showed
      a level, over the oxide brown of the tape itself. */
+  --strip-change-animation: none;
+  --strip-change-scale: 1;
+  --strip-change-origin: center;
   --bar-align: center;
   --bar-pieces: 4;
   --bar-piece-gap: 2px;

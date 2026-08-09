@@ -24,6 +24,7 @@ import {
 import { disclosure } from "../src/lib/disclosure.js";
 import type { RangeKey, ServiceStatus } from "../src/lib/types.js";
 import { createChartView, type ChartView } from "./chart-view.js";
+import { createOverlay } from "./overlay.js";
 import { createUptimeStrip, type UptimeStrip } from "./uptime-strip.js";
 import {
   GENERATED_AT,
@@ -33,13 +34,19 @@ import {
   statusDocument,
 } from "./dummy-data.js";
 
-/** The five ranges, in the order and with the labels the product uses. */
-const RANGES: Array<{ key: RangeKey; label: string }> = [
-  { key: "day", label: "24h" },
-  { key: "week", label: "7d" },
-  { key: "month", label: "30d" },
-  { key: "quarter", label: "90d" },
-  { key: "year", label: "1yr" },
+/**
+ * The five ranges, in the order and with the labels the product uses.
+ *
+ * Each carries a sentence as well, because "90d" on its own says how long but
+ * not what it covers. It is the button's accessible name and the text of its
+ * overlay, so what is read aloud and what is shown on hover are the same words.
+ */
+const RANGES: Array<{ key: RangeKey; label: string; description: string }> = [
+  { key: "day", label: "24h", description: "The last 24 hours" },
+  { key: "week", label: "7d", description: "The last 7 days" },
+  { key: "month", label: "30d", description: "The last 30 days" },
+  { key: "quarter", label: "90d", description: "The last 90 days" },
+  { key: "year", label: "1yr", description: "The last 12 months" },
 ];
 
 /**
@@ -260,11 +267,28 @@ export function mountStatusPage(
   rangeMark.setAttribute("aria-hidden", "true");
   rangeButtons.append(rangeMark);
   const rangeControls = new Map<RangeKey, HTMLButtonElement>();
+  // On the document's own layer rather than inside the bar, for the reason
+  // `overlay.ts` sets out: a clipping ancestor cuts an overlay however it is
+  // positioned.
+  const rangeTip = createOverlay("uptime-tooltip");
   for (const option of RANGES) {
     const button = el("button", "range-button", option.label);
     button.type = "button";
     button.setAttribute("aria-pressed", String(option.key === range));
+    // The sentence rather than the abbreviation, since "90d" says how long but
+    // not what it covers.
+    button.setAttribute("aria-label", option.description);
     button.addEventListener("click", () => selectRange(option.key));
+    // Shown on focus as well as on hover, so a keyboard reaches it too.
+    const show = (): void =>
+      rangeTip.show(option.description, () => ({
+        rect: button.getBoundingClientRect(),
+        side: "below",
+      }));
+    button.addEventListener("pointerenter", show);
+    button.addEventListener("focus", show);
+    button.addEventListener("pointerleave", () => rangeTip.hide());
+    button.addEventListener("blur", () => rangeTip.hide());
     rangeControls.set(option.key, button);
     rangeButtons.append(button);
   }

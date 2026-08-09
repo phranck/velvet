@@ -306,14 +306,17 @@ body::after {
 }
 
 /*
-  The unknown state takes the ghost edge rather than the no-data fill. That
-  fill is what an unrecorded day is painted in, so it is a shade off the page
-  by design and measures 1.13:1 to 1.60:1 against it across the six themes,
-  which is invisible for anything in the foreground. The edge is the mark that
-  says such a day exists at all, and it measures 3.16:1 to 4.97:1.
+  The unknown state has a colour of its own rather than borrowing one.
+
+  The no-data fill is what an unrecorded day is painted in, so it is a shade
+  off the page by design and measures 1.13:1 to 1.60:1 against it across the
+  six themes, which is invisible for anything in the foreground. The ghost edge
+  is legible, but it belongs to the strip: a theme that wants its unrecorded
+  days drawn without an outline sets it to nothing, and the headline would go
+  with it.
 */
 :root[data-status="unknown"] {
-  --status-colour: var(--state-ghost-edge);
+  --status-colour: var(--state-unknown-mark);
 }
 
 .status-hero-mark {
@@ -1221,12 +1224,27 @@ body::after {
   margin-top: var(--space-tight);
 }
 
+/*
+  The strip is one canvas, so a range change replaces every segment at once. A
+  design may have that arrive rather than appear, and only `opacity` and
+  `transform` are animated, which a compositor handles without repainting
+  anything. The whole strip moves as one element, not one animation per day.
+*/
 .uptime-strip canvas {
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
   display: block;
   width: 100%;
+  transform-origin: var(--strip-change-origin);
+  animation: var(--strip-change-animation);
+}
+
+@keyframes velvet-strip-change {
+  from {
+    opacity: 0;
+    transform: scaleY(var(--strip-change-scale));
+  }
 }
 
 /*
@@ -1695,7 +1713,8 @@ linearGradient stop {
 
   /* Every optional movement stops, including the backdrop's. */
   body::after,
-  .uptime-tooltip {
+  .uptime-tooltip,
+  .uptime-strip canvas {
     animation: none;
   }
 

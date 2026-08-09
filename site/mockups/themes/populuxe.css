@@ -55,6 +55,7 @@
   --state-no-data: #c8b89e;
   --state-maintenance: #0a6371;
   --state-maintenance-edge: #073f49;
+  --state-unknown-mark: var(--state-ghost-edge);
   --state-ghost-edge: #7d6f5c;
   --protocol-ipv4: #b93c1a;
   --protocol-ipv6: #0a6371;
@@ -150,6 +151,9 @@
      would swallow the segment, so the narrow value keeps them legible. */
   /* One solid capsule per day. The shape is the whole idea, so it is not
      divided. */
+  --strip-change-animation: none;
+  --strip-change-scale: 1;
+  --strip-change-origin: center;
   --bar-align: center;
   --bar-pieces: 1;
   --bar-piece-gap: 0px;

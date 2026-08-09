@@ -71,6 +71,7 @@
   --state-no-data: #131e21;
   --state-maintenance: #7d78c4;
   --state-maintenance-edge: #a8a3e0;
+  --state-unknown-mark: var(--state-ghost-edge);
   --state-ghost-edge: #4d6b84;
   --protocol-ipv4: #5fb2e0;
   --protocol-ipv6: #c2913f;
@@ -275,6 +276,9 @@
      on these panels: a value rising from an origin, divided once so the eye
      can read half of it at a glance. No gloss, because this is emitted light
      rather than a reflective surface. */
+  --strip-change-animation: none;
+  --strip-change-scale: 1;
+  --strip-change-origin: center;
   --bar-align: bottom;
   --bar-pieces: 2;
   --bar-piece-gap: 3px;

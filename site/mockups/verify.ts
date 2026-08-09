@@ -75,6 +75,22 @@ function parseColour(value: string): Rgb | null {
   }
   const rgb = text.match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
   if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+  // A two-colour mix in sRGB, which is how a theme states a colour derived from
+  // another rather than a second literal beside it. Mixed componentwise, which
+  // is what `in srgb` means; any other colour space would need its own
+  // conversion and no theme asks for one.
+  const mix = text.match(
+    /^color-mix\(\s*in\s+srgb\s*,\s*(.+?)\s+([\d.]+)%\s*,\s*(.+?)\s*\)$/i,
+  );
+  if (mix) {
+    const first = parseColour(mix[1]!);
+    const second = parseColour(mix[3]!);
+    if (!first || !second) return null;
+    const weight = Number(mix[2]) / 100;
+    return first.map((channel, at) =>
+      Math.round(channel * weight + second[at]! * (1 - weight)),
+    ) as Rgb;
+  }
   return null;
 }
 

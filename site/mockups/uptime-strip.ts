@@ -375,8 +375,24 @@ export function createUptimeStrip(host: HTMLElement): UptimeStrip {
   width = host.getBoundingClientRect().width;
   ratio = window.devicePixelRatio || 1;
 
+  /**
+   * Replays whatever change animation the theme states, if it states one.
+   *
+   * A CSS animation runs once per element and knows nothing about the drawing
+   * behind it changing, so it is taken off, the layout is read to make that
+   * take effect, and it is handed straight back.
+   */
+  function replayChange(): void {
+    canvas.style.animation = "none";
+    void canvas.offsetWidth;
+    canvas.style.animation = "";
+  }
+
   return {
     update(nextDays, nextRange) {
+      // Only when the range moves. Redrawing on a resize or a theme switch is
+      // the same days over again and has nothing to announce.
+      const changed = nextRange !== range;
       days = nextDays;
       range = nextRange;
       hovered = null;
@@ -391,6 +407,7 @@ export function createUptimeStrip(host: HTMLElement): UptimeStrip {
         hiddenList.append(item);
       }
       paint();
+      if (changed) replayChange();
       placeTooltip();
     },
     destroy() {

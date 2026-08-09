@@ -72,6 +72,7 @@
   --state-maintenance: #8b919b;
   --state-maintenance-edge: #b9bdc4;
   /* Lifted from the shipping value; see the note at the head of this file. */
+  --state-unknown-mark: var(--state-ghost-edge);
   --state-ghost-edge: #5b616c;
   --protocol-ipv4: #7c7ef3;
   --protocol-ipv6: #38bdf8;
@@ -203,6 +204,9 @@
   /* ── Availability strip ───────────────────────────────────────────────── */
   /* `bar` from `tokens.ts`, exactly: 32 tall, 38 hovered, 2 apart, 2 rounded,
      and a capsule in the 90-day view. The gloss is the one in `segGloss`. */
+  --strip-change-animation: none;
+  --strip-change-scale: 1;
+  --strip-change-origin: center;
   --bar-align: center;
   --bar-pieces: 1;
   --bar-piece-gap: 0px;

@@ -58,6 +58,7 @@
   --state-no-data: #12333d;
   --state-maintenance: #8f9dff;
   --state-maintenance-edge: #c3cbff;
+  --state-unknown-mark: var(--state-ghost-edge);
   --state-ghost-edge: #4f7d88;
   --protocol-ipv4: #39e9ff;
   --protocol-ipv6: #b06bff;
@@ -167,6 +168,9 @@
      emits light, it does not reflect it. */
   /* Standing on a baseline rather than centred, because a vector display draws
      from an origin and everything grows away from it. */
+  --strip-change-animation: none;
+  --strip-change-scale: 1;
+  --strip-change-origin: center;
   --bar-align: bottom;
   --bar-pieces: 1;
   --bar-piece-gap: 0px;
