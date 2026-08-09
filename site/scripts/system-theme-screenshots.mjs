@@ -37,10 +37,16 @@ const SETS = [
     viewport: { width: 640, height: 480 },
   },
   {
-    // The gallery on the start page.
+    // The gallery on the start page, where each picture is cut to a squircle.
+    // A squircle pulls in towards its corners, so a page photographed edge to
+    // edge loses the ends of its first and last rows to the curve. The inset
+    // holds the page's own content in far enough that the curve meets its
+    // background instead, and the background is the theme's, so the margin is
+    // part of the picture rather than a border around it.
     directory: resolve(SITE, "src/website/assets/themes"),
     health: "operational",
-    viewport: { width: 640, height: 400 },
+    viewport: { width: 800, height: 500 },
+    contentInset: { inline: 60, block: 38 },
   },
 ];
 const MIME = {
@@ -113,11 +119,12 @@ async function main() {
       route.abort(),
     );
 
-    for (const { directory, health, viewport } of SETS) {
+    for (const { directory, health, viewport, contentInset } of SETS) {
       const manifest = {
         schemaVersion: 1,
         viewport,
         health,
+        ...(contentInset ? { contentInset } : {}),
         themes: {},
       };
       // The Configurator shows a degraded page by default and reads this to
@@ -142,6 +149,9 @@ async function main() {
           content: `.status-page {
             width: ${viewport.width}px !important;
             max-width: ${viewport.width}px !important;
+            box-sizing: border-box !important;
+            padding-inline: ${contentInset?.inline ?? 0}px !important;
+            padding-block: ${contentInset?.block ?? 0}px !important;
           }`,
         });
         await page.evaluate(() => globalThis.document.fonts.ready);

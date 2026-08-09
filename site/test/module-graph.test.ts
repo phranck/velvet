@@ -236,7 +236,7 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // steps, the theme cards and the icon picker draw the outline themselves and
   // read its insets from `lib/squircle`, so the geometry is stated once even
   // where the markup is not.
-  "squircle-frame": ["configurator", "references", "status page"],
+  "squircle-frame": ["configurator", "references", "status page", "website"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],
   "service-icon-picker": ["configurator", "onboarding"],

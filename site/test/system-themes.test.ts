@@ -55,7 +55,11 @@ const SCREENSHOT_SETS = [
   {
     directory: "../src/website/assets/themes",
     health: "operational",
-    viewport: { width: 640, height: 400 },
+    // Larger than the picker's, and photographed with the page held in from
+    // the edge, because these are cut to a squircle and a squircle pulls in
+    // towards its corners.
+    viewport: { width: 800, height: 500 },
+    contentInset: { inline: 60, block: 38 },
   },
 ];
 
@@ -76,6 +80,10 @@ test("both sets of theme pictures match the current themes and assets", async ()
     // until the start page reported trouble again.
     assert.equal(manifest.health, set.health, set.directory);
     assert.deepEqual(manifest.viewport, set.viewport, set.directory);
+    // How far the page was held in from the edge of the picture. The gallery
+    // needs it because a squircle cuts into the corners, and a set regenerated
+    // without it looks right until somebody reads the ends of a row.
+    assert.deepEqual(manifest.contentInset, set.contentInset, set.directory);
   }
 });
 

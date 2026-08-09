@@ -16,6 +16,35 @@
   // browser setup and the Configurator read, so the page cannot advertise a
   // theme that is not offered or miss one that is.
   import { GALLERY_THEMES } from "./theme-gallery.js";
+  import * as SquircleFrame from "../components/squircle-frame";
+  import {
+    SQUIRCLE_CONTENT_INSET,
+    createSquircleRectPath,
+  } from "../lib/squircle.js";
+
+  /**
+   * The box a theme tile is drawn in, and the squircle cut inside it.
+   *
+   * A nominal size rather than a measured one, because this page ships as
+   * prerendered HTML and loads no script. It is the size a tile renders at in
+   * the two-column grid, so the frame's two lines come out at the widths they
+   * are declared at, and it carries the pictures' own 16 by 10 proportion, so
+   * scaling it to a narrower tile stays uniform.
+   *
+   * The picture is cut at the inner edge of the wide line, which is what
+   * `SQUIRCLE_CONTENT_INSET` names. Stated as a path in that box and applied
+   * with `clipPathUnits="objectBoundingBox"`, so the one definition fits every
+   * tile: the transform is what maps the box onto the 0 to 1 space that unit
+   * expects.
+   */
+  const TILE_WIDTH = 576;
+  const TILE_HEIGHT = 360;
+  const TILE_CONTENT_PATH = createSquircleRectPath(
+    TILE_WIDTH,
+    TILE_HEIGHT,
+    SQUIRCLE_CONTENT_INSET,
+  );
+  const TILE_CONTENT_TRANSFORM = `scale(${1 / TILE_WIDTH} ${1 / TILE_HEIGHT})`;
 
   /**
    * Where a visitor goes to install Velvet. The setup service redirects its
@@ -247,16 +276,31 @@
               backdrop.
             </p>
           </div>
+          <!-- The cut, defined once. Zero-sized and hidden, because it is a
+               definition rather than a drawing. -->
+          <svg width="0" height="0" aria-hidden="true" focusable="false" class="shape-defs">
+            <defs>
+              <clipPath id="velvet-theme-tile" clipPathUnits="objectBoundingBox">
+                <path d={TILE_CONTENT_PATH} transform={TILE_CONTENT_TRANSFORM} />
+              </clipPath>
+            </defs>
+          </svg>
           <ul class="themes">
             {#each GALLERY_THEMES as theme (theme.id)}
               <li>
                 <figure>
-                  <img
-                    src={theme.picture}
-                    alt={`The ${theme.name} theme on a Velvet status page`}
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <span class="shot">
+                    <SquircleFrame.Outline
+                      width={TILE_WIDTH}
+                      height={TILE_HEIGHT}
+                    />
+                    <img
+                      src={theme.picture}
+                      alt={`The ${theme.name} theme on a Velvet status page`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
                   <figcaption>{theme.name}</figcaption>
                 </figure>
               </li>
@@ -558,16 +602,32 @@
     gap: 0.6rem;
     margin: 0;
   }
-  .themes img {
-    width: 100%;
-    height: auto;
+  /* The tile carries the shape and the picture fills it, because a squircle is
+     a path rather than a radius and a path clips the box it is set on. The
+     ratio is claimed before the file arrives, so the cards below do not move
+     when it does. */
+  .shape-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+  .themes .shot {
+    color: color-mix(in srgb, var(--velvet-text-muted) 55%, transparent);
+    position: relative;
     display: block;
-    border-radius: var(--step-card-inner-radius);
-    /* Claimed before the file arrives, so the cards below do not move when it
-       does. It is the ratio the four preview images are cut to. */
     aspect-ratio: 16 / 10;
+  }
+  /* Fills the shape rather than sitting inside it, cut at the inner edge of the
+     wide line so the frame closes around it. The pictures are photographed at
+     16 by 10, which is the ratio above, so filling crops nothing. */
+  .themes img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
     object-fit: cover;
-    background: var(--velvet-surface-sunken);
+    clip-path: url(#velvet-theme-tile);
   }
   .themes figcaption {
     text-align: center;
