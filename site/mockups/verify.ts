@@ -360,18 +360,27 @@ for (const [file, declared] of themes) {
       A day nothing was recorded on is meant to read as an absence, so a fill
       that stood out from the page as strongly as a working day would say the
       opposite of what it means. What has to be visible is that a segment is
-      there at all, and that is carried by the inset edge such a day draws
-      rather than by its fill. So the edge is what must clear the page, whilst
-      the fill only has to be separable from a working day.
+      there at all, and where such a day draws an inset edge that is what
+      carries it, so the edge is what must clear the page whilst the fill only
+      has to be separable from a working day.
+
+      A theme may draw no edge at all, saying so by giving it the fill's own
+      colour. Then there is nothing to hold to the page, and the day is told
+      apart by its neighbours instead: the check below, that an empty day does
+      not look like a working one, is the whole requirement in that case.
     */
-    check(
-      file,
-      declared,
-      "--state-ghost-edge",
-      surface,
-      GRAPHIC_MINIMUM,
-      "the edge of an empty day",
-    );
+    const edge = declared.get("--state-ghost-edge")?.trim();
+    const outlined = edge !== "var(--state-no-data)";
+    if (outlined) {
+      check(
+        file,
+        declared,
+        "--state-ghost-edge",
+        surface,
+        GRAPHIC_MINIMUM,
+        "the edge of an empty day",
+      );
+    }
   }
   const noData = resolve(declared, "--state-no-data");
   const working = resolve(declared, "--state-operational");

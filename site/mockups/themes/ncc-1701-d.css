@@ -78,12 +78,13 @@
     black and said nothing; the taupe at full strength measured 1.67:1 against
     the operational blue, so an empty day looked like a working one.
 
-    60 per cent is as dim as it goes: 3.14:1 on black, against a floor of 3:1
-    for anything that has to be seen, and 3.96:1 against that blue. 58 per cent
-    already computes to 2.998:1 and fails, and anything darker than that is not
-    a day at all.
+    Dim, because an absence should read as one. Nothing holds it to the page,
+    since this design draws no edge, and it does not need to: what says a day
+    is empty is that it does not look like a working one, and 28 per cent
+    measures 7.79:1 against the operational blue. It sits at 1.42:1 on black,
+    which is a shadow of a bar rather than a bar.
   */
-  --state-no-data: color-mix(in srgb, #b1957a 60%, #000000);
+  --state-no-data: color-mix(in srgb, #b1957a 28%, #000000);
   --state-maintenance: #cc99cc;
   --state-maintenance-edge: color-mix(in srgb, #cc99cc 60%, #ffffcc);
   /* Announcing that nothing is known. Named apart from the strip's own edge,
