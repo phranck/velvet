@@ -1,0 +1,341 @@
+/**
+ * Velvet, as it ships today.
+ *
+ * This is not a new design. It is the status page Velvet publishes now,
+ * expressed as a theme file, and it is here for two reasons. It gives the
+ * collection its own baseline to be compared against, and it is the honest test
+ * of whether the token set can express the thing it was derived from.
+ *
+ * Every value below is taken from the running product rather than matched by
+ * eye, and each group names where it came from:
+ *
+ *   - the palette from `site/src/app.css`
+ *   - the strip and type geometry from `site/src/lib/tokens.ts`
+ *   - the card radius, padding and page width from the defaults documented in
+ *     `documentation/configuration.md`
+ *   - the chart's fill opacity from `ResponseTimeChart.svelte`
+ *
+ * Two values had to move, and both are recorded here rather than quietly
+ * corrected, because they are findings about the shipping product rather than
+ * decisions about this theme.
+ *
+ * The empty-day colour ships as `#1c2029`, which measures 1.31:1 against the
+ * page. A day nothing was recorded on is therefore very nearly invisible, and
+ * the only thing that would distinguish it is the inset edge, which ships as
+ * `--text-tertiary` at 14 per cent and measures 1.16:1. Neither reaches the 3:1
+ * a graphic needs. The fill is kept and the edge is lifted to the lowest value
+ * that passes, which is the smallest change that makes an empty day legible.
+ *
+ * The faces are fetched here rather than self-hosted; see `cassette.css`. The
+ * product self-hosts both through `@fontsource`.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* ── Identity ─────────────────────────────────────────────────────────── */
+  --theme-name: "Velvet";
+  --theme-era: "today";
+  --theme-scheme: dark;
+
+  /* ── Surface ──────────────────────────────────────────────────────────── */
+  /* `--background-end`, `--card-background`, `--card-border` and
+     `--card-separator` from `app.css`. `--surface-sunken` is the `--surface-2`
+     that file derives, which is the card mixed 45 per cent into the page. */
+  --surface-base: #0a0b0f;
+  --surface-sunken: #0c0d12;
+  --surface-card: #0e1015;
+  --surface-rule: #1c2029;
+  --surface-popover: #171a22;
+
+  /* ── Text ─────────────────────────────────────────────────────────────── */
+  --text-1: #e8eaed;
+  --text-2: #8b919b;
+  --text-3: #565b65;
+  --popover-text: #e8eaed;
+  --popover-text-muted: #8b919b;
+  --popover-edge: #313640;
+
+  /* ── Brand and accent ─────────────────────────────────────────────────── */
+  --brand-primary: #8ca5ff;
+  --accent: #6366f1;
+  --accent-quiet: rgb(99 102 241 / 0.16);
+
+  /* ── State ────────────────────────────────────────────────────────────── */
+  /* The four grid colours as shipped. Operational is the accent itself, which
+     is unusual and deliberate: on this design a working service is drawn in
+     the same colour the interface points with. */
+  --state-operational: #6366f1;
+  --state-degraded: #d29922;
+  --state-outage: #f85149;
+  --state-no-data: #1c2029;
+  --state-maintenance: #8b919b;
+  --state-maintenance-edge: #b9bdc4;
+  /* Lifted from the shipping value; see the note at the head of this file. */
+  --state-ghost-edge: #5b616c;
+  --protocol-ipv4: #7c7ef3;
+  --protocol-ipv6: #38bdf8;
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  /* Inter and Fira Code, which are what `app.css` names and what the build
+     ships. The sizes are `typeScale` from `tokens.ts`, in the same order. */
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-meta: "Fira Code", ui-monospace, monospace;
+  --display-transform: none;
+  --display-tracking: 0em;
+  --display-weight: 500;
+  --label-transform: uppercase;
+  --label-tracking: 0.06em;
+  --meta-style: normal;
+  --meta-weight: 600;
+
+  --page-min-width: 320px;
+  --text-size-body: 18px;
+  --text-size-small: 15px;
+  --text-size-caption: 13px;
+  --text-size-badge: 11.5px;
+  --text-size-lead: 16px;
+  --text-size-section: 15px;
+  --text-size-service: 16.5px;
+  --text-size-brand: 17px;
+  --text-size-headline: 38px;
+  --text-size-hero-glyph: 54px;
+  --text-size-service-icon: 22px;
+  --text-size-ornament: 22px;
+  --text-size-chart-label: 11px;
+  --text-size-chart-caption: 10px;
+  --text-leading-body: 1.55;
+  --text-leading-display: 1.1;
+  --text-leading-tight: 1.5;
+
+  /* ── Shape ────────────────────────────────────────────────────────────── */
+  /* The documented defaults: radius 14, padding 16, and a 760px measure. */
+  --detail-space-after: 0px;
+  --detail-padding: var(--card-padding);
+  --card-radius-base: 14px;
+  --card-radius: 14px;
+  --card-clip: none;
+  --card-border-width: 1px;
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.28);
+  --control-radius: 6px;
+  --control-border-width: 1px;
+  --badge-radius: 999px;
+  --badge-border-width: 1px;
+  --tooltip-radius: 8px;
+  --tooltip-clip: none;
+  --dot-radius: 50%;
+  --rule-width: 1px;
+  --rule-style: solid;
+  --summary-hover-fill: var(--accent-quiet);
+  --focus-width: 2px;
+  --focus-offset: 4px;
+  --notices-gap: var(--space-tight);
+  --notices-arm-space: 0px;
+  --notices-arm-inset: 0px;
+  --notices-arm-image: none;
+  --notices-arm-size: auto;
+  --notices-arm-position: left bottom;
+  --notices-throat: 0px;
+  --notices-throat-offset: 0px;
+  --notice-glyph-display: inline-block;
+  --notices-rail-width: 0px;
+  --notices-rail-gap: 0px;
+  --notices-rail-radius: 0px;
+  --notices-rail-fill: transparent;
+  --notice-align: center;
+  --notice-areas-maintenance: "glyph title meta" "glyph summary summary";
+  --notice-areas-incident: "title meta" "summary summary";
+  --notice-columns-maintenance: auto 1fr auto;
+  --notice-columns-incident: 1fr auto;
+  --notice-fill: color-mix(in srgb, currentColor 12%, var(--surface-card));
+  --notice-padding: var(--card-padding);
+  --notice-radius: var(--card-radius);
+  --notice-border-width: var(--card-border-width);
+  --card-rail-width: 0px;
+  --card-rail-colour: transparent;
+  --card-rail-radius: 0px;
+  --card-rail-inset: 0px;
+  --card-texture: none;
+  --card-texture-size: auto;
+  --card-ornament-height: auto;
+  --card-ornament-radius: 0px;
+  --card-ornament-fill: transparent;
+  --card-ornament-throat: 0px;
+  --card-ornament-throat-offset: 0px;
+  --card-ornament-display: none;
+  --card-ornament-inset: 0px;
+  --card-ornament-image: none;
+  --card-ornament-size: auto;
+  --card-ornament-position: center;
+  --nav-rule-height: 1px;
+  --nav-rule-colour: var(--surface-rule);
+  --nav-rule-radius: 0px;
+  --nav-rule-inset: 0px;
+
+  /* ── Measure ──────────────────────────────────────────────────────────── */
+  --page-width: 760px;
+  --page-inset: clamp(12px, 4vw, 22px);
+  --row-inset: var(--card-text-inset);
+  --card-padding: 16px;
+  --card-gap: 6px;
+  --space-hair: 5px;
+  --space-tight: 9px;
+  --space-row: 11px;
+  --space-block: 16px;
+  --space-section: 26px;
+  --nav-gap: 16px;
+  --nav-padding-block: 26px;
+  --nav-padding-inline: 6px;
+  --hero-padding-block: 36px;
+  --hero-padding-inline: 6px;
+  --control-padding-block: 3px;
+  --toggle-padding-inline: var(--control-padding-inline);
+  --control-padding-inline: 8px;
+  --badge-padding-block: 2px;
+  --badge-padding-inline: 7px;
+  --tooltip-padding-block: 7px;
+  --tooltip-padding-inline: 12px;
+  --stamp-inset-block: 8px;
+  --stamp-inset-inline: 10px;
+  --dot-size: 6px;
+
+  /* ── Availability strip ───────────────────────────────────────────────── */
+  /* `bar` from `tokens.ts`, exactly: 32 tall, 38 hovered, 2 apart, 2 rounded,
+     and a capsule in the 90-day view. The gloss is the one in `segGloss`. */
+  --bar-align: center;
+  --bar-pieces: 1;
+  --bar-piece-gap: 0px;
+  --bar-height: 32px;
+  --bar-hover-height: 38px;
+  --bar-gap: 2px;
+  --bar-radius: 2px;
+  --bar-track-radius: var(--bar-radius);
+  --bar-radius-narrow: 999px;
+  --seg-gloss: on;
+
+  /* ── Chart ────────────────────────────────────────────────────────────── */
+  /* The plot box from `ResponseTimeChart.svelte`: 148 tall, inset 12, three
+     rules, a 2px stroke, points at 3, a 136px reading, and the 0.28 fill its
+     gradient declares. */
+  --chart-head-space: var(--space-tight);
+  --chart-height: 148px;
+  --chart-inset-inline: 12px;
+  --chart-inset-block: 12px;
+  --chart-grid-lines: 3;
+  --chart-grid-dash: none;
+  --chart-line-width: 2px;
+  --chart-line-cap: round;
+  --chart-ipv4-dash: none;
+  --chart-ipv6-dash: none;
+  --chart-fill: 0.28;
+  --chart-point-radius: 3px;
+  --chart-tooltip-width: 136px;
+  --chart-crosshair-dash: 3 4;
+  --chart-key-width: 16px;
+
+  /* ── Backdrop ─────────────────────────────────────────────────────────── */
+  /* The three washes `app.css` calls `--cloudy-blobs`, over the vertical fall
+     from `--background-start` to `--background-end`. */
+  --backdrop-layer: radial-gradient(
+      52% 41% at 12% 0%,
+      rgb(99 102 241 / 0.13),
+      transparent 70%
+    ),
+    radial-gradient(
+      46% 36% at 88% 4%,
+      rgb(129 132 244 / 0.1),
+      transparent 70%
+    ),
+    radial-gradient(
+      58% 45% at 50% 100%,
+      rgb(99 102 241 / 0.08),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #0e1018 0%, #0a0b0f 100%);
+  --backdrop-texture: none;
+  --backdrop-texture-size: auto;
+  --backdrop-texture-opacity: 0;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  /* 400ms, which is what `app.css` declares for a service panel. */
+  --backdrop-motion: none;
+  --motion-disclosure: 400ms;
+  --velvet-disclosure-duration: 400ms;
+  --motion-ease: ease-in-out;
+  --motion-range: 260ms;
+  --motion-hover: 120ms;
+
+  /* ── Arrangement ──────────────────────────────────────────────────────── */
+  /* Centred throughout, which is how the page reads today. */
+  --nav-justify: center;
+  --nav-fill: transparent;
+  --nav-brand-colour: var(--text-1);
+  --nav-link-colour: #8b919b;
+  --hero-align: center;
+  --hero-text-align: center;
+  --hero-fill: transparent;
+  --hero-areas: "mark" "title" "updated";
+  --hero-columns: auto;
+  --hero-mark-size: var(--text-size-hero-glyph);
+  --hero-mark-display: inline-block;
+  --hero-mark-glow: drop-shadow(
+    0 0 14px color-mix(in srgb, currentColor 35%, transparent)
+  );
+  --hero-title-colour: var(--text-1);
+  --hero-updated-colour: var(--text-2);
+  --range-label-display: block;
+  --range-label-colour: var(--text-2);
+  --range-button-colour: var(--text-3);
+  --range-button-hover-colour: var(--text-1);
+  --range-bar-height: auto;
+  --range-bar-space: var(--space-tight);
+  --range-bar-padding: 0;
+  --range-bar-radius: 0px;
+  --range-bar-fill: transparent;
+  --range-bar-colour: currentColor;
+  --range-bar-stem-width: 0px;
+  --range-bar-stem-height: 0px;
+  --range-bar-throat: 0px;
+  --range-bar-throat-offset: 0px;
+  --range-justify: flex-end;
+  --footer-align: center;
+  --footer-text-align: center;
+  /* One column: the name stays inside the summary and no rail is drawn. */
+  --service-areas: "summary" "strip" "axis" "details";
+  --service-columns: 1fr;
+  --service-rail-display: none;
+  --service-rail-justify: center;
+  --service-rail-weight: var(--display-weight);
+  --control-font: var(--font-meta);
+  --control-weight: var(--meta-weight);
+  --control-tracking: 0em;
+  --control-transform: none;
+  --service-rail-align: center;
+  --service-rail-padding: 0;
+  --service-rail-radius: 0px;
+  --service-rail-fill: transparent;
+  --service-rail-colour: currentColor;
+  --service-rail-gap: 0px;
+  --service-gap: var(--space-block);
+  --service-divider-space: var(--space-block);
+  --service-divider-width: var(--rule-width);
+  --service-icon-display: inline-block;
+  --service-icon-colour: var(--accent);
+  --service-name-display: inline;
+  --service-name-flex: 1 1 auto;
+  --service-name-padding: 0;
+  --service-name-radius: 0px;
+  --service-name-fill: transparent;
+  --service-name-colour: currentColor;
+  --layout-cards: auto;
+
+  /* ── Controls ─────────────────────────────────────────────────────────── */
+  /* The accent at 16 per cent behind the current range, with the brighter
+     accent as its text, which is what `StatusPage.svelte` declares. */
+  --control-idle-edge: transparent;
+  --control-active-fill: rgb(99 102 241 / 0.16);
+  --control-active-edge: transparent;
+  --control-active-text: #8286f4;
+  --control-active-glow: none;
+}

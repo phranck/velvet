@@ -4,6 +4,8 @@
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
+  import * as CRTSquircle from "../components/crt-squircle";
+  import * as SquircleCard from "../components/squircle-card";
   import * as StepCard from "../components/step-card";
   import {
     STEP_CARD_CONTENT_INSET,
@@ -11,11 +13,43 @@
   } from "../components/step-card/geometry.js";
   // The README's screenshot, imported from where it already lives rather than
   // copied here, so the page and the repository can never show different ones.
-  import screenshotUrl from "../../../docs/screenshot.png";
+  // The same capture without a window around it, because the tube below is
+  // the frame. `docs/screenshot.png` keeps its window for the README, which is
+  // read on a page that has none.
+  import screenshotUrl from "./assets/screenshot-screen.png";
   // The four themes an installation can be set to, read from the registry the
   // browser setup and the Configurator read, so the page cannot advertise a
   // theme that is not offered or miss one that is.
   import { GALLERY_THEMES } from "./theme-gallery.js";
+  import * as SquircleFrame from "../components/squircle-frame";
+  import {
+    SQUIRCLE_CONTENT_INSET,
+    createSquircleRectPath,
+  } from "../lib/squircle.js";
+
+  /**
+   * The box a theme tile is drawn in, and the squircle cut inside it.
+   *
+   * A nominal size rather than a measured one, because this page ships as
+   * prerendered HTML and loads no script. It is the size a tile renders at in
+   * the two-column grid, so the frame's two lines come out at the widths they
+   * are declared at, and it carries the pictures' own 16 by 10 proportion, so
+   * scaling it to a narrower tile stays uniform.
+   *
+   * The picture is cut at the inner edge of the wide line, which is what
+   * `SQUIRCLE_CONTENT_INSET` names. Stated as a path in that box and applied
+   * with `clipPathUnits="objectBoundingBox"`, so the one definition fits every
+   * tile: the transform is what maps the box onto the 0 to 1 space that unit
+   * expects.
+   */
+  const TILE_WIDTH = 576;
+  const TILE_HEIGHT = 360;
+  const TILE_CONTENT_PATH = createSquircleRectPath(
+    TILE_WIDTH,
+    TILE_HEIGHT,
+    SQUIRCLE_CONTENT_INSET,
+  );
+  const TILE_CONTENT_TRANSFORM = `scale(${1 / TILE_WIDTH} ${1 / TILE_HEIGHT})`;
 
   /**
    * Where a visitor goes to install Velvet. The setup service redirects its
@@ -160,21 +194,22 @@
     <section class="showcase" aria-label="A published Velvet status page">
       <div class="showcase-plate">
         <a href={ONBOARDING_URL} tabindex="-1" aria-hidden="true">
-          <img
-            src={screenshotUrl}
-            alt="A Velvet status page showing services, uptime bars, and a response-time chart"
-            width="2010"
-            height="1536"
-            fetchpriority="high"
-            decoding="async"
-          />
+          <CRTSquircle.Root>
+            <img
+              src={screenshotUrl}
+              alt="A Velvet status page showing services, uptime bars, and a response-time chart"
+              width="1770"
+              height="1328"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </CRTSquircle.Root>
         </a>
       </div>
     </section>
 
     <section class="column" aria-labelledby="capabilities-title">
-      <StepCard.Root>
-        <div class="card-inset">
+      <div class="card-inset">
           <div class="velvet-section-heading">
             <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
@@ -189,21 +224,25 @@
           <ul class="capabilities">
             {#each CAPABILITIES as capability (capability.title)}
               <li>
-                <Icon name={capability.icon} />
-                <div>
-                  <h3>{capability.title}</h3>
-                  <p>{capability.description}</p>
-                </div>
+                <SquircleCard.Root>
+                  <SquircleCard.Body>
+                    <div class="entry">
+                      <Icon name={capability.icon} />
+                      <div>
+                        <h3>{capability.title}</h3>
+                        <p>{capability.description}</p>
+                      </div>
+                    </div>
+                  </SquircleCard.Body>
+                </SquircleCard.Root>
               </li>
             {/each}
           </ul>
-        </div>
-      </StepCard.Root>
+      </div>
     </section>
 
     <section class="column" aria-labelledby="pipeline-title">
-      <StepCard.Root>
-        <div class="card-inset">
+      <div class="card-inset">
           <div class="velvet-section-heading">
             <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
@@ -218,23 +257,27 @@
           <ol class="pipeline">
             {#each PIPELINE as stage, index (stage.title)}
               <li>
-                <span class="pipeline-number" aria-hidden="true">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <h3>{stage.title}</h3>
-                  <p>{stage.description}</p>
-                </div>
+                <SquircleCard.Root>
+                  <SquircleCard.Body>
+                    <div class="entry">
+                      <span class="pipeline-number" aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <h3>{stage.title}</h3>
+                        <p>{stage.description}</p>
+                      </div>
+                    </div>
+                  </SquircleCard.Body>
+                </SquircleCard.Root>
               </li>
             {/each}
           </ol>
-        </div>
-      </StepCard.Root>
+      </div>
     </section>
 
     <section class="column" aria-labelledby="themes-title">
-      <StepCard.Root>
-        <div class="card-inset">
+      <div class="card-inset">
           <div class="velvet-section-heading">
             <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
@@ -247,23 +290,37 @@
               backdrop.
             </p>
           </div>
+          <!-- The cut, defined once. Zero-sized and hidden, because it is a
+               definition rather than a drawing. -->
+          <svg width="0" height="0" aria-hidden="true" focusable="false" class="shape-defs">
+            <defs>
+              <clipPath id="velvet-theme-tile" clipPathUnits="objectBoundingBox">
+                <path d={TILE_CONTENT_PATH} transform={TILE_CONTENT_TRANSFORM} />
+              </clipPath>
+            </defs>
+          </svg>
           <ul class="themes">
             {#each GALLERY_THEMES as theme (theme.id)}
               <li>
                 <figure>
-                  <img
-                    src={theme.picture}
-                    alt={`The ${theme.name} theme on a Velvet status page`}
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <span class="shot">
+                    <SquircleFrame.Outline
+                      width={TILE_WIDTH}
+                      height={TILE_HEIGHT}
+                    />
+                    <img
+                      src={theme.picture}
+                      alt={`The ${theme.name} theme on a Velvet status page`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
                   <figcaption>{theme.name}</figcaption>
                 </figure>
               </li>
             {/each}
           </ul>
-        </div>
-      </StepCard.Root>
+      </div>
     </section>
 
     <section class="column" aria-labelledby="manual-title">
@@ -459,10 +516,11 @@
      arrives. Measured at 208px short on a desktop width before this. */
   .showcase-plate a {
     width: 100%;
-    /* Wider than the window inside it by exactly the transparent margin the
-       picture carries, so the window itself lands at the size it had when the
-       frame was still baked in. */
-    max-width: 830px;
+    /* The tube is its own frame now, so this is the width of the screen itself
+       rather than of a window plus the transparent margin around it. Smaller
+       than that window was, because a screen showing a page reads at a size a
+       screen would be rather than at the size of a picture of one. */
+    max-width: 720px;
   }
   .showcase img {
     width: 100%;
@@ -472,7 +530,7 @@
        left to the width and height attributes, because the picture loads
        lazily and the ratio has to hold whilst it is still absent. It is the
        file's own, 2010 by 1536. */
-    aspect-ratio: 2010 / 1536;
+    aspect-ratio: 4 / 3;
   }
   .card-inset {
     padding: var(--step-card-content-inset, 16px);
@@ -508,14 +566,46 @@
     padding: 0;
     list-style: none;
   }
+  /* Three across rather than two, so each card is nearer square. A squircle far
+     from square reads as a capsule, and these are the shortest cards on the
+     page. Narrower cards need a wider share of themselves kept clear, because
+     the icon sits at the left where the curve has already begun to pull in. */
+  .capabilities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /*
+    A card inside a card. It lifts itself off the one behind it with the raised
+    surface, and takes a smaller safe inset than the outer card because it is
+    wide and shallow: the curve pulls in hardest towards the corners, and on a
+    box far from square the vertical share of a percentage inset is already
+    generous. The minimum height keeps it from flattening into a capsule, which
+    is what a squircle becomes when its box is.
+  */
   .capabilities li,
   .pipeline li {
+    /* Lifted off the card behind it, and translucent to the same degree, so the
+       board shows through both rather than through one of them. */
+    --squircle-card-surface: color-mix(
+      in srgb,
+      var(--velvet-surface-raised) 74%,
+      transparent
+    );
+    /* Turned down, because a card inside another does not need to cast as far
+       as the one it sits in. */
+    --squircle-card-shadow-strength: 0.16;
+    --squircle-card-safe-inset: 7.5%;
+    display: grid;
+    min-height: 14rem;
+  }
+  /* The narrower of the two, and its icon sits at the left where the curve has
+     already begun to pull in, so it keeps a wider share of itself clear. */
+  .capabilities li {
+    --squircle-card-safe-inset: 10.5%;
+  }
+  .entry {
     display: flex;
     align-items: start;
     gap: 0.85rem;
-    padding: 1rem;
-    border-radius: var(--step-card-inner-radius);
-    background: var(--velvet-rule);
   }
   .capabilities :global(svg) {
     color: var(--setup-accent);
@@ -536,11 +626,19 @@
     font-size: var(--setup-text-body);
     font-weight: 650;
   }
+  /* One step up the scale from the text beneath it, so the title of a card
+     leads rather than merely starting the paragraph. */
+  .capabilities h3,
+  .pipeline h3 {
+    font-size: var(--velvet-text-copy);
+  }
+  /* A step up from the site's small text, because these paragraphs carry the
+     substance of both sections rather than annotating something else. */
   .capabilities p,
   .pipeline p {
     margin: 0;
     color: var(--setup-muted);
-    font-size: var(--setup-text-small);
+    font-size: var(--velvet-text-body);
     line-height: 1.5;
   }
   /* Two across, because a status page in a quarter of this card is too small
@@ -558,16 +656,32 @@
     gap: 0.6rem;
     margin: 0;
   }
-  .themes img {
-    width: 100%;
-    height: auto;
+  /* The tile carries the shape and the picture fills it, because a squircle is
+     a path rather than a radius and a path clips the box it is set on. The
+     ratio is claimed before the file arrives, so the cards below do not move
+     when it does. */
+  .shape-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+  .themes .shot {
+    color: color-mix(in srgb, var(--velvet-text-muted) 55%, transparent);
+    position: relative;
     display: block;
-    border-radius: var(--step-card-inner-radius);
-    /* Claimed before the file arrives, so the cards below do not move when it
-       does. It is the ratio the four preview images are cut to. */
     aspect-ratio: 16 / 10;
+  }
+  /* Fills the shape rather than sitting inside it, cut at the inner edge of the
+     wide line so the frame closes around it. The pictures are photographed at
+     16 by 10, which is the ratio above, so filling crops nothing. */
+  .themes img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
     object-fit: cover;
-    background: var(--velvet-surface-sunken);
+    clip-path: url(#velvet-theme-tile);
   }
   .themes figcaption {
     text-align: center;

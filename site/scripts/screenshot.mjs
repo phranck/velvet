@@ -30,11 +30,22 @@ import {
 const SITE = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DIST = join(SITE, "dist");
 const OUT = resolve(SITE, "..", "docs", "screenshot.png");
+/**
+ * The same capture without the window around it, for the start page.
+ *
+ * The README wants a window, because it is read on a page that has none. The
+ * start page puts the picture behind a monitor of its own, and a second frame
+ * inside that one would read as a screen showing a screenshot rather than as a
+ * screen showing the page.
+ */
+const SCREEN_OUT = resolve(SITE, "src", "website", "assets", "screenshot-screen.png");
 
 /** CSS px width the demo page renders at; the column (max 760) sits centred with margin. */
 const PAGE_W = 1180;
 /** CSS px height captured — shows logo, hero, range bar, and the first cards. */
 const PAGE_H = 760;
+/** Four by three, the proportion of the tube the start page shows it in. */
+const SCREEN_H = Math.round((PAGE_W * 3) / 4);
 /**
  * Transparent room around the window, in CSS px, sized to hold its drop shadow.
  *
@@ -197,6 +208,19 @@ async function main() {
 
     const shot = await page.screenshot({ type: "png" });
 
+    // The start page's copy is taken again at the proportion a cathode ray tube
+    // has, so the picture fills the screen without being stretched into it. The
+    // window above keeps the wider frame it was composed for.
+    await page.setViewportSize({ width: PAGE_W, height: SCREEN_H });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(150);
+    const screenShot = await page.screenshot({ type: "png" });
+    await writeFile(SCREEN_OUT, screenShot);
+    console.log(
+      `velvet: wrote ${SCREEN_OUT} (${(screenShot.length / 1024).toFixed(0)} KB)`,
+    );
+    await page.setViewportSize({ width: PAGE_W, height: PAGE_H });
+
     await page
       .locator(".name")
       .first()
@@ -297,6 +321,11 @@ async function main() {
       execFileSync("pngquant", ["--quality=80-96", "--force", "--strip", "--output", OUT, OUT], {
         stdio: "ignore",
       });
+      execFileSync(
+        "pngquant",
+        ["--quality=80-96", "--force", "--strip", "--output", SCREEN_OUT, SCREEN_OUT],
+        { stdio: "ignore" },
+      );
       console.log(`velvet: compressed to ${((await stat(OUT)).size / 1024).toFixed(0)} KB`);
     } catch {
       console.log("velvet: pngquant not found — left PNG uncompressed");
