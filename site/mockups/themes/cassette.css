@@ -336,6 +336,7 @@
   --control-min-width: auto;
   --text-size-control: var(--text-size-caption);
   --control-active-scale: 1;
+  --range-mark-trim: 0px;
   --range-bar-height: auto;
   --range-bar-space: var(--space-tight);
   --range-bar-padding: 0;

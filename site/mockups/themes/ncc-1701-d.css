@@ -460,6 +460,10 @@
   /* The chosen label reads as 26px against the others' 16px, and grows by
      transform so the row's geometry does not move under it. */
   --control-active-scale: 1.625;
+  /* Taken off each side of the gap. The label's own padding is scaled up with
+     it and would otherwise leave 22.75px of empty bar either side of the
+     words. */
+  --range-mark-trim: 13px;
   --range-bar-height: var(--lcars-arm-depth);
   --range-bar-space: calc(var(--range-bar-stem-height) + var(--service-gap));
   --range-bar-padding: 0 0 0 clamp(10px, 3vw, 20px);

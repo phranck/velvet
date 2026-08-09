@@ -542,11 +542,14 @@ export function mountStatusPage(
     if (!button) return;
     const track = rangeButtons.getBoundingClientRect();
     if (track.width === 0) return;
+    const style = getComputedStyle(button);
     const scale =
-      Number.parseFloat(
-        getComputedStyle(button).getPropertyValue("--control-active-scale"),
-      ) || 1;
-    const width = button.offsetWidth * scale;
+      Number.parseFloat(style.getPropertyValue("--control-active-scale")) || 1;
+    // Taken off each side, because a label's own padding is scaled up with it
+    // and a theme may not want all of that as empty bar around the words.
+    const trim =
+      Number.parseFloat(style.getPropertyValue("--range-mark-trim")) || 0;
+    const width = button.offsetWidth * scale - 2 * trim;
     const left = button.offsetLeft - (width - button.offsetWidth) / 2;
     rangeMark.style.transition = animate ? "" : "none";
     rangeMark.style.width = `${width}px`;
