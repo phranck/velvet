@@ -815,12 +815,6 @@ body::after {
   text-indent: calc(var(--control-tracking) / 2);
   text-transform: var(--control-transform);
   padding: var(--control-padding-block) var(--control-padding-inline);
-  /*
-    A floor under every label's width, so a design that sets the chosen one
-    larger does not push its neighbours aside when the choice moves. Wide
-    enough for the longest label at its chosen size, every segment is then the
-    same width and only the mark travels.
-  */
   min-width: var(--control-min-width);
   border: var(--control-border-width) var(--rule-style) var(--control-idle-edge);
   border-radius: var(--control-radius);
@@ -846,23 +840,26 @@ body::after {
   through the bar rather than laying a filled pill under it, size is most of
   what says which one is chosen.
 
-  It is a real size rather than a `transform`, and that is deliberate. Scaling
-  leaves every label occupying the space of its largest form, which spreads the
-  row out and leaves gaps that belong to nothing. The size therefore changes on
-  two elements at a time, which `web-app-ui.md` allows where it is spent
-  deliberately, and the mark is given its destination rather than reading it
-  mid-flight.
+  It grows by `transform`, so its box does not. A real font size would lay the
+  row out afresh on every change and push the labels beside it sideways; giving
+  every label the largest one's width instead holds them still but spreads the
+  row out and leaves gaps belonging to nothing. Scaling leaves the row exactly
+  as it is, and the label's own padding keeps the enlarged glyphs clear of its
+  neighbours.
+
+  The mark that cuts through the bar is widened by the same factor, so the gap
+  is the size of what stands in it.
 */
 .range-button {
   transition:
     color var(--motion-hover),
     background var(--motion-hover),
-    font-size var(--motion-range) var(--motion-ease);
+    transform var(--motion-range) var(--motion-ease);
 }
 
 .range-button[aria-pressed="true"] {
   color: var(--control-active-text);
-  font-size: var(--text-size-control-active);
+  transform: scale(var(--control-active-scale));
 }
 
 /* Its own inline padding rather than the range buttons', so it can be brought

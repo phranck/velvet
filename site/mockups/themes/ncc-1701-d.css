@@ -455,11 +455,11 @@
      so the mark is square and as tall as the arm itself. */
   --range-align: stretch;
   --range-mark-radius: 0px;
-  /* The longest label measures 78.7px when chosen, so 80px holds all five
-     and every segment is the same width. */
-  --control-min-width: 80px;
+  --control-min-width: auto;
   --text-size-control: 16px;
-  --text-size-control-active: 26px;
+  /* The chosen label reads as 26px against the others' 16px, and grows by
+     transform so the row's geometry does not move under it. */
+  --control-active-scale: 1.625;
   --range-bar-height: var(--lcars-arm-depth);
   --range-bar-space: calc(var(--range-bar-stem-height) + var(--service-gap));
   --range-bar-padding: 0 0 0 clamp(10px, 3vw, 20px);

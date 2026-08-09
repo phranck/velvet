@@ -297,7 +297,7 @@
   --range-mark-radius: var(--control-radius);
   --control-min-width: auto;
   --text-size-control: var(--text-size-caption);
-  --text-size-control-active: var(--text-size-caption);
+  --control-active-scale: 1;
   --range-bar-height: auto;
   --range-bar-space: var(--space-tight);
   --range-bar-padding: 0;
