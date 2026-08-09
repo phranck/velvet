@@ -13,7 +13,8 @@
 
 import "@phosphor-icons/web/duotone";
 
-import { mountStatusPage } from "./page.js";
+import { mountStatusPage, previewOverallStatus } from "./page.js";
+import type { ServiceStatus } from "../src/lib/types.js";
 
 /** Every theme, in the order the toolbar lists them. */
 const THEMES = [
@@ -34,11 +35,13 @@ const THEMES = [
  * @param current - The file name of the page it is being built on, so that
  *   entry can be marked rather than linked to itself.
  * @param onLayoutChange - Called with the layout the visitor picked.
+ * @param onStateChange - Called with the state the visitor picked.
  * @returns The bar, ready to be put at the top of the document.
  */
 function buildToolbar(
   current: string,
   onLayoutChange: (layout: "grouped" | "cards") => void,
+  onStateChange: (status: ServiceStatus) => void,
 ): HTMLElement {
   const bar = document.createElement("div");
   bar.className = "mockup-bar";
@@ -68,8 +71,41 @@ function buildToolbar(
   }
   bar.append(themes);
 
+  // What the page announces, so the state colours can be reviewed. The fixture
+  // reports an outage, and without this that is the only headline a theme
+  // would ever be seen carrying.
+  const states = document.createElement("div");
+  states.className = "mockup-bar-group";
+  states.setAttribute("role", "group");
+  states.setAttribute("aria-label", "State");
+  const STATES: ServiceStatus[] = [
+    "operational",
+    "degraded",
+    "outage",
+    "unknown",
+  ];
+  for (const state of STATES) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "mockup-bar-button";
+    button.textContent = state;
+    button.setAttribute(
+      "aria-pressed",
+      String(state === document.documentElement.dataset.status),
+    );
+    button.addEventListener("click", () => {
+      for (const other of states.children) {
+        other.setAttribute("aria-pressed", "false");
+      }
+      button.setAttribute("aria-pressed", "true");
+      onStateChange(state);
+    });
+    states.append(button);
+  }
+  bar.append(states);
+
   const layouts = document.createElement("div");
-  layouts.className = "mockup-bar-layouts";
+  layouts.className = "mockup-bar-group";
   layouts.setAttribute("role", "group");
   layouts.setAttribute("aria-label", "Layout");
   // A design whose structure runs the height of the whole readout has no
@@ -106,7 +142,24 @@ if (!mount) {
 }
 
 const current = window.location.pathname.split("/").pop() || "cassette.html";
-document.body.prepend(
-  buildToolbar(current, (layout) => mountStatusPage(mount, layout)),
-);
+
+// The page is mounted first, because the bar marks whichever state button the
+// fixture produced and can only read that once the page has said what it is.
 mountStatusPage(mount, "grouped");
+
+/** The state the bar is showing, held so a layout change does not lose it. */
+let previewed = document.documentElement.dataset.status as ServiceStatus;
+
+document.body.prepend(
+  buildToolbar(
+    current,
+    (layout) => {
+      mountStatusPage(mount, layout);
+      previewOverallStatus(previewed);
+    },
+    (status) => {
+      previewed = status;
+      previewOverallStatus(status);
+    },
+  ),
+);

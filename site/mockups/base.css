@@ -459,6 +459,15 @@ body::after {
   Five themes set the rail to zero width and get the stack of padded cards they
   had.
 */
+/*
+  Nothing to report means nothing here at all, and the root says which it is so
+  a theme can answer. One draws a limb around this region, and a limb around an
+  empty region is a shape with nothing in it.
+*/
+:root[data-notices="none"] .notices {
+  display: none;
+}
+
 .notices {
   position: relative;
   display: grid;
@@ -1683,6 +1692,8 @@ linearGradient stop {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  /* Takes the slack, so every group of buttons after it sits to the right. */
+  margin-right: auto;
 }
 
 .mockup-bar-link {
@@ -1702,10 +1713,9 @@ linearGradient stop {
   color: #101014;
 }
 
-.mockup-bar-layouts {
+.mockup-bar-group {
   display: flex;
   gap: 4px;
-  margin-left: auto;
 }
 
 .mockup-bar-button {

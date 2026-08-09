@@ -16,9 +16,10 @@
  *
  * Colour here is decorative rather than semantic, which is the one place a
  * status page has to depart from the source. A reader must be able to tell a
- * working service from a failing one, so the five states take five members of
- * the palette and keep them: ice blue reads as nominal, gold as a warning, and
- * the red-orange as a fault.
+ * working service from a failing one, so the five states keep five fixed
+ * colours: ice blue reads as nominal, orange as a warning, and a red as a
+ * fault. Four of them are members of the standard palette and the red is not,
+ * for the reason given where it is declared.
  *
  * The faces are fetched here rather than self-hosted; see `cassette.css`.
  */
@@ -54,11 +55,11 @@
   --accent-quiet: rgb(255 156 0 / 0.18);
 
   /* ── State ────────────────────────────────────────────────────────────── */
-  /* Ice blue for nominal, gold for a warning, red-orange for a fault, mauve
-     for a scheduled window, and a desaturated slate where nothing was
-     recorded. All five are palette members rather than invented colours. */
+  /* Ice blue for nominal, the panel's own orange for a warning, red for a
+     fault, mauve for a scheduled window, and a desaturated slate where nothing
+     was recorded. */
   --state-operational: #99ccff;
-  --state-degraded: #ffff33;
+  --state-degraded: #ff9c00;
   /*
     One colour beyond the standard set, because that set has none that can
     mean this. It runs from a deep orange to an ice blue with a single muted
@@ -386,8 +387,15 @@
     where the headline ends rather than at the page edge.
   */
   --hero-areas: "rail bar title arm" "rail . updated .";
-  --hero-columns: var(--notices-rail-width) 1fr auto
-    clamp(56px, 11vw, 132px);
+  /*
+    The bar takes what the headline leaves, but never less than its floor. A
+    plain `1fr` beside a content-width headline is nothing at all once the
+    words are long enough, so the bar came and went with the wording: it was
+    there for "Major service outage" and gone for "All systems operational".
+  */
+  --hero-columns: var(--lcars-hero-rail-column)
+    minmax(clamp(40px, 8vw, 96px), 1fr) auto clamp(56px, 11vw, 132px);
+  --lcars-hero-rail-column: var(--notices-rail-width);
   --hero-rail-display: block;
   --hero-rail-fill: var(--status-colour);
   --hero-rail-radius: var(--lcars-outer-radius) 0 0 0;
@@ -529,4 +537,19 @@
   --control-active-edge: transparent;
   --control-active-text: #ff9c00;
   --control-active-glow: none;
+}
+
+/*
+  Nothing to report.
+
+  With no notices there is no region for a limb to surround, so what is left of
+  it is the bar the headline sits in: no column, no throat, and a capsule at the
+  end that used to meet the column. The bar keeps its negative start margin, so
+  it still begins at the page's own edge now that the column's track is gone.
+*/
+:root[data-notices="none"] {
+  --lcars-hero-rail-column: 0px;
+  --hero-rail-display: none;
+  --hero-bar-radius: 999px 0 0 999px;
+  --hero-throat: 0px;
 }

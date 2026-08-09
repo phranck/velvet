@@ -22,7 +22,7 @@ import {
   visibleIncidentEvents,
 } from "../src/lib/data.js";
 import { disclosure } from "../src/lib/disclosure.js";
-import type { RangeKey } from "../src/lib/types.js";
+import type { RangeKey, ServiceStatus } from "../src/lib/types.js";
 import { createChartView, type ChartView } from "./chart-view.js";
 import { createUptimeStrip, type UptimeStrip } from "./uptime-strip.js";
 import {
@@ -108,6 +108,33 @@ interface ServiceRow {
 }
 
 /**
+ * Shows the page as though the installation were in a given state.
+ *
+ * A mockup renders from one fixture, so on its own it would only ever show the
+ * one headline that fixture produces. A theme may colour a great deal by the
+ * state, and none of that can be reviewed without seeing the other three.
+ *
+ * It changes what the page announces and nothing behind it: the services, the
+ * strips and the charts go on reporting what the fixture says.
+ *
+ * @param status - The state to announce.
+ */
+export function previewOverallStatus(status: ServiceStatus): void {
+  document.documentElement.dataset.status = status;
+  const title = document.querySelector(".status-hero-title");
+  if (title) title.textContent = STATUS_HERO[status].text;
+  const glyph = document.querySelector(".status-hero-glyph");
+  if (glyph) {
+    glyph.className = `status-hero-glyph ph-duotone ${STATUS_HERO[status].icon}`;
+  }
+  // Nothing is wrong, so nothing is being reported. A page announcing that
+  // every service is up whilst listing an open incident contradicts itself.
+  const notices = document.querySelector(".notices");
+  const quiet = status === "operational" || !notices?.hasChildNodes();
+  document.documentElement.dataset.notices = quiet ? "none" : "some";
+}
+
+/**
  * Builds the page into a container and wires every control.
  *
  * @param container - Where the page is mounted. It is emptied first.
@@ -164,12 +191,6 @@ export function mountStatusPage(
 
   // ── Hero ──────────────────────────────────────────────────────────────────
   const overall = overallStatus(statusDocument.services);
-  // The root carries the state, not only the hero, because a design may colour
-  // anything by it: one paints the limb around the notices in the state's own
-  // colour, and that limb is nowhere near the hero in the tree. It goes on the
-  // root because a theme declares its tokens there, and a token declared on the
-  // root cannot read a value held below it.
-  document.documentElement.dataset.status = overall;
   const hero = el("div", "status-hero");
   const heroMark = el("span", "status-hero-mark");
   heroMark.setAttribute("aria-hidden", "true");
@@ -469,6 +490,11 @@ export function mountStatusPage(
     serial,
   );
   container.append(page);
+  // The state goes on the root, where a theme can read it, because a theme
+  // declares its tokens on `:root` and a token declared there cannot read a
+  // value held below it. One design paints the limb around the notices in this
+  // colour, and that limb is nowhere near the hero in the tree.
+  previewOverallStatus(overall);
 
   /**
    * Opens or closes one service.
