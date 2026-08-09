@@ -164,18 +164,28 @@ export function mountStatusPage(
 
   // ── Hero ──────────────────────────────────────────────────────────────────
   const overall = overallStatus(statusDocument.services);
+  // The root carries the state, not only the hero, because a design may colour
+  // anything by it: one paints the limb around the notices in the state's own
+  // colour, and that limb is nowhere near the hero in the tree. It goes on the
+  // root because a theme declares its tokens there, and a token declared on the
+  // root cannot read a value held below it.
+  document.documentElement.dataset.status = overall;
   const hero = el("div", "status-hero");
-  hero.dataset.status = overall;
   const heroMark = el("span", "status-hero-mark");
   heroMark.setAttribute("aria-hidden", "true");
   heroMark.append(icon(STATUS_HERO[overall].icon, "status-hero-glyph"));
+  // A filled block between the column and the headline, so a design can run a
+  // bar into the words from the left. It says nothing, so it is hidden from
+  // anything that reads the page aloud.
+  const heroBar = el("span", "status-hero-bar");
+  heroBar.setAttribute("aria-hidden", "true");
   const heroTitle = el("h1", "status-hero-title", STATUS_HERO[overall].text);
   const heroUpdated = el(
     "p",
     "status-hero-updated",
     `Last updated ${UPDATED_TIME.format(new Date(GENERATED_AT))}`,
   );
-  hero.append(heroMark, heroTitle, heroUpdated);
+  hero.append(heroMark, heroBar, heroTitle, heroUpdated);
 
   // ── Notices ───────────────────────────────────────────────────────────────
   const notices = el("section", "notices");

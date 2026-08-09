@@ -119,7 +119,7 @@ The overlay flips to the other side when the preferred one does not fit, clamps 
 
 ## 6. The token set
 
-191 required tokens in 34 groups. Print the current list with every theme's value beside it:
+223 required tokens in 37 groups, which the rendered gate resolves as 241 because eighteen more are read only in script and no text search finds them. Print the current list with every theme's value beside it:
 
 ```bash
 bun ./mockups/verify.ts --tokens
@@ -151,9 +151,15 @@ A theme that names a face ships it. The mockups fetch theirs from a font host, w
 
 **Range bar.** In five themes a plain row above the card. In one it is the arm of an elbow, with a fill, a height, a radius, a stem and a concave throat, and the controls live inside it. It carries its own foreground tokens, because everything in a filled bar stands on that fill.
 
+The stem is the vertical run below the arm, and it owns the outer corner rather than the arm doing so. The corner is as large as the arm is deep plus the throat, which is what keeps the wall of the elbow one thickness all the way round the turn, and an arm is never tall enough to hold a radius larger than itself. The arm's fill is a background image sized to stop where the stem begins, because a background colour covers the whole box whatever the stem draws and fills the corner back in from underneath.
+
 **Arrangement.** `--nav-justify`, `--hero-align`, `--range-justify` and `--footer-align` are what make one theme right-ranged and another centred with the same markup. `--nav-gap` is separate from the general row gap, because a bar that pushes its parts to opposite edges never shows the value whilst a centred one shows nothing else.
 
 `--hero-areas` and `--hero-columns` decide where the status mark goes. Centred, it stands above the words: anything beside a centred line stops the line being centred. Ranged left or right, it moves onto the same line at the headline's own size and centres against it, and both columns are content-width so the pair stays together.
+
+The same two tokens let a design make the headline part of a shape. The hero's grid names two further areas, `rail` and `arm`, filled by two pseudo-elements a theme may display. One design uses them to turn the headline into the interrupted upper arm of the limb that surrounds the notices: a column's head to the left, a capped block to the right, the words in the gap between them, and the time in the second row of the headline's own column so it ends where the headline ends. Where a theme leaves them undisplayed they are not grid items at all, so `--hero-areas` may go on naming two areas and nothing changes.
+
+**State colour.** `--status-colour` is what the page is announcing, resolved in `base.css` from a `data-status` attribute, and any part of a design may read it. It is set on `:root` rather than further down, because a theme declares its tokens on `:root` and a `var()` in such a declaration resolves there. A theme that colours a shape by the state writes `var(--status-colour)` into that shape's own token.
 
 **Backdrop and motion.** The backdrop is two fixed layers rather than a background. Measured in `site/src/app.css:92`: over eight expand-all cycles, 5809ms of rasterisation as a background against 485ms as a layer, layout unchanged at 12ms either way. Line 97 notes `background-attachment: fixed` does not help and measured 7127ms.
 
@@ -206,11 +212,13 @@ One screenshot per theme and per page, compared against the last accepted one. D
 
 Everything here was found by building. Each is a case where the design would have shipped wrong.
 
-**A `var()` at the root pointing at a derivation further down computes to nothing.** A custom property containing `var()` resolves on the element that declares it. `--row-inset: var(--card-text-inset)` at `:root`, against a derivation on `.status-page`, comes back empty and fails silently. Both derivations now sit on `:root`. This bit twice, first with `--detail-radius` and then with `--row-inset`.
+**A `var()` at the root pointing at a derivation further down computes to nothing.** A custom property containing `var()` resolves on the element that declares it. `--row-inset: var(--card-text-inset)` at `:root`, against a derivation on `.status-page`, comes back empty and fails silently. Both derivations now sit on `:root`. This bit three times: `--detail-radius`, then `--row-inset`, then `--status-colour`, which was held on the page element whilst every theme that wanted to paint with it declared its tokens on `:root` and got nothing.
 
 **`inherit` on a custom property at the root resolves against nothing.** `--service-name-colour: inherit` comes back empty. `currentColor` is what was meant.
 
 **A `clip-path` cuts the border off.** A border is painted outside the padding box and `clip-path` cuts afterwards, so a chamfered card loses its border along exactly the two corners the chamfer creates. Every edge is now a masked ring cut by the same `clip-path`, which also serves a plain radius.
+
+**A `border-radius` larger than its box is scaled down, silently.** Where two radii along one edge exceed that edge, the browser scales *every* corner of the box by the same factor until they fit. A 68px outer corner on a 44px-deep arm therefore rendered as 44px, and the cap at the arm's other end, declared at 22px, came out at 14px because it was scaled by the same 0.65. Nothing reports this: `getComputedStyle` gives back the declared value, not the drawn one. A corner larger than the box it is on belongs on a neighbouring element that is big enough for it.
 
 **A radial gradient without an explicit radius defaults to `farthest-corner`.** On a square that is the diagonal, so a concave curve came out 1.41 times too large and never appeared. Always write `circle <length> at …`.
 
@@ -226,7 +234,7 @@ Everything here was found by building. Each is a case where the design would hav
 
 **A left- or right-ranged footer collides with the fixed stamps.** Measured: **7px horizontally and 16px vertically**. The footer's bottom padding is derived from the stamp's own inset and size.
 
-**The hero mark must follow the state.** The first build showed a green mark above "major service outage". The colour now comes from a `data-status` attribute in `base.css`.
+**The hero mark must follow the state.** The first build showed a green mark above "major service outage". The colour now comes from a `data-status` attribute on `:root`, which `base.css` turns into `--status-colour`.
 
 **A fixture can satisfy the types and still be invalid.** Response-time samples ran back a year whilst monitoring started 300 days earlier; the validator rejected it with `TIMESTAMP_OUT_OF_RANGE`.
 

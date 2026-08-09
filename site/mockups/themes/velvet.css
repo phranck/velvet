@@ -278,6 +278,20 @@
   --hero-areas: "mark" "title" "updated";
   --hero-columns: auto;
   --hero-mark-size: var(--text-size-hero-glyph);
+  --hero-bar-margin: 0px;
+  --hero-throat: 0px;
+  --hero-bar-display: none;
+  --hero-bar-fill: transparent;
+  --hero-bar-radius: 0px;
+  --hero-title-trim: normal;
+  --hero-rail-display: none;
+  --hero-rail-fill: transparent;
+  --hero-rail-radius: 0px;
+  --hero-arm-display: none;
+  --hero-arm-fill: transparent;
+  --hero-arm-radius: 0px;
+  --hero-arm-depth: 0px;
+  --hero-arm-align: stretch;
   --hero-mark-display: inline-block;
   --hero-mark-glow: drop-shadow(
     0 0 14px color-mix(in srgb, currentColor 35%, transparent)
@@ -295,6 +309,7 @@
   --range-bar-fill: transparent;
   --range-bar-colour: currentColor;
   --range-bar-stem-width: 0px;
+  --range-bar-stem-radius: 0px;
   --range-bar-stem-height: 0px;
   --range-bar-throat: 0px;
   --range-bar-throat-offset: 0px;

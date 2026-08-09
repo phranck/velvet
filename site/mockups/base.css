@@ -268,31 +268,52 @@ body::after {
   justify-items: var(--hero-align);
   align-items: center;
   gap: var(--space-tight) var(--space-row);
-  padding: var(--hero-padding-block) var(--hero-padding-inline);
+  /* Two longhands rather than one shorthand, so a theme may set the block edges
+     apart. One does: its hero ends flush against the block below it, because
+     the two together are one shape. */
+  padding-block: var(--hero-padding-block);
+  padding-inline: var(--hero-padding-inline);
   text-align: var(--hero-text-align);
 }
 
 /*
-  The hero mark takes the colour of the state it is announcing, which is a
-  structural fact rather than a theme's decision: a green cross on a page
-  reporting an outage is wrong in every design. A theme may still override it,
-  and one of the four has to, because its hero sits on a filled band where a
-  state colour would disappear.
+  What the page is announcing, as a colour anything on it can read.
+
+  It is a structural fact rather than a theme's decision: a green cross on a
+  page reporting an outage is wrong in every design. A theme may still override
+  where it is used, and one has to, because its hero sits on a filled band
+  where a state colour would disappear.
+
+  It sits on the root rather than on the hero, because a design may colour
+  something far from the hero by it, and one paints the limb around the notices
+  in this colour.
+
+  The root is where it has to be, not merely where it is convenient. A theme
+  declares its tokens on `:root`, and a `var()` in such a declaration is
+  resolved on `:root` itself. A state colour held further down the tree would
+  resolve to nothing there, and the property using it would be dropped.
 */
-.status-hero {
+:root {
   --status-colour: var(--state-operational);
 }
 
-.status-hero[data-status="degraded"] {
+:root[data-status="degraded"] {
   --status-colour: var(--state-degraded);
 }
 
-.status-hero[data-status="outage"] {
+:root[data-status="outage"] {
   --status-colour: var(--state-outage);
 }
 
-.status-hero[data-status="unknown"] {
-  --status-colour: var(--state-no-data);
+/*
+  The unknown state takes the ghost edge rather than the no-data fill. That
+  fill is what an unrecorded day is painted in, so it is a shade off the page
+  by design and measures 1.13:1 to 1.60:1 against it across the six themes,
+  which is invisible for anything in the foreground. The edge is the mark that
+  says such a day exists at all, and it measures 3.16:1 to 4.97:1.
+*/
+:root[data-status="unknown"] {
+  --status-colour: var(--state-ghost-edge);
 }
 
 .status-hero-mark {
@@ -317,6 +338,17 @@ body::after {
   letter-spacing: var(--display-tracking);
   line-height: var(--text-leading-display);
   text-transform: var(--display-transform);
+  /*
+    Where a design sets a bar beside the headline, the two have to meet at the
+    same top and bottom edge, and a line box does not end where the letters do:
+    at 44px this face leaves 3.5px of leading above the capitals and below the
+    baseline. Trimming to the cap height and the baseline makes the box the
+    letters themselves, so a bar stretched to the same row matches them.
+
+    A browser without it keeps the untrimmed box, and the bar stretches to that
+    instead. The two still meet; there is simply a little air.
+  */
+  text-box: var(--hero-title-trim);
 }
 
 .status-hero-updated {
@@ -326,6 +358,91 @@ body::after {
   font-family: var(--font-meta);
   font-size: var(--text-size-caption);
   font-style: var(--meta-style);
+}
+
+/*
+  Three filled blocks the hero's grid places around the headline, so a design
+  can make the headline part of a bar rather than something set above one: the
+  column's head to the left, a run of bar between that and the words, and a
+  capped block after them.
+
+  Two are pseudo-elements, because a column and a cap are ornament. The middle
+  one is an element, because a grid area has to be a rectangle and the column
+  is one row shorter than the bar beside it.
+
+  All three stretch. The hero aligns its items to one edge, and an empty block
+  aligned to an edge has no width at all. Stretching also makes the two beside
+  the headline exactly as tall as the headline's own box, which is what puts
+  their edges on its edges.
+*/
+.status-hero::before {
+  content: "";
+  grid-area: rail;
+  display: var(--hero-rail-display);
+  align-self: stretch;
+  justify-self: stretch;
+  border-radius: var(--hero-rail-radius);
+  background: var(--hero-rail-fill);
+}
+
+/*
+  The run of bar between the column and the words.
+
+  Its margin is how it reaches the column. The hero sets one gap for every
+  column it has, and this is the single joint that must not have one, because
+  the bar and the column are one shape; a negative start margin takes back
+  exactly that gap and leaves the others alone.
+*/
+.status-hero-bar {
+  position: relative;
+  grid-area: bar;
+  display: var(--hero-bar-display);
+  align-self: stretch;
+  justify-self: stretch;
+  margin: var(--hero-bar-margin);
+  border-radius: var(--hero-bar-radius);
+  background: var(--hero-bar-fill);
+}
+
+/*
+  The throat: the concave curve under the joint, where the bar's underside runs
+  into the column's trailing edge. Without it the two meet at a right angle and
+  read as two blocks that happen to touch.
+
+  Drawn the same way as the elbow's own throat, so the circle carries an
+  explicit radius. Left to itself it would default to `farthest-corner`, which
+  on a square is the diagonal and 1.41 times too large.
+*/
+.status-hero-bar::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  width: var(--hero-throat);
+  height: var(--hero-throat);
+  background: radial-gradient(
+    circle var(--hero-throat) at 100% 100%,
+    transparent 0 99.5%,
+    var(--hero-bar-fill) 100%
+  );
+  pointer-events: none;
+}
+
+/*
+  The cap keeps a floor under its depth, so that a headline short enough to sit
+  on one line still leaves it something to be. Its radius is a capsule rather
+  than a figure, because its height follows the headline and a half-disc has to
+  follow the height.
+*/
+.status-hero::after {
+  content: "";
+  grid-area: arm;
+  display: var(--hero-arm-display);
+  align-self: var(--hero-arm-align);
+  justify-self: stretch;
+  min-height: var(--hero-arm-depth);
+  border-radius: var(--hero-arm-radius);
+  background: var(--hero-arm-fill);
 }
 
 /* ── Notices ──────────────────────────────────────────────────────────────── */
@@ -541,22 +658,45 @@ body::after {
   margin-bottom: var(--range-bar-space);
   padding: var(--range-bar-padding);
   border-radius: var(--range-bar-radius);
-  background: var(--range-bar-fill);
+  /*
+    The arm's fill starts where the stem ends, so the stem's outer corner is
+    not filled back in from underneath. A background colour would cover the
+    whole box whatever the stem does, which is why this is an image: only an
+    image can be given a size.
+
+    Where a theme declares no stem, the width is the full box and this is the
+    plain fill it was before.
+  */
+  background-color: transparent;
+  background-image: linear-gradient(
+    var(--range-bar-fill),
+    var(--range-bar-fill)
+  );
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: calc(100% - var(--range-bar-stem-width)) 100%;
   color: var(--range-bar-colour);
 }
 
 /*
-  The stem: the short vertical run below the arm, in the column's width. An
-  elbow does not stop at the turn; it carries on for a stretch before the first
-  segment, and without that it reads as a corner rather than as a limb.
+  The stem: the vertical run of the elbow, in the column's width. An elbow does
+  not stop at the turn; it carries on for a stretch before the first segment,
+  and without that it reads as a corner rather than as a limb.
+
+  It starts at the arm's own top edge and overlaps it, because the outer corner
+  belongs to both and only the stem is tall enough to hold it. A `border-radius`
+  larger than the box it sits on is scaled down to fit, silently, so a corner
+  the depth of the arm plus the throat renders on the arm alone as the arm's
+  depth, and the wall of the elbow goes thin at the turn.
 */
 .range-bar::before {
   content: "";
   position: absolute;
-  inset-block-start: 100%;
+  inset-block-start: 0;
   inset-inline-start: 0;
   width: var(--range-bar-stem-width);
-  height: var(--range-bar-stem-height);
+  height: calc(100% + var(--range-bar-stem-height));
+  border-radius: var(--range-bar-stem-radius);
   background: var(--range-bar-fill);
   pointer-events: none;
 }
