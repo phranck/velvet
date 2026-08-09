@@ -816,7 +816,9 @@ body::after {
   transition: color var(--motion-hover), background var(--motion-hover);
 }
 
-.range-button:hover {
+/* Not the chosen one. It already carries the mark, and a neutral hover tint
+   over it replaces what says it is chosen with what says it is hoverable. */
+.range-button:not([aria-pressed="true"]):hover {
   color: var(--range-button-hover-colour);
   background: var(--accent-quiet);
 }
@@ -825,8 +827,12 @@ body::after {
   position: relative;
 }
 
+/* The chosen range may be set larger than the others. Where a design cuts it
+   through the bar rather than marking it with a fill, size is what says which
+   one is chosen. */
 .range-button[aria-pressed="true"] {
   color: var(--control-active-text);
+  font-size: var(--text-size-control-active);
 }
 
 /* Its own inline padding rather than the range buttons', so it can be brought

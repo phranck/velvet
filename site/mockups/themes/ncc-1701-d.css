@@ -456,6 +456,7 @@
   --range-align: stretch;
   --range-mark-radius: 0px;
   --text-size-control: 16px;
+  --text-size-control-active: 22px;
   --range-bar-height: var(--lcars-arm-depth);
   --range-bar-space: calc(var(--range-bar-stem-height) + var(--service-gap));
   --range-bar-padding: 0 0 0 clamp(10px, 3vw, 20px);

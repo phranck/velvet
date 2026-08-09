@@ -318,6 +318,7 @@
   --range-align: center;
   --range-mark-radius: var(--control-radius);
   --text-size-control: var(--text-size-caption);
+  --text-size-control-active: var(--text-size-caption);
   --range-bar-height: auto;
   --range-bar-space: var(--space-tight);
   --range-bar-padding: 0;
