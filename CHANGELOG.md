@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.5.3 (2026-08-09)
+
+### Changed
+
+The mouse cursor is the browser's own again. Velvet states nothing about it on the website or on the page it builds for you, so every control behaves the way your browser behaves everywhere else.
+
 ## Version 1.5.2 (2026-08-09)
 
 ### Fixed
