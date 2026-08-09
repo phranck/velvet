@@ -1,8 +1,8 @@
-# Velvet 1.5.2
+# Velvet 1.5.3
 
-## Fixed
+## Changed
 
-The hand over links and controls no longer depends on one selector every browser has to understand.
+The mouse cursor is the browser's own again. Velvet states nothing about it, so every control on your page behaves the way your browser behaves everywhere else.
 
 ## What stays yours
 
