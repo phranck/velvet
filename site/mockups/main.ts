@@ -20,8 +20,6 @@ import type { ServiceStatus } from "../src/lib/types.js";
 const THEMES = [
   { file: "velvet.html", name: "Velvet", era: "today" },
   { file: "cassette.html", name: "Cassette Futurism", era: "1979" },
-  { file: "populuxe.html", name: "Populuxe", era: "1958" },
-  { file: "vector.html", name: "Vector Grid", era: "1982" },
   { file: "twenty-forty-nine.html", name: "Twenty Forty-Nine", era: "2049" },
   { file: "ncc-1701-d.html", name: "NCC-1701-D", era: "2364" },
 ];

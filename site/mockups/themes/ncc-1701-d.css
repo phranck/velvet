@@ -339,15 +339,6 @@
     segments by narrow gaps, so the row holds together and the divisions read
     as divisions rather than as items.
   */
-  /* The days arrive rather than appear when the range changes: the run draws
-     itself in from its trailing edge. Width only, because the bars say how much
-     time was lost by their height and a height that moves says something the
-     data did not. */
-  --strip-change-animation: velvet-strip-change calc(var(--motion-range) * 1.6)
-    var(--motion-ease) both;
-  --strip-change-scale-x: 0.82;
-  --strip-change-scale-y: 1;
-  --strip-change-origin: right;
   --bar-align: center;
   --bar-pieces: 1;
   --bar-piece-gap: 0px;

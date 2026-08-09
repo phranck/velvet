@@ -204,10 +204,6 @@
   /* ── Availability strip ───────────────────────────────────────────────── */
   /* `bar` from `tokens.ts`, exactly: 32 tall, 38 hovered, 2 apart, 2 rounded,
      and a capsule in the 90-day view. The gloss is the one in `segGloss`. */
-  --strip-change-animation: none;
-  --strip-change-scale-x: 1;
-  --strip-change-scale-y: 1;
-  --strip-change-origin: center;
   --bar-align: center;
   --bar-pieces: 1;
   --bar-piece-gap: 0px;

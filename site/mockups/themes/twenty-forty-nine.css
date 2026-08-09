@@ -276,10 +276,6 @@
      on these panels: a value rising from an origin, divided once so the eye
      can read half of it at a glance. No gloss, because this is emitted light
      rather than a reflective surface. */
-  --strip-change-animation: none;
-  --strip-change-scale-x: 1;
-  --strip-change-scale-y: 1;
-  --strip-change-origin: center;
   --bar-align: bottom;
   --bar-pieces: 2;
   --bar-piece-gap: 3px;

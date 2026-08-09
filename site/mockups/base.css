@@ -309,8 +309,8 @@ body::after {
   The unknown state has a colour of its own rather than borrowing one.
 
   The no-data fill is what an unrecorded day is painted in, so it is a shade
-  off the page by design and measures 1.13:1 to 1.60:1 against it across the
-  six themes, which is invisible for anything in the foreground. The ghost edge
+  off the page by design and measures little more than 1:1 against it in every
+  theme, which is invisible for anything in the foreground. The ghost edge
   is legible, but it belongs to the strip: a theme that wants its unrecorded
   days drawn without an outline sets it to nothing, and the headline would go
   with it.
@@ -558,7 +558,7 @@ body::after {
 
   A `border` is painted outside the padding box and `clip-path` cuts the
   element after that, so a chamfered card loses its border along exactly the
-  two corners the chamfer creates. Measured on the Vector Grid theme before
+  two corners the chamfer creates. Measured before
   this: the notice showed no edge along either cut corner.
 
   The ring below is a filled rectangle with its own middle masked out, and it
@@ -677,9 +677,9 @@ body::after {
 /*
   The range bar, which one design turns into the arm of an elbow.
 
-  In six themes it is a plain row above the card. In the seventh it is a filled
-  bar that runs into the column below it, so it carries a fill, a height, a
-  radius and the same concave throat the card ornament can draw. Putting the
+  In most themes it is a plain row above the card. In one it is a filled bar
+  that runs into the column below it, so it carries a fill, a height, a radius
+  and the same concave throat the card ornament can draw. Putting the
   controls inside that bar is not decoration: on those panels the horizontal
   arm is where the controls live.
 */
@@ -1232,30 +1232,12 @@ body::after {
   margin-top: var(--space-tight);
 }
 
-/*
-  The strip is one canvas, so a range change replaces every segment at once. A
-  design may have that arrive rather than appear, and only `opacity` and
-  `transform` are animated, which a compositor handles without repainting
-  anything. The whole strip moves as one element, not one animation per day.
-*/
 .uptime-strip canvas {
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
   display: block;
   width: 100%;
-  transform-origin: var(--strip-change-origin);
-  animation: var(--strip-change-animation);
-}
-
-@keyframes velvet-strip-change {
-  from {
-    opacity: 0;
-    transform: scale(
-      var(--strip-change-scale-x),
-      var(--strip-change-scale-y)
-    );
-  }
 }
 
 /*
@@ -1724,8 +1706,7 @@ linearGradient stop {
 
   /* Every optional movement stops, including the backdrop's. */
   body::after,
-  .uptime-tooltip,
-  .uptime-strip canvas {
+  .uptime-tooltip {
     animation: none;
   }
 
