@@ -249,17 +249,15 @@
      is read from the shape rather than from a glyph beside the headline. */
   --notices-rail-fill: var(--status-colour);
   --notice-align: center;
-  /* The text inset its own corner derives, so the words clear the curve and
-     the padding is the same the whole way round. */
-  --notice-padding: var(--notice-text-inset);
+  --notice-padding: 16px;
   /*
-    Nested inside the region the limb encloses, so its corner is the limb's
-    outer radius less the distance from the column: 68px less the 14px gap is
-    54px. The trailing end stays a capsule, which is what an LCARS row does at
-    its free end.
+    The throat's radius less the distance from the column: 24px less the 14px
+    gap is 10px. The throat is the curve the notice sits against, so that is
+    the curve its own corner is measured from, and the gap between the two is
+    the inset the rule takes off.
   */
   --notice-radius-base: max(
-    calc(var(--lcars-outer-radius) - var(--notices-rail-gap)),
+    calc(var(--lcars-throat) - var(--notices-rail-gap)),
     0px
   );
   /*
