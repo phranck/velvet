@@ -286,7 +286,9 @@
   --notice-columns-incident: 1fr auto;
   --notice-fill: color-mix(in srgb, currentColor 12%, var(--surface-card));
   --notice-padding: var(--card-padding);
+  --notice-radius-base: var(--card-radius-base);
   --notice-radius: var(--card-radius);
+  --notice-gap: var(--space-hair) var(--space-row);
   --notice-border-width: var(--card-border-width);
   --card-rail-width: 0px;
   --card-rail-colour: transparent;

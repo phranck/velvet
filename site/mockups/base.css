@@ -146,6 +146,13 @@ body::after {
     0px
   );
   --card-text-inset: calc(var(--card-radius-base) / 2);
+  /* A notice is a surface of its own, so it derives its own two values from
+     its own radius rather than borrowing the card's. */
+  --notice-inner-radius: max(
+    calc(var(--notice-radius-base) - var(--notice-padding)),
+    0px
+  );
+  --notice-text-inset: calc(var(--notice-radius-base) / 2);
 }
 
 /* ── Page ─────────────────────────────────────────────────────────────────── */
@@ -611,8 +618,15 @@ body::after {
   position: relative;
   display: grid;
   align-items: var(--notice-align);
-  gap: var(--space-hair) var(--space-row);
-  padding: var(--notice-padding);
+  gap: var(--notice-gap);
+  /*
+    The same on all four sides, with the text standing in by half the radius on
+    top of it. That inset is what keeps a line of type from reading as though it
+    collides with the curve beside it, and it is derived from the radius rather
+    than chosen, so a theme states one number and the rest follows.
+  */
+  padding: var(--notice-padding)
+    calc(var(--notice-padding) + var(--notice-text-inset));
   border-radius: var(--notice-radius);
   background: var(--notice-fill);
 }

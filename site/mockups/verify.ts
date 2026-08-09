@@ -232,8 +232,8 @@ const read = new Set(
  *
  * `--status-colour` and `--series-colour` are set by `base.css` from a data
  * attribute, `--strip-surface-height` is written by the strip once it has
- * measured itself, the two card values are derived, the two edge values are
- * set per surface, and `--hero-mark-colour` is an optional override with a
+ * measured itself, the card and notice values are derived, the two edge values
+ * are set per surface, and `--hero-mark-colour` is an optional override with a
  * documented fallback. All of them are structure rather than design.
  */
 const structural = new Set([
@@ -242,6 +242,8 @@ const structural = new Set([
   "--strip-surface-height",
   "--card-inner-radius",
   "--card-text-inset",
+  "--notice-inner-radius",
+  "--notice-text-inset",
   "--edge-width",
   "--edge-colour",
   "--hero-mark-colour",

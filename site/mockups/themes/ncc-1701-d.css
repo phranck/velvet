@@ -248,8 +248,20 @@
      is read from the shape rather than from a glyph beside the headline. */
   --notices-rail-fill: var(--status-colour);
   --notice-align: center;
-  --notice-padding: 10px 18px;
-  --notice-radius: 0 999px 999px 0;
+  --notice-padding: 12px;
+  /*
+    Nested inside the region the limb encloses, so its corner is the limb's
+    outer radius less the distance from the column: 68px less the 14px gap is
+    54px. The trailing end stays a capsule, which is what an LCARS row does at
+    its free end.
+  */
+  --notice-radius-base: max(
+    calc(var(--lcars-outer-radius) - var(--notices-rail-gap)),
+    0px
+  );
+  --notice-radius: var(--notice-radius-base) 999px 999px
+    var(--notice-radius-base);
+  --notice-gap: 4px var(--space-row);
   --notice-border-width: 0px;
   --notice-areas-maintenance: "glyph title meta" "glyph summary summary";
   --notice-areas-incident: "title meta" "summary summary";
