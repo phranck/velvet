@@ -49,6 +49,27 @@ export const SetupErrorCodeSchema = Type.Union([
   Type.Literal("SETUP_FAILED"),
   Type.Literal("NOT_FOUND"),
   Type.Literal("METHOD_NOT_ALLOWED"),
+  // The alarm relay refuses for six separate reasons, and they are six codes
+  // rather than one because a monitor run reports what it was told. A single
+  // code would leave an operator unable to tell a misconfigured subscription
+  // from a quota Velvet has run out of, and only one of those is theirs to fix.
+  //
+  // The instance serves no relay at all, so nothing is wrong with the call.
+  Type.Literal("NOTIFY_UNAVAILABLE"),
+  // The proof of which repository is calling did not verify against GitHub.
+  Type.Literal("NOTIFY_IDENTITY_REJECTED"),
+  // The subscription Velvet issued did not verify against Velvet's own key.
+  Type.Literal("NOTIFY_GRANT_REJECTED"),
+  // Both verified and they name different repositories, which is the case that
+  // would otherwise let one installation alarm another operator.
+  Type.Literal("NOTIFY_GRANT_MISMATCHED"),
+  // This installation has spent what it may send today.
+  Type.Literal("NOTIFY_ALLOWANCE_SPENT"),
+  // What Pushover has left for the whole application is below the floor, so
+  // sending would spend the room every other installation still needs.
+  Type.Literal("NOTIFY_QUOTA_EXHAUSTED"),
+  // Pushover refused the message or could not be reached.
+  Type.Literal("NOTIFY_DELIVERY_FAILED"),
 ]);
 
 export const SetupPublicErrorSchema = Type.Object(
@@ -120,6 +141,34 @@ export const SetupRequestSchema = Type.Object(
         { additionalProperties: false },
       ),
     ),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * What a monitor run sends when it asks Velvet to raise an alarm.
+ *
+ * Every field is bounded, because all three reach something outside this
+ * service: the grant reaches a signature check, and the title and the message
+ * reach Pushover, which states its own limits.
+ *
+ * The recipient is not in here. A monitor never sends a bare Pushover key,
+ * because a relay accepting one would let any installation alarm any operator.
+ * It sends the grant Velvet issued, which carries the key bound to the one
+ * repository it belongs to.
+ */
+export const NotifyRequestSchema = Type.Object(
+  {
+    /** The subscription Velvet signed, as `payload.signature`. */
+    grant: Type.String({
+      minLength: 16,
+      maxLength: 1_024,
+      pattern: "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+    }),
+    /** The alarm text, which passes through and is never stored. */
+    message: Type.String({ minLength: 1, maxLength: 1_024 }),
+    /** Pushover documents a title of up to 250 characters. */
+    title: Type.Optional(Type.String({ minLength: 1, maxLength: 250 })),
   },
   { additionalProperties: false },
 );
@@ -234,6 +283,7 @@ export const SetupStatusSchema = Type.Object(
   { additionalProperties: false },
 );
 
+export type NotifyRequest = Static<typeof NotifyRequestSchema>;
 export type SetupErrorCode = Static<typeof SetupErrorCodeSchema>;
 export type SetupEvent = Static<typeof SetupEventSchema>;
 export type SetupProgressStage = Static<typeof SetupProgressStageSchema>;

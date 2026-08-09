@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 
 import {
+  validateNotifyRequest,
   validateSetupEvent,
   validateSetupRequest,
   validateSetupSession,
@@ -23,6 +24,9 @@ import {
   type GitHubSetupClient,
 } from "./github.js";
 import type { AuditLogger } from "./observability.js";
+import { createNotifyRelay, type NotifyRelay } from "./notify.js";
+import { createNotificationGrants } from "./notify-grant.js";
+import { createGitHubOidcVerifier } from "./oidc.js";
 import type { InstallationSerialCounter } from "./serial.js";
 import { provisionVelvet } from "./provision.js";
 import { createRateLimiter, type RateLimiter } from "./rate-limit.js";
@@ -67,6 +71,15 @@ interface SetupHandlerOptions {
   staticAsset?: StaticAssetProvider;
   setupRateLimiter?: RateLimiter;
   authRateLimiter?: RateLimiter;
+  /**
+   * Forwards alarms to Pushover, when the instance is configured to.
+   *
+   * Absent on an instance with no relay configured, and `/api/notify` then
+   * refuses with a code saying exactly that rather than a generic failure.
+   */
+  notify?: NotifyRelay;
+  /** Bounds the work an unproven caller can ask of `/api/notify`. */
+  notifyRateLimiter?: RateLimiter;
   randomToken?: () => string;
   requestId?: () => string;
   errorId?: () => string;
@@ -84,6 +97,23 @@ export function createSetupHandler(
   const authRateLimiter =
     options.authRateLimiter ??
     createRateLimiter({ limit: 30, windowMs: 60_000, maxEntries: 2_000 });
+  const notify = options.notify ?? defaultNotifyRelay(options.config);
+  /*
+   * A ceiling on the work an unproven caller can ask for, since this route is
+   * the one thing here that no session guards: it is called by a GitHub Actions
+   * runner, not by a browser.
+   *
+   * It counts every call rather than counting per source, because the only
+   * thing naming a source on this deployment is a forwarded header, and a
+   * forwarded header is chosen by whoever sends it. The ceiling is therefore
+   * set well above what every installation together would ever send, so it
+   * bounds the cost of a flood without a legitimate alarm ever meeting it. What
+   * limits an individual installation is its own allowance, counted after
+   * GitHub has proved which one it is.
+   */
+  const notifyRateLimiter =
+    options.notifyRateLimiter ??
+    createRateLimiter({ limit: 600, windowMs: 60_000, maxEntries: 1 });
   const randomToken = options.randomToken ?? secureRandomToken;
   const requestId = options.requestId ?? secureIdentifier;
   const errorId = options.errorId ?? secureIdentifier;
@@ -413,6 +443,117 @@ export function createSetupHandler(
             errorId,
           }),
         );
+      }
+
+      if (route === "/api/notify") {
+        if (request.method !== "POST") return reject(methodError(), "notify");
+        if (!notify) {
+          return reject(
+            new SetupServiceError(
+              "NOTIFY_UNAVAILABLE",
+              "This Velvet service forwards no alarms.",
+              { status: 503 },
+            ),
+            "notify",
+          );
+        }
+        const ceiling = notifyRateLimiter.consume("notify");
+        if (!ceiling.allowed) {
+          return reject(rateLimitError(), "notify", {
+            "Retry-After": String(ceiling.retryAfterSeconds),
+          });
+        }
+        /*
+         * No session, no CSRF token, and no origin check, because none of the
+         * three exists here: the caller is a workflow run rather than a
+         * browser. What takes their place is the bearer token GitHub minted for
+         * that run, which the relay verifies against GitHub's own keys.
+         */
+        const identityToken = bearerToken(request.headers.get("Authorization"));
+        if (!identityToken) {
+          return reject(
+            new SetupServiceError(
+              "NOTIFY_IDENTITY_REJECTED",
+              "This alarm carried no proof of which repository sent it.",
+              { status: 401 },
+            ),
+            "notify",
+          );
+        }
+        if (
+          !request.headers
+            .get("Content-Type")
+            ?.toLowerCase()
+            .startsWith("application/json")
+        ) {
+          return reject(invalidRequestError(), "notify");
+        }
+        let body: unknown;
+        try {
+          body = await readBoundedJson(request);
+        } catch (cause) {
+          const tooLarge = cause instanceof RequestTooLargeError;
+          return reject(
+            new SetupServiceError(
+              "INVALID_SETUP_REQUEST",
+              tooLarge
+                ? "Alarm request is too large."
+                : "Alarm request must contain valid JSON.",
+              { status: tooLarge ? 413 : 400, cause },
+            ),
+            "notify",
+          );
+        }
+        const parsedNotify = validateNotifyRequest(body);
+        if (!parsedNotify.success) return reject(invalidRequestError(), "notify");
+
+        const result = await notify.relay({
+          identityToken,
+          request: parsedNotify.data,
+        });
+        if (result.outcome === "refused") {
+          const currentErrorId = errorId();
+          /*
+           * Logged here rather than through `reject`, because what makes one of
+           * these diagnosable is which repository called and what Pushover said
+           * was left, and neither belongs to a generic refusal. The recipient's
+           * key, the grant carrying it, and the alarm text are all secret and
+           * none of them is in the context.
+           */
+          options.logger({
+            level: result.error.status >= 500 ? "error" : "warn",
+            requestId: currentRequestId,
+            route,
+            operation: "notify",
+            status: result.error.status,
+            outcome: "rejected",
+            code: result.error.code,
+            errorId: currentErrorId,
+            context: result.context,
+            cause: result.error.cause,
+          });
+          return finish(
+            jsonResponse(
+              { error: publicSetupError(result.error, currentErrorId) },
+              result.error.status,
+              result.retryAfterSeconds === undefined
+                ? undefined
+                : { "Retry-After": String(result.retryAfterSeconds) },
+            ),
+          );
+        }
+        options.logger({
+          level: "info",
+          requestId: currentRequestId,
+          route,
+          operation: "notify",
+          status: 202,
+          outcome: "succeeded",
+          context: result.context,
+        });
+        // Accepted rather than created: Pushover took the message, and whether
+        // it reaches a device is between Pushover and that device.
+        return finish(jsonResponse({ delivered: true }, 202));
       }
 
       if (route === "/api/setup/status") {
@@ -777,6 +918,43 @@ function defaultUpdateRoutes(
     releases,
     logger: options.logger,
   }).routes;
+}
+
+/**
+ * Builds the alarm relay from configuration, or reports that there is none.
+ *
+ * The audience the identity proof has to name is this service's own origin, so
+ * a token a workflow minted for somebody else's service does not verify here.
+ * Without that requirement, any repository's default token would.
+ *
+ * @param config - The service's configuration.
+ * @returns The relay, or `null` on an instance that forwards no alarms.
+ */
+function defaultNotifyRelay(config: SetupServiceConfig): NotifyRelay | null {
+  if (!config.notify) return null;
+  return createNotifyRelay({
+    applicationToken: config.notify.pushoverToken,
+    identity: createGitHubOidcVerifier({ audience: config.publicOrigin }),
+    grants: createNotificationGrants({ secret: config.notify.grantSecret }),
+    allowance: createRateLimiter({
+      limit: config.notify.dailyLimit,
+      windowMs: 24 * 60 * 60_000,
+      maxEntries: 5_000,
+    }),
+    quotaFloor: config.notify.quotaFloor,
+  });
+}
+
+/**
+ * Reads a bearer token out of an `Authorization` header.
+ *
+ * @param header - The header exactly as it arrived, or `null`.
+ * @returns The token, or `null` when the header is missing or another scheme.
+ */
+function bearerToken(header: string | null): string | null {
+  if (!header) return null;
+  const match = header.match(/^Bearer ([A-Za-z0-9._~+/=-]{16,4096})$/u);
+  return match ? match[1]! : null;
 }
 
 /**

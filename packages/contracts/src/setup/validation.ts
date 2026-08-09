@@ -2,10 +2,12 @@ import { Value } from "@sinclair/typebox/value";
 
 import { validateVelvetConfiguration } from "../configuration/validation.js";
 import {
+  NotifyRequestSchema,
   SetupEventSchema,
   SetupRequestSchema,
   SetupSessionSchema,
   SetupStatusSchema,
+  type NotifyRequest,
   type SetupEvent,
   type SetupSession,
   type SetupStatus,
@@ -58,6 +60,35 @@ export function validateSetupRequest(
         : { replaceExistingRepository: value.replaceExistingRepository }),
       ...(value.logo === undefined ? {} : { logo: value.logo }),
     },
+  };
+}
+
+/**
+ * Holds an alarm request to the contract before anything acts on it.
+ *
+ * Refused as a request rather than as a response, because this one arrives from
+ * outside: a monitor run somewhere else sends it, so a field it did not state
+ * or a field it invented is the caller's mistake and is answerable as such.
+ *
+ * @param value - The parsed body, still untrusted.
+ * @returns The request, or the reason it does not match the contract.
+ */
+export function validateNotifyRequest(
+  value: unknown,
+): SetupContractValidationResult<NotifyRequest> {
+  if (Value.Check(NotifyRequestSchema, value)) {
+    return { success: true, data: value };
+  }
+  const error = Value.Errors(NotifyRequestSchema, value).First();
+  return {
+    success: false,
+    errors: [
+      {
+        code: "INVALID_SETUP_REQUEST",
+        path: error?.path || "/",
+        message: "Alarm request does not match the supported contract.",
+      },
+    ],
   };
 }
 

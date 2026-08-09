@@ -95,6 +95,8 @@ The following values belong in the setup service's Zerops secret environment, ne
 | `GITHUB_APP_CLIENT_SECRET` | A current GitHub App client secret |
 | `GITHUB_APP_PRIVATE_KEY` | RSA private key; Zerops may store PEM newlines as literal `\n` sequences |
 | `SESSION_SECRET` | At least 32 random bytes; the import manifest generates 64 characters |
+| `PUSHOVER_APPLICATION_TOKEN` | Velvet's Pushover application token, 30 characters of `A-Za-z0-9`. Optional, and without it the service forwards no alarms |
+| `NOTIFY_GRANT_SECRET` | At least 32 random bytes, used only to sign notification subscriptions. Required whenever `PUSHOVER_APPLICATION_TOKEN` is set |
 
 Set these non-secret runtime values separately:
 
@@ -104,6 +106,12 @@ Set these non-secret runtime values separately:
 | `WEBSITE_ORIGIN` | Origin of the Velvet website, which may read `/api/references` from its own pages. Optional, and without it that route is readable from this origin alone |
 | `GITHUB_APP_SLUG` | Public slug from the GitHub App URL |
 | `AUTOMATIC_UPDATE_INTERVAL_MINUTES` | How often eligible security releases are swept for, from 0 through 1440. Defaults to 60, and 0 turns the sweep off |
+| `NOTIFY_DAILY_LIMIT` | How many alarms one installation may send in a day, from 1 through 10000. Defaults to 50 |
+| `NOTIFY_QUOTA_FLOOR` | The remaining Pushover quota below which no alarm is forwarded for anybody, from 0 through 10000. Defaults to 500 |
+
+The alarm relay is optional and is off unless both of its secrets are set. Setting only one of them stops the service from starting, because a token without a signing secret cannot tell whose recipient it was given and a secret without a token has nothing to forward to. Either half alone would leave every alarm refused for a reason nobody would think to look for.
+
+The two limits protect a quota that is not Velvet's alone. Pushover allows an account 10,000 messages a month and every application on that account shares them, so roughly 333 a day covers every installation together. `NOTIFY_DAILY_LIMIT` lets one outage run without emptying the month, and `NOTIFY_QUOTA_FLOOR` keeps the rest of it open for everybody else once the account runs low. The service learns what is actually left from the `X-Limit-App-Remaining` header Pushover returns, so the floor is compared against a measurement rather than an estimate.
 
 `WEBSITE_ORIGIN` exists because the references list is served here and rendered by a page hosted elsewhere. `/api/references` answers a browser on that origin with `Access-Control-Allow-Origin` and a relaxed resource policy, and every other route keeps refusing every origin but this one. Leaving it unset is what an instance without a website of its own wants: the route still answers, and no page on another host can read it.
 

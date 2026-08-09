@@ -33,6 +33,7 @@ const config = {
   sessionSecret: "s".repeat(32),
   automaticUpdateIntervalMs: 0,
   serialCounter: null,
+  notify: null,
 } satisfies SetupServiceConfig;
 
 const setupBody = JSON.stringify({

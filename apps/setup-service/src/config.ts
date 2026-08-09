@@ -49,6 +49,35 @@ export interface SetupServiceConfig {
     /** Path to the counter file inside it. */
     path: string;
   } | null;
+  /**
+   * What the alarm relay needs, or `null` on an instance that serves none.
+   *
+   * Both values are required together. A relay with a Pushover token and no
+   * signing secret would have no way to tell whose recipient it was given, and
+   * one with a secret and no token has nothing to forward to, so neither half
+   * is usable alone and configuring one alone is refused rather than ignored.
+   */
+  notify: {
+    /** Velvet's Pushover application token. */
+    pushoverToken: string;
+    /**
+     * The key notification grants are signed with.
+     *
+     * Its own secret rather than `sessionSecret`, so rotating a session key
+     * does not silently switch off notifications for every installation.
+     */
+    grantSecret: string;
+    /** How many alarms one installation may send in a day. */
+    dailyLimit: number;
+    /**
+     * The remaining Pushover quota below which nothing is forwarded at all.
+     *
+     * The quota belongs to the account rather than to this application, and
+     * Pushover's reference states that every application of an account shares
+     * it, so this floor protects room something other than Velvet may need.
+     */
+    quotaFloor: number;
+  } | null;
 }
 
 export function loadSetupServiceConfig(
@@ -133,6 +162,8 @@ export function loadSetupServiceConfig(
     );
   }
 
+  const notify = loadNotifyConfig(environment);
+
   return {
     environment: nodeEnvironment,
     publicOrigin,
@@ -145,7 +176,96 @@ export function loadSetupServiceConfig(
     serialCounter: serialRepository
       ? { repository: serialRepository, path: serialPath }
       : null,
+    notify,
   };
+}
+
+/**
+ * The shape of a Pushover application token.
+ *
+ * Quoting Pushover's API reference: "Application tokens are case-sensitive, 30
+ * characters long, and may contain the character set `[A-Za-z0-9]`."
+ */
+const PUSHOVER_TOKEN_PATTERN = /^[A-Za-z0-9]{30}$/u;
+
+/** What one installation may send in a day when nothing says otherwise. */
+const DEFAULT_NOTIFY_DAILY_LIMIT = 50;
+
+/** The remaining account quota below which nothing is forwarded, by default. */
+const DEFAULT_NOTIFY_QUOTA_FLOOR = 500;
+
+/**
+ * Reads the alarm relay's configuration, or reports that there is none.
+ *
+ * Absent is a valid answer and the relay then refuses every call with a code
+ * saying so. What is not valid is half of it: a token without a signing secret,
+ * or a secret without a token, is a deployment somebody meant to finish, and
+ * starting anyway would leave the relay refusing every alarm for a reason
+ * nobody would think to look for.
+ *
+ * @param environment - The process environment.
+ * @returns The relay's configuration, or `null` when none is configured.
+ * @throws {TypeError} When it is configured incompletely or out of range.
+ */
+function loadNotifyConfig(
+  environment: Record<string, string | undefined>,
+): SetupServiceConfig["notify"] {
+  const pushoverToken = environment.PUSHOVER_APPLICATION_TOKEN?.trim();
+  const grantSecret = environment.NOTIFY_GRANT_SECRET?.trim();
+  if (!pushoverToken && !grantSecret) return null;
+  if (!pushoverToken || !grantSecret) {
+    throw new TypeError(
+      "PUSHOVER_APPLICATION_TOKEN and NOTIFY_GRANT_SECRET must be set together.",
+    );
+  }
+  if (!PUSHOVER_TOKEN_PATTERN.test(pushoverToken)) {
+    throw new TypeError(
+      "PUSHOVER_APPLICATION_TOKEN must be 30 characters of A-Z, a-z, and 0-9.",
+    );
+  }
+  if (Buffer.byteLength(grantSecret, "utf8") < 32) {
+    throw new TypeError("NOTIFY_GRANT_SECRET must contain at least 32 bytes.");
+  }
+  const dailyLimit = boundedInteger(
+    environment.NOTIFY_DAILY_LIMIT,
+    DEFAULT_NOTIFY_DAILY_LIMIT,
+    { name: "NOTIFY_DAILY_LIMIT", minimum: 1, maximum: 10_000 },
+  );
+  const quotaFloor = boundedInteger(
+    environment.NOTIFY_QUOTA_FLOOR,
+    DEFAULT_NOTIFY_QUOTA_FLOOR,
+    { name: "NOTIFY_QUOTA_FLOOR", minimum: 0, maximum: 10_000 },
+  );
+  return { pushoverToken, grantSecret, dailyLimit, quotaFloor };
+}
+
+/**
+ * Reads a whole number from the environment, or takes the default.
+ *
+ * @param source - What the environment holds, if anything.
+ * @param fallback - The value used when nothing is set.
+ * @param bounds - The variable's name, for the message, and its range.
+ * @returns The number to use.
+ * @throws {TypeError} When something is set and is not a number in range.
+ */
+function boundedInteger(
+  source: string | undefined,
+  fallback: number,
+  bounds: { name: string; minimum: number; maximum: number },
+): number {
+  const trimmed = source?.trim();
+  if (!trimmed) return fallback;
+  const parsed = Number(trimmed);
+  if (
+    !Number.isSafeInteger(parsed) ||
+    parsed < bounds.minimum ||
+    parsed > bounds.maximum
+  ) {
+    throw new TypeError(
+      `${bounds.name} must be an integer from ${bounds.minimum} through ${bounds.maximum}.`,
+    );
+  }
+  return parsed;
 }
 
 function required(
