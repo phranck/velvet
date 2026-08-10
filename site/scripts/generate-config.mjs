@@ -78,6 +78,7 @@ const sw = {
   navbar: configuration.statusPage.navigation,
 };
 const velvet = {
+  design: configuration.statusPage.design,
   layout: configuration.statusPage.layout,
   defaultRange: configuration.statusPage.defaultRange,
   logoHeight: configuration.statusPage.logoHeight,
@@ -148,6 +149,12 @@ const config = {
     ? sw.navbar.map((n) => ({ title: n.title, href: subst(n.href) }))
     : [{ title: "Status", href: "/" }],
   layout: velvet.layout === "cards" ? "cards" : "grouped",
+  // Absent for an installation that names no design, which publishes the page
+  // Velvet ships. A name is carried through untouched: whether a design answers
+  // to it is the build's question, and it stops rather than guessing.
+  ...(typeof velvet.design === "string" && velvet.design.trim()
+    ? { design: velvet.design.trim() }
+    : {}),
   defaultRange: normalizeRange(velvet.defaultRange),
   logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 72,
   theme: {

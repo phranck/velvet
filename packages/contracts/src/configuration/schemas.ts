@@ -275,6 +275,15 @@ const StatusPageSchema = Type.Object(
     ),
     logoUrl: Type.Optional(UrlSchema),
     logoHeight: Type.Optional(Type.Integer({ minimum: 16, maximum: 256 })),
+    design: Type.Optional(
+      Type.String({
+        minLength: 1,
+        maxLength: 64,
+        pattern: "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+        description:
+          "The design the page is published in, named by its bundle directory. Absent publishes the page Velvet ships. A name no installed design answers to stops the build rather than falling back to another design.",
+      }),
+    ),
     layout: Type.Optional(
       Type.Union([Type.Literal("grouped"), Type.Literal("cards")]),
     ),

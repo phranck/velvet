@@ -160,6 +160,7 @@ statusPage:
   logoHeight: 72
   layout: grouped
   defaultRange: 30d
+  design: proof
   navigation:
     - title: Website
       href: https://example.com
@@ -173,6 +174,7 @@ statusPage:
 | `customDomain` | no | GitHub Pages URL | Hostname only, without scheme, path, port, credentials, or wildcard. |
 | `logoUrl` | no | none | The logo shown instead of the page name. Either an absolute HTTP(S) address, or a file in this repository written as `./logo.svg`. The browser setup uploads one for you and writes it here. |
 | `logoHeight` | no | `72` | Display height from `16` through `256` px. |
+| `design` | no | the page Velvet ships | The design the page is published in, named by its bundle. A design carries its own appearance, so `theme` and `fonts` do not apply to one. A name no installed design answers to stops the build rather than publishing a different design under your domain. |
 | `layout` | no | `grouped` | `grouped` for one shared service card or `cards` for one card per service. |
 | `defaultRange` | no | `30d` | Initial range: `24h`, `7d`, `30d`, `90d`, or `1yr`. A visitor's saved choice wins later. |
 | `navigation` | no | `[]` | Up to 16 links with `title` and `href`. |

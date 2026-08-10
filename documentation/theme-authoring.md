@@ -392,3 +392,23 @@ A plugin owns behaviour, never markup. It draws into an element the bundle gives
 The isolation gate refuses a bundle naming a plugin that does not exist, or one at a version the package no longer offers, and refuses an import of a plugin the manifest did not declare. The number rises when a change would make a design that used the previous version render something else: an option removed or renamed, a default changed, or a drawing rule reversed. Adding an option whose default preserves what already happened does not raise it.
 
 Nothing here obliges a bundle to use any of them. A design that draws its own strip is allowed, and the conformance suite is what catches it if the drawing lies. `site/bundles/proof/` shows the pairing: it borrows the disclosure and does its own arithmetic.
+
+### The host: how a design reaches a published page
+
+**Naming one.** `statusPage.design` in `velvet.yml` reaches the page as `design` in `config.json`. An installation that names nothing is published exactly as before, so bundles are opt-in until the designs themselves are bundles.
+
+**When it cannot be served, the build stops.** An unknown name, or a design reading a status data version this release does not serve, fails the build with a message naming what exists. There is deliberately no fallback: the name comes from the operator's own configuration, so a typo is fixed in a second, whilst a silent fallback publishes somebody else's design under their domain with no way for them to tell. A stopped build also leaves the last published page exactly as it was, which is the safer failure for a page people open when something is already broken. `selectBundle` in `site/src/lib/bundles/host.ts` is where that is decided.
+
+**A layout the design does not support.** The design wins. `layoutFor` picks the design's first supported layout over what an installation configured, because a layout a design cannot draw is not a layout.
+
+**The page is still prerendered.** `site/vite.bundle-page.ts` renders the design's template at build time and writes the markup into the document, exactly as the component page was prerendered and for the reason recorded there: a prerendered page is in its own colours at first paint instead of arriving in a fallback palette and repainting. It costs less than it did — a template is a pure function returning a string, so the build needs no DOM and no component runtime to call it.
+
+Three things follow from a design being a whole page rather than values injected into one:
+
+- The `:root` block goes. A bundle carries its own appearance, and nothing of `themeCustomProperties` reaches a design.
+- The component page is not built at all when a design is named. The two are alternatives, chosen in `site/vite.config.ts` before the build starts, so nothing of the one an installation did not choose is published beside the one it did.
+- The stylesheet is imported by the generated entry rather than linked by hand, so Vite emits it beside the page and rewrites every `url()` in it — which is how a design's own typefaces and images reach the published site without the design knowing where they landed.
+
+**A first run has no data.** A bundle never fetches, so a page built before the first check has run cannot fill itself in later the way the component page did. It is given empty documents, and every design answers that with the state it shows when nothing is known — which is the truth about an installation that has not measured anything yet.
+
+**The Configurator previews a design in a frame of its own.** `site/src/components/DesignPreview.svelte` renders it into a document of its own with the design's stylesheet inlined, so nothing a design declares can reach the tool around it and no design is ever rendered inside another design's document. The frame runs no script: choosing how a page should look is not using the page.

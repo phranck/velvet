@@ -52,6 +52,15 @@ export interface VelvetConfig {
   serial?: number;
   /** Navbar links. */
   navbar: Array<{ title: string; href: string }>;
+  /**
+   * The design this installation publishes in, named by its bundle directory.
+   *
+   * Absent for an installation that names none, which publishes the page Velvet
+   * ships. A name no installed design answers to stops the build, because a
+   * silent fallback would publish somebody else's design under this
+   * installation's own domain without anybody being able to tell.
+   */
+  design?: string;
   /** Card layout: one grouped card (default) or one card per service. */
   layout: VelvetLayout;
   /** Range pre-selected on first visit, before the visitor picks one themselves. */

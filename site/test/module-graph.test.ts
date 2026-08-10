@@ -176,6 +176,10 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "references",
     "website",
   ],
+  // A design is previewed in a frame of its own, and only the Configurator has
+  // a reason to show one. The published status page renders its design into its
+  // own document rather than into a frame.
+  "DesignPreview.svelte": ["configurator"],
   "VelvetToolBrand.svelte": ["configurator", "onboarding", "website"],
   // The site's own chrome, on every page of it.
   "SiteHeader.svelte": [

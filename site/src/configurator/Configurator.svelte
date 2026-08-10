@@ -38,6 +38,9 @@
     type ConfiguratorSettings,
     type ConfiguratorTheme,
   } from "./configuration";
+  import DesignPreview from "../components/DesignPreview.svelte";
+  import { bundleDataFor } from "../lib/bundles/host.js";
+  import { installedDesign } from "../lib/bundles/installed.js";
   import { DEFAULT_CONFIGURATION_FILENAME } from "./configuration-filename.js";
   import {
     loadConfigurationFileHandle,
@@ -259,6 +262,24 @@
     "operational"
       ? "operational"
       : "degraded";
+  /**
+   * The design this configuration names, where it names one.
+   *
+   * Read from the loaded document rather than from the settings model, because
+   * choosing a design is the Configurator surface issue #463 replaces and this
+   * only has to show what a file already says.
+   */
+  const namedDesign = $derived.by(() => {
+    const statusPage = importedDocument?.statusPage;
+    const named =
+      statusPage && typeof statusPage === "object" && !Array.isArray(statusPage)
+        ? (statusPage as Record<string, unknown>).design
+        : undefined;
+    return typeof named === "string" && named.trim() !== ""
+      ? named.trim()
+      : undefined;
+  });
+
   const previewDocuments = $derived(
     previewDocumentsForServices(configuredServices, previewHealth),
   );
@@ -284,6 +305,30 @@
       timeZone: "UTC",
     }),
   );
+  /**
+   * The design as it would be published, ready for a frame of its own.
+   *
+   * Built from the same preview configuration and the same documents the live
+   * preview uses, so switching between the two shows the same installation
+   * rather than two different ones. A name no installed design answers to
+   * leaves the live preview in place here; on a published build it stops the
+   * build instead, which is where an operator can act on it.
+   */
+  const designPreview = $derived.by(() => {
+    if (!namedDesign) return undefined;
+    const design = installedDesign(namedDesign);
+    if (!design) return undefined;
+    const data = bundleDataFor(previewConfig, {
+      status: previewDocuments.status,
+      incidents: previewDocuments.incidents,
+      responseTimes: previewDocuments.responseTimes,
+    });
+    return {
+      title: design.manifest.name,
+      markup: design.template(data),
+      css: design.css,
+    };
+  });
   const settingsDirty = $derived(
     isConfiguratorDirty(settings, selectedBaseline),
   );
@@ -630,6 +675,18 @@
       <span class="preview-size">Status page</span>
     </header>
     <section class="preview-surface">
+      {#if designPreview}
+        <!--
+          A design is previewed in a document of its own, so nothing it declares
+          can reach the Configurator around it and no design is ever rendered
+          inside another design's document.
+        -->
+        <DesignPreview
+          title={designPreview.title}
+          markup={designPreview.markup}
+          css={designPreview.css}
+        />
+      {:else}
       <StatusPage
         config={previewConfig}
         showNavigation={false}
@@ -643,6 +700,7 @@
         onToggleAll={setAllPreviewServices}
         onToggleService={togglePreviewService}
       />
+      {/if}
     </section>
   </main>
 

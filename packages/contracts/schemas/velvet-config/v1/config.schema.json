@@ -66,6 +66,13 @@
           "maximum": 256,
           "type": "integer"
         },
+        "design": {
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+          "description": "The design the page is published in, named by its bundle directory. Absent publishes the page Velvet ships. A name no installed design answers to stops the build rather than falling back to another design.",
+          "type": "string"
+        },
         "layout": {
           "anyOf": [
             {

@@ -13,10 +13,14 @@ import { INITIAL_STATE_ELEMENT_ID } from "./src/lib/initial-state.js";
  * same loaders rather than parsing and normalising the documents a second time.
  * A second implementation is a second set of defaults to keep in step.
  *
+ * Exported because the bundle page needs the same two: whichever of the two
+ * pages a build produces, it reads the same files the runtime loaders would
+ * have fetched.
+ *
  * @param path - The file to answer with.
  * @returns A fetch returning that file, or a 404 when it is not there.
  */
-function fileAt(path: string): FetchImplementation {
+export function fileAt(path: string): FetchImplementation {
   return async () => {
     try {
       return new Response(await readFile(path, "utf8"), { status: 200 });
@@ -27,7 +31,7 @@ function fileAt(path: string): FetchImplementation {
 }
 
 /** Answers a fetch from whichever file the requested URL names. */
-const fileByUrl: FetchImplementation = async (input) => {
+export const fileByUrl: FetchImplementation = async (input) => {
   try {
     return new Response(await readFile(String(input), "utf8"), { status: 200 });
   } catch {
