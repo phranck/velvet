@@ -24,7 +24,7 @@
  * The faces are fetched here rather than self-hosted; see `cassette.css`.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Big+Shoulders:opsz,wght@10..72,400..900&family=Jura:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Antonio:wght@400;600;700&family=Jura:wght@400;500;600;700&display=swap");
 
 :root {
   /* ── Identity ─────────────────────────────────────────────────────────── */
@@ -80,11 +80,15 @@
 
     Dim, because an absence should read as one. Nothing holds it to the page,
     since this design draws no edge, and it does not need to: what says a day
-    is empty is that it does not look like a working one, and 28 per cent
-    measures 7.79:1 against the operational blue. It sits at 1.42:1 on black,
+    is empty is that it does not look like a working one, and 13 per cent
+    measures 10.94:1 against the operational blue. It sits at 1.14:1 on black,
     which is a shadow of a bar rather than a bar.
   */
-  --state-no-data: color-mix(in srgb, #b1957a 28%, #000000);
+  --state-no-data: color-mix(in srgb, var(--lcars-quiet) 13%, #000000);
+  /* The one quiet colour this design has, which an empty day, the opened
+     panel and the chart's own grid are all drawn from at different
+     strengths. */
+  --lcars-quiet: #b1957a;
   --state-maintenance: #cc99cc;
   --state-maintenance-edge: color-mix(in srgb, #cc99cc 60%, #ffffcc);
   /* Announcing that nothing is known. Named apart from the strip's own edge,
@@ -99,24 +103,29 @@
 
   /* ── Typography ───────────────────────────────────────────────────────── */
   /*
-    Big Shoulders, under the SIL Open Font License.
+    Tungsten first, Big Shoulders behind it.
 
-    The original is Helvetica Ultra Compressed, with Letraset Compacta beside
-    it, and neither is free. Okuda, the fan face cut from the same lettering,
-    is licensed for personal use only, so a theme that ships to other people's
-    installations cannot carry it.
+    Tungsten is the face this interface is usually set in, and it is Hoefler &
+    Co's: its licence forbids copying, distributing and hosting the files
+    without an agreement with them, so nothing here ships it. Naming it first
+    means an installation that holds a licence drops the files in beside this
+    stylesheet, declares them, and gets the face; every other installation gets
+    the one behind it and nothing breaks.
 
-    This one is narrower than Antonio, which is what thelcars.com substitutes,
-    and it runs to weight 900 where Antonio stops at 700. Both matter on these
-    panels: every label and every reading is condensed, and the names in the
-    column are set as heavy as the face allows.
+    Antonio, and nothing behind it.
+
+    The original LCARS lettering is Helvetica Ultra Compressed with Letraset
+    Compacta beside it, and neither is free; Tungsten, which the interface is
+    usually set in, is Hoefler & Co's and may not be redistributed. Antonio is
+    under the SIL Open Font License and is what thelcars.com substitutes for
+    the same reason. It stops at weight 700, so nothing here asks for more.
 
     Jura stays for anything read as a sentence. A compressed face at paragraph
     length is a wall, and the incident summaries are prose.
   */
-  --font-display: "Big Shoulders", "Arial Narrow", sans-serif;
+  --font-display: "Antonio";
   --font-body: "Jura", ui-sans-serif, system-ui, sans-serif;
-  --font-meta: "Big Shoulders", "Arial Narrow", sans-serif;
+  --font-meta: "Antonio";
   --display-transform: uppercase;
   --display-tracking: 0.06em;
   --display-weight: 700;
@@ -139,13 +148,13 @@
     height, so its size is the depth of the upper arm.
 
     The headline and the time stand one above the other inside the bar, and
-    together they are the upper arm's depth. This face puts its capitals at 0.8
-    of the size, so a 34px headline gives 27.2px of capitals, and with a 5px
-    gap and the 13.4px line of time under it the arm is 45.6px deep against the
-    lower arm's 44px. It gives way on a narrow
-    window rather than wrapping into a block three lines deep.
+    together they are the upper arm's depth. The fallback face puts its
+    capitals at 0.9 of the size, so a 30px headline gives 27px of capitals, and
+    with a 5px gap and the line of time under it the arm is about 45px deep
+    against the lower arm's 44px. It gives way on a narrow window rather than
+    wrapping into a block three lines deep.
   */
-  --text-size-headline: clamp(24px, 2.7vw, 34px);
+  --text-size-headline: clamp(22px, 2.4vw, 30px);
   --text-size-service-icon: 22px;
   --text-size-ornament: 22px;
   --text-size-chart-label: 12px;
@@ -159,7 +168,17 @@
      whole interface is built from. Controls are full capsules. */
   /* The opened panel is a capsule at both ends, like everything else here. */
   --detail-space-after: 10px;
-  --detail-padding: 12px 18px 14px;
+  /* One value, so the panel holds its contents at the same distance on every
+     side. */
+  --detail-padding: 14px;
+  /* No outline and no rule above the chart: this interface separates by space
+     and by fill, never by a line. The panel takes the same colour an
+     unrecorded day does, which is the quietest fill the palette holds. */
+  --detail-edge-width: 0px;
+  --detail-edge-colour: transparent;
+  --detail-fill: var(--state-no-data);
+  --chart-rule-width: 0px;
+  --chart-rule-colour: transparent;
   --detail-radius: 26px;
   --card-radius-base: 0px;
   --card-radius: 0px;
@@ -212,7 +231,9 @@
   /* The arm: 26px tall, across the full width, capped at its free end, with
      the column running down into it through the throat. No glyph: a panel of
      this kind names a thing in type rather than in a picture. */
-  --notices-arm-space: calc(var(--lcars-arm-depth) + 8px);
+  /* The arm plus the same gap the column keeps from a notice, so the region is
+     inset by one figure on both sides rather than two. */
+  --notices-arm-space: calc(var(--lcars-arm-depth) + var(--notices-rail-gap));
   --notices-arm-inset: var(--lcars-arm-depth);
   --notices-arm-image: linear-gradient(var(--status-colour) 0 0),
     radial-gradient(
@@ -261,19 +282,51 @@
     0px
   );
   /*
-    One corner on all four, not a capsule at the trailing end. Where two radii
-    along an edge exceed it, the browser scales every corner of the box by the
-    same factor: a 999px capsule against a 104px box gave a factor of 0.05, and
-    the 54px corners came out at 2.8px, which is why they looked square.
+    Derived at the leading edge, a capsule at the trailing one, which is what
+    an LCARS row does at its free end.
+
+    The capsule is exactly half the notice's height, which `page.ts` measures
+    and reports, and it has to be exact: where two radii along one edge overrun
+    it the browser scales every corner of the box by the same factor. A 999px
+    capsule against a 112px notice gave a factor of 0.056, and the 10px leading
+    corners were drawn at 0.56px, which is why they looked square.
   */
-  --notice-radius: var(--notice-radius-base);
+  --notice-radius-lead: var(--notice-radius-base);
+  --notice-radius-trail: var(--notice-radius-base);
+  --notice-trailing: capsule;
   --notice-gap: 4px var(--space-row);
   --notice-border-width: 0px;
-  --notice-areas-maintenance: "glyph title meta" "glyph summary summary";
-  --notice-areas-incident: "title meta" "summary summary";
-  --notice-columns-maintenance: auto 1fr auto;
-  --notice-columns-incident: 1fr auto;
-  --notice-fill: color-mix(in srgb, currentColor 10%, #000000);
+  /*
+    A table rather than a stack. Every notice is one row of four columns, and
+    the columns are the region's, so they are one width down the whole list
+    however long any single entry is.
+
+    Date, stardate, claim, then the message itself, which is held to two lines.
+  */
+  /* One face, one size and one casing straight across the row, because the
+     notices are a table here rather than a stack of cards. */
+  --notice-title-colour: var(--text-1);
+  --notice-title-font: var(--font-display);
+  --notice-title-size: var(--text-size-small);
+  --notice-title-transform: uppercase;
+  --notice-summary-colour: var(--text-2);
+  --notice-summary-font: var(--font-display);
+  --notice-summary-size: var(--text-size-small);
+  --notice-summary-transform: uppercase;
+  --notice-meta-colour: currentColor;
+  --notice-meta-font: var(--font-display);
+  --notice-meta-size: var(--text-size-small);
+  --notice-meta-transform: uppercase;
+  --notices-columns: auto auto minmax(12ch, 22ch) 1fr;
+  --notice-areas-maintenance: "date stardate title summary";
+  --notice-areas-incident: "date stardate title summary";
+  --notice-columns-maintenance: subgrid;
+  --notice-columns-incident: subgrid;
+  --notice-date-display: block;
+  --notice-meta-display: none;
+  --notice-cell-lines: 1;
+  /* No card behind a row of a table. */
+  --notice-fill: transparent;
   --card-rail-width: 0px;
   --card-rail-colour: transparent;
   --card-rail-radius: 0px;
@@ -310,7 +363,7 @@
   );
 
   /* ── Measure ──────────────────────────────────────────────────────────── */
-  --page-width: 1080px;
+  --page-width: 1280px;
   --page-inset: clamp(12px, 4vw, 40px);
   /* Half the radius of the strip's own capsule ends, which is what every line
      in the column is inset by, leading and trailing alike. The segments are
@@ -369,10 +422,27 @@
   --seg-gloss: none;
 
   /* ── Chart ────────────────────────────────────────────────────────────── */
-  --chart-head-space: 20px;
+  --chart-head-margin: 8px;
+  --chart-head-space: 8px;
   --chart-height: 168px;
   --chart-inset-inline: 0px;
+  /* How far the range's two ends sit under the axis. */
+  --chart-axis-space: 18px;
   --chart-inset-block: 22px;
+  /* Both take the service's own colour, which `base.css` hands them, and
+     differ only in strength: the axes stand at 50 per cent and the grid behind
+     them at 40. */
+  --chart-grid-colour: var(--accent);
+  --chart-grid-alpha: 40%;
+  --chart-axis-colour: var(--accent);
+  --chart-axis-text-colour: var(--accent);
+  --chart-axis-text-alpha: 100%;
+  --chart-axis-alpha: 50%;
+  --chart-scale-display: block;
+  /* The axes' own colour at full strength, so the figures belong to the
+     lines they label. */
+  --chart-scale-colour: var(--accent);
+  --chart-scale-alpha: 100%;
   --chart-grid-lines: 3;
   --chart-grid-dash: 1 7;
   /* Round caps, a filled curve, and a generous point. Nothing on these panels
@@ -384,7 +454,8 @@
      cap draws a circle rather than a stroke, so the second series reads as a
      dotted trace rather than as a broken line. */
   --chart-ipv4-dash: none;
-  --chart-ipv6-dash: 0 11;
+  /* Solid, like every other trace here. */
+  --chart-ipv6-dash: none;
   --chart-fill: 0.42;
   --chart-point-radius: 5px;
   --chart-tooltip-width: 152px;
@@ -458,9 +529,10 @@
      and bottom edge as the letters. */
   --hero-title-trail: calc(-1 * var(--display-tracking));
   --hero-title-trim: trim-both cap alphabetic;
-  /* To the text edge below rather than the baseline, so the descenders in
-     the date are inside the bar rather than hanging under it. */
-  --hero-updated-trim: trim-both cap text;
+  /* To the baseline, so the bar's lower edge is the line the time sits on. Its
+     descenders hang below that edge, which is what the hero's bottom padding
+     is there for. */
+  --hero-updated-trim: trim-both cap alphabetic;
   /* Tighter than the page's own, because this gap is part of the arm's
      depth rather than space between two blocks. */
   --hero-gap: 5px var(--space-row);
@@ -562,7 +634,7 @@
   --service-columns: var(--lcars-rail-width) 1fr;
   --service-rail-display: flex;
   --service-rail-justify: flex-end;
-  --service-rail-weight: 900;
+  --service-rail-weight: 700;
   --control-font: var(--font-display);
   --control-weight: 700;
   --control-tracking: 0.1em;
@@ -585,11 +657,26 @@
   --service-name-padding: 0;
   --service-name-radius: 0px;
   --service-name-fill: transparent;
-  --service-name-fill-1: #ff9c00;
-  --service-name-fill-2: #cc99cc;
-  --service-name-fill-3: #9c9cff;
-  --service-name-fill-4: #f7bd5a;
-  --service-name-fill-5: #cd6363;
+  /*
+    Ten colours, in the order the column runs through them. Every one is a
+    member of the standard set, and every one carries black type, which is what
+    a filled block on these panels does. A run of more than ten services starts
+    the list again.
+
+    They colour the chart as well: a service's own line is the colour of its
+    block, and the second protocol takes the next service's colour, so a panel
+    reads as one run of colour from the column across to the graph.
+  */
+  --service-colour-1: #ff9c00;
+  --service-colour-2: #cc99cc;
+  --service-colour-3: #9c9cff;
+  --service-colour-4: #f7bd5a;
+  --service-colour-5: #cd6363;
+  --service-colour-6: #99ccff;
+  --service-colour-7: #ffcc99;
+  --service-colour-8: #ed884c;
+  --service-colour-9: #646dcc;
+  --service-colour-10: #ffff9c;
   --service-name-colour: transparent;
   /* One card, always. This design has no notion of a panel per service: the
      rail runs the height of the whole readout. */

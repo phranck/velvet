@@ -118,6 +118,11 @@
      roughly a tenth of their height, and the outer housing far more than that.
      The border width is zero because the edge here is the bracket, not a
      frame. */
+  --detail-edge-width: var(--rule-width);
+  --detail-edge-colour: var(--surface-rule);
+  --detail-fill: var(--surface-sunken);
+  --chart-rule-width: var(--rule-width);
+  --chart-rule-colour: var(--surface-rule);
   --detail-space-after: 0px;
   --detail-padding: var(--card-padding);
   --card-radius-base: 10px;
@@ -160,7 +165,25 @@
   --notice-fill: color-mix(in srgb, currentColor 12%, var(--surface-card));
   --notice-padding: var(--card-padding);
   --notice-radius-base: var(--card-radius-base);
-  --notice-radius: var(--card-radius);
+  --notice-title-colour: var(--text-1);
+  --notice-title-font: var(--font-display);
+  --notice-title-size: var(--text-size-lead);
+  --notice-title-transform: var(--display-transform);
+  --notice-summary-colour: var(--text-2);
+  --notice-summary-font: var(--font-body);
+  --notice-summary-size: var(--text-size-small);
+  --notice-summary-transform: none;
+  --notice-meta-colour: var(--text-2);
+  --notice-meta-font: var(--font-meta);
+  --notice-meta-size: var(--text-size-caption);
+  --notice-meta-transform: none;
+  --notices-columns: 1fr;
+  --notice-date-display: none;
+  --notice-meta-display: block;
+  --notice-cell-lines: 99;
+  --notice-radius-lead: var(--card-radius);
+  --notice-radius-trail: var(--card-radius);
+  --notice-trailing: none;
   --notice-gap: var(--space-hair) var(--space-row);
   --notice-border-width: var(--card-border-width);
   --card-rail-width: 0px;
@@ -292,10 +315,21 @@
   /* ── Chart ────────────────────────────────────────────────────────────── */
   /* Five dotted rules and hairline traces, with the crosshair dotted as well.
      Every line on these screens is either dotted or one pixel wide. */
+  --chart-head-margin: var(--space-block);
   --chart-head-space: var(--space-tight);
   --chart-height: 168px;
   --chart-inset-inline: 10px;
+  --chart-axis-space: 20px;
   --chart-inset-block: 16px;
+  --chart-grid-colour: var(--surface-rule);
+  --chart-grid-alpha: 100%;
+  --chart-axis-colour: var(--surface-rule);
+  --chart-axis-text-colour: var(--text-3);
+  --chart-axis-text-alpha: 100%;
+  --chart-axis-alpha: 100%;
+  --chart-scale-display: none;
+  --chart-scale-colour: var(--text-3);
+  --chart-scale-alpha: 100%;
   --chart-grid-lines: 5;
   --chart-grid-dash: 1 5;
   --chart-line-width: 1.5px;

@@ -503,6 +503,14 @@ body::after {
 .notices {
   position: relative;
   display: grid;
+  /*
+    The region carries the columns, not each notice, because a design may lay
+    the notices out as a table and then every column has to be one width down
+    the whole list. A notice takes those columns back through `subgrid`; a
+    design that wants a stack of cards leaves this at one column and nothing
+    changes.
+  */
+  grid-template-columns: var(--notices-columns);
   gap: var(--notices-gap);
   margin-bottom: var(--space-block);
   padding-inline-start: calc(
@@ -551,6 +559,7 @@ body::after {
 }
 
 .notices-heading {
+  grid-column: 1 / -1;
   margin: var(--space-block) 0 0;
   color: var(--text-2);
   font-family: var(--font-display);
@@ -617,13 +626,26 @@ body::after {
 
   position: relative;
   display: grid;
+  /* Across every column the region has, so its own areas can be laid on them. */
+  grid-column: 1 / -1;
   align-items: var(--notice-align);
   gap: var(--notice-gap);
   /* The same on all four sides. A theme that carries a large corner sets this
      to the text inset derived from it, so the words clear the curve and the
      padding stays even the whole way round. */
   padding: var(--notice-padding);
-  border-radius: var(--notice-radius);
+  /*
+    Composed here rather than stated by the theme, because the trailing corners
+    may be a capsule and a capsule is exactly half the box's height. CSS cannot
+    say that: a percentage in a radius resolves against the box's own axis, and
+    a number large enough to always exceed it makes the browser scale every
+    corner of the box down by one factor, which flattens the leading corners
+    with it. `page.ts` measures the height onto the element instead, and this is
+    read on the element, where that measurement lives.
+  */
+  border-radius: var(--notice-radius-lead)
+    var(--notice-cap, var(--notice-radius-trail))
+    var(--notice-cap, var(--notice-radius-trail)) var(--notice-radius-lead);
   background: var(--notice-fill);
 }
 
@@ -632,16 +654,31 @@ body::after {
   display: var(--notice-glyph-display);
 }
 
+.notice-date {
+  grid-area: date;
+  display: var(--notice-date-display);
+}
+
 .notice-title {
   grid-area: title;
 }
 
 .notice-summary {
   grid-area: summary;
+  /*
+    Held to a number of lines, so a long summary cannot turn one row of a table
+    into three. A design that stacks its notices sets no limit and the text
+    runs as far as it needs to.
+  */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--notice-cell-lines);
+  overflow: hidden;
 }
 
 .notice-meta {
   grid-area: meta;
+  display: var(--notice-meta-display);
 }
 
 .notice--maintenance {
@@ -662,25 +699,48 @@ body::after {
   line-height: 1;
 }
 
+/*
+  Every cell states its face, size and casing from its own token rather than
+  taking them from the page's general ones. A design that lists notices as a
+  table wants one face and one size straight across the row; a design that
+  stacks them as cards wants a heading, a paragraph and a timestamp that differ
+  from one another. Both are the same four tokens with different values.
+*/
+.notice-date {
+  color: var(--notice-meta-colour);
+  font-family: var(--notice-meta-font);
+  font-size: var(--notice-meta-size);
+  text-transform: var(--notice-meta-transform);
+}
+
 .notice-title {
-  color: var(--text-1);
-  font-family: var(--font-display);
-  font-size: var(--text-size-lead);
+  /* Cut short the same way the summary is, so a long claim cannot push the row
+     onto a second line by itself. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--notice-cell-lines);
+  overflow: hidden;
+  color: var(--notice-title-colour);
+  font-family: var(--notice-title-font);
+  font-size: var(--notice-title-size);
   font-weight: var(--display-weight);
   letter-spacing: var(--display-tracking);
-  text-transform: var(--display-transform);
+  text-transform: var(--notice-title-transform);
 }
 
 .notice-summary {
-  color: var(--text-2);
-  font-size: var(--text-size-small);
+  color: var(--notice-summary-colour);
+  font-family: var(--notice-summary-font);
+  font-size: var(--notice-summary-size);
   line-height: var(--text-leading-body);
+  text-transform: var(--notice-summary-transform);
 }
 
 .notice-meta {
-  color: var(--text-2);
-  font-family: var(--font-meta);
-  font-size: var(--text-size-caption);
+  color: var(--notice-meta-colour);
+  font-family: var(--notice-meta-font);
+  font-size: var(--notice-meta-size);
+  text-transform: var(--notice-meta-transform);
 }
 
 /* ── Range bar ────────────────────────────────────────────────────────────── */
@@ -1056,25 +1116,108 @@ body::after {
   overflow-wrap: anywhere;
 }
 
-/* Same cycle as the name block, so consecutive segments differ. */
-.service:nth-of-type(5n + 1) .service-rail {
-  background: var(--service-name-fill-1, var(--service-rail-fill));
+/*
+  Each service takes a colour from the theme's list, and the list runs out after
+  ten and starts again. Every service also knows the next one's colour, because
+  a design may draw a second series in it; the last service takes the first
+  colour as its next, so the run closes.
+
+  A theme that does not colour by service declares none of these, and everything
+  below falls back to what it did before.
+*/
+
+.service:nth-of-type(10n + 1) {
+  --series-own: var(--service-colour-1);
+  --series-next: var(--service-colour-2);
 }
 
-.service:nth-of-type(5n + 2) .service-rail {
-  background: var(--service-name-fill-2, var(--service-rail-fill));
+.service:nth-of-type(10n + 2) {
+  --series-own: var(--service-colour-2);
+  --series-next: var(--service-colour-3);
 }
 
-.service:nth-of-type(5n + 3) .service-rail {
-  background: var(--service-name-fill-3, var(--service-rail-fill));
+.service:nth-of-type(10n + 3) {
+  --series-own: var(--service-colour-3);
+  --series-next: var(--service-colour-4);
 }
 
-.service:nth-of-type(5n + 4) .service-rail {
-  background: var(--service-name-fill-4, var(--service-rail-fill));
+.service:nth-of-type(10n + 4) {
+  --series-own: var(--service-colour-4);
+  --series-next: var(--service-colour-5);
 }
 
-.service:nth-of-type(5n + 5) .service-rail {
-  background: var(--service-name-fill-5, var(--service-rail-fill));
+.service:nth-of-type(10n + 5) {
+  --series-own: var(--service-colour-5);
+  --series-next: var(--service-colour-6);
+}
+
+.service:nth-of-type(10n + 6) {
+  --series-own: var(--service-colour-6);
+  --series-next: var(--service-colour-7);
+}
+
+.service:nth-of-type(10n + 7) {
+  --series-own: var(--service-colour-7);
+  --series-next: var(--service-colour-8);
+}
+
+.service:nth-of-type(10n + 8) {
+  --series-own: var(--service-colour-8);
+  --series-next: var(--service-colour-9);
+}
+
+.service:nth-of-type(10n + 9) {
+  --series-own: var(--service-colour-9);
+  --series-next: var(--service-colour-10);
+}
+
+.service:nth-of-type(10n + 10) {
+  --series-own: var(--service-colour-10);
+  --series-next: var(--service-colour-1);
+}
+
+.service:last-of-type {
+  --series-next: var(--service-colour-1);
+}
+
+.service:nth-of-type(10n + 1) .service-rail {
+  background: var(--service-colour-1, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 2) .service-rail {
+  background: var(--service-colour-2, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 3) .service-rail {
+  background: var(--service-colour-3, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 4) .service-rail {
+  background: var(--service-colour-4, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 5) .service-rail {
+  background: var(--service-colour-5, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 6) .service-rail {
+  background: var(--service-colour-6, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 7) .service-rail {
+  background: var(--service-colour-7, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 8) .service-rail {
+  background: var(--service-colour-8, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 9) .service-rail {
+  background: var(--service-colour-9, var(--service-rail-fill));
+}
+
+.service:nth-of-type(10n + 10) .service-rail {
+  background: var(--service-colour-10, var(--service-rail-fill));
 }
 
 /* The foot of the column. A design whose rail is the structure rounds it the
@@ -1185,27 +1328,49 @@ body::after {
   varying ones is the interface those designs are built from.
 
   The cycle lives here because it is structure, and the colours live in the
-  theme because they are design. A theme that wants one colour sets none of the
-  five and every row falls back to `--service-name-fill`.
+  theme because they are design. It is the same list of ten the column and the
+  chart draw from, so a service is one colour wherever it appears. A theme that
+  lists none of them leaves every row on `--service-name-fill`.
 */
-.service:nth-of-type(5n + 1) .service-name {
-  background: var(--service-name-fill-1, var(--service-name-fill));
+
+.service:nth-of-type(10n + 1) .service-name {
+  background: var(--service-colour-1, var(--service-name-fill));
 }
 
-.service:nth-of-type(5n + 2) .service-name {
-  background: var(--service-name-fill-2, var(--service-name-fill));
+.service:nth-of-type(10n + 2) .service-name {
+  background: var(--service-colour-2, var(--service-name-fill));
 }
 
-.service:nth-of-type(5n + 3) .service-name {
-  background: var(--service-name-fill-3, var(--service-name-fill));
+.service:nth-of-type(10n + 3) .service-name {
+  background: var(--service-colour-3, var(--service-name-fill));
 }
 
-.service:nth-of-type(5n + 4) .service-name {
-  background: var(--service-name-fill-4, var(--service-name-fill));
+.service:nth-of-type(10n + 4) .service-name {
+  background: var(--service-colour-4, var(--service-name-fill));
 }
 
-.service:nth-of-type(5n + 5) .service-name {
-  background: var(--service-name-fill-5, var(--service-name-fill));
+.service:nth-of-type(10n + 5) .service-name {
+  background: var(--service-colour-5, var(--service-name-fill));
+}
+
+.service:nth-of-type(10n + 6) .service-name {
+  background: var(--service-colour-6, var(--service-name-fill));
+}
+
+.service:nth-of-type(10n + 7) .service-name {
+  background: var(--service-colour-7, var(--service-name-fill));
+}
+
+.service:nth-of-type(10n + 8) .service-name {
+  background: var(--service-colour-8, var(--service-name-fill));
+}
+
+.service:nth-of-type(10n + 9) .service-name {
+  background: var(--service-colour-9, var(--service-name-fill));
+}
+
+.service:nth-of-type(10n + 10) .service-name {
+  background: var(--service-colour-10, var(--service-name-fill));
 }
 
 .service-uptime {
@@ -1335,8 +1500,10 @@ body::after {
 }
 
 .service-details {
-  --edge-width: var(--rule-width);
-  --edge-colour: var(--surface-rule);
+  /* Its own edge rather than the page's, because a design may want the panel
+     to be a filled field with no outline at all. */
+  --edge-width: var(--detail-edge-width);
+  --edge-colour: var(--detail-edge-colour);
 
   margin: var(--space-block) var(--row-inset) var(--detail-space-after);
   /* Its own padding rather than the card's. A design whose card has none still
@@ -1344,7 +1511,7 @@ body::after {
      is the one that would otherwise run into the bottom of it. */
   padding: var(--detail-padding);
   border-radius: var(--detail-radius, var(--card-inner-radius));
-  background: var(--surface-sunken);
+  background: var(--detail-fill);
 }
 
 .protocol-readings {
@@ -1434,12 +1601,17 @@ body::after {
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: var(--space-tight) var(--space-row);
-  margin-top: var(--space-block);
-  /* Its own value rather than the general tight step, because the rule above
-     it is the only line on the page that a caption sits directly under, and
-     the two need more air between them than two stacked rows do. */
+  /* Its own space above rather than the general block step, because a design
+     that draws no rule between the readings and the chart wants them closer
+     than two stacked blocks would be. */
+  margin-top: var(--chart-head-margin);
+  /* Its own value rather than the general tight step, because where a rule is
+     drawn above it, a caption sitting directly under that rule needs more air
+     than two stacked rows do. */
   padding-top: var(--chart-head-space);
-  border-top: var(--rule-width) var(--rule-style) var(--surface-rule);
+  /* Its own rule rather than the page's, because a design may separate the
+     chart from the readings above it by space alone. */
+  border-top: var(--chart-rule-width) var(--rule-style) var(--chart-rule-colour);
 }
 
 .chart-caption {
@@ -1505,19 +1677,57 @@ body::after {
 
 /* One declaration decides a series colour, and everything drawn for that
    series reads it. Adding a third protocol would mean one more rule here. */
+/* By service where the theme lists colours for that, by protocol otherwise. */
 [data-protocol="ipv4"] {
-  --series-colour: var(--protocol-ipv4);
+  --series-colour: var(--series-own, var(--protocol-ipv4));
 }
 
 [data-protocol="ipv6"] {
-  --series-colour: var(--protocol-ipv6);
+  --series-colour: var(--series-next, var(--protocol-ipv6));
 }
 
+/*
+  The grid and the two axes, which a design may draw in the series' own colour
+  rather than in the page's rule colour. Where the theme lists no colour per
+  service, `--series-own` is not defined at all and the fallback stands.
+
+  Both carry their own strength, because an axis that reads as firmly as its
+  grid stops being an axis.
+*/
 .chart-grid line {
-  stroke: var(--surface-rule);
+  stroke: color-mix(
+    in srgb,
+    var(--series-own, var(--chart-grid-colour)) var(--chart-grid-alpha),
+    transparent
+  );
   stroke-width: var(--rule-width);
   stroke-dasharray: var(--chart-grid-dash);
   vector-effect: non-scaling-stroke;
+}
+
+.chart-axis-line {
+  stroke: color-mix(
+    in srgb,
+    var(--series-own, var(--chart-axis-colour)) var(--chart-axis-alpha),
+    transparent
+  );
+  stroke-width: var(--rule-width);
+  vector-effect: non-scaling-stroke;
+}
+
+/* The reading each grid line stands for. Off in most designs, where the two
+   ends of the range are the only scale the chart shows. */
+.chart-scale text {
+  display: var(--chart-scale-display);
+  /* The same source the axes take, so a scale reads as belonging to the lines
+     it labels rather than to the page. */
+  fill: color-mix(
+    in srgb,
+    var(--series-own, var(--chart-scale-colour)) var(--chart-scale-alpha),
+    transparent
+  );
+  font-family: var(--font-meta);
+  font-size: var(--text-size-chart-caption);
 }
 
 .chart-line {
@@ -1540,9 +1750,12 @@ body::after {
   pointer-events: none;
 }
 
+/* A reading with no neighbour to join, drawn as a ring so it reads as one
+   measurement rather than as a dot of the trace. It is filled with the panel it
+   sits on, not the page's sunken surface, which a design may set apart. */
 .chart-point,
 .chart-hover-point {
-  fill: var(--surface-sunken);
+  fill: var(--detail-fill);
   stroke: var(--series-colour);
   stroke-width: var(--chart-line-width);
   vector-effect: non-scaling-stroke;
@@ -1580,8 +1793,14 @@ linearGradient stop {
   fill: var(--series-colour);
 }
 
+/* The two ends of the range, in the same source the axes and the scale take,
+   so everything naming the plot reads as one set of marks. */
 .chart-axis text {
-  fill: var(--text-3);
+  fill: color-mix(
+    in srgb,
+    var(--series-own, var(--chart-axis-text-colour)) var(--chart-axis-text-alpha),
+    transparent
+  );
   font-family: var(--font-meta);
   font-size: var(--text-size-chart-label);
 }

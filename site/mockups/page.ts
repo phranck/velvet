@@ -77,6 +77,25 @@ const UPDATED_TIME = new Intl.DateTimeFormat("en-GB", {
   timeStyle: "short",
 });
 
+/**
+ * A date as `24.03.2026`.
+ *
+ * Written out rather than formatted by locale, because the panel's own reading
+ * of a date is fixed: two digits, two digits, four digits, separated by stops.
+ * A locale would give a different order and a different separator depending on
+ * who is looking.
+ *
+ * @param moment - The date to write.
+ * @returns The date, zero-padded.
+ */
+function panelDate(moment: Date): string {
+  const day = String(moment.getUTCDate()).padStart(2, "0");
+  const month = String(moment.getUTCMonth() + 1).padStart(2, "0");
+  return `${day}.${month}.${moment.getUTCFullYear()}`;
+}
+
+
+
 /** Creates an element with a class and optional text, since there is a lot of this. */
 function el<K extends keyof HTMLElementTagNameMap>(
   name: K,
@@ -217,19 +236,107 @@ export function mountStatusPage(
 
   // ── Notices ───────────────────────────────────────────────────────────────
   const notices = el("section", "notices");
+  /*
+    Every notice reports its own height as a custom property, so a theme can
+    round one end into a capsule without flattening the other.
+
+    A capsule is half the box's height, and CSS has no way to say that: a
+    percentage in a `border-radius` resolves against the box's own axis, so 50%
+    on the horizontal component gives half the width. Writing a number large
+    enough to always exceed it does not work either, because where two radii
+    along one edge overrun it the browser scales every corner of the box by the
+    same factor. Measured on a 112px notice with a 999px capsule at its trailing
+    end: the factor came out at 0.056, and the 10px leading corners were drawn
+    at 0.56px.
+  */
+  const capObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const element = entry.target as HTMLElement;
+      // Only where the theme asks for one. Every other design wants its own
+      // corner at that end and would be given a capsule it never asked for.
+      const wanted =
+        getComputedStyle(element).getPropertyValue("--notice-trailing").trim() ===
+        "capsule";
+      if (!wanted) {
+        element.style.removeProperty("--notice-cap");
+        continue;
+      }
+      element.style.setProperty(
+        "--notice-cap",
+        `${element.getBoundingClientRect().height / 2}px`,
+      );
+    }
+  });
+  // A design may hold each notice to a single line and cut the rest off, so the
+  // whole of it is available on hover and on focus. On the document's own
+  // layer, for the reason `overlay.ts` sets out.
+  const noticeTip = createOverlay("uptime-tooltip");
+  /**
+   * Shows a notice's full text whilst it is hovered or focused.
+   *
+   * @param notice - The row to attach to.
+   * @param text - Everything the row says, however much of it is drawn.
+   */
+  function tellInFull(notice: HTMLElement, text: string): void {
+    /**
+     * Whether anything in the row is being cut off.
+     *
+     * Read at the moment it is asked rather than once at build time, because
+     * whether a line fits depends on the width the window happens to have.
+     *
+     * @returns True where a cell is drawing less than it holds.
+     */
+    const clipped = (): boolean =>
+      [...notice.children].some((cell) => {
+        const box = cell as HTMLElement;
+        return (
+          box.scrollWidth > box.clientWidth + 1 ||
+          box.scrollHeight > box.clientHeight + 1
+        );
+      });
+    // Focusable only whilst there is something a pointer could not reach, since
+    // a stop on the way through the page that says nothing is a stop wasted.
+    const reflectFocusable = (): void => {
+      if (clipped()) notice.tabIndex = 0;
+      else notice.removeAttribute("tabindex");
+    };
+    reflectFocusable();
+    new ResizeObserver(reflectFocusable).observe(notice);
+    // Again once the faces have arrived. A row measured before the face loads
+    // is measured in whatever the browser put there meanwhile, which can
+    // overflow where the real one fits, and the row's own box does not change
+    // when the swap happens, so nothing else would ask again.
+    void document.fonts.ready.then(reflectFocusable);
+    const show = (): void => {
+      // Nothing to add where the row already shows all of it.
+      if (!clipped()) return;
+      noticeTip.show(text, () => ({
+        rect: notice.getBoundingClientRect(),
+        side: "below",
+      }));
+    };
+    notice.addEventListener("pointerenter", show);
+    notice.addEventListener("focus", show);
+    notice.addEventListener("pointerleave", () => noticeTip.hide());
+    notice.addEventListener("blur", () => noticeTip.hide());
+  }
   const visible = visibleIncidentEvents(incidentsDocument.events);
   for (const event of visible.filter((entry) => entry.kind === "maintenance")) {
     const notice = el("div", "notice notice--maintenance");
+    const starts = new Date(event.startsAt);
     notice.append(
       icon("ph-wrench", "notice-glyph"),
+      el("span", "notice-date", panelDate(starts)),
       el("span", "notice-title", event.title),
       el("span", "notice-summary", event.summary),
       el(
         "span",
         "notice-meta",
-        `${event.state} · ${EVENT_TIME.format(new Date(event.startsAt))}`,
+        `${event.state} · ${EVENT_TIME.format(starts)}`,
       ),
     );
+    capObserver.observe(notice);
+    tellInFull(notice, `${event.title}. ${event.summary}`);
     notices.append(notice);
   }
   const incidents = visible.filter((entry) => entry.kind === "incident");
@@ -237,15 +344,15 @@ export function mountStatusPage(
     notices.append(el("h2", "notices-heading", "Active incidents"));
     for (const event of incidents) {
       const notice = el("div", "notice notice--incident");
+      const began = new Date(event.startsAt);
       notice.append(
+        el("span", "notice-date", panelDate(began)),
         el("span", "notice-title", event.title),
         el("span", "notice-summary", event.summary),
-        el(
-          "span",
-          "notice-meta",
-          `Started ${EVENT_TIME.format(new Date(event.startsAt))}`,
-        ),
+        el("span", "notice-meta", `Started ${EVENT_TIME.format(began)}`),
       );
+      capObserver.observe(notice);
+      tellInFull(notice, `${event.title}. ${event.summary}`);
       notices.append(notice);
     }
   }

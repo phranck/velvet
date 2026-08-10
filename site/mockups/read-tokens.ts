@@ -202,6 +202,8 @@ export interface ChartTokens {
   height: number;
   insetInline: number;
   insetBlock: number;
+  /** How far the range's two ends sit below the plot. */
+  axisSpace: number;
   gridLines: number;
   lineWidth: number;
   pointRadius: number;
@@ -224,6 +226,7 @@ export function readChartTokens(element: Element): ChartTokens {
     height: readLength(element, "--chart-height", 148),
     insetInline: readLength(element, "--chart-inset-inline", 12),
     insetBlock: readLength(element, "--chart-inset-block", 12),
+    axisSpace: readLength(element, "--chart-axis-space", 16),
     gridLines: readNumber(element, "--chart-grid-lines", 3),
     lineWidth: readLength(element, "--chart-line-width", 2),
     pointRadius: readLength(element, "--chart-point-radius", 3),

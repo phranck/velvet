@@ -42,6 +42,12 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  */
 const VIEW_WIDTH = 640;
 
+/** Room under the axis labels' baseline, for their descenders and nothing more. */
+const AXIS_DESCENDER = 4;
+
+/** What one grid line stands apart from the next by, in milliseconds. */
+const AXIS_STEP = 20;
+
 /** How many points survive downsampling, matching `MAX_POINTS` in the component. */
 const MAX_POINTS = 96;
 
@@ -152,6 +158,14 @@ export function createChartView(
   let series: Series = [];
   let range: RangeKey = "month";
   let activeTimestamp: string | null = null;
+  /*
+    What each series is drawn in, read once per render rather than per pointer
+    move. The overlay lives on the document rather than inside the service, so
+    it inherits nothing from it: a design that colours a series by service has
+    to hand those colours over. Empty where the design colours by protocol, and
+    then the overlay's own rule stands.
+  */
+  let seriesColours = { ipv4: "", ipv6: "" };
   /**
    * The reading to show once the drawing is back in the document.
    *
@@ -190,6 +204,8 @@ export function createChartView(
       const row = document.createElement("span");
       row.className = "chart-reading-row";
       row.dataset.protocol = value.protocol;
+      const colour = seriesColours[value.protocol];
+      if (colour) row.style.setProperty("--series-colour", colour);
       const key = document.createElement("span");
       key.className = "chart-reading-key";
       const label = document.createElement("span");
@@ -217,6 +233,11 @@ export function createChartView(
   /** Draws everything from the current state. */
   function render(): void {
     const tokens = readChartTokens(host);
+    const inherited = getComputedStyle(host);
+    seriesColours = {
+      ipv4: inherited.getPropertyValue("--series-own").trim(),
+      ipv6: inherited.getPropertyValue("--series-next").trim(),
+    };
     const filtered = filterResponseSeries(series, range, generatedAt);
     const withSamples = filtered.filter(({ samples }) => samples.length > 0);
 
@@ -255,20 +276,47 @@ export function createChartView(
     plotHost.setAttribute("tabindex", "0");
 
     const plotTop = tokens.insetBlock;
-    // The bottom of the plot leaves room beneath it for the two axis labels,
-    // which sit inside the drawing so they scale with it.
-    const plotBottom = tokens.height - tokens.insetBlock - 20;
+    /*
+      The bottom of the plot leaves room beneath it for the two axis labels,
+      which sit inside the drawing so they scale with it. How much room is the
+      theme's, because a design may want them tucked under the plot or well
+      clear of it.
+
+      Below their baseline sits only enough for their descenders. Taking the
+      inset off both ends instead left that much empty drawing under the words,
+      which the panel's own padding then added to.
+    */
+    const plotBottom = tokens.height - tokens.axisSpace - AXIS_DESCENDER;
     const plotLeft = tokens.insetInline;
     const plotRight = VIEW_WIDTH - tokens.insetInline;
 
-    let maximum = 1;
+    let highest = 1;
     for (const entry of filtered) {
       for (const sample of entry.samples) {
-        if (sample.responseTimeMs !== null && sample.responseTimeMs > maximum) {
-          maximum = sample.responseTimeMs;
+        if (sample.responseTimeMs !== null && sample.responseTimeMs > highest) {
+          highest = sample.responseTimeMs;
         }
       }
     }
+
+    /*
+      The axis is drawn in steps of twenty milliseconds, and its top is whatever
+      number of those steps the readings need rather than the highest reading
+      itself.
+
+      Scaling to the highest reading made every service look alike: one running
+      at 96ms and one at 412ms both filled the plot to the top, and the shape
+      said nothing about how slow either was. With a fixed step the trace sits
+      where the readings put it, and the labels are figures a reader can compare
+      from one service to the next.
+
+      The step grows in multiples of twenty where it has to, so a slow service
+      does not end up with twenty-five lines across it.
+    */
+    const steps = Math.max(1, tokens.gridLines - 1);
+    const step =
+      AXIS_STEP * Math.max(1, Math.ceil(highest / (AXIS_STEP * steps)));
+    const maximum = step * steps;
 
     const window = responseRangeWindow(range, generatedAt);
     const xFor = (timestamp: string): number =>
@@ -318,6 +366,22 @@ export function createChartView(
       grid.append(svg("line", { x1: plotLeft, y1: y, x2: plotRight, y2: y }));
     }
     root.append(grid);
+
+    /*
+      The value each grid line stands for, written just above it and inside the
+      plot, so the scale costs no width. The lowest line is zero and says so by
+      being the floor, which is why it carries no label of its own.
+    */
+    const scale = svg("g", { class: "chart-scale", "aria-hidden": "true" });
+    for (let index = 0; index < tokens.gridLines - 1; index += 1) {
+      const y =
+        plotTop + (index * (plotBottom - plotTop)) / (tokens.gridLines - 1);
+      const value = maximum * (1 - index / (tokens.gridLines - 1));
+      const label = svg("text", { x: plotLeft + 4, y: y - 4 });
+      label.textContent = `${Math.round(value)} ms`;
+      scale.append(label);
+    }
+    root.append(scale);
 
     for (const entry of withSamples) {
       const reduced = downsampleResponseSamples(entry.samples, MAX_POINTS);
@@ -393,11 +457,30 @@ export function createChartView(
     }
 
     const axes = svg("g", { class: "chart-axis", "aria-hidden": "true" });
-    const from = svg("text", { x: plotLeft, y: tokens.height - 4 });
+    // The two sides of the plot, drawn as lines rather than left to the grid.
+    // A design may want them stronger than the grid, and they are what the
+    // readings are measured against.
+    axes.append(
+      svg("line", {
+        class: "chart-axis-line",
+        x1: plotLeft,
+        y1: plotTop,
+        x2: plotLeft,
+        y2: plotBottom,
+      }),
+      svg("line", {
+        class: "chart-axis-line",
+        x1: plotLeft,
+        y1: plotBottom,
+        x2: plotRight,
+        y2: plotBottom,
+      }),
+    );
+    const from = svg("text", { x: plotLeft, y: plotBottom + tokens.axisSpace });
     from.textContent = RANGE_LABEL[range];
     const to = svg("text", {
       x: plotRight,
-      y: tokens.height - 4,
+      y: plotBottom + tokens.axisSpace,
       "text-anchor": "end",
     });
     to.textContent = "Now";

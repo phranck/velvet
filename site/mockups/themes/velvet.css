@@ -112,6 +112,11 @@
 
   /* ── Shape ────────────────────────────────────────────────────────────── */
   /* The documented defaults: radius 14, padding 16, and a 760px measure. */
+  --detail-edge-width: var(--rule-width);
+  --detail-edge-colour: var(--surface-rule);
+  --detail-fill: var(--surface-sunken);
+  --chart-rule-width: var(--rule-width);
+  --chart-rule-colour: var(--surface-rule);
   --detail-space-after: 0px;
   --detail-padding: var(--card-padding);
   --card-radius-base: 14px;
@@ -152,7 +157,25 @@
   --notice-fill: color-mix(in srgb, currentColor 12%, var(--surface-card));
   --notice-padding: var(--card-padding);
   --notice-radius-base: var(--card-radius-base);
-  --notice-radius: var(--card-radius);
+  --notice-title-colour: var(--text-1);
+  --notice-title-font: var(--font-display);
+  --notice-title-size: var(--text-size-lead);
+  --notice-title-transform: var(--display-transform);
+  --notice-summary-colour: var(--text-2);
+  --notice-summary-font: var(--font-body);
+  --notice-summary-size: var(--text-size-small);
+  --notice-summary-transform: none;
+  --notice-meta-colour: var(--text-2);
+  --notice-meta-font: var(--font-meta);
+  --notice-meta-size: var(--text-size-caption);
+  --notice-meta-transform: none;
+  --notices-columns: 1fr;
+  --notice-date-display: none;
+  --notice-meta-display: block;
+  --notice-cell-lines: 99;
+  --notice-radius-lead: var(--card-radius);
+  --notice-radius-trail: var(--card-radius);
+  --notice-trailing: none;
   --notice-gap: var(--space-hair) var(--space-row);
   --notice-border-width: var(--card-border-width);
   --card-rail-width: 0px;
@@ -221,10 +244,21 @@
   /* The plot box from `ResponseTimeChart.svelte`: 148 tall, inset 12, three
      rules, a 2px stroke, points at 3, a 136px reading, and the 0.28 fill its
      gradient declares. */
+  --chart-head-margin: var(--space-block);
   --chart-head-space: var(--space-tight);
   --chart-height: 148px;
   --chart-inset-inline: 12px;
+  --chart-axis-space: 20px;
   --chart-inset-block: 12px;
+  --chart-grid-colour: var(--surface-rule);
+  --chart-grid-alpha: 100%;
+  --chart-axis-colour: var(--surface-rule);
+  --chart-axis-text-colour: var(--text-3);
+  --chart-axis-text-alpha: 100%;
+  --chart-axis-alpha: 100%;
+  --chart-scale-display: none;
+  --chart-scale-colour: var(--text-3);
+  --chart-scale-alpha: 100%;
   --chart-grid-lines: 3;
   --chart-grid-dash: none;
   --chart-line-width: 2px;

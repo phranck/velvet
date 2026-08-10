@@ -232,14 +232,17 @@ const read = new Set(
  *
  * `--status-colour` and `--series-colour` are set by `base.css` from a data
  * attribute, `--strip-surface-height` is written by the strip once it has
- * measured itself, the card and notice values are derived, the two edge values
- * are set per surface, and `--hero-mark-colour` is an optional override with a
+ * measured itself, `--notice-cap` is written onto each notice once it has been
+ * measured, the card and notice values are derived, the service colours are a
+ * list a theme may leave out entirely, the two edge values are set per
+ * surface, and `--hero-mark-colour` is an optional override with a
  * documented fallback. All of them are structure rather than design.
  */
 const structural = new Set([
   "--status-colour",
   "--series-colour",
   "--strip-surface-height",
+  "--notice-cap",
   "--card-inner-radius",
   "--card-text-inset",
   "--notice-inner-radius",
@@ -248,11 +251,18 @@ const structural = new Set([
   "--edge-colour",
   "--hero-mark-colour",
   "--card-padding-top",
-  "--service-name-fill-1",
-  "--service-name-fill-2",
-  "--service-name-fill-3",
-  "--service-name-fill-4",
-  "--service-name-fill-5",
+  "--series-own",
+  "--series-next",
+  "--service-colour-1",
+  "--service-colour-2",
+  "--service-colour-3",
+  "--service-colour-4",
+  "--service-colour-5",
+  "--service-colour-6",
+  "--service-colour-7",
+  "--service-colour-8",
+  "--service-colour-9",
+  "--service-colour-10",
   "--backdrop-drift",
   "--detail-radius",
   "--service-rail-radius-last",
