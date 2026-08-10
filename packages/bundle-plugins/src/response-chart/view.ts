@@ -1,15 +1,17 @@
 /**
- * The response-time chart, laid out from tokens rather than from constants.
+ * The response-time chart: the drawing that goes with the arithmetic beside it.
  *
- * This mirrors `site/src/components/service/ResponseTimeChart.svelte` and
- * differs in one respect: that component states `WIDTH`, `HEIGHT`, the four
- * plot edges, the point radius and the tooltip width as module constants, so no
- * theme can reach them. Here they come from `read-tokens.ts`, which is the
- * second prerequisite in `documentation/theme-authoring.md`.
+ * `site/src/components/service/ResponseTimeChart.svelte` states `WIDTH`,
+ * `HEIGHT`, the four plot edges, the point radius and the tooltip width as
+ * module constants, so no design can reach them. Here they are a style object a
+ * design passes, and the proportion of the plot becomes a design decision
+ * rather than a constant.
  *
- * The curve itself is drawn by `monotonePath` from `site/src/lib/response-chart.ts`,
- * the same function the product uses, so a mockup cannot show a smoother or
- * uglier line than the real page would.
+ * The curve itself is drawn by `monotonePath` from the arithmetic beside this,
+ * which is the same function the product uses, so no design can show a smoother
+ * or uglier line than the real page would.
+ *
+ * Version 1.
  */
 
 import {
@@ -20,13 +22,69 @@ import {
   nearestResponseTimestamp,
   responseRangeWindow,
   responseValuesAtTimestamp,
-} from "../src/lib/response-chart.js";
-import { RANGE_LABEL } from "../src/lib/data.js";
-import type { RangeKey, ResponseTimesDocument } from "../src/lib/types.js";
-import { createOverlay } from "./overlay.js";
-import { readChartTokens } from "./read-tokens.js";
+} from "./arithmetic.js";
+import type { RangeKey, ResponseSeries } from "../data.js";
+import { createOverlay } from "../overlay/index.js";
 
-type Series = ResponseTimesDocument["series"];
+/** The version a manifest names to use this plugin. */
+export const VERSION = 1;
+
+/** How each range is named at the left edge of the plot. */
+const RANGE_LABEL: Record<RangeKey, string> = {
+  day: "24h ago",
+  week: "7 days ago",
+  month: "30 days ago",
+  quarter: "90 days ago",
+  year: "1 year ago",
+};
+
+/** Everything the chart needs in order to lay itself out. */
+export interface ResponseChartStyle {
+  /** How tall the plot is, in the drawing units the viewBox uses. */
+  height: number;
+  /** The space kept clear at the left and right edges. */
+  insetInline: number;
+  /** The space kept clear at the top and bottom. */
+  insetBlock: number;
+  /** How many horizontal rules stand behind the curve. */
+  gridLines: number;
+  /** How thick the curve is drawn. */
+  lineWidth: number;
+  /** The radius of a plotted point. */
+  pointRadius: number;
+  /** How wide the hover reading is. */
+  tooltipWidth: number;
+  /** The opacity of the area under the curve; zero draws none. */
+  fill: number;
+}
+
+/** What the chart draws where a design says nothing. */
+export const DEFAULT_RESPONSE_CHART_STYLE: ResponseChartStyle = {
+  height: 148,
+  insetInline: 12,
+  insetBlock: 12,
+  gridLines: 3,
+  lineWidth: 2,
+  pointRadius: 3,
+  tooltipWidth: 136,
+  fill: 0,
+};
+
+/** How a design configures one chart. */
+export interface ResponseChartOptions {
+  /**
+   * The layout, or a function returning it.
+   *
+   * A function is re-read on every draw, which is what lets a design whose
+   * values come from its own custom properties follow a change without being
+   * told about it.
+   */
+  style?: Partial<ResponseChartStyle> | (() => Partial<ResponseChartStyle>);
+  /** The class put on the hover reading, which lives on the document's layer. */
+  tooltipClassName?: string;
+}
+
+type Series = ResponseSeries;
 type Sample = Series[number]["samples"][number];
 type MeasuredSample = Sample & { responseTimeMs: number };
 
@@ -125,6 +183,7 @@ export interface ChartView {
  * @param serviceName - Named in the accessible description.
  * @param generatedAt - The moment the data was generated, which is the right
  *   edge of every range window.
+ * @param options - The layout, and the class the hover reading carries.
  * @returns A handle for updating the chart.
  */
 export function createChartView(
@@ -132,9 +191,17 @@ export function createChartView(
   serviceId: string,
   serviceName: string,
   generatedAt: string,
+  options: ResponseChartOptions = {},
 ): ChartView {
+  /** The layout as it stands now, which a function-valued option can change. */
+  function currentStyle(): ResponseChartStyle {
+    const given =
+      typeof options.style === "function" ? options.style() : options.style;
+    return { ...DEFAULT_RESPONSE_CHART_STYLE, ...given };
+  }
+
   host.textContent = "";
-  host.className = "response-chart";
+  host.classList.add("response-chart");
 
   const caption = document.createElement("p");
   caption.className = "chart-caption";
@@ -164,9 +231,8 @@ export function createChartView(
     timestamp: string;
     values: Array<{ protocol: "ipv4" | "ipv6"; responseTimeMs: number }>;
   } | null = null;
-  // On the document's own layer, for the reasons in `overlay.ts`. It carries
-  // the same class as the strip's, so a theme states that appearance once.
-  const tooltip = createOverlay("uptime-tooltip chart-reading");
+  // On the document's own layer, for the reasons the overlay plugin records.
+  const tooltip = createOverlay(options.tooltipClassName ?? "chart-reading");
 
   /**
    * Shows the reading under the crosshair.
@@ -216,7 +282,7 @@ export function createChartView(
 
   /** Draws everything from the current state. */
   function render(): void {
-    const tokens = readChartTokens(host);
+    const tokens = currentStyle();
     const filtered = filterResponseSeries(series, range, generatedAt);
     const withSamples = filtered.filter(({ samples }) => samples.length > 0);
 

@@ -200,6 +200,14 @@
 }
 
 .proof-details {
+  /* The disclosure animates this element's height, and the clip is what
+     contains the contents' own margin whilst it does. A height measured
+     without it is short by exactly that margin. */
+  overflow: hidden;
+  --velvet-disclosure-duration: 320ms;
+}
+
+.proof-details-inner {
   padding: 0 8px 8px;
 }
 

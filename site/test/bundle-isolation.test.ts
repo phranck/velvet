@@ -241,6 +241,58 @@ test("refuses a manifest whose id does not match its directory", () => {
   assert.match(violations[0]!.detail, /does not match the directory/);
 });
 
+test("refuses a manifest naming a plugin that is not offered at that version", () => {
+  const files = [
+    { path: "bundle.json", text: "{}" },
+    { path: "template.ts", text: "" },
+    { path: "bundle.css", text: "" },
+    { path: "script.ts", text: "" },
+    { path: "assets/preview.svg", text: "" },
+  ];
+  const manifestWith = (plugins: Array<{ name: string; version: number }>) => ({
+    id: "borrower",
+    name: "Borrower",
+    description: "Uses a plugin.",
+    version: "1.0.0",
+    dataVersion: 1,
+    entries: {
+      template: "template.ts",
+      styles: "bundle.css",
+      script: "script.ts",
+    },
+    layouts: ["grouped"],
+    readings: "panel",
+    preview: "assets/preview.svg",
+    plugins,
+  });
+
+  for (const [plugins, expected] of [
+    [[{ name: "uptime-bar", version: 1 }], /no plugin called/],
+    [[{ name: "uptime-strip", version: 7 }], /is at version 1/],
+  ] as const) {
+    const parsed = parseBundleManifest(manifestWith([...plugins]));
+    assert.equal(parsed.ok, true);
+    if (!parsed.ok) continue;
+    const violations = checkBundle({
+      manifest: parsed.manifest,
+      directory: "borrower",
+      files,
+    });
+    assert.equal(violations.length, 1);
+    assert.match(violations[0]!.detail, expected);
+  }
+
+  const parsed = parseBundleManifest(
+    manifestWith([{ name: "disclosure", version: 1 }]),
+  );
+  assert.equal(parsed.ok, true);
+  if (!parsed.ok) return;
+  assert.deepEqual(
+    checkBundle({ manifest: parsed.manifest, directory: "borrower", files }),
+    [],
+  );
+});
+
 test("every bundle in the repository passes all four rules", async () => {
   const bundles = await readBundles();
   assert.equal(bundles.length > 0, true, "there should be at least one bundle");

@@ -30,7 +30,7 @@ interface ResponseChartModule {
 }
 
 async function loadResponseChartModule(): Promise<Partial<ResponseChartModule>> {
-  return import("../src/lib/response-chart.js").catch(() => ({}));
+  return import("@velvet/bundle-plugins/response-chart").catch(() => ({}));
 }
 
 const generatedAt = "2026-07-27T12:00:00.000Z";

@@ -369,3 +369,26 @@ It serves each bundle over a real HTTP origin, renders its template from a fixtu
 **The fixtures** live in `site/bundles/fixtures/` and are used by the gallery, the suite and the screenshot workflow alike. Eight cases: the ordinary installation (`orbital`, the five services the mockups always rendered), and seven that break designs rather than flatter them — the first day of an installation with no history, everything unknown, one service, twenty services, very long service names, an incident summary of two thousand characters, and a service reachable over IPv6 only. Most of the defects found whilst building the six existing designs would have been caught by "twenty services" and "very long names" alone.
 
 Every fixture is checked against the product's own validators rather than the raw schemas, because the validators catch what a schema cannot: duplicate identifiers, timestamps outside the document's own window, and durations that contradict each other. `site/test/bundle-fixtures.test.ts` is that gate, and it needs no browser.
+
+### Plugins: what is worth sharing, offered rather than imposed
+
+Bundles are redundant by design and each works on its own. Some things are still worth sharing, and those live in `packages/bundle-plugins` as `@velvet/bundle-plugins`. **A bundle that uses none of them is complete.**
+
+A plugin owns behaviour, never markup. It draws into an element the bundle gives it, or answers a question the bundle asks. It never assumes what the page around it looks like, never selects an element it was not handed, and never declares a style outside the element it was given. Everything it draws is described by options the bundle passes — a style object, or a function returning one for a design whose values come from its own custom properties — so two designs using the same plugin need not look alike.
+
+| Plugin | What it carries | Why it is worth sharing |
+| --- | --- | --- |
+| `uptime-strip` | A month of days on a canvas, and the rule that decides a day's colour | 695ms of rasterisation as elements against 315ms as a canvas, over six expand-all cycles at 90 days with four services. The colour rule is the one place where a plausible-looking mistake shows a green day where nothing was measured |
+| `response-chart` | The range arithmetic and the curve | `monotonePath` is what the product draws with, so no design can show a smoother line than the real page would |
+| `disclosure` | A panel that animates its own height | Two frames longer than 32ms out of roughly 250, measured in WebKit expanding and collapsing six services — what the same page produces with no animation at all |
+| `overlay` | A floating reading on the document's own layer | `position: fixed` escapes `overflow` but not `clip-path`, so the only thing that works is not being a descendant |
+
+**Versioning.** Each plugin exports `VERSION`, a whole number, and a bundle names it in its manifest:
+
+```json
+"plugins": [{ "name": "disclosure", "version": 1 }]
+```
+
+The isolation gate refuses a bundle naming a plugin that does not exist, or one at a version the package no longer offers, and refuses an import of a plugin the manifest did not declare. The number rises when a change would make a design that used the previous version render something else: an option removed or renamed, a default changed, or a drawing rule reversed. Adding an option whose default preserves what already happened does not raise it.
+
+Nothing here obliges a bundle to use any of them. A design that draws its own strip is allowed, and the conformance suite is what catches it if the drawing lies. `site/bundles/proof/` shows the pairing: it borrows the disclosure and does its own arithmetic.

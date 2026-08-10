@@ -6,9 +6,15 @@
  * change needs is already in the object it was given, which is the point of the
  * host loading the data rather than the design.
  *
+ * It uses one plugin, the disclosure, and does its own arithmetic. That pairing
+ * is deliberate: a bundle may borrow what is worth borrowing and still owe
+ * nothing for the rest.
+ *
  * Whatever it returns is called when the page goes away, so a preview frame can
  * swap one design for another without leaving listeners behind.
  */
+
+import { disclosure } from "@velvet/bundle-plugins/disclosure";
 
 import type { BundleData } from "../../src/lib/bundles/data.js";
 import { uptimeFor } from "./uptime.js";
@@ -26,7 +32,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
   const summaries = [
     ...page.querySelectorAll<HTMLButtonElement>(".proof-summary"),
   ];
-  const listeners: Array<() => void> = [];
+  const undo: Array<() => void> = [];
 
   /** Rewrites every figure for the range a visitor picked. */
   function selectRange(next: string): void {
@@ -44,24 +50,33 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
   for (const button of ranges) {
     const onClick = (): void => selectRange(button.dataset.range ?? "month");
     button.addEventListener("click", onClick);
-    listeners.push(() => button.removeEventListener("click", onClick));
+    undo.push(() => button.removeEventListener("click", onClick));
   }
 
   for (const summary of summaries) {
     const detailsId = summary.getAttribute("aria-controls");
-    const details = detailsId ? page.querySelector<HTMLElement>(`#${CSS.escape(detailsId)}`) : null;
+    const details = detailsId
+      ? page.querySelector<HTMLElement>(`#${CSS.escape(detailsId)}`)
+      : null;
     if (!details) continue;
+    // The panel animates its own height, so everything under it is carried
+    // along by ordinary layout rather than by anything this has to move.
+    const panel = disclosure(details, false);
+    let open = false;
     const onClick = (): void => {
-      const open = summary.getAttribute("aria-expanded") === "true";
-      summary.setAttribute("aria-expanded", String(!open));
-      details.hidden = open;
+      open = !open;
+      summary.setAttribute("aria-expanded", String(open));
+      panel.update(open);
     };
     summary.addEventListener("click", onClick);
-    listeners.push(() => summary.removeEventListener("click", onClick));
+    undo.push(() => {
+      summary.removeEventListener("click", onClick);
+      panel.destroy();
+    });
   }
 
   return () => {
-    for (const undo of listeners) undo();
+    for (const step of undo) step();
   };
 }
 

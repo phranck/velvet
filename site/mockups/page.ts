@@ -21,10 +21,17 @@ import {
   uptimeForRange,
   visibleIncidentEvents,
 } from "../src/lib/data.js";
-import { disclosure } from "../src/lib/disclosure.js";
+import { disclosure } from "@velvet/bundle-plugins/disclosure";
 import type { RangeKey } from "../src/lib/types.js";
-import { createChartView, type ChartView } from "./chart-view.js";
-import { createUptimeStrip, type UptimeStrip } from "./uptime-strip.js";
+import {
+  createChartView,
+  type ChartView,
+} from "@velvet/bundle-plugins/response-chart";
+import {
+  createUptimeStrip,
+  type UptimeStrip,
+} from "@velvet/bundle-plugins/uptime-strip";
+import { readChartTokens, readStripTokens } from "./read-tokens.js";
 import {
   GENERATED_AT,
   incidentsDocument,
@@ -381,11 +388,23 @@ export function mountStatusPage(
       summary,
       uptime,
       stripHost,
-      strip: createUptimeStrip(stripHost),
+      /*
+        The plugins take their appearance from the design that uses them. Whilst
+        the mockups still run on the shared token set, that appearance is the
+        token set read back, so a theme file keeps deciding the shape of a
+        segment exactly as it did before the drawing became a plugin.
+      */
+      strip: createUptimeStrip(stripHost, {
+        style: () => readStripTokens(stripHost),
+        heightProperty: "--strip-surface-height",
+      }),
       axisFrom,
       detailWrap,
       panel: disclosure(detailWrap, false),
-      chart: createChartView(chartHost, service.id, service.name, GENERATED_AT),
+      chart: createChartView(chartHost, service.id, service.name, GENERATED_AT, {
+        style: () => readChartTokens(chartHost),
+        tooltipClassName: "uptime-tooltip chart-reading",
+      }),
       chartBuilt: false,
     };
     rows.push(entry);

@@ -26,6 +26,8 @@
  * question, not this one.
  */
 
+import { pluginProblem } from "@velvet/bundle-plugins";
+
 import type { BundleManifest } from "./manifest.js";
 
 /** The rules, named the way a failure reports them. */
@@ -351,6 +353,12 @@ export function checkBundle(contents: BundleContents): BundleViolation[] {
       file: "bundle.json",
       detail: `id "${manifest.id}" does not match the directory "${directory}"`,
     });
+  }
+  for (const plugin of manifest.plugins) {
+    const problem = pluginProblem(plugin.name, plugin.version);
+    if (problem) {
+      violations.push({ rule: "manifest", file: "bundle.json", detail: problem });
+    }
   }
   for (const named of [
     manifest.entries.template,

@@ -57,7 +57,10 @@ function collectTokenNames(): { fromCss: Set<string>; fromScript: Set<string> } 
     [...css.matchAll(/var\(\s*(--[a-z0-9-]+)/gi)].map((match) => match[1]!),
   );
   const fromScript = new Set<string>();
-  for (const file of ["read-tokens.ts", "uptime-strip.ts", "chart-view.ts"]) {
+  // The drawings moved into `@velvet/bundle-plugins`, and the mockups now hand
+  // them the same values through `read-tokens.ts`, so every token a drawing
+  // needs is still named here as a string literal.
+  for (const file of ["read-tokens.ts"]) {
     const source = readFileSync(join(here, file), "utf8");
     for (const match of source.matchAll(/"(--[a-z0-9-]+)"/g)) {
       fromScript.add(match[1]!);

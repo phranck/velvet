@@ -59,8 +59,10 @@ function service(data: BundleData, id: string, name: string, range: string): str
       <span class="proof-service-name">${escape(name)}</span>
       <span class="proof-uptime" data-uptime-for="${escape(id)}">${escape(figure)} uptime</span>
     </button>
-    <div class="proof-details" id="proof-details-${escape(id)}" hidden>
-      <ul class="proof-readings">${readings}</ul>
+    <div class="proof-details" id="proof-details-${escape(id)}" hidden inert>
+      <div class="proof-details-inner">
+        <ul class="proof-readings">${readings}</ul>
+      </div>
     </div>
   </article>`;
 }

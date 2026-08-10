@@ -10,8 +10,15 @@
     "styles": "bundle.css",
     "script": "script.ts"
   },
-  "layouts": ["grouped"],
+  "layouts": [
+    "grouped"
+  ],
   "readings": "panel",
   "preview": "assets/preview.svg",
-  "plugins": []
+  "plugins": [
+    {
+      "name": "disclosure",
+      "version": 1
+    }
+  ]
 }

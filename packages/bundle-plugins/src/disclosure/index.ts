@@ -16,7 +16,12 @@
  * of the tab order and the accessibility tree. `hidden` is applied only once a
  * collapse has finished, because an element removed from the layout cannot be
  * animated out of it.
+ *
+ * Version 1.
  */
+
+/** The version a manifest names to use this plugin. */
+export const VERSION = 1;
 
 /** How long a panel takes to open or close, read from the stylesheet. */
 const DURATION_PROPERTY = "--velvet-disclosure-duration";

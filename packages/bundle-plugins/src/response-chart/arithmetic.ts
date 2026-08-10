@@ -1,6 +1,5 @@
-import type { RangeKey, ResponseTimesDocument } from "./types";
+import type { RangeKey, ResponseSeries } from "../data.js";
 
-type ResponseSeries = ResponseTimesDocument["series"];
 type ResponseSamples = ResponseSeries[number]["samples"];
 
 const DAY_MS = 86_400_000;

@@ -15,8 +15,13 @@
  * Measured before this, hovering the first segment of the first service: the
  * tooltip stood 12px above the card's top edge and 18px to the left of it under
  * the Vector Grid theme, both inside a `clip-path`, and the chart tooltip had a
- * clipping ancestor in all six themes.
+ * clipping ancestor in all six designs.
+ *
+ * Version 1.
  */
+
+/** The version a manifest names to use this plugin. */
+export const VERSION = 1;
 
 /** How an overlay is placed relative to what it describes. */
 export interface OverlayAnchor {
@@ -46,9 +51,8 @@ const ANCHOR_GAP = 9;
 /**
  * Creates an overlay on the document's own layer.
  *
- * @param className - Applied to the element, so a theme styles it as it styles
- *   anything else. Both overlays use the tooltip tokens, so a theme states that
- *   appearance once.
+ * @param className - Applied to the element, so a design styles it as it styles
+ *   anything else. A design that uses both overlays states that appearance once.
  * @returns Handles for showing, hiding and removing it.
  */
 export function createOverlay(className: string): Overlay {

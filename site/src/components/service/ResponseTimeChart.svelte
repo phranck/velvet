@@ -9,7 +9,7 @@
     nearestResponseTimestamp,
     responseValuesAtTimestamp,
     responseRangeWindow,
-  } from "../../lib/response-chart";
+  } from "@velvet/bundle-plugins/response-chart";
   import type { VelvetTheme } from "../../lib/config";
   import { protocolLabel } from "../../lib/protocol";
 
