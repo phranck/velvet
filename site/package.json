@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "attributions:build": "vite build --config vite.attributions.ts",
+    "bundles:verify": "bun scripts/verify-bundles.ts",
     "build": "svelte-check --tsconfig ./tsconfig.json && vite build",
     "changelog:build": "vite build --config vite.changelog.ts",
     "configurator:build": "svelte-check --tsconfig ./tsconfig.json && vite build --config vite.configurator.ts",

@@ -1,0 +1,247 @@
+/*
+  The whole appearance of this design.
+
+  Every selector begins inside `.proof-page`, so the sheet cannot reach the
+  document it is loaded into. Nothing here is `!important` and nothing styles
+  `html`, `body`, `:root` or `*`: a design that did any of those would leak into
+  whatever else the page carries, and a preview frame would show two designs at
+  once. The isolation gate refuses all four.
+
+  No typeface is fetched. The stack below is what the visitor's own system
+  provides, which is the one way to name a face without waiting on a third party
+  in order to report on your own availability.
+*/
+
+.proof-page {
+  --proof-ink: #101014;
+  --proof-ink-soft: #4a4a55;
+  --proof-paper: #f6f6f8;
+  --proof-line: #d3d3dc;
+  --proof-accent: #2f4bd6;
+  --proof-operational: #1c6b3a;
+  --proof-degraded: #8a5a00;
+  --proof-outage: #a52014;
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  background: var(--proof-paper);
+  color: var(--proof-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.proof-page *,
+.proof-page *::before,
+.proof-page *::after {
+  box-sizing: inherit;
+}
+
+.proof-page :focus-visible {
+  outline: 2px solid var(--proof-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.proof-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--proof-line);
+}
+
+.proof-brand {
+  margin: 0;
+  font-weight: 600;
+}
+
+.proof-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.proof-nav-link {
+  color: var(--proof-accent);
+  text-decoration: underline;
+}
+
+.proof-headline {
+  margin: 24px 0 4px;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.proof-generated {
+  margin: 0 0 24px;
+  color: var(--proof-ink-soft);
+  font-size: 14px;
+}
+
+.proof-events {
+  margin: 0 0 24px;
+  padding: 12px 14px;
+  border: 1px solid var(--proof-line);
+  border-left: 4px solid var(--proof-outage);
+  background: #fff;
+}
+
+.proof-events-heading {
+  margin: 0 0 8px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--proof-ink-soft);
+}
+
+.proof-event-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.proof-event {
+  display: grid;
+  gap: 2px;
+}
+
+.proof-event-title {
+  font-weight: 600;
+}
+
+.proof-event-summary {
+  color: var(--proof-ink-soft);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.proof-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.proof-range {
+  padding: 6px 12px;
+  border: 1px solid var(--proof-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--proof-ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.proof-range[aria-pressed="true"] {
+  border-color: var(--proof-accent);
+  background: var(--proof-accent);
+  color: #fff;
+}
+
+.proof-services {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--proof-line);
+  background: #fff;
+  padding: 8px;
+}
+
+.proof-service + .proof-service {
+  border-top: 1px solid var(--proof-line);
+  padding-top: 8px;
+}
+
+.proof-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.proof-service-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.proof-uptime {
+  color: var(--proof-ink-soft);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.proof-service[data-status="operational"] .proof-service-name {
+  color: var(--proof-operational);
+}
+
+.proof-service[data-status="degraded"] .proof-service-name {
+  color: var(--proof-degraded);
+}
+
+.proof-service[data-status="outage"] .proof-service-name {
+  color: var(--proof-outage);
+}
+
+.proof-details {
+  padding: 0 8px 8px;
+}
+
+.proof-readings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.proof-reading {
+  display: flex;
+  gap: 6px;
+}
+
+.proof-reading-name {
+  font-weight: 600;
+}
+
+.proof-reading-value {
+  color: var(--proof-ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.proof-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--proof-line);
+  color: var(--proof-ink-soft);
+  font-size: 13px;
+}
+
+.proof-foot p {
+  margin: 0;
+}
+
+.proof-configured a {
+  color: var(--proof-accent);
+}

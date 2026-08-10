@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200" role="img" aria-label="Proof, a plain status page on paper white">
+  <rect width="320" height="200" fill="#f6f6f8"/>
+  <rect x="20" y="18" width="90" height="8" rx="4" fill="#101014"/>
+  <rect x="238" y="18" width="62" height="8" rx="4" fill="#2f4bd6"/>
+  <rect x="20" y="42" width="176" height="16" rx="4" fill="#1c6b3a"/>
+  <rect x="20" y="66" width="120" height="7" rx="3.5" fill="#4a4a55"/>
+  <g fill="#ffffff" stroke="#d3d3dc">
+    <rect x="20" y="88" width="280" height="34" rx="2"/>
+    <rect x="20" y="126" width="280" height="34" rx="2"/>
+  </g>
+  <g fill="#101014">
+    <rect x="32" y="100" width="72" height="8" rx="4"/>
+    <rect x="32" y="138" width="56" height="8" rx="4"/>
+  </g>
+  <g fill="#4a4a55">
+    <rect x="216" y="101" width="72" height="6" rx="3"/>
+    <rect x="216" y="139" width="72" height="6" rx="3"/>
+  </g>
+  <rect x="20" y="176" width="120" height="6" rx="3" fill="#4a4a55"/>
+</svg>

@@ -6,6 +6,8 @@ This is the working manual for building a Velvet status-page design. It is writt
 
 Two rules for reading it. Every claim names the file it comes from, and every figure was measured rather than estimated. Where a decision could have gone another way, the alternative is stated with the reason it was not taken.
 
+**Start at [section 11](#11-theme-bundles-the-format-that-replaces-the-token-contract) if you are building a design now.** A design is a self-contained bundle: a directory with a manifest, a template, a stylesheet, a script and its own assets. Sections 1 to 10 describe the shared-markup-and-token arrangement it replaces; everything they say about drawing (4, 5) and the traps (8) still holds, and the property contract (6, 7) does not.
+
 ---
 
 ## 1. What a theme is
@@ -263,3 +265,81 @@ Everything here was found by building. Each is a case where the design would hav
 **The screenshot gate.** Described, not built.
 
 **The mockups need a dev server.** They import TypeScript from `site/src/lib/` directly, which is deliberate: the arithmetic cannot drift from the product's. The cost is that they do not open from the filesystem.
+
+---
+
+## 11. Theme bundles: the format that replaces the token contract
+
+Sections 1 to 10 describe one arrangement: one markup, one structural stylesheet, and a set of custom properties every design must declare. That arrangement is being replaced, and this section is the format replacing it. Everything about drawing (sections 4, 5) and every trap (section 8) still holds; the property contract (sections 6, 7) does not survive the move.
+
+**Why.** `site/mockups/base.css` reads 423 custom properties, of which 128 are used by exactly one design: 72 by `ncc-1701-d`, 52 by `cassette`, 4 by `twenty-forty-nine`. The count is not the problem. Seven design decisions of the last session could not be expressed as a value at all and needed changes to the shared markup or the shared script, and each of those forced every other design to declare properties it set to nothing.
+
+### What a bundle is
+
+A directory under `site/bundles/`, named for the design, carrying everything it needs:
+
+```
+site/bundles/<id>/
+  bundle.json     the manifest, which is all the host reads before loading anything
+  template.ts     builds the markup from the data, as a string
+  bundle.css      the whole appearance
+  script.ts       behaviour, attached to markup that already exists
+  assets/         typefaces, images, anything the design references
+```
+
+The three entry names are conventions rather than rules: the manifest says which file is which, so a design may call them whatever it likes. What is not negotiable is that everything the bundle references lives inside the directory and is addressed relative to it.
+
+`site/bundles/proof/` is a deliberately plain bundle whose only purpose is to prove the format. It is not a design anybody chooses.
+
+### The manifest
+
+`bundle.json`, parsed by `parseBundleManifest` in `site/src/lib/bundles/manifest.ts`:
+
+| Field | What it is |
+| --- | --- |
+| `id` | Lowercase words joined by hyphens, and identical to the directory name |
+| `name` | What an operator sees |
+| `description` | One line telling this design from the others |
+| `era` | Optional; the period the design belongs to |
+| `version` | The bundle's own version, as `major.minor.patch` |
+| `dataVersion` | The version of the status data the design understands |
+| `entries.template` | The module exporting the markup function |
+| `entries.styles` | The stylesheet |
+| `entries.script` | The module exporting the behaviour |
+| `layouts` | `grouped`, `cards`, or both; at least one |
+| `readings` | `panel` or `overlay` |
+| `preview` | A picture of the design, inside the bundle |
+| `plugins` | The plugins the design uses, each with the major version it expects |
+
+`layouts` and `readings` are fields because both were previously read out of a computed style: the mockup toolbar read `--layout-cards` to decide which layout buttons to offer, and `site/mockups/main.ts` read `--service-display-display` to decide where a reading was shown. **Nothing about a design is discovered by inspecting its stylesheet.**
+
+A manifest is reported on in full rather than at the first fault, because a design with two mistakes should not have to be fixed twice.
+
+### The data, and its version
+
+A bundle receives one object, already loaded and already validated: `BundleData` in `site/src/lib/bundles/data.ts`. It carries the installation as the operator configured it (`site`), the three contract documents unchanged (`status`, `incidents`, `responseTimes`), and the moment the data was generated.
+
+The shape carries a version because a bundle outlives the release that produced it. `BUNDLE_DATA_VERSION` is what the host hands out today; `SUPPORTED_BUNDLE_DATA_VERSIONS` is everything it can still hand out. A manifest naming anything else is refused before a byte of its stylesheet is loaded. Raising the version is for a change a design cannot survive — a field removed, renamed, or given a different meaning. Adding a field a design may ignore is not that.
+
+The template is a function returning a **string** rather than a tree, because the same function has to run in the build, which has no DOM, and in a preview frame, which does.
+
+### The four rules, each with a gate
+
+Run the gate with:
+
+```bash
+bun run --cwd site bundles:verify
+```
+
+`site/src/lib/bundles/isolation.ts` holds the rules and `site/test/bundle-isolation.test.ts` holds their tests, including the near misses each rule must *not* report.
+
+1. **Self-contained.** Every `url()`, `import` and `src` resolves inside the bundle. Nothing points at another bundle, at the site, or at a remote host. Two things are allowed through: a type-only import, because TypeScript erases the statement and nothing is ever loaded, and a plugin the manifest declares, imported as `@velvet/bundle-plugins/<name>`.
+2. **Fonts ship with the bundle.** All six designs fetch their faces from `fonts.googleapis.com` today. A published status page must not wait on a third party in order to report on its own availability, and a German operator should not be made to send their visitors to a font host without having chosen to. A `@font-face` whose `src` leaves the bundle fails the same rule.
+3. **Styles stay inside the bundle's own root.** No selectors on `html`, `body`, `:root` or `*`, and no `!important`. The check reads the first compound of every selector rather than searching for words, so `.status-body` is not mistaken for `body`.
+4. **Data is given, not fetched.** No `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon` or `importScripts`. The host loads the data, validates it, and hands the bundle a typed object.
+
+The gate reads text and opens no browser, so it fails in the time it takes to read a directory rather than after a build. What a browser resolved is a different question with a different gate: the conformance suite renders a bundle against a fixture and checks what it said.
+
+### Redundancy between bundles is intended
+
+A design that borrows nothing still works on its own, and that is the point. Where code is genuinely worth sharing it is offered as a plugin, and a plugin is optional. What must stay true regardless of how a design is built is that the figures on the page are right and that the page can be used with a keyboard — and neither is enforced by making every design run through the same code. Both are enforced by the conformance suite, against what a bundle actually rendered from a known fixture.

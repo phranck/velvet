@@ -1,0 +1,17 @@
+{
+  "id": "proof",
+  "name": "Proof",
+  "description": "A deliberately plain design that exists to prove the bundle format rather than to be chosen.",
+  "era": "none",
+  "version": "1.0.0",
+  "dataVersion": 1,
+  "entries": {
+    "template": "template.ts",
+    "styles": "bundle.css",
+    "script": "script.ts"
+  },
+  "layouts": ["grouped"],
+  "readings": "panel",
+  "preview": "assets/preview.svg",
+  "plugins": []
+}

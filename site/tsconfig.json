@@ -13,6 +13,14 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.svelte", "test/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.svelte",
+    "test/**/*.ts",
+    "bundles/**/*.ts",
+    "scripts/bundles.ts",
+    "scripts/verify-bundles.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
