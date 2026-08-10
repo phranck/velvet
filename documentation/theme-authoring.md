@@ -343,3 +343,29 @@ The gate reads text and opens no browser, so it fails in the time it takes to re
 ### Redundancy between bundles is intended
 
 A design that borrows nothing still works on its own, and that is the point. Where code is genuinely worth sharing it is offered as a plugin, and a plugin is optional. What must stay true regardless of how a design is built is that the figures on the page are right and that the page can be used with a keyboard — and neither is enforced by making every design run through the same code. Both are enforced by the conformance suite, against what a bundle actually rendered from a known fixture.
+
+### The conformance suite, and the fixtures it runs against
+
+The property contract asked whether 418 named values existed and resolved, which says nothing about whether the page is right: a design can declare every property in the set and still print last week's uptime beside a service nobody can reach with a keyboard. The suite asks the other question.
+
+```bash
+bun run --cwd site bundles:conform                    # every bundle, every fixture
+bun scripts/verify-conformance.ts --bundle proof      # one design
+bun scripts/verify-conformance.ts --fixture long-names
+```
+
+It serves each bundle over a real HTTP origin, renders its template from a fixture, runs its script, and then asks of the page:
+
+- Every service's name appears, and beside it its uptime figure for the chosen range. **The figure is compared against what `uptimeForRange` in `site/src/lib/data.ts` computes from the same fixture**, so a design that does its own arithmetic and gets it wrong fails here. That is what makes the redundancy between bundles safe.
+- Every incident `visibleIncidentEvents` returns appears, with its title.
+- The version, the serial number and the line naming where the page is configured all appear.
+- Exactly one `h1`.
+- Every interactive element is reachable with Tab and has a name a screen reader would announce.
+- Nothing overflows a 320px viewport.
+- Text meets 4.5:1, or 3:1 where it is large. Text over a background image is not measured, because no static reading of one is honest.
+- No request leaves the bundle's own origin.
+- The focus ring is the design's own: the focused element must look different from the resting one, and `outline-style` must not be `auto`, which is how a browser draws its own.
+
+**The fixtures** live in `site/bundles/fixtures/` and are used by the gallery, the suite and the screenshot workflow alike. Eight cases: the ordinary installation (`orbital`, the five services the mockups always rendered), and seven that break designs rather than flatter them — the first day of an installation with no history, everything unknown, one service, twenty services, very long service names, an incident summary of two thousand characters, and a service reachable over IPv6 only. Most of the defects found whilst building the six existing designs would have been caught by "twenty services" and "very long names" alone.
+
+Every fixture is checked against the product's own validators rather than the raw schemas, because the validators catch what a schema cannot: duplicate identifiers, timestamps outside the document's own window, and durations that contradict each other. `site/test/bundle-fixtures.test.ts` is that gate, and it needs no browser.

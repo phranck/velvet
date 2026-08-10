@@ -20,7 +20,9 @@
     "test/**/*.ts",
     "bundles/**/*.ts",
     "scripts/bundles.ts",
-    "scripts/verify-bundles.ts"
+    "scripts/verify-bundles.ts",
+    "scripts/conformance.ts",
+    "scripts/verify-conformance.ts"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
