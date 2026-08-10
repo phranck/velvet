@@ -12,7 +12,7 @@ Two rules for reading it. Every claim names the file it comes from, and every fi
 
 One stylesheet that declares custom properties and no rules. Dropping a different one in changes the colour, the typography, the shape of every surface, the texture behind the page, the arrangement of the parts, and the motion. It changes nothing about what the page says or which elements exist.
 
-Six exist today, in `site/mockups/themes/`, with one page each in `site/mockups/`. Run them:
+Four exist today, in `site/mockups/themes/`, with one page each in `site/mockups/`. Run them:
 
 ```bash
 bun run --cwd site dev
@@ -24,10 +24,10 @@ Then open `http://localhost:5173/mockups/`.
 | --- | --- | --- | --- |
 | `velvet` | today | The page Velvet publishes now | Nothing. It is the baseline, and it proved the token set can express the product it came from |
 | `cassette` | 1979 | The cassette itself: shell charcoal, a cream write-on label under every service name, the printed label head across the top, oxide brown for unrecorded tape | Masked edges, because `clip-path` cuts a `border` off |
-| `populuxe` | 1958 | Manila paper, vermilion and petrol, capsule segments, a geometric sans over an italic serif | Separate brand and accent, after they measured 0.3 degrees apart |
-| `vector` | 1982 | Unfilled surfaces, lit edges, a horizon grid, a five-line graticule | `--surface-card: transparent` |
 | `twenty-forty-nine` | 2049 | A filthy pane of glass with a dim blue readout: corner brackets, edge scales, dotted grids, a vignette to black | `--card-ornament-*` and `--card-texture` |
-| `ncc-1701-d` | 2364 | A divided column of coloured segments carrying the service names, an elbow whose arm is the range bar | `--service-rail-*`, `--range-bar-*`, `--row-inset`, `--toggle-padding-inline`, one-layout support |
+| `ncc-1701-d` | 2364 | A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards | `--service-rail-*`, `--range-bar-*`, the hero's three blocks, the notice's own geometry and cells, the ten service colours, the chart's axes, `--row-inset`, one-layout support |
+
+Two were dropped: `populuxe`, a 1958 manila-and-vermilion design, and `vector`, a 1982 wireframe. What they forced into the token set stayed, because it is general: separate brand and accent, after the two measured 0.3 degrees apart, and `--surface-card: transparent` with the contrast gate measuring through it.
 
 ---
 
@@ -76,7 +76,7 @@ Almost everything is boxes, and CSS positions those. Two things are not, and bot
 
 **The narrow radius applies at `quarter` only, not at `year`**, following `UptimeBar.svelte:54`. That reads like an oversight and is not: a year is 53 weekly buckets whilst a quarter is 90 single days, so a year's bars are about twice as wide.
 
-**Four tokens shape the track**, and they are what stop six themes having the same bar:
+**Four tokens shape the track**, and they are what stop the themes having the same bar:
 
 - `--bar-align`: `center`, `top` or `bottom`. Centred keeps the strip symmetrical; anchored to an edge it grows away from that edge and reads as a meter.
 - `--bar-pieces`: how many stacked blocks one segment is drawn as. One is a solid bar; four is a lamp meter.
@@ -90,6 +90,14 @@ Almost everything is boxes, and CSS positions those. Two things are not, and bot
 The curve is drawn by `monotonePath` from `site/src/lib/response-chart.ts`, imported rather than reimplemented, so a mockup cannot show a smoother line than the real page would.
 
 `WIDTH` stays a constant on purpose. The chart scales to its container, so that number is a drawing unit rather than a size. The height is a token, because the proportion of the plot is a design decision.
+
+**The value axis climbs in steps of twenty milliseconds.** `AXIS_STEP` in `chart-view.ts` fixes that step, the number of steps is `--chart-grid-lines` less one, and the top of the axis is the first multiple of the step that covers the readings. Scaling to the highest reading instead made every service look alike: one running at 96ms and one at 412ms both filled the plot to the top, and the shape said nothing about how slow either was. Measured after the change, the share of the plot the trace fills: Database 44 per cent, Website 60, API 66, Mail 69, CDN 85. The step itself grows in multiples of twenty where a slow service would otherwise need twenty-five lines.
+
+This is not full comparability, and it should not be mistaken for it. Each service's axis still ends at its own rounded maximum, so a service twenty-three times slower than another is not drawn twenty-three times taller. Sharing one axis across every service would do that, at the cost of flattening a fast service into a line along the floor. That trade was put to phranck on 2026-08-10 and the per-service axis was kept.
+
+**The grid, the two axes and the scale figures may take the series' own colour.** `base.css` hands each of them `var(--series-own, …)`, so a design that lists a colour per service gets a chart in that service's colour and a design that does not falls back to what it names. Each carries its own strength as a percentage, because an axis that reads as firmly as its grid stops being an axis.
+
+**A reading with no neighbour is drawn as a ring**, filled with `--detail-fill` so it sits on the panel rather than on the page. A service in a running outage produces a run of them, which is what it looks like when a measurement stands alone.
 
 ### What the mockups share with the product, and what they do not
 
@@ -119,7 +127,7 @@ The overlay flips to the other side when the preferred one does not fit, clamps 
 
 ## 6. The token set
 
-223 required tokens in 37 groups, which the rendered gate resolves as 241 because eighteen more are read only in script and no text search finds them. Print the current list with every theme's value beside it:
+269 required tokens in 37 groups, which the rendered gate resolves as 288 because nineteen more are read only in script and no text search finds them. Print the current list with every theme's value beside it:
 
 ```bash
 bun ./mockups/verify.ts --tokens
@@ -137,7 +145,7 @@ What follows is why each group exists and what varies inside it.
 
 **Brand and accent.** `--accent` is what the interface points with; `--brand-primary` is the mark; `--nav-brand-colour` is separate again, because a theme may fill its bar and the mark then stands on that fill.
 
-**State.** Five states, two protocols, two edge colours. The two edges are easy to overlook: one marks a planned window, the other is the only thing that says a segment exists on a day nothing was recorded.
+**State.** Five states, two protocols, two edge colours and a mark for the unknown state. The two edges are easy to overlook: one marks a planned window, the other is what says a segment exists on a day nothing was recorded. A design may draw no such edge, and says so by giving it the fill's own colour; the gate then stops holding the edge to the page and holds the fill apart from a working day instead. `--state-unknown-mark` is named separately from that edge for exactly this reason, because a design that drops the edge would otherwise lose its headline with it.
 
 **Typography.** Three families. Two is not enough, because timestamps want tabular figures whilst incident summaries want prose; five would mean each theme choosing five faces that agree. One theme uses one face for all three, which is period-correct. Another keeps its display face off anything read at length, because it is unreadable in a paragraph.
 
@@ -149,21 +157,33 @@ A theme that names a face ships it. The mockups fetch theirs from a font host, w
 
 **Service row.** `--service-areas` and `--service-columns` decide whether a row is one column or two. The two-column form puts a coloured segment carrying the name beside everything the row shows. `--service-name-display` and `--service-icon-display` let a design drop either. `--row-inset` is the single inset every part of the row shares, so the summary, the strip, the axis and the panel all end on the same vertical.
 
-**Range bar.** In five themes a plain row above the card. In one it is the arm of an elbow, with a fill, a height, a radius, a stem and a concave throat, and the controls live inside it. It carries its own foreground tokens, because everything in a filled bar stands on that fill.
+**Range bar.** In most themes a plain row above the card. In one it is the arm of an elbow, with a fill, a height, a radius, a stem and a concave throat, and the controls live inside it. It carries its own foreground tokens, because everything in a filled bar stands on that fill.
 
 The stem is the vertical run below the arm, and it owns the outer corner rather than the arm doing so. The corner is as large as the arm is deep plus the throat, which is what keeps the wall of the elbow one thickness all the way round the turn, and an arm is never tall enough to hold a radius larger than itself. The arm's fill is a background image sized to stop where the stem begins, because a background colour covers the whole box whatever the stem draws and fills the corner back in from underneath.
+
+The chosen range may be set apart by size as well as by the mark. It grows by `transform` rather than by font size, so its box does not change and nothing beside it moves: a real size laid the row out afresh on every change, and giving every label the largest one's width held the row still but spread it out and left gaps belonging to nothing. The mark is widened by the same factor, less whatever `--range-mark-trim` takes off each side, because a label's own padding is scaled up with it.
+
+**Notices.** A notice derives its geometry from its own radius, not the card's: the text stands in by half that radius, and the padding is one value on all four sides. A theme that carries a large corner sets that padding to the derived text inset, so the words clear the curve without the padding going uneven to do it.
+
+The region carries the columns rather than each notice, so a design may lay the notices out as a table with one set of column widths down the whole list; a notice takes them back through `subgrid`. Every cell states its face, size and casing from its own token, because a table wants one face straight across a row whilst a stack of cards wants a heading, a paragraph and a timestamp that differ. `--notice-cell-lines` cuts a row short, and `page.ts` shows the whole of it on hover and on focus only where something is actually cut off.
+
+`--notice-trailing: capsule` asks for a capsule at the free end. That is exactly half the notice's height, which CSS cannot express, so `page.ts` measures it onto the element and `base.css` composes the radius there. Writing a large number instead makes the browser scale every corner of the box down by one factor and flattens the leading corners with it.
+
+**Service colours.** A list of ten, cycling after ten services, which a theme may leave out entirely. Where it lists them, a service's block, its rail segment and its chart all take the same colour, and the second protocol takes the next service's, so the last service closes the run on the first. The chart's overlay lives on the document rather than inside the service and inherits nothing from it, so `chart-view.ts` hands it those colours when it draws, once per render rather than once per pointer move.
 
 **Arrangement.** `--nav-justify`, `--hero-align`, `--range-justify` and `--footer-align` are what make one theme right-ranged and another centred with the same markup. `--nav-gap` is separate from the general row gap, because a bar that pushes its parts to opposite edges never shows the value whilst a centred one shows nothing else.
 
 `--hero-areas` and `--hero-columns` decide where the status mark goes. Centred, it stands above the words: anything beside a centred line stops the line being centred. Ranged left or right, it moves onto the same line at the headline's own size and centres against it, and both columns are content-width so the pair stays together.
 
-The same two tokens let a design make the headline part of a shape. The hero's grid names two further areas, `rail` and `arm`, filled by two pseudo-elements a theme may display. One design uses them to turn the headline into the interrupted upper arm of the limb that surrounds the notices: a column's head to the left, a capped block to the right, the words in the gap between them, and the time in the second row of the headline's own column so it ends where the headline ends. Where a theme leaves them undisplayed they are not grid items at all, so `--hero-areas` may go on naming two areas and nothing changes.
+The same two tokens let a design make the headline part of a shape. The hero's grid names three further areas, `rail`, `bar` and `arm`. Two are pseudo-elements and the middle one is an element, because a grid area has to be a rectangle and the column is one row shorter than the bar beside it. One design uses them to turn the headline into the interrupted upper arm of the limb that surrounds the notices: the column's head to the left, a run of bar between that and the words, and a capped block after them, with the time under the headline inside the same bar. Where a theme leaves them undisplayed they are not grid items at all, so `--hero-areas` may go on naming areas that nothing fills.
+
+`--hero-title-trim` and `--hero-updated-trim` trim those two lines to their own letters through `text-box`, because a line box does not end where the letters do and a block stretched to the same row would stand proud of them. The headline trims to its baseline and the time to its text edge or its baseline, depending on whether the design wants its descenders inside the bar or hanging below it. `--hero-title-trail` pulls the headline out by its own trailing tracking where a design ranges it right, since tracking is added after the last letter as well as between them: measured at 2.04px of tracking, both boxes ended at 1034 whilst the headline's glyphs stopped at 1032 and the time's reached 1034.7.
 
 **State colour.** `--status-colour` is what the page is announcing, resolved in `base.css` from a `data-status` attribute, and any part of a design may read it. It is set on `:root` rather than further down, because a theme declares its tokens on `:root` and a `var()` in such a declaration resolves there. A theme that colours a shape by the state writes `var(--status-colour)` into that shape's own token.
 
 **Backdrop and motion.** The backdrop is two fixed layers rather than a background. Measured in `site/src/app.css:92`: over eight expand-all cycles, 5809ms of rasterisation as a background against 485ms as a layer, layout unchanged at 12ms either way. Line 97 notes `background-attachment: fixed` does not help and measured 7127ms.
 
-Motion is sparse. Three of six themes move nothing. The three that do animate the backdrop layer only, through `background-position` or `opacity`, at nine, seven and twenty-one seconds a cycle. Everything optional stops under `prefers-reduced-motion: reduce`.
+Motion is sparse. Two of the four themes move nothing. The three that do animate the backdrop layer only, through `background-position` or `opacity`, at nine, seven and twenty-one seconds a cycle. Everything optional stops under `prefers-reduced-motion: reduce`.
 
 `--velvet-disclosure-duration` must carry the same value as `--motion-disclosure`, because `site/src/lib/disclosure.ts:22` reads that exact name.
 
@@ -181,7 +201,7 @@ bun ./mockups/verify-rendered.ts   # reads what a browser resolved
 ### What `verify.ts` checks
 
 1. **No design values in `base.css`.** Hex, `rgb()`, `hsl()`, named font families, literal shadows. The mockup toolbar is excluded by a marker comment.
-2. **Completeness.** Every token `base.css` reads is defined by every theme. Sixteen are exempt as structural or optional.
+2. **Completeness.** Every token `base.css` reads is defined by every theme. A short list is exempt as structural or optional: values `base.css` resolves itself from a data attribute, values a script measures onto an element, the derived card and notice geometry, and the ten service colours, which a theme may leave out entirely to colour by protocol instead.
 3. **Contrast.** Text reaches 4.5:1 against page and card. State colours reach 3:1, because the strip and the chart are graphics. Translucent colours are flattened first; an unfilled card is measured against the page behind it.
 4. **Separation of meaning.** `--accent` and `--state-outage` at least 45 degrees apart in OKLCH hue, and the three state colours pairwise. Where either colour is within 0.04 of grey, the pair is separated by chroma and the hue test does not apply.
 5. **Fixture validity.** The dummy data checked with the product's own validators, not the raw schemas, because those check duplicate identifiers, timestamps outside the monitoring window and contradictory durations.
@@ -190,7 +210,7 @@ bun ./mockups/verify-rendered.ts   # reads what a browser resolved
 
 A file-searching gate has three holes, and a review found all three by exploiting them:
 
-- Eighteen tokens drive the strip and the chart and are read through `getComputedStyle` rather than named in `base.css`, so a gate deriving its list from `base.css` never asked for them. Deleting eight left every gate green whilst the chart silently fell back to another theme's values.
+- Nineteen tokens drive the strip and the chart and are read through `getComputedStyle` rather than named in `base.css`, so a gate deriving its list from `base.css` never asked for them. Deleting eight left every gate green whilst the chart silently fell back to another theme's values.
 - The literal search stops at a marker comment with no closing one, so anything appended to `base.css` is unchecked.
 - A declaration is collected from anywhere in a theme file, including a selector matching nothing, so a dead value can be measured whilst the page renders from something else.
 
@@ -198,7 +218,7 @@ All three disappear when the question is asked of the page. This gate:
 
 1. **Resolves every token in every theme**, on `.status-page` rather than on the root, and fails on any that comes back empty.
 2. **Fingerprints each theme** and fails if two render identically, which is what a theme that failed to load looks like.
-3. **Switches every theme to every other in a live document** and fails if any token keeps a value from the previous one. Thirty switches for six themes.
+3. **Switches every theme to every other in a live document** and fails if any token keeps a value from the previous one. Twelve switches for four themes.
 
 The third is the one that matters in the product: an installation changes its design by changing one file, and a value that survives the change is a page rendering as two designs at once.
 
@@ -215,6 +235,12 @@ Everything here was found by building. Each is a case where the design would hav
 **A `var()` at the root pointing at a derivation further down computes to nothing.** A custom property containing `var()` resolves on the element that declares it. `--row-inset: var(--card-text-inset)` at `:root`, against a derivation on `.status-page`, comes back empty and fails silently. Both derivations now sit on `:root`. This bit three times: `--detail-radius`, then `--row-inset`, then `--status-colour`, which was held on the page element whilst every theme that wanted to paint with it declared its tokens on `:root` and got nothing.
 
 **`inherit` on a custom property at the root resolves against nothing.** `--service-name-colour: inherit` comes back empty. `currentColor` is what was meant.
+
+**An overlay on the document inherits nothing from where it came from.** The chart's reading overlay is appended to the body so nothing can clip it, which also means a colour set on the service is not there. `chart-view.ts` hands it the two series colours when it renders. The same shape of mistake, in reverse: a value measured onto an element cannot be read by a declaration on `:root`, which is why the notice's capsule is composed in `base.css` rather than in the theme.
+
+**The contrast gate could not read `color-mix`.** It parsed hex and `rgb()` only, so a theme deriving a colour from another reported as an unresolvable token. It now mixes the one form themes use, two colours in sRGB.
+
+**A figure a theme asks for is not always a figure that can be seen.** A grid at 18 per cent of the panel's own colour measured 1.32:1 against it, which is below what an eye separates: the grid was drawn, and nobody could find it. Anything meant to be read has to clear 3:1, and anything meant to recede has to be checked the other way round, because a fill at 1.14:1 is a shadow rather than a bar. Measure both directions and report the figure.
 
 **A `clip-path` cuts the border off.** A border is painted outside the padding box and `clip-path` cuts afterwards, so a chamfered card loses its border along exactly the two corners the chamfer creates. Every edge is now a masked ring cut by the same `clip-path`, which also serves a plain radius.
 
@@ -253,8 +279,8 @@ Everything here was found by building. Each is a case where the design would hav
 3. **Work through the groups in order.** Every token gets a value.
 4. **Decide the shape and the strip deliberately.** This is what separates a design from a recolour. Ask what a panel *is* here: a box, a field beside a rail, a chamfered plate, a bracketed region, or nothing. Then ask what a day *is*: a block, a capsule, a tick, a stack, or part of one divided run.
 5. **Run both gates.** Expect failures on the first run; every theme had them.
-6. **Add the page.** Copy any HTML file, change the one `<link>`, add an entry to `site/mockups/main.ts` and a card in `site/mockups/index.html`.
-7. **Drive it in a browser and read figures back.** All five ranges, both overlays, the disclosure, the chart's arrow keys, both layouts, and 320, 375 and 430 pixels wide.
+6. **Add the page.** Copy any HTML file, change the one `<link>`, add an entry to `site/mockups/main.ts` and a card in `site/mockups/index.html`. Removing a theme is the same four places in reverse, plus any comment that named it as evidence.
+7. **Drive it in a browser and read figures back.** All five ranges, all three overlays, the four states through the toolbar's own switch, the disclosure, the chart's arrow keys, both layouts, and 320, 375 and 430 pixels wide.
 8. **Then look at it.** Measuring proves the geometry; only looking catches a shape that is technically correct and visually wrong. Both are required, and in that order.
 9. **If the design needs something no token expresses, add the token**, set it neutrally in the others, and record the trap in section 8.
 
@@ -269,5 +295,7 @@ Everything here was found by building. Each is a case where the design would hav
 **How an installation picks a design.** Issue #463.
 
 **The screenshot gate.** Described, not built.
+
+**Which faces a shipped theme may carry.** The mockups fetch theirs from a font host. Two were asked for and refused on licence: Okuda, the fan face cut from the LCARS lettering, is licensed for personal use only, and Tungsten is Hoefler & Co's and may not be copied, distributed or hosted without an agreement with them. Neither can travel to somebody else's installation. Antonio, under the SIL Open Font License, is what `ncc-1701-d` uses and what thelcars.com substitutes for the same reason.
 
 **The mockups need a dev server.** They import TypeScript from `site/src/lib/` directly, which is deliberate: the arithmetic cannot drift from the product's. The cost is that they do not open from the filesystem.
