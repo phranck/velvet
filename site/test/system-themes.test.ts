@@ -37,13 +37,11 @@ test("offers exactly the four embedded system themes as complete canonical theme
 });
 
 /**
- * The two sets of theme pictures, and what each has to be showing.
+ * The theme picker's pictures, and what they have to be showing.
  *
- * Both come from one run of `theme-screenshots`, photographed from the real
- * Configurator preview, and both show a well page: four status pages reporting
- * trouble is the wrong thing to show anybody, whether they are visiting or
- * installing. They differ in shape, which each manifest records as its own
- * viewport.
+ * From `theme-screenshots`, photographed from the real Configurator preview,
+ * showing a well page: four status pages reporting trouble is the wrong thing
+ * to show somebody installing Velvet.
  */
 const SCREENSHOT_SETS = [
   {
@@ -52,18 +50,9 @@ const SCREENSHOT_SETS = [
     // Nearly square, because each option in the picker is.
     viewport: { width: 640, height: 480 },
   },
-  {
-    directory: "../src/website/assets/themes",
-    health: "operational",
-    // Larger than the picker's, and photographed with the page held in from
-    // the edge, because these are cut to a squircle and a squircle pulls in
-    // towards its corners.
-    viewport: { width: 800, height: 500 },
-    contentInset: { inline: 60, block: 38 },
-  },
 ];
 
-test("both sets of theme pictures match the current themes and assets", async () => {
+test("the theme picker's pictures match the current themes and assets", async () => {
   for (const set of SCREENSHOT_SETS) {
     const manifestPath = resolve(
       import.meta.dirname,
@@ -80,32 +69,47 @@ test("both sets of theme pictures match the current themes and assets", async ()
     // until the start page reported trouble again.
     assert.equal(manifest.health, set.health, set.directory);
     assert.deepEqual(manifest.viewport, set.viewport, set.directory);
-    // How far the page was held in from the edge of the picture. The gallery
-    // needs it because a squircle cuts into the corners, and a set regenerated
-    // without it looks right until somebody reads the ends of a row.
-    assert.deepEqual(manifest.contentInset, set.contentInset, set.directory);
   }
 });
 
-test("the gallery shows a picture of every theme, and not the picker's", async () => {
-  const { GALLERY_THEMES } = await import("../src/website/theme-gallery.js");
+/**
+ * The start page offers the designs a page can be published in.
+ *
+ * A design ships with Velvet as a bundle, so the set is whatever is installed
+ * rather than a list kept by hand, and the one thing that can go wrong is a
+ * design without a picture of it. `proof` is deliberately absent: it is a
+ * bundle like any other and every gate runs over it, but nobody picks it.
+ */
+test("the start page offers every design that is meant to be chosen", async () => {
+  const { GALLERY_DESIGNS } = await import("../src/website/design-gallery.js");
+  const manifest = JSON.parse(
+    await readFile(
+      resolve(import.meta.dirname, "../src/website/assets/designs/manifest.json"),
+      "utf8",
+    ),
+  ) as { fixture: string; designs: Record<string, { file: string }> };
 
   assert.deepEqual(
-    GALLERY_THEMES.map(({ id }) => id),
-    SYSTEM_THEMES.map(({ id }) => id),
+    [...GALLERY_DESIGNS.map(({ id }) => id)].sort(),
+    Object.keys(manifest.designs).sort(),
   );
-  for (const theme of GALLERY_THEMES) {
-    assert.ok(theme.picture, `${theme.id} has no picture`);
+  assert.equal(GALLERY_DESIGNS.length > 0, true);
+  for (const design of GALLERY_DESIGNS) {
+    assert.ok(design.picture, `${design.id} has no picture`);
+    assert.ok(design.name, `${design.id} has no name`);
+    assert.ok(design.description, `${design.id} has no description`);
   }
+  // Photographed on a page with nothing wrong on it, because four status pages
+  // reporting trouble is the wrong thing to greet anybody with.
+  assert.equal(manifest.fixture, "all-well");
 
   // Read from the source rather than from the resolved URL, because the build
   // rewrites those to hashed names and the assertion would then pass whatever
-  // the page ended up showing. What matters is which module the start page
-  // asks, since one answers with a degraded page and the other with a well one.
+  // the page ended up showing.
   const startPage = await readFile(
     resolve(import.meta.dirname, "../src/website/Website.svelte"),
     "utf8",
   );
-  assert.match(startPage, /from "\.\/theme-gallery\.js"/u);
+  assert.match(startPage, /from "\.\/design-gallery\.js"/u);
   assert.doesNotMatch(startPage, /system-themes/u);
 });

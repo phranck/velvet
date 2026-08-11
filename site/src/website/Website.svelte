@@ -17,10 +17,10 @@
   // the frame. `docs/screenshot.png` keeps its window for the README, which is
   // read on a page that has none.
   import screenshotUrl from "./assets/screenshot-screen.png";
-  // The four themes an installation can be set to, read from the registry the
-  // browser setup and the Configurator read, so the page cannot advertise a
-  // theme that is not offered or miss one that is.
-  import { GALLERY_THEMES } from "./theme-gallery.js";
+  // The designs a page can be published in, read from the manifests that ship
+  // with Velvet, so this page cannot offer one that does not exist or miss one
+  // that does.
+  import { GALLERY_DESIGNS } from "./design-gallery.js";
   import * as SquircleFrame from "../components/squircle-frame";
   import {
     SQUIRCLE_CONTENT_INSET,
@@ -106,9 +106,9 @@
     },
     {
       icon: "color-swatch",
-      title: "A page you can shape",
+      title: "A page somebody designed",
       description:
-        "Four system themes, detailed visual configuration, service icons, SEO output, and selectable history ranges.",
+        "Four curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, and selectable history ranges.",
     },
     {
       icon: "global",
@@ -281,13 +281,14 @@
           <div class="velvet-section-heading">
             <div class="velvet-section-title">
               <span class="marker" aria-hidden="true">//</span>
-              <h2 id="themes-title">Four themes to start from</h2>
+              <h2 id="themes-title">Four designs to publish in</h2>
             </div>
             <p>
-              The browser setup offers these as preview cards and the
-              Configurator edits every colour behind them, from the palette and
-              the uptime grid to the response-time chart, the cards, and the
-              backdrop.
+              Each is a whole page rather than a palette: its own typefaces, its
+              own shapes, its own way of drawing a month of days. They ship with
+              Velvet, so a page names one and gets it, and nothing has to be
+              assembled from thirty colour fields to arrive somewhere nobody
+              designed.
             </p>
           </div>
           <!-- The cut, defined once. Zero-sized and hidden, because it is a
@@ -300,7 +301,7 @@
             </defs>
           </svg>
           <ul class="themes">
-            {#each GALLERY_THEMES as theme (theme.id)}
+            {#each GALLERY_DESIGNS as design (design.id)}
               <li>
                 <figure>
                   <span class="shot">
@@ -309,13 +310,15 @@
                       height={TILE_HEIGHT}
                     />
                     <img
-                      src={theme.picture}
-                      alt={`The ${theme.name} theme on a Velvet status page`}
+                      src={design.picture}
+                      alt={`A Velvet status page in the ${design.name} design`}
                       loading="lazy"
                       decoding="async"
                     />
                   </span>
-                  <figcaption>{theme.name}</figcaption>
+                  <figcaption>
+                    {design.name} <span class="era">{design.era}</span>
+                  </figcaption>
                 </figure>
               </li>
             {/each}
@@ -361,10 +364,10 @@
     <section class="closing column" aria-labelledby="start-title">
       <h2 id="start-title">Ready in a couple of minutes</h2>
       <p>
-        The browser setup asks for a repository and page name, your services, an
-        optional custom domain, and one of the four themes. After you approve it
-        on GitHub it creates the repository, enables Pages, starts monitoring,
-        and waits for the first deployment.
+        The browser setup asks for a repository and page name, your services,
+        and an optional custom domain. After you approve it on GitHub it creates
+        the repository, enables Pages, starts monitoring, and waits for the
+        first deployment.
       </p>
       <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL}>
         <Icon name="flash" />
@@ -688,6 +691,17 @@
     color: var(--setup-muted);
     font-size: var(--setup-text-small);
     font-weight: 650;
+  }
+
+  /* The period a design belongs to, which is half of what its name means. It
+     stays inline rather than becoming a flex item, because the space between
+     the two is a real space: whitespace between flex items is dropped, and the
+     caption would then be read aloud as one word. Set apart by weight rather
+     than by a colour of its own, since the caption is already the quietest
+     text on the page. */
+  .themes .era {
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
   }
   /* The commands and the button sit side by side whilst there is room for
      both, and the block of commands takes whatever the button leaves. */

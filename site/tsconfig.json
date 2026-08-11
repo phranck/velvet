@@ -21,6 +21,7 @@
     "bundles/**/*.ts",
     "gallery/**/*.ts",
     "scripts/bundles.ts",
+    "scripts/design-screenshots.ts",
     "scripts/verify-bundles.ts",
     "scripts/conformance.ts",
     "scripts/verify-conformance.ts"

@@ -342,7 +342,8 @@ Everything here was found by building. Each is a case where a design would have 
 6. **Run both gates.** `bundles:verify` first, because it fails in a second; then `bundles:conform`. Expect failures on the first run; every design had them.
 7. **Drive it in the gallery and read figures back.** All five ranges, all three overlays, every fixture, the disclosure, the chart's arrow keys, both layouts if the manifest claims both, and 320, 375 and 430 pixels wide.
 8. **Then look at it.** Measuring proves the geometry; only looking catches a shape that is technically correct and visually wrong. Both are required, and in that order.
-9. **Record whatever cost you a build in section 11**, with the figure that showed it.
+9. **Photograph it for the start page.** `bun run --cwd site designs:screenshots` renders every design on the `all-well` fixture and writes the pictures the start page shows, then add it to `site/src/website/design-gallery.ts` beside its picture.
+10. **Record whatever cost you a build in section 11**, with the figure that showed it.
 
 ---
 
