@@ -1,0 +1,64 @@
+/*
+  The faces this design carries: Rajdhani, Share Tech Mono, Plaster.
+
+  Written by site/scripts/bundle-fonts.ts together with the files it
+  names, so a rule cannot point at a face nobody copied. Every one of
+  them is published under the SIL Open Font License 1.1, and the licence
+  travels beside the files in assets/fonts/.
+*/
+
+@font-face {
+  font-family: "Rajdhani";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("./fonts/rajdhani-latin-300-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Rajdhani";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/rajdhani-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Rajdhani";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/rajdhani-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Rajdhani";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/rajdhani-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Rajdhani";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/rajdhani-latin-700-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Share Tech Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/share-tech-mono-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Plaster";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/plaster-latin-400-normal.woff2") format("woff2");
+}

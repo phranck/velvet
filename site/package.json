@@ -4,9 +4,10 @@
   "type": "module",
   "scripts": {
     "attributions:build": "vite build --config vite.attributions.ts",
-    "bundles:conform": "bun scripts/verify-conformance.ts",
-    "bundles:verify": "bun scripts/verify-bundles.ts",
     "build": "svelte-check --tsconfig ./tsconfig.json && vite build",
+    "bundles:conform": "bun scripts/verify-conformance.ts",
+    "bundles:fonts": "bun scripts/bundle-fonts.ts",
+    "bundles:verify": "bun scripts/verify-bundles.ts",
     "changelog:build": "vite build --config vite.changelog.ts",
     "configurator:build": "svelte-check --tsconfig ./tsconfig.json && vite build --config vite.configurator.ts",
     "dev": "vite",
@@ -43,6 +44,15 @@
     "@velvet/contracts": "workspace:*"
   },
   "devDependencies": {
+    "@fontsource/antonio": "^5.3.0",
+    "@fontsource/doto": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jura": "^5.3.0",
+    "@fontsource/monoton": "^5.3.0",
+    "@fontsource/rajdhani": "^5.3.0",
+    "@fontsource/share-tech-mono": "^5.3.0",
+    "@fontsource/tangerine": "^5.3.0",
     "@phosphor-icons/core": "^2.1.1",
     "@phosphor-icons/web": "^2.1.2",
     "@resvg/resvg-js": "^2.6.2",

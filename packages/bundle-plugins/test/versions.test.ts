@@ -10,6 +10,7 @@ import {
 import { VERSION as disclosureVersion } from "../src/disclosure/index.js";
 import { VERSION as overlayVersion } from "../src/overlay/index.js";
 import { VERSION as chartVersion } from "../src/response-chart/view.js";
+import { VERSION as statusVersion } from "../src/status/index.js";
 import { VERSION as stripVersion } from "../src/uptime-strip/index.js";
 
 /**
@@ -24,6 +25,7 @@ test("every plugin declares the version the table offers", () => {
   assert.equal(overlayVersion, PLUGIN_VERSIONS.overlay);
   assert.equal(chartVersion, PLUGIN_VERSIONS["response-chart"]);
   assert.equal(stripVersion, PLUGIN_VERSIONS["uptime-strip"]);
+  assert.equal(statusVersion, PLUGIN_VERSIONS.status);
 });
 
 test("the table names every plugin and nothing else", () => {

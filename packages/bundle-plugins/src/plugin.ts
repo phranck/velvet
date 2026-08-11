@@ -2,10 +2,10 @@
  * What a plugin is, and what it is not.
  *
  * Bundles are redundant by design and each works on its own. Some things are
- * still worth sharing — a canvas that draws a month of days without costing
- * ninety elements, the arithmetic behind a response curve, a panel that animates
- * its own height, a floating reading that no `clip-path` can cut — and those are
- * offered here. A bundle may use one. A bundle that uses none is complete.
+ * still worth sharing. A canvas that draws a month of days without costing
+ * ninety elements, the arithmetic behind a response curve, the arithmetic behind
+ * a figure, a panel that animates its own height, and a floating reading that no
+ * `clip-path` can cut are all offered here. A bundle may use one. A bundle that uses none is complete.
  *
  * **A plugin owns behaviour, never markup.** It draws into an element a bundle
  * gives it, or answers a question a bundle asks. It never assumes what the page
@@ -28,6 +28,7 @@
 
 /** The name a manifest uses for each plugin. */
 export const PLUGIN_NAMES = [
+  "status",
   "uptime-strip",
   "response-chart",
   "disclosure",
@@ -44,6 +45,7 @@ export type PluginName = (typeof PLUGIN_NAMES)[number];
  * without the gate in `packages/bundle-plugins/test/versions.test.ts` saying so.
  */
 export const PLUGIN_VERSIONS: Record<PluginName, number> = {
+  status: 1,
   "uptime-strip": 1,
   "response-chart": 1,
   disclosure: 1,

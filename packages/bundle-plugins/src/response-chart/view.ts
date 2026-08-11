@@ -211,6 +211,13 @@ function svg<K extends keyof SVGElementTagNameMap>(
 /** What a caller gets back, so it can hand the chart a new range. */
 export interface ChartView {
   update(series: Series, range: RangeKey): void;
+  /**
+   * Removes the chart's listeners and the reading it put on the document.
+   *
+   * The reading lives on the document's own layer rather than inside the chart,
+   * so tearing the chart out of the page would otherwise leave it behind.
+   */
+  destroy(): void;
 }
 
 /**
@@ -751,17 +758,19 @@ export function createChartView(
     render();
   }
 
-  plotHost.addEventListener("pointermove", onPointerMove);
-  plotHost.addEventListener("pointerleave", clearHover);
-  plotHost.addEventListener("blur", clearHover);
-  plotHost.addEventListener("keydown", onKeyDown);
-  plotHost.addEventListener("focus", () => {
+  function onFocus(): void {
     const timestamps = availableResponseTimestamps(
       filterResponseSeries(series, range, generatedAt),
     );
     activeTimestamp = timestamps.at(-1) ?? null;
     render();
-  });
+  }
+
+  plotHost.addEventListener("pointermove", onPointerMove);
+  plotHost.addEventListener("pointerleave", clearHover);
+  plotHost.addEventListener("blur", clearHover);
+  plotHost.addEventListener("keydown", onKeyDown);
+  plotHost.addEventListener("focus", onFocus);
 
   return {
     update(nextSeries, nextRange) {
@@ -769,6 +778,15 @@ export function createChartView(
       range = nextRange;
       activeTimestamp = null;
       render();
+    },
+    destroy() {
+      plotHost.removeEventListener("pointermove", onPointerMove);
+      plotHost.removeEventListener("pointerleave", clearHover);
+      plotHost.removeEventListener("blur", clearHover);
+      plotHost.removeEventListener("keydown", onKeyDown);
+      plotHost.removeEventListener("focus", onFocus);
+      tooltip.destroy();
+      host.textContent = "";
     },
   };
 }
