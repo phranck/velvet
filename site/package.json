@@ -37,16 +37,18 @@
     "website:og": "bun scripts/website-og.ts"
   },
   "dependencies": {
-    "@fontsource/barlow": "^5.3.0",
-    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource-variable/datatype": "^5.3.0",
+    "@fontsource/audiowide": "^5.3.0",
+    "@fontsource/doto": "^5.3.0",
     "@fontsource/fira-code": "^5.3.0",
     "@fontsource/plaster": "^5.3.0",
+    "@fontsource/space-mono": "^5.3.0",
+    "@fontsource/workbench": "^5.3.0",
     "@velvet/bundle-plugins": "workspace:*",
     "@velvet/contracts": "workspace:*"
   },
   "devDependencies": {
     "@fontsource/antonio": "^5.3.0",
-    "@fontsource/doto": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/inter": "^5.3.0",
     "@fontsource/jura": "^5.3.0",

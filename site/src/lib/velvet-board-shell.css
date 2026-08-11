@@ -1,11 +1,12 @@
 /**
- * The faces the board-backed tools set their text in.
+ * What a tool drawn on the board backdrop starts from: the faces, the colour
+ * scheme, and the surface behind everything.
  *
- * Separate from velvet-tokens.css because the configurator shares the values
- * but not the typography: it sets its own text in the system UI face, and
- * importing this there would ship it eight font files it never renders.
+ * Separate from velvet-tokens.css because the Configurator shares the values
+ * but not this shell. It draws its own frame rather than sitting on the board,
+ * so it reaches for the faces directly and takes none of the rules below.
  */
-@import "./velvet-typefaces.css";
+@import "./velvet-retro-typefaces.css";
 
 :root {
   color-scheme: dark;

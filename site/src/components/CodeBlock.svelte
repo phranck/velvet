@@ -135,7 +135,7 @@
     font-style: italic;
   }
   .key {
-    color: var(--velvet-accent, #8ca5ff);
+    color: var(--velvet-accent, #e07a3f);
   }
   .string {
     color: #9ece6a;
@@ -160,7 +160,7 @@
     padding: 0;
     border: 0;
     background: none;
-    color: var(--velvet-text-muted, #979aa8);
+    color: var(--velvet-text-muted, #9c948a);
     /* The way back from the copied colour, and only that way. The rule below
        turns the transition off whilst the mark is being set, so the green
        arrives at once and drains away afterwards. */
@@ -173,7 +173,7 @@
   }
   .copy:hover,
   .copy:focus-visible {
-    color: var(--velvet-text, #efedf5);
+    color: var(--velvet-text, #f2eadf);
   }
   /* Global, because the attribute is set by the page's script after the copy
      succeeds and never appears in this markup. Left scoped, Svelte finds no

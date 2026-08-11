@@ -19,16 +19,32 @@
 
 :root {
   /* Shared by the onboarding, the configurator, and the website. */
-  --velvet-accent: #8ca5ff;
+  --velvet-accent: #e07a3f;
+  /* What is written on top of the accent. Near-black rather than the page's
+     own base, because the accent is bright enough to carry dark text and a
+     label in the page colour on it reads as a hole rather than as a word. */
+  --velvet-on-accent: #160f09;
+  /* The accent behind something rather than in front of it: the tint under the
+     page a reader is already on, and under a section's own eyebrow. */
+  --velvet-accent-tint: color-mix(in srgb, var(--velvet-accent) 12%, transparent);
   /* The two colours the mark is drawn in, one per half of its V. They are the
      brand's own pair rather than the accent, which is what an interface points
      with. `site/scripts/generate-mark.ts` reads them from here, so the mark and
      the icon follow whatever these say. */
   --velvet-mark-blue: #778edd;
   --velvet-mark-apricot: #faa785;
-  --velvet-text: #efedf5;
-  --velvet-text-muted: #979aa8;
-  --velvet-surface-raised: #272a36;
+  --velvet-text: #f2eadf;
+  --velvet-text-muted: #9c948a;
+  /* Below the muted tone: a version, a step's own paragraph, an annotation
+     nobody reads first. The mockup carries three separate tones between the
+     text colour and this one, and two of them differ by less than a reader can
+     see, so the ladder is the two steps that are actually distinguishable. */
+  --velvet-text-dim: #8a8177;
+  /* The lit edge of a raised surface, and the punctuation that leads into a
+     label. Not a text colour: it is what an edge catches, so it reads as
+     material rather than as something written. */
+  --velvet-edge: #4a3e31;
+  --velvet-surface-raised: #262019;
   /* The four states a monitored thing is in, named once so a status page, a
      tool, and the gallery all draw the same state in the same colour. The tools
      also use the outage tone to mark something irreversible, because a reader
@@ -42,9 +58,12 @@
      transparent, so the board behind these pages shows through and a card sits
      on it rather than over it. `sunken` is what a picture rests on until it
      arrives, and `rule` draws a line or an edge. */
-  --velvet-surface-card: rgb(28 31 41 / 0.74);
-  --velvet-surface-sunken: #0e1017;
-  --velvet-rule: #222530;
+  --velvet-surface-card: #131109;
+  --velvet-surface-sunken: #08090c;
+  --velvet-rule: #241f18;
+  /* A band set slightly deeper than the page, which is how the surface tells
+     one section from the next without drawing a box around either. */
+  --velvet-surface-band: #100e0c;
   /* What a dialog darkens the page with whilst it is open. */
   --velvet-scrim: rgb(10 11 15 / 0.72);
   /* The lamp a tool marks a live local state with, and the halo around it. */
@@ -53,12 +72,16 @@
      the operational green, so a choice reads as a choice rather than as a
      service reporting itself healthy. */
   --velvet-selection: #c9f47f;
-  /* Barlow's capitals sit below the middle of its own metrics, so a word
-     centred by its box reads low. This is twice the correction, meant to be
-     used as block padding on a control that centres its own line: half the
+  /* Twice the correction a control needs when it centres a line of capitals by
+     its box, applied as block padding at the bottom. The correction is half the
      difference between the ascender and the descender, less half the cap
-     height, which for this face is 0.039em. */
-  --velvet-cap-shift: 0.078em;
+     height.
+
+     Datatype needs none. It ascends 1.0em, descends 0.3em and caps at 0.7em, so
+     the middle of its box and the middle of a capital fall on the same line and
+     the arithmetic comes out at zero. The token stays because the next face may
+     not be so obliging, and because three surfaces already read it. */
+  --velvet-cap-shift: 0em;
 
   /* Two layers rather than one. A single wide shadow dissolves into the board
      backdrop and leaves a card looking pasted flat; the near layer draws its
@@ -68,10 +91,19 @@
     0 1.25rem 3rem rgb(0 0 0 / 0.45);
 
   /* Shared by the onboarding and the website, which sit on the board. */
-  --velvet-base: #0a0b0f;
-  --velvet-font: "Barlow", "Barlow Fallback", "Segoe UI", sans-serif;
-  --velvet-font-heading:
-    "Barlow Condensed", "Barlow Condensed Fallback", "Arial Narrow", sans-serif;
+  --velvet-base: #0d0c0b;
+  --velvet-font: "Datatype", "Datatype Fallback", monospace;
+  --velvet-font-heading: "Workbench", "Workbench Fallback", monospace;
+  /* An uppercase label with tracking on it: a section eyebrow, a navigation
+     item, the caption under a picture. It is the one face that never sets a
+     sentence, which is what keeps a label reading as a label. */
+  --velvet-font-label: "Space Mono", monospace;
+  /* The number a step is counted with. Wide and rounded, so a figure standing
+     alone reads as an ornament rather than as data. */
+  --velvet-font-numeral: "Audiowide", sans-serif;
+  /* A value a reader takes a reading from: a table cell, a configuration key,
+     the credit at the foot of a page. */
+  --velvet-font-figure: "Doto", monospace;
   /* The type scale, in the order it grows. The start page is where it was set,
      and the rest of the site is measured against it rather than choosing sizes
      of its own. A page that names a size in rem here is a page that will drift

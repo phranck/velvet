@@ -1,0 +1,142 @@
+/**
+ * The faces Velvet's own tools set their text in.
+ *
+ * Separate from `velvet-typefaces.css`, which holds only what a published
+ * status page also renders. A status page carries the typefaces of whichever
+ * design it was published in, so declaring these there would emit five woff2
+ * files into every status page build that nothing on it ever asks for.
+ *
+ * This file imports that one, so the website, the onboarding and the
+ * Configurator each name a single stylesheet and get both sets.
+ *
+ * Every face is declared `font-display: optional`, for the reason stated in the
+ * file this imports: `optional` never swaps, so no heading appears in one face
+ * and then changes to another.
+ *
+ * The files are the ones `@fontsource` ships. Only the declaration is ours.
+ */
+
+@import "./velvet-typefaces.css";
+
+/**
+ * The face everything is read in.
+ *
+ * Monospaced, which is the point rather than an accident: it advances by half
+ * an em, so ordinary prose set in it comes out narrow and even, and that
+ * evenness is what the whole surface is built on.
+ *
+ * The variable file rather than two static ones. This surface reads at 400 and
+ * sets a key's label at 600, and the two static weights are 52kB each against
+ * 72kB for the one file that carries every weight between 100 and 900. It is
+ * also the only face here that needs more than one weight at all, which is why
+ * it is the only variable one.
+ */
+@font-face {
+  font-family: "Datatype";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: optional;
+  src:
+    url("@fontsource-variable/datatype/files/datatype-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
+
+/**
+ * Every heading, and the text on the terminal's screen.
+ *
+ * One weight is all it ships and all it needs, because it is a display face
+ * that carries its own weight in its drawing.
+ */
+@font-face {
+  font-family: "Workbench";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src:
+    url("@fontsource/workbench/files/workbench-latin-400-normal.woff2")
+    format("woff2");
+}
+
+/**
+ * Eyebrows, navigation, and every uppercase label with tracking on it.
+ *
+ * Only the bold weight is declared, because nothing sets this face at book
+ * weight. A rule asking for 600 gets this file rather than a synthesised bold,
+ * since a browser matching a weight above 400 walks upwards first.
+ */
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+  src:
+    url("@fontsource/space-mono/files/space-mono-latin-700-normal.woff2")
+    format("woff2");
+}
+
+/** The number a step is counted with, and nothing else. */
+@font-face {
+  font-family: "Audiowide";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src:
+    url("@fontsource/audiowide/files/audiowide-latin-400-normal.woff2")
+    format("woff2");
+}
+
+/**
+ * Figures a reader takes a value from: a table cell, a configuration key, the
+ * credit at the foot of a page.
+ *
+ * It is drawn from dots, so it reads as something a machine printed rather than
+ * as prose, which is what separates a value from the sentence around it.
+ */
+@font-face {
+  font-family: "Doto";
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src: url("@fontsource/doto/files/doto-latin-600-normal.woff2") format("woff2");
+}
+
+/**
+ * Stand-ins for the two faces the surface is laid out in, for the moment before
+ * the real ones arrive and for the whole of a load slow enough that they do not.
+ *
+ * Both are monospaced and both advance by 0.5em, whilst the monospace a reader
+ * already has advances by more, so neither can be left to fall through: the
+ * column would come out a fifth wider. Measured in this browser at a font size
+ * of 1000px, the generic `monospace` family advances 0.60205em, which is Menlo.
+ * The size adjustment is 0.5 divided by that, and the ascent and descent
+ * overrides are each face's own divided by the adjustment, because a browser
+ * reads them against the adjusted em.
+ *
+ * A reader with none of the named faces matches nothing here, and the stack
+ * falls through to the generic family.
+ */
+@font-face {
+  font-family: "Datatype Fallback";
+  src:
+    local("Menlo"),
+    local("DejaVu Sans Mono"),
+    local("Consolas"),
+    local("Courier New");
+  size-adjust: 83.05%;
+  ascent-override: 120.41%;
+  descent-override: 36.12%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Workbench Fallback";
+  src:
+    local("Menlo"),
+    local("DejaVu Sans Mono"),
+    local("Consolas"),
+    local("Courier New");
+  size-adjust: 83.05%;
+  ascent-override: 105.36%;
+  descent-override: 15.05%;
+  line-gap-override: 0%;
+}

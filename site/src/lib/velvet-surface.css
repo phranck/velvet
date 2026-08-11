@@ -26,7 +26,7 @@
   justify-content: center;
   gap: 0.45rem;
   /* Lifts the whole row, icon included, rather than the text alone. */
-  padding-block: 0 var(--velvet-cap-shift, 0.078em);
+  padding-block: 0 var(--velvet-cap-shift, 0em);
   border: 0;
   border-radius: var(--step-card-inner-radius, 12px);
   outline: none;
@@ -39,7 +39,7 @@
 
 .velvet-button--primary {
   background: var(--velvet-accent);
-  color: #10131c;
+  color: var(--velvet-on-accent);
 }
 
 .velvet-button--secondary {

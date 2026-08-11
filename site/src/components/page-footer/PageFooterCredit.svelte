@@ -5,8 +5,10 @@
    * The year is read here rather than passed in, because every caller would
    * otherwise compute the same thing and one of them would eventually stop.
    *
-   * Placed in the middle column so it stays centred on the page however wide
-   * whatever sits beside it happens to be.
+   * The middle column by default, so it stays centred on the page however wide
+   * whatever sits beside it happens to be. An arrangement that puts something
+   * else in the middle names a different column from its own side, which is a
+   * placement rather than a setting: the credit itself is unchanged either way.
    */
   const CURRENT_YEAR = new Date().getFullYear();
 </script>
@@ -20,7 +22,7 @@
 
 <style>
   .credit {
-    grid-column: 2;
+    grid-column: var(--page-footer-credit-column, 2);
     display: flex;
     align-items: center;
     gap: 0.2rem;
