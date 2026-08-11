@@ -13,18 +13,34 @@
    * `data-topic`, which is what `page-script.js` reads. Nothing here runs any
    * code: every entry is an ordinary link to an ordinary anchor, so a reader
    * whose script never runs can still reach any of them.
+   *
+   * The label is drawn rather than hidden, and the panel is named by it. A
+   * heading a reader can see says the same thing to everybody, whilst
+   * `aria-label` said it only to a reader who could not.
    */
   let {
     entries,
     label,
   }: {
     entries: readonly TopicIndexEntry[];
-    /** What the list is a list of, for a reader who cannot see it. */
+    /** What the list is a list of, drawn above it and naming the panel. */
     label: string;
   } = $props();
+
+  /**
+   * What names the panel.
+   *
+   * Two steps rather than one, because Svelte accepts `$props.id()` only as the
+   * whole initialiser of a declaration and refuses it inside a template
+   * literal. Unique per instance, so two indexes on one page cannot both claim
+   * the same name.
+   */
+  const instanceId = $props.id();
+  const headingId = `topic-index-${instanceId}`;
 </script>
 
-<aside class="topic-index" aria-label={label}>
+<aside class="topic-index" aria-labelledby={headingId}>
+  <p class="heading" id={headingId}>{label}</p>
   <nav>
     <ul>
       {#each entries as entry (entry.id)}
@@ -78,6 +94,23 @@
       overflow-y: auto;
     }
   }
+  /* What the list is a list of. Set in the label face like every other line on
+     the site that names something rather than saying it, and inset to the same
+     distance from the panel's edge as an entry's own label, so the two start on
+     one line. */
+  .heading {
+    margin: 0.375rem 0 0.75rem;
+    padding-inline: calc(
+      var(--topic-index-padding) + var(--topic-index-inner-radius) / 2
+    );
+    color: var(--velvet-accent);
+    font-family: var(--velvet-font-label);
+    font-size: var(--velvet-text-label-small);
+    font-weight: 700;
+    letter-spacing: var(--velvet-tracking-wide);
+    line-height: 1;
+    text-transform: uppercase;
+  }
   ul {
     display: flex;
     flex-direction: column;
@@ -121,7 +154,7 @@
      as unused. */
   a:global([data-current]) {
     color: var(--velvet-accent);
-    background: color-mix(in srgb, var(--velvet-accent) 10%, transparent);
+    background: var(--velvet-accent-tint);
   }
   /* Hovering the entry a reader is already on must not wash its tint away,
      which the neutral rule above would do by replacing the background. It

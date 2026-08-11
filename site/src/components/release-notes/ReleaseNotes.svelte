@@ -223,8 +223,16 @@
     padding: 0.5rem 0.75rem;
     vertical-align: top;
   }
+  /* The label face, as everywhere else on the site that names a thing rather
+     than saying it. A column heading is not prose, and setting it apart by
+     weight alone left it reading as the first row of the table. */
   th {
-    font-weight: 650;
+    color: var(--velvet-accent);
+    font-family: var(--velvet-font-label);
+    font-size: var(--velvet-text-label-small, 0.6875rem);
+    font-weight: 700;
+    letter-spacing: var(--velvet-tracking-eyebrow, 0.16em);
+    text-transform: uppercase;
     white-space: nowrap;
   }
   /* Banded rather than ruled. A rule between every row draws as many lines as

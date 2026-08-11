@@ -244,14 +244,9 @@
   .lede {
     margin-inline: var(--velvet-card-text-inset);
   }
-  h1 {
-    font-size: var(--velvet-text-title);
-    line-height: 1.1;
-    margin-block: 0 1rem;
-  }
+  /* A step further from the grid below it than the other pages leave, because
+     what follows here is a row of cards rather than a run of prose. */
   .lede {
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-copy);
     margin-block: 0 3rem;
   }
   /* A grid rather than a column, so one entry occupies one cell instead of a
@@ -430,13 +425,12 @@
       calc(var(--velvet-card-padding) + 0.75rem);
     text-align: center;
   }
-  /* The condensed face, as the site sets every name that titles something. It
-     also buys the width a long page name needs on a card this size. */
+  /* The heading face, as the site sets every name that titles something. */
   .reference-name {
     display: block;
     font-family: var(--velvet-font-heading);
     font-size: var(--velvet-text-copy);
-    font-weight: 600;
+    font-weight: 400;
     line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -109,16 +109,6 @@
   main h2 {
     margin-inline: var(--velvet-card-text-inset);
   }
-  h1 {
-    font-size: var(--velvet-text-title);
-    line-height: 1.1;
-    margin-block: 0 1rem;
-  }
-  .lede {
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-copy);
-    margin-block: 0 2.5rem;
-  }
   /* The same treatment a code word gets inside a card. A filename set in an
      opening paragraph is the same thing as a filename set in a reference, and
      it drew no background at all before, so the two read as different kinds of
