@@ -10,7 +10,7 @@ import {
 import { VERSION as disclosureVersion } from "../src/disclosure/index.js";
 import { VERSION as overlayVersion } from "../src/overlay/index.js";
 import { VERSION as chartVersion } from "../src/response-chart/view.js";
-import { VERSION as statusVersion } from "../src/status/index.js";
+import { VERSION as statusVersion } from "../src/status.js";
 import { VERSION as stripVersion } from "../src/uptime-strip/index.js";
 
 /**

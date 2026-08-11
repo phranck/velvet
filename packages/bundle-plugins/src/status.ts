@@ -29,9 +29,9 @@ import type {
   MaintenanceWindow,
   RangeKey,
   ServiceStatus,
-} from "../data.js";
+} from "./data.js";
 
-export type { RangeKey, ServiceStatus } from "../data.js";
+export type { RangeKey, ServiceStatus } from "./data.js";
 
 /** The version a manifest names to use this plugin. */
 export const VERSION = 1;

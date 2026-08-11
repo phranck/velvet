@@ -10,7 +10,7 @@
     "./disclosure": "./src/disclosure/index.ts",
     "./overlay": "./src/overlay/index.ts",
     "./response-chart": "./src/response-chart/index.ts",
-    "./status": "./src/status/index.ts",
+    "./status": "./src/status.ts",
     "./uptime-strip": "./src/uptime-strip/index.ts"
   },
   "files": [
