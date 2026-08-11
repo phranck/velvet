@@ -38,24 +38,17 @@ const directory = join(siteRoot, "src/website/assets/designs");
 const FIXTURE = "all-well";
 
 /** How large a picture is, and how far the page is held in from its edge. */
-const VIEWPORT = { width: 800, height: 500 };
+// Five by four, which is the ratio the tiles on the start page carry. A status
+// page is taller than it is wide, so a wide picture shows a headline and one
+// row of days and nothing of what the design does with a list of services.
+const VIEWPORT = { width: 800, height: 640 };
 const CONTENT_INSET = { inline: 60, block: 38 };
-
-/**
- * The design that exists to prove the format rather than to be chosen.
- *
- * It is a bundle like any other and the gates run over it, but it is not a
- * design anybody picks, so the start page does not offer it.
- */
-const NOT_OFFERED = new Set(["proof"]);
 
 function sha256(value: Uint8Array | string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-const bundles = (await readBundles()).filter(
-  (bundle) => bundle.manifest && !NOT_OFFERED.has(bundle.directory),
-);
+const bundles = (await readBundles()).filter((bundle) => bundle.manifest);
 if (bundles.length === 0) throw new Error("No design to photograph.");
 
 await mkdir(directory, { recursive: true });

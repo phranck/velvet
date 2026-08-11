@@ -12,8 +12,8 @@
  * filled block between the column's head and the words. The foot of the
  * readings closes that limb the other way up and carries the release and the
  * serial as two segments cut out of it, which is why the footer states neither.
- * And the bar at the top holds nothing at all: this design names the
- * installation nowhere, the way a panel of its period names no ship.
+ * No design carries a bar at the top any more, and this one named the
+ * installation nowhere even when it did.
  *
  * A string rather than a tree, because the same function runs in the build,
  * which has no DOM, and in a preview frame, which does. Everything the page
@@ -240,9 +240,6 @@ export function template(data: BundleData): string {
     state !== "operational" && visibleEvents(data.incidents.events).length > 0;
 
   return `<main class="ncc-1701-d-page" data-layout="grouped" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
-    <div class="status-band status-band--nav">
-      <div class="status-nav"></div>
-    </div>
     ${hero(data, state)}
     <div class="status-band status-band--body">
       <div class="status-body">

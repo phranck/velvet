@@ -25,7 +25,7 @@ The three entry names are conventions rather than rules: the manifest says which
 
 **A design owns its own markup.** Two designs share the status data and nothing else. Where one wants a coloured segment beside every row and another wants nothing there, the first emits the segment and the second does not emit anything: neither has to declare a value that hides the other's element.
 
-Five bundles exist today. Open them:
+Four designs exist today, and they are the four an installation can be published in. Open them:
 
 ```bash
 bun run --cwd site dev
@@ -39,7 +39,6 @@ Then open `http://localhost:5173/gallery/`.
 | `cassette` | 1979 | A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, carrying a recessed name plate lit from behind, two protocol lamps, a two-line readout, a lamp meter for its days, and its response times on the lit scale of a receiver. A striped sun stands behind the status, and there is not one picture anywhere |
 | `twenty-forty-nine` | 2049 | A filthy pane of glass with a dim blue readout: corner brackets, edge scales, dotted grids, a vignette to black |
 | `ncc-1701-d` | 2364 | A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards |
-| `proof` | none | A deliberately plain bundle whose only purpose is to prove the format. It is not a design anybody chooses |
 
 **Redundancy between designs is intended rather than tolerated.** A design that borrows nothing still works on its own, and that is the point. Where code is genuinely worth sharing it is offered as a plugin, and a plugin is optional. What must stay true regardless of how a design is built is that the figures on the page are right and that the page can be used with a keyboard. Neither is enforced by making every design run through the same code; both are enforced by the conformance suite, against what a design actually rendered from a known fixture.
 
@@ -185,7 +184,7 @@ A plugin owns behaviour, never markup. It draws into an element the design gives
 
 The isolation gate refuses a design naming a plugin that does not exist, one at a version the package no longer offers, and an import of a plugin the manifest did not declare. The number rises when a change would make a design that used the previous version render something else: an option removed or renamed, a default changed, or a drawing rule reversed. Adding an option whose default preserves what already happened does not raise it.
 
-Nothing here obliges a design to use any of it. `site/bundles/proof/` shows the pairing: it borrows the disclosure and does its own arithmetic.
+Nothing here obliges a design to use any of it. A design that draws its own strip is allowed, and the conformance suite is what catches it if the drawing lies.
 
 ### Passing a plugin its appearance
 

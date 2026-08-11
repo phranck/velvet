@@ -12,9 +12,6 @@
  * `bun run --cwd site designs:screenshots`, and every one shows a well page:
  * nothing somebody meeting Velvet for the first time sees should be four status
  * pages reporting trouble.
- *
- * `site/bundles/proof/` is deliberately absent. It is a bundle like any other
- * and every gate runs over it, but nobody picks it.
  */
 
 import cassetteManifest from "../../bundles/cassette/bundle.json";

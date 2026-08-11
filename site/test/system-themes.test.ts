@@ -75,10 +75,8 @@ test("the theme picker's pictures match the current themes and assets", async ()
 /**
  * The start page offers the designs a page can be published in.
  *
- * A design ships with Velvet as a bundle, so the set is whatever is installed
- * rather than a list kept by hand, and the one thing that can go wrong is a
- * design without a picture of it. `proof` is deliberately absent: it is a
- * bundle like any other and every gate runs over it, but nobody picks it.
+ * A design ships with Velvet as a bundle, and the one thing that can go wrong
+ * is a design without a picture of it.
  */
 test("the start page offers every design that is meant to be chosen", async () => {
   const { GALLERY_DESIGNS } = await import("../src/website/design-gallery.js");

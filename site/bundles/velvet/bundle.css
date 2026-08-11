@@ -28,7 +28,6 @@
 @import "./assets/fonts.css";
 @import "./assets/icons.css";
 
-
 .velvet-page {
   /* ── Identity ─────────────────────────────────────────────────────────── */
   --theme-scheme: dark;
@@ -96,10 +95,6 @@
     `StatusHero.svelte` for the headline and the time under it, `Incidents.svelte`
     for the heading, and `ServiceSummary.svelte` for the uptime figure.
   */
-  --brand-weight: 600;
-  --brand-tracking: normal;
-  --nav-link-size: 15px;
-  --nav-link-tracking: normal;
   --headline-font: var(--font-display);
   --headline-weight: 700;
   --headline-tracking: -0.8px;
@@ -127,7 +122,6 @@
   --text-size-lead: 16px;
   --text-size-section: 15px;
   --text-size-service: 16.5px;
-  --text-size-brand: 17px;
   --text-size-headline: 38px;
   --text-size-hero-glyph: 54px;
   --text-size-service-icon: 22px;
@@ -210,10 +204,6 @@
   --card-rail-inset: 0px;
   --card-texture: none;
   --card-texture-size: auto;
-  --nav-rule-height: 1px;
-  --nav-rule-fill: var(--surface-rule);
-  --nav-rule-radius: 0px;
-  --nav-rule-inset: 0px;
 
   /* ── Measure ──────────────────────────────────────────────────────────── */
   --page-width: 760px;
@@ -226,9 +216,6 @@
   --space-row: 11px;
   --space-block: 16px;
   --space-section: 26px;
-  --nav-gap: 16px;
-  --nav-padding-block: 26px;
-  --nav-padding-inline: 6px;
   --hero-padding-block: 36px;
   --hero-padding-inline: 6px;
   --control-padding-block: 3px;
@@ -317,12 +304,6 @@
 
   /* ── Arrangement ──────────────────────────────────────────────────────── */
   /* Centred throughout, which is how the page reads today. */
-  --nav-brand-display: inline-block;
-  --nav-links-display: flex;
-  --nav-justify: center;
-  --nav-fill: transparent;
-  --nav-brand-colour: var(--text-1);
-  --nav-link-colour: #8b919b;
   --hero-align: center;
   --hero-text-align: center;
   --hero-fill: transparent;
@@ -620,26 +601,6 @@
   margin-inline: auto;
 }
 
-.status-band--nav {
-  background: var(--nav-fill);
-}
-
-/*
-  The line under the bar is an element rather than a `border-bottom`, because a
-  border cannot be rounded independently of the box it belongs to and cannot be
-  inset from the window edge. One design here wants a thick capsule held to the
-  page measure, and five want a hairline across the window; both are the same
-  four tokens with different values.
-*/
-.status-band--nav::after {
-  content: "";
-  display: block;
-  height: var(--nav-rule-height);
-  margin-inline: var(--nav-rule-inset);
-  border-radius: var(--nav-rule-radius);
-  background: var(--nav-rule-fill);
-}
-
 .status-band--hero {
   background: var(--hero-fill);
 }
@@ -660,51 +621,6 @@
   inset-block-end: 0;
   z-index: 5;
   background: var(--footer-fill);
-}
-
-/* ── Navigation ───────────────────────────────────────────────────────────── */
-/* The bar carries a gap of its own rather than the general row gap. A bar that
-   pushes its parts to opposite edges never shows the value at all, whilst a
-   centred one shows nothing else, so the two want different numbers. */
-.status-nav {
-  display: flex;
-  align-items: center;
-  justify-content: var(--nav-justify);
-  gap: var(--nav-gap);
-  padding: var(--nav-padding-block) var(--nav-padding-inline);
-}
-
-/* Named separately from `--brand-primary`, because a theme may give the bar a
-   fill of its own and the mark then stands on that rather than on the page. */
-.status-brand {
-  display: var(--nav-brand-display);
-  color: var(--nav-brand-colour);
-  font-family: var(--font-display);
-  font-size: var(--text-size-brand);
-  font-weight: var(--brand-weight);
-  letter-spacing: var(--brand-tracking);
-  text-transform: var(--display-transform);
-  text-decoration: none;
-}
-
-/* A design may carry no navigation at all, and one does: its bar holds the
-   installation's name and mark and nothing else. */
-.status-nav-links {
-  display: var(--nav-links-display);
-  flex-wrap: wrap;
-  gap: var(--space-row);
-}
-
-.status-nav-link {
-  color: var(--nav-link-colour);
-  font-size: var(--nav-link-size);
-  letter-spacing: var(--nav-link-tracking);
-  text-decoration: none;
-  text-transform: var(--label-transform);
-}
-
-.status-nav-link:hover {
-  color: var(--accent);
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
@@ -2384,10 +2300,6 @@
 
   .chart-legend {
     justify-content: flex-start;
-  }
-
-  .status-nav {
-    flex-wrap: wrap;
   }
 }@media (prefers-reduced-motion: reduce) {
   .toggle-all-glyph,

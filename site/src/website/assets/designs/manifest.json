@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "viewport": {
     "width": 800,
-    "height": 500
+    "height": 640
   },
   "fixture": "all-well",
   "contentInset": {
@@ -12,23 +12,23 @@
   "designs": {
     "cassette": {
       "file": "cassette.png",
-      "imageSha256": "2f7ca81fddc20aaa88a08ef6f7e4bd278f2c4d0f07157567421403ea4a730dde",
-      "bundleSha256": "1792b331f02e57a97a79ff7db0b5d4fcdc34c21c7d1122600e6169dd107c084d"
+      "imageSha256": "44f857a4109fd59b52e3b1dca819e99055a1f0d49723a6403437f569180659f7",
+      "bundleSha256": "6650bfc38ee142f65e778edc04c5ef3cae8705febc2cd531f8252bbcaadbbf03"
     },
     "ncc-1701-d": {
       "file": "ncc-1701-d.png",
-      "imageSha256": "cbafae955e5433cded7c033ef9528a17bd7e6b949fed3223c20ff05c8695e961",
-      "bundleSha256": "252f8c0f19bad4505b7c7959e369f10d9e7652cb53700e7aa22c4a317be99045"
+      "imageSha256": "bfe9d15efc2b534df824fe916c08adf937dd6b36eca4ab55887f876b340986c5",
+      "bundleSha256": "c075046025cf387af2c8ecfe7b2573718515833168fc6941d93860cd77c036d8"
     },
     "twenty-forty-nine": {
       "file": "twenty-forty-nine.png",
-      "imageSha256": "373d52e2684c1bb4c4a53ce1f4a7444bf317ec7cd4efc361a42202eca2c37850",
-      "bundleSha256": "9bb728a86d1795dad199354a5639846735e232c8112f8239aa9a7a071cec40f8"
+      "imageSha256": "fe627b7290cf2e6c3333131f82fc795e59a185cbad34765b9f6023cce8fb3627",
+      "bundleSha256": "b593dcab26046115faf83ecc66be90b7b9c7dd4999dc654e1b5c7425338bacea"
     },
     "velvet": {
       "file": "velvet.png",
-      "imageSha256": "7a9d0e8ba18c295b4cfdedee35406498ef3a8a0422772ab0d70eb3f6324be370",
-      "bundleSha256": "b24ff6b73a66757816cfe7391cedf33ca34553620a5f0affd334d2141b36c8eb"
+      "imageSha256": "018ffcb5e0b89886b4a11e6e74f7f3ef9a004fc845b5fa829a7f6d6f02c7c969",
+      "bundleSha256": "1d266763160cc6fe90fbdb4def97e812c5bd9a29b753cdd2c1bfb48fb12dab63"
     }
   }
 }

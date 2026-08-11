@@ -160,7 +160,7 @@ statusPage:
   logoHeight: 72
   layout: grouped
   defaultRange: 30d
-  design: proof
+  design: cassette
   navigation:
     - title: Website
       href: https://example.com
@@ -177,7 +177,7 @@ statusPage:
 | `design` | no | the page Velvet ships | The design the page is published in, named by its bundle. A design carries its own appearance, so `theme` and `fonts` do not apply to one. A name no installed design answers to stops the build rather than publishing a different design under your domain. |
 | `layout` | no | `grouped` | `grouped` for one shared service card or `cards` for one card per service. |
 | `defaultRange` | no | `30d` | Initial range: `24h`, `7d`, `30d`, `90d`, or `1yr`. A visitor's saved choice wins later. |
-| `navigation` | no | `[]` | Up to 16 links with `title` and `href`. |
+| `navigation` | no | `[]` | Up to 16 links with `title` and `href`. **None of the four designs draws them.** A published page carries the installation's name and its readings and nothing else, so links written here reach the page's data and are shown nowhere. |
 | `theme` | no | Velvet Default | Theme name plus optional semantic visual overrides. |
 | `fonts.sans` | no | `Inter` | CSS font-family for normal interface text. |
 | `fonts.mono` | no | `Fira Code` | CSS font-family for times, values, and labels. Velvet ships this one, so leaving it unset needs no external request. |

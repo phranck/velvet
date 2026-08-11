@@ -43,7 +43,7 @@
    * expects.
    */
   const TILE_WIDTH = 576;
-  const TILE_HEIGHT = 360;
+  const TILE_HEIGHT = 461;
   const TILE_CONTENT_PATH = createSquircleRectPath(
     TILE_WIDTH,
     TILE_HEIGHT,
@@ -672,11 +672,14 @@
     color: color-mix(in srgb, var(--velvet-text-muted) 55%, transparent);
     position: relative;
     display: block;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 5 / 4;
   }
   /* Fills the shape rather than sitting inside it, cut at the inner edge of the
-     wide line so the frame closes around it. The pictures are photographed at
-     16 by 10, which is the ratio above, so filling crops nothing. */
+     wide line so the frame closes around it. A status page is taller than it is
+     wide, so a tile near square shows the headline, the range row and several
+     services rather than a headline and one row of days. The pictures are
+     photographed at five by four, which is the ratio above, so filling crops
+     nothing. */
   .themes img {
     position: absolute;
     inset: 0;
