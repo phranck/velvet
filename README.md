@@ -2,7 +2,7 @@
 
 # Velvet
 
-**GitHub-native status monitoring and a polished status page, without a server or database.**
+**Velvet monitors websites and HTTP endpoints from GitHub Actions and publishes a polished status page through GitHub Pages. No extra server. No database. Just five steps away.**
 
 <a href="https://setup.velvet.li/onboarding/">
   <img src="docs/screenshot.png" alt="Velvet status page" width="930">
@@ -27,7 +27,7 @@ Velvet monitors websites and HTTP endpoints from GitHub Actions, records inciden
 - No analytics of any kind. A published status page loads no third-party script, the browser setup reports to nobody, and there is no setting that would change either.
 - A static GitHub Pages site that keeps working independently of the optional browser setup service.
 
-GitHub is part of the platform. Every installation uses GitHub Actions for scheduling, GitHub Issues for incidents and maintenance, a dedicated Git branch for generated data, and GitHub Pages for the public site.
+GitHub is part of the platform rather than somewhere to host Velvet, which is what makes it GitHub-native. Every installation uses GitHub Actions for scheduling, GitHub Issues for incidents and maintenance, a dedicated Git branch for generated data, and GitHub Pages for the public site.
 
 ## How it works
 
