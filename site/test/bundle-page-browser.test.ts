@@ -82,7 +82,7 @@ async function buildDesignPage(design: string): Promise<{
 test(
   "publishes the named design, in its own colours, working without the component page",
   async () => {
-    const built = await buildDesignPage("proof");
+    const built = await buildDesignPage("velvet");
     const server = Bun.serve({
       port: 0,
       fetch: async (request) => {
@@ -101,7 +101,7 @@ test(
       // What a reader receives before a single script has run. A status page is
       // opened when something is already broken, often over a connection that
       // is part of what is broken.
-      assert.match(published, /class="proof-page"/);
+      assert.match(published, /class="velvet-page"/);
       for (const service of built.status.services) {
         assert.ok(
           published.includes(service.name),
@@ -131,22 +131,21 @@ test(
       page.on("pageerror", (error) => failures.push(error.message));
 
       await page.goto(`http://127.0.0.1:${server.port}/`);
-      await page.locator(".proof-page").first().waitFor();
+      await page.locator(".velvet-page").first().waitFor();
 
       // One page, not the published one with a second built beside it.
-      assert.equal(await page.locator(".proof-page").count(), 1);
+      assert.equal(await page.locator(".velvet-page").count(), 1);
 
       // The design's script took over: a range the page was not published in
       // rewrites every figure, and it does so from the data in the document
       // rather than by fetching anything.
       const first = built.status.services[0]!;
-      const before = await page
-        .locator(`[data-uptime-for="${first.id}"]`)
-        .textContent();
-      await page.locator('.proof-range[data-range="week"]').click();
-      const after = await page
-        .locator(`[data-uptime-for="${first.id}"]`)
-        .textContent();
+      const figure = page.locator(
+        `.service[data-service-id="${first.id}"] .service-uptime`,
+      );
+      const before = await figure.textContent();
+      await page.locator('.range-button[data-range="week"]').click();
+      const after = await figure.textContent();
       assert.equal(
         after?.includes(
           uptimeForRange(

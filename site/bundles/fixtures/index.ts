@@ -13,6 +13,7 @@
 
 import type { BundleData } from "../../src/lib/bundles/data.js";
 import {
+  allWell,
   everythingUnknown,
   firstDay,
   ipv6Only,
@@ -37,6 +38,11 @@ export const FIXTURES: readonly Fixture[] = [
     name: "velvet-underground",
     what: "the ordinary installation: five services, three hundred days, one open incident",
     data: velvetUnderground,
+  },
+  {
+    name: "all-well",
+    what: "the ordinary installation with nothing wrong, which is what the start page is photographed on",
+    data: allWell,
   },
   {
     name: "first-day",

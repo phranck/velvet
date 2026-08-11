@@ -10,6 +10,7 @@
     "bundles:verify": "bun scripts/verify-bundles.ts",
     "changelog:build": "vite build --config vite.changelog.ts",
     "configurator:build": "svelte-check --tsconfig ./tsconfig.json && vite build --config vite.configurator.ts",
+    "designs:screenshots": "bun scripts/design-screenshots.ts",
     "dev": "vite",
     "documentation:build": "vite build --config vite.documentation.ts",
     "icons:build": "bun scripts/build-iconsax.ts",

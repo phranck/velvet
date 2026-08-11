@@ -44,22 +44,6 @@ function key(): string {
   return `<span class="disclosure-mark" aria-hidden="true"></span>`;
 }
 
-/** The bar at the top: the installation's name, and its links where it has any. */
-function navigation(data: BundleData): string {
-  const links = data.site.navigation
-    .map(
-      (link) =>
-        `<a class="status-nav-link" href="${escape(link.href)}">${escape(link.title)}</a>`,
-    )
-    .join("");
-  return `<div class="status-band status-band--nav">
-    <nav class="status-nav">
-      <a class="status-brand" href="#">${escape(data.site.name)}</a>
-      ${links === "" ? "" : `<div class="status-nav-links">${links}</div>`}
-    </nav>
-  </div>`;
-}
-
 /**
  * The one line naming the state, with the striped sun standing behind it.
  *
@@ -263,7 +247,6 @@ export function template(data: BundleData): string {
     state !== "operational" && visibleEvents(data.incidents.events).length > 0;
 
   return `<main class="cassette-page" data-layout="cards" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
-    ${navigation(data)}
     ${hero(data, state)}
     <div class="status-band status-band--body">
       <div class="status-body">

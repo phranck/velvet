@@ -32,7 +32,6 @@
 @import "./assets/fonts.css";
 @import "./assets/icons.css";
 
-
 .twenty-forty-nine-page {
   /* ── Identity ─────────────────────────────────────────────────────────── */
   --theme-scheme: dark;
@@ -90,10 +89,6 @@
   --font-body: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
   --font-meta: "Share Tech Mono", ui-monospace, monospace;
   --display-transform: uppercase;
-  --brand-weight: var(--display-weight);
-  --brand-tracking: var(--display-tracking);
-  --nav-link-size: var(--text-size-caption);
-  --nav-link-tracking: var(--label-tracking);
   --headline-font: var(--font-display);
   --headline-weight: var(--display-weight);
   --headline-tracking: var(--display-tracking);
@@ -124,7 +119,6 @@
   --text-size-lead: 17px;
   --text-size-section: 11px;
   --text-size-service: 19px;
-  --text-size-brand: 18px;
   --text-size-headline: 32px;
   --text-size-hero-glyph: 36px;
   --text-size-service-icon: 19px;
@@ -210,10 +204,6 @@
   --card-rail-colour: transparent;
   --card-rail-radius: 0px;
   --card-rail-inset: 0px;
-  --nav-rule-height: 1px;
-  --nav-rule-fill: var(--surface-rule);
-  --nav-rule-radius: 0px;
-  --nav-rule-inset: 0px;
 
   /* The dotted grid behind a panel's contents. Every reading on these screens
      sits on one, and it is what stops a large dark panel reading as empty. */
@@ -300,9 +290,6 @@
   --space-row: 16px;
   --space-block: 20px;
   --space-section: 36px;
-  --nav-gap: 20px;
-  --nav-padding-block: 16px;
-  --nav-padding-inline: 2px;
   --hero-padding-block: 40px;
   --hero-padding-inline: 2px;
   --control-padding-block: 3px;
@@ -417,12 +404,6 @@
   --motion-hover: 90ms;
 
   /* ── Arrangement ──────────────────────────────────────────────────────── */
-  --nav-brand-display: inline-block;
-  --nav-links-display: flex;
-  --nav-justify: center;
-  --nav-fill: transparent;
-  --nav-brand-colour: var(--accent);
-  --nav-link-colour: #3f8f97;
   --hero-align: center;
   --hero-text-align: center;
   --hero-fill: transparent;
@@ -720,26 +701,6 @@
   margin-inline: auto;
 }
 
-.status-band--nav {
-  background: var(--nav-fill);
-}
-
-/*
-  The line under the bar is an element rather than a `border-bottom`, because a
-  border cannot be rounded independently of the box it belongs to and cannot be
-  inset from the window edge. One design here wants a thick capsule held to the
-  page measure, and five want a hairline across the window; both are the same
-  four tokens with different values.
-*/
-.status-band--nav::after {
-  content: "";
-  display: block;
-  height: var(--nav-rule-height);
-  margin-inline: var(--nav-rule-inset);
-  border-radius: var(--nav-rule-radius);
-  background: var(--nav-rule-fill);
-}
-
 .status-band--hero {
   background: var(--hero-fill);
 }
@@ -760,51 +721,6 @@
   inset-block-end: 0;
   z-index: 5;
   background: var(--footer-fill);
-}
-
-/* ── Navigation ───────────────────────────────────────────────────────────── */
-/* The bar carries a gap of its own rather than the general row gap. A bar that
-   pushes its parts to opposite edges never shows the value at all, whilst a
-   centred one shows nothing else, so the two want different numbers. */
-.status-nav {
-  display: flex;
-  align-items: center;
-  justify-content: var(--nav-justify);
-  gap: var(--nav-gap);
-  padding: var(--nav-padding-block) var(--nav-padding-inline);
-}
-
-/* Named separately from `--brand-primary`, because a theme may give the bar a
-   fill of its own and the mark then stands on that rather than on the page. */
-.status-brand {
-  display: var(--nav-brand-display);
-  color: var(--nav-brand-colour);
-  font-family: var(--font-display);
-  font-size: var(--text-size-brand);
-  font-weight: var(--brand-weight);
-  letter-spacing: var(--brand-tracking);
-  text-transform: var(--display-transform);
-  text-decoration: none;
-}
-
-/* A design may carry no navigation at all, and one does: its bar holds the
-   installation's name and mark and nothing else. */
-.status-nav-links {
-  display: var(--nav-links-display);
-  flex-wrap: wrap;
-  gap: var(--space-row);
-}
-
-.status-nav-link {
-  color: var(--nav-link-colour);
-  font-size: var(--nav-link-size);
-  letter-spacing: var(--nav-link-tracking);
-  text-decoration: none;
-  text-transform: var(--label-transform);
-}
-
-.status-nav-link:hover {
-  color: var(--accent);
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
@@ -2535,10 +2451,6 @@
 
   .chart-legend {
     justify-content: flex-start;
-  }
-
-  .status-nav {
-    flex-wrap: wrap;
   }
 }@media (prefers-reduced-motion: reduce) {
   .toggle-all-glyph,

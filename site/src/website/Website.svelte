@@ -17,10 +17,11 @@
   // the frame. `docs/screenshot.png` keeps its window for the README, which is
   // read on a page that has none.
   import screenshotUrl from "./assets/screenshot-screen.png";
-  // The four themes an installation can be set to, read from the registry the
-  // browser setup and the Configurator read, so the page cannot advertise a
-  // theme that is not offered or miss one that is.
-  import { GALLERY_THEMES } from "./theme-gallery.js";
+  // The designs a page can be published in, read from the manifests that ship
+  // with Velvet, so this page cannot offer one that does not exist or miss one
+  // that does.
+  import { GALLERY_DESIGNS } from "./design-gallery.js";
+  import * as SquircleButton from "../components/squircle-button";
   import * as SquircleFrame from "../components/squircle-frame";
   import {
     SQUIRCLE_CONTENT_INSET,
@@ -43,7 +44,7 @@
    * expects.
    */
   const TILE_WIDTH = 576;
-  const TILE_HEIGHT = 360;
+  const TILE_HEIGHT = 461;
   const TILE_CONTENT_PATH = createSquircleRectPath(
     TILE_WIDTH,
     TILE_HEIGHT,
@@ -106,9 +107,9 @@
     },
     {
       icon: "color-swatch",
-      title: "A page you can shape",
+      title: "A page somebody designed",
       description:
-        "Four system themes, detailed visual configuration, service icons, SEO output, and selectable history ranges.",
+        "Four curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, and selectable history ranges.",
     },
     {
       icon: "global",
@@ -175,19 +176,26 @@
         without a server or a database. Just five steps away.
       </p>
       <div class="hero-actions">
-        <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL} data-onboarding-link>
-          <Icon name="flash" />
-          <span>Create your status page</span>
-        </a>
-        <a
-          class="velvet-button velvet-button--secondary"
+        <SquircleButton.Root
+          href={ONBOARDING_URL}
+          label="Create your status page"
+          variant="primary"
+          data-onboarding-link
+        >
+          <SquircleButton.Icon><Icon name="flash" /></SquircleButton.Icon>
+          <SquircleButton.Label>Create</SquircleButton.Label>
+        </SquircleButton.Root>
+        <SquircleButton.Root
           href={REPOSITORY_URL}
+          label="Github, read the source"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <i class="ph-duotone ph-github-logo" aria-hidden="true"></i>
-          <span>Read the source</span>
-        </a>
+          <SquircleButton.Icon>
+            <i class="ph-duotone ph-github-logo"></i>
+          </SquircleButton.Icon>
+          <SquircleButton.Label>Github</SquircleButton.Label>
+        </SquircleButton.Root>
       </div>
     </section>
 
@@ -241,6 +249,56 @@
       </div>
     </section>
 
+    <section class="column" aria-labelledby="themes-title">
+      <div class="card-inset">
+          <div class="velvet-section-heading">
+            <div class="velvet-section-title">
+              <span class="marker" aria-hidden="true">//</span>
+              <h2 id="themes-title">Four designs to publish in</h2>
+            </div>
+            <p>
+              Each is a whole page rather than a palette: its own typefaces, its
+              own shapes, its own way of drawing a month of days. They ship with
+              Velvet, so a page names one and gets it, and nothing has to be
+              assembled from thirty colour fields to arrive somewhere nobody
+              designed.
+            </p>
+          </div>
+          <!-- The cut, defined once. Zero-sized and hidden, because it is a
+               definition rather than a drawing. -->
+          <svg width="0" height="0" aria-hidden="true" focusable="false" class="shape-defs">
+            <defs>
+              <clipPath id="velvet-theme-tile" clipPathUnits="objectBoundingBox">
+                <path d={TILE_CONTENT_PATH} transform={TILE_CONTENT_TRANSFORM} />
+              </clipPath>
+            </defs>
+          </svg>
+          <ul class="themes">
+            {#each GALLERY_DESIGNS as design (design.id)}
+              <li>
+                <figure>
+                  <span class="shot">
+                    <SquircleFrame.Outline
+                      width={TILE_WIDTH}
+                      height={TILE_HEIGHT}
+                    />
+                    <img
+                      src={design.picture}
+                      alt={`A Velvet status page in the ${design.name} design`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
+                  <figcaption>
+                    {design.name} <span class="era">{design.era}</span>
+                  </figcaption>
+                </figure>
+              </li>
+            {/each}
+          </ul>
+      </div>
+    </section>
+
     <section class="column" aria-labelledby="pipeline-title">
       <div class="card-inset">
           <div class="velvet-section-heading">
@@ -276,53 +334,6 @@
       </div>
     </section>
 
-    <section class="column" aria-labelledby="themes-title">
-      <div class="card-inset">
-          <div class="velvet-section-heading">
-            <div class="velvet-section-title">
-              <span class="marker" aria-hidden="true">//</span>
-              <h2 id="themes-title">Four themes to start from</h2>
-            </div>
-            <p>
-              The browser setup offers these as preview cards and the
-              Configurator edits every colour behind them, from the palette and
-              the uptime grid to the response-time chart, the cards, and the
-              backdrop.
-            </p>
-          </div>
-          <!-- The cut, defined once. Zero-sized and hidden, because it is a
-               definition rather than a drawing. -->
-          <svg width="0" height="0" aria-hidden="true" focusable="false" class="shape-defs">
-            <defs>
-              <clipPath id="velvet-theme-tile" clipPathUnits="objectBoundingBox">
-                <path d={TILE_CONTENT_PATH} transform={TILE_CONTENT_TRANSFORM} />
-              </clipPath>
-            </defs>
-          </svg>
-          <ul class="themes">
-            {#each GALLERY_THEMES as theme (theme.id)}
-              <li>
-                <figure>
-                  <span class="shot">
-                    <SquircleFrame.Outline
-                      width={TILE_WIDTH}
-                      height={TILE_HEIGHT}
-                    />
-                    <img
-                      src={theme.picture}
-                      alt={`The ${theme.name} theme on a Velvet status page`}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </span>
-                  <figcaption>{theme.name}</figcaption>
-                </figure>
-              </li>
-            {/each}
-          </ul>
-      </div>
-    </section>
-
     <section class="column" aria-labelledby="manual-title">
       <StepCard.Root>
         <div class="card-inset">
@@ -345,14 +356,18 @@
               copyable
               label="Copy these commands"
             />
-            <a
-              class="velvet-button velvet-button--secondary"
+            <SquircleButton.Root
               href={MAN_PAGES_ARCHIVE}
+              label="Download the manual"
+              size="var(--manual-key-size)"
+              ratio={6 / 5}
               download
             >
-              <Icon name="document-download" />
-              <span>Download the manual</span>
-            </a>
+              <SquircleButton.Icon>
+                <Icon name="document-download" />
+              </SquircleButton.Icon>
+              <SquircleButton.Label>Download</SquircleButton.Label>
+            </SquircleButton.Root>
           </div>
         </div>
       </StepCard.Root>
@@ -361,15 +376,19 @@
     <section class="closing column" aria-labelledby="start-title">
       <h2 id="start-title">Ready in a couple of minutes</h2>
       <p>
-        The browser setup asks for a repository and page name, your services, an
-        optional custom domain, and one of the four themes. After you approve it
-        on GitHub it creates the repository, enables Pages, starts monitoring,
-        and waits for the first deployment.
+        The browser setup asks for a repository and page name, your services,
+        and an optional custom domain. After you approve it on GitHub it creates
+        the repository, enables Pages, starts monitoring, and waits for the
+        first deployment.
       </p>
-      <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL}>
-        <Icon name="flash" />
-        <span>Create your status page</span>
-      </a>
+      <SquircleButton.Root
+        href={ONBOARDING_URL}
+        label="Create your status page"
+        variant="primary"
+      >
+        <SquircleButton.Icon><Icon name="flash" /></SquircleButton.Icon>
+        <SquircleButton.Label>Create</SquircleButton.Label>
+      </SquircleButton.Root>
     </section>
   </main>
 
@@ -432,31 +451,20 @@
   .lead {
     margin: 3.5rem 0 0;
     color: color-mix(in srgb, var(--setup-muted) 78%, var(--setup-text));
-    font-size: var(--setup-text-intro);
-    line-height: 1.3;
+    font-size: var(--setup-text-copy);
+    line-height: 1.4;
   }
   /* Both buttons the same width, which a flex row cannot do without giving one
      of them a length. The columns take their size from the wider label, so the
      pair stays balanced whatever the labels say. */
+  /* The buttons are square and size themselves, so the row places them and
+     states no width of its own. */
   .hero-actions {
-    display: inline-grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 0.75rem;
     margin-top: 2.5rem;
-  }
-  /* Only what this page's buttons do differently: they stand alone in a hero
-     rather than sitting in a card footer, so they are roomier. */
-  .velvet-button {
-    min-width: 7rem;
-    padding-inline: 1.1rem;
-  }
-  .velvet-button i {
-    font-size: 1.25em;
-  }
-  .velvet-button :global(svg) {
-    width: 1.25em;
-    height: 1.25em;
   }
   /* The one section that is not a column. It spans the window as a band with a
      rule above and below, whilst the picture inside stays the size it was. */
@@ -669,11 +677,14 @@
     color: color-mix(in srgb, var(--velvet-text-muted) 55%, transparent);
     position: relative;
     display: block;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 5 / 4;
   }
   /* Fills the shape rather than sitting inside it, cut at the inner edge of the
-     wide line so the frame closes around it. The pictures are photographed at
-     16 by 10, which is the ratio above, so filling crops nothing. */
+     wide line so the frame closes around it. A status page is taller than it is
+     wide, so a tile near square shows the headline, the range row and several
+     services rather than a headline and one row of days. The pictures are
+     photographed at five by four, which is the ratio above, so filling crops
+     nothing. */
   .themes img {
     position: absolute;
     inset: 0;
@@ -689,13 +700,37 @@
     font-size: var(--setup-text-small);
     font-weight: 650;
   }
+
+  /* The period a design belongs to, which is half of what its name means. It
+     stays inline rather than becoming a flex item, because the space between
+     the two is a real space: whitespace between flex items is dropped, and the
+     caption would then be read aloud as one word. Set apart by weight rather
+     than by a colour of its own, since the caption is already the quietest
+     text on the page. */
+  .themes .era {
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
   /* The commands and the button sit side by side whilst there is room for
      both, and the block of commands takes whatever the button leaves. */
+  /*
+    The block of commands and the key beside it, the same height.
+
+    One value states it and both take it: the key is square, so it is also its
+    width, and the block carries it as a floor. Neither can be measured from the
+    other, because the key refuses to be stretched and the block's height is its
+    three lines of code.
+  */
   .manual {
+    --manual-key-size: 7rem;
+
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
+  }
+  .manual :global(.code-block) {
+    min-height: var(--manual-key-size);
   }
   /* The block takes whatever the button leaves, and scrolls inside itself
      rather than reporting its longest line upwards as a minimum width. */
@@ -715,10 +750,6 @@
     font-size: var(--setup-text-copy);
     line-height: 1.5;
   }
-  .closing .velvet-button {
-    margin-top: 0.5rem;
-  }
-
   @media (max-width: 720px) {
     .capabilities,
     .pipeline,
@@ -729,7 +760,8 @@
     }
     /* Stacked once a row of two would be cramped, still matching each other. */
     .hero-actions {
-      grid-auto-flow: row;
+      flex-direction: column;
+      align-items: center;
     }
   }
 </style>

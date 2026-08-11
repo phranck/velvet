@@ -28,7 +28,6 @@
 @import "./assets/fonts.css";
 @import "./assets/icons.css";
 
-
 .ncc-1701-d-page {
   /* ── Identity ─────────────────────────────────────────────────────────── */
   --theme-scheme: dark;
@@ -345,18 +344,6 @@
     The bar's underline is two capsules with a gap rather than one rule. Every
     horizontal element on these panels is interrupted at least once.
   */
-  --nav-rule-height: 0px;
-  --nav-rule-fill: linear-gradient(
-    to right,
-    #cc99cc 0 62%,
-    transparent 62% 64.5%,
-    #ff9c00 64.5% 100%
-  );
-  --nav-rule-radius: 999px;
-  --nav-rule-inset: max(
-    var(--page-inset),
-    calc((100% - var(--page-width)) / 2)
-  );
 
   /* ── Measure ──────────────────────────────────────────────────────────── */
   --page-width: 1180px;
@@ -375,9 +362,6 @@
   --space-row: 14px;
   --space-block: 26px;
   --space-section: 30px;
-  --nav-gap: 20px;
-  --nav-padding-block: 14px;
-  --nav-padding-inline: 0px;
   /* Nothing below, because the hero's column runs on into the notices without
      a break. The two are one limb. */
   --hero-padding-block: 30px 12px;
@@ -476,8 +460,6 @@
   /* Nothing in the bar. A published installation puts its own name and mark
      here, centred; the mockup has neither, so it shows neither rather than
      standing in for them. */
-  --nav-justify: center;
-  --nav-fill: transparent;
   --hero-align: end;
   --hero-text-align: right;
   --hero-fill: transparent;
@@ -766,18 +748,7 @@
   --hero-rail-display: none;
   --hero-bar-radius: 999px 0 0 999px;
   --hero-throat: 0px;
-}
-
-/*
-  A window too narrow for both segments.
-
-  The version stands on the vertical the readings stand on, which on a phone
-  leaves too little arm for the serial beside it: measured, the two segments
-  meet at 470px and the page itself begins to overflow at 435px. Below this the
-  version falls back to the arm's own corner, so both figures stay in the limb
-  and neither has to leave the page.
-*/
-@media (max-width: 480px) {
+}@media (max-width: 480px) {
   .ncc-1701-d-page {
     --service-foot-version-inset: calc(
       var(--lcars-arm-depth) + var(--row-inset)
@@ -965,26 +936,6 @@
   margin-inline: auto;
 }
 
-.status-band--nav {
-  background: var(--nav-fill);
-}
-
-/*
-  The line under the bar is an element rather than a `border-bottom`, because a
-  border cannot be rounded independently of the box it belongs to and cannot be
-  inset from the window edge. One design here wants a thick capsule held to the
-  page measure, and five want a hairline across the window; both are the same
-  four tokens with different values.
-*/
-.status-band--nav::after {
-  content: "";
-  display: block;
-  height: var(--nav-rule-height);
-  margin-inline: var(--nav-rule-inset);
-  border-radius: var(--nav-rule-radius);
-  background: var(--nav-rule-fill);
-}
-
 .status-band--hero {
   background: var(--hero-fill);
 }
@@ -1005,18 +956,6 @@
   inset-block-end: 0;
   z-index: 5;
   background: var(--footer-fill);
-}
-
-/* ── Navigation ───────────────────────────────────────────────────────────── */
-/* The bar carries a gap of its own rather than the general row gap. A bar that
-   pushes its parts to opposite edges never shows the value at all, whilst a
-   centred one shows nothing else, so the two want different numbers. */
-.status-nav {
-  display: flex;
-  align-items: center;
-  justify-content: var(--nav-justify);
-  gap: var(--nav-gap);
-  padding: var(--nav-padding-block) var(--nav-padding-inline);
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
@@ -2729,10 +2668,6 @@
   .chart-legend {
     justify-content: flex-start;
   }
-
-  .status-nav {
-    flex-wrap: wrap;
-  }
 }@media (prefers-reduced-motion: reduce) {
   .toggle-all-glyph,
   .service-chevron,
@@ -2760,20 +2695,7 @@
   .chart-line-key {
     border-top-color: CanvasText;
   }
-}
-
-/*
-  A window narrower than a phone in portrait.
-
-  The column, the table of events and the row of ranges each hold a floor that
-  is fine at any width this design was drawn at and too wide at 320. Measured
-  before this, at a 320px viewport: the page came to 338px, the last range
-  button ended at 337.9 and a notice at 324.2.
-
-  Three floors come down together, because dropping one of them alone only
-  moves which element is the widest.
-*/
-@media (max-width: 420px) {
+}@media (max-width: 420px) {
   .ncc-1701-d-page {
     --notices-rail-width: clamp(44px, 18vw, 175px);
     --lcars-rail-width: clamp(64px, 26vw, 175px);

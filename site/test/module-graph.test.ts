@@ -242,6 +242,8 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // where the markup is not.
   "squircle-frame": ["configurator", "references", "status page", "website"],
   "squircle-card": ["website"],
+  // The key the start page asks with, in the same shape.
+  "squircle-button": ["website"],
   "crt-squircle": ["website"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],

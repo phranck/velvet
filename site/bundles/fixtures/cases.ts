@@ -51,6 +51,45 @@ function spec(partial: Omit<FixtureSpec, "generatedAt">): FixtureSpec {
 }
 
 /**
+ * The ordinary installation, well.
+ *
+ * The one case that is neither a trap nor a page reporting trouble: five
+ * services, three hundred days behind them, nothing wrong anywhere. Two things
+ * need it. No design is otherwise proved against its own healthy state with a
+ * full history, and the pictures the start page shows are taken here, because
+ * four status pages reporting an outage is the wrong thing to greet anybody
+ * with.
+ *
+ * The five services and their response times are the ordinary installation's,
+ * so the two read as the same fictional company on a better day.
+ */
+export const allWell: BundleData = buildFixture(
+  spec({
+    monitoringDays: 300,
+    services: [
+      { id: "website", name: "Website", status: "operational", protocols: ["ipv4", "ipv6"], responseTimeMs: 96 },
+      { id: "api", name: "API", status: "operational", protocols: ["ipv4", "ipv6"], responseTimeMs: 128 },
+      { id: "cdn", name: "CDN", status: "operational", protocols: ["ipv4"], responseTimeMs: 412 },
+      { id: "mail", name: "Mail", status: "operational", protocols: ["ipv4", "ipv6"], responseTimeMs: 240 },
+      { id: "database", name: "Database", status: "operational", protocols: ["ipv6"], responseTimeMs: 18 },
+    ],
+    site: {
+      name: "Velvet Underground Inc.",
+      // None, which is what a published installation shows unless its operator
+      // wrote links into `velvet.yml` by hand.
+      navigation: [],
+      icons: {
+        website: "globe",
+        api: "brackets",
+        cdn: "cloud",
+        mail: "envelope",
+        database: "database",
+      },
+    },
+  }),
+);
+
+/**
  * The first day of an installation, with no history at all.
  *
  * The case that catches a design reporting a fresh installation as flawless:

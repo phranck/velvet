@@ -5,11 +5,13 @@
  * StatusPage component deployed sites use, so a picture here cannot drift from
  * what an installation actually looks like.
  *
- * Two sets, from one run, both showing a well page. Nothing a visitor or
- * somebody installing sees of Velvet should be four status pages reporting
- * trouble. They differ in shape: the picker's options are square, so its
- * pictures are cut to four by three, whilst the gallery's sit in a row and keep
- * the wider frame.
+ * The picker's own pictures, showing a well page: nothing somebody installing
+ * Velvet sees should be four status pages reporting trouble. Each option in the
+ * picker is nearly square, so the pictures are cut to four by three.
+ *
+ * The start page has its own set, photographed from the designs themselves by
+ * `bun run --cwd site designs:screenshots`, because a page is published in a
+ * design rather than in one of these.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -26,7 +28,7 @@ import { PREVIEW_STATUS } from "../src/configurator/preview.ts";
 const PREVIEW_GENERATED_AT = PREVIEW_STATUS.generatedAt;
 const SITE = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DISTRIBUTION = resolve(SITE, "../configurator");
-/** Where each set is written, and what the page has to be showing for it. */
+/** Where the set is written, and what the page has to be showing for it. */
 const SETS = [
   {
     // The picker, in the browser setup and in the Configurator. Nearly square,
@@ -35,18 +37,6 @@ const SETS = [
     directory: resolve(SITE, "src/components/theme-card/assets"),
     health: "operational",
     viewport: { width: 640, height: 480 },
-  },
-  {
-    // The gallery on the start page, where each picture is cut to a squircle.
-    // A squircle pulls in towards its corners, so a page photographed edge to
-    // edge loses the ends of its first and last rows to the curve. The inset
-    // holds the page's own content in far enough that the curve meets its
-    // background instead, and the background is the theme's, so the margin is
-    // part of the picture rather than a border around it.
-    directory: resolve(SITE, "src/website/assets/themes"),
-    health: "operational",
-    viewport: { width: 800, height: 500 },
-    contentInset: { inline: 60, block: 38 },
   },
 ];
 const MIME = {
