@@ -21,6 +21,11 @@
     for (const button of document.querySelectorAll("[data-copy-code]")) {
       const code = button.parentElement.querySelector("pre > code");
       if (!code) continue;
+      // Wired once. The published page runs this script once, but a page being
+      // developed runs it again after every hot update, and a control wired
+      // twice copies twice.
+      if (button.dataset.velvetWired) continue;
+      button.dataset.velvetWired = "";
       button.disabled = false;
       button.addEventListener("click", async function () {
         // The numbers live in a column of their own, outside this element, so
@@ -55,6 +60,127 @@
       });
     }
   }
+
+  /**
+   * The terminal's copy key.
+   *
+   * Wired the same way and for the same reason as the buttons above: the key
+   * ships disabled and is enabled here, so a reader whose browser cannot copy
+   * is shown no control rather than a dead one.
+   *
+   * What it copies is read out of the screen, so the commands a reader sees and
+   * the commands they receive cannot differ. Each is marked on its own element,
+   * which is what makes a long command that the glass wrapped still come back
+   * as one line.
+   *
+   * The confirmation is printed on the screen rather than under the finger,
+   * because that is where a reader who has just pressed the key is looking. It
+   * is already on the screen and only hidden, so revealing it moves no line.
+   */
+  if (navigator.clipboard) {
+    for (const key of document.querySelectorAll("[data-copy-terminal]")) {
+      const terminal = key.closest("[data-brass-terminal]");
+      if (!terminal) continue;
+      const commands = [
+        ...terminal.querySelectorAll("[data-terminal-command]"),
+      ].map(function (line) {
+        return line.textContent.trim();
+      });
+      if (commands.length === 0) continue;
+      if (key.dataset.velvetWired) continue;
+      key.dataset.velvetWired = "";
+      const marker = terminal.querySelector("[data-terminal-copied]");
+      let clearMarker = 0;
+
+      key.disabled = false;
+      key.addEventListener("pointerdown", playKeyClick);
+      key.addEventListener("click", async function () {
+        try {
+          await navigator.clipboard.writeText(commands.join("\n"));
+        } catch {
+          // A refused clipboard leaves the screen as it was. Nothing is claimed
+          // to have been copied that was not.
+          return;
+        }
+        if (!marker) return;
+        marker.style.visibility = "visible";
+        clearTimeout(clearMarker);
+        clearMarker = setTimeout(function () {
+          marker.style.visibility = "hidden";
+        }, 1800);
+      });
+    }
+  }
+
+  /**
+   * The sound the key makes, built rather than fetched.
+   *
+   * A burst of filtered noise for the click of the contact, over a square wave
+   * falling from 190Hz to 58Hz for the thock of the key bottoming out. Together
+   * they are what a keyboard of that era sounded like, in about a twentieth of
+   * a second.
+   *
+   * It is an extra. A browser with no audio, or one that refuses to start a
+   * context, still copies, and nothing is reported.
+   */
+  let audio = null;
+  function playKeyClick() {
+    const Context = window.AudioContext || window.webkitAudioContext;
+    if (!Context) return;
+    try {
+      audio = audio || new Context();
+      if (audio.state === "suspended") audio.resume();
+      const now = audio.currentTime;
+
+      // The contact: noise shaped by a steep decay, so it is a click rather
+      // than a hiss, and banded around 2.4kHz where a key's own click sits.
+      const length = Math.floor(audio.sampleRate * 0.035);
+      const buffer = audio.createBuffer(1, length, audio.sampleRate);
+      const samples = buffer.getChannelData(0);
+      for (let index = 0; index < length; index += 1) {
+        samples[index] =
+          (Math.random() * 2 - 1) * Math.pow(1 - index / length, 7);
+      }
+      const noise = audio.createBufferSource();
+      noise.buffer = buffer;
+      const band = audio.createBiquadFilter();
+      band.type = "bandpass";
+      band.frequency.value = 2400;
+      band.Q.value = 1.1;
+      const noiseLevel = audio.createGain();
+      noiseLevel.gain.setValueAtTime(0.42, now);
+      noiseLevel.gain.exponentialRampToValueAtTime(0.0008, now + 0.05);
+      noise.connect(band);
+      band.connect(noiseLevel);
+      noiseLevel.connect(audio.destination);
+      noise.start(now);
+      noise.stop(now + 0.06);
+
+      // The key bottoming out, an octave and a half below where it started.
+      const thock = audio.createOscillator();
+      thock.type = "square";
+      thock.frequency.setValueAtTime(190, now);
+      thock.frequency.exponentialRampToValueAtTime(58, now + 0.03);
+      const thockLevel = audio.createGain();
+      thockLevel.gain.setValueAtTime(0.16, now);
+      thockLevel.gain.exponentialRampToValueAtTime(0.0008, now + 0.045);
+      thock.connect(thockLevel);
+      thockLevel.connect(audio.destination);
+      thock.start(now);
+      thock.stop(now + 0.06);
+    } catch {
+      // Sound is a courtesy. Its absence changes nothing about the copy.
+    }
+  }
+
+  /**
+   * Everything below listens on the document rather than on an element, so it
+   * is installed once and survives whatever happens to the page afterwards. The
+   * flag matters whilst developing, where this script runs again after every
+   * hot update; on a published page it is simply never true twice.
+   */
+  if (window.velvetPageScriptInstalled) return;
+  window.velvetPageScriptInstalled = true;
 
   /**
    * One scroll, whichever browser is reading.
