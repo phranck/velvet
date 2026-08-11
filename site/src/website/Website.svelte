@@ -408,6 +408,7 @@
     --setup-control-height: 2.75rem;
     --setup-text-body: var(--velvet-text-body);
     --setup-text-copy: var(--velvet-text-copy);
+    --setup-text-lead: var(--velvet-text-lead);
     --setup-text-intro: var(--velvet-text-intro);
     --setup-text-small: var(--velvet-text-small);
     --setup-font: var(--velvet-font);
@@ -451,7 +452,7 @@
   .lead {
     margin: 3.5rem 0 0;
     color: color-mix(in srgb, var(--setup-muted) 78%, var(--setup-text));
-    font-size: var(--setup-text-copy);
+    font-size: var(--setup-text-lead);
     line-height: 1.4;
   }
   /* Both buttons the same width, which a flex row cannot do without giving one
