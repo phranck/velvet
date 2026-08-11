@@ -1,0 +1,22 @@
+{
+  "id": "ncc-1701-d",
+  "name": "NCC-1701-D",
+  "description": "A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards.",
+  "era": "2364",
+  "version": "1.0.0",
+  "dataVersion": 1,
+  "entries": {
+    "template": "template.ts",
+    "styles": "bundle.css",
+    "script": "script.ts"
+  },
+  "layouts": ["grouped"],
+  "readings": "overlay",
+  "preview": "assets/preview.svg",
+  "plugins": [
+    { "name": "status", "version": 1 },
+    { "name": "uptime-strip", "version": 1 },
+    { "name": "response-chart", "version": 1 },
+    { "name": "disclosure", "version": 1 }
+  ]
+}
