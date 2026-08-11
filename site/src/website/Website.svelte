@@ -21,6 +21,7 @@
   // with Velvet, so this page cannot offer one that does not exist or miss one
   // that does.
   import { GALLERY_DESIGNS } from "./design-gallery.js";
+  import * as SquircleButton from "../components/squircle-button";
   import * as SquircleFrame from "../components/squircle-frame";
   import {
     SQUIRCLE_CONTENT_INSET,
@@ -175,19 +176,26 @@
         without a server or a database. Just five steps away.
       </p>
       <div class="hero-actions">
-        <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL} data-onboarding-link>
-          <Icon name="flash" />
-          <span>Create your status page</span>
-        </a>
-        <a
-          class="velvet-button velvet-button--secondary"
+        <SquircleButton.Root
+          href={ONBOARDING_URL}
+          label="Create your status page"
+          variant="primary"
+          data-onboarding-link
+        >
+          <SquircleButton.Icon><Icon name="flash" /></SquircleButton.Icon>
+          <SquircleButton.Label>Create</SquircleButton.Label>
+        </SquircleButton.Root>
+        <SquircleButton.Root
           href={REPOSITORY_URL}
+          label="Github, read the source"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <i class="ph-duotone ph-github-logo" aria-hidden="true"></i>
-          <span>Read the source</span>
-        </a>
+          <SquircleButton.Icon>
+            <i class="ph-duotone ph-github-logo"></i>
+          </SquircleButton.Icon>
+          <SquircleButton.Label>Github</SquircleButton.Label>
+        </SquircleButton.Root>
       </div>
     </section>
 
@@ -348,14 +356,18 @@
               copyable
               label="Copy these commands"
             />
-            <a
-              class="velvet-button velvet-button--secondary"
+            <SquircleButton.Root
               href={MAN_PAGES_ARCHIVE}
+              label="Download the manual"
+              size="var(--manual-key-size)"
+              ratio={6 / 5}
               download
             >
-              <Icon name="document-download" />
-              <span>Download the manual</span>
-            </a>
+              <SquircleButton.Icon>
+                <Icon name="document-download" />
+              </SquircleButton.Icon>
+              <SquircleButton.Label>Download</SquircleButton.Label>
+            </SquircleButton.Root>
           </div>
         </div>
       </StepCard.Root>
@@ -369,10 +381,14 @@
         the repository, enables Pages, starts monitoring, and waits for the
         first deployment.
       </p>
-      <a class="velvet-button velvet-button--primary" href={ONBOARDING_URL}>
-        <Icon name="flash" />
-        <span>Create your status page</span>
-      </a>
+      <SquircleButton.Root
+        href={ONBOARDING_URL}
+        label="Create your status page"
+        variant="primary"
+      >
+        <SquircleButton.Icon><Icon name="flash" /></SquircleButton.Icon>
+        <SquircleButton.Label>Create</SquircleButton.Label>
+      </SquircleButton.Root>
     </section>
   </main>
 
@@ -435,31 +451,20 @@
   .lead {
     margin: 3.5rem 0 0;
     color: color-mix(in srgb, var(--setup-muted) 78%, var(--setup-text));
-    font-size: var(--setup-text-intro);
-    line-height: 1.3;
+    font-size: var(--setup-text-copy);
+    line-height: 1.4;
   }
   /* Both buttons the same width, which a flex row cannot do without giving one
      of them a length. The columns take their size from the wider label, so the
      pair stays balanced whatever the labels say. */
+  /* The buttons are square and size themselves, so the row places them and
+     states no width of its own. */
   .hero-actions {
-    display: inline-grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 0.75rem;
     margin-top: 2.5rem;
-  }
-  /* Only what this page's buttons do differently: they stand alone in a hero
-     rather than sitting in a card footer, so they are roomier. */
-  .velvet-button {
-    min-width: 7rem;
-    padding-inline: 1.1rem;
-  }
-  .velvet-button i {
-    font-size: 1.25em;
-  }
-  .velvet-button :global(svg) {
-    width: 1.25em;
-    height: 1.25em;
   }
   /* The one section that is not a column. It spans the window as a band with a
      rule above and below, whilst the picture inside stays the size it was. */
@@ -708,11 +713,24 @@
   }
   /* The commands and the button sit side by side whilst there is room for
      both, and the block of commands takes whatever the button leaves. */
+  /*
+    The block of commands and the key beside it, the same height.
+
+    One value states it and both take it: the key is square, so it is also its
+    width, and the block carries it as a floor. Neither can be measured from the
+    other, because the key refuses to be stretched and the block's height is its
+    three lines of code.
+  */
   .manual {
+    --manual-key-size: 7rem;
+
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
+  }
+  .manual :global(.code-block) {
+    min-height: var(--manual-key-size);
   }
   /* The block takes whatever the button leaves, and scrolls inside itself
      rather than reporting its longest line upwards as a minimum width. */
@@ -732,10 +750,6 @@
     font-size: var(--setup-text-copy);
     line-height: 1.5;
   }
-  .closing .velvet-button {
-    margin-top: 0.5rem;
-  }
-
   @media (max-width: 720px) {
     .capabilities,
     .pipeline,
@@ -746,7 +760,8 @@
     }
     /* Stacked once a row of two would be cramped, still matching each other. */
     .hero-actions {
-      grid-auto-flow: row;
+      flex-direction: column;
+      align-items: center;
     }
   }
 </style>
