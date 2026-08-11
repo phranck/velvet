@@ -24,7 +24,7 @@
  * The faces are fetched here rather than self-hosted; see `cassette.css`.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Antonio:wght@400;600;700&family=Jura:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Antonio:wght@400;600;700&family=Jura:wght@400;500;600;700&family=Plaster&display=swap");
 
 :root {
   /* ── Identity ─────────────────────────────────────────────────────────── */
@@ -50,6 +50,9 @@
   --popover-edge: #ff9c00;
 
   /* ── Brand and accent ─────────────────────────────────────────────────── */
+  /* The Velvet wordmark, which is the same lettering on every page. Its
+     colour is this theme's; its face is not. */
+  --brand-font: "Plaster", sans-serif;
   --brand-primary: #ff9c00;
   --accent: #ff9c00;
   --accent-quiet: rgb(255 156 0 / 0.18);
@@ -127,6 +130,23 @@
   --font-body: "Jura", ui-sans-serif, system-ui, sans-serif;
   --font-meta: "Antonio";
   --display-transform: uppercase;
+  --brand-weight: var(--display-weight);
+  --brand-tracking: var(--display-tracking);
+  --nav-link-size: var(--text-size-caption);
+  --nav-link-tracking: var(--label-tracking);
+  --headline-font: var(--font-display);
+  --headline-weight: var(--display-weight);
+  --headline-tracking: var(--display-tracking);
+  --hero-updated-size: var(--text-size-caption);
+  --notices-heading-weight: var(--display-weight);
+  --notices-heading-tracking: var(--label-tracking);
+  --group-name-size: var(--text-size-caption);
+  --group-name-weight: var(--display-weight);
+  --group-name-tracking: var(--label-tracking);
+  --uptime-size: var(--text-size-caption);
+  /* Both figures ride in the closing arm, so the footer states neither. */
+  --stamp-display: none;
+  --stamp-tracking: var(--label-tracking);
   --display-tracking: 0.06em;
   --display-weight: 700;
   --label-transform: uppercase;
@@ -265,6 +285,8 @@
   /* Never narrower than the outer radius, which the column has to hold. */
   --notices-rail-width: clamp(68px, 22vw, 175px);
   --notices-rail-gap: 14px;
+  /* Stops one segment gap short of the arm below it. */
+  --notices-rail-inset: 0 calc(var(--lcars-arm-depth) + var(--service-gap));
   --notices-rail-radius: 0 0 0 var(--lcars-outer-radius);
   /* The whole limb is the colour of what the page is announcing, so the state
      is read from the shape rather than from a glyph beside the headline. */
@@ -349,8 +371,8 @@
     The bar's underline is two capsules with a gap rather than one rule. Every
     horizontal element on these panels is interrupted at least once.
   */
-  --nav-rule-height: 18px;
-  --nav-rule-colour: linear-gradient(
+  --nav-rule-height: 0px;
+  --nav-rule-fill: linear-gradient(
     to right,
     #cc99cc 0 62%,
     transparent 62% 64.5%,
@@ -363,7 +385,7 @@
   );
 
   /* ── Measure ──────────────────────────────────────────────────────────── */
-  --page-width: 1280px;
+  --page-width: 1180px;
   --page-inset: clamp(12px, 4vw, 40px);
   /* Half the radius of the strip's own capsule ends, which is what every line
      in the column is inset by, leading and trailing alike. The segments are
@@ -395,8 +417,7 @@
   --badge-padding-inline: 0px;
   --tooltip-padding-block: 10px;
   --tooltip-padding-inline: 28px;
-  --stamp-inset-block: 8px;
-  --stamp-inset-inline: 12px;
+  --stamp-inset-inline: 0px;
   --dot-size: 8px;
 
   /* ── Availability strip ───────────────────────────────────────────────── */
@@ -422,6 +443,22 @@
   --seg-gloss: none;
 
   /* ── Chart ────────────────────────────────────────────────────────────── */
+  --chart-plot-inset: 0px;
+  --chart-plot-edge-width: 0px;
+  --chart-plot-edge-colour: transparent;
+  --chart-plot-fill: transparent;
+  --chart-axis-value-display: block;
+  --chart-crosshair-colour: var(--text-3);
+  --chart-hover-point-display: block;
+  --chart-tick-step: 0px;
+  --chart-tick-major-every: 4;
+  --chart-tick-minor: 0px;
+  --chart-tick-major: 0px;
+  --chart-tick-colour: transparent;
+  --chart-tick-major-colour: transparent;
+  --chart-needle-width: 0px;
+  --chart-needle-fill: transparent;
+  --chart-needle-edge: transparent;
   --chart-head-margin: 8px;
   --chart-head-space: 8px;
   --chart-height: 168px;
@@ -434,6 +471,7 @@
      them at 40. */
   --chart-grid-colour: var(--accent);
   --chart-grid-alpha: 40%;
+  --chart-axis-text-size: var(--text-size-chart-caption);
   --chart-axis-colour: var(--accent);
   --chart-axis-text-colour: var(--accent);
   --chart-axis-text-alpha: 100%;
@@ -482,7 +520,12 @@
   /* Ranged right throughout. On these panels the rail holds the left edge and
      everything else is pushed away from it, which is the opposite of every
      other theme here and the reason `--hero-align` takes `end` at all. */
-  --nav-justify: flex-end;
+  /* Nothing in the bar. A published installation puts its own name and mark
+     here, centred; the mockup has neither, so it shows neither rather than
+     standing in for them. */
+  --nav-brand-display: none;
+  --nav-links-display: none;
+  --nav-justify: center;
   --nav-fill: transparent;
   --nav-brand-colour: var(--accent);
   --nav-link-colour: #cc99cc;
@@ -515,9 +558,12 @@
   --hero-rail-display: block;
   --hero-rail-fill: var(--status-colour);
   --hero-rail-radius: var(--lcars-outer-radius) 0 0 0;
-  /* Across the bottom padding, which is the air under the words rather
-     than a break in the column. */
-  --hero-rail-margin: 0 0 -12px 0;
+  /* From the top of the bar to just past the hero's own bottom padding, which
+     is the air under the words rather than a break in the column. Its depth
+     comes out at the outer radius, which is what that corner needs. */
+  --hero-rail-inset: 30px -12px;
+  --hero-rail-min-height: var(--lcars-outer-radius);
+  --hero-rail-width: var(--notices-rail-width);
   --hero-bar-display: block;
   --hero-bar-fill: var(--status-colour);
   --hero-bar-radius: 0px;
@@ -547,6 +593,29 @@
   /* No mark. The state is carried by the colour of the whole limb, and a glyph
      in front of the words would only say it a second time. */
   --hero-mark-size: var(--text-size-headline);
+  --hero-mark-shape-display: none;
+  --hero-mark-shape-size: 0px;
+  --hero-mark-shape-radius: 0px;
+  --hero-mark-shape-fill: transparent;
+  --disclosure-mark-self: center;
+  --disclosure-mark-width: auto;
+  --disclosure-mark-height: auto;
+  --disclosure-mark-radius: 0px;
+  --disclosure-mark-fill: transparent;
+  --disclosure-mark-fill-hover: transparent;
+  --disclosure-mark-fill-pressed: transparent;
+  --disclosure-mark-shadow: none;
+  --disclosure-mark-shadow-pressed: none;
+  --disclosure-led-size: 0px;
+  --disclosure-led-fill: transparent;
+  --disclosure-led-fill-on: transparent;
+  --disclosure-led-glow: none;
+  --disclosure-led-glow-on: none;
+  --disclosure-icon-display: inline-block;
+  --disclosure-mark-display: none;
+  --disclosure-mark-closed: "";
+  --disclosure-mark-open: "";
+  --hero-glyph-display: inline-block;
   --hero-mark-display: none;
   --hero-mark-glow: none;
   --hero-title-colour: var(--status-colour);
@@ -560,6 +629,8 @@
   --range-label-display: none;
   --range-label-colour: rgb(0 0 0 / 0.62);
   --range-button-colour: #000000;
+  --toggle-hover-fill: var(--accent-quiet);
+  --toggle-hover-colour: var(--range-button-hover-colour);
   --range-button-hover-colour: #000000;
   /* The chosen range is a gap cut through the arm rather than a pill on it,
      so the mark is square and as tall as the arm itself. */
@@ -597,8 +668,13 @@
   --range-bar-stem-height: calc(var(--range-bar-throat) + 26px);
   --range-bar-throat-offset: var(--lcars-rail-width);
   --range-justify: flex-end;
-  --footer-align: end;
-  --footer-text-align: right;
+  --footer-position: static;
+  --footer-fill: transparent;
+  /* The one place in this design that is centred. Everything above it is ranged
+     right against the column, and there is no column at the foot to range
+     against once the limb has closed. */
+  --footer-align: center;
+  --footer-text-align: center;
   /*
     The name is the column. Each row is a filled block wide enough to hold a
     word at display size, rounded on its leading edge, and taking its own
@@ -628,7 +704,13 @@
     outer corner belongs to the vertical run of each elbow, which is tall
     enough for it.
   */
-  --lcars-arm-depth: 44px;
+  /*
+    Every arm is this deep, and the figure comes from the upper one: its depth
+    is the headline over the time, which is what those two need at the sizes
+    they are set in, measured at 42px. On a window narrow enough for the
+    headline to shrink, the upper arm shrinks with it and the others hold.
+  */
+  --lcars-arm-depth: 42px;
   --lcars-throat: 24px;
   --lcars-outer-radius: calc(var(--lcars-arm-depth) + var(--lcars-throat));
   --service-columns: var(--lcars-rail-width) 1fr;
@@ -639,10 +721,62 @@
   --control-weight: 700;
   --control-tracking: 0.1em;
   --control-transform: uppercase;
-  --service-rail-align: flex-start;
+  --service-rail-align: flex-end;
   --service-rail-padding: 6px clamp(5px, 1.5vw, 10px);
   --service-rail-radius: 0px;
-  --service-rail-radius-last: 0 0 0 var(--lcars-outer-radius);
+  /* Square. The corner at the foot of the limb belongs to the arm below it,
+     which is a separate block with its own gap between them. */
+  --service-rail-radius-last: 0px;
+  /*
+    The arm that closes the column, set off by the same gap that divides the
+    segments above it. Its leading corner is a quarter circle across its whole
+    depth, which is the deepest a block that height can carry, and its free end
+    is a capsule.
+  */
+  --service-arm-display: block;
+  --service-arm-layout: flex;
+  /* The list's own gap plus this comes to the segment gap. */
+  /* The stem's own run, then the segment gap, less the list's gap. */
+  --service-arm-gap: calc(
+    var(--service-stem-height) + var(--service-gap) - var(--card-gap)
+  );
+  --service-arm-depth: var(--lcars-arm-depth);
+  --service-arm-radius: 0 calc(var(--lcars-arm-depth) / 2)
+    calc(var(--lcars-arm-depth) / 2) var(--lcars-arm-depth);
+  --service-arm-fill: var(--accent);
+  /* The stem rising from that arm, in the column's width, and the curve where
+     the two turn into each other. The stem outlasts the throat, so the limb
+     reads as carrying on rather than stopping at the turn. */
+  /* The version and the serial ride in the arm, as two segments cut out of it,
+     so the footer carries neither. */
+  --service-foot-segment-display: flex;
+  /* Cut out of the arm on both sides, by the same step that cuts the column
+     between its segments. */
+  --service-foot-segment-seam: var(--service-gap);
+  /* Set the way a service name is set in its own segment: to the trailing
+     edge, at the foot, on the same padding. */
+  --service-foot-segment-align: flex-end;
+  --service-foot-segment-justify: flex-end;
+  --service-foot-segment-padding: var(--service-rail-padding);
+  --service-foot-segment-colour: var(--service-rail-colour);
+  --service-foot-segment-size: var(--text-size-caption);
+  --service-foot-segment-weight: 700;
+  /* The version stands on the same vertical as the readings above it: the
+     column's width, the gap beside it, the rows' own inset, and the corner the
+     arm turns through. Half again the 64px its text and padding come to. */
+  --service-foot-version-inset: calc(
+    var(--lcars-rail-width) + var(--service-rail-gap) + var(--row-inset) +
+      var(--lcars-arm-depth)
+  );
+  --service-foot-version-width: 96px;
+  /* The serial keeps clear of the free end: the capsule's own radius, so the
+     seam falls where the arm is still square, and the rows' inset beyond it. */
+  --service-foot-serial-inset: calc(
+    var(--lcars-arm-depth) / 2 + var(--row-inset)
+  );
+  --service-stem-width: var(--lcars-rail-width);
+  --service-stem-height: calc(var(--lcars-throat) + 26px);
+  --service-throat: var(--lcars-throat);
   --service-rail-fill: #ff9c00;
   --service-rail-colour: #000000;
   --service-rail-gap: clamp(8px, 2.5vw, 14px);
@@ -652,6 +786,50 @@
   --service-divider-space: 0px;
   --service-divider-width: 0px;
   --service-icon-display: none;
+  --service-name-self: auto;
+  --protocols-self: auto;
+  --protocols-justify: flex-start;
+  --protocols-single-display: none;
+  --badge-absent-display: none;
+  --badge-fill: transparent;
+  --badge-glow: none;
+  --badge-absent-edge: var(--surface-rule);
+  --badge-absent-fill: transparent;
+  --badge-absent-colour: var(--text-3);
+  --protocols-direction: row;
+  --protocols-align: center;
+  --service-display-display: contents;
+  --service-display-line-display: contents;
+  --service-display-main-display: none;
+  --service-display-flex: none;
+  --service-display-padding: 0px;
+  --service-display-edge-width: 0px;
+  --service-display-edge-colour: transparent;
+  --service-display-radius: 0px;
+  --service-display-fill: transparent;
+  --service-display-colour: currentColor;
+  --service-display-colour-quiet: currentColor;
+  --service-display-colour-faint: currentColor;
+  --service-display-font: var(--font-meta);
+  --service-display-size: var(--text-size-caption);
+  --service-display-leading: 1;
+  --service-display-tracking: normal;
+  --service-display-transform: none;
+  --service-display-glow: none;
+  --uptime-colour: var(--text-2);
+  --uptime-font: var(--font-meta);
+  --service-name-stroke: 0px;
+  --service-name-stroke-colour: transparent;
+  --service-name-glow: none;
+  --service-name-shadow: none;
+  --service-name-trim: normal;
+  --service-name-leading: var(--text-leading-body);
+  --service-name-tracking: var(--display-tracking);
+  --service-name-transform: var(--display-transform);
+  --service-name-weight: var(--display-weight);
+  --service-name-font: var(--font-display);
+  --service-name-clip: border-box;
+  --service-display-shadow: none;
   --service-name-display: none;
   --service-name-flex: 0 0 auto;
   --service-name-padding: 0;
@@ -680,6 +858,7 @@
   --service-name-colour: transparent;
   /* One card, always. This design has no notion of a panel per service: the
      rail runs the height of the whole readout. */
+  --layout-grouped: auto;
   --layout-cards: none;
   --service-icon-colour: var(--state-maintenance);
 
@@ -707,4 +886,21 @@
   --hero-rail-display: none;
   --hero-bar-radius: 999px 0 0 999px;
   --hero-throat: 0px;
+}
+
+/*
+  A window too narrow for both segments.
+
+  The version stands on the vertical the readings stand on, which on a phone
+  leaves too little arm for the serial beside it: measured, the two segments
+  meet at 470px and the page itself begins to overflow at 435px. Below this the
+  version falls back to the arm's own corner, so both figures stay in the limb
+  and neither has to leave the page.
+*/
+@media (max-width: 480px) {
+  :root {
+    --service-foot-version-inset: calc(
+      var(--lcars-arm-depth) + var(--row-inset)
+    );
+  }
 }

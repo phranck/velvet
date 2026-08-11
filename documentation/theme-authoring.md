@@ -23,7 +23,7 @@ Then open `http://localhost:5173/mockups/`.
 | Theme | Era | What it is | What it forced into the token set |
 | --- | --- | --- | --- |
 | `velvet` | today | The page Velvet publishes now | Nothing. It is the baseline, and it proved the token set can express the product it came from |
-| `cassette` | 1979 | The cassette itself: shell charcoal, a cream write-on label under every service name, the printed label head across the top, oxide brown for unrecorded tape | Masked edges, because `clip-path` cuts a `border` off |
+| `cassette` | 1979 | A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, carrying a recessed name plate lit from behind, two protocol lamps, a two-line readout, a lamp meter for its days, and its response times on the lit scale of a receiver. A striped sun stands behind the status, and there is not one icon anywhere | Masked edges, because `clip-path` cuts a `border` off; the shape behind the status mark; the typed disclosure mark; the plot's own surface, its printed scale and its pointer; the two-line readout and the readings routed into it; both protocols as lamps; a design that supports one layout being the cards one |
 | `twenty-forty-nine` | 2049 | A filthy pane of glass with a dim blue readout: corner brackets, edge scales, dotted grids, a vignette to black | `--card-ornament-*` and `--card-texture` |
 | `ncc-1701-d` | 2364 | A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards | `--service-rail-*`, `--range-bar-*`, the hero's three blocks, the notice's own geometry and cells, the ten service colours, the chart's axes, `--row-inset`, one-layout support |
 
@@ -41,7 +41,7 @@ Three consequences, and all three are design rules rather than obstacles.
 
 **Anything drawn rather than laid out reads its measurements back.** That is exactly two things, both covered in section 4.
 
-**A theme may declare that it supports only one layout.** `--layout-cards: none` and the control that would contradict the design is not offered.
+**A theme may declare that it supports only one layout.** `--layout-cards: none` where a design's structure runs the height of the whole readout, `--layout-grouped: none` where each service is an instrument of its own, and the control that would contradict the design is not offered. The page opens in the first layout that is left.
 
 ---
 
@@ -127,7 +127,7 @@ The overlay flips to the other side when the preferred one does not fit, clamps 
 
 ## 6. The token set
 
-269 required tokens in 37 groups, which the rendered gate resolves as 288 because nineteen more are read only in script and no text search finds them. Print the current list with every theme's value beside it:
+395 required tokens in 42 groups, which the rendered gate resolves as 417 because twenty-two more are read only in script and no text search finds them. Print the current list with every theme's value beside it:
 
 ```bash
 bun ./mockups/verify.ts --tokens
@@ -147,11 +147,19 @@ What follows is why each group exists and what varies inside it.
 
 **State.** Five states, two protocols, two edge colours and a mark for the unknown state. The two edges are easy to overlook: one marks a planned window, the other is what says a segment exists on a day nothing was recorded. A design may draw no such edge, and says so by giving it the fill's own colour; the gate then stops holding the edge to the page and holds the fill apart from a working day instead. `--state-unknown-mark` is named separately from that edge for exactly this reason, because a design that drops the edge would otherwise lose its headline with it.
 
-**Typography.** Three families. Two is not enough, because timestamps want tabular figures whilst incident summaries want prose; five would mean each theme choosing five faces that agree. One theme uses one face for all three, which is period-correct. Another keeps its display face off anything read at length, because it is unreadable in a paragraph.
+**Typography.** Three families, and a token per place where the product sets type individually rather than from a general step.
+
+That last part is not decoration. The `velvet` theme reproduces the page Velvet publishes today, and that page states its own size, weight and tracking at nine places: the wordmark at 600, the headline at 700 and -0.8px, the navigation link at 15px, the time under the headline at 15px, the incidents heading at 600 and 0.4px, the group name at 14px, 600 and 0.6px, the range buttons at 13.5px in the page's own face at 400, the uptime figure at 14px, and the stamps at 0.04em. A theme with one display weight cannot say that, and reading them off `StatusPage.svelte`, `StatusHero.svelte`, `Incidents.svelte` and `ServiceSummary.svelte` is what closed the gap between the mockup and the page it copies.
+
+`--headline-font` sits with them: the one line naming the state may be set in a face the design uses nowhere else. `cassette` puts Monoton there, which draws every stroke as a pair of hairlines and is unreadable at paragraph size, and keeps IBM Plex Mono for everything else.
+
+The other three themes point those tokens at their general steps, so nothing changed for them.
+
+Three families. Two is not enough, because timestamps want tabular figures whilst incident summaries want prose; five would mean each theme choosing five faces that agree. One theme uses one face for all three, which is period-correct. Another keeps its display face off anything read at length, because it is unreadable in a paragraph.
 
 A theme that names a face ships it. The mockups fetch theirs from a font host, which is the one respect in which they differ from a theme that would ship: a published status page must not wait on a third party to report on its own availability.
 
-**Shape.** `--card-radius` and `--card-clip` are separate because a chamfered corner is a polygon and a capsule is a radius. `--card-radius-base` exists beside `--card-radius` because the derived geometry needs a single number and one theme's card is `22px 22px 22px 6px`.
+**Shape.** `--card-radius` and `--card-clip` are separate because a chamfered corner is a polygon and a capsule is a radius. No theme cuts a chamfer now, and the token stays because the geometry it expresses has no other form. `--card-radius-base` exists beside `--card-radius` because the derived geometry needs a single number and one theme's card is `22px 22px 22px 6px`.
 
 **Card rail, ornament and texture.** Three groups that exist because two designs need surfaces the others do not. The rail is a coloured band down the leading edge. The ornament is an element for corner brackets, edge scales and label heads, drawn as background layers because doing it with real elements would mean sixteen per card. The texture is a pattern on the card itself.
 
@@ -162,6 +170,12 @@ A theme that names a face ships it. The mockups fetch theirs from a font host, w
 The stem is the vertical run below the arm, and it owns the outer corner rather than the arm doing so. The corner is as large as the arm is deep plus the throat, which is what keeps the wall of the elbow one thickness all the way round the turn, and an arm is never tall enough to hold a radius larger than itself. The arm's fill is a background image sized to stop where the stem begins, because a background colour covers the whole box whatever the stem draws and fills the corner back in from underneath.
 
 The chosen range may be set apart by size as well as by the mark. It grows by `transform` rather than by font size, so its box does not change and nothing beside it moves: a real size laid the row out afresh on every change, and giving every label the largest one's width held the row still but spread it out and left gaps belonging to nothing. The mark is widened by the same factor, less whatever `--range-mark-trim` takes off each side, because a label's own padding is scaled up with it.
+
+**The foot of the readings** closes that limb the other way up, through `--service-arm-*`, `--service-stem-*` and `--service-throat`. Arm, stem and throat are one element, so the seam that sets the limb off from the last row falls between that row and the stem rather than across the turn, and the throat sits inside the shape. Every theme but one leaves it undisplayed.
+
+That arm can carry the version and the serial as two segments cut out of it. The cut is a border in the page's own colour on either side of a segment, which is the same step that divides the column above into its own segments, and each segment's margin takes that border back off so its edge still lands where the arithmetic puts it. The version stands on the vertical the readings stand on and states its width rather than taking it from its text, because a release number is short enough that the segment would otherwise be the width of however many digits it happens to carry. The serial keeps clear of the free end by the capsule's own radius, so its seam falls where the arm is still square. A design that shows them here sets `--stamp-display: none`, and the footer then states neither, because the page states each figure once.
+
+A window narrow enough that the two segments meet takes the version off that vertical and back to the arm's own corner. Measured in the one theme that draws the limb: the segments touch at 470px and the page begins to overflow at 435px, so the theme moves the version at 480px.
 
 **Notices.** A notice derives its geometry from its own radius, not the card's: the text stands in by half that radius, and the padding is one value on all four sides. A theme that carries a large corner sets that padding to the derived text inset, so the words clear the curve without the padding going uneven to do it.
 
@@ -179,7 +193,45 @@ The same two tokens let a design make the headline part of a shape. The hero's g
 
 `--hero-title-trim` and `--hero-updated-trim` trim those two lines to their own letters through `text-box`, because a line box does not end where the letters do and a block stretched to the same row would stand proud of them. The headline trims to its baseline and the time to its text edge or its baseline, depending on whether the design wants its descenders inside the bar or hanging below it. `--hero-title-trail` pulls the headline out by its own trailing tracking where a design ranges it right, since tracking is added after the last letter as well as between them: measured at 2.04px of tracking, both boxes ended at 1034 whilst the headline's glyphs stopped at 1032 and the time's reached 1034.7.
 
+**A design may use no pictures at all.** Three groups make that possible, and each is a token rather than a rule so the design decides. `--service-icon-display` and `--notice-glyph-display` drop the glyph beside a service and the one beside a notice. `--hero-glyph-display` drops the status glyph whilst keeping the mark it stands in, so the shape behind it survives. `--disclosure-icon-display` and `--disclosure-mark-display` are a pair: one shows the chevron, the other shows a character stated by `--disclosure-mark-closed` and `--disclosure-mark-open`, and no design shows both. One theme reads `[+]` and `[-]`, which is how a machine of its period would have printed it.
+
+**The control that opens a row may be a key rather than a mark.** `--disclosure-mark-*` gives that element a size, a face, a shape and two shadows, and `--disclosure-led-*` turns what it carries into a pilot light instead of a character. One theme makes it a rectangular aluminium key with a green lamp in the middle: pressed means the response times are showing. Its face is domed by a radial highlight over a vertical gradient and its chamfer is two inset hairlines, one light at the top and one dark at the bottom, because a border cannot be light on one edge and dark on another.
+
+Where a design puts the whole affordance in one key, the row's own hover goes quiet and the key answers instead, through `--summary-hover-fill` and `--disclosure-mark-fill-hover`. The control that opens every row at once answers to nothing in that design, which is what `--toggle-hover-fill` is for: it is not one row's key.
+
+**A design may read on a panel of its own rather than in overlays.** `--service-display-*` turns the space between whatever labels a row and the control that opens it into a two-line readout, with the uptime figure at the end of the first line. Three strengths separate what it is reading from what that reading is of and from the standing figure, and `--service-display-shadow` presses the whole panel into the face. Measured on the glass of the one theme that draws it: 15.07:1, 10.20:1, 5.50:1, with the unlit dots at 1.23:1.
+
+Those unlit dots sit on the lattice the face itself draws on. Measured on a canvas at 100px, Doto's dots stand a tenth of the size apart, are eight hundredths across, and the first sits forty-five thousandths in from where a character begins. A grid of the same step, offset by half a step less that first centre, therefore lands on every dot the face would light. Two further conditions keep a whole line on it: the leading must be a whole number of steps, and so must the advance, which means a tracking of a tenth of the size rather than the six hundredths that first looked right and put every character after the first off the grid. Where a design has none, both the element and its lines are `display: contents` and the row is laid out exactly as it was before the panel existed.
+
+The strip and the chart take an optional reporter, one string per line. Given one, they hand over what they would have shown and draw no overlay; given none, they behave as before. `page.ts` reads `--service-display-display` once at mount to decide which it is, because a mockup page carries one theme for its whole life.
+
+**Both protocols may stand on every row.** The markup carries a badge for each, marked present or absent. A design that treats them as labels hides whatever is absent and hides the pair entirely where a service has one IPv4 check and nothing to compare it with, which is what the product does. One design instead draws them as two lamps, backlit in their own colour, and leaves the one nothing was measured on dark: a lamp that is out is a reading.
+
+**The plot may have a surface of its own.** `--chart-plot-fill`, `--chart-plot-edge-*` and `--chart-plot-inset` give the response chart a face, a frame and room around the drawing. One theme paints a receiver's scale there: a lamp glowing behind the glass, the trace running from edge to edge with no value axis, and a printed scale of ticks below it with the two range labels under that.
+
+That scale is drawn in the chart rather than as a background, through `--chart-tick-*`, because it belongs between the readings and those labels and both of those are in the drawing's own units: a scale positioned in pixels drifts away from them as the chart scales. `--chart-needle-*` replaces the crosshair's dots with the strip of plexiglass a receiver reads through, sized in the stylesheet and centred on the reading by a transform against its own box, since only the theme knows the width to halve. The overlay measures the drawing rather than its container, because room around the drawing would otherwise be carried into the scale and put the crosshair beside the pointer.
+
+**A name may be cut rather than printed.** `--service-name-font`, `--service-name-weight`, `--service-name-tracking` and `--service-name-transform` give it a face, a weight, a tracking and a casing of its own, and `--service-name-clip: text` clips the fill to the letters so a gradient becomes the metal they are cut from. One theme sets its services in Tangerine's bold, filled with polished brass. A script needs its own casing, because upper case in such a face is a row of ornaments rather than a word.
+
+That clip cost a rule. Ten rules used to paint the name by position, each setting the `background` shorthand at a higher specificity than the rule that sets the clip, and a shorthand resets the clip to its initial value: the clip was declared, computed to `border-box`, and nothing said why. The name now reads `--series-own` directly, which the same cycle already sets per row, so the fill and the clip sit in one declaration block and neither can be undone without the other.
+
+**A card may be built as an object with two ends.** `--card-padding-top` and `--card-padding-bottom` each fall back to the card's own padding, so a design that draws something across an end holds its content clear of it whilst everything else keeps one value on four sides. One theme closes its cards with a plate at either end, the printed stripes on the top one only, and screws with a hexagonal socket in each corner. The socket is a small drawing rather than a gradient, because a gradient cannot be a hexagon and two background layers cannot be made to intersect.
+
+**A plate may be set into the face rather than printed on it.** `--service-name-shadow` is a shadow inside its own edge with none outside, `--service-name-trim` cuts the line box back to the letters so centring them is exact, and `--service-name-stroke-*` with `--service-name-glow` light the lettering rather than print it. One theme mills the plate into the plastic, lays a liquid-crystal grid over it and lights the word from behind with a red lamp. Measured on the rendered pixels at four times: the ink stands 56 device pixels from the top of the plate and 61 from the bottom, so the letters sit within a pixel of centre and the rest is the font's own overshoot.
+
+**The status mark may stand on a shape.** `--hero-mark-shape-*` gives it a fill, a size and a radius, and the radius clips the fill, so a gradient of hard-stopped bands inside a round element is a striped disc and needs no mask. The shape decides how much room the mark takes, which is what keeps the words below it clear of a shape larger than the glyph: the first build centred a 172px disc on a 44px glyph and it crossed the headline.
+
+**The bar at the top carries the installation's name and nothing else.** `StatusPage.svelte` drops the single entry a default configuration holds, because its address is the page itself, so a published installation shows no links unless its operator has written some into `velvet.yml` by hand. The mockups therefore show none either, whilst `--nav-link-*` stays in the contract for the installation that has them. `status.musiccloud.io` is the reference: a bar, a logo in the middle of it, nothing beside it.
+
+`--nav-rule-*` is the line under that bar, and it is an element rather than a `border-bottom` because a border cannot be rounded on its own or held to the page measure. `--nav-rule-fill` is what it is painted with rather than a colour, since two themes put a gradient there: one draws a capsule in the state's own colour, and one prints a five-block band across the window in the way a deck of its period prints one across its faceplate.
+
 **State colour.** `--status-colour` is what the page is announcing, resolved in `base.css` from a `data-status` attribute, and any part of a design may read it. It is set on `:root` rather than further down, because a theme declares its tokens on `:root` and a `var()` in such a declaration resolves there. A theme that colours a shape by the state writes `var(--status-colour)` into that shape's own token.
+
+**The wordmark is not a theme's to set.** Only its colour is. The face, the size, the weight, the tracking and the casing are the mark itself, taken from `VelvetWordmark.svelte`: Plaster at 400 and 24px with no tracking and no transform. `--brand-font` exists so `base.css` can name it without holding a literal, and every theme sets it to the same value and loads the face.
+
+**The footer stands at the foot of the readings in all four themes.** `--footer-position` can hold it at the foot of the window instead, and `--footer-fill` is what it then needs, because the readings scroll underneath it and a transparent band would show them through. One theme did that and no longer does: a band that covers the readings has to be reckoned with by everything that scrolls under it, and the two figures it hid were the second defect it caused.
+
+The window's height is stated on the document and the page takes what is left, rather than the page stating that height itself. A footer held to the foot of the window makes the difference visible at once: a page as tall as the window, with anything at all above it, is taller than the window by that much and scrolls with nothing to scroll to.
 
 **Backdrop and motion.** The backdrop is two fixed layers rather than a background. Measured in `site/src/app.css:92`: over eight expand-all cycles, 5809ms of rasterisation as a background against 485ms as a layer, layout unchanged at 12ms either way. Line 97 notes `background-attachment: fixed` does not help and measured 7127ms.
 
@@ -259,6 +311,10 @@ Everything here was found by building. Each is a case where the design would hav
 **A filled band needs its own foreground tokens.** A hero on a filled band loses the state colour; a range bar that is an elbow's arm loses the page's text colours. Both have overrides.
 
 **A left- or right-ranged footer collides with the fixed stamps.** Measured: **7px horizontally and 16px vertically**. The footer's bottom padding is derived from the stamp's own inset and size.
+
+**`min-height: 100vh` on the page scrolls a page with nothing to scroll.** Two reasons, and both were measured here. Anything standing above the page adds its own height to the document: the mockup toolbar is **47.6px**, so every page scrolled by **48px** at any window size. And `vh` is the height a phone's browser has once its own bars have gone, so a page sized in `vh` scrolls under a visible address bar as well. The document carries `100dvh` and the page takes what is left of it.
+
+**A grid item set to `display: none` gives its column away.** The footer's row is `1fr auto 1fr` with the version, the credit and the serial in it. Hiding the two figures did not leave the credit in the middle: it was auto-placed into the first column and sat **302px** left of centre. Every child of a track-based grid names its own column, so a design may drop any of them.
 
 **The hero mark must follow the state.** The first build showed a green mark above "major service outage". The colour now comes from a `data-status` attribute on `:root`, which `base.css` turns into `--status-colour`.
 

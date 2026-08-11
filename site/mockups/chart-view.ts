@@ -42,9 +42,6 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  */
 const VIEW_WIDTH = 640;
 
-/** Room under the axis labels' baseline, for their descenders and nothing more. */
-const AXIS_DESCENDER = 4;
-
 /** What one grid line stands apart from the next by, in milliseconds. */
 const AXIS_STEP = 20;
 
@@ -131,6 +128,10 @@ export interface ChartView {
  * @param serviceName - Named in the accessible description.
  * @param generatedAt - The moment the data was generated, which is the right
  *   edge of every range window.
+ * @param report - Where the reading under the crosshair goes, one string per
+ *   line, or `null` when the pointer has left. Given by a design that reads on
+ *   a display of its own; where it is absent the chart shows its own overlay
+ *   above the plot instead.
  * @returns A handle for updating the chart.
  */
 export function createChartView(
@@ -138,6 +139,7 @@ export function createChartView(
   serviceId: string,
   serviceName: string,
   generatedAt: string,
+  report?: (lines: string[] | null) => void,
 ): ChartView {
   host.textContent = "";
   host.className = "response-chart";
@@ -153,7 +155,22 @@ export function createChartView(
   plotHost.className = "chart-plot";
   plotHost.setAttribute("tabindex", "0");
   plotHost.setAttribute("role", "img");
-  host.append(caption, legend, plotHost);
+  /*
+    The two ends of the range, under the drawing rather than inside it.
+
+    A design may give the plot a surface of its own, and a label drawn inside
+    the drawing stands on that surface rather than under it. Out here it sits
+    on whatever the card is made of, which is where a scale of this kind is
+    read from.
+  */
+  const axisRow = document.createElement("div");
+  axisRow.className = "chart-axis-row";
+  axisRow.setAttribute("aria-hidden", "true");
+  const axisFrom = document.createElement("span");
+  const axisTo = document.createElement("span");
+  axisTo.textContent = "Now";
+  axisRow.append(axisFrom, axisTo);
+  host.append(caption, legend, plotHost, axisRow);
 
   let series: Series = [];
   let range: RangeKey = "month";
@@ -183,6 +200,21 @@ export function createChartView(
   const tooltip = createOverlay("uptime-tooltip chart-reading");
 
   /**
+   * The box the drawing itself occupies.
+   *
+   * The drawing rather than its container, because a design may hold the plot
+   * inside a frame with room around it, and every coordinate below is in the
+   * drawing's own units: measuring the container would carry that room into
+   * the scale and put the crosshair beside the pointer.
+   *
+   * @returns The drawing's box, or the container's whilst nothing is drawn.
+   */
+  function plotBox(): DOMRect {
+    const drawing = plotHost.querySelector("svg");
+    return (drawing ?? plotHost).getBoundingClientRect();
+  }
+
+  /**
    * Shows the reading under the crosshair.
    *
    * @param plotX - Where the crosshair is, in the drawing's own units.
@@ -194,6 +226,20 @@ export function createChartView(
     timestamp: string,
     values: Array<{ protocol: "ipv4" | "ipv6"; responseTimeMs: number }>,
   ): void {
+    // A design may read this on a display of its own, and then it is told the
+    // same two lines rather than having them drawn over the plot.
+    if (report) {
+      report([
+        HOVER_TIME.format(new Date(timestamp)),
+        values
+          .map(
+            (value) =>
+              `${protocolLabel(value.protocol)} ${formatMilliseconds(value.responseTimeMs)}`,
+          )
+          .join("   "),
+      ]);
+      return;
+    }
     const body = document.createElement("span");
     body.className = "chart-reading-body";
     const when = document.createElement("span");
@@ -217,7 +263,7 @@ export function createChartView(
     }
     tooltip.show(body, () => {
       if (activeTimestamp !== timestamp) return null;
-      const box = plotHost.getBoundingClientRect();
+      const box = plotBox();
       if (box.width === 0) return null;
       // The drawing scales to its container, so a coordinate inside the
       // viewBox has to be carried back into viewport units before the overlay
@@ -286,7 +332,13 @@ export function createChartView(
       inset off both ends instead left that much empty drawing under the words,
       which the panel's own padding then added to.
     */
-    const plotBottom = tokens.height - tokens.axisSpace - AXIS_DESCENDER;
+    /*
+      The time axis is the foot of the drawing. Everything a design prints
+      below the readings stands on it rather than under it: the printed scale
+      grows up from it into the plot, and the two range labels are read
+      outside the drawing altogether.
+    */
+    const plotBottom = tokens.height;
     const plotLeft = tokens.insetInline;
     const plotRight = VIEW_WIDTH - tokens.insetInline;
 
@@ -426,13 +478,26 @@ export function createChartView(
       if (values.length > 0) {
         const x = xFor(activeTimestamp);
         const group = svg("g", { class: "chart-hover", "aria-hidden": "true" });
+        /*
+          The strip the pointer rides on, sized and coloured entirely in the
+          stylesheet: its width is a design decision and its position is not,
+          so the drawing states where it stands and the theme states how wide
+          it is. It is centred on that position by a transform against its own
+          box, since only the theme knows the width to halve.
+        */
         group.append(
+          svg("rect", {
+            class: "chart-needle",
+            x,
+            y: 0,
+            height: tokens.height,
+          }),
           svg("line", {
             class: "chart-crosshair",
             x1: x,
-            y1: plotTop,
+            y1: 0,
             x2: x,
-            y2: plotBottom,
+            y2: tokens.height,
           }),
         );
         for (const value of values) {
@@ -456,36 +521,59 @@ export function createChartView(
       }
     }
 
+    /*
+      The printed scale.
+
+      Drawn here rather than as a background on the plot, because it belongs
+      between the readings and the two labels under them and both of those are
+      in the drawing's own units: a scale positioned in pixels would drift away
+      from them as the chart scales. A design that prints none sets its tick
+      heights to zero and this draws nothing.
+    */
+    if (tokens.tickStep > 0 && (tokens.tickMajor > 0 || tokens.tickMinor > 0)) {
+      const ticks = svg("g", { class: "chart-ticks", "aria-hidden": "true" });
+      let index = 0;
+      for (let x = plotLeft; x <= plotRight + 0.01; x += tokens.tickStep) {
+        const major = index % Math.max(1, tokens.tickMajorEvery) === 0;
+        // Every tick stands on the time axis and reaches up by its own
+        // length, which is how a printed scale is set: the foot is the
+        // measure and the head says how important the mark is.
+        ticks.append(
+          svg("line", {
+            class: major ? "chart-tick chart-tick--major" : "chart-tick",
+            x1: x,
+            y1: plotBottom - (major ? tokens.tickMajor : tokens.tickMinor),
+            x2: x,
+            y2: plotBottom,
+          }),
+        );
+        index += 1;
+      }
+      root.append(ticks);
+    }
+
     const axes = svg("g", { class: "chart-axis", "aria-hidden": "true" });
     // The two sides of the plot, drawn as lines rather than left to the grid.
     // A design may want them stronger than the grid, and they are what the
     // readings are measured against.
     axes.append(
       svg("line", {
-        class: "chart-axis-line",
+        class: "chart-axis-line chart-axis-line--value",
         x1: plotLeft,
         y1: plotTop,
         x2: plotLeft,
         y2: plotBottom,
       }),
       svg("line", {
-        class: "chart-axis-line",
+        class: "chart-axis-line chart-axis-line--time",
         x1: plotLeft,
         y1: plotBottom,
         x2: plotRight,
         y2: plotBottom,
       }),
     );
-    const from = svg("text", { x: plotLeft, y: plotBottom + tokens.axisSpace });
-    from.textContent = RANGE_LABEL[range];
-    const to = svg("text", {
-      x: plotRight,
-      y: plotBottom + tokens.axisSpace,
-      "text-anchor": "end",
-    });
-    to.textContent = "Now";
-    axes.append(from, to);
     root.append(axes);
+    axisFrom.textContent = RANGE_LABEL[range];
 
     const description = withSamples
       .map((entry) => {
@@ -514,12 +602,13 @@ export function createChartView(
       pendingReading = null;
     } else {
       tooltip.hide();
+      report?.(null);
     }
   }
 
   /** Moves the crosshair to whichever measurement is nearest the pointer. */
   function onPointerMove(event: PointerEvent): void {
-    const box = plotHost.getBoundingClientRect();
+    const box = plotBox();
     if (box.width === 0) return;
     const ratio = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
     const window = responseRangeWindow(range, generatedAt);

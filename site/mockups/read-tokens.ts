@@ -202,13 +202,17 @@ export interface ChartTokens {
   height: number;
   insetInline: number;
   insetBlock: number;
-  /** How far the range's two ends sit below the plot. */
-  axisSpace: number;
   gridLines: number;
   lineWidth: number;
   pointRadius: number;
   tooltipWidth: number;
   fill: number;
+  /** How far apart the ticks of a printed scale stand. Zero draws none. */
+  tickStep: number;
+  /** Every how many ticks a long one is drawn. */
+  tickMajorEvery: number;
+  tickMinor: number;
+  tickMajor: number;
 }
 
 /**
@@ -226,11 +230,14 @@ export function readChartTokens(element: Element): ChartTokens {
     height: readLength(element, "--chart-height", 148),
     insetInline: readLength(element, "--chart-inset-inline", 12),
     insetBlock: readLength(element, "--chart-inset-block", 12),
-    axisSpace: readLength(element, "--chart-axis-space", 16),
     gridLines: readNumber(element, "--chart-grid-lines", 3),
     lineWidth: readLength(element, "--chart-line-width", 2),
     pointRadius: readLength(element, "--chart-point-radius", 3),
     tooltipWidth: readLength(element, "--chart-tooltip-width", 136),
     fill: readNumber(element, "--chart-fill", 0),
+    tickStep: readLength(element, "--chart-tick-step", 0),
+    tickMajorEvery: readNumber(element, "--chart-tick-major-every", 4),
+    tickMinor: readLength(element, "--chart-tick-minor", 0),
+    tickMajor: readLength(element, "--chart-tick-major", 0),
   };
 }

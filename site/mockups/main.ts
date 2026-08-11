@@ -106,20 +106,13 @@ function buildToolbar(
   layouts.className = "mockup-bar-group";
   layouts.setAttribute("role", "group");
   layouts.setAttribute("aria-label", "Layout");
-  // A design whose structure runs the height of the whole readout has no
-  // notion of a panel per service, and says so with `--layout-cards: none`.
-  const offered =
-    getComputedStyle(document.documentElement)
-      .getPropertyValue("--layout-cards")
-      .trim() === "none"
-      ? (["grouped"] as const)
-      : (["grouped", "cards"] as const);
+  const offered = offeredLayouts();
   for (const layout of offered) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "mockup-bar-button";
     button.textContent = layout;
-    button.setAttribute("aria-pressed", String(layout === "grouped"));
+    button.setAttribute("aria-pressed", String(layout === offered[0]));
     button.addEventListener("click", () => {
       for (const other of layouts.children) {
         other.setAttribute("aria-pressed", "false");
@@ -134,6 +127,27 @@ function buildToolbar(
   return bar;
 }
 
+/**
+ * The layouts the current theme supports, in the order the bar offers them.
+ *
+ * A design may have no notion of a panel per service, because its structure
+ * runs the height of the whole readout, and another may have no notion of one
+ * panel holding every service, because each of its services is an instrument
+ * of its own. Either says so by setting its layout token to `none`, and the
+ * first of whatever is left is what the page opens in.
+ *
+ * @returns The supported layouts, never empty.
+ */
+function offeredLayouts(): ReadonlyArray<"grouped" | "cards"> {
+  const style = getComputedStyle(document.documentElement);
+  const supports = (name: string): boolean =>
+    style.getPropertyValue(name).trim() !== "none";
+  const layouts: Array<"grouped" | "cards"> = [];
+  if (supports("--layout-grouped")) layouts.push("grouped");
+  if (supports("--layout-cards")) layouts.push("cards");
+  return layouts.length > 0 ? layouts : ["grouped"];
+}
+
 const mount = document.querySelector<HTMLElement>("#mockup");
 if (!mount) {
   throw new Error("No #mockup element to render into.");
@@ -143,7 +157,7 @@ const current = window.location.pathname.split("/").pop() || "cassette.html";
 
 // The page is mounted first, because the bar marks whichever state button the
 // fixture produced and can only read that once the page has said what it is.
-mountStatusPage(mount, "grouped");
+mountStatusPage(mount, offeredLayouts()[0]);
 
 /** The state the bar is showing, held so a layout change does not lose it. */
 let previewed = document.documentElement.dataset.status as ServiceStatus;

@@ -29,7 +29,7 @@
  * The faces are fetched here rather than self-hosted; see `cassette.css`.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Plaster&display=swap");
 
 :root {
   /* ── Identity ─────────────────────────────────────────────────────────── */
@@ -56,6 +56,9 @@
   --popover-edge: #3f7ba3;
 
   /* ── Brand and accent ─────────────────────────────────────────────────── */
+  /* The Velvet wordmark, which is the same lettering on every page. Its
+     colour is this theme's; its face is not. */
+  --brand-font: "Plaster", sans-serif;
   --brand-primary: #5fb2e0;
   --accent: #5fb2e0;
   --accent-quiet: rgb(95 178 224 / 0.14);
@@ -84,6 +87,22 @@
   --font-body: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
   --font-meta: "Share Tech Mono", ui-monospace, monospace;
   --display-transform: uppercase;
+  --brand-weight: var(--display-weight);
+  --brand-tracking: var(--display-tracking);
+  --nav-link-size: var(--text-size-caption);
+  --nav-link-tracking: var(--label-tracking);
+  --headline-font: var(--font-display);
+  --headline-weight: var(--display-weight);
+  --headline-tracking: var(--display-tracking);
+  --hero-updated-size: var(--text-size-caption);
+  --notices-heading-weight: var(--display-weight);
+  --notices-heading-tracking: var(--label-tracking);
+  --group-name-size: var(--text-size-caption);
+  --group-name-weight: var(--display-weight);
+  --group-name-tracking: var(--label-tracking);
+  --uptime-size: var(--text-size-caption);
+  --stamp-display: block;
+  --stamp-tracking: var(--label-tracking);
   --display-tracking: 0.16em;
   --display-weight: 600;
   --label-transform: uppercase;
@@ -155,6 +174,7 @@
   --notice-glyph-display: inline-block;
   --notices-rail-width: 0px;
   --notices-rail-gap: 0px;
+  --notices-rail-inset: 0px;
   --notices-rail-radius: 0px;
   --notices-rail-fill: transparent;
   --notice-align: center;
@@ -191,7 +211,7 @@
   --card-rail-radius: 0px;
   --card-rail-inset: 0px;
   --nav-rule-height: 1px;
-  --nav-rule-colour: var(--surface-rule);
+  --nav-rule-fill: var(--surface-rule);
   --nav-rule-radius: 0px;
   --nav-rule-inset: 0px;
 
@@ -292,8 +312,7 @@
   --badge-padding-inline: 6px;
   --tooltip-padding-block: 8px;
   --tooltip-padding-inline: 12px;
-  --stamp-inset-block: 9px;
-  --stamp-inset-inline: 12px;
+  --stamp-inset-inline: 0px;
   --dot-size: 6px;
 
   /* ── Availability strip ───────────────────────────────────────────────── */
@@ -315,6 +334,22 @@
   /* ── Chart ────────────────────────────────────────────────────────────── */
   /* Five dotted rules and hairline traces, with the crosshair dotted as well.
      Every line on these screens is either dotted or one pixel wide. */
+  --chart-plot-inset: 0px;
+  --chart-plot-edge-width: 0px;
+  --chart-plot-edge-colour: transparent;
+  --chart-plot-fill: transparent;
+  --chart-axis-value-display: block;
+  --chart-crosshair-colour: var(--text-3);
+  --chart-hover-point-display: block;
+  --chart-tick-step: 0px;
+  --chart-tick-major-every: 4;
+  --chart-tick-minor: 0px;
+  --chart-tick-major: 0px;
+  --chart-tick-colour: transparent;
+  --chart-tick-major-colour: transparent;
+  --chart-needle-width: 0px;
+  --chart-needle-fill: transparent;
+  --chart-needle-edge: transparent;
   --chart-head-margin: var(--space-block);
   --chart-head-space: var(--space-tight);
   --chart-height: 168px;
@@ -323,6 +358,7 @@
   --chart-inset-block: 16px;
   --chart-grid-colour: var(--surface-rule);
   --chart-grid-alpha: 100%;
+  --chart-axis-text-size: var(--text-size-chart-caption);
   --chart-axis-colour: var(--surface-rule);
   --chart-axis-text-colour: var(--text-3);
   --chart-axis-text-alpha: 100%;
@@ -401,7 +437,9 @@
   --motion-hover: 90ms;
 
   /* ── Arrangement ──────────────────────────────────────────────────────── */
-  --nav-justify: space-between;
+  --nav-brand-display: inline-block;
+  --nav-links-display: flex;
+  --nav-justify: center;
   --nav-fill: transparent;
   --nav-brand-colour: var(--accent);
   --nav-link-colour: #3f8f97;
@@ -422,7 +460,9 @@
   --hero-title-trail: 0px;
   --hero-title-trim: normal;
   --hero-updated-trim: normal;
-  --hero-rail-margin: 0px;
+  --hero-rail-inset: 0px;
+  --hero-rail-min-height: 0px;
+  --hero-rail-width: 0px;
   --hero-rail-display: none;
   --hero-rail-fill: transparent;
   --hero-rail-radius: 0px;
@@ -431,6 +471,29 @@
   --hero-arm-radius: 0px;
   --hero-arm-depth: 0px;
   --hero-arm-align: stretch;
+  --hero-mark-shape-display: none;
+  --hero-mark-shape-size: 0px;
+  --hero-mark-shape-radius: 0px;
+  --hero-mark-shape-fill: transparent;
+  --disclosure-mark-self: center;
+  --disclosure-mark-width: auto;
+  --disclosure-mark-height: auto;
+  --disclosure-mark-radius: 0px;
+  --disclosure-mark-fill: transparent;
+  --disclosure-mark-fill-hover: transparent;
+  --disclosure-mark-fill-pressed: transparent;
+  --disclosure-mark-shadow: none;
+  --disclosure-mark-shadow-pressed: none;
+  --disclosure-led-size: 0px;
+  --disclosure-led-fill: transparent;
+  --disclosure-led-fill-on: transparent;
+  --disclosure-led-glow: none;
+  --disclosure-led-glow-on: none;
+  --disclosure-icon-display: inline-block;
+  --disclosure-mark-display: none;
+  --disclosure-mark-closed: "";
+  --disclosure-mark-open: "";
+  --hero-glyph-display: inline-block;
   --hero-mark-display: inline-block;
   --hero-mark-glow: drop-shadow(
     0 0 16px color-mix(in srgb, currentColor 28%, transparent)
@@ -440,6 +503,8 @@
   --range-label-display: block;
   --range-label-colour: var(--text-2);
   --range-button-colour: var(--text-3);
+  --toggle-hover-fill: var(--accent-quiet);
+  --toggle-hover-colour: var(--range-button-hover-colour);
   --range-button-hover-colour: var(--text-1);
   --range-align: center;
   --range-mark-radius: var(--control-radius);
@@ -459,6 +524,8 @@
   --range-bar-throat: 0px;
   --range-bar-throat-offset: 0px;
   --range-justify: flex-end;
+  --footer-position: static;
+  --footer-fill: transparent;
   --footer-align: center;
   --footer-text-align: center;
   /* One column: the name stays inside the summary and no rail is drawn. */
@@ -473,6 +540,26 @@
   --control-transform: none;
   --service-rail-align: center;
   --service-rail-padding: 0;
+  --service-arm-display: none;
+  --service-arm-layout: none;
+  --service-arm-gap: 0px;
+  --service-throat: 0px;
+  --service-foot-segment-display: none;
+  --service-foot-segment-seam: 0px;
+  --service-foot-segment-align: center;
+  --service-foot-segment-justify: flex-start;
+  --service-foot-segment-padding: 0px;
+  --service-foot-segment-colour: transparent;
+  --service-foot-segment-size: 0px;
+  --service-foot-segment-weight: 400;
+  --service-foot-version-inset: 0px;
+  --service-foot-version-width: auto;
+  --service-foot-serial-inset: 0px;
+  --service-stem-width: 0px;
+  --service-stem-height: 0px;
+  --service-arm-depth: 0px;
+  --service-arm-radius: 0px;
+  --service-arm-fill: transparent;
   --service-rail-radius: 0px;
   --service-rail-fill: transparent;
   --service-rail-colour: currentColor;
@@ -481,12 +568,57 @@
   --service-divider-space: var(--space-block);
   --service-divider-width: var(--rule-width);
   --service-icon-display: inline-block;
+  --service-name-self: auto;
+  --protocols-self: auto;
+  --protocols-justify: flex-start;
+  --protocols-single-display: none;
+  --badge-absent-display: none;
+  --badge-fill: transparent;
+  --badge-glow: none;
+  --badge-absent-edge: var(--surface-rule);
+  --badge-absent-fill: transparent;
+  --badge-absent-colour: var(--text-3);
+  --protocols-direction: row;
+  --protocols-align: center;
+  --service-display-display: contents;
+  --service-display-line-display: contents;
+  --service-display-main-display: none;
+  --service-display-flex: none;
+  --service-display-padding: 0px;
+  --service-display-edge-width: 0px;
+  --service-display-edge-colour: transparent;
+  --service-display-radius: 0px;
+  --service-display-fill: transparent;
+  --service-display-colour: currentColor;
+  --service-display-colour-quiet: currentColor;
+  --service-display-colour-faint: currentColor;
+  --service-display-font: var(--font-meta);
+  --service-display-size: var(--text-size-caption);
+  --service-display-leading: 1;
+  --service-display-tracking: normal;
+  --service-display-transform: none;
+  --service-display-glow: none;
+  --uptime-colour: var(--text-2);
+  --uptime-font: var(--font-meta);
+  --service-name-stroke: 0px;
+  --service-name-stroke-colour: transparent;
+  --service-name-glow: none;
+  --service-name-shadow: none;
+  --service-name-trim: normal;
+  --service-name-leading: var(--text-leading-body);
+  --service-name-tracking: var(--display-tracking);
+  --service-name-transform: var(--display-transform);
+  --service-name-weight: var(--display-weight);
+  --service-name-font: var(--font-display);
+  --service-name-clip: border-box;
+  --service-display-shadow: none;
   --service-name-display: inline;
   --service-name-flex: 1 1 auto;
   --service-name-padding: 0;
   --service-name-radius: 0px;
   --service-name-fill: transparent;
   --service-name-colour: currentColor;
+  --layout-grouped: auto;
   --layout-cards: auto;
   --service-icon-colour: var(--accent);
 

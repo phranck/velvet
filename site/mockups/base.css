@@ -54,8 +54,23 @@ html {
   }
 }
 
+/*
+  The window's height belongs to the document, and the page takes what is left
+  of it.
+
+  Stating that height on the page itself instead makes the document taller than
+  the window by however much stands above the page, which is what a sticky
+  footer shows: the page scrolls a little with nothing to scroll to. `dvh` is
+  the height actually available, whilst `vh` is the height a phone's browser
+  has once its own bars have gone, so the second line is what stops a page
+  scrolling under a visible address bar.
+*/
 body {
+  display: flex;
+  flex-direction: column;
   margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
   min-width: var(--page-min-width);
   background: var(--surface-base);
   color: var(--text-1);
@@ -156,10 +171,12 @@ body::after {
 }
 
 /* ── Page ─────────────────────────────────────────────────────────────────── */
+/* Takes the height the document has left, so the footer stands at the foot of
+   the window on a short page and at the foot of the readings on a long one. */
 .status-page {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  flex: 1;
 }
 
 /*
@@ -194,7 +211,7 @@ body::after {
   height: var(--nav-rule-height);
   margin-inline: var(--nav-rule-inset);
   border-radius: var(--nav-rule-radius);
-  background: var(--nav-rule-colour);
+  background: var(--nav-rule-fill);
 }
 
 .status-band--hero {
@@ -205,6 +222,18 @@ body::after {
    short page rather than sitting under the last card. */
 .status-band--body {
   flex: 1;
+}
+
+/*
+  The footer may stay at the foot of the window rather than at the foot of the
+  page. It needs a fill of its own to do that, because the readings scroll
+  underneath it and a transparent band would show them through.
+*/
+.status-band--footer {
+  position: var(--footer-position);
+  inset-block-end: 0;
+  z-index: 5;
+  background: var(--footer-fill);
 }
 
 /* ── Navigation ───────────────────────────────────────────────────────────── */
@@ -222,25 +251,28 @@ body::after {
 /* Named separately from `--brand-primary`, because a theme may give the bar a
    fill of its own and the mark then stands on that rather than on the page. */
 .status-brand {
+  display: var(--nav-brand-display);
   color: var(--nav-brand-colour);
   font-family: var(--font-display);
   font-size: var(--text-size-brand);
-  font-weight: var(--display-weight);
-  letter-spacing: var(--display-tracking);
+  font-weight: var(--brand-weight);
+  letter-spacing: var(--brand-tracking);
   text-transform: var(--display-transform);
   text-decoration: none;
 }
 
+/* A design may carry no navigation at all, and one does: its bar holds the
+   installation's name and mark and nothing else. */
 .status-nav-links {
-  display: flex;
+  display: var(--nav-links-display);
   flex-wrap: wrap;
   gap: var(--space-row);
 }
 
 .status-nav-link {
   color: var(--nav-link-colour);
-  font-size: var(--text-size-caption);
-  letter-spacing: var(--label-tracking);
+  font-size: var(--nav-link-size);
+  letter-spacing: var(--nav-link-tracking);
   text-decoration: none;
   text-transform: var(--label-transform);
 }
@@ -264,6 +296,7 @@ body::after {
   states the two properties below and nothing else changes.
 */
 .status-hero {
+  position: relative;
   display: grid;
   grid-template-areas: var(--hero-areas);
   grid-template-columns: var(--hero-columns);
@@ -328,7 +361,18 @@ body::after {
 
 .status-hero-mark {
   grid-area: mark;
+  /* Holds the shape below, and keeps it to itself: a stacking context of its
+     own means the shape sits behind the glyph without going behind the band
+     the hero is drawn on. */
+  position: relative;
+  isolation: isolate;
   display: var(--hero-mark-display);
+  /* The shape decides how much room the mark takes, so the words below it are
+     laid out clear of it rather than under it. Where no theme draws one the
+     size is zero and the mark is the glyph, as before. */
+  place-items: center;
+  min-width: var(--hero-mark-shape-size);
+  min-height: var(--hero-mark-shape-size);
   color: var(--hero-mark-colour, var(--status-colour));
   /* Beside a headline it takes the headline's size, so the two read as one
      line rather than as a glyph with a caption. Above it, it is free to be
@@ -336,6 +380,31 @@ body::after {
   font-size: var(--hero-mark-size);
   line-height: 1;
   filter: var(--hero-mark-glow);
+}
+
+/*
+  A shape behind the status mark, for a design that stands its glyph on one.
+
+  Centred on the glyph and sized on its own rather than by the type around it,
+  because it is a graphic in its own right. Its fill may be a gradient, and the
+  radius clips that fill, which is how one design draws a run of stripes inside
+  a disc. Three themes leave it undisplayed.
+*/
+.status-hero-mark::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  display: var(--hero-mark-shape-display);
+  border-radius: var(--hero-mark-shape-radius);
+  background: var(--hero-mark-shape-fill);
+  pointer-events: none;
+}
+
+/* The picture inside the mark. A design that uses no icons drops it whilst
+   keeping the shape the mark stands on. */
+.status-hero-glyph {
+  display: var(--hero-glyph-display);
 }
 
 .status-hero-title {
@@ -350,10 +419,12 @@ body::after {
   */
   margin-inline-end: var(--hero-title-trail);
   color: var(--hero-title-colour);
-  font-family: var(--font-display);
+  /* Its own face, because a design may want the one line that names the state
+     set in something it uses nowhere else. */
+  font-family: var(--headline-font);
   font-size: var(--text-size-headline);
-  font-weight: var(--display-weight);
-  letter-spacing: var(--display-tracking);
+  font-weight: var(--headline-weight);
+  letter-spacing: var(--headline-tracking);
   line-height: var(--text-leading-display);
   text-transform: var(--display-transform);
   /*
@@ -374,7 +445,7 @@ body::after {
   margin: 0;
   color: var(--hero-updated-colour);
   font-family: var(--font-meta);
-  font-size: var(--text-size-caption);
+  font-size: var(--hero-updated-size);
   font-style: var(--meta-style);
   /*
     Trimmed with the headline, because a design may set the two as one block
@@ -406,13 +477,31 @@ body::after {
   design that runs it on into whatever follows needs that padding for the space
   under the words, and the column has to cross it rather than stop at it.
 */
+/*
+  The column is laid over the hero rather than placed in it.
+
+  It has to be at least as deep as the corner it carries, because a radius
+  taller than its own box is scaled down to fit and the same corner at the foot
+  of the limb would then be drawn larger. As a grid item that floor reached the
+  rows it spanned and stretched them, which pushed the headline off the edges of
+  the bar beside it: measured at 3.5px top and bottom, and the arm 56px deep
+  against the 44px of every other arm. Positioned instead, it takes the depth it
+  needs and the row keeps the depth the words give it.
+
+  Its track stays in `--hero-areas` regardless, because the words still have to
+  begin beside it rather than under it.
+*/
 .status-hero::before {
   content: "";
-  grid-area: rail;
+  position: absolute;
+  /* Its own two edges, because absolute positioning measures from the padding
+     box: left at nought it began where the hero's top padding does, thirty
+     pixels above the bar it belongs beside. */
+  inset-block: var(--hero-rail-inset);
+  inset-inline-start: 0;
   display: var(--hero-rail-display);
-  align-self: stretch;
-  justify-self: stretch;
-  margin: var(--hero-rail-margin);
+  width: var(--hero-rail-width);
+  min-height: var(--hero-rail-min-height);
   border-radius: var(--hero-rail-radius);
   background: var(--hero-rail-fill);
 }
@@ -533,7 +622,9 @@ body::after {
 .notices::before {
   content: "";
   position: absolute;
-  inset-block: 0;
+  /* Its own two edges, so a design can set the column off from the arm below it
+     the way its segments are set off from each other. */
+  inset-block: var(--notices-rail-inset);
   inset-inline-start: 0;
   width: var(--notices-rail-width);
   border-radius: var(--notices-rail-radius);
@@ -564,8 +655,8 @@ body::after {
   color: var(--text-2);
   font-family: var(--font-display);
   font-size: var(--text-size-section);
-  font-weight: var(--display-weight);
-  letter-spacing: var(--label-tracking);
+  font-weight: var(--notices-heading-weight);
+  letter-spacing: var(--notices-heading-tracking);
   text-transform: var(--label-transform);
 }
 
@@ -839,8 +930,9 @@ body::after {
   min-width: 0;
   overflow: hidden;
   color: var(--range-label-colour);
-  font-size: var(--text-size-caption);
-  letter-spacing: var(--label-tracking);
+  font-size: var(--group-name-size);
+  font-weight: var(--group-name-weight);
+  letter-spacing: var(--group-name-tracking);
   text-overflow: ellipsis;
   text-transform: var(--label-transform);
   white-space: nowrap;
@@ -959,11 +1051,12 @@ body::after {
 }
 
 .toggle-all:hover {
-  background: var(--accent-quiet);
-  color: var(--range-button-hover-colour);
+  background: var(--toggle-hover-fill);
+  color: var(--toggle-hover-colour);
 }
 
 .toggle-all-glyph {
+  display: var(--disclosure-icon-display);
   font-size: var(--text-size-ornament);
   line-height: 1;
   transition: transform var(--motion-disclosure) var(--motion-ease);
@@ -979,6 +1072,115 @@ body::after {
   gap: var(--card-gap);
 }
 
+/*
+  The foot of the readings, where a design closes its column with an arm the way
+  it opened it with one. It is a grid item, so the list's own gap separates it
+  from the last row exactly as that gap separates the rows from each other.
+
+  Its corner is its own rather than the column's, because the two are apart: a
+  radius cannot be larger than the box carrying it, so the deepest corner an arm
+  can hold is its own depth.
+*/
+/*
+  The foot of the readings: the same elbow the range bar draws above them, the
+  other way up. The arm runs along the bottom, a stem rises from it in the
+  column's width, and the throat rounds the turn between the two.
+
+  All three belong to one element, so the seam that sets the limb off from the
+  last row falls between that row and the stem, and the throat sits inside the
+  shape rather than across a gap.
+*/
+/* Laid out as a row, so what it carries can be stretched to its depth and cut
+   out of it. */
+.service-foot {
+  position: relative;
+  display: var(--service-arm-layout);
+  /* Room for the stem above it and the seam under the last row, on top of the
+     list's own gap. */
+  margin-block-start: var(--service-arm-gap);
+  height: var(--service-arm-depth);
+  border-radius: var(--service-arm-radius);
+  background: var(--service-arm-fill);
+}
+
+/*
+  The version and the serial, where a design puts them in the arm rather than in
+  the footer. Both are segments cut out of it: the seam either side is a border
+  in the page's own colour, which divides the arm the way the column is divided
+  between its own segments, and each segment's margin takes that seam back off
+  so its edge still lands where the arithmetic says.
+*/
+.service-foot-version,
+.service-foot-serial {
+  display: var(--service-foot-segment-display);
+  align-items: var(--service-foot-segment-align);
+  justify-content: var(--service-foot-segment-justify);
+  align-self: stretch;
+  /* Each segment holds its own width and sets its figure on one line, so a
+     narrow window moves the two together rather than breaking either. */
+  flex: none;
+  white-space: nowrap;
+  padding: var(--service-foot-segment-padding);
+  border-inline: var(--service-foot-segment-seam) solid var(--surface-base);
+  color: var(--service-foot-segment-colour);
+  font-family: var(--font-display);
+  font-size: var(--service-foot-segment-size);
+  font-weight: var(--service-foot-segment-weight);
+  letter-spacing: var(--display-tracking);
+  text-transform: var(--display-transform);
+}
+
+/*
+  The version stands where the readings above it stand: the column's width plus
+  whatever those rows are inset by. Its width is stated rather than taken from
+  its text, because the figure is short enough that the segment would otherwise
+  read as an accident of how many digits the release happens to carry.
+*/
+.service-foot-version {
+  width: var(--service-foot-version-width);
+  margin-inline-start: calc(
+    var(--service-foot-version-inset) - var(--service-foot-segment-seam)
+  );
+}
+
+/*
+  The serial is the same segment at the other end of the arm, held clear of the
+  free end so the seam falls across a part of the arm that is still full height
+  rather than across the curve.
+*/
+.service-foot-serial {
+  margin-inline-start: auto;
+  margin-inline-end: calc(
+    var(--service-foot-serial-inset) - var(--service-foot-segment-seam)
+  );
+}
+
+.service-foot::before {
+  content: "";
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-start: 0;
+  width: var(--service-stem-width);
+  height: var(--service-stem-height);
+  background: var(--service-arm-fill);
+  pointer-events: none;
+}
+
+.service-foot::after {
+  content: "";
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-start: var(--service-stem-width);
+  width: var(--service-throat);
+  height: var(--service-throat);
+  background: radial-gradient(
+    circle var(--service-throat) at 100% 0,
+    transparent 0 99.5%,
+    var(--service-arm-fill) 100%
+  );
+  pointer-events: none;
+}
+
 .service-card {
   --edge-width: var(--card-border-width);
   --edge-colour: var(--surface-rule);
@@ -988,10 +1190,14 @@ body::after {
      than sitting on it. Five themes set the width to zero and the expression
      then reduces to the plain padding. */
   padding-inline-start: calc(var(--card-padding) + var(--card-rail-width));
-  /* One theme draws a horizontal arm across the top of the card and needs the
-     content to start below it. Everything else inherits the plain padding, so
-     the equal-on-four-sides rule still holds wherever nothing is drawn there. */
+  /* Two themes draw something across an end of the card and need the content
+     to start clear of it: an arm across the top in one, a printed head and a
+     matching foot in the other. Everything else inherits the plain padding, so
+     the equal-on-four-sides rule still holds wherever nothing is drawn there,
+     and where something is, the content stands the same distance from what it
+     is drawn on. */
   padding-block-start: var(--card-padding-top, var(--card-padding));
+  padding-block-end: var(--card-padding-bottom, var(--card-padding));
   border-radius: var(--card-radius);
   clip-path: var(--card-clip);
   background: var(--surface-card);
@@ -1285,21 +1491,70 @@ body::after {
 .service-name {
   display: var(--service-name-display);
   flex: var(--service-name-flex);
+  /* A design may run the plate the full height of the row, so it stands level
+     with whatever else labels it. The word inside stays centred either way. */
+  align-self: var(--service-name-self);
+  place-items: center;
   min-width: 0;
   padding: var(--service-name-padding);
   border-radius: var(--service-name-radius);
-  background: var(--service-name-fill);
+  /*
+    The service's own colour where the theme lists one, and the design's fill
+    where it does not. `--series-own` is set per row by the cycle further down,
+    so a service is one colour wherever it appears, and one declaration here
+    replaces the ten that used to set this by position.
+
+    That matters for more than tidiness: those ten carried a higher specificity
+    than this rule and set the `background` shorthand, and a shorthand resets
+    the clip below to its initial value. With the fill and the clip in the same
+    declaration block, nothing can undo one without the other.
+  */
+  background: var(--series-own, var(--service-name-fill));
+  /* Clipped to the letters where a design engraves the name rather than
+     printing it on something: the fill is then the metal and the letters are
+     the window onto it. Both spellings, because the unprefixed one is recent
+     and the prefixed one is what older engines answer to. */
+  -webkit-background-clip: var(--service-name-clip);
+  background-clip: var(--service-name-clip);
+  /* A design may set the plate into the face rather than on it, which is a
+     shadow inside its own edge and none outside. */
+  box-shadow: var(--service-name-shadow);
   color: var(--service-name-colour);
   overflow-wrap: anywhere;
-  font-family: var(--font-display);
+  /* Its own face, because a design may name its services in something it uses
+     nowhere else. */
+  font-family: var(--service-name-font);
   font-size: var(--text-size-service);
-  font-weight: var(--display-weight);
-  letter-spacing: var(--display-tracking);
-  text-transform: var(--display-transform);
+  /* Its own weight, because a design may set its services in a face whose
+     usable weight is not the one the rest of the page is set in. */
+  font-weight: var(--service-name-weight);
+  /* Its own leading rather than the page's. A plate carrying one word is as
+     tall as that word plus its padding, and reading leading is what made it
+     stand a third taller than the letters in it. */
+  line-height: var(--service-name-leading);
+  /* Its own casing and tracking, because a design may name its services in a
+     script that has no capitals to speak of and no room between letters. */
+  letter-spacing: var(--service-name-tracking);
+  text-transform: var(--service-name-transform);
+  /* Trimmed to its own letters where a design centres them in a plate. A line
+     box is taller than what is in it and by different amounts above and below,
+     so a centred line box leaves the letters sitting high. */
+  text-box: var(--service-name-trim);
+  /* A design may light the lettering rather than print it: a stroke holds the
+     shape against a pale plate and the shadow is what a lamp behind it would
+     spill around the letters. */
+  -webkit-text-stroke: var(--service-name-stroke) var(--service-name-stroke-colour);
+  text-shadow: var(--service-name-glow);
 }
 
+/* Side by side in most designs. One stacks them, because two small plates
+   above each other is how the machine it copies labels a pair of inputs. */
 .service-protocols {
   display: inline-flex;
+  flex-direction: var(--protocols-direction);
+  align-items: var(--protocols-align);
+  justify-content: var(--protocols-justify);
+  align-self: var(--protocols-self);
   flex: none;
   gap: var(--space-hair);
 }
@@ -1308,10 +1563,21 @@ body::after {
   padding: var(--badge-padding-block) var(--badge-padding-inline);
   border: var(--badge-border-width) var(--rule-style) var(--surface-rule);
   border-radius: var(--badge-radius);
+  background: var(--badge-fill);
   color: var(--text-2);
   font-family: var(--font-meta);
   font-size: var(--text-size-badge);
   line-height: 1;
+  text-shadow: var(--badge-glow);
+}
+
+/*
+  A service with one IPv4 check and nothing to compare it with. Most designs
+  say nothing at all there; one draws the pair as two lamps and shows them
+  whatever the service has.
+*/
+.service-protocols[data-single="true"] {
+  display: var(--protocols-single-display);
 }
 
 .protocol-badge[data-protocol="ipv4"] {
@@ -1323,54 +1589,76 @@ body::after {
 }
 
 /*
-  Where a design makes the name a filled block, consecutive rows usually take
-  different colours: a column of identical blocks is a table, and a column of
-  varying ones is the interface those designs are built from.
-
-  The cycle lives here because it is structure, and the colours live in the
-  theme because they are design. It is the same list of ten the column and the
-  chart draw from, so a service is one colour wherever it appears. A theme that
-  lists none of them leaves every row on `--service-name-fill`.
+  A protocol nothing was measured on. Hidden where the badges are labels, and
+  drawn unlit where they are lamps, because a lamp that is out is a reading in
+  itself.
 */
-
-.service:nth-of-type(10n + 1) .service-name {
-  background: var(--service-colour-1, var(--service-name-fill));
+.protocol-badge[data-present="false"] {
+  display: var(--badge-absent-display);
+  border-color: var(--badge-absent-edge);
+  background: var(--badge-absent-fill);
+  color: var(--badge-absent-colour);
+  text-shadow: none;
 }
 
-.service:nth-of-type(10n + 2) .service-name {
-  background: var(--service-colour-2, var(--service-name-fill));
+
+
+/*
+  Two lines a design may read on, standing between whatever labels the row and
+  the control that opens it.
+
+  Most designs have no such thing and set both this and its lines to
+  `display: contents`, which takes them out of the layout entirely and leaves
+  the uptime figure a child of the row, exactly as it was before this existed.
+  One design makes it a lit panel: the figure sits at the end of the first
+  line, and everything another design would show in an overlay is read out
+  here instead.
+*/
+.service-display {
+  display: var(--service-display-display);
+  flex: var(--service-display-flex);
+  min-width: 0;
+  padding: var(--service-display-padding);
+  border: var(--service-display-edge-width) var(--rule-style)
+    var(--service-display-edge-colour);
+  border-radius: var(--service-display-radius);
+  background: var(--service-display-fill);
+  box-shadow: var(--service-display-shadow);
+  color: var(--service-display-colour);
+  font-family: var(--service-display-font);
+  font-size: var(--service-display-size);
+  line-height: var(--service-display-leading);
+  letter-spacing: var(--service-display-tracking);
+  text-transform: var(--service-display-transform);
+  text-shadow: var(--service-display-glow);
 }
 
-.service:nth-of-type(10n + 3) .service-name {
-  background: var(--service-colour-3, var(--service-name-fill));
+.service-display-line {
+  display: var(--service-display-line-display);
+  align-items: baseline;
+  gap: var(--space-row);
+  min-width: 0;
+  /* One line each. A reading longer than the panel is cut rather than wrapped,
+     the way a real one runs out of characters. */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.service:nth-of-type(10n + 4) .service-name {
-  background: var(--service-colour-4, var(--service-name-fill));
+/*
+  Three strengths, so a panel carrying three things at once separates them the
+  way a real one does: what it is reading brightest, what that reading is of
+  behind it, and the standing figure quietest of the three.
+*/
+.service-display-main {
+  display: var(--service-display-main-display);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.service:nth-of-type(10n + 5) .service-name {
-  background: var(--service-colour-5, var(--service-name-fill));
-}
-
-.service:nth-of-type(10n + 6) .service-name {
-  background: var(--service-colour-6, var(--service-name-fill));
-}
-
-.service:nth-of-type(10n + 7) .service-name {
-  background: var(--service-colour-7, var(--service-name-fill));
-}
-
-.service:nth-of-type(10n + 8) .service-name {
-  background: var(--service-colour-8, var(--service-name-fill));
-}
-
-.service:nth-of-type(10n + 9) .service-name {
-  background: var(--service-colour-9, var(--service-name-fill));
-}
-
-.service:nth-of-type(10n + 10) .service-name {
-  background: var(--service-colour-10, var(--service-name-fill));
+.service-display-line + .service-display-line {
+  color: var(--service-display-colour-quiet);
 }
 
 .service-uptime {
@@ -1378,13 +1666,18 @@ body::after {
      the trailing edge whether the name grows or is fixed. */
   margin-inline-start: auto;
   flex: none;
-  color: var(--text-2);
-  font-family: var(--font-meta);
-  font-size: var(--text-size-caption);
+  color: var(--uptime-colour);
+  font-family: var(--uptime-font);
+  font-size: var(--uptime-size);
+}
+
+.service-display .service-uptime {
+  color: var(--service-display-colour-faint);
 }
 
 .service-chevron {
   flex: none;
+  display: var(--disclosure-icon-display);
   color: var(--service-icon-colour);
   font-size: var(--text-size-ornament);
   line-height: 1;
@@ -1393,6 +1686,69 @@ body::after {
 
 .service[data-open="true"] .service-chevron {
   transform: rotate(180deg);
+}
+
+/*
+  What says a row opens, where a design draws no icons at all.
+
+  A chevron is a picture, and a design built from one typeface says the same
+  thing with a character. The two characters are the theme's, because which one
+  means "this opens" is a design decision; the element is undisplayed wherever
+  the chevron is drawn instead, so no design shows both.
+*/
+.disclosure-mark {
+  flex: none;
+  display: var(--disclosure-mark-display);
+  /* A design may stand its key against the top of the row rather than in the
+     middle of it, level with whatever it sits beside. */
+  align-self: var(--disclosure-mark-self);
+  place-items: center;
+  width: var(--disclosure-mark-width);
+  height: var(--disclosure-mark-height);
+  border-radius: var(--disclosure-mark-radius);
+  background: var(--disclosure-mark-fill);
+  box-shadow: var(--disclosure-mark-shadow);
+  color: var(--service-icon-colour);
+  font-family: var(--font-display);
+  font-size: var(--text-size-ornament);
+  font-weight: var(--display-weight);
+  line-height: 1;
+}
+
+/*
+  What the mark carries.
+
+  A character in one design and a lamp in another: the content is the theme's,
+  and where it is empty this is a round pilot light in the middle of the key,
+  dark until the row is open.
+*/
+.disclosure-mark::before {
+  content: var(--disclosure-mark-closed);
+  width: var(--disclosure-led-size);
+  height: var(--disclosure-led-size);
+  border-radius: 50%;
+  background: var(--disclosure-led-fill);
+  box-shadow: var(--disclosure-led-glow);
+}
+
+/* Where a design puts the whole affordance in one key, the row's own hover
+   goes quiet and the key answers instead. The control that opens every row at
+   once answers to nothing, because it is not one row's key. */
+.service-summary:hover .disclosure-mark {
+  background: var(--disclosure-mark-fill-hover);
+}
+
+.service[data-open="true"] .disclosure-mark,
+.toggle-all.is-expanded .disclosure-mark {
+  background: var(--disclosure-mark-fill-pressed);
+  box-shadow: var(--disclosure-mark-shadow-pressed);
+}
+
+.service[data-open="true"] .disclosure-mark::before,
+.toggle-all.is-expanded .disclosure-mark::before {
+  content: var(--disclosure-mark-open);
+  background: var(--disclosure-led-fill-on);
+  box-shadow: var(--disclosure-led-glow-on);
 }
 
 /* ── Availability strip ───────────────────────────────────────────────────── */
@@ -1656,9 +2012,21 @@ body::after {
   grid-column: 1 / -1;
 }
 
+/*
+  The face the readings are drawn on.
+
+  Most designs leave it bare and the page shows through. A design may instead
+  give it a surface, a frame and room around the drawing, which is how one of
+  them turns the plot into the lit scale of a receiver: the ticks are the
+  surface, and the trace runs across them.
+*/
 .chart-plot {
   display: block;
+  padding: var(--chart-plot-inset);
+  border: var(--chart-plot-edge-width) var(--rule-style)
+    var(--chart-plot-edge-colour);
   border-radius: var(--control-radius);
+  background: var(--chart-plot-fill);
 }
 
 .chart-svg {
@@ -1666,6 +2034,24 @@ body::after {
   width: 100%;
   height: auto;
   overflow: visible;
+}
+
+/*
+  The two ends of the range, read under the drawing rather than inside it.
+
+  Out here they stand on the card rather than on whatever surface the plot is
+  given, and they keep one size instead of scaling with the drawing.
+*/
+.chart-axis-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  /* Its own distance from the drawing, with the grid's row gap taken back off
+     so the token states the whole of it. */
+  margin-block-start: calc(var(--chart-axis-space) - var(--space-tight));
+  color: var(--chart-axis-text-colour);
+  font-family: var(--font-meta);
+  font-size: var(--chart-axis-text-size);
 }
 
 .chart-empty {
@@ -1761,12 +2147,57 @@ body::after {
   vector-effect: non-scaling-stroke;
 }
 
+/* The ring on the trace under the pointer. A design that reads its chart with
+   a pointer of its own draws none. */
+.chart-hover-point {
+  display: var(--chart-hover-point-display);
+}
+
+/*
+  The ticks of a printed scale, hanging below the plot. Two lengths, so the
+  eye finds the long ones first, and both are zero in a design that prints no
+  scale.
+*/
+.chart-tick {
+  stroke: var(--chart-tick-colour);
+  stroke-width: var(--rule-width);
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-tick--major {
+  stroke: var(--chart-tick-major-colour);
+}
+
+/*
+  The pointer.
+
+  A receiver reads through a strip of plexiglass with a line down the middle
+  of it, and that is what this is: a translucent band the width the theme
+  states, centred on the reading, with the crosshair drawn over it. A design
+  that wants none sets the width to zero.
+*/
+.chart-needle {
+  transform-box: fill-box;
+  transform: translateX(-50%);
+  width: var(--chart-needle-width);
+  fill: var(--chart-needle-fill);
+  stroke: var(--chart-needle-edge);
+  stroke-width: var(--rule-width);
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 linearGradient stop {
   stop-color: var(--series-colour);
 }
 
+/* The value axis, which a design drawing edge to edge does not want. */
+.chart-axis-line--value {
+  display: var(--chart-axis-value-display);
+}
+
 .chart-crosshair {
-  stroke: var(--text-3);
+  stroke: var(--chart-crosshair-colour);
   stroke-width: var(--rule-width);
   stroke-dasharray: var(--chart-crosshair-dash);
   vector-effect: non-scaling-stroke;
@@ -1810,22 +2241,22 @@ linearGradient stop {
   display: grid;
   justify-items: var(--footer-align);
   gap: var(--space-hair);
-  /*
-    The bottom padding clears the two stamps, which are fixed to the window's
-    corners and would otherwise sit on top of the credit. A theme that aligns
-    its footer left puts the credit directly over the version stamp: measured
-    on the Cosmist theme before this, they overlapped by 7px horizontally and
-    16px vertically. The clearance is derived from the stamp's own inset and
-    size rather than guessed, so it follows a theme that changes either.
-  */
-  padding: var(--space-section) 0
-    calc(var(--stamp-inset-block) * 2 + var(--text-size-chart-label) * 2);
+  padding: var(--space-section) 0;
   text-align: var(--footer-text-align);
 }
 
+/*
+  The credit is two lines that end on the same two edges, whatever face either
+  is set in. The group takes its width from the wordmark, which is the wider of
+  the two, and the label above is stretched across it.
+
+  `text-align-last` is what does that: `justify` alone leaves a final line
+  ranged, and a two-word label is nothing but a final line.
+*/
 .powered {
   display: grid;
-  justify-items: var(--footer-align);
+  justify-self: var(--footer-align);
+  justify-items: stretch;
   gap: var(--space-hair);
   line-height: 1;
 }
@@ -1834,16 +2265,37 @@ linearGradient stop {
   color: var(--text-3);
   font-family: var(--font-meta);
   font-size: var(--text-size-chart-label);
-  letter-spacing: var(--label-tracking);
+  /*
+    Tracked out to the wordmark's width rather than justified to it. Justifying
+    two words puts the whole difference into the one space between them, which
+    reads as a hole; letter-spacing spreads it across every gap, which is what
+    a line set to a measure does. `page.ts` works out the step, because it
+    depends on the two faces and neither is known here.
+
+    The negative end margin takes back the step that letter-spacing adds after
+    the last letter, which would otherwise carry the line past the mark.
+  */
+  letter-spacing: var(--powered-label-tracking, var(--label-tracking));
+  margin-inline-end: calc(-1 * var(--powered-label-tracking, 0px));
 }
 
+/*
+  The Velvet wordmark, and it is the same lettering on every page.
+
+  Only its colour is a theme's to choose. The face, the weight, the tracking and
+  the casing are the mark itself, taken from `VelvetWordmark.svelte`, which sets
+  Plaster at 400 with no tracking and no transform, at 24px in the footer. A
+  theme that set its own face here would be drawing a different mark.
+*/
 .velvet-wordmark {
   color: var(--brand-primary);
-  font-family: var(--font-display);
-  font-size: var(--text-size-lead);
-  font-weight: var(--display-weight);
-  letter-spacing: var(--display-tracking);
-  text-transform: var(--display-transform);
+  font-family: var(--brand-font);
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1;
+  text-transform: none;
 }
 
 .configured {
@@ -1862,23 +2314,56 @@ linearGradient stop {
   color: var(--accent);
 }
 
+/* A design that carries the two figures elsewhere sets the display to none, so
+   the page states each of them once. */
 .stamp {
-  position: fixed;
-  inset-block-end: var(--stamp-inset-block);
+  display: var(--stamp-display);
   margin: 0;
   color: var(--text-3);
   font-family: var(--font-meta);
   font-size: var(--text-size-chart-label);
+  letter-spacing: var(--stamp-tracking);
   pointer-events: none;
   user-select: none;
 }
 
+/*
+  One row across the foot of the page: version at the leading edge, the credit
+  in the middle, serial at the trailing one, all on the same baseline. The two
+  outer columns are equal, so the middle one stays centred whichever of them is
+  the wider.
+*/
+.status-footer-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  gap: var(--space-row);
+  width: 100%;
+}
+
+/*
+  Each of the three names its column, so a design that hides the two figures
+  leaves the credit where it was. Auto-placement would otherwise move it into
+  the column the version had vacated, which puts a centred line at the leading
+  edge.
+*/
 .stamp--build {
-  inset-inline-start: var(--stamp-inset-inline);
+  grid-column: 1;
+  justify-self: start;
+  /* Stood in from the page's edge by whatever a design wants to line them up
+     with. One design uses the width of the cheeks its cards are held between,
+     so the three lines below the rack begin where the metal does. */
+  margin-inline-start: var(--stamp-inset-inline);
+}
+
+.status-footer-row .configured {
+  grid-column: 2;
 }
 
 .stamp--serial {
-  inset-inline-end: var(--stamp-inset-inline);
+  grid-column: 3;
+  justify-self: end;
+  margin-inline-end: var(--stamp-inset-inline);
 }
 
 .visually-hidden {
@@ -1962,6 +2447,17 @@ linearGradient stop {
    so it cannot be mistaken for the design under review. This is the one place
    in this file where literals are correct: it has to look the same on all four
    pages, whatever the theme beneath it does. */
+
+/* The element the page is mounted into, which stands between the document and
+   the page and would otherwise stop the page taking the height the document
+   has left for it. In a published installation the page is the document's own
+   child and nothing of this exists. */
+#mockup {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 .mockup-bar {
   position: sticky;
   top: 0;

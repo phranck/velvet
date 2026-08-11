@@ -175,9 +175,16 @@ export interface UptimeStrip {
  * width, the device pixel ratio, the hovered segment, or the theme changes.
  *
  * @param host - The element the strip is drawn into. It is emptied first.
+ * @param report - Where the reading for the hovered day goes, one string per
+ *   line, or `null` when nothing is hovered. Given by a design that reads on a
+ *   display of its own; where it is absent the strip shows its own overlay
+ *   over the segment instead.
  * @returns Handles for updating and tearing the strip down.
  */
-export function createUptimeStrip(host: HTMLElement): UptimeStrip {
+export function createUptimeStrip(
+  host: HTMLElement,
+  report?: (lines: string[] | null) => void,
+): UptimeStrip {
   host.textContent = "";
   host.classList.add("uptime-strip");
   host.setAttribute("role", "img");
@@ -329,9 +336,17 @@ export function createUptimeStrip(host: HTMLElement): UptimeStrip {
   function placeTooltip(): void {
     if (hovered === null || !days[hovered]) {
       tooltip.hide();
+      report?.(null);
       return;
     }
     const index = hovered;
+    // A design may read this on a display of its own rather than over the
+    // strip, and then it is told the same lines instead of being drawn on top
+    // of the page.
+    if (report) {
+      report(tooltipFor(days[index]!).split("\n"));
+      return;
+    }
     tooltip.show(tooltipFor(days[index]!), () => {
       if (hovered !== index) return null;
       const box = host.getBoundingClientRect();

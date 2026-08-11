@@ -115,6 +115,43 @@ function icon(name: string, className: string): HTMLElement {
   return element;
 }
 
+/**
+ * Whether the design reads on a display of its own rather than in an overlay.
+ *
+ * Read once, from the root, because a mockup page carries one theme for its
+ * whole life and this decides how every row is wired.
+ */
+const READS_ON_DISPLAY =
+  getComputedStyle(document.documentElement)
+    .getPropertyValue("--service-display-display")
+    .trim() !== "contents";
+
+/** What a service's own state is called on that display. */
+const STATE_WORD: Record<ServiceStatus, string> = {
+  operational: "Operational",
+  degraded: "Degraded",
+  outage: "Outage",
+  maintenance: "Maintenance",
+  unknown: "No data",
+};
+
+/**
+ * The mark a design without icons uses where another design puts a chevron.
+ *
+ * It carries no text of its own. `base.css` states the two characters, because
+ * which character says "this opens" is a design decision rather than a fact
+ * about the row, and a theme that draws a chevron leaves the element
+ * undisplayed. Hidden from assistive technology, since the button around it
+ * already says what it does.
+ *
+ * @returns The mark, ready to be put in a control beside its glyph.
+ */
+function disclosureMark(): HTMLElement {
+  const mark = el("span", "disclosure-mark");
+  mark.setAttribute("aria-hidden", "true");
+  return mark;
+}
+
 /** What one service row owns, so a range change can reach into it. */
 interface ServiceRow {
   id: string;
@@ -124,6 +161,9 @@ interface ServiceRow {
   root: HTMLElement;
   summary: HTMLElement;
   uptime: HTMLElement;
+  status: ServiceStatus;
+  displayMain: HTMLElement;
+  displaySecond: HTMLElement;
   stripHost: HTMLElement;
   strip: UptimeStrip;
   axisFrom: HTMLElement;
@@ -204,16 +244,20 @@ export function mountStatusPage(
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
+  /*
+    The installation's own name, and nothing beside it.
+
+    A published page carries a bar with the operator's name or logo in it and no
+    links: `StatusPage.svelte` drops the one entry the default configuration
+    holds, because its address is the page itself, and an installation adds
+    others only by hand. `base.css` goes on styling those, so a theme covers
+    them where an operator has written some, but a mockup that invented three
+    would be showing a page nobody has.
+  */
   const nav = el("nav", "status-nav");
   const brand = el("a", "status-brand", mockConfig.name);
   brand.href = "#";
-  const links = el("div", "status-nav-links");
-  for (const link of mockConfig.navigation) {
-    const anchor = el("a", "status-nav-link", link.title);
-    anchor.href = link.href;
-    links.append(anchor);
-  }
-  nav.append(brand, links);
+  nav.append(brand);
 
   // ── Hero ──────────────────────────────────────────────────────────────────
   const overall = overallStatus(statusDocument.services);
@@ -401,13 +445,37 @@ export function mountStatusPage(
   }
   const toggleAll = el("button", "toggle-all");
   toggleAll.type = "button";
-  toggleAll.append(icon("ph-caret-circle-double-down", "toggle-all-glyph"));
+  toggleAll.append(
+    icon("ph-caret-circle-double-down", "toggle-all-glyph"),
+    disclosureMark(),
+  );
   toggleAll.addEventListener("click", () => {
     const shouldOpen = !rows.every((row) => row.open);
     for (const row of rows) setOpen(row, shouldOpen);
     reflectToggleAll();
   });
   rangeBar.append(groupName, rangeButtons, toggleAll);
+
+  /**
+   * Puts a reading on a row's display, or restores what it says at rest.
+   *
+   * One line each. At rest the display names the service's own state and the
+   * window it is reporting on, which is what a machine of this kind shows when
+   * nobody is touching it.
+   *
+   * @param row - The row whose display is being written.
+   * @param lines - The reading, one string per line, or `null` for at rest.
+   */
+  function readOut(row: ServiceRow, lines: string[] | null): void {
+    if (!lines || lines.length === 0) {
+      row.displayMain.textContent = STATE_WORD[row.status];
+      row.displaySecond.textContent =
+        RANGES.find((option) => option.key === range)?.description ?? "";
+      return;
+    }
+    row.displayMain.textContent = lines[0] ?? "";
+    row.displaySecond.textContent = lines.slice(1).join("   ");
+  }
 
   /** Keeps the expand-all control showing what it would do next. */
   function reflectToggleAll(): void {
@@ -463,25 +531,52 @@ export function mountStatusPage(
       icon(ICONS[mockConfig.icons[service.id] ?? ""] ?? "ph-circle", "service-icon"),
       el("span", "service-name", service.name),
     );
-    // The badges appear only where there is something to distinguish, which is
-    // what `ServiceSummary.svelte` does: one IPv4 check needs no label.
-    if (service.checks.length > 1 || service.checks[0]?.protocol === "ipv6") {
-      const badges = el("span", "service-protocols");
-      badges.setAttribute("aria-label", "Protocol reachability");
-      for (const check of service.checks) {
-        const badge = el(
-          "span",
-          "protocol-badge",
-          check.protocol === "ipv4" ? "IPv4" : "IPv6",
-        );
-        badge.dataset.protocol = check.protocol;
-        badge.dataset.status = check.status;
-        badges.append(badge);
-      }
-      summary.append(badges);
+    /*
+      Both protocols, always, with each marked as measured or not.
+
+      `ServiceSummary.svelte` shows a badge only where there is something to
+      distinguish, and a design may keep that: it hides whatever is marked
+      absent, and hides the pair entirely where a service has one IPv4 check
+      and nothing to compare it with. One design instead draws the pair as two
+      lamps and lights whichever protocol was actually measured, which needs
+      both in the markup whatever the service has.
+    */
+    const badges = el("span", "service-protocols");
+    badges.setAttribute("aria-label", "Protocol reachability");
+    badges.dataset.single = String(
+      service.checks.length === 1 && service.checks[0]?.protocol === "ipv4",
+    );
+    for (const protocol of ["ipv4", "ipv6"] as const) {
+      const check = service.checks.find((entry) => entry.protocol === protocol);
+      const badge = el(
+        "span",
+        "protocol-badge",
+        protocol === "ipv4" ? "IPv4" : "IPv6",
+      );
+      badge.dataset.protocol = protocol;
+      badge.dataset.present = String(Boolean(check));
+      if (check) badge.dataset.status = check.status;
+      badges.append(badge);
     }
+    summary.append(badges);
+    /*
+      Two lines a design may read on, with the uptime figure at the end of the
+      first. Where a design has no such display, both the element and its lines
+      are `display: contents`, so the figure is a child of the row again and
+      the row is laid out exactly as it was before this existed.
+    */
     const uptime = el("span", "service-uptime");
-    summary.append(uptime, icon("ph-caret-circle-down", "service-chevron"));
+    const displayMain = el("span", "service-display-main");
+    const displaySecond = el("span", "service-display-line");
+    const displayFirst = el("span", "service-display-line");
+    displayFirst.append(displayMain, uptime);
+    const display = el("span", "service-display");
+    display.append(displayFirst, displaySecond);
+    summary.append(
+      display,
+      icon("ph-caret-circle-down", "service-chevron"),
+      disclosureMark(),
+    );
 
     const stripHost = el("div", "uptime-strip-host");
     const axis = el("div", "strip-axis");
@@ -542,12 +637,24 @@ export function mountStatusPage(
       root: row,
       summary,
       uptime,
+      status: service.status,
+      displayMain,
+      displaySecond,
       stripHost,
-      strip: createUptimeStrip(stripHost),
+      strip: createUptimeStrip(
+        stripHost,
+        READS_ON_DISPLAY ? (lines) => readOut(entry, lines) : undefined,
+      ),
       axisFrom,
       detailWrap,
       panel: disclosure(detailWrap, false),
-      chart: createChartView(chartHost, service.id, service.name, GENERATED_AT),
+      chart: createChartView(
+        chartHost,
+        service.id,
+        service.name,
+        GENERATED_AT,
+        READS_ON_DISPLAY ? (lines) => readOut(entry, lines) : undefined,
+      ),
       chartBuilt: false,
     };
     rows.push(entry);
@@ -589,6 +696,13 @@ export function mountStatusPage(
 
   // ── Footer ────────────────────────────────────────────────────────────────
   const footer = el("footer", "status-footer");
+  const build = el("p", "stamp stamp--build", `v${mockConfig.version}`);
+  const serial = el(
+    "p",
+    "stamp stamp--serial",
+    `Serial #${String(mockConfig.serial).padStart(5, "0")}`,
+  );
+
   const powered = el("div", "powered");
   powered.append(
     el("span", "powered-label", "powered by"),
@@ -601,24 +715,63 @@ export function mountStatusPage(
   configuredLink.rel = "noopener noreferrer";
   configuredLink.target = "_blank";
   configured.append(configuredLink);
-  footer.append(powered, configured);
+  /*
+    The version, the credit line and the serial share one row, so all three sit
+    on one baseline. They used to be fixed to the window's corners whilst the
+    credit sat in the flow, which put them on different lines by however tall
+    the footer happened to be.
+  */
+  const footerRow = el("div", "status-footer-row");
+  footerRow.append(build, configured, serial);
+  footer.append(powered, footerRow);
 
-  const build = el("p", "stamp stamp--build", `v${mockConfig.version}`);
-  const serial = el(
-    "p",
-    "stamp stamp--serial",
-    `Serial #${String(mockConfig.serial).padStart(5, "0")}`,
-  );
+  /*
+    Tracks the credit's label out until it ends where the wordmark ends.
+    Measured rather than stated, because the two lines are set in different
+    faces at different sizes and only the browser knows what either comes to.
+  */
+  function fitPoweredLabel(): void {
+    const mark = powered.querySelector<HTMLElement>(".velvet-wordmark");
+    const label = powered.querySelector<HTMLElement>(".powered-label");
+    if (!mark || !label) return;
+    label.style.removeProperty("--powered-label-tracking");
+    const natural = label.getBoundingClientRect().width;
+    const target = mark.getBoundingClientRect().width;
+    const gaps = (label.textContent ?? "").length - 1;
+    if (gaps <= 0 || natural <= 0 || target <= natural) return;
+    label.style.setProperty(
+      "--powered-label-tracking",
+      `${(target - natural) / gaps}px`,
+    );
+  }
+  new ResizeObserver(fitPoweredLabel).observe(powered);
+  void document.fonts.ready.then(fitPoweredLabel);
+
 
   const body = el("div", "status-body");
+  // The foot of the limb the range bar opens: a design that draws one closes it
+  // here, and every other leaves it undisplayed.
+  const serviceFoot = el("div", "service-foot");
+  // The arm can carry the version and the serial, which is why it is not hidden
+  // from a reader who hears the page. What it draws besides those two is
+  // decoration. A design that shows them here hides the footer's own pair, so
+  // the page states each figure once.
+  serviceFoot.append(
+    el("span", "service-foot-version", `v${mockConfig.version}`),
+    el(
+      "span",
+      "service-foot-serial",
+      `Serial #${String(mockConfig.serial).padStart(5, "0")}`,
+    ),
+  );
+  serviceHost.append(serviceFoot);
+
   body.append(notices, rangeBar, serviceHost);
   page.append(
     band("nav", nav),
     band("hero", hero),
     band("body", body),
     band("footer", footer),
-    build,
-    serial,
   );
   container.append(page);
   // The state goes on the root, where a theme can read it, because a theme
@@ -732,6 +885,9 @@ export function mountStatusPage(
         range,
       );
       row.axisFrom.textContent = RANGE_LABEL[range];
+      // The display names the window it is reporting on, so a range change
+      // rewrites what it says at rest.
+      readOut(row, null);
       if (row.chartBuilt) {
         row.chart.update(
           responseTimesDocument.series.filter(
