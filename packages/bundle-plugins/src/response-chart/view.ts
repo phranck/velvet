@@ -56,6 +56,14 @@ export interface ResponseChartStyle {
   tooltipWidth: number;
   /** The opacity of the area under the curve; zero draws none. */
   fill: number;
+  /** How far apart the ticks of a printed scale stand. Zero draws none. */
+  tickStep: number;
+  /** Every how many ticks a long one is drawn. */
+  tickMajorEvery: number;
+  /** How far a short tick reaches up from the time axis. */
+  tickMinor: number;
+  /** How far a long tick reaches up from the time axis. */
+  tickMajor: number;
 }
 
 /** What the chart draws where a design says nothing. */
@@ -68,7 +76,17 @@ export const DEFAULT_RESPONSE_CHART_STYLE: ResponseChartStyle = {
   pointRadius: 3,
   tooltipWidth: 136,
   fill: 0,
+  tickStep: 0,
+  tickMajorEvery: 4,
+  tickMinor: 0,
+  tickMajor: 0,
 };
+
+/** What each of the two series is drawn in. */
+export interface SeriesColours {
+  ipv4: string;
+  ipv6: string;
+}
 
 /** How a design configures one chart. */
 export interface ResponseChartOptions {
@@ -82,6 +100,24 @@ export interface ResponseChartOptions {
   style?: Partial<ResponseChartStyle> | (() => Partial<ResponseChartStyle>);
   /** The class put on the hover reading, which lives on the document's layer. */
   tooltipClassName?: string;
+  /**
+   * What each series is drawn in, or a function returning it.
+   *
+   * Read once per render rather than once per pointer move. The hover reading
+   * lives on the document rather than inside the service, so it inherits
+   * nothing from it: a design that colours a series by service has to hand
+   * those colours over. Left out where the design colours by protocol, and the
+   * reading's own rule then stands.
+   */
+  seriesColours?: SeriesColours | (() => SeriesColours);
+  /**
+   * Where the reading under the crosshair goes, one string per line, or `null`
+   * when the pointer has left.
+   *
+   * Given by a design that reads on a display of its own; where it is absent
+   * the chart shows its own overlay above the plot instead.
+   */
+  report?: (lines: string[] | null) => void;
 }
 
 type Series = ResponseSeries;
@@ -99,6 +135,9 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * because the ratio of the plot is a design decision.
  */
 const VIEW_WIDTH = 640;
+
+/** What one grid line stands apart from the next by, in milliseconds. */
+const AXIS_STEP = 20;
 
 /** How many points survive downsampling, matching `MAX_POINTS` in the component. */
 const MAX_POINTS = 96;
@@ -183,7 +222,8 @@ export interface ChartView {
  * @param serviceName - Named in the accessible description.
  * @param generatedAt - The moment the data was generated, which is the right
  *   edge of every range window.
- * @param options - The layout, and the class the hover reading carries.
+ * @param options - The layout, the series colours, the reporter, and the class
+ *   the hover reading carries.
  * @returns A handle for updating the chart.
  */
 export function createChartView(
@@ -193,11 +233,22 @@ export function createChartView(
   generatedAt: string,
   options: ResponseChartOptions = {},
 ): ChartView {
+  const report = options.report;
+
   /** The layout as it stands now, which a function-valued option can change. */
   function currentStyle(): ResponseChartStyle {
     const given =
       typeof options.style === "function" ? options.style() : options.style;
     return { ...DEFAULT_RESPONSE_CHART_STYLE, ...given };
+  }
+
+  /** The series colours as they stand now, on the same terms as the layout. */
+  function currentSeriesColours(): SeriesColours {
+    const given =
+      typeof options.seriesColours === "function"
+        ? options.seriesColours()
+        : options.seriesColours;
+    return given ?? { ipv4: "", ipv6: "" };
   }
 
   host.textContent = "";
@@ -214,11 +265,34 @@ export function createChartView(
   plotHost.className = "chart-plot";
   plotHost.setAttribute("tabindex", "0");
   plotHost.setAttribute("role", "img");
-  host.append(caption, legend, plotHost);
+  /*
+    The two ends of the range, under the drawing rather than inside it.
+
+    A design may give the plot a surface of its own, and a label drawn inside
+    the drawing stands on that surface rather than under it. Out here it sits
+    on whatever the card is made of, which is where a scale of this kind is
+    read from.
+  */
+  const axisRow = document.createElement("div");
+  axisRow.className = "chart-axis-row";
+  axisRow.setAttribute("aria-hidden", "true");
+  const axisFrom = document.createElement("span");
+  const axisTo = document.createElement("span");
+  axisTo.textContent = "Now";
+  axisRow.append(axisFrom, axisTo);
+  host.append(caption, legend, plotHost, axisRow);
 
   let series: Series = [];
   let range: RangeKey = "month";
   let activeTimestamp: string | null = null;
+  /*
+    What each series is drawn in, read once per render rather than per pointer
+    move. The overlay lives on the document rather than inside the service, so
+    it inherits nothing from it: a design that colours a series by service has
+    to hand those colours over. Empty where the design colours by protocol, and
+    then the overlay's own rule stands.
+  */
+  let seriesColours = { ipv4: "", ipv6: "" };
   /**
    * The reading to show once the drawing is back in the document.
    *
@@ -235,6 +309,21 @@ export function createChartView(
   const tooltip = createOverlay(options.tooltipClassName ?? "chart-reading");
 
   /**
+   * The box the drawing itself occupies.
+   *
+   * The drawing rather than its container, because a design may hold the plot
+   * inside a frame with room around it, and every coordinate below is in the
+   * drawing's own units: measuring the container would carry that room into
+   * the scale and put the crosshair beside the pointer.
+   *
+   * @returns The drawing's box, or the container's whilst nothing is drawn.
+   */
+  function plotBox(): DOMRect {
+    const drawing = plotHost.querySelector("svg");
+    return (drawing ?? plotHost).getBoundingClientRect();
+  }
+
+  /**
    * Shows the reading under the crosshair.
    *
    * @param plotX - Where the crosshair is, in the drawing's own units.
@@ -246,6 +335,20 @@ export function createChartView(
     timestamp: string,
     values: Array<{ protocol: "ipv4" | "ipv6"; responseTimeMs: number }>,
   ): void {
+    // A design may read this on a display of its own, and then it is told the
+    // same two lines rather than having them drawn over the plot.
+    if (report) {
+      report([
+        HOVER_TIME.format(new Date(timestamp)),
+        values
+          .map(
+            (value) =>
+              `${protocolLabel(value.protocol)} ${formatMilliseconds(value.responseTimeMs)}`,
+          )
+          .join("   "),
+      ]);
+      return;
+    }
     const body = document.createElement("span");
     body.className = "chart-reading-body";
     const when = document.createElement("span");
@@ -256,6 +359,8 @@ export function createChartView(
       const row = document.createElement("span");
       row.className = "chart-reading-row";
       row.dataset.protocol = value.protocol;
+      const colour = seriesColours[value.protocol];
+      if (colour) row.style.setProperty("--series-colour", colour);
       const key = document.createElement("span");
       key.className = "chart-reading-key";
       const label = document.createElement("span");
@@ -267,7 +372,7 @@ export function createChartView(
     }
     tooltip.show(body, () => {
       if (activeTimestamp !== timestamp) return null;
-      const box = plotHost.getBoundingClientRect();
+      const box = plotBox();
       if (box.width === 0) return null;
       // The drawing scales to its container, so a coordinate inside the
       // viewBox has to be carried back into viewport units before the overlay
@@ -283,6 +388,7 @@ export function createChartView(
   /** Draws everything from the current state. */
   function render(): void {
     const tokens = currentStyle();
+    seriesColours = currentSeriesColours();
     const filtered = filterResponseSeries(series, range, generatedAt);
     const withSamples = filtered.filter(({ samples }) => samples.length > 0);
 
@@ -321,20 +427,53 @@ export function createChartView(
     plotHost.setAttribute("tabindex", "0");
 
     const plotTop = tokens.insetBlock;
-    // The bottom of the plot leaves room beneath it for the two axis labels,
-    // which sit inside the drawing so they scale with it.
-    const plotBottom = tokens.height - tokens.insetBlock - 20;
+    /*
+      The bottom of the plot leaves room beneath it for the two axis labels,
+      which sit inside the drawing so they scale with it. How much room is the
+      theme's, because a design may want them tucked under the plot or well
+      clear of it.
+
+      Below their baseline sits only enough for their descenders. Taking the
+      inset off both ends instead left that much empty drawing under the words,
+      which the panel's own padding then added to.
+    */
+    /*
+      The time axis is the foot of the drawing. Everything a design prints
+      below the readings stands on it rather than under it: the printed scale
+      grows up from it into the plot, and the two range labels are read
+      outside the drawing altogether.
+    */
+    const plotBottom = tokens.height;
     const plotLeft = tokens.insetInline;
     const plotRight = VIEW_WIDTH - tokens.insetInline;
 
-    let maximum = 1;
+    let highest = 1;
     for (const entry of filtered) {
       for (const sample of entry.samples) {
-        if (sample.responseTimeMs !== null && sample.responseTimeMs > maximum) {
-          maximum = sample.responseTimeMs;
+        if (sample.responseTimeMs !== null && sample.responseTimeMs > highest) {
+          highest = sample.responseTimeMs;
         }
       }
     }
+
+    /*
+      The axis is drawn in steps of twenty milliseconds, and its top is whatever
+      number of those steps the readings need rather than the highest reading
+      itself.
+
+      Scaling to the highest reading made every service look alike: one running
+      at 96ms and one at 412ms both filled the plot to the top, and the shape
+      said nothing about how slow either was. With a fixed step the trace sits
+      where the readings put it, and the labels are figures a reader can compare
+      from one service to the next.
+
+      The step grows in multiples of twenty where it has to, so a slow service
+      does not end up with twenty-five lines across it.
+    */
+    const steps = Math.max(1, tokens.gridLines - 1);
+    const step =
+      AXIS_STEP * Math.max(1, Math.ceil(highest / (AXIS_STEP * steps)));
+    const maximum = step * steps;
 
     const window = responseRangeWindow(range, generatedAt);
     const xFor = (timestamp: string): number =>
@@ -385,6 +524,22 @@ export function createChartView(
     }
     root.append(grid);
 
+    /*
+      The value each grid line stands for, written just above it and inside the
+      plot, so the scale costs no width. The lowest line is zero and says so by
+      being the floor, which is why it carries no label of its own.
+    */
+    const scale = svg("g", { class: "chart-scale", "aria-hidden": "true" });
+    for (let index = 0; index < tokens.gridLines - 1; index += 1) {
+      const y =
+        plotTop + (index * (plotBottom - plotTop)) / (tokens.gridLines - 1);
+      const value = maximum * (1 - index / (tokens.gridLines - 1));
+      const label = svg("text", { x: plotLeft + 4, y: y - 4 });
+      label.textContent = `${Math.round(value)} ms`;
+      scale.append(label);
+    }
+    root.append(scale);
+
     for (const entry of withSamples) {
       const reduced = downsampleResponseSamples(entry.samples, MAX_POINTS);
       for (const run of measuredRuns(reduced)) {
@@ -428,13 +583,26 @@ export function createChartView(
       if (values.length > 0) {
         const x = xFor(activeTimestamp);
         const group = svg("g", { class: "chart-hover", "aria-hidden": "true" });
+        /*
+          The strip the pointer rides on, sized and coloured entirely in the
+          stylesheet: its width is a design decision and its position is not,
+          so the drawing states where it stands and the theme states how wide
+          it is. It is centred on that position by a transform against its own
+          box, since only the theme knows the width to halve.
+        */
         group.append(
+          svg("rect", {
+            class: "chart-needle",
+            x,
+            y: 0,
+            height: tokens.height,
+          }),
           svg("line", {
             class: "chart-crosshair",
             x1: x,
-            y1: plotTop,
+            y1: 0,
             x2: x,
-            y2: plotBottom,
+            y2: tokens.height,
           }),
         );
         for (const value of values) {
@@ -458,17 +626,59 @@ export function createChartView(
       }
     }
 
+    /*
+      The printed scale.
+
+      Drawn here rather than as a background on the plot, because it belongs
+      between the readings and the two labels under them and both of those are
+      in the drawing's own units: a scale positioned in pixels would drift away
+      from them as the chart scales. A design that prints none sets its tick
+      heights to zero and this draws nothing.
+    */
+    if (tokens.tickStep > 0 && (tokens.tickMajor > 0 || tokens.tickMinor > 0)) {
+      const ticks = svg("g", { class: "chart-ticks", "aria-hidden": "true" });
+      let index = 0;
+      for (let x = plotLeft; x <= plotRight + 0.01; x += tokens.tickStep) {
+        const major = index % Math.max(1, tokens.tickMajorEvery) === 0;
+        // Every tick stands on the time axis and reaches up by its own
+        // length, which is how a printed scale is set: the foot is the
+        // measure and the head says how important the mark is.
+        ticks.append(
+          svg("line", {
+            class: major ? "chart-tick chart-tick--major" : "chart-tick",
+            x1: x,
+            y1: plotBottom - (major ? tokens.tickMajor : tokens.tickMinor),
+            x2: x,
+            y2: plotBottom,
+          }),
+        );
+        index += 1;
+      }
+      root.append(ticks);
+    }
+
     const axes = svg("g", { class: "chart-axis", "aria-hidden": "true" });
-    const from = svg("text", { x: plotLeft, y: tokens.height - 4 });
-    from.textContent = RANGE_LABEL[range];
-    const to = svg("text", {
-      x: plotRight,
-      y: tokens.height - 4,
-      "text-anchor": "end",
-    });
-    to.textContent = "Now";
-    axes.append(from, to);
+    // The two sides of the plot, drawn as lines rather than left to the grid.
+    // A design may want them stronger than the grid, and they are what the
+    // readings are measured against.
+    axes.append(
+      svg("line", {
+        class: "chart-axis-line chart-axis-line--value",
+        x1: plotLeft,
+        y1: plotTop,
+        x2: plotLeft,
+        y2: plotBottom,
+      }),
+      svg("line", {
+        class: "chart-axis-line chart-axis-line--time",
+        x1: plotLeft,
+        y1: plotBottom,
+        x2: plotRight,
+        y2: plotBottom,
+      }),
+    );
     root.append(axes);
+    axisFrom.textContent = RANGE_LABEL[range];
 
     const description = withSamples
       .map((entry) => {
@@ -497,12 +707,13 @@ export function createChartView(
       pendingReading = null;
     } else {
       tooltip.hide();
+      report?.(null);
     }
   }
 
   /** Moves the crosshair to whichever measurement is nearest the pointer. */
   function onPointerMove(event: PointerEvent): void {
-    const box = plotHost.getBoundingClientRect();
+    const box = plotBox();
     if (box.width === 0) return;
     const ratio = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
     const window = responseRangeWindow(range, generatedAt);

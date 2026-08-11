@@ -14,8 +14,8 @@
  *
  * Measured before this, hovering the first segment of the first service: the
  * tooltip stood 12px above the card's top edge and 18px to the left of it under
- * the Vector Grid theme, both inside a `clip-path`, and the chart tooltip had a
- * clipping ancestor in all six designs.
+ * one of the designs, both inside a `clip-path`, and the chart tooltip had a
+ * clipping ancestor in every one of them.
  *
  * Version 1.
  */

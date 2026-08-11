@@ -26,7 +26,7 @@
  * page must not wait on a font host to report on its own availability.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Doto:wght@400;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Monoton&family=Plaster&family=Tangerine:wght@400;700&display=swap");
 
 :root {
   /* ── Identity ─────────────────────────────────────────────────────────── */
@@ -50,6 +50,9 @@
   --popover-edge: #e8a33d;
 
   /* ── Brand and accent ─────────────────────────────────────────────────── */
+  /* The Velvet wordmark, which is the same lettering on every page. Its
+     colour is this theme's; its face is not. */
+  --brand-font: "Plaster", sans-serif;
   --brand-primary: #e8a33d;
   --accent: #e8a33d;
   --accent-quiet: rgb(232 163 61 / 0.16);
@@ -63,6 +66,7 @@
   --state-no-data: #3d2c1d;
   --state-maintenance: #6f8794;
   --state-maintenance-edge: #9fb4c0;
+  --state-unknown-mark: var(--state-ghost-edge);
   --state-ghost-edge: #8d8770;
   --protocol-ipv4: #e8a33d;
   --protocol-ipv6: #8fae5a;
@@ -75,6 +79,28 @@
   --font-body: "IBM Plex Mono", ui-monospace, monospace;
   --font-meta: "IBM Plex Mono", ui-monospace, monospace;
   --display-transform: uppercase;
+  --brand-weight: var(--display-weight);
+  --brand-tracking: var(--display-tracking);
+  --nav-link-size: var(--text-size-caption);
+  --nav-link-tracking: var(--label-tracking);
+  /*
+    Monoton for the one line that names the state, and nowhere else. It draws
+    every stroke as a pair of hairlines, which is the lettering a cassette
+    inlay carries, and at paragraph size it stops being readable at all. It
+    ships one weight, so the headline takes that rather than the display one.
+  */
+  --headline-font: "Monoton", cursive;
+  --headline-weight: 400;
+  --headline-tracking: var(--display-tracking);
+  --hero-updated-size: var(--text-size-caption);
+  --notices-heading-weight: var(--display-weight);
+  --notices-heading-tracking: var(--label-tracking);
+  --group-name-size: var(--text-size-caption);
+  --group-name-weight: var(--display-weight);
+  --group-name-tracking: var(--label-tracking);
+  --uptime-size: var(--text-size-caption);
+  --stamp-display: block;
+  --stamp-tracking: var(--label-tracking);
   --display-tracking: 0.1em;
   --display-weight: 500;
   --label-transform: uppercase;
@@ -88,7 +114,7 @@
   --text-size-badge: 11px;
   --text-size-lead: 16px;
   --text-size-section: 14px;
-  --text-size-service: 16px;
+  --text-size-service: 40px;
   --text-size-brand: 17px;
   --text-size-headline: 30px;
   --text-size-hero-glyph: 44px;
@@ -101,33 +127,45 @@
   --text-leading-tight: 1.45;
 
   /* ── Shape ────────────────────────────────────────────────────────────── */
-  /* No radius anywhere. The corner cut is a chamfer, which is a polygon rather
-     than a radius, so the two properties are stated side by side and each
-     surface uses the one that applies. */
-  --detail-space-after: 0px;
-  --detail-padding: var(--card-padding);
-  --card-radius-base: 0px;
-  --card-radius: 0px;
-  --card-clip: polygon(
-    0 0,
-    calc(100% - 14px) 0,
-    100% 14px,
-    100% 100%,
-    14px 100%,
-    0 calc(100% - 14px)
-  );
+  /*
+    Moulded rather than cut.
+
+    A shell of this period is injection-moulded ABS, and a mould has a radius
+    at every edge because a sharp one neither fills nor releases. So the card
+    carries a radius, and the surfaces inside it carry smaller ones in the same
+    manner: a moulding is rounded throughout or it is not a moulding.
+
+    The one thing that stays square is the printed band across the top, which
+    is ink on a flat face rather than a shape in the plastic.
+  */
+  /* The opened panel is not a card: no outline, no fill of its own. */
+  --detail-edge-width: 0px;
+  --detail-edge-colour: var(--surface-rule);
+  --detail-fill: transparent;
+  --chart-rule-width: var(--rule-width);
+  --chart-rule-colour: var(--surface-rule);
+  /* The opened panel is not a card, so it adds nothing of its own: everything
+     inside the case stands the same distance from it, which is the card's
+     padding plus the inset every row shares. */
+  --detail-space-after: var(--row-inset);
+  --detail-padding: 0px;
+  --card-radius-base: 12px;
+  --card-radius: 12px;
+  --card-clip: none;
   --card-border-width: 1px;
-  --card-shadow: none;
-  --control-radius: 0px;
+  --card-shadow: 0 10px 22px rgb(0 0 0 / 0.55);
+  --control-radius: 5px;
   --control-border-width: 1px;
   --badge-border-width: 1px;
-  --badge-radius: 0px;
-  --tooltip-radius: 0px;
+  --badge-radius: 4px;
+  --tooltip-radius: 7px;
   --tooltip-clip: none;
-  --dot-radius: 0px;
+  /* An indicator lamp is round. */
+  --dot-radius: 999px;
   --rule-width: 1px;
   --rule-style: solid;
-  --summary-hover-fill: var(--accent-quiet);
+  /* The row does not answer to the pointer; its key does. */
+  --summary-hover-fill: transparent;
   --focus-width: 2px;
   --focus-offset: 3px;
 
@@ -136,9 +174,17 @@
   --page-width: 920px;
   --page-inset: clamp(12px, 4vw, 32px);
   --row-inset: var(--card-text-inset);
-  --card-padding: 16px;
-  /* Clears the label head printed across the top. */
+  --card-padding: 26px;
+  /*
+    Clears the plate at either end.
+
+    The head runs to 32 pixels: a 22 pixel plate, a 3 pixel stripe under it and
+    two hairlines. The foot is the plate alone, so 22. Sixteen pixels of metal
+    inside each of them, which is what the cheeks leave at the sides, so the
+    face has the same margin the whole way round.
+  */
   --card-padding-top: 48px;
+  --card-padding-bottom: 38px;
   --card-gap: 10px;
   --space-hair: 5px;
   --space-tight: 9px;
@@ -156,14 +202,14 @@
   --badge-padding-inline: 6px;
   --tooltip-padding-block: 7px;
   --tooltip-padding-inline: 11px;
-  --stamp-inset-block: 8px;
-  --stamp-inset-inline: 10px;
+  /* The stamps below the rack begin where the metal of a faceplate does. */
+  --stamp-inset-inline: var(--cassette-cheek);
   --dot-size: 7px;
 
   /* ── Availability strip ───────────────────────────────────────────────── */
-  /* Square ticks, evenly spaced, like the segments of a bar-graph meter. The
-     gloss stays, because a segment on such a meter is a lit window with a
-     curved cover over it. */
+  /* Evenly spaced ticks, like the segments of a bar-graph meter, each with the
+     small radius a moulded window has. The gloss stays, because a segment on
+     such a meter is a lit window with a curved cover over it. */
   /* Four stacked lamps per day, which is how a deck without a display showed
      a level, over the oxide brown of the tape itself. */
   --bar-align: center;
@@ -172,26 +218,80 @@
   --bar-height: 30px;
   --bar-hover-height: 36px;
   --bar-gap: 3px;
-  --bar-radius: 0px;
+  --bar-radius: 2px;
   --bar-track-radius: var(--bar-radius);
-  --bar-radius-narrow: 0px;
+  --bar-radius-narrow: 2px;
   --seg-gloss: on;
 
   /* ── Chart ────────────────────────────────────────────────────────────── */
+  /*
+    The dial.
+
+    A receiver of this period reads through a lit window with a scale printed
+    on the glass: fine ticks along the bottom, longer ones where the figures
+    stand, and a lamp behind it warming the whole face. The trace runs across
+    that scale the way the tuning needle does.
+  */
+  --chart-plot-inset: 0px;
+  --chart-plot-edge-width: 0px;
+  --chart-plot-edge-colour: #4a4033;
+  --chart-plot-fill: radial-gradient(
+      ellipse 80% 130% at 50% 100%,
+      rgb(232 163 61 / 0.22),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #241f18, #16130f);
+  /* No value axis: the trace runs from edge to edge and the scale below it is
+     what the reading is measured against. */
+  --chart-axis-value-display: none;
+  /* The needle: a strip of plexiglass with a red line down the middle of it,
+     which is how a receiver of this period reads its own scale. */
+  --chart-crosshair-colour: #e2453a;
+  --chart-hover-point-display: none;
+  --chart-needle-width: 7px;
+  --chart-needle-fill: rgb(232 220 196 / 0.10);
+  --chart-needle-edge: rgb(232 220 196 / 0.22);
+  /* The printed scale: a tick every 8 units of the drawing, every fourth one
+     long, hanging under the graph with the range's two ends below it. */
+  --chart-tick-step: 8px;
+  --chart-tick-major-every: 4;
+  --chart-tick-minor: 4px;
+  --chart-tick-major: 8px;
+  --chart-tick-colour: rgb(232 220 196 / 0.45);
+  --chart-tick-major-colour: rgb(232 220 196 / 0.8);
+  --chart-head-margin: var(--space-block);
   --chart-head-space: var(--space-tight);
   --chart-height: 150px;
-  --chart-inset-inline: 12px;
-  --chart-inset-block: 12px;
+  --chart-inset-inline: 0px;
+  /* The gap between the drawing and the two ends of the range under it. */
+  --chart-axis-space: 5px;
+  /* Room over the highest reading for its own figure plus ten pixels of air
+     to the top of the box. */
+  --chart-inset-block: 22px;
+  --chart-grid-colour: var(--surface-rule);
+  --chart-grid-alpha: 100%;
+  --chart-axis-text-size: var(--text-size-chart-label);
+  --chart-axis-colour: var(--surface-rule);
+  --chart-axis-text-colour: var(--text-3);
+  --chart-axis-text-alpha: 100%;
+  --chart-axis-alpha: 100%;
+  /* The figures print on the glass beside the ticks, the way a scale of this
+     period carries its own readings. */
+  --chart-scale-display: block;
+  --chart-scale-colour: var(--text-3);
+  --chart-scale-alpha: 100%;
   --chart-grid-lines: 3;
   --chart-grid-dash: 3 4;
   --chart-line-width: 2px;
   --chart-line-cap: butt;
   --chart-ipv4-dash: none;
-  --chart-ipv6-dash: 7 4;
-  --chart-fill: 0;
+  /* Both traces unbroken, each washed down to the scale below it. */
+  --chart-ipv6-dash: none;
+  --chart-fill: 0.32;
   --chart-point-radius: 3px;
   --chart-tooltip-width: 140px;
-  --chart-crosshair-dash: 2 4;
+  /* The needle's line is unbroken, the way a printed pointer is. */
+  --chart-crosshair-dash: none;
   --chart-key-width: 16px;
 
   /* ── Backdrop ─────────────────────────────────────────────────────────── */
@@ -228,16 +328,40 @@
 
   /* ── Arrangement ──────────────────────────────────────────────────────── */
   --nav-rule-height: 1px;
-  --nav-rule-colour: var(--surface-rule);
+  --nav-rule-fill: var(--surface-rule);
   --nav-rule-radius: 0px;
   --nav-rule-inset: 0px;
-  /* Moulding grain across the shell, fine enough to be felt rather than
-     seen. */
-  --card-texture: repeating-linear-gradient(
-    to bottom,
-    rgb(232 220 196 / 0.022) 0 1px,
-    transparent 1px 4px
-  );
+  /* How wide the walnut cheeks are, which is also where the lines below the
+     rack begin. */
+  --cassette-cheek: 16px;
+  /*
+    The faceplate.
+
+    A component of this period is a brushed metal front bolted between two
+    walnut cheeks, and all three are one surface here: the cheeks are the first
+    layer, drawn from both edges inwards, the brushing is a fine vertical
+    striping across the face, and the moulding grain that was already here runs
+    under both.
+  */
+  --card-texture: linear-gradient(
+      to right,
+      #4a301c 0 calc(var(--cassette-cheek) - 2px),
+      #2e1d10 calc(var(--cassette-cheek) - 2px) var(--cassette-cheek),
+      transparent var(--cassette-cheek) calc(100% - var(--cassette-cheek)),
+      #2e1d10 calc(100% - var(--cassette-cheek))
+        calc(100% - var(--cassette-cheek) + 2px),
+      #4a301c calc(100% - var(--cassette-cheek) + 2px) 100%
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgb(232 220 196 / 0.028) 0 1px,
+      transparent 1px 3px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgb(232 220 196 / 0.022) 0 1px,
+      transparent 1px 4px
+    );
   --card-texture-size: auto;
   /*
     The label head.
@@ -255,16 +379,67 @@
   --card-ornament-display: block;
   --card-ornament-inset: 0px;
   --card-ornament-height: auto;
-  --card-ornament-radius: 0px;
+  --card-ornament-radius: var(--card-radius);
   --card-ornament-fill: transparent;
   --card-ornament-throat: 0px;
   --card-ornament-throat-offset: 0px;
-  --card-ornament-image: linear-gradient(#c8752a 0 0),
+  /*
+    Four screws, the printed head, and the plate the case is closed with.
+
+    A screw is two layers: a domed head with a dark rim, and the hexagonal
+    socket sunk into it. The socket is a small drawing rather than a gradient,
+    because a gradient cannot be a hexagon and two background layers cannot be
+    made to intersect. Every socket stands above its own head, so all four come
+    first in the list.
+
+    The stripes belong to the head alone. They are what the make prints across
+    the top of its inlay, and a printed band is not something a case repeats at
+    the other end: the foot is the same plate without them.
+
+    Both run between the cheeks rather than across them, because the plate is
+    metal and the wood is bolted to either side of it.
+  */
+  --card-ornament-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), radial-gradient(
+      circle 7px at 50% 42%,
+      #c3b89c 0 26%,
+      #8f8570 26% 62%,
+      #5d543f 62% 84%,
+      #2a251d 84% 96%,
+      transparent 96%
+    ),
+    radial-gradient(
+      circle 7px at 50% 42%,
+      #c3b89c 0 26%,
+      #8f8570 26% 62%,
+      #5d543f 62% 84%,
+      #2a251d 84% 96%,
+      transparent 96%
+    ), radial-gradient(
+      circle 7px at 50% 42%,
+      #c3b89c 0 26%,
+      #8f8570 26% 62%,
+      #5d543f 62% 84%,
+      #2a251d 84% 96%,
+      transparent 96%
+    ), radial-gradient(
+      circle 7px at 50% 42%,
+      #c3b89c 0 26%,
+      #8f8570 26% 62%,
+      #5d543f 62% 84%,
+      #2a251d 84% 96%,
+      transparent 96%
+    ), linear-gradient(#c8752a 0 0),
     linear-gradient(#e8dcc4 0 0), linear-gradient(#7d5a33 0 0),
-    linear-gradient(#3b342a 0 0);
-  --card-ornament-size: 100% 3px, 100% 1px, 100% 1px, 100% 22px;
-  --card-ornament-position: left top 22px, left top 27px, left top 31px,
-    left top;
+    linear-gradient(#3b342a 0 0), linear-gradient(#3b342a 0 0);
+  --card-ornament-size: 7px 7px, 7px 7px, 7px 7px, 7px 7px, 15px 15px,
+    15px 15px, 15px 15px, 15px 15px, calc(100% - 32px) 3px,
+    calc(100% - 32px) 1px, calc(100% - 32px) 1px, calc(100% - 32px) 22px,
+    calc(100% - 32px) 22px;
+  --card-ornament-position: left 30px top 8px, right 30px top 8px,
+    left 30px bottom 10px, right 30px bottom 10px, left 26px top 4px,
+    right 26px top 4px, left 26px bottom 6px, right 26px bottom 6px,
+    left 16px top 22px, left 16px top 27px, left 16px top 31px, left 16px top,
+    left 16px bottom;
   --notices-gap: var(--space-tight);
   --notices-arm-space: 0px;
   --notices-arm-inset: 0px;
@@ -273,9 +448,10 @@
   --notices-arm-position: left bottom;
   --notices-throat: 0px;
   --notices-throat-offset: 0px;
-  --notice-glyph-display: inline-block;
+  --notice-glyph-display: none;
   --notices-rail-width: 0px;
   --notices-rail-gap: 0px;
+  --notices-rail-inset: 0px;
   --notices-rail-radius: 0px;
   --notices-rail-fill: transparent;
   --notice-align: center;
@@ -285,14 +461,36 @@
   --notice-columns-incident: 1fr auto;
   --notice-fill: color-mix(in srgb, currentColor 12%, var(--surface-card));
   --notice-padding: var(--card-padding);
-  --notice-radius: var(--card-radius);
+  --notice-radius-base: var(--card-radius-base);
+  --notice-title-colour: var(--text-1);
+  --notice-title-font: var(--font-display);
+  --notice-title-size: var(--text-size-lead);
+  --notice-title-transform: var(--display-transform);
+  --notice-summary-colour: var(--text-2);
+  --notice-summary-font: var(--font-body);
+  --notice-summary-size: var(--text-size-small);
+  --notice-summary-transform: none;
+  --notice-meta-colour: var(--text-2);
+  --notice-meta-font: var(--font-meta);
+  --notice-meta-size: var(--text-size-caption);
+  --notice-meta-transform: none;
+  --notices-columns: 1fr;
+  --notice-date-display: none;
+  --notice-meta-display: block;
+  --notice-cell-lines: 99;
+  --notice-radius-lead: var(--card-radius);
+  --notice-radius-trail: var(--card-radius);
+  --notice-trailing: none;
+  --notice-gap: var(--space-hair) var(--space-row);
   --notice-border-width: var(--card-border-width);
   --card-rail-width: 0px;
   --card-rail-colour: transparent;
   --card-rail-radius: 0px;
   --card-rail-inset: 0px;
   --nav-gap: 16px;
-  --nav-justify: space-between;
+  --nav-brand-display: inline-block;
+  --nav-links-display: flex;
+  --nav-justify: center;
   --nav-fill: transparent;
   --nav-brand-colour: var(--brand-primary);
   --nav-link-colour: #a29a7e;
@@ -304,7 +502,114 @@
   --hero-areas: "mark" "title" "updated";
   --hero-columns: auto;
   --hero-mark-size: var(--text-size-hero-glyph);
-  --hero-mark-display: inline-block;
+  --hero-bar-margin: 0px;
+  --hero-throat: 0px;
+  --hero-bar-display: none;
+  --hero-bar-fill: transparent;
+  --hero-bar-radius: 0px;
+  --hero-gap: var(--space-tight) var(--space-row);
+  --hero-title-trail: 0px;
+  --hero-title-trim: normal;
+  --hero-updated-trim: normal;
+  --hero-rail-inset: 0px;
+  --hero-rail-min-height: 0px;
+  --hero-rail-width: 0px;
+  --hero-rail-display: none;
+  --hero-rail-fill: transparent;
+  --hero-rail-radius: 0px;
+  --hero-arm-display: none;
+  --hero-arm-fill: transparent;
+  --hero-arm-radius: 0px;
+  --hero-arm-depth: 0px;
+  --hero-arm-align: stretch;
+  /*
+    The sun.
+
+    A poster of this period prints a disc filled with horizontal bands, warm at
+    the top and cool at the bottom, with the ground showing through between
+    them. It is drawn as one gradient inside a round element, because a radius
+    clips a background and no mask is needed for a shape this plain.
+
+    Five bands in the object's own colours: the shell's brown, the oxide of the
+    tape, the amber of an indicator lamp, the olive of the record lamp, and the
+    slate of the meter's scale. The status glyph stands in the middle of it,
+    which is where such a poster puts its subject.
+  */
+  --hero-mark-shape-display: block;
+  --hero-mark-shape-size: 172px;
+  --hero-mark-shape-radius: 999px;
+  --hero-mark-shape-fill: linear-gradient(
+    to bottom,
+    #7d5a33 0 17%,
+    transparent 17% 20%,
+    #c8752a 20% 37%,
+    transparent 37% 40%,
+    #e8a33d 40% 57%,
+    transparent 57% 60%,
+    #8fae5a 60% 77%,
+    transparent 77% 80%,
+    #6f8794 80% 100%
+  );
+  /* No pictures anywhere in this design, so what opens a row is a character
+     the way a machine of the period would print one. */
+  /*
+    The key that opens a row.
+
+    A rectangular aluminium button with a pilot light in the middle of it: the
+    face is brushed metal domed a little towards the centre, the chamfer around
+    it is one hairline light at the top and one dark at the bottom, and the
+    lamp is out until the key is down. Down means the response times are
+    showing, which is what the key is for.
+  */
+  --disclosure-mark-self: flex-start;
+  --disclosure-mark-width: 30px;
+  --disclosure-mark-height: 22px;
+  --disclosure-mark-radius: 3px;
+  --disclosure-mark-fill: radial-gradient(
+      ellipse 120% 90% at 50% 38%,
+      rgb(255 255 255 / 0.22),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #cfcdc7 0%, #a5a29b 52%, #8b887f 100%);
+  --disclosure-mark-fill-hover: radial-gradient(
+      ellipse 120% 90% at 50% 38%,
+      rgb(255 255 255 / 0.34),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #e2e0da 0%, #b6b3ac 52%, #9a978f 100%);
+  --disclosure-mark-fill-pressed: radial-gradient(
+      ellipse 120% 90% at 50% 62%,
+      rgb(255 255 255 / 0.14),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #98958d 0%, #b0ada6 55%, #c4c1ba 100%);
+  --disclosure-mark-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65),
+    inset 0 -1px 0 rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.55);
+  --disclosure-mark-shadow-pressed: inset 0 2px 3px rgb(0 0 0 / 0.5),
+    inset 0 -1px 0 rgb(255 255 255 / 0.35);
+  --disclosure-led-size: 7px;
+  --disclosure-led-fill: radial-gradient(
+    circle at 50% 35%,
+    #375c33 0 55%,
+    #1d2f1b 55% 100%
+  );
+  --disclosure-led-fill-on: radial-gradient(
+    circle at 50% 35%,
+    #d6ffb8 0 30%,
+    #6ee34a 30% 60%,
+    #2f8f21 60% 100%
+  );
+  --disclosure-led-glow: inset 0 1px 1px rgb(0 0 0 / 0.6);
+  --disclosure-led-glow-on: inset 0 1px 1px rgb(0 0 0 / 0.35),
+    0 0 7px rgb(110 227 74 / 0.85), 0 0 16px rgb(110 227 74 / 0.5);
+  --disclosure-icon-display: none;
+  /* A grid, so the lamp in the middle of the key is a box that can be sized
+     and centred rather than an inline sliver. */
+  --disclosure-mark-display: inline-grid;
+  --disclosure-mark-closed: "";
+  --disclosure-mark-open: "";
+  --hero-glyph-display: none;
+  --hero-mark-display: grid;
   --hero-mark-glow: drop-shadow(
     0 0 14px color-mix(in srgb, currentColor 35%, transparent)
   );
@@ -313,7 +618,16 @@
   --range-label-display: block;
   --range-label-colour: var(--text-2);
   --range-button-colour: var(--text-3);
+  /* The control that opens every row at once answers to nothing. */
+  --toggle-hover-fill: transparent;
+  --toggle-hover-colour: var(--range-button-colour);
   --range-button-hover-colour: var(--text-1);
+  --range-align: center;
+  --range-mark-radius: var(--control-radius);
+  --control-min-width: auto;
+  --text-size-control: var(--text-size-caption);
+  --control-active-scale: 1;
+  --range-mark-trim: 0px;
   --range-bar-height: auto;
   --range-bar-space: var(--space-tight);
   --range-bar-padding: 0;
@@ -321,10 +635,15 @@
   --range-bar-fill: transparent;
   --range-bar-colour: currentColor;
   --range-bar-stem-width: 0px;
+  --range-bar-stem-radius: 0px;
   --range-bar-stem-height: 0px;
   --range-bar-throat: 0px;
   --range-bar-throat-offset: 0px;
   --range-justify: flex-end;
+  /* The credit stands at the foot of the readings, as it does in every theme
+     here, and needs no fill of its own for that. */
+  --footer-position: static;
+  --footer-fill: transparent;
   --footer-align: center;
   --footer-text-align: center;
   /* One column: the name stays inside the summary and no rail is drawn. */
@@ -339,6 +658,26 @@
   --control-transform: none;
   --service-rail-align: center;
   --service-rail-padding: 0;
+  --service-arm-display: none;
+  --service-arm-layout: none;
+  --service-arm-gap: 0px;
+  --service-throat: 0px;
+  --service-foot-segment-display: none;
+  --service-foot-segment-seam: 0px;
+  --service-foot-segment-align: center;
+  --service-foot-segment-justify: flex-start;
+  --service-foot-segment-padding: 0px;
+  --service-foot-segment-colour: transparent;
+  --service-foot-segment-size: 0px;
+  --service-foot-segment-weight: 400;
+  --service-foot-version-inset: 0px;
+  --service-foot-version-width: auto;
+  --service-foot-serial-inset: 0px;
+  --service-stem-width: 0px;
+  --service-stem-height: 0px;
+  --service-arm-depth: 0px;
+  --service-arm-radius: 0px;
+  --service-arm-fill: transparent;
   --service-rail-radius: 0px;
   --service-rail-fill: transparent;
   --service-rail-colour: currentColor;
@@ -346,20 +685,135 @@
   --service-gap: var(--space-block);
   --service-divider-space: var(--space-block);
   --service-divider-width: var(--rule-width);
-  --service-icon-display: inline-block;
-  /* The write-on label. Cream card stock, a hairline rule under the name, and
-     square corners, which is the panel a cassette prints for its title. */
-  --service-name-display: inline-block;
+  --service-icon-display: none;
+  /*
+    Two lamps rather than two labels.
+
+    Both protocols stand on every service, lit where something was measured and
+    dark where nothing was: an unlit lamp is a reading, and hiding it would
+    take that reading away. Each is backlit in its own colour at a tenth of its
+    strength, which is what a filter over a bulb comes to.
+  */
+  --protocols-single-display: inline-flex;
+  --badge-absent-display: block;
+  --badge-fill: color-mix(in srgb, currentColor 12%, #0d0b07);
+  --badge-glow: 0 0 6px color-mix(in srgb, currentColor 55%, transparent);
+  --badge-absent-edge: #2b2519;
+  --badge-absent-fill: #0d0b07;
+  --badge-absent-colour: #4a4235;
+  /* Plate, badges and readout all run the full height of the row, so the three
+     stand level the way instruments on one faceplate do. */
+  --service-name-self: stretch;
+  --protocols-self: stretch;
+  --protocols-justify: space-between;
+  --protocols-direction: column;
+  --protocols-align: flex-start;
+  /*
+    The readout.
+
+    A vacuum fluorescent display: the blue-green of a phosphor tube on
+    near-black glass, glowing into the surface around it. It reads two lines,
+    the uptime figure sits at the end of the first, and everything another
+    design would show in an overlay is read out here rather than drawn over the
+    page.
+
+    Doto is a dot-matrix face, so the dots are the letters rather than a
+    texture laid over them.
+  */
+  --service-display-display: grid;
+  --service-display-line-display: flex;
+  --service-display-main-display: block;
+  --service-display-flex: 1 1 auto;
+  --service-display-padding: 4px 10px 5px;
+  --service-display-edge-width: 1px;
+  --service-display-edge-colour: #16241f;
+  --service-display-radius: 3px;
+  /*
+    The dots that are not lit, on the same lattice as the ones that are.
+
+    Every figure here comes from the face, measured on a canvas at 100px: its
+    dots stand a tenth of the size apart, are eight hundredths across, and the
+    first of them sits forty-five thousandths in from where a character begins.
+    At fifteen pixels that is a step of 1.5, a dot of 1.2, and a first centre
+    at 10.675 from the panel's edge, which is its padding plus 0.675. The tile
+    carries its dot in the middle, so the pattern starts half a step earlier.
+
+    Two things keep the whole line on that lattice. The leading is 1.2, so a
+    line is eighteen pixels, which is twelve steps. And the tracking is a tenth
+    of the size, so a character takes seven steps rather than six and a bit:
+    one blank dot column between characters, which is how such a panel spaces
+    them anyway.
+  */
+  --service-display-fill: radial-gradient(
+      circle 0.6px at 50% 50%,
+      #14281f 0 100%,
+      transparent 100%
+    )
+      0.925px 0.1px / 1.5px 1.5px,
+    linear-gradient(to bottom, #060f0d, #0b1512);
+  --service-display-colour: #8ff8dd;
+  /* Two steps down from the reading itself: what the reading is of, then the
+     standing figure. Measured on the glass: 15.07:1, 10.20:1 and 5.50:1, with
+     the unlit dots at 1.23:1. */
+  --service-display-colour-quiet: #4ad3b4;
+  --service-display-colour-faint: #2e9a84;
+  --service-display-font: "Doto", ui-monospace, monospace;
+  --service-display-size: 15px;
+  --service-display-leading: 1.2;
+  --service-display-tracking: 0.1em;
+  --service-display-transform: uppercase;
+  --service-display-glow: 0 0 7px rgb(110 240 205 / 0.55);
+  --uptime-colour: currentColor;
+  --uptime-font: var(--service-display-font);
+  --service-name-tracking: normal;
+  --service-name-transform: none;
+  --service-name-weight: 700;
+  --service-name-font: "Tangerine", cursive;
+  --service-name-clip: text;
+  /* Pressed into the face: dark where the light does not reach over its top
+     edge, and a hairline of the metal along the bottom. */
+  --service-display-shadow: inset 0 2px 4px rgb(0 0 0 / 0.75),
+    inset 0 -1px 0 rgb(0 0 0 / 0.5), 0 1px 0 rgb(232 220 196 / 0.09);
+  --service-name-display: grid;
   --service-name-flex: 0 1 auto;
-  --service-name-padding: 3px 12px 4px;
-  --service-name-radius: 1px;
+  --service-name-trim: normal;
+  --service-name-leading: 1.15;
+  /*
+    The name, cut in polished brass.
+
+    No plate at all any more: the letters are the metal. A gradient runs down
+    them from a lit top edge through the body of the brass to a dark foot, with
+    a second highlight where a polished surface catches the light again, and
+    the whole of it is clipped to the letters. Tangerine at 700 is the
+    engraver's script such a badge is cut in, and its bold is the weight with
+    enough body to hold a gradient.
+  */
+  --service-name-padding: 0px 2px;
+  --service-name-radius: 0px;
+  --service-name-shadow: none;
   --service-name-fill: linear-gradient(
     to bottom,
-    #e8e0cb 0 calc(100% - 3px),
-    #b9ae92 calc(100% - 3px) calc(100% - 2px),
-    #e8e0cb calc(100% - 2px) 100%
+    #fffbe9 0%,
+    #ffe9a8 10%,
+    #d9ad4c 26%,
+    #8a6418 44%,
+    #4a340c 51%,
+    #c99a34 57%,
+    #ffeeb4 66%,
+    #fffdf2 71%,
+    #e2b64e 78%,
+    #9a7420 90%,
+    #5c410f 100%
   );
-  --service-name-colour: #23201a;
+  --service-name-colour: transparent;
+  --service-name-stroke: 0px;
+  --service-name-stroke-colour: transparent;
+  /* The shadow a raised letter throws on the face behind it. */
+  --service-name-glow: 0 1px 1px rgb(0 0 0 / 0.75);
+  /* One instrument per service, always. A rack holds separate
+     components, and a single panel listing all of them is not what this
+     design is. */
+  --layout-grouped: none;
   --layout-cards: auto;
   --service-icon-colour: var(--accent);
 

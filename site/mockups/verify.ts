@@ -75,6 +75,22 @@ function parseColour(value: string): Rgb | null {
   }
   const rgb = text.match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
   if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+  // A two-colour mix in sRGB, which is how a theme states a colour derived from
+  // another rather than a second literal beside it. Mixed componentwise, which
+  // is what `in srgb` means; any other colour space would need its own
+  // conversion and no theme asks for one.
+  const mix = text.match(
+    /^color-mix\(\s*in\s+srgb\s*,\s*(.+?)\s+([\d.]+)%\s*,\s*(.+?)\s*\)$/i,
+  );
+  if (mix) {
+    const first = parseColour(mix[1]!);
+    const second = parseColour(mix[3]!);
+    if (!first || !second) return null;
+    const weight = Number(mix[2]) / 100;
+    return first.map((channel, at) =>
+      Math.round(channel * weight + second[at]! * (1 - weight)),
+    ) as Rgb;
+  }
   return null;
 }
 
@@ -216,25 +232,41 @@ const read = new Set(
  *
  * `--status-colour` and `--series-colour` are set by `base.css` from a data
  * attribute, `--strip-surface-height` is written by the strip once it has
- * measured itself, the two card values are derived, the two edge values are
- * set per surface, and `--hero-mark-colour` is an optional override with a
+ * measured itself, `--notice-cap` is written onto each notice once it has been
+ * measured, `--powered-label-tracking` is worked out from the two faces in the
+ * credit, the card and notice values are derived, the service colours are a
+ * list a theme may leave out entirely, the two edge values are set per
+ * surface, the two card paddings are optional overrides that fall back to
+ * the card's own, and `--hero-mark-colour` is an optional override with a
  * documented fallback. All of them are structure rather than design.
  */
 const structural = new Set([
   "--status-colour",
   "--series-colour",
   "--strip-surface-height",
+  "--notice-cap",
+  "--powered-label-tracking",
   "--card-inner-radius",
   "--card-text-inset",
+  "--notice-inner-radius",
+  "--notice-text-inset",
   "--edge-width",
   "--edge-colour",
   "--hero-mark-colour",
   "--card-padding-top",
-  "--service-name-fill-1",
-  "--service-name-fill-2",
-  "--service-name-fill-3",
-  "--service-name-fill-4",
-  "--service-name-fill-5",
+  "--card-padding-bottom",
+  "--series-own",
+  "--series-next",
+  "--service-colour-1",
+  "--service-colour-2",
+  "--service-colour-3",
+  "--service-colour-4",
+  "--service-colour-5",
+  "--service-colour-6",
+  "--service-colour-7",
+  "--service-colour-8",
+  "--service-colour-9",
+  "--service-colour-10",
   "--backdrop-drift",
   "--detail-radius",
   "--service-rail-radius-last",
@@ -342,18 +374,27 @@ for (const [file, declared] of themes) {
       A day nothing was recorded on is meant to read as an absence, so a fill
       that stood out from the page as strongly as a working day would say the
       opposite of what it means. What has to be visible is that a segment is
-      there at all, and that is carried by the inset edge such a day draws
-      rather than by its fill. So the edge is what must clear the page, whilst
-      the fill only has to be separable from a working day.
+      there at all, and where such a day draws an inset edge that is what
+      carries it, so the edge is what must clear the page whilst the fill only
+      has to be separable from a working day.
+
+      A theme may draw no edge at all, saying so by giving it the fill's own
+      colour. Then there is nothing to hold to the page, and the day is told
+      apart by its neighbours instead: the check below, that an empty day does
+      not look like a working one, is the whole requirement in that case.
     */
-    check(
-      file,
-      declared,
-      "--state-ghost-edge",
-      surface,
-      GRAPHIC_MINIMUM,
-      "the edge of an empty day",
-    );
+    const edge = declared.get("--state-ghost-edge")?.trim();
+    const outlined = edge !== "var(--state-no-data)";
+    if (outlined) {
+      check(
+        file,
+        declared,
+        "--state-ghost-edge",
+        surface,
+        GRAPHIC_MINIMUM,
+        "the edge of an empty day",
+      );
+    }
   }
   const noData = resolve(declared, "--state-no-data");
   const working = resolve(declared, "--state-operational");

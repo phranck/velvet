@@ -136,6 +136,14 @@ export interface UptimeStripOptions {
    * strip in its layout needs to know the figure.
    */
   heightProperty?: string;
+  /**
+   * Where the reading for the hovered day goes, one string per line, or `null`
+   * when nothing is hovered.
+   *
+   * Given by a design that reads on a display of its own; where it is absent
+   * the strip shows its own overlay over the segment instead.
+   */
+  report?: (lines: string[] | null) => void;
 }
 
 /**
@@ -255,7 +263,8 @@ export interface UptimeStrip {
  * width, the device pixel ratio, the hovered segment, or the style changes.
  *
  * @param host - The element the strip is drawn into. It is emptied first.
- * @param options - The appearance and the names the design wants used.
+ * @param options - The appearance, the names and the reporter the design wants
+ *   used.
  * @returns Handles for updating and tearing the strip down.
  */
 export function createUptimeStrip(
@@ -264,6 +273,7 @@ export function createUptimeStrip(
 ): UptimeStrip {
   const className = options.className ?? "uptime-strip";
   const heightProperty = options.heightProperty ?? "--uptime-strip-height";
+  const report = options.report;
 
   /** The style as it stands now, which a function-valued option can change. */
   function currentStyle(): UptimeStripStyle {
@@ -415,9 +425,17 @@ export function createUptimeStrip(
   function placeTooltip(): void {
     if (hovered === null || !days[hovered]) {
       tooltip.hide();
+      report?.(null);
       return;
     }
     const index = hovered;
+    // A design may read this on a display of its own rather than over the
+    // strip, and then it is told the same lines instead of being drawn on top
+    // of the page.
+    if (report) {
+      report(tooltipFor(days[index]!).split("\n"));
+      return;
+    }
     tooltip.show(tooltipFor(days[index]!), () => {
       if (hovered !== index) return null;
       const box = host.getBoundingClientRect();

@@ -54,7 +54,7 @@ export interface FixtureSpec {
 
 /** The installation every fixture starts from, before its own overrides. */
 const DEFAULT_SITE: BundleSite = {
-  name: "Orbital Systems",
+  name: "Velvet Underground Inc.",
   navigation: [
     { title: "Website", href: "#" },
     { title: "Documentation", href: "#" },

@@ -22,11 +22,12 @@ import {
   visibleIncidentEvents,
 } from "../src/lib/data.js";
 import { disclosure } from "@velvet/bundle-plugins/disclosure";
-import type { RangeKey } from "../src/lib/types.js";
+import type { RangeKey, ServiceStatus } from "../src/lib/types.js";
 import {
   createChartView,
   type ChartView,
 } from "@velvet/bundle-plugins/response-chart";
+import { createOverlay } from "@velvet/bundle-plugins/overlay";
 import {
   createUptimeStrip,
   type UptimeStrip,
@@ -40,13 +41,19 @@ import {
   statusDocument,
 } from "./dummy-data.js";
 
-/** The five ranges, in the order and with the labels the product uses. */
-const RANGES: Array<{ key: RangeKey; label: string }> = [
-  { key: "day", label: "24h" },
-  { key: "week", label: "7d" },
-  { key: "month", label: "30d" },
-  { key: "quarter", label: "90d" },
-  { key: "year", label: "1yr" },
+/**
+ * The five ranges, in the order and with the labels the product uses.
+ *
+ * Each carries a sentence as well, because "90d" on its own says how long but
+ * not what it covers. It is the button's accessible name and the text of its
+ * overlay, so what is read aloud and what is shown on hover are the same words.
+ */
+const RANGES: Array<{ key: RangeKey; label: string; description: string }> = [
+  { key: "day", label: "24h", description: "The last 24 hours" },
+  { key: "week", label: "7d", description: "The last 7 days" },
+  { key: "month", label: "30d", description: "The last 30 days" },
+  { key: "quarter", label: "90d", description: "The last 90 days" },
+  { key: "year", label: "1yr", description: "The last 12 months" },
 ];
 
 /**
@@ -77,6 +84,25 @@ const UPDATED_TIME = new Intl.DateTimeFormat("en-GB", {
   timeStyle: "short",
 });
 
+/**
+ * A date as `24.03.2026`.
+ *
+ * Written out rather than formatted by locale, because the panel's own reading
+ * of a date is fixed: two digits, two digits, four digits, separated by stops.
+ * A locale would give a different order and a different separator depending on
+ * who is looking.
+ *
+ * @param moment - The date to write.
+ * @returns The date, zero-padded.
+ */
+function panelDate(moment: Date): string {
+  const day = String(moment.getUTCDate()).padStart(2, "0");
+  const month = String(moment.getUTCMonth() + 1).padStart(2, "0");
+  return `${day}.${month}.${moment.getUTCFullYear()}`;
+}
+
+
+
 /** Creates an element with a class and optional text, since there is a lot of this. */
 function el<K extends keyof HTMLElementTagNameMap>(
   name: K,
@@ -96,6 +122,43 @@ function icon(name: string, className: string): HTMLElement {
   return element;
 }
 
+/**
+ * Whether the design reads on a display of its own rather than in an overlay.
+ *
+ * Read once, from the root, because a mockup page carries one theme for its
+ * whole life and this decides how every row is wired.
+ */
+const READS_ON_DISPLAY =
+  getComputedStyle(document.documentElement)
+    .getPropertyValue("--service-display-display")
+    .trim() !== "contents";
+
+/** What a service's own state is called on that display. */
+const STATE_WORD: Record<ServiceStatus, string> = {
+  operational: "Operational",
+  degraded: "Degraded",
+  outage: "Outage",
+  maintenance: "Maintenance",
+  unknown: "No data",
+};
+
+/**
+ * The mark a design without icons uses where another design puts a chevron.
+ *
+ * It carries no text of its own. `base.css` states the two characters, because
+ * which character says "this opens" is a design decision rather than a fact
+ * about the row, and a theme that draws a chevron leaves the element
+ * undisplayed. Hidden from assistive technology, since the button around it
+ * already says what it does.
+ *
+ * @returns The mark, ready to be put in a control beside its glyph.
+ */
+function disclosureMark(): HTMLElement {
+  const mark = el("span", "disclosure-mark");
+  mark.setAttribute("aria-hidden", "true");
+  return mark;
+}
+
 /** What one service row owns, so a range change can reach into it. */
 interface ServiceRow {
   id: string;
@@ -105,6 +168,9 @@ interface ServiceRow {
   root: HTMLElement;
   summary: HTMLElement;
   uptime: HTMLElement;
+  status: ServiceStatus;
+  displayMain: HTMLElement;
+  displaySecond: HTMLElement;
   stripHost: HTMLElement;
   strip: UptimeStrip;
   axisFrom: HTMLElement;
@@ -112,6 +178,33 @@ interface ServiceRow {
   panel: ReturnType<typeof disclosure>;
   chart: ChartView;
   chartBuilt: boolean;
+}
+
+/**
+ * Shows the page as though the installation were in a given state.
+ *
+ * A mockup renders from one fixture, so on its own it would only ever show the
+ * one headline that fixture produces. A theme may colour a great deal by the
+ * state, and none of that can be reviewed without seeing the other three.
+ *
+ * It changes what the page announces and nothing behind it: the services, the
+ * strips and the charts go on reporting what the fixture says.
+ *
+ * @param status - The state to announce.
+ */
+export function previewOverallStatus(status: ServiceStatus): void {
+  document.documentElement.dataset.status = status;
+  const title = document.querySelector(".status-hero-title");
+  if (title) title.textContent = STATUS_HERO[status].text;
+  const glyph = document.querySelector(".status-hero-glyph");
+  if (glyph) {
+    glyph.className = `status-hero-glyph ph-duotone ${STATUS_HERO[status].icon}`;
+  }
+  // Nothing is wrong, so nothing is being reported. A page announcing that
+  // every service is up whilst listing an open incident contradicts itself.
+  const notices = document.querySelector(".notices");
+  const quiet = status === "operational" || !notices?.hasChildNodes();
+  document.documentElement.dataset.notices = quiet ? "none" : "some";
 }
 
 /**
@@ -158,47 +251,143 @@ export function mountStatusPage(
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
+  /*
+    The installation's own name, and nothing beside it.
+
+    A published page carries a bar with the operator's name or logo in it and no
+    links: `StatusPage.svelte` drops the one entry the default configuration
+    holds, because its address is the page itself, and an installation adds
+    others only by hand. `base.css` goes on styling those, so a theme covers
+    them where an operator has written some, but a mockup that invented three
+    would be showing a page nobody has.
+  */
   const nav = el("nav", "status-nav");
   const brand = el("a", "status-brand", mockConfig.name);
   brand.href = "#";
-  const links = el("div", "status-nav-links");
-  for (const link of mockConfig.navigation) {
-    const anchor = el("a", "status-nav-link", link.title);
-    anchor.href = link.href;
-    links.append(anchor);
-  }
-  nav.append(brand, links);
+  nav.append(brand);
 
   // ── Hero ──────────────────────────────────────────────────────────────────
   const overall = overallStatus(statusDocument.services);
   const hero = el("div", "status-hero");
-  hero.dataset.status = overall;
   const heroMark = el("span", "status-hero-mark");
   heroMark.setAttribute("aria-hidden", "true");
   heroMark.append(icon(STATUS_HERO[overall].icon, "status-hero-glyph"));
+  // A filled block between the column and the headline, so a design can run a
+  // bar into the words from the left. It says nothing, so it is hidden from
+  // anything that reads the page aloud.
+  const heroBar = el("span", "status-hero-bar");
+  heroBar.setAttribute("aria-hidden", "true");
   const heroTitle = el("h1", "status-hero-title", STATUS_HERO[overall].text);
   const heroUpdated = el(
     "p",
     "status-hero-updated",
     `Last updated ${UPDATED_TIME.format(new Date(GENERATED_AT))}`,
   );
-  hero.append(heroMark, heroTitle, heroUpdated);
+  hero.append(heroMark, heroBar, heroTitle, heroUpdated);
 
   // ── Notices ───────────────────────────────────────────────────────────────
   const notices = el("section", "notices");
+  /*
+    Every notice reports its own height as a custom property, so a theme can
+    round one end into a capsule without flattening the other.
+
+    A capsule is half the box's height, and CSS has no way to say that: a
+    percentage in a `border-radius` resolves against the box's own axis, so 50%
+    on the horizontal component gives half the width. Writing a number large
+    enough to always exceed it does not work either, because where two radii
+    along one edge overrun it the browser scales every corner of the box by the
+    same factor. Measured on a 112px notice with a 999px capsule at its trailing
+    end: the factor came out at 0.056, and the 10px leading corners were drawn
+    at 0.56px.
+  */
+  const capObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const element = entry.target as HTMLElement;
+      // Only where the theme asks for one. Every other design wants its own
+      // corner at that end and would be given a capsule it never asked for.
+      const wanted =
+        getComputedStyle(element).getPropertyValue("--notice-trailing").trim() ===
+        "capsule";
+      if (!wanted) {
+        element.style.removeProperty("--notice-cap");
+        continue;
+      }
+      element.style.setProperty(
+        "--notice-cap",
+        `${element.getBoundingClientRect().height / 2}px`,
+      );
+    }
+  });
+  // A design may hold each notice to a single line and cut the rest off, so the
+  // whole of it is available on hover and on focus. On the document's own
+  // layer, for the reason `overlay.ts` sets out.
+  const noticeTip = createOverlay("uptime-tooltip");
+  /**
+   * Shows a notice's full text whilst it is hovered or focused.
+   *
+   * @param notice - The row to attach to.
+   * @param text - Everything the row says, however much of it is drawn.
+   */
+  function tellInFull(notice: HTMLElement, text: string): void {
+    /**
+     * Whether anything in the row is being cut off.
+     *
+     * Read at the moment it is asked rather than once at build time, because
+     * whether a line fits depends on the width the window happens to have.
+     *
+     * @returns True where a cell is drawing less than it holds.
+     */
+    const clipped = (): boolean =>
+      [...notice.children].some((cell) => {
+        const box = cell as HTMLElement;
+        return (
+          box.scrollWidth > box.clientWidth + 1 ||
+          box.scrollHeight > box.clientHeight + 1
+        );
+      });
+    // Focusable only whilst there is something a pointer could not reach, since
+    // a stop on the way through the page that says nothing is a stop wasted.
+    const reflectFocusable = (): void => {
+      if (clipped()) notice.tabIndex = 0;
+      else notice.removeAttribute("tabindex");
+    };
+    reflectFocusable();
+    new ResizeObserver(reflectFocusable).observe(notice);
+    // Again once the faces have arrived. A row measured before the face loads
+    // is measured in whatever the browser put there meanwhile, which can
+    // overflow where the real one fits, and the row's own box does not change
+    // when the swap happens, so nothing else would ask again.
+    void document.fonts.ready.then(reflectFocusable);
+    const show = (): void => {
+      // Nothing to add where the row already shows all of it.
+      if (!clipped()) return;
+      noticeTip.show(text, () => ({
+        rect: notice.getBoundingClientRect(),
+        side: "below",
+      }));
+    };
+    notice.addEventListener("pointerenter", show);
+    notice.addEventListener("focus", show);
+    notice.addEventListener("pointerleave", () => noticeTip.hide());
+    notice.addEventListener("blur", () => noticeTip.hide());
+  }
   const visible = visibleIncidentEvents(incidentsDocument.events);
   for (const event of visible.filter((entry) => entry.kind === "maintenance")) {
     const notice = el("div", "notice notice--maintenance");
+    const starts = new Date(event.startsAt);
     notice.append(
       icon("ph-wrench", "notice-glyph"),
+      el("span", "notice-date", panelDate(starts)),
       el("span", "notice-title", event.title),
       el("span", "notice-summary", event.summary),
       el(
         "span",
         "notice-meta",
-        `${event.state} · ${EVENT_TIME.format(new Date(event.startsAt))}`,
+        `${event.state} · ${EVENT_TIME.format(starts)}`,
       ),
     );
+    capObserver.observe(notice);
+    tellInFull(notice, `${event.title}. ${event.summary}`);
     notices.append(notice);
   }
   const incidents = visible.filter((entry) => entry.kind === "incident");
@@ -206,15 +395,15 @@ export function mountStatusPage(
     notices.append(el("h2", "notices-heading", "Active incidents"));
     for (const event of incidents) {
       const notice = el("div", "notice notice--incident");
+      const began = new Date(event.startsAt);
       notice.append(
+        el("span", "notice-date", panelDate(began)),
         el("span", "notice-title", event.title),
         el("span", "notice-summary", event.summary),
-        el(
-          "span",
-          "notice-meta",
-          `Started ${EVENT_TIME.format(new Date(event.startsAt))}`,
-        ),
+        el("span", "notice-meta", `Started ${EVENT_TIME.format(began)}`),
       );
+      capObserver.observe(notice);
+      tellInFull(notice, `${event.title}. ${event.summary}`);
       notices.append(notice);
     }
   }
@@ -236,23 +425,64 @@ export function mountStatusPage(
   rangeMark.setAttribute("aria-hidden", "true");
   rangeButtons.append(rangeMark);
   const rangeControls = new Map<RangeKey, HTMLButtonElement>();
+  // On the document's own layer rather than inside the bar, for the reason
+  // `overlay.ts` sets out: a clipping ancestor cuts an overlay however it is
+  // positioned.
+  const rangeTip = createOverlay("uptime-tooltip");
   for (const option of RANGES) {
     const button = el("button", "range-button", option.label);
     button.type = "button";
     button.setAttribute("aria-pressed", String(option.key === range));
+    // The sentence rather than the abbreviation, since "90d" says how long but
+    // not what it covers.
+    button.setAttribute("aria-label", option.description);
     button.addEventListener("click", () => selectRange(option.key));
+    // Shown on focus as well as on hover, so a keyboard reaches it too.
+    const show = (): void =>
+      rangeTip.show(option.description, () => ({
+        rect: button.getBoundingClientRect(),
+        side: "below",
+      }));
+    button.addEventListener("pointerenter", show);
+    button.addEventListener("focus", show);
+    button.addEventListener("pointerleave", () => rangeTip.hide());
+    button.addEventListener("blur", () => rangeTip.hide());
     rangeControls.set(option.key, button);
     rangeButtons.append(button);
   }
   const toggleAll = el("button", "toggle-all");
   toggleAll.type = "button";
-  toggleAll.append(icon("ph-caret-circle-double-down", "toggle-all-glyph"));
+  toggleAll.append(
+    icon("ph-caret-circle-double-down", "toggle-all-glyph"),
+    disclosureMark(),
+  );
   toggleAll.addEventListener("click", () => {
     const shouldOpen = !rows.every((row) => row.open);
     for (const row of rows) setOpen(row, shouldOpen);
     reflectToggleAll();
   });
   rangeBar.append(groupName, rangeButtons, toggleAll);
+
+  /**
+   * Puts a reading on a row's display, or restores what it says at rest.
+   *
+   * One line each. At rest the display names the service's own state and the
+   * window it is reporting on, which is what a machine of this kind shows when
+   * nobody is touching it.
+   *
+   * @param row - The row whose display is being written.
+   * @param lines - The reading, one string per line, or `null` for at rest.
+   */
+  function readOut(row: ServiceRow, lines: string[] | null): void {
+    if (!lines || lines.length === 0) {
+      row.displayMain.textContent = STATE_WORD[row.status];
+      row.displaySecond.textContent =
+        RANGES.find((option) => option.key === range)?.description ?? "";
+      return;
+    }
+    row.displayMain.textContent = lines[0] ?? "";
+    row.displaySecond.textContent = lines.slice(1).join("   ");
+  }
 
   /** Keeps the expand-all control showing what it would do next. */
   function reflectToggleAll(): void {
@@ -308,25 +538,52 @@ export function mountStatusPage(
       icon(ICONS[mockConfig.icons[service.id] ?? ""] ?? "ph-circle", "service-icon"),
       el("span", "service-name", service.name),
     );
-    // The badges appear only where there is something to distinguish, which is
-    // what `ServiceSummary.svelte` does: one IPv4 check needs no label.
-    if (service.checks.length > 1 || service.checks[0]?.protocol === "ipv6") {
-      const badges = el("span", "service-protocols");
-      badges.setAttribute("aria-label", "Protocol reachability");
-      for (const check of service.checks) {
-        const badge = el(
-          "span",
-          "protocol-badge",
-          check.protocol === "ipv4" ? "IPv4" : "IPv6",
-        );
-        badge.dataset.protocol = check.protocol;
-        badge.dataset.status = check.status;
-        badges.append(badge);
-      }
-      summary.append(badges);
+    /*
+      Both protocols, always, with each marked as measured or not.
+
+      `ServiceSummary.svelte` shows a badge only where there is something to
+      distinguish, and a design may keep that: it hides whatever is marked
+      absent, and hides the pair entirely where a service has one IPv4 check
+      and nothing to compare it with. One design instead draws the pair as two
+      lamps and lights whichever protocol was actually measured, which needs
+      both in the markup whatever the service has.
+    */
+    const badges = el("span", "service-protocols");
+    badges.setAttribute("aria-label", "Protocol reachability");
+    badges.dataset.single = String(
+      service.checks.length === 1 && service.checks[0]?.protocol === "ipv4",
+    );
+    for (const protocol of ["ipv4", "ipv6"] as const) {
+      const check = service.checks.find((entry) => entry.protocol === protocol);
+      const badge = el(
+        "span",
+        "protocol-badge",
+        protocol === "ipv4" ? "IPv4" : "IPv6",
+      );
+      badge.dataset.protocol = protocol;
+      badge.dataset.present = String(Boolean(check));
+      if (check) badge.dataset.status = check.status;
+      badges.append(badge);
     }
+    summary.append(badges);
+    /*
+      Two lines a design may read on, with the uptime figure at the end of the
+      first. Where a design has no such display, both the element and its lines
+      are `display: contents`, so the figure is a child of the row again and
+      the row is laid out exactly as it was before this existed.
+    */
     const uptime = el("span", "service-uptime");
-    summary.append(uptime, icon("ph-caret-circle-down", "service-chevron"));
+    const displayMain = el("span", "service-display-main");
+    const displaySecond = el("span", "service-display-line");
+    const displayFirst = el("span", "service-display-line");
+    displayFirst.append(displayMain, uptime);
+    const display = el("span", "service-display");
+    display.append(displayFirst, displaySecond);
+    summary.append(
+      display,
+      icon("ph-caret-circle-down", "service-chevron"),
+      disclosureMark(),
+    );
 
     const stripHost = el("div", "uptime-strip-host");
     const axis = el("div", "strip-axis");
@@ -387,6 +644,9 @@ export function mountStatusPage(
       root: row,
       summary,
       uptime,
+      status: service.status,
+      displayMain,
+      displaySecond,
       stripHost,
       /*
         The plugins take their appearance from the design that uses them. Whilst
@@ -397,6 +657,7 @@ export function mountStatusPage(
       strip: createUptimeStrip(stripHost, {
         style: () => readStripTokens(stripHost),
         heightProperty: "--strip-surface-height",
+        report: READS_ON_DISPLAY ? (lines) => readOut(entry, lines) : undefined,
       }),
       axisFrom,
       detailWrap,
@@ -404,6 +665,14 @@ export function mountStatusPage(
       chart: createChartView(chartHost, service.id, service.name, GENERATED_AT, {
         style: () => readChartTokens(chartHost),
         tooltipClassName: "uptime-tooltip chart-reading",
+        seriesColours: () => {
+          const inherited = getComputedStyle(chartHost);
+          return {
+            ipv4: inherited.getPropertyValue("--series-own").trim(),
+            ipv6: inherited.getPropertyValue("--series-next").trim(),
+          };
+        },
+        report: READS_ON_DISPLAY ? (lines) => readOut(entry, lines) : undefined,
       }),
       chartBuilt: false,
     };
@@ -446,6 +715,13 @@ export function mountStatusPage(
 
   // ── Footer ────────────────────────────────────────────────────────────────
   const footer = el("footer", "status-footer");
+  const build = el("p", "stamp stamp--build", `v${mockConfig.version}`);
+  const serial = el(
+    "p",
+    "stamp stamp--serial",
+    `Serial #${String(mockConfig.serial).padStart(5, "0")}`,
+  );
+
   const powered = el("div", "powered");
   powered.append(
     el("span", "powered-label", "powered by"),
@@ -458,26 +734,70 @@ export function mountStatusPage(
   configuredLink.rel = "noopener noreferrer";
   configuredLink.target = "_blank";
   configured.append(configuredLink);
-  footer.append(powered, configured);
+  /*
+    The version, the credit line and the serial share one row, so all three sit
+    on one baseline. They used to be fixed to the window's corners whilst the
+    credit sat in the flow, which put them on different lines by however tall
+    the footer happened to be.
+  */
+  const footerRow = el("div", "status-footer-row");
+  footerRow.append(build, configured, serial);
+  footer.append(powered, footerRow);
 
-  const build = el("p", "stamp stamp--build", `v${mockConfig.version}`);
-  const serial = el(
-    "p",
-    "stamp stamp--serial",
-    `Serial #${String(mockConfig.serial).padStart(5, "0")}`,
-  );
+  /*
+    Tracks the credit's label out until it ends where the wordmark ends.
+    Measured rather than stated, because the two lines are set in different
+    faces at different sizes and only the browser knows what either comes to.
+  */
+  function fitPoweredLabel(): void {
+    const mark = powered.querySelector<HTMLElement>(".velvet-wordmark");
+    const label = powered.querySelector<HTMLElement>(".powered-label");
+    if (!mark || !label) return;
+    label.style.removeProperty("--powered-label-tracking");
+    const natural = label.getBoundingClientRect().width;
+    const target = mark.getBoundingClientRect().width;
+    const gaps = (label.textContent ?? "").length - 1;
+    if (gaps <= 0 || natural <= 0 || target <= natural) return;
+    label.style.setProperty(
+      "--powered-label-tracking",
+      `${(target - natural) / gaps}px`,
+    );
+  }
+  new ResizeObserver(fitPoweredLabel).observe(powered);
+  void document.fonts.ready.then(fitPoweredLabel);
+
 
   const body = el("div", "status-body");
+  // The foot of the limb the range bar opens: a design that draws one closes it
+  // here, and every other leaves it undisplayed.
+  const serviceFoot = el("div", "service-foot");
+  // The arm can carry the version and the serial, which is why it is not hidden
+  // from a reader who hears the page. What it draws besides those two is
+  // decoration. A design that shows them here hides the footer's own pair, so
+  // the page states each figure once.
+  serviceFoot.append(
+    el("span", "service-foot-version", `v${mockConfig.version}`),
+    el(
+      "span",
+      "service-foot-serial",
+      `Serial #${String(mockConfig.serial).padStart(5, "0")}`,
+    ),
+  );
+  serviceHost.append(serviceFoot);
+
   body.append(notices, rangeBar, serviceHost);
   page.append(
     band("nav", nav),
     band("hero", hero),
     band("body", body),
     band("footer", footer),
-    build,
-    serial,
   );
   container.append(page);
+  // The state goes on the root, where a theme can read it, because a theme
+  // declares its tokens on `:root` and a token declared there cannot read a
+  // value held below it. One design paints the limb around the notices in this
+  // colour, and that limb is nowhere near the hero in the tree.
+  previewOverallStatus(overall);
 
   /**
    * Opens or closes one service.
@@ -510,6 +830,13 @@ export function mountStatusPage(
    * Measured rather than calculated from the labels, because the buttons are
    * as wide as their type and that depends on the theme's face and tracking.
    *
+   * The layout box is what is read, and the theme's scale for the chosen label
+   * is applied to it here. A theme may draw that label larger through a
+   * `transform`, which leaves the box alone by design, so the mark has to be
+   * widened by the same factor for the gap to be the size of what stands in
+   * it. Reading the rendered rectangle instead would give whatever size the
+   * label happened to be passing through mid-transition.
+   *
    * @param animate - False on the first placement, so the mark does not slide
    *   in from the left edge when the page opens.
    */
@@ -517,11 +844,19 @@ export function mountStatusPage(
     const button = rangeControls.get(range);
     if (!button) return;
     const track = rangeButtons.getBoundingClientRect();
-    const box = button.getBoundingClientRect();
     if (track.width === 0) return;
+    const style = getComputedStyle(button);
+    const scale =
+      Number.parseFloat(style.getPropertyValue("--control-active-scale")) || 1;
+    // Taken off each side, because a label's own padding is scaled up with it
+    // and a theme may not want all of that as empty bar around the words.
+    const trim =
+      Number.parseFloat(style.getPropertyValue("--range-mark-trim")) || 0;
+    const width = button.offsetWidth * scale - 2 * trim;
+    const left = button.offsetLeft - (width - button.offsetWidth) / 2;
     rangeMark.style.transition = animate ? "" : "none";
-    rangeMark.style.width = `${box.width}px`;
-    rangeMark.style.transform = `translateX(${box.left - track.left}px)`;
+    rangeMark.style.width = `${width}px`;
+    rangeMark.style.transform = `translateX(${left}px)`;
     if (!animate) {
       // Forces the browser to take the un-animated position before the
       // transition is handed back, so the next change animates from here.
@@ -569,6 +904,9 @@ export function mountStatusPage(
         range,
       );
       row.axisFrom.textContent = RANGE_LABEL[range];
+      // The display names the window it is reporting on, so a range change
+      // rewrites what it says at rest.
+      readOut(row, null);
       if (row.chartBuilt) {
         row.chart.update(
           responseTimesDocument.series.filter(

@@ -9,7 +9,7 @@ import {
 import { BUNDLE_DATA_VERSION } from "../src/lib/bundles/data.js";
 import { parseBundleManifest, type BundleManifest } from "../src/lib/bundles/manifest.js";
 import type { VelvetConfig } from "../src/lib/config.js";
-import { orbital } from "../bundles/fixtures/index.js";
+import { velvetUnderground } from "../bundles/fixtures/index.js";
 
 /**
  * The two decisions the host makes before anything is rendered: which design,
@@ -80,7 +80,7 @@ test("hands the design the installation as its operator configured it", () => {
     repo: "status",
     dataBranch: "velvet-data",
     dataBaseUrl: "./",
-    name: "Orbital Systems",
+    name: "Velvet Underground Inc.",
     logoHeight: 72,
     serial: 42,
     navbar: [{ title: "Website", href: "#" }],
@@ -93,16 +93,16 @@ test("hands the design the installation as its operator configured it", () => {
   const data = bundleDataFor(
     config,
     {
-      status: orbital.status,
-      incidents: orbital.incidents,
-      responseTimes: orbital.responseTimes,
+      status: velvetUnderground.status,
+      incidents: velvetUnderground.incidents,
+      responseTimes: velvetUnderground.responseTimes,
     },
     "9.9.9",
   );
 
   assert.equal(data.dataVersion, BUNDLE_DATA_VERSION);
-  assert.equal(data.generatedAt, orbital.status.generatedAt);
-  assert.equal(data.site.name, "Orbital Systems");
+  assert.equal(data.generatedAt, velvetUnderground.status.generatedAt);
+  assert.equal(data.site.name, "Velvet Underground Inc.");
   assert.equal(data.site.serial, 42);
   assert.equal(data.site.version, "9.9.9");
   assert.deepEqual(data.site.icons, { website: "globe" });
@@ -113,9 +113,9 @@ test("hands the design the installation as its operator configured it", () => {
   );
   // The documents go across unchanged, because a design reads exactly what the
   // monitor wrote.
-  assert.equal(data.status, orbital.status);
-  assert.equal(data.incidents, orbital.incidents);
-  assert.equal(data.responseTimes, orbital.responseTimes);
+  assert.equal(data.status, velvetUnderground.status);
+  assert.equal(data.incidents, velvetUnderground.incidents);
+  assert.equal(data.responseTimes, velvetUnderground.responseTimes);
 });
 
 test("an installation with no serial says so rather than claiming one", () => {
@@ -127,9 +127,9 @@ test("an installation with no serial says so rather than claiming one", () => {
     icons: {},
   } as unknown as VelvetConfig;
   const data = bundleDataFor(config, {
-    status: orbital.status,
-    incidents: orbital.incidents,
-    responseTimes: orbital.responseTimes,
+    status: velvetUnderground.status,
+    incidents: velvetUnderground.incidents,
+    responseTimes: velvetUnderground.responseTimes,
   });
   assert.equal(data.site.serial, null);
 });

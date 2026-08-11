@@ -21,7 +21,7 @@ import {
   oneService,
   twentyServices,
 } from "./cases.js";
-import { orbital } from "./orbital.js";
+import { velvetUnderground } from "./velvet-underground.js";
 
 /** One case, with the sentence explaining what it exists to catch. */
 export interface Fixture {
@@ -34,9 +34,9 @@ export interface Fixture {
 
 export const FIXTURES: readonly Fixture[] = [
   {
-    name: "orbital",
+    name: "velvet-underground",
     what: "the ordinary installation: five services, three hundred days, one open incident",
-    data: orbital,
+    data: velvetUnderground,
   },
   {
     name: "first-day",
@@ -68,5 +68,5 @@ export function fixtureNamed(name: string): Fixture | undefined {
   return FIXTURES.find((fixture) => fixture.name === name);
 }
 
-export { orbital } from "./orbital.js";
+export { velvetUnderground } from "./velvet-underground.js";
 export * from "./cases.js";
