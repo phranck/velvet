@@ -1,0 +1,2900 @@
+/**
+ * Cassette, 1979, as a bundle of its own.
+ *
+ * Not a terminal with an amber accent. A rack of separate components, and the
+ * deck at the middle of it. The design is built from what those objects
+ * actually have, and each of these is a real element on the page rather than an
+ * allusion:
+ *
+ *   - The faceplate. Brushed aluminium, bolted between two walnut cheeks, with
+ *     a screw in each corner and a printed stripe across the head.
+ *   - The name plate. Milled into the plastic, with a liquid-crystal grid over
+ *     it, lit from behind by a red lamp.
+ *   - The readout. Two lines of a dot-matrix display between the plate and the
+ *     key, where the strip and the plot write what another design would draw in
+ *     an overlay.
+ *   - The tape. The availability strip is oxide brown in four stacked lamps,
+ *     which is both the tape's own colour and the way a deck's meter reads.
+ *   - The key. A rectangular aluminium button with a green pilot light in the
+ *     middle of it; pressed means the response times are showing.
+ *   - The scale. The response plot is the lit dial of a receiver, read through
+ *     a strip of plexiglass with a line down the middle of it.
+ *
+ * The palette is the object's, not a screen's: shell charcoal, label cream,
+ * oxide brown, and the amber of a deck's indicator lamp. The green is the one
+ * borrowed thing, and it is borrowed from the same deck's record lamp. There is
+ * not one picture on the page.
+ *
+ * Everything is declared on this design's own root element. A bundle styles
+ * only what is inside itself: the document's own colours, its scrolling and its
+ * margins belong to whatever is publishing the page.
+ */
+
+@import "./assets/fonts.css";
+
+
+.cassette-page {
+  /* ── Identity ─────────────────────────────────────────────────────────── */
+  --theme-scheme: dark;
+
+  /* ── Surface ──────────────────────────────────────────────────────────── */
+  --surface-base: #191714;
+  --surface-card: #14120f;
+  --surface-rule: #3b342a;
+  --surface-popover: #0d0b09;
+
+  /* ── Text ─────────────────────────────────────────────────────────────── */
+  --text-1: #e6dcc4;
+  --text-2: #a89a7c;
+  /* Lifted from #7d735c, which measures 3.82:1 on the shell. This is the
+     lowest value reaching 4.5:1 against both surfaces it stands on: 4.52:1 on
+     the shell, 4.72:1 on a faceplate. */
+  --text-3: #8a7f65;
+  --popover-text: #e6dcc4;
+  --popover-text-muted: #a89a7c;
+  --popover-edge: #e8a33d;
+
+  /* ── Brand and accent ─────────────────────────────────────────────────── */
+  /* The Velvet wordmark, which is the same lettering on every page. Its
+     colour is this theme's; its face is not. */
+  --brand-font: "Plaster", sans-serif;
+  --brand-primary: #e8a33d;
+  --accent: #e8a33d;
+  --accent-quiet: rgb(232 163 61 / 0.16);
+
+  /* ── State ────────────────────────────────────────────────────────────── */
+  /* Olive for a working system, amber for a slow one, and a red that leaves
+     the amber family entirely so a failure cannot be read as a warning. */
+  --state-operational: #8fae5a;
+  --state-degraded: #d99a2e;
+  --state-outage: #c9463f;
+  --state-no-data: #3d2c1d;
+  --state-maintenance: #6f8794;
+  --state-maintenance-edge: #9fb4c0;
+  --state-unknown-mark: var(--state-ghost-edge);
+  --state-ghost-edge: #8d8770;
+  --protocol-ipv4: #e8a33d;
+  --protocol-ipv6: #8fae5a;
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  /* One face throughout, because a machine of this period had one printer and
+     one character generator. The hierarchy is carried by size, weight and
+     letter-spacing instead. */
+  --font-display: "IBM Plex Mono", ui-monospace, monospace;
+  --font-body: "IBM Plex Mono", ui-monospace, monospace;
+  --font-meta: "IBM Plex Mono", ui-monospace, monospace;
+  --display-transform: uppercase;
+  --brand-weight: var(--display-weight);
+  --brand-tracking: var(--display-tracking);
+  --nav-link-size: var(--text-size-caption);
+  --nav-link-tracking: var(--label-tracking);
+  /*
+    Monoton for the one line that names the state, and nowhere else. It draws
+    every stroke as a pair of hairlines, which is the lettering a cassette
+    inlay carries, and at paragraph size it stops being readable at all. It
+    ships one weight, so the headline takes that rather than the display one.
+  */
+  --headline-font: "Monoton", cursive;
+  --headline-weight: 400;
+  --headline-tracking: var(--display-tracking);
+  --hero-updated-size: var(--text-size-caption);
+  --notices-heading-weight: var(--display-weight);
+  --notices-heading-tracking: var(--label-tracking);
+  --group-name-size: var(--text-size-caption);
+  --group-name-weight: var(--display-weight);
+  --group-name-tracking: var(--label-tracking);
+  --uptime-size: var(--text-size-caption);
+  --stamp-display: block;
+  --stamp-tracking: var(--label-tracking);
+  --display-tracking: 0.1em;
+  --display-weight: 500;
+  --label-transform: uppercase;
+  --label-tracking: 0.14em;
+  --meta-style: normal;
+  --meta-weight: 600;
+
+  --text-size-body: 15px;
+  --text-size-small: 14px;
+  --text-size-caption: 12px;
+  --text-size-badge: 11px;
+  --text-size-lead: 16px;
+  --text-size-section: 14px;
+  --text-size-service: 40px;
+  --text-size-brand: 17px;
+  --text-size-headline: 30px;
+  --text-size-hero-glyph: 44px;
+  --text-size-ornament: 20px;
+  --text-size-chart-label: 11px;
+  --text-size-chart-caption: 10px;
+  --text-leading-body: 1.55;
+  --text-leading-display: 1.15;
+  --text-leading-tight: 1.45;
+
+  /* ── Shape ────────────────────────────────────────────────────────────── */
+  /*
+    Moulded rather than cut.
+
+    A shell of this period is injection-moulded ABS, and a mould has a radius
+    at every edge because a sharp one neither fills nor releases. So the card
+    carries a radius, and the surfaces inside it carry smaller ones in the same
+    manner: a moulding is rounded throughout or it is not a moulding.
+
+    The one thing that stays square is the printed band across the top, which
+    is ink on a flat face rather than a shape in the plastic.
+  */
+  /* The opened panel is not a card: no outline, no fill of its own. */
+  --detail-edge-width: 0px;
+  --detail-edge-colour: var(--surface-rule);
+  --detail-fill: transparent;
+  --chart-rule-width: var(--rule-width);
+  --chart-rule-colour: var(--surface-rule);
+  /* The opened panel is not a card, so it adds nothing of its own: everything
+     inside the case stands the same distance from it, which is the card's
+     padding plus the inset every row shares. */
+  --detail-space-after: var(--row-inset);
+  --detail-padding: 0px;
+  --card-radius-base: 12px;
+  --card-radius: 12px;
+  --card-clip: none;
+  --card-border-width: 1px;
+  --card-shadow: 0 10px 22px rgb(0 0 0 / 0.55);
+  --control-radius: 5px;
+  --control-border-width: 1px;
+  --badge-border-width: 1px;
+  --badge-radius: 4px;
+  --tooltip-radius: 7px;
+  --tooltip-clip: none;
+  /* An indicator lamp is round. */
+  --dot-radius: 999px;
+  --rule-width: 1px;
+  --rule-style: solid;
+  /* The row does not answer to the pointer; its key does. */
+  --summary-hover-fill: transparent;
+  --focus-width: 2px;
+  --focus-offset: 3px;
+
+  /* ── Measure ──────────────────────────────────────────────────────────── */
+  --page-min-width: 320px;
+  --page-width: 920px;
+  --page-inset: clamp(12px, 4vw, 32px);
+  --row-inset: var(--card-text-inset);
+  --card-padding: 26px;
+  /*
+    Clears the plate at either end.
+
+    The head runs to 32 pixels: a 22 pixel plate, a 3 pixel stripe under it and
+    two hairlines. The foot is the plate alone, so 22. Sixteen pixels of metal
+    inside each of them, which is what the cheeks leave at the sides, so the
+    face has the same margin the whole way round.
+  */
+  --card-padding-top: 48px;
+  --card-padding-bottom: 38px;
+  --card-gap: 10px;
+  --space-hair: 5px;
+  --space-tight: 9px;
+  --space-row: 12px;
+  --space-block: 16px;
+  --space-section: 28px;
+  --nav-padding-block: 16px;
+  --nav-padding-inline: 4px;
+  --hero-padding-block: 30px;
+  --hero-padding-inline: 4px;
+  --control-padding-block: 3px;
+  --toggle-padding-inline: var(--control-padding-inline);
+  --control-padding-inline: 9px;
+  --badge-padding-block: 2px;
+  --badge-padding-inline: 6px;
+  --tooltip-padding-block: 7px;
+  --tooltip-padding-inline: 11px;
+  /* The stamps below the rack begin where the metal of a faceplate does. */
+  --stamp-inset-inline: var(--cassette-cheek);
+  --dot-size: 7px;
+
+  /* ── Availability strip ───────────────────────────────────────────────── */
+  /* Evenly spaced ticks, like the segments of a bar-graph meter, each with the
+     small radius a moulded window has. The gloss stays, because a segment on
+     such a meter is a lit window with a curved cover over it. */
+  /* Four stacked lamps per day, which is how a deck without a display showed
+     a level, over the oxide brown of the tape itself. */
+  --bar-hover-height: 36px;
+
+  /* ── Chart ────────────────────────────────────────────────────────────── */
+  /*
+    The dial.
+
+    A receiver of this period reads through a lit window with a scale printed
+    on the glass: fine ticks along the bottom, longer ones where the figures
+    stand, and a lamp behind it warming the whole face. The trace runs across
+    that scale the way the tuning needle does.
+  */
+  --chart-plot-inset: 0px;
+  --chart-plot-edge-width: 0px;
+  --chart-plot-edge-colour: #4a4033;
+  --chart-plot-fill: radial-gradient(
+      ellipse 80% 130% at 50% 100%,
+      rgb(232 163 61 / 0.22),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #241f18, #16130f);
+  /* No value axis: the trace runs from edge to edge and the scale below it is
+     what the reading is measured against. */
+  --chart-axis-value-display: none;
+  /* The needle: a strip of plexiglass with a red line down the middle of it,
+     which is how a receiver of this period reads its own scale. */
+  --chart-crosshair-colour: #e2453a;
+  --chart-hover-point-display: none;
+  --chart-needle-width: 7px;
+  --chart-needle-fill: rgb(232 220 196 / 0.10);
+  --chart-needle-edge: rgb(232 220 196 / 0.22);
+  /* The printed scale: a tick every 8 units of the drawing, every fourth one
+     long, hanging under the graph with the range's two ends below it. */
+  --chart-tick-colour: rgb(232 220 196 / 0.45);
+  --chart-tick-major-colour: rgb(232 220 196 / 0.8);
+  --chart-head-margin: var(--space-block);
+  --chart-head-space: var(--space-tight);
+  /* The gap between the drawing and the two ends of the range under it. */
+  --chart-axis-space: 5px;
+  /* Room over the highest reading for its own figure plus ten pixels of air
+     to the top of the box. */
+  --chart-grid-colour: var(--surface-rule);
+  --chart-grid-alpha: 100%;
+  --chart-axis-text-size: var(--text-size-chart-label);
+  --chart-axis-colour: var(--surface-rule);
+  --chart-axis-text-colour: var(--text-3);
+  --chart-axis-text-alpha: 100%;
+  --chart-axis-alpha: 100%;
+  /* The figures print on the glass beside the ticks, the way a scale of this
+     period carries its own readings. */
+  --chart-scale-display: block;
+  --chart-scale-colour: var(--text-3);
+  --chart-scale-alpha: 100%;
+  --chart-grid-dash: 3 4;
+  --chart-line-width: 2px;
+  --chart-line-cap: butt;
+  --chart-ipv4-dash: none;
+  /* Both traces unbroken, each washed down to the scale below it. */
+  --chart-ipv6-dash: none;
+  /* The needle's line is unbroken, the way a printed pointer is. */
+  --chart-crosshair-dash: none;
+  --chart-key-width: 16px;
+
+  /* ── Backdrop ─────────────────────────────────────────────────────────── */
+  /* The scan lines of a monitor, over a warm grey the colour of a painted
+     steel enclosure. Both are layers rather than backgrounds, so neither is
+     repainted when the page scrolls. */
+  --backdrop-layer: radial-gradient(
+      ellipse 90% 60% at 50% 0%,
+      rgb(232 163 61 / 0.07),
+      transparent 70%
+    ),
+    #1b1a15;
+  --backdrop-texture: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0.22) 0 1px,
+    transparent 1px 3px
+  );
+  --backdrop-texture-size: auto;
+  --backdrop-texture-opacity: 1;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  /* `--velvet-disclosure-duration` is read by `site/src/lib/disclosure.ts`,
+     which the mockups use unchanged, so it carries the same value as the token
+     beside it rather than being a second number. */
+  /* The scan lines creep, which is what an unsynchronised tube does. Nine
+     seconds for three pixels: visible only if somebody stares at it. */
+  --backdrop-motion: velvet-drift 9s linear infinite;
+  --backdrop-drift: 3px;
+  --velvet-disclosure-duration: 320ms;
+  --motion-ease: ease-in-out;
+  --motion-range: 260ms;
+  --motion-hover: 110ms;
+
+  /* ── Arrangement ──────────────────────────────────────────────────────── */
+  --nav-rule-height: 1px;
+  --nav-rule-fill: var(--surface-rule);
+  --nav-rule-radius: 0px;
+  --nav-rule-inset: 0px;
+  /* How wide the walnut cheeks are, which is also where the lines below the
+     rack begin. */
+  --cassette-cheek: 16px;
+  /*
+    The faceplate.
+
+    A component of this period is a brushed metal front bolted between two
+    walnut cheeks, and all three are one surface here: the cheeks are the first
+    layer, drawn from both edges inwards, the brushing is a fine vertical
+    striping across the face, and the moulding grain that was already here runs
+    under both.
+  */
+  --card-texture: linear-gradient(
+      to right,
+      #4a301c 0 calc(var(--cassette-cheek) - 2px),
+      #2e1d10 calc(var(--cassette-cheek) - 2px) var(--cassette-cheek),
+      transparent var(--cassette-cheek) calc(100% - var(--cassette-cheek)),
+      #2e1d10 calc(100% - var(--cassette-cheek))
+        calc(100% - var(--cassette-cheek) + 2px),
+      #4a301c calc(100% - var(--cassette-cheek) + 2px) 100%
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgb(232 220 196 / 0.028) 0 1px,
+      transparent 1px 3px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgb(232 220 196 / 0.022) 0 1px,
+      transparent 1px 4px
+    );
+  --card-texture-size: auto;
+  /*
+    The label head.
+
+    A cassette's inlay is a printed band across the top of the card, and every
+    make had its own: TDK a broad stripe over a hairline, BASF two rules in
+    sequence, Maxell a gold band on black. It is the one graphic that names the
+    make before a word is read, and it is what this design is built on.
+
+    Four layers: the broad band, a hairline under it, a second hairline further
+    down, and the trim strip at the very top. All of them are horizontal, all
+    of them run the full width, and none of them is decoration for its own
+    sake: this is what the object prints on itself.
+  */
+  --card-ornament-display: block;
+  --card-ornament-inset: 0px;
+  --card-ornament-height: auto;
+  --card-ornament-radius: var(--card-radius);
+  --card-ornament-fill: transparent;
+  --card-ornament-throat: 0px;
+  --card-ornament-throat-offset: 0px;
+  /*
+    Four screws, the printed head, and the plate the case is closed with.
+
+    A screw is two layers: a domed head with a dark rim, and the hexagonal
+    socket sunk into it. The socket is a small drawing rather than a gradient,
+    because a gradient cannot be a hexagon and two background layers cannot be
+    made to intersect. Every socket stands above its own head, so all four come
+    first in the list.
+
+    The stripes belong to the head alone. They are what the make prints across
+    the top of its inlay, and a printed band is not something a case repeats at
+    the other end: the foot is the same plate without them.
+
+    Both run between the cheeks rather than across them, because the plate is
+    metal and the wood is bolted to either side of it.
+  */
+  --card-ornament-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), radial-gradient(
+      circle 7px at 50% 42%,
+      #c3b89c 0 26%,
+      #8f8570 26% 62%,
+      #5d543f 62% 84%,
+      #2a251d 84% 96%,
+      transparent 96%
+    ),
+    radial-gradient(
+      circle 7px at 50% 42%,
+      #c3b89c 0 26%,
+      #8f8570 26% 62%,
+      #5d543f 62% 84%,
+      #2a251d 84% 96%,
+      transparent 96%
+    ), radial-gradient(
+      circle 7px at 50% 42%,
+      #c3b89c 0 26%,
+      #8f8570 26% 62%,
+      #5d543f 62% 84%,
+      #2a251d 84% 96%,
+      transparent 96%
+    ), radial-gradient(
+      circle 7px at 50% 42%,
+      #c3b89c 0 26%,
+      #8f8570 26% 62%,
+      #5d543f 62% 84%,
+      #2a251d 84% 96%,
+      transparent 96%
+    ), linear-gradient(#c8752a 0 0),
+    linear-gradient(#e8dcc4 0 0), linear-gradient(#7d5a33 0 0),
+    linear-gradient(#3b342a 0 0), linear-gradient(#3b342a 0 0);
+  --card-ornament-size: 7px 7px, 7px 7px, 7px 7px, 7px 7px, 15px 15px,
+    15px 15px, 15px 15px, 15px 15px, calc(100% - 32px) 3px,
+    calc(100% - 32px) 1px, calc(100% - 32px) 1px, calc(100% - 32px) 22px,
+    calc(100% - 32px) 22px;
+  --card-ornament-position: left 30px top 8px, right 30px top 8px,
+    left 30px bottom 10px, right 30px bottom 10px, left 26px top 4px,
+    right 26px top 4px, left 26px bottom 6px, right 26px bottom 6px,
+    left 16px top 22px, left 16px top 27px, left 16px top 31px, left 16px top,
+    left 16px bottom;
+  --notices-gap: var(--space-tight);
+  --notices-arm-space: 0px;
+  --notices-arm-image: none;
+  --notices-arm-size: auto;
+  --notices-arm-position: left bottom;
+  --notices-throat: 0px;
+  --notices-throat-offset: 0px;
+  --notices-rail-width: 0px;
+  --notices-rail-gap: 0px;
+  --notices-rail-inset: 0px;
+  --notices-rail-radius: 0px;
+  --notices-rail-fill: transparent;
+  --notice-align: center;
+  --notice-areas-maintenance: "glyph title meta" "glyph summary summary";
+  --notice-areas-incident: "title meta" "summary summary";
+  --notice-columns-maintenance: auto 1fr auto;
+  --notice-columns-incident: 1fr auto;
+  --notice-fill: color-mix(in srgb, currentColor 12%, var(--surface-card));
+  --notice-padding: var(--card-padding);
+  --notice-radius-base: var(--card-radius-base);
+  --notice-title-colour: var(--text-1);
+  --notice-title-font: var(--font-display);
+  --notice-title-size: var(--text-size-lead);
+  --notice-title-transform: var(--display-transform);
+  --notice-summary-colour: var(--text-2);
+  --notice-summary-font: var(--font-body);
+  --notice-summary-size: var(--text-size-small);
+  --notice-summary-transform: none;
+  --notice-meta-colour: var(--text-2);
+  --notice-meta-font: var(--font-meta);
+  --notice-meta-size: var(--text-size-caption);
+  --notice-meta-transform: none;
+  --notices-columns: 1fr;
+  --notice-meta-display: block;
+  --notice-cell-lines: 99;
+  --notice-radius-lead: var(--card-radius);
+  --notice-radius-trail: var(--card-radius);
+  --notice-gap: var(--space-hair) var(--space-row);
+  --notice-border-width: var(--card-border-width);
+  --card-rail-width: 0px;
+  --card-rail-colour: transparent;
+  --card-rail-radius: 0px;
+  --card-rail-inset: 0px;
+  --nav-gap: 16px;
+  --nav-brand-display: inline-block;
+  --nav-links-display: flex;
+  --nav-justify: center;
+  --nav-fill: transparent;
+  --nav-brand-colour: var(--brand-primary);
+  --nav-link-colour: #a29a7e;
+  --hero-align: center;
+  --hero-text-align: center;
+  --hero-fill: transparent;
+  /* Centred, so the mark stands above the words: anything beside a
+     centred line stops the line being centred. */
+  --hero-areas: "mark" "title" "updated";
+  --hero-columns: auto;
+  --hero-mark-size: var(--text-size-hero-glyph);
+  --hero-gap: var(--space-tight) var(--space-row);
+  --hero-title-trail: 0px;
+  --hero-title-trim: normal;
+  --hero-updated-trim: normal;
+  --hero-rail-inset: 0px;
+  --hero-rail-min-height: 0px;
+  --hero-rail-width: 0px;
+  --hero-rail-display: none;
+  --hero-rail-fill: transparent;
+  --hero-rail-radius: 0px;
+  --hero-arm-display: none;
+  --hero-arm-fill: transparent;
+  --hero-arm-radius: 0px;
+  --hero-arm-depth: 0px;
+  --hero-arm-align: stretch;
+  /*
+    The sun.
+
+    A poster of this period prints a disc filled with horizontal bands, warm at
+    the top and cool at the bottom, with the ground showing through between
+    them. It is drawn as one gradient inside a round element, because a radius
+    clips a background and no mask is needed for a shape this plain.
+
+    Five bands in the object's own colours: the shell's brown, the oxide of the
+    tape, the amber of an indicator lamp, the olive of the record lamp, and the
+    slate of the meter's scale. The status glyph stands in the middle of it,
+    which is where such a poster puts its subject.
+  */
+  --hero-mark-shape-display: block;
+  --hero-mark-shape-size: 172px;
+  --hero-mark-shape-radius: 999px;
+  --hero-mark-shape-fill: linear-gradient(
+    to bottom,
+    #7d5a33 0 17%,
+    transparent 17% 20%,
+    #c8752a 20% 37%,
+    transparent 37% 40%,
+    #e8a33d 40% 57%,
+    transparent 57% 60%,
+    #8fae5a 60% 77%,
+    transparent 77% 80%,
+    #6f8794 80% 100%
+  );
+  /* No pictures anywhere in this design, so what opens a row is a character
+     the way a machine of the period would print one. */
+  /*
+    The key that opens a row.
+
+    A rectangular aluminium button with a pilot light in the middle of it: the
+    face is brushed metal domed a little towards the centre, the chamfer around
+    it is one hairline light at the top and one dark at the bottom, and the
+    lamp is out until the key is down. Down means the response times are
+    showing, which is what the key is for.
+  */
+  --disclosure-mark-self: flex-start;
+  --disclosure-mark-width: 30px;
+  --disclosure-mark-height: 22px;
+  --disclosure-mark-radius: 3px;
+  --disclosure-mark-fill: radial-gradient(
+      ellipse 120% 90% at 50% 38%,
+      rgb(255 255 255 / 0.22),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #cfcdc7 0%, #a5a29b 52%, #8b887f 100%);
+  --disclosure-mark-fill-hover: radial-gradient(
+      ellipse 120% 90% at 50% 38%,
+      rgb(255 255 255 / 0.34),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #e2e0da 0%, #b6b3ac 52%, #9a978f 100%);
+  --disclosure-mark-fill-pressed: radial-gradient(
+      ellipse 120% 90% at 50% 62%,
+      rgb(255 255 255 / 0.14),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #98958d 0%, #b0ada6 55%, #c4c1ba 100%);
+  --disclosure-mark-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65),
+    inset 0 -1px 0 rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.55);
+  --disclosure-mark-shadow-pressed: inset 0 2px 3px rgb(0 0 0 / 0.5),
+    inset 0 -1px 0 rgb(255 255 255 / 0.35);
+  --disclosure-led-size: 7px;
+  --disclosure-led-fill: radial-gradient(
+    circle at 50% 35%,
+    #375c33 0 55%,
+    #1d2f1b 55% 100%
+  );
+  --disclosure-led-fill-on: radial-gradient(
+    circle at 50% 35%,
+    #d6ffb8 0 30%,
+    #6ee34a 30% 60%,
+    #2f8f21 60% 100%
+  );
+  --disclosure-led-glow: inset 0 1px 1px rgb(0 0 0 / 0.6);
+  --disclosure-led-glow-on: inset 0 1px 1px rgb(0 0 0 / 0.35),
+    0 0 7px rgb(110 227 74 / 0.85), 0 0 16px rgb(110 227 74 / 0.5);
+  /* A grid, so the lamp in the middle of the key is a box that can be sized
+     and centred rather than an inline sliver. */
+  --disclosure-mark-display: inline-grid;
+  --disclosure-mark-closed: "";
+  --disclosure-mark-open: "";
+  --hero-mark-display: grid;
+  --hero-mark-glow: drop-shadow(
+    0 0 14px color-mix(in srgb, currentColor 35%, transparent)
+  );
+  --hero-title-colour: var(--text-1);
+  --hero-updated-colour: var(--text-3);
+  --range-label-display: block;
+  --range-label-colour: var(--text-2);
+  --range-button-colour: var(--text-3);
+  /* The control that opens every row at once answers to nothing. */
+  --toggle-hover-fill: transparent;
+  --toggle-hover-colour: var(--range-button-colour);
+  --range-button-hover-colour: var(--text-1);
+  --range-align: center;
+  --range-mark-radius: var(--control-radius);
+  --control-min-width: auto;
+  --text-size-control: var(--text-size-caption);
+  --control-active-scale: 1;
+  --range-bar-height: auto;
+  --range-bar-space: var(--space-tight);
+  --range-bar-padding: 0;
+  --range-bar-radius: 0px;
+  --range-bar-fill: transparent;
+  --range-bar-colour: currentColor;
+  --range-bar-stem-width: 0px;
+  --range-bar-stem-radius: 0px;
+  --range-bar-stem-height: 0px;
+  --range-bar-throat: 0px;
+  --range-bar-throat-offset: 0px;
+  --range-justify: flex-end;
+  /* The credit stands at the foot of the readings, as it does in every theme
+     here, and needs no fill of its own for that. */
+  --footer-position: static;
+  --footer-fill: transparent;
+  --footer-align: center;
+  --footer-text-align: center;
+  /* One column: the name stays inside the summary and no rail is drawn. */
+  --service-areas: "summary" "strip" "axis" "details";
+  --service-columns: 1fr;
+  --control-font: var(--font-meta);
+  --control-weight: var(--meta-weight);
+  --control-tracking: 0em;
+  --control-transform: none;
+  --service-rail-gap: 0px;
+  --service-gap: var(--space-block);
+  --service-divider-space: var(--space-block);
+  --service-divider-width: var(--rule-width);
+  /*
+    Two lamps rather than two labels.
+
+    Both protocols stand on every service, lit where something was measured and
+    dark where nothing was: an unlit lamp is a reading, and hiding it would
+    take that reading away. Each is backlit in its own colour at a tenth of its
+    strength, which is what a filter over a bulb comes to.
+  */
+  --protocols-single-display: inline-flex;
+  --badge-absent-display: block;
+  --badge-fill: color-mix(in srgb, currentColor 12%, #0d0b07);
+  --badge-glow: 0 0 6px color-mix(in srgb, currentColor 55%, transparent);
+  --badge-absent-edge: #2b2519;
+  --badge-absent-fill: #0d0b07;
+  /* An unlit lamp is a reading, so it is dimmer than a lit one and it is
+     still read: the letters are what say which protocol went unmeasured.
+     Lifted from #4a4235, which measured 1.99:1 inside the dark lamp, to the
+     lowest value reaching 4.51:1 there. */
+  --badge-absent-colour: #867760;
+  /* Plate, badges and readout all run the full height of the row, so the three
+     stand level the way instruments on one faceplate do. */
+  --service-name-self: stretch;
+  --protocols-self: stretch;
+  --protocols-justify: space-between;
+  --protocols-direction: column;
+  --protocols-align: flex-start;
+  /*
+    The readout.
+
+    A vacuum fluorescent display: the blue-green of a phosphor tube on
+    near-black glass, glowing into the surface around it. It reads two lines,
+    the uptime figure sits at the end of the first, and everything another
+    design would show in an overlay is read out here rather than drawn over the
+    page.
+
+    Doto is a dot-matrix face, so the dots are the letters rather than a
+    texture laid over them.
+  */
+  --service-display-display: grid;
+  --service-display-line-display: flex;
+  --service-display-main-display: block;
+  --service-display-flex: 1 1 auto;
+  --service-display-padding: 4px 10px 5px;
+  --service-display-edge-width: 1px;
+  --service-display-edge-colour: #16241f;
+  --service-display-radius: 3px;
+  /*
+    The dots that are not lit, on the same lattice as the ones that are.
+
+    Every figure here comes from the face, measured on a canvas at 100px: its
+    dots stand a tenth of the size apart, are eight hundredths across, and the
+    first of them sits forty-five thousandths in from where a character begins.
+    At fifteen pixels that is a step of 1.5, a dot of 1.2, and a first centre
+    at 10.675 from the panel's edge, which is its padding plus 0.675. The tile
+    carries its dot in the middle, so the pattern starts half a step earlier.
+
+    Two things keep the whole line on that lattice. The leading is 1.2, so a
+    line is eighteen pixels, which is twelve steps. And the tracking is a tenth
+    of the size, so a character takes seven steps rather than six and a bit:
+    one blank dot column between characters, which is how such a panel spaces
+    them anyway.
+  */
+  --service-display-fill: radial-gradient(
+      circle 0.6px at 50% 50%,
+      #14281f 0 100%,
+      transparent 100%
+    )
+      0.925px 0.1px / 1.5px 1.5px,
+    linear-gradient(to bottom, #060f0d, #0b1512);
+  --service-display-colour: #8ff8dd;
+  /* Two steps down from the reading itself: what the reading is of, then the
+     standing figure. Measured on the glass: 15.07:1, 10.20:1 and 5.50:1, with
+     the unlit dots at 1.23:1. */
+  --service-display-colour-quiet: #4ad3b4;
+  --service-display-colour-faint: #2e9a84;
+  --service-display-font: "Doto", ui-monospace, monospace;
+  --service-display-size: 15px;
+  --service-display-leading: 1.2;
+  --service-display-tracking: 0.1em;
+  --service-display-transform: uppercase;
+  --service-display-glow: 0 0 7px rgb(110 240 205 / 0.55);
+  --uptime-colour: currentColor;
+  --uptime-font: var(--service-display-font);
+  --service-name-tracking: normal;
+  --service-name-transform: none;
+  --service-name-weight: 700;
+  --service-name-font: "Tangerine", cursive;
+  --service-name-clip: text;
+  /* Pressed into the face: dark where the light does not reach over its top
+     edge, and a hairline of the metal along the bottom. */
+  --service-display-shadow: inset 0 2px 4px rgb(0 0 0 / 0.75),
+    inset 0 -1px 0 rgb(0 0 0 / 0.5), 0 1px 0 rgb(232 220 196 / 0.09);
+  --service-name-display: grid;
+  --service-name-flex: 0 1 auto;
+  --service-name-trim: normal;
+  --service-name-leading: 1.15;
+  /*
+    The name, cut in polished brass.
+
+    No plate at all any more: the letters are the metal. A gradient runs down
+    them from a lit top edge through the body of the brass to a dark foot, with
+    a second highlight where a polished surface catches the light again, and
+    the whole of it is clipped to the letters. Tangerine at 700 is the
+    engraver's script such a badge is cut in, and its bold is the weight with
+    enough body to hold a gradient.
+  */
+  --service-name-padding: 0px 2px;
+  --service-name-radius: 0px;
+  --service-name-shadow: none;
+  --service-name-fill: linear-gradient(
+    to bottom,
+    #fffbe9 0%,
+    #ffe9a8 10%,
+    #d9ad4c 26%,
+    #8a6418 44%,
+    #4a340c 51%,
+    #c99a34 57%,
+    #ffeeb4 66%,
+    #fffdf2 71%,
+    #e2b64e 78%,
+    #9a7420 90%,
+    #5c410f 100%
+  );
+  --service-name-colour: transparent;
+  --service-name-stroke: 0px;
+  --service-name-stroke-colour: transparent;
+  /* The shadow a raised letter throws on the face behind it. */
+  --service-name-glow: 0 1px 1px rgb(0 0 0 / 0.75);
+  /* One instrument per service, always. A rack holds separate
+     components, and a single panel listing all of them is not what this
+     design is. */
+  --service-icon-colour: var(--accent);
+
+  /* ── Controls ─────────────────────────────────────────────────────────── */
+  --control-idle-edge: transparent;
+  --control-active-fill: var(--accent);
+  --control-active-edge: transparent;
+  --control-active-text: #12120e;
+  --control-active-glow: none;
+}
+
+/**
+ * Structure, and nothing that decides how the page looks.
+ *
+ * Every colour, radius, font, spacing step, border width, shadow and duration
+ * below comes from a custom property that a theme file defines. This file may
+ * not contain a single literal of any of those, and that restriction is what
+ * makes the claim in `documentation/theme-authoring.md` testable rather than
+ * merely stated: `verify.ts` greps this file for literals and fails on a hit.
+ *
+ * Four kinds of value are allowed here and are not design decisions:
+ *
+ *   - structural zeroes and resets, such as `margin: 0` or `border: 0`
+ *   - relational values, such as `1fr`, `100%`, `auto` and `min-content`
+ *   - the derived geometry below, which computes one value from another
+ *   - the mockup toolbar at the foot of this file, which is not part of the
+ *     page under review and is deliberately outside every theme's reach
+ *
+ * The card geometry follows the rule that a nested radius is the outer radius
+ * less the inset, and that text meeting a curve stands in by half the radius.
+ * Both are derived here rather than restated per theme, so a theme states its
+ * radius once and everything inside it follows.
+ */
+
+.cassette-page,
+.cassette-page *,
+.cassette-page *::before,
+.cassette-page *::after {
+  box-sizing: border-box;
+}
+
+/*
+  The focus ring is the theme's, never the browser's.
+
+  Every focusable element on the page is listed, because a default ring appears
+  wherever one is not, and a page carrying two different rings is worse than
+  either. It is never set to `none`: a keyboard user has nothing else to go on,
+  and `:focus-visible` already keeps it away from pointer users.
+*/
+.cassette-page a:focus-visible,
+.cassette-page button:focus-visible,
+.cassette-page [tabindex]:focus-visible {
+  outline: var(--focus-width) solid var(--accent);
+  outline-offset: var(--focus-offset);
+  border-radius: var(--control-radius);
+}
+
+/*
+  The window's height belongs to the document, and the page takes what is left
+  of it.
+
+  Stating that height on the page itself instead makes the document taller than
+  the window by however much stands above the page, which is what a sticky
+  footer shows: the page scrolls a little with nothing to scroll to. `dvh` is
+  the height actually available, whilst `vh` is the height a phone's browser
+  has once its own bars have gone, so the second line is what stops a page
+  scrolling under a visible address bar.
+*/
+.cassette-page {
+  color-scheme: var(--theme-scheme);
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-width: var(--page-min-width);
+  isolation: isolate;
+  background: var(--surface-base);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  font-size: var(--text-size-body);
+  line-height: var(--text-leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+  The backdrop as a layer of its own rather than as the body's background.
+  A background belongs to the paint of the element carrying it, so everything
+  that repaints the page repaints it across the whole window; a fixed layer is
+  rasterised once and composited afterwards. The same reasoning is recorded in
+  `site/src/app.css`, where the measured difference over eight expand-all
+  cycles was 5809ms against 485ms.
+*/
+.cassette-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: var(--backdrop-layer);
+  pointer-events: none;
+}
+
+.cassette-page::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--backdrop-texture);
+  background-size: var(--backdrop-texture-size);
+  opacity: var(--backdrop-texture-opacity);
+  /*
+    Optional, and off in most themes. Only `background-position` and `opacity`
+    are animated here, both of which a compositor handles on its own, and the
+    layer is already composited once and never repainted. A design that wants
+    stillness sets this to `none` and the rule costs nothing.
+  */
+  animation: var(--backdrop-motion);
+  pointer-events: none;
+}@keyframes velvet-drift {
+  to {
+    background-position: 0 var(--backdrop-drift, 4px);
+  }
+}@keyframes velvet-breathe {
+  50% {
+    opacity: calc(var(--backdrop-texture-opacity) * 0.62);
+  }
+}
+
+/* The overlay arrives rather than appearing, and leaves instantly, because a
+   reading that lingered after the pointer moved would be reporting the wrong
+   segment. Opacity only. */
+.uptime-tooltip {
+  animation: velvet-overlay-in var(--motion-hover) ease-out;
+}@keyframes velvet-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ── Derived geometry ──────────────────────────────────────────────────────
+   Stated once, so a theme changes one number and the rest follows.
+
+   Declared on the root rather than on the page, and that placement matters. A
+   custom property containing `var()` resolves on the element that declares it,
+   so a theme writing `--row-inset: var(--card-text-inset)` at the root against
+   a derivation living further down computes to nothing at all: the reference
+   fails silently and the property comes back empty. Both derivations therefore
+   sit where every theme declares its own values.
+
+   A surface that overrides `--card-padding` further down restates these two
+   beside it, because descendants inherit the resolved value rather than the
+   expression. */
+.cassette-page {
+  --card-inner-radius: max(
+    calc(var(--card-radius-base) - var(--card-padding)),
+    0px
+  );
+  --card-text-inset: calc(var(--card-radius-base) / 2);
+  /* A notice is a surface of its own, so it derives its own two values from
+     its own radius rather than borrowing the card's. */
+  --notice-inner-radius: max(
+    calc(var(--notice-radius-base) - var(--notice-padding)),
+    0px
+  );
+  --notice-text-inset: calc(var(--notice-radius-base) / 2);
+}
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+/* Takes the height the document has left, so the footer stands at the foot of
+   the window on a short page and at the foot of the readings on a long one. */
+.cassette-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/*
+  A band spans the window and carries the fill; its child carries the width.
+  One element cannot do both, and a bar whose frosted edge stops at the text
+  measure reads as a narrower page sitting inside a wider one. Themes that fill
+  nothing leave the band transparent, and it then costs nothing but an element.
+*/
+.status-band {
+  width: 100%;
+}
+
+.status-band > * {
+  width: min(100% - 2 * var(--page-inset), var(--page-width));
+  margin-inline: auto;
+}
+
+.status-band--nav {
+  background: var(--nav-fill);
+}
+
+/*
+  The line under the bar is an element rather than a `border-bottom`, because a
+  border cannot be rounded independently of the box it belongs to and cannot be
+  inset from the window edge. One design here wants a thick capsule held to the
+  page measure, and five want a hairline across the window; both are the same
+  four tokens with different values.
+*/
+.status-band--nav::after {
+  content: "";
+  display: block;
+  height: var(--nav-rule-height);
+  margin-inline: var(--nav-rule-inset);
+  border-radius: var(--nav-rule-radius);
+  background: var(--nav-rule-fill);
+}
+
+.status-band--hero {
+  background: var(--hero-fill);
+}
+
+/* The one band that has to grow, so the footer is pushed to the bottom of a
+   short page rather than sitting under the last card. */
+.status-band--body {
+  flex: 1;
+}
+
+/*
+  The footer may stay at the foot of the window rather than at the foot of the
+  page. It needs a fill of its own to do that, because the readings scroll
+  underneath it and a transparent band would show them through.
+*/
+.status-band--footer {
+  position: var(--footer-position);
+  inset-block-end: 0;
+  z-index: 5;
+  background: var(--footer-fill);
+}
+
+/* ── Navigation ───────────────────────────────────────────────────────────── */
+/* The bar carries a gap of its own rather than the general row gap. A bar that
+   pushes its parts to opposite edges never shows the value at all, whilst a
+   centred one shows nothing else, so the two want different numbers. */
+.status-nav {
+  display: flex;
+  align-items: center;
+  justify-content: var(--nav-justify);
+  gap: var(--nav-gap);
+  padding: var(--nav-padding-block) var(--nav-padding-inline);
+}
+
+/* Named separately from `--brand-primary`, because a theme may give the bar a
+   fill of its own and the mark then stands on that rather than on the page. */
+.status-brand {
+  display: var(--nav-brand-display);
+  color: var(--nav-brand-colour);
+  font-family: var(--font-display);
+  font-size: var(--text-size-brand);
+  font-weight: var(--brand-weight);
+  letter-spacing: var(--brand-tracking);
+  text-transform: var(--display-transform);
+  text-decoration: none;
+}
+
+/* A design may carry no navigation at all, and one does: its bar holds the
+   installation's name and mark and nothing else. */
+.status-nav-links {
+  display: var(--nav-links-display);
+  flex-wrap: wrap;
+  gap: var(--space-row);
+}
+
+.status-nav-link {
+  color: var(--nav-link-colour);
+  font-size: var(--nav-link-size);
+  letter-spacing: var(--nav-link-tracking);
+  text-decoration: none;
+  text-transform: var(--label-transform);
+}
+
+.status-nav-link:hover {
+  color: var(--accent);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+/*
+  The hero is a three-part grid, and where the mark goes depends on whether the
+  headline is centred.
+
+  Centred, the mark stands above the words, which is what a centred composition
+  wants: anything beside a centred line makes the line no longer centred. Ranged
+  left or right, a mark above the words sits on its own and reads as unrelated
+  to them, so it moves onto the same line, is set to the headline's own size,
+  and centres against it.
+
+  Both arrangements are the same three elements in the same order, so a theme
+  states the two properties below and nothing else changes.
+*/
+.status-hero {
+  position: relative;
+  display: grid;
+  grid-template-areas: var(--hero-areas);
+  grid-template-columns: var(--hero-columns);
+  /* The group is aligned, and so is each part within its own cell. Aligning
+     only the parts would leave the mark pinned to the far edge of its column
+     with the headline drifting away from it; the mark has to sit against the
+     words whichever way the block is ranged. */
+  justify-content: var(--hero-align);
+  justify-items: var(--hero-align);
+  align-items: center;
+  gap: var(--hero-gap);
+  /* Two longhands rather than one shorthand, so a theme may set the block edges
+     apart. One does: its hero ends flush against the block below it, because
+     the two together are one shape. */
+  padding-block: var(--hero-padding-block);
+  padding-inline: var(--hero-padding-inline);
+  text-align: var(--hero-text-align);
+}
+
+/*
+  What the page is announcing, as a colour anything on it can read.
+
+  It is a structural fact rather than a theme's decision: a green cross on a
+  page reporting an outage is wrong in every design. A theme may still override
+  where it is used, and one has to, because its hero sits on a filled band
+  where a state colour would disappear.
+
+  It sits on the root rather than on the hero, because a design may colour
+  something far from the hero by it, and one paints the limb around the notices
+  in this colour.
+
+  The root is where it has to be, not merely where it is convenient. A theme
+  declares its tokens on `:root`, and a `var()` in such a declaration is
+  resolved on `:root` itself. A state colour held further down the tree would
+  resolve to nothing there, and the property using it would be dropped.
+*/
+.cassette-page {
+  --status-colour: var(--state-operational);
+}
+
+.cassette-page[data-status="degraded"] {
+  --status-colour: var(--state-degraded);
+}
+
+.cassette-page[data-status="outage"] {
+  --status-colour: var(--state-outage);
+}
+
+/*
+  The unknown state has a colour of its own rather than borrowing one.
+
+  The no-data fill is what an unrecorded day is painted in, so it is a shade
+  off the page by design and measures little more than 1:1 against it in every
+  theme, which is invisible for anything in the foreground. The ghost edge
+  is legible, but it belongs to the strip: a theme that wants its unrecorded
+  days drawn without an outline sets it to nothing, and the headline would go
+  with it.
+*/
+.cassette-page[data-status="unknown"] {
+  --status-colour: var(--state-unknown-mark);
+}
+
+.status-hero-mark {
+  grid-area: mark;
+  /* Holds the shape below, and keeps it to itself: a stacking context of its
+     own means the shape sits behind the glyph without going behind the band
+     the hero is drawn on. */
+  position: relative;
+  isolation: isolate;
+  display: var(--hero-mark-display);
+  /* The shape decides how much room the mark takes, so the words below it are
+     laid out clear of it rather than under it. Where no theme draws one the
+     size is zero and the mark is the glyph, as before. */
+  place-items: center;
+  min-width: var(--hero-mark-shape-size);
+  min-height: var(--hero-mark-shape-size);
+  color: var(--hero-mark-colour, var(--status-colour));
+  /* Beside a headline it takes the headline's size, so the two read as one
+     line rather than as a glyph with a caption. Above it, it is free to be
+     larger than any type on the page. */
+  font-size: var(--hero-mark-size);
+  line-height: 1;
+  filter: var(--hero-mark-glow);
+}
+
+/*
+  A shape behind the status mark, for a design that stands its glyph on one.
+
+  Centred on the glyph and sized on its own rather than by the type around it,
+  because it is a graphic in its own right. Its fill may be a gradient, and the
+  radius clips that fill, which is how one design draws a run of stripes inside
+  a disc. Three themes leave it undisplayed.
+*/
+.status-hero-mark::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  display: var(--hero-mark-shape-display);
+  border-radius: var(--hero-mark-shape-radius);
+  background: var(--hero-mark-shape-fill);
+  pointer-events: none;
+}
+
+.status-hero-title {
+  grid-area: title;
+  margin: 0;
+  /*
+    Pulled out by its own trailing tracking where a design ranges it right.
+    Tracking is added after the last letter as well as between them, so the box
+    ends flush whilst the letters stop short of it: measured at 2.04px of
+    tracking, the headline's glyphs ended at 1032 against the time's 1034.7,
+    both boxes ending at 1034.
+  */
+  margin-inline-end: var(--hero-title-trail);
+  color: var(--hero-title-colour);
+  /* Its own face, because a design may want the one line that names the state
+     set in something it uses nowhere else. */
+  font-family: var(--headline-font);
+  font-size: var(--text-size-headline);
+  font-weight: var(--headline-weight);
+  letter-spacing: var(--headline-tracking);
+  line-height: var(--text-leading-display);
+  text-transform: var(--display-transform);
+  /*
+    Where a design sets a bar beside the headline, the two have to meet at the
+    same top and bottom edge, and a line box does not end where the letters do:
+    at 34px this face leaves 7px of leading above the capitals and below the
+    baseline. Trimming to the cap height and the baseline makes the box the
+    letters themselves, so a bar stretched to the same row matches them.
+
+    A browser without it keeps the untrimmed box, and the bar stretches to that
+    instead. The two still meet; there is simply a little air.
+  */
+  text-box: var(--hero-title-trim);
+}
+
+.status-hero-updated {
+  grid-area: updated;
+  margin: 0;
+  color: var(--hero-updated-colour);
+  font-family: var(--font-meta);
+  font-size: var(--hero-updated-size);
+  font-style: var(--meta-style);
+  /*
+    Trimmed with the headline, because a design may set the two as one block
+    inside a bar. It trims to the text edge below rather than to the baseline:
+    this line carries descenders, and a box ending at the baseline leaves them
+    hanging over whatever comes next. Measured before this: 2.6px of "p" and
+    comma across the first notice.
+  */
+  text-box: var(--hero-updated-trim);
+}
+
+/*
+  Three filled blocks the hero's grid places around the headline, so a design
+  can make the headline part of a bar rather than something set above one: the
+  column's head to the left, a run of bar between that and the words, and a
+  capped block after them.
+
+  Two are pseudo-elements, because a column and a cap are ornament. The middle
+  one is an element, because a grid area has to be a rectangle and the column
+  is one row shorter than the bar beside it.
+
+  All three stretch. The hero aligns its items to one edge, and an empty block
+  aligned to an edge has no width at all. Stretching also makes the two beside
+  the headline exactly as tall as the headline's own box, which is what puts
+  their edges on its edges.
+*/
+/*
+  The column's margin is how it reaches past the hero's own bottom padding. A
+  design that runs it on into whatever follows needs that padding for the space
+  under the words, and the column has to cross it rather than stop at it.
+*/
+/*
+  The column is laid over the hero rather than placed in it.
+
+  It has to be at least as deep as the corner it carries, because a radius
+  taller than its own box is scaled down to fit and the same corner at the foot
+  of the limb would then be drawn larger. As a grid item that floor reached the
+  rows it spanned and stretched them, which pushed the headline off the edges of
+  the bar beside it: measured at 3.5px top and bottom, and the arm 56px deep
+  against the 44px of every other arm. Positioned instead, it takes the depth it
+  needs and the row keeps the depth the words give it.
+
+  Its track stays in `--hero-areas` regardless, because the words still have to
+  begin beside it rather than under it.
+*/
+.status-hero::before {
+  content: "";
+  position: absolute;
+  /* Its own two edges, because absolute positioning measures from the padding
+     box: left at nought it began where the hero's top padding does, thirty
+     pixels above the bar it belongs beside. */
+  inset-block: var(--hero-rail-inset);
+  inset-inline-start: 0;
+  display: var(--hero-rail-display);
+  width: var(--hero-rail-width);
+  min-height: var(--hero-rail-min-height);
+  border-radius: var(--hero-rail-radius);
+  background: var(--hero-rail-fill);
+}
+
+/*
+  The cap keeps a floor under its depth, so that a headline short enough to sit
+  on one line still leaves it something to be. Its radius is a capsule rather
+  than a figure, because its height follows the headline and a half-disc has to
+  follow the height.
+*/
+.status-hero::after {
+  content: "";
+  grid-area: arm;
+  display: var(--hero-arm-display);
+  align-self: var(--hero-arm-align);
+  justify-self: stretch;
+  min-height: var(--hero-arm-depth);
+  border-radius: var(--hero-arm-radius);
+  background: var(--hero-arm-fill);
+}
+
+/* ── Notices ──────────────────────────────────────────────────────────────── */
+/*
+  The notices, as one block rather than a stack of cards.
+
+  One design puts a single inverted elbow down the leading edge of the whole
+  block and sets the notices inside it as single lines, which is how a readout
+  of this kind lists events: one column carrying the region, and rows of text
+  beside it. The elbow is the region's, not any one notice's, so it takes the
+  accent rather than a state colour; the notices keep their own colours in
+  their type.
+
+  Five themes set the rail to zero width and get the stack of padded cards they
+  had.
+*/
+/*
+  Nothing to report means nothing here at all, and the root says which it is so
+  a theme can answer. One draws a limb around this region, and a limb around an
+  empty region is a shape with nothing in it.
+*/
+.cassette-page[data-notices="none"] .notices {
+  display: none;
+}
+
+.notices {
+  position: relative;
+  display: grid;
+  /*
+    The region carries the columns, not each notice, because a design may lay
+    the notices out as a table and then every column has to be one width down
+    the whole list. A notice takes those columns back through `subgrid`; a
+    design that wants a stack of cards leaves this at one column and nothing
+    changes.
+  */
+  grid-template-columns: var(--notices-columns);
+  gap: var(--notices-gap);
+  margin-bottom: var(--space-block);
+  padding-inline-start: calc(
+    var(--notices-rail-width) + var(--notices-rail-gap)
+  );
+  padding-block-end: var(--notices-arm-space);
+  /* The horizontal arm the column runs out into, with a cap at its free end.
+     Two background layers rather than a third pseudo-element, since both of
+     those are already the vertical run and the throat. */
+  background-image: var(--notices-arm-image);
+  background-size: var(--notices-arm-size);
+  background-position: var(--notices-arm-position);
+  background-repeat: no-repeat;
+}
+
+.notices:empty {
+  display: none;
+}
+
+.notices::before {
+  content: "";
+  position: absolute;
+  /* Its own two edges, so a design can set the column off from the arm below it
+     the way its segments are set off from each other. */
+  inset-block: var(--notices-rail-inset);
+  inset-inline-start: 0;
+  width: var(--notices-rail-width);
+  border-radius: var(--notices-rail-radius);
+  background: var(--notices-rail-fill);
+  pointer-events: none;
+}
+
+/* The throat, where the column turns into the arm. Concave, so it is a radial
+   gradient with an explicit radius rather than a `border-radius`. */
+.notices::after {
+  content: "";
+  position: absolute;
+  inset-block-end: var(--notices-throat-offset);
+  inset-inline-start: var(--notices-rail-width);
+  width: var(--notices-throat);
+  height: var(--notices-throat);
+  background: radial-gradient(
+    circle var(--notices-throat) at 100% 0,
+    transparent 0 99.5%,
+    var(--notices-rail-fill) 100%
+  );
+  pointer-events: none;
+}
+
+.notices-heading {
+  grid-column: 1 / -1;
+  margin: var(--space-block) 0 0;
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: var(--text-size-section);
+  font-weight: var(--notices-heading-weight);
+  letter-spacing: var(--notices-heading-tracking);
+  text-transform: var(--label-transform);
+}
+
+/*
+  Every edge on this page is drawn by a mask rather than by `border`.
+
+  A `border` is painted outside the padding box and `clip-path` cuts the
+  element after that, so a chamfered card loses its border along exactly the
+  two corners the chamfer creates. Measured before
+  this: the notice showed no edge along either cut corner.
+
+  The ring below is a filled rectangle with its own middle masked out, and it
+  is cut by the same `clip-path` as the element it sits in, so the edge follows
+  whatever shape the theme asked for. The same rule serves a plain radius, so
+  there is one mechanism rather than two.
+*/
+.notice,
+.service-card,
+.service-details,
+.uptime-tooltip {
+  position: relative;
+}
+
+.notice::after,
+.service-card::after,
+.service-details::after,
+.uptime-tooltip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: var(--edge-width);
+  border-radius: inherit;
+  background: var(--edge-colour);
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: content-box, border-box;
+  mask-composite: exclude;
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: content-box, border-box;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+/*
+  A notice, and one design turns it into an inverted elbow.
+
+  The rail below is the same mechanism the service rows use, mirrored: there the
+  curve is at the top, because the arm arrives from above; here it is at the
+  bottom, because the notice is what the column runs out into. It takes
+  `currentColor`, so a maintenance window and an incident each carry their own
+  colour without a second set of tokens.
+
+  Five themes set the width to zero and the whole thing reduces to the padded
+  box it was.
+*/
+.notice {
+  --edge-width: var(--notice-border-width);
+  --edge-colour: currentColor;
+
+  position: relative;
+  display: grid;
+  /* Across every column the region has, so its own areas can be laid on them. */
+  grid-column: 1 / -1;
+  align-items: var(--notice-align);
+  gap: var(--notice-gap);
+  /* The same on all four sides. A theme that carries a large corner sets this
+     to the text inset derived from it, so the words clear the curve and the
+     padding stays even the whole way round. */
+  padding: var(--notice-padding);
+  /*
+    Composed here rather than stated by the theme, because the trailing corners
+    may be a capsule and a capsule is exactly half the box's height. CSS cannot
+    say that: a percentage in a radius resolves against the box's own axis, and
+    a number large enough to always exceed it makes the browser scale every
+    corner of the box down by one factor, which flattens the leading corners
+    with it. `page.ts` measures the height onto the element instead, and this is
+    read on the element, where that measurement lives.
+  */
+  border-radius: var(--notice-radius-lead)
+    var(--notice-cap, var(--notice-radius-trail))
+    var(--notice-cap, var(--notice-radius-trail)) var(--notice-radius-lead);
+  background: var(--notice-fill);
+}
+
+.notice-title {
+  grid-area: title;
+}
+
+.notice-summary {
+  grid-area: summary;
+  /*
+    Held to a number of lines, so a long summary cannot turn one row of a table
+    into three. A design that stacks its notices sets no limit and the text
+    runs as far as it needs to.
+  */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--notice-cell-lines);
+  overflow: hidden;
+}
+
+.notice-meta {
+  grid-area: meta;
+  display: var(--notice-meta-display);
+}
+
+.notice--maintenance {
+  color: var(--state-maintenance);
+  grid-template-areas: var(--notice-areas-maintenance);
+  grid-template-columns: var(--notice-columns-maintenance);
+}
+
+.notice--incident {
+  color: var(--state-outage);
+  grid-template-areas: var(--notice-areas-incident);
+  grid-template-columns: var(--notice-columns-incident);
+}
+
+.notice-title {
+  /* Cut short the same way the summary is, so a long claim cannot push the row
+     onto a second line by itself. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--notice-cell-lines);
+  overflow: hidden;
+  color: var(--notice-title-colour);
+  font-family: var(--notice-title-font);
+  font-size: var(--notice-title-size);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  text-transform: var(--notice-title-transform);
+}
+
+.notice-summary {
+  color: var(--notice-summary-colour);
+  font-family: var(--notice-summary-font);
+  font-size: var(--notice-summary-size);
+  line-height: var(--text-leading-body);
+  text-transform: var(--notice-summary-transform);
+}
+
+.notice-meta {
+  color: var(--notice-meta-colour);
+  font-family: var(--notice-meta-font);
+  font-size: var(--notice-meta-size);
+  text-transform: var(--notice-meta-transform);
+}
+
+/* ── Range bar ────────────────────────────────────────────────────────────── */
+/*
+  The range bar, which one design turns into the arm of an elbow.
+
+  In most themes it is a plain row above the card. In one it is a filled bar
+  that runs into the column below it, so it carries a fill, a height, a radius
+  and the same concave throat the card ornament can draw. Putting the
+  controls inside that bar is not decoration: on those panels the horizontal
+  arm is where the controls live.
+*/
+.range-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-hair);
+  min-height: var(--range-bar-height);
+  margin-bottom: var(--range-bar-space);
+  padding: var(--range-bar-padding);
+  border-radius: var(--range-bar-radius);
+  /*
+    The arm's fill starts where the stem ends, so the stem's outer corner is
+    not filled back in from underneath. A background colour would cover the
+    whole box whatever the stem does, which is why this is an image: only an
+    image can be given a size.
+
+    Where a theme declares no stem, the width is the full box and this is the
+    plain fill it was before.
+  */
+  background-color: transparent;
+  background-image: linear-gradient(
+    var(--range-bar-fill),
+    var(--range-bar-fill)
+  );
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: calc(100% - var(--range-bar-stem-width)) 100%;
+  color: var(--range-bar-colour);
+}
+
+/*
+  The stem: the vertical run of the elbow, in the column's width. An elbow does
+  not stop at the turn; it carries on for a stretch before the first segment,
+  and without that it reads as a corner rather than as a limb.
+
+  It starts at the arm's own top edge and overlaps it, because the outer corner
+  belongs to both and only the stem is tall enough to hold it. A `border-radius`
+  larger than the box it sits on is scaled down to fit, silently, so a corner
+  the depth of the arm plus the throat renders on the arm alone as the arm's
+  depth, and the wall of the elbow goes thin at the turn.
+*/
+.range-bar::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: var(--range-bar-stem-width);
+  height: calc(100% + var(--range-bar-stem-height));
+  border-radius: var(--range-bar-stem-radius);
+  background: var(--range-bar-fill);
+  pointer-events: none;
+}
+
+/*
+  The throat: the concave curve where the arm's underside meets the stem's
+  trailing edge.
+
+  Painted as a radial gradient rather than cut with a mask. A mask needs the
+  element to be filled and then removes part of it, which is two operations and
+  one more thing to get wrong; a gradient fills exactly the region that should
+  be filled and leaves the rest transparent. The circle carries an explicit
+  radius, because without one it defaults to `farthest-corner`, which on a
+  square is the diagonal and therefore 1.41 times too large.
+*/
+.range-bar::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: var(--range-bar-throat-offset);
+  width: var(--range-bar-throat);
+  height: var(--range-bar-throat);
+  background: radial-gradient(
+    circle var(--range-bar-throat) at 100% 100%,
+    transparent 0 99.5%,
+    var(--range-bar-fill) 100%
+  );
+  pointer-events: none;
+}
+
+/* Named separately from the page's text, because a theme may fill the bar and
+   everything inside it then stands on that fill rather than on the page. */
+.group-name {
+  display: var(--range-label-display);
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--range-label-colour);
+  font-size: var(--group-name-size);
+  font-weight: var(--group-name-weight);
+  letter-spacing: var(--group-name-tracking);
+  text-overflow: ellipsis;
+  text-transform: var(--label-transform);
+  white-space: nowrap;
+}
+
+/* Claims the room the label did not, so the buttons sit where the theme asks
+   whether or not a label is shown. */
+.ranges {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-self: var(--range-align);
+  align-items: center;
+  justify-content: var(--range-justify);
+  gap: var(--space-hair);
+}
+
+/*
+  The travelling mark. `transform` and `width` only, so nothing around it is
+  laid out again, and it sits behind the labels rather than over them.
+
+  It carries a radius of its own rather than the general control radius. In
+  most designs it is a capsule under the chosen label; in one it is square and
+  as tall as the bar it sits in, so the chosen range reads as a gap cut through
+  the bar rather than as a button laid on top of it.
+*/
+.range-mark {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border: var(--control-border-width) var(--rule-style)
+    var(--control-active-edge);
+  border-radius: var(--range-mark-radius);
+  background: var(--control-active-fill);
+  box-shadow: var(--control-active-glow);
+  transition:
+    transform var(--motion-range) var(--motion-ease),
+    width var(--motion-range) var(--motion-ease);
+  pointer-events: none;
+}
+
+/*
+  Tracking is added after the last letter as well as between them, so a centred
+  label carries half a step of empty space on its right and its glyphs sit that
+  far left of the box they are centred in. Indenting by half a step puts them
+  back. Measured at 2.2px of tracking: the box centre and the ink centre both
+  read 975.06, whilst the letters ended 1.1px before it.
+*/
+.range-button {
+  font-family: var(--control-font);
+  font-weight: var(--control-weight);
+  letter-spacing: var(--control-tracking);
+  text-indent: calc(var(--control-tracking) / 2);
+  text-transform: var(--control-transform);
+  padding: var(--control-padding-block) var(--control-padding-inline);
+  min-width: var(--control-min-width);
+  border: var(--control-border-width) var(--rule-style) var(--control-idle-edge);
+  border-radius: var(--control-radius);
+  background: none;
+  color: var(--range-button-colour);
+  font-size: var(--text-size-control);
+  cursor: pointer;
+}
+
+/* Not the chosen one. It already carries the mark, and a neutral hover tint
+   over it replaces what says it is chosen with what says it is hoverable. */
+.range-button:not([aria-pressed="true"]):hover {
+  color: var(--range-button-hover-colour);
+  background: var(--accent-quiet);
+}
+
+.range-button {
+  position: relative;
+}
+
+/*
+  The chosen range may be set larger than the others, and where a design cuts it
+  through the bar rather than laying a filled pill under it, size is most of
+  what says which one is chosen.
+
+  It grows by `transform`, so its box does not. A real font size would lay the
+  row out afresh on every change and push the labels beside it sideways; giving
+  every label the largest one's width instead holds them still but spreads the
+  row out and leaves gaps belonging to nothing. Scaling leaves the row exactly
+  as it is, and the label's own padding keeps the enlarged glyphs clear of its
+  neighbours.
+
+  The mark that cuts through the bar is widened by the same factor, so the gap
+  is the size of what stands in it.
+*/
+.range-button {
+  transition:
+    color var(--motion-hover),
+    background var(--motion-hover),
+    transform var(--motion-range) var(--motion-ease);
+}
+
+.range-button[aria-pressed="true"] {
+  color: var(--control-active-text);
+  transform: scale(var(--control-active-scale));
+}
+
+/* Its own inline padding rather than the range buttons', so it can be brought
+   into line with the chevrons in the rows below it without moving them. */
+.toggle-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--control-padding-block) var(--toggle-padding-inline);
+  border: 0;
+  border-radius: var(--control-radius);
+  background: none;
+  color: var(--range-button-colour);
+  cursor: pointer;
+  transition: color var(--motion-hover), background var(--motion-hover);
+}
+
+.toggle-all:hover {
+  background: var(--toggle-hover-fill);
+  color: var(--toggle-hover-colour);
+}
+
+/* ── Service card ─────────────────────────────────────────────────────────── */
+.service-list {
+  display: grid;
+  gap: var(--card-gap);
+}
+
+.service-card {
+  --edge-width: var(--card-border-width);
+  --edge-colour: var(--surface-rule);
+
+  padding: var(--card-padding);
+  /* The rail below stands inside the card, so the content clears it rather
+     than sitting on it. Five themes set the width to zero and the expression
+     then reduces to the plain padding. */
+  padding-inline-start: calc(var(--card-padding) + var(--card-rail-width));
+  /* Two themes draw something across an end of the card and need the content
+     to start clear of it: an arm across the top in one, a printed head and a
+     matching foot in the other. Everything else inherits the plain padding, so
+     the equal-on-four-sides rule still holds wherever nothing is drawn there,
+     and where something is, the content stands the same distance from what it
+     is drawn on. */
+  padding-block-start: var(--card-padding-top, var(--card-padding));
+  padding-block-end: var(--card-padding-bottom, var(--card-padding));
+  border-radius: var(--card-radius);
+  clip-path: var(--card-clip);
+  background: var(--surface-card);
+  box-shadow: var(--card-shadow);
+}
+
+/*
+  A coloured rail down the leading edge of a card.
+
+  Added for a design whose structure is a rail rather than a border, and set to
+  zero width by every other theme. It uses `::before`, since `::after` already
+  draws the masked edge, and it is inside the card's own `clip-path`, so a
+  chamfered or rounded card cuts the rail to the same shape.
+*/
+.service-card::before {
+  content: "";
+  position: absolute;
+  inset-block: var(--card-rail-inset);
+  inset-inline-start: var(--card-rail-inset);
+  width: var(--card-rail-width);
+  border-radius: var(--card-rail-radius);
+  background: var(--card-rail-colour);
+  pointer-events: none;
+}
+
+/*
+  Anything a card is patterned with: a grid, a grain, a wash. Applied to the
+  card itself rather than to a layer, because it belongs to the surface and
+  moves with it.
+*/
+.service-card {
+  background-image: var(--card-texture);
+  background-size: var(--card-texture-size);
+}
+
+/*
+  A surface for whatever a theme draws on a card that is neither its rail nor
+  its edge, both of which are already taken by the two pseudo-elements.
+
+  Most themes hide it. Two use it: one for corner brackets and edge scales,
+  drawn as background layers, and one for an elbow.
+
+  An elbow is a horizontal arm that turns into a vertical column, and it needs
+  three curves that no single property provides together: a large convex radius
+  on its outer corner, a capsule at its free end, and a concave throat where
+  the arm meets the column. The first two are `border-radius`. The third cannot
+  be, because a radius rounds a corner outwards, so it is drawn by `::after` as
+  a square with a quarter-circle taken out of it.
+*/
+.card-ornament {
+  position: absolute;
+  inset: var(--card-ornament-inset);
+  display: var(--card-ornament-display);
+  height: var(--card-ornament-height);
+  border-radius: var(--card-ornament-radius);
+  background-color: var(--card-ornament-fill);
+  background-image: var(--card-ornament-image);
+  background-size: var(--card-ornament-size);
+  background-position: var(--card-ornament-position);
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+/* The throat. Square, filled, with a quarter-circle removed from the corner
+   facing the arm, which is what turns a right angle into a curve that reads as
+   one continuous shape. */
+.card-ornament::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: var(--card-ornament-throat-offset);
+  width: var(--card-ornament-throat);
+  height: var(--card-ornament-throat);
+  background: var(--card-ornament-fill);
+  mask-image: radial-gradient(
+    circle var(--card-ornament-throat) at 100% 100%,
+    transparent 0 99.5%,
+    #000 100%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle var(--card-ornament-throat) at 100% 100%,
+    transparent 0 99.5%,
+    #000 100%
+  );
+}
+
+/*
+  A service is a two-column grid whose first column is optional.
+
+  Five designs use one column and put the name inside the summary. One builds
+  its structure from a rail: a coloured segment carrying the name, as tall as
+  everything the row shows, with the readings beside it. Stacked, those segments
+  are the divided column that design is made of.
+*/
+.service {
+  display: grid;
+  grid-template-columns: var(--service-columns);
+  grid-template-areas: var(--service-areas);
+  column-gap: var(--service-rail-gap);
+}
+
+.service + .service {
+  margin-top: var(--service-gap);
+  padding-top: var(--service-divider-space);
+  border-top: var(--service-divider-width) var(--rule-style) var(--surface-rule);
+}
+
+/*
+  Each service takes a colour from the theme's list, and the list runs out after
+  ten and starts again. Every service also knows the next one's colour, because
+  a design may draw a second series in it; the last service takes the first
+  colour as its next, so the run closes.
+
+  A theme that does not colour by service declares none of these, and everything
+  below falls back to what it did before.
+*/
+
+.service:nth-of-type(10n + 1) {
+  --series-own: var(--service-colour-1);
+  --series-next: var(--service-colour-2);
+}
+
+.service:nth-of-type(10n + 2) {
+  --series-own: var(--service-colour-2);
+  --series-next: var(--service-colour-3);
+}
+
+.service:nth-of-type(10n + 3) {
+  --series-own: var(--service-colour-3);
+  --series-next: var(--service-colour-4);
+}
+
+.service:nth-of-type(10n + 4) {
+  --series-own: var(--service-colour-4);
+  --series-next: var(--service-colour-5);
+}
+
+.service:nth-of-type(10n + 5) {
+  --series-own: var(--service-colour-5);
+  --series-next: var(--service-colour-6);
+}
+
+.service:nth-of-type(10n + 6) {
+  --series-own: var(--service-colour-6);
+  --series-next: var(--service-colour-7);
+}
+
+.service:nth-of-type(10n + 7) {
+  --series-own: var(--service-colour-7);
+  --series-next: var(--service-colour-8);
+}
+
+.service:nth-of-type(10n + 8) {
+  --series-own: var(--service-colour-8);
+  --series-next: var(--service-colour-9);
+}
+
+.service:nth-of-type(10n + 9) {
+  --series-own: var(--service-colour-9);
+  --series-next: var(--service-colour-10);
+}
+
+.service:nth-of-type(10n + 10) {
+  --series-own: var(--service-colour-10);
+  --series-next: var(--service-colour-1);
+}
+
+.service:last-of-type {
+  --series-next: var(--service-colour-1);
+}
+
+.service-summary {
+  grid-area: summary;
+  display: flex;
+  align-items: center;
+  gap: var(--space-row);
+  width: 100%;
+  padding: 0 var(--row-inset);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}@media (hover: hover) {
+  .service-summary:hover {
+    background: var(--summary-hover-fill);
+    border-radius: var(--control-radius);
+  }
+}
+
+/*
+  The name, which in one design is not text on a card but a filled block that
+  the row hangs off. That design also drops the icon, because a block carrying
+  a word needs nothing beside it.
+
+  `--service-name-flex` decides between the two: `1 1 auto` lets the name take
+  the room left over, whilst `0 0 <width>` fixes it and turns it into a column.
+  The uptime figure below claims the leftover room either way, so the row does
+  not depend on which was chosen.
+*/
+.service-name {
+  display: var(--service-name-display);
+  flex: var(--service-name-flex);
+  /* A design may run the plate the full height of the row, so it stands level
+     with whatever else labels it. The word inside stays centred either way. */
+  align-self: var(--service-name-self);
+  place-items: center;
+  min-width: 0;
+  padding: var(--service-name-padding);
+  border-radius: var(--service-name-radius);
+  /*
+    The service's own colour where the theme lists one, and the design's fill
+    where it does not. `--series-own` is set per row by the cycle further down,
+    so a service is one colour wherever it appears, and one declaration here
+    replaces the ten that used to set this by position.
+
+    That matters for more than tidiness: those ten carried a higher specificity
+    than this rule and set the `background` shorthand, and a shorthand resets
+    the clip below to its initial value. With the fill and the clip in the same
+    declaration block, nothing can undo one without the other.
+  */
+  background: var(--series-own, var(--service-name-fill));
+  /* Clipped to the letters where a design engraves the name rather than
+     printing it on something: the fill is then the metal and the letters are
+     the window onto it. Both spellings, because the unprefixed one is recent
+     and the prefixed one is what older engines answer to. */
+  -webkit-background-clip: var(--service-name-clip);
+  background-clip: var(--service-name-clip);
+  /* A design may set the plate into the face rather than on it, which is a
+     shadow inside its own edge and none outside. */
+  box-shadow: var(--service-name-shadow);
+  color: var(--service-name-colour);
+  overflow-wrap: anywhere;
+  /* Its own face, because a design may name its services in something it uses
+     nowhere else. */
+  font-family: var(--service-name-font);
+  font-size: var(--text-size-service);
+  /* Its own weight, because a design may set its services in a face whose
+     usable weight is not the one the rest of the page is set in. */
+  font-weight: var(--service-name-weight);
+  /* Its own leading rather than the page's. A plate carrying one word is as
+     tall as that word plus its padding, and reading leading is what made it
+     stand a third taller than the letters in it. */
+  line-height: var(--service-name-leading);
+  /* Its own casing and tracking, because a design may name its services in a
+     script that has no capitals to speak of and no room between letters. */
+  letter-spacing: var(--service-name-tracking);
+  text-transform: var(--service-name-transform);
+  /* Trimmed to its own letters where a design centres them in a plate. A line
+     box is taller than what is in it and by different amounts above and below,
+     so a centred line box leaves the letters sitting high. */
+  text-box: var(--service-name-trim);
+  /* A design may light the lettering rather than print it: a stroke holds the
+     shape against a pale plate and the shadow is what a lamp behind it would
+     spill around the letters. */
+  -webkit-text-stroke: var(--service-name-stroke) var(--service-name-stroke-colour);
+  text-shadow: var(--service-name-glow);
+}
+
+/* Side by side in most designs. One stacks them, because two small plates
+   above each other is how the machine it copies labels a pair of inputs. */
+.service-protocols {
+  display: inline-flex;
+  flex-direction: var(--protocols-direction);
+  align-items: var(--protocols-align);
+  justify-content: var(--protocols-justify);
+  align-self: var(--protocols-self);
+  flex: none;
+  gap: var(--space-hair);
+}
+
+.protocol-badge {
+  padding: var(--badge-padding-block) var(--badge-padding-inline);
+  border: var(--badge-border-width) var(--rule-style) var(--surface-rule);
+  border-radius: var(--badge-radius);
+  background: var(--badge-fill);
+  color: var(--text-2);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-badge);
+  line-height: 1;
+  text-shadow: var(--badge-glow);
+}
+
+/*
+  A service with one IPv4 check and nothing to compare it with. Most designs
+  say nothing at all there; one draws the pair as two lamps and shows them
+  whatever the service has.
+*/
+.service-protocols[data-single="true"] {
+  display: var(--protocols-single-display);
+}
+
+.protocol-badge[data-protocol="ipv4"] {
+  color: var(--protocol-ipv4);
+}
+
+.protocol-badge[data-protocol="ipv6"] {
+  color: var(--protocol-ipv6);
+}
+
+/*
+  A protocol nothing was measured on. Hidden where the badges are labels, and
+  drawn unlit where they are lamps, because a lamp that is out is a reading in
+  itself.
+*/
+.protocol-badge[data-present="false"] {
+  display: var(--badge-absent-display);
+  border-color: var(--badge-absent-edge);
+  background: var(--badge-absent-fill);
+  color: var(--badge-absent-colour);
+  text-shadow: none;
+}
+
+/*
+  Two lines a design may read on, standing between whatever labels the row and
+  the control that opens it.
+
+  Most designs have no such thing and set both this and its lines to
+  `display: contents`, which takes them out of the layout entirely and leaves
+  the uptime figure a child of the row, exactly as it was before this existed.
+  One design makes it a lit panel: the figure sits at the end of the first
+  line, and everything another design would show in an overlay is read out
+  here instead.
+*/
+.service-display {
+  display: var(--service-display-display);
+  flex: var(--service-display-flex);
+  min-width: 0;
+  padding: var(--service-display-padding);
+  border: var(--service-display-edge-width) var(--rule-style)
+    var(--service-display-edge-colour);
+  border-radius: var(--service-display-radius);
+  background: var(--service-display-fill);
+  box-shadow: var(--service-display-shadow);
+  color: var(--service-display-colour);
+  font-family: var(--service-display-font);
+  font-size: var(--service-display-size);
+  line-height: var(--service-display-leading);
+  letter-spacing: var(--service-display-tracking);
+  text-transform: var(--service-display-transform);
+  text-shadow: var(--service-display-glow);
+}
+
+.service-display-line {
+  display: var(--service-display-line-display);
+  align-items: baseline;
+  gap: var(--space-row);
+  min-width: 0;
+  /* One line each. A reading longer than the panel is cut rather than wrapped,
+     the way a real one runs out of characters. */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*
+  Three strengths, so a panel carrying three things at once separates them the
+  way a real one does: what it is reading brightest, what that reading is of
+  behind it, and the standing figure quietest of the three.
+*/
+.service-display-main {
+  display: var(--service-display-main-display);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.service-display-line + .service-display-line {
+  color: var(--service-display-colour-quiet);
+}
+
+.service-uptime {
+  /* Claims whatever the name did not, so the figure and the chevron stay at
+     the trailing edge whether the name grows or is fixed. */
+  margin-inline-start: auto;
+  flex: none;
+  color: var(--uptime-colour);
+  font-family: var(--uptime-font);
+  font-size: var(--uptime-size);
+}
+
+.service-display .service-uptime {
+  color: var(--service-display-colour-faint);
+}
+
+/*
+  What says a row opens, where a design draws no icons at all.
+
+  A chevron is a picture, and a design built from one typeface says the same
+  thing with a character. The two characters are the theme's, because which one
+  means "this opens" is a design decision; the element is undisplayed wherever
+  the chevron is drawn instead, so no design shows both.
+*/
+.disclosure-mark {
+  flex: none;
+  display: var(--disclosure-mark-display);
+  /* A design may stand its key against the top of the row rather than in the
+     middle of it, level with whatever it sits beside. */
+  align-self: var(--disclosure-mark-self);
+  place-items: center;
+  width: var(--disclosure-mark-width);
+  height: var(--disclosure-mark-height);
+  border-radius: var(--disclosure-mark-radius);
+  background: var(--disclosure-mark-fill);
+  box-shadow: var(--disclosure-mark-shadow);
+  color: var(--service-icon-colour);
+  font-family: var(--font-display);
+  font-size: var(--text-size-ornament);
+  font-weight: var(--display-weight);
+  line-height: 1;
+}
+
+/*
+  What the mark carries.
+
+  A character in one design and a lamp in another: the content is the theme's,
+  and where it is empty this is a round pilot light in the middle of the key,
+  dark until the row is open.
+*/
+.disclosure-mark::before {
+  content: var(--disclosure-mark-closed);
+  width: var(--disclosure-led-size);
+  height: var(--disclosure-led-size);
+  border-radius: 50%;
+  background: var(--disclosure-led-fill);
+  box-shadow: var(--disclosure-led-glow);
+}
+
+/* Where a design puts the whole affordance in one key, the row's own hover
+   goes quiet and the key answers instead. The control that opens every row at
+   once answers to nothing, because it is not one row's key. */
+.service-summary:hover .disclosure-mark {
+  background: var(--disclosure-mark-fill-hover);
+}
+
+.service[data-open="true"] .disclosure-mark,
+.toggle-all.is-expanded .disclosure-mark {
+  background: var(--disclosure-mark-fill-pressed);
+  box-shadow: var(--disclosure-mark-shadow-pressed);
+}
+
+.service[data-open="true"] .disclosure-mark::before,
+.toggle-all.is-expanded .disclosure-mark::before {
+  content: var(--disclosure-mark-open);
+  background: var(--disclosure-led-fill-on);
+  box-shadow: var(--disclosure-led-glow-on);
+}
+
+/* ── Availability strip ───────────────────────────────────────────────────── */
+.uptime-strip-host {
+  grid-area: strip;
+  margin: 0 var(--row-inset);
+}
+
+.uptime-strip {
+  position: relative;
+  height: var(--strip-surface-height, var(--bar-hover-height));
+  margin-top: var(--space-tight);
+}
+
+.uptime-strip canvas {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  display: block;
+  width: 100%;
+}
+
+/*
+  Both hover overlays, and they live on the document rather than inside a card.
+
+  An overlay inside a card is clipped by it: the card carries a `clip-path` in
+  the chamfered themes, and the disclosure wrapper carries `overflow: hidden` in
+  every theme. `position: fixed` escapes the second and not the first, because a
+  `clip-path` clips every descendant however it is positioned. `overlay.ts`
+  appends them to the document and positions them against their anchor, and this
+  is where they are dressed.
+*/
+.uptime-tooltip {
+  --edge-width: var(--rule-width);
+  --edge-colour: var(--popover-edge);
+
+  padding: var(--tooltip-padding-block) var(--tooltip-padding-inline);
+  border-radius: var(--tooltip-radius);
+  clip-path: var(--tooltip-clip);
+  background: var(--surface-popover);
+  color: var(--popover-text);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-caption);
+  line-height: var(--text-leading-tight);
+  text-align: center;
+  white-space: pre;
+}
+
+/* The chart's reading is a small table rather than a run of text, so it opts
+   out of the centred, pre-wrapped layout the strip's tooltip uses. */
+.chart-reading {
+  white-space: normal;
+  text-align: start;
+}
+
+.chart-reading-body {
+  display: grid;
+  gap: var(--space-hair);
+}
+
+.chart-reading-time {
+  color: var(--popover-text-muted);
+  font-size: var(--text-size-chart-caption);
+}
+
+.chart-reading-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-hair);
+}
+
+.chart-reading-row strong {
+  font-weight: var(--meta-weight);
+}
+
+.chart-reading-key {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: var(--dot-radius);
+  background: var(--series-colour);
+}
+
+.strip-axis {
+  grid-area: axis;
+  display: flex;
+  justify-content: space-between;
+  margin: var(--space-hair) var(--row-inset) 0;
+  color: var(--text-3);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-caption);
+}
+
+/* ── Service details ──────────────────────────────────────────────────────── */
+/*
+  Clipped at all times rather than only whilst animating. `overflow` other than
+  `visible` gives this its own formatting context, which contains the panel's
+  top margin instead of letting it collapse through. A panel measured without
+  the clip and animated with it arrives short by exactly that margin, and
+  everything below jumps by that much on the last frame.
+*/
+.service-details-wrap {
+  grid-area: details;
+  overflow: hidden;
+}
+
+.service-details {
+  /* Its own edge rather than the page's, because a design may want the panel
+     to be a filled field with no outline at all. */
+  --edge-width: var(--detail-edge-width);
+  --edge-colour: var(--detail-edge-colour);
+
+  margin: var(--space-block) var(--row-inset) var(--detail-space-after);
+  /* Its own padding rather than the card's. A design whose card has none still
+     needs the readings inside the panel to stand off its edges, and the chart
+     is the one that would otherwise run into the bottom of it. */
+  padding: var(--detail-padding);
+  border-radius: var(--detail-radius, var(--card-inner-radius));
+  background: var(--detail-fill);
+}
+
+.protocol-readings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-row);
+  flex-wrap: wrap;
+}
+
+.protocol-separator {
+  flex: none;
+  color: var(--text-3);
+  font-family: var(--font-meta);
+  line-height: 1;
+}
+
+.protocol-reading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-hair);
+  min-width: 0;
+}
+
+.protocol-reading::before {
+  content: "";
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: var(--dot-radius);
+  background: var(--state-operational);
+  flex: none;
+}
+
+.protocol-reading[data-status="degraded"]::before {
+  background: var(--state-degraded);
+}
+
+.protocol-reading[data-status="outage"]::before {
+  background: var(--state-outage);
+}
+
+.protocol-reading[data-status="unknown"]::before {
+  background: var(--state-no-data);
+}
+
+.protocol-name {
+  font-family: var(--font-meta);
+  font-size: var(--text-size-badge);
+  font-weight: var(--meta-weight);
+  line-height: 1;
+}
+
+.protocol-reading[data-protocol="ipv4"] .protocol-name {
+  color: var(--protocol-ipv4);
+}
+
+.protocol-reading[data-protocol="ipv6"] .protocol-name {
+  color: var(--protocol-ipv6);
+}
+
+.protocol-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-hair);
+  min-width: 0;
+}
+
+.protocol-state {
+  color: var(--text-1);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-small);
+  font-weight: var(--meta-weight);
+  line-height: 1;
+}
+
+.protocol-latency {
+  color: var(--text-2);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-small);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── Response chart ───────────────────────────────────────────────────────── */
+.response-chart {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-tight) var(--space-row);
+  /* Its own space above rather than the general block step, because a design
+     that draws no rule between the readings and the chart wants them closer
+     than two stacked blocks would be. */
+  margin-top: var(--chart-head-margin);
+  /* Its own value rather than the general tight step, because where a rule is
+     drawn above it, a caption sitting directly under that rule needs more air
+     than two stacked rows do. */
+  padding-top: var(--chart-head-space);
+  /* Its own rule rather than the page's, because a design may separate the
+     chart from the readings above it by space alone. */
+  border-top: var(--chart-rule-width) var(--rule-style) var(--chart-rule-colour);
+}
+
+.chart-caption {
+  margin: 0;
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: var(--text-size-caption);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-hair) var(--space-row);
+}
+
+.chart-legend-item {
+  display: inline-grid;
+  grid-template-columns: var(--chart-key-width) auto auto;
+  align-items: center;
+  gap: var(--space-hair);
+  color: var(--text-2);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-badge);
+}
+
+.chart-legend-item strong {
+  color: var(--text-1);
+  font-weight: var(--meta-weight);
+}
+
+.chart-line-key {
+  height: 0;
+  border-top: var(--chart-line-width) solid var(--series-colour);
+}
+
+.chart-plot,
+.chart-empty {
+  grid-column: 1 / -1;
+}
+
+/*
+  The face the readings are drawn on.
+
+  Most designs leave it bare and the page shows through. A design may instead
+  give it a surface, a frame and room around the drawing, which is how one of
+  them turns the plot into the lit scale of a receiver: the ticks are the
+  surface, and the trace runs across them.
+*/
+.chart-plot {
+  display: block;
+  padding: var(--chart-plot-inset);
+  border: var(--chart-plot-edge-width) var(--rule-style)
+    var(--chart-plot-edge-colour);
+  border-radius: var(--control-radius);
+  background: var(--chart-plot-fill);
+}
+
+.chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/*
+  The two ends of the range, read under the drawing rather than inside it.
+
+  Out here they stand on the card rather than on whatever surface the plot is
+  given, and they keep one size instead of scaling with the drawing.
+*/
+.chart-axis-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  /* Its own distance from the drawing, with the grid's row gap taken back off
+     so the token states the whole of it. */
+  margin-block-start: calc(var(--chart-axis-space) - var(--space-tight));
+  color: var(--chart-axis-text-colour);
+  font-family: var(--font-meta);
+  font-size: var(--chart-axis-text-size);
+}
+
+.chart-empty {
+  margin: var(--space-tight) 0 0;
+  color: var(--text-3);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-caption);
+}
+
+/* One declaration decides a series colour, and everything drawn for that
+   series reads it. Adding a third protocol would mean one more rule here. */
+/* By service where the theme lists colours for that, by protocol otherwise. */
+.cassette-page [data-protocol="ipv4"] {
+  --series-colour: var(--series-own, var(--protocol-ipv4));
+}
+
+.cassette-page [data-protocol="ipv6"] {
+  --series-colour: var(--series-next, var(--protocol-ipv6));
+}
+
+/*
+  The grid and the two axes, which a design may draw in the series' own colour
+  rather than in the page's rule colour. Where the theme lists no colour per
+  service, `--series-own` is not defined at all and the fallback stands.
+
+  Both carry their own strength, because an axis that reads as firmly as its
+  grid stops being an axis.
+*/
+.chart-grid line {
+  stroke: color-mix(
+    in srgb,
+    var(--series-own, var(--chart-grid-colour)) var(--chart-grid-alpha),
+    transparent
+  );
+  stroke-width: var(--rule-width);
+  stroke-dasharray: var(--chart-grid-dash);
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-axis-line {
+  stroke: color-mix(
+    in srgb,
+    var(--series-own, var(--chart-axis-colour)) var(--chart-axis-alpha),
+    transparent
+  );
+  stroke-width: var(--rule-width);
+  vector-effect: non-scaling-stroke;
+}
+
+/* The reading each grid line stands for. Off in most designs, where the two
+   ends of the range are the only scale the chart shows. */
+.chart-scale text {
+  display: var(--chart-scale-display);
+  /* The same source the axes take, so a scale reads as belonging to the lines
+     it labels rather than to the page. */
+  fill: color-mix(
+    in srgb,
+    var(--series-own, var(--chart-scale-colour)) var(--chart-scale-alpha),
+    transparent
+  );
+  font-family: var(--font-meta);
+  font-size: var(--text-size-chart-caption);
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--series-colour);
+  stroke-linecap: var(--chart-line-cap);
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-line[data-protocol="ipv4"] {
+  stroke-dasharray: var(--chart-ipv4-dash);
+}
+
+.chart-line[data-protocol="ipv6"] {
+  stroke-dasharray: var(--chart-ipv6-dash);
+}
+
+.chart-area {
+  pointer-events: none;
+}
+
+/* A reading with no neighbour to join, drawn as a ring so it reads as one
+   measurement rather than as a dot of the trace. It is filled with the panel it
+   sits on, not the page's sunken surface, which a design may set apart. */
+.chart-point,
+.chart-hover-point {
+  fill: var(--detail-fill);
+  stroke: var(--series-colour);
+  stroke-width: var(--chart-line-width);
+  vector-effect: non-scaling-stroke;
+}
+
+/* The ring on the trace under the pointer. A design that reads its chart with
+   a pointer of its own draws none. */
+.chart-hover-point {
+  display: var(--chart-hover-point-display);
+}
+
+/*
+  The ticks of a printed scale, hanging below the plot. Two lengths, so the
+  eye finds the long ones first, and both are zero in a design that prints no
+  scale.
+*/
+.chart-tick {
+  stroke: var(--chart-tick-colour);
+  stroke-width: var(--rule-width);
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-tick--major {
+  stroke: var(--chart-tick-major-colour);
+}
+
+/*
+  The pointer.
+
+  A receiver reads through a strip of plexiglass with a line down the middle
+  of it, and that is what this is: a translucent band the width the theme
+  states, centred on the reading, with the crosshair drawn over it. A design
+  that wants none sets the width to zero.
+*/
+.chart-needle {
+  transform-box: fill-box;
+  transform: translateX(-50%);
+  width: var(--chart-needle-width);
+  fill: var(--chart-needle-fill);
+  stroke: var(--chart-needle-edge);
+  stroke-width: var(--rule-width);
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.cassette-page linearGradient stop {
+  stop-color: var(--series-colour);
+}
+
+/* The value axis, which a design drawing edge to edge does not want. */
+.chart-axis-line--value {
+  display: var(--chart-axis-value-display);
+}
+
+.chart-crosshair {
+  stroke: var(--chart-crosshair-colour);
+  stroke-width: var(--rule-width);
+  stroke-dasharray: var(--chart-crosshair-dash);
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-tooltip rect {
+  fill: var(--surface-popover);
+  stroke: var(--popover-edge);
+  stroke-width: var(--rule-width);
+}
+
+.chart-tooltip text {
+  fill: var(--popover-text);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-chart-label);
+}
+
+.chart-tooltip .chart-tooltip-time {
+  fill: var(--popover-text-muted);
+  font-size: var(--text-size-chart-caption);
+}
+
+.chart-tooltip circle {
+  fill: var(--series-colour);
+}
+
+/* The two ends of the range, in the same source the axes and the scale take,
+   so everything naming the plot reads as one set of marks. */
+.chart-axis text {
+  fill: color-mix(
+    in srgb,
+    var(--series-own, var(--chart-axis-text-colour)) var(--chart-axis-text-alpha),
+    transparent
+  );
+  font-family: var(--font-meta);
+  font-size: var(--text-size-chart-label);
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.status-footer {
+  display: grid;
+  justify-items: var(--footer-align);
+  gap: var(--space-hair);
+  padding: var(--space-section) 0;
+  text-align: var(--footer-text-align);
+}
+
+/*
+  The credit is two lines that end on the same two edges, whatever face either
+  is set in. The group takes its width from the wordmark, which is the wider of
+  the two, and the label above is stretched across it.
+
+  `text-align-last` is what does that: `justify` alone leaves a final line
+  ranged, and a two-word label is nothing but a final line.
+*/
+.powered {
+  display: grid;
+  justify-self: var(--footer-align);
+  justify-items: stretch;
+  gap: var(--space-hair);
+  line-height: 1;
+}
+
+.powered-label {
+  color: var(--text-3);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-chart-label);
+  /*
+    Tracked out to the wordmark's width rather than justified to it. Justifying
+    two words puts the whole difference into the one space between them, which
+    reads as a hole; letter-spacing spreads it across every gap, which is what
+    a line set to a measure does. `page.ts` works out the step, because it
+    depends on the two faces and neither is known here.
+
+    The negative end margin takes back the step that letter-spacing adds after
+    the last letter, which would otherwise carry the line past the mark.
+  */
+  letter-spacing: var(--powered-label-tracking, var(--label-tracking));
+  margin-inline-end: calc(-1 * var(--powered-label-tracking, 0px));
+}
+
+/*
+  The Velvet wordmark, and it is the same lettering on every page.
+
+  Only its colour is a theme's to choose. The face, the weight, the tracking and
+  the casing are the mark itself, taken from `VelvetWordmark.svelte`, which sets
+  Plaster at 400 with no tracking and no transform, at 24px in the footer. A
+  theme that set its own face here would be drawing a different mark.
+*/
+.velvet-wordmark {
+  color: var(--brand-primary);
+  font-family: var(--brand-font);
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1;
+  text-transform: none;
+}
+
+.configured {
+  margin: 0;
+  color: var(--text-3);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-chart-label);
+}
+
+.configured a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.configured a:hover {
+  color: var(--accent);
+}
+
+/* A design that carries the two figures elsewhere sets the display to none, so
+   the page states each of them once. */
+.stamp {
+  display: var(--stamp-display);
+  margin: 0;
+  color: var(--text-3);
+  font-family: var(--font-meta);
+  font-size: var(--text-size-chart-label);
+  letter-spacing: var(--stamp-tracking);
+  pointer-events: none;
+  user-select: none;
+}
+
+/*
+  One row across the foot of the page: version at the leading edge, the credit
+  in the middle, serial at the trailing one, all on the same baseline. The two
+  outer columns are equal, so the middle one stays centred whichever of them is
+  the wider.
+*/
+.status-footer-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  gap: var(--space-row);
+  width: 100%;
+}
+
+/*
+  Each of the three names its column, so a design that hides the two figures
+  leaves the credit where it was. Auto-placement would otherwise move it into
+  the column the version had vacated, which puts a centred line at the leading
+  edge.
+*/
+.stamp--build {
+  grid-column: 1;
+  justify-self: start;
+  /* Stood in from the page's edge by whatever a design wants to line them up
+     with. One design uses the width of the cheeks its cards are held between,
+     so the three lines below the rack begin where the metal does. */
+  margin-inline-start: var(--stamp-inset-inline);
+}
+
+.status-footer-row .configured {
+  grid-column: 2;
+}
+
+.stamp--serial {
+  grid-column: 3;
+  justify-self: end;
+  margin-inline-end: var(--stamp-inset-inline);
+}@media (max-width: 560px) {
+  .service-protocols {
+    display: none;
+  }
+
+  /* The range buttons and the expand control need more room than a phone has
+     beside a group name, so the row wraps rather than pushing the last control
+     past the edge. Measured at 320px before this: the control stood 18px
+     outside the page. */
+  .range-bar {
+    flex-wrap: wrap;
+    row-gap: var(--space-hair);
+  }
+
+  .group-name {
+    flex: 1 0 100%;
+  }
+
+  .response-chart {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-legend {
+    justify-content: flex-start;
+  }
+
+  .status-nav {
+    flex-wrap: wrap;
+  }
+}@media (prefers-reduced-motion: reduce) {
+  .toggle-all-glyph,
+  .service-chevron,
+  .range-button,
+  .toggle-all {
+    transition: none;
+  }
+
+  /* Every optional movement stops, including the backdrop's. */
+  .cassette-page::after,
+  .uptime-tooltip {
+    animation: none;
+  }
+
+  .range-mark {
+    transition: none;
+  }
+}@media (forced-colors: active) {
+  .chart-line,
+  .chart-point,
+  .chart-hover-point {
+    stroke: CanvasText;
+  }
+
+  .chart-line-key {
+    border-top-color: CanvasText;
+  }
+}
+
+/*
+  A window narrow enough that the three lines under the rack cannot share one.
+
+  The row is the release, the credit and the serial on one baseline, and this
+  design sets all three in a monospaced face with the specification tracking a
+  cassette prints its own with. Measured at a 320px viewport before this: the
+  row came to 338.5px and the page to 351px. Stacked, each keeps its own line
+  and the page keeps its width.
+*/
+@media (max-width: 560px) {
+  .cassette-page .status-footer-row {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    row-gap: var(--space-hair);
+  }
+
+  .cassette-page .stamp--build,
+  .cassette-page .status-footer-row .configured,
+  .cassette-page .stamp--serial {
+    grid-column: 1;
+    justify-self: center;
+    margin-inline: 0;
+  }
+}

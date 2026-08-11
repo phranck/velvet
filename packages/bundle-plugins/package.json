@@ -1,0 +1,28 @@
+{
+  "name": "@velvet/bundle-plugins",
+  "version": "1.5.4",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./disclosure": "./src/disclosure/index.ts",
+    "./overlay": "./src/overlay/index.ts",
+    "./response-chart": "./src/response-chart/index.ts",
+    "./status": "./src/status.ts",
+    "./uptime-strip": "./src/uptime-strip/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "bun test test/*.test.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "typescript": "^5.7.0"
+  }
+}

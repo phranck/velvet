@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Velvet designs</title>
+    <style>
+      /* This page is scaffolding rather than a design under review, so it
+         carries its own values and loads no bundle. Everything it shows is
+         inside a frame, and nothing of a design reaches out here. */
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        padding: 40px 24px 64px;
+        background: #0b0b0f;
+        color: #e6e6ee;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        line-height: 1.6;
+      }
+
+      main {
+        width: min(100% - 32px, 1200px);
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: 28px;
+        letter-spacing: -0.01em;
+      }
+
+      .lede {
+        margin: 0 0 28px;
+        max-width: 70ch;
+        color: #9b9bab;
+      }
+
+      .controls {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        margin-bottom: 28px;
+        padding: 12px 0;
+        background: #0b0b0f;
+        font-size: 13px;
+      }
+
+      .controls label {
+        color: #9b9bab;
+      }
+
+      select {
+        padding: 5px 8px;
+        border: 1px solid #2a2a32;
+        border-radius: 8px;
+        background: #14141a;
+        color: inherit;
+        font: inherit;
+      }
+
+      .what {
+        color: #8b8b9c;
+      }
+
+      .designs {
+        display: grid;
+        gap: 28px;
+      }
+
+      .design {
+        border: 1px solid #26262f;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #14141a;
+      }
+
+      .design-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #26262f;
+      }
+
+      .design-name {
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .design-era {
+        color: #8b8b9c;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .design-open {
+        margin-left: auto;
+        color: #9b9bab;
+        font-size: 13px;
+      }
+
+      .design-what {
+        flex: 1 0 100%;
+        color: #9b9bab;
+        font-size: 13px;
+      }
+
+      iframe {
+        display: block;
+        width: 100%;
+        height: 720px;
+        border: 0;
+        background: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Velvet designs</h1>
+      <p class="lede">
+        Every design a status page can be published in, each one loaded in a
+        frame of its own from its own bundle. Nothing is shared between two of
+        them: a frame carries one design's markup, one design's stylesheet and
+        one design's script, which is the whole claim the bundle format makes.
+      </p>
+
+      <div class="controls">
+        <label for="fixture">Installation</label>
+        <select id="fixture"></select>
+        <span class="what" id="fixture-what"></span>
+      </div>
+
+      <div class="designs" id="designs"></div>
+    </main>
+    <script type="module" src="./index.ts"></script>
+  </body>
+</html>

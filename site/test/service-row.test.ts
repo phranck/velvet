@@ -248,7 +248,10 @@ test("opens a service through the shared disclosure, and captures nothing", asyn
 
 test("the disclosure animates one height and reads its duration from a token", async () => {
   const source = await readFile(
-    resolve(import.meta.dirname, "../src/lib/disclosure.ts"),
+    resolve(
+      import.meta.dirname,
+      "../../packages/bundle-plugins/src/disclosure/index.ts",
+    ),
     "utf8",
   );
 

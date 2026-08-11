@@ -176,6 +176,10 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "references",
     "website",
   ],
+  // A design is previewed in a frame of its own, and only the Configurator has
+  // a reason to show one. The published status page renders its design into its
+  // own document rather than into a frame.
+  "DesignPreview.svelte": ["configurator"],
   "VelvetToolBrand.svelte": ["configurator", "onboarding", "website"],
   // The site's own chrome, on every page of it.
   "SiteHeader.svelte": [
@@ -327,8 +331,15 @@ test("names every browser-driven test so the runner can leave it out", async () 
     if (file.endsWith("module-graph.test.ts")) continue;
     // Reached rather than imported directly, because a test may open its
     // browser through a helper beside it, which `configurator-update-browser`
-    // does.
-    const reached = await modulesReachedFrom(file);
+    // does, or through a script it runs as a process of its own, which
+    // `bundle-conformance-browser` does.
+    const reached = new Set(await modulesReachedFrom(file));
+    for (const [, script] of (await readFile(file, "utf8")).matchAll(
+      /"(scripts\/[A-Za-z0-9._-]+\.ts)"/gu,
+    )) {
+      const path = resolve(testRoot, "..", script!);
+      for (const module_ of await modulesReachedFrom(path)) reached.add(module_);
+    }
     let drivesABrowser = false;
     for (const module_ of reached) {
       const source = await readFile(module_, "utf8");

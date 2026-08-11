@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import { disclosure } from "../../lib/disclosure";
+  import { disclosure } from "@velvet/bundle-plugins/disclosure";
   import type {
     RangeKey,
     ResponseTimesDocument,

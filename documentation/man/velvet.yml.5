@@ -273,9 +273,20 @@ Optional, empty by default. Up to 16 links, each with
 and
 .BR href .
 .TP
+.B design
+Optional, defaulting to the page Velvet ships. The design the page is published
+in, named by its bundle. A design carries its own appearance, so
+.B theme
+and
+.B fonts
+do not apply to one. A name no installed design answers to stops the build
+rather than publishing a different design under your domain.
+.TP
 .B theme
 Optional, defaulting to Velvet Default. A theme name plus optional semantic
-visual overrides.
+visual overrides. Ignored where
+.B design
+names a bundle.
 .TP
 .B fonts
 Optional. Holds

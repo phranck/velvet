@@ -7,7 +7,7 @@ import {
   previewDocumentsForServices,
 } from "../src/configurator/preview.js";
 import { barsForRange } from "../src/lib/data.js";
-import { responseRangeWindow } from "../src/lib/response-chart.js";
+import { responseRangeWindow } from "@velvet/bundle-plugins/response-chart";
 
 function responseSeries(serviceId: string, protocol: "ipv4" | "ipv6") {
   const series = PREVIEW_RESPONSE_TIMES.series.find(
