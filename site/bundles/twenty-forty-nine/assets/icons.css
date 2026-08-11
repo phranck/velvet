@@ -1,0 +1,143 @@
+/*
+  The Phosphor duotone glyphs this design shows, and nothing else.
+
+  Written by site/scripts/bundle-fonts.ts, which reads the names out of
+  this design's own files and cuts the face down to them. The complete
+  face carries about fifteen hundred icons; 13 are used here.
+
+  Phosphor Icons is published under the MIT licence.
+*/
+
+@font-face {
+  font-family: "Phosphor-Duotone";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("./phosphor-duotone-subset.woff2") format("woff2");
+}
+
+.ph-duotone {
+  display: inline-block;
+  font-family: "Phosphor-Duotone";
+  font-style: normal;
+  font-weight: 400;
+  font-variant: normal;
+  line-height: 1;
+  text-transform: none;
+}
+
+/*
+  The foreground layer is laid back over the background one, which is
+  what makes a duotone icon two-tone rather than two icons side by side.
+*/
+.ph-duotone::after {
+  margin-left: -1em;
+}
+
+.ph-duotone::before {
+  opacity: 0.2;
+}
+
+.ph-duotone.ph-brackets-curly::before {
+  content: "\e860";
+}
+
+.ph-duotone.ph-brackets-curly::after {
+  content: "\e861";
+}
+
+.ph-duotone.ph-caret-circle-double-down::before {
+  content: "\e116";
+}
+
+.ph-duotone.ph-caret-circle-double-down::after {
+  content: "\e117";
+}
+
+.ph-duotone.ph-caret-circle-down::before {
+  content: "\e11e";
+}
+
+.ph-duotone.ph-caret-circle-down::after {
+  content: "\e11f";
+}
+
+.ph-duotone.ph-check-circle::before {
+  content: "\e184";
+}
+
+.ph-duotone.ph-check-circle::after {
+  content: "\e185";
+}
+
+.ph-duotone.ph-circle::before {
+  content: "\e18a";
+}
+
+.ph-duotone.ph-circle::after {
+  content: "\e18b";
+}
+
+.ph-duotone.ph-cloud::before {
+  content: "\e1aa";
+}
+
+.ph-duotone.ph-cloud::after {
+  content: "\e1ab";
+}
+
+.ph-duotone.ph-database::before {
+  content: "\e1de";
+}
+
+.ph-duotone.ph-database::after {
+  content: "\e1df";
+}
+
+.ph-duotone.ph-envelope-simple::before {
+  content: "\e218";
+}
+
+.ph-duotone.ph-envelope-simple::after {
+  content: "\e219";
+}
+
+.ph-duotone.ph-globe::before {
+  content: "\e288";
+}
+
+.ph-duotone.ph-globe::after {
+  content: "\e289";
+}
+
+.ph-duotone.ph-question::before {
+  content: "\e3e8";
+}
+
+.ph-duotone.ph-question::after {
+  content: "\e3eb";
+}
+
+.ph-duotone.ph-warning::before {
+  content: "\e4e0";
+}
+
+.ph-duotone.ph-warning::after {
+  content: "\e4e1";
+}
+
+.ph-duotone.ph-wrench::before {
+  content: "\e5d4";
+}
+
+.ph-duotone.ph-wrench::after {
+  content: "\e5d5";
+}
+
+.ph-duotone.ph-x-circle::before {
+  content: "\e4f8";
+}
+
+.ph-duotone.ph-x-circle::after {
+  content: "\e4f9";
+}
