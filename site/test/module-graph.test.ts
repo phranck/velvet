@@ -180,7 +180,7 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // a reason to show one. The published status page renders its design into its
   // own document rather than into a frame.
   "DesignPreview.svelte": ["configurator"],
-  "VelvetToolBrand.svelte": ["configurator", "onboarding", "website"],
+  "VelvetToolBrand.svelte": ["configurator", "onboarding"],
   // The site's own chrome, on every page of it.
   "SiteHeader.svelte": [
     "attributions",
@@ -192,12 +192,14 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // The Iconsax icons the site draws. The Configurator reaches it through the
   // release-note overlay, which draws the copy and external-link marks, and
   // nothing else of its own.
+  // The Iconsax icons. The references page dropped out of this list when the
+  // site's bar gave up its icons: that bar was the only thing reaching it
+  // there, whilst the other three pages reach it through the release notes.
   "Icon.svelte": [
     "attributions",
     "changelog",
     "configurator",
     "documentation",
-    "references",
     "website",
   ],
   // The site's own footer, which holds the shared strip to the page measure.
@@ -215,7 +217,6 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "changelog",
     "configurator",
     "documentation",
-    "website",
   ],
   "ConsentCheckbox.svelte": ["configurator", "onboarding"],
   // The surface everything on velvet.li sits on. One component rather than one
@@ -226,7 +227,7 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // The list of places a long page holds. The reference lists its topics and
   // the changelog its releases, and both want the same panel.
   "topic-index": ["changelog", "documentation"],
-  "step-card": ["onboarding", "website"],
+  "step-card": ["onboarding"],
   "page-footer": [
     "attributions",
     "changelog",
@@ -244,6 +245,8 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "squircle-card": ["website"],
   // The key the start page asks with, in the same shape.
   "squircle-button": ["website"],
+  // The machine the install commands are read off, and the tube inside it.
+  "brass-terminal": ["website"],
   "crt-squircle": ["website"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],

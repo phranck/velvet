@@ -76,7 +76,7 @@ test("describes the product the way the README does", async () => {
 
     // The lead sentence is quoted from the README on purpose, so the public
     // page and the repository cannot end up describing Velvet differently.
-    const lead = "GitHub-native status monitoring and a polished status page,";
+    const lead = "Velvet monitors websites and HTTP endpoints from GitHub Actions and";
     assert.ok(readme.includes(lead), "the README still carries the lead sentence");
     assert.ok(html.includes(lead), "the page still carries the lead sentence");
     assert.match(html, /What an installation gives you/);

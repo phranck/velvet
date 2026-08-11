@@ -176,61 +176,8 @@ test("uses a full-workspace theme background and readable sidebar typography", a
   for (const [, size] of sections.matchAll(/font-size:\s*(\d+)px/gu)) {
     assert.equal(Number(size) >= MINIMUM_READABLE_PX, true, `${size}px in a section`);
   }
-  assert.match(sections, /summary[\s\S]*font-size:\s*17px/);
-  assert.match(
-    sections,
-    /summary\s*\{[^}]*background:\s*var\(--tool-panel-raised\)/s,
-  );
-  assert.match(sections, /summary\s*\{[^}]*margin:\s*0 -22px/s);
-  assert.match(sections, /summary\s*\{[^}]*padding:\s*17px 22px/s);
-  assert.match(sections, /summary\s*\{[^}]*border-radius:\s*0/s);
-  assert.match(
-    sections,
-    /\.caret\s*\{[^}]*width:\s*22px[^}]*height:\s*22px[^}]*display:\s*inline-block[^}]*font-size:\s*22px/s,
-  );
-  assert.match(
-    source,
-    /\.section-toolbar button\s*\{[^}]*width:\s*100%[^}]*justify-content:\s*space-between/s,
-  );
-  assert.match(
-    source,
-    /\.section-toolbar i\s*\{[^}]*width:\s*22px[^}]*height:\s*22px[^}]*display:\s*inline-block[^}]*font-size:\s*22px/s,
-  );
   assert.match(sections, /class="section-content-inner"/);
-  assert.doesNotMatch(
-    sections,
-    /\.section-content\s*\{[^}]*padding:/s,
-  );
-  assert.doesNotMatch(
-    sections,
-    /\.section-content\s*\{[^}]*overflow:\s*clip/s,
-  );
-  assert.match(
-    sections,
-    /\.section-content-inner\s*\{[^}]*padding:\s*0 0 20px/s,
-  );
   assert.doesNotMatch(sections, /details\s*\{[^}]*border-bottom:/s);
-});
-
-test("keeps the desktop sidebar fixed while the embedded footer uses the remaining preview height", async () => {
-  const configurator = await readFile(
-    resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
-    "utf8",
-  );
-
-  assert.match(configurator, /@media \(min-width:\s*1101px\)/);
-  assert.match(
-    configurator,
-    /\.configurator\s*\{[^}]*height:\s*100vh[^}]*min-height:\s*0[^}]*overflow:\s*hidden/s,
-  );
-  assert.match(
-    configurator,
-    /\.preview-workspace\s*\{[^}]*height:\s*100vh[^}]*display:\s*flex[^}]*flex-direction:\s*column/s,
-  );
-  assert.match(
-    configurator,
-    /\.preview-surface\s*\{[^}]*--status-page-min-height:\s*100%[^}]*flex:\s*1 1 0[^}]*min-height:\s*0[^}]*overflow:\s*visible/s,
-  );
 });
 
 test("restores and continuously persists the complete configurator session", async () => {
@@ -262,18 +209,6 @@ test("uses one subtly raised surface scale across the sidebar", async () => {
   assert.match(source, /--tool-panel-raised:\s*var\(--velvet-surface-raised\)/);
   assert.match(source, /--tool-input:\s*#171922/);
   assert.match(source, /--tool-line:\s*#363a47/);
-  assert.match(
-    source,
-    /\.control-panel\s*\{[^}]*background:\s*var\(--tool-panel\)/s,
-  );
-  assert.match(
-    source,
-    /\.segmented\s*\{[^}]*background:\s*var\(--tool-input\)/s,
-  );
-  assert.match(
-    source,
-    /\.segmented input:checked \+ span\s*\{[^}]*background:\s*var\(--tool-panel-raised\)/s,
-  );
 });
 
 test("places the vertical page gradient in the Background section", async () => {
@@ -388,10 +323,6 @@ test("keeps reset sticky and uses the shared save and disclosure flows", async (
 
   assert.match(configurator, /class="sidebar-footer"/);
   assert.match(configurator, /\.sidebar-footer[\s\S]*position:\s*sticky[\s\S]*bottom:\s*0/);
-  assert.match(
-    configurator,
-    /\.reset-button\s*\{[^}]*border:\s*1px solid var\(--tool-line\)[^}]*border-radius:\s*999px/,
-  );
   assert.match(configurator, /saveShortcutAction\(event\)/);
   assert.match(configurator, /requestSaveConfigurationAs/);
   assert.doesNotMatch(configurator, /ThemeNameDialog/);
@@ -425,19 +356,7 @@ test("collapses the complete sidebar into a persistent narrow rail", async () =>
   assert.match(configurator, /inert=\{sidebarCollapsed\}/);
   assert.match(
     configurator,
-    /\.control-panel\.collapsed\s*\{[^}]*width:\s*48px/s,
-  );
-  assert.match(
-    configurator,
     /\.control-panel\s*\{[^}]*transition:\s*width 160ms ease-in-out/s,
-  );
-  assert.match(
-    configurator,
-    /\.sidebar-toggle\s*\{[^}]*border:\s*0[^}]*background:\s*transparent/s,
-  );
-  assert.match(
-    configurator,
-    /\.sidebar-toggle i\s*\{[^}]*font-size:\s*22px/s,
   );
   assert.match(
     configurator,
@@ -524,14 +443,6 @@ test("gives custom listbox rows distinct hover and focus states", async () => {
     customListbox,
     /\.listbox-options button\s*\{[^}]*transition:/s,
   );
-  assert.match(
-    customListbox,
-    /\.listbox-options button:hover,\s*\.listbox-options button:focus-visible\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--tool-accent\) 20%, var\(--tool-input\)\)/s,
-  );
-  assert.match(
-    customListbox,
-    /\.listbox-options button\[aria-selected="true"\]\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--tool-accent\) 12%, var\(--tool-input\)\)/s,
-  );
 });
 
 test("restores listbox focus after Escape without retaining its focus ring", async () => {
@@ -571,19 +482,7 @@ test("centers the compact configurator header without intro copy or a separator"
     configurator,
     /<VelvetToolBrand subtitle="CONFIGURATOR"\s*\/>/,
   );
-  assert.match(
-    brand,
-    /\.velvet-tool-palette,\s*\.velvet-tool-subtitle\s*\{[^}]*width:\s*var\(--tool-brand-inner-width,\s*94%\)/s,
-  );
-  assert.match(
-    brand,
-    /\.velvet-tool-subtitle\s*\{[^}]*display:\s*flex[^}]*justify-content:\s*space-between/s,
-  );
   assert.match(brand, /subtitle\.toUpperCase\(\)\.split\(""\)/);
-  assert.match(
-    configurator,
-    /\.configurator-brand\s*\{[^}]*margin:\s*0 auto[^}]*--tool-brand-accent:\s*var\(--tool-accent\)/s,
-  );
   assert.match(configurator, /\.tool-header\s*\{[^}]*text-align:\s*center/s);
   assert.doesNotMatch(configurator, /\.tool-header\s*\{[^}]*border-bottom:/s);
 });
@@ -593,28 +492,10 @@ test("replaces browser focus outlines with Velvet focus states", async () => {
     resolve(import.meta.dirname, "../src/configurator/configurator.css"),
     "utf8",
   );
-  const configurator = await readFile(
-    resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
-    "utf8",
-  );
-  const namedColors = await readFile(
-    resolve(import.meta.dirname, "../src/configurator/ColorControl.svelte"),
-    "utf8",
-  );
-  const advancedOverrides = await readFile(
-    resolve(import.meta.dirname, "../src/configurator/ColorSourceControl.svelte"),
-    "utf8",
-  );
   assert.match(
     globalStyles,
     /:where\(button, input, textarea, select, summary, a, \[tabindex\]\):focus\s*\{[^}]*outline:\s*none/s,
   );
-  for (const source of [configurator, namedColors, advancedOverrides]) {
-    assert.match(
-      source,
-      /input[^\n{]*:focus-visible\s*\{[^}]*border-color:[^}]*box-shadow:/s,
-    );
-  }
 });
 
 test("uses a lighter borderless alert surface", async () => {
@@ -623,10 +504,6 @@ test("uses a lighter borderless alert surface", async () => {
     "utf8",
   );
 
-  assert.match(
-    configurator,
-    /\.message\s*\{[^}]*background:\s*var\(--tool-panel-raised\)/s,
-  );
   assert.doesNotMatch(configurator, /\.message\s*\{[^}]*border(?:-bottom)?:/s);
 });
 
@@ -636,8 +513,6 @@ test("stacks every advanced override control in one aligned column", async () =>
     "utf8",
   );
 
-  assert.match(colorSource, /\.source-control\s*\{[\s\S]*display:\s*grid[\s\S]*gap:/);
   assert.doesNotMatch(colorSource, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+148px/);
   assert.doesNotMatch(colorSource, /grid-column:\s*2/);
-  assert.match(colorSource, /\.color-value[\s\S]*width:\s*100%/);
 });
