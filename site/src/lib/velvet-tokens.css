@@ -84,6 +84,11 @@
   --velvet-text-small: 0.9375rem;
   --velvet-text-body: 1rem;
   --velvet-text-copy: 1.25rem;
+  /* The step between a paragraph and a heading, for the one line a page opens
+     with. Nothing else stood between 1.25rem and the 1.5rem floor of
+     `--velvet-text-heading`, which left a lead either reading as body copy or
+     as a heading it is not. */
+  --velvet-text-lead: 1.5rem;
   --velvet-text-heading: clamp(1.5rem, 3vw, 1.875rem);
   --velvet-text-intro: 2rem;
   --velvet-text-title: clamp(2rem, 6vw, 3rem);
