@@ -15,16 +15,24 @@
  * bundler at all.
  */
 
-import type { BundleData } from "./data.js";
+import type { BundleData, BundleScript } from "./data.js";
 import { parseBundleManifest, type BundleManifest } from "./manifest.js";
 
-/** A design, with the two pieces a preview needs. */
+/** A design, with the pieces a preview or a gallery needs. */
 export interface InstalledDesign {
   manifest: BundleManifest;
   /** Builds the markup from the data it is given. */
   template: (data: BundleData) => string;
   /** The design's whole stylesheet, as text. */
   css: string;
+  /**
+   * Attaches the design's behaviour to markup that already exists.
+   *
+   * The Configurator's preview never calls it, because choosing how a page
+   * should look is not using the page. The gallery does, because a design is
+   * not reviewable without its ranges, its disclosures and its readings.
+   */
+  script: BundleScript;
 }
 
 const manifestFiles = import.meta.glob("/bundles/*/bundle.json", {
@@ -50,12 +58,22 @@ function collect(): InstalledDesign[] {
     if (!parsed.ok) continue;
     const directory = path.slice(0, path.lastIndexOf("/"));
     const templateModule = moduleFiles[`${directory}/${parsed.manifest.entries.template}`];
+    const scriptModule = moduleFiles[`${directory}/${parsed.manifest.entries.script}`];
     const css = styleFiles[`${directory}/${parsed.manifest.entries.styles}`];
     const template = (templateModule?.default ?? templateModule?.template) as
       | ((data: BundleData) => string)
       | undefined;
-    if (typeof template !== "function" || typeof css !== "string") continue;
-    designs.push({ manifest: parsed.manifest, template, css });
+    const script = (scriptModule?.default ?? scriptModule?.enhance) as
+      | BundleScript
+      | undefined;
+    if (
+      typeof template !== "function" ||
+      typeof script !== "function" ||
+      typeof css !== "string"
+    ) {
+      continue;
+    }
+    designs.push({ manifest: parsed.manifest, template, css, script });
   }
   return designs.sort((left, right) =>
     left.manifest.id.localeCompare(right.manifest.id),

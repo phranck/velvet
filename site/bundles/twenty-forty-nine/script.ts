@@ -29,6 +29,7 @@ import {
 import {
   createUptimeStrip,
   type UptimeStrip,
+  type UptimeStripStyle,
 } from "@velvet/bundle-plugins/uptime-strip";
 
 import type { BundleData } from "../../src/lib/bundles/data.js";
@@ -102,20 +103,30 @@ interface Row {
  */
 export function enhance(root: HTMLElement, data: BundleData): () => void {
   const page = root.querySelector<HTMLElement>(".twenty-forty-nine-page") ?? root;
-  const palette = getComputedStyle(page);
   const undo: Array<() => void> = [];
   const rows: Row[] = [];
   let range = data.site.defaultRange as RangeKey;
 
-  const stripStyle = {
-    ...STRIP_GEOMETRY,
-    operational: colourOf(palette, "--state-operational"),
-    degraded: colourOf(palette, "--state-degraded"),
-    outage: colourOf(palette, "--state-outage"),
-    noData: colourOf(palette, "--state-no-data"),
-    maintenance: colourOf(palette, "--state-maintenance"),
-    maintenanceEdge: colourOf(palette, "--state-maintenance-edge"),
-    ghostEdge: colourOf(palette, "--state-ghost-edge"),
+  /**
+   * The strip's appearance as it stands now.
+   *
+   * Read on every paint rather than once, because a stylesheet arrives when it
+   * arrives: a palette read before it applied is a strip drawn in nothing at
+   * all, and reading it again is what makes the drawing follow the design
+   * whenever the design turns up.
+   */
+  const stripStyle = (): UptimeStripStyle => {
+    const palette = getComputedStyle(page);
+    return {
+      ...STRIP_GEOMETRY,
+      operational: colourOf(palette, "--state-operational"),
+      degraded: colourOf(palette, "--state-degraded"),
+      outage: colourOf(palette, "--state-outage"),
+      noData: colourOf(palette, "--state-no-data"),
+      maintenance: colourOf(palette, "--state-maintenance"),
+      maintenanceEdge: colourOf(palette, "--state-maintenance-edge"),
+      ghostEdge: colourOf(palette, "--state-ghost-edge"),
+    };
   };
 
   // ── The rows ───────────────────────────────────────────────────────────────
