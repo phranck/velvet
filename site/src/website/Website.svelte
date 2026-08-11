@@ -1,21 +1,16 @@
 <script lang="ts">
   import Icon from "../components/Icon.svelte";
-  import CodeBlock from "../components/CodeBlock.svelte";
+  import RainbowScale from "../components/RainbowScale.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
-  import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
-  import * as CRTSquircle from "../components/crt-squircle";
+  import VelvetWordmark from "../components/VelvetWordmark.svelte";
+  import * as BrassTerminal from "../components/brass-terminal";
   import * as SquircleCard from "../components/squircle-card";
-  import * as StepCard from "../components/step-card";
-  import {
-    STEP_CARD_CONTENT_INSET,
-    STEP_CARD_INNER_RADIUS,
-  } from "../components/step-card/geometry.js";
   // The README's screenshot, imported from where it already lives rather than
   // copied here, so the page and the repository can never show different ones.
-  // The same capture without a window around it, because the tube below is
-  // the frame. `docs/screenshot.png` keeps its window for the README, which is
-  // read on a page that has none.
+  // The same capture without a window around it, because the frame is drawn
+  // around it here. `docs/screenshot.png` keeps its window for the README,
+  // which is read on a page that has none.
   import screenshotUrl from "./assets/screenshot-screen.png";
   // The designs a page can be published in, read from the manifests that ship
   // with Velvet, so this page cannot offer one that does not exist or miss one
@@ -29,28 +24,66 @@
   } from "../lib/squircle.js";
 
   /**
-   * The box a theme tile is drawn in, and the squircle cut inside it.
+   * A box a framed picture is drawn in, and the squircle cut inside it.
    *
-   * A nominal size rather than a measured one, because this page ships as
-   * prerendered HTML and loads no script. It is the size a tile renders at in
-   * the two-column grid, so the frame's two lines come out at the widths they
-   * are declared at, and it carries the pictures' own 16 by 10 proportion, so
-   * scaling it to a narrower tile stays uniform.
+   * Nominal sizes rather than measured ones, because this page ships as
+   * prerendered HTML and loads no script. The picture is cut at the inner edge
+   * of the wide line, which is what `SQUIRCLE_CONTENT_INSET` names. The cut is
+   * stated as a path in that box and applied with
+   * `clipPathUnits="objectBoundingBox"`, so the transform is what maps the box
+   * onto the 0 to 1 space that unit expects.
    *
-   * The picture is cut at the inner edge of the wide line, which is what
-   * `SQUIRCLE_CONTENT_INSET` names. Stated as a path in that box and applied
-   * with `clipPathUnits="objectBoundingBox"`, so the one definition fits every
-   * tile: the transform is what maps the box onto the 0 to 1 space that unit
-   * expects.
+   * **The box has to carry the ratio the frame is drawn at.** The frame keeps
+   * its own proportions inside whatever element it is given, so a box stated at
+   * five by four inside an element at four by three is scaled down to fit and
+   * floats in the middle of it. Measured on the opening section before this:
+   * the frame painted 439 wide in a box 470 wide and stood 16 clear of its own
+   * left edge.
+   *
+   * Two boxes, therefore, because the two pictures genuinely differ. The
+   * screenshot is a capture at four by three; a design tile is nearer square,
+   * so that a status page in half a row still shows several services rather
+   * than a headline and one row of days.
+   *
+   * @param width - How wide the box is stated, which only sets the resolution
+   *   the path is computed at. The frame is drawn at whatever size the element
+   *   turns out to be.
+   * @param ratio - Width against height, which is the part that matters.
    */
-  const TILE_WIDTH = 576;
-  const TILE_HEIGHT = 461;
-  const TILE_CONTENT_PATH = createSquircleRectPath(
-    TILE_WIDTH,
-    TILE_HEIGHT,
-    SQUIRCLE_CONTENT_INSET,
-  );
-  const TILE_CONTENT_TRANSFORM = `scale(${1 / TILE_WIDTH} ${1 / TILE_HEIGHT})`;
+  function pictureBox(width: number, ratio: number, inset: number) {
+    const height = width / ratio;
+    return {
+      width,
+      height,
+      path: createSquircleRectPath(width, height, inset),
+      transform: `scale(${1 / width} ${1 / height})`,
+    };
+  }
+
+  /**
+   * The screenshot is cut at the inner edge of the double frame around it, and
+   * a design tile at its own edge.
+   *
+   * The two frames are different frames, because the design uses them for
+   * different things. The screenshot carries Velvet's double outline, a thin
+   * line and a thick one with a gap between, which is the one place the design
+   * spends it. A tile carries a single hairline, drawn as a box the colour of
+   * the line holding a box the size of the picture, so the cut it needs is the
+   * shape at its own edge rather than a share of the way in.
+   */
+  const SHOT_BOX = pictureBox(470, 4 / 3, SQUIRCLE_CONTENT_INSET);
+  const TILE_BOX = pictureBox(576, 5 / 4, 0);
+
+  /**
+   * The keys on this page, which are wider than they are tall.
+   *
+   * A word like "Download" needs the width, and a key that took it by growing
+   * taller would stand above the row it sits in. Stated once because three
+   * sections place one and a row of keys at different proportions is a row of
+   * different keys.
+   */
+  const KEY_HEIGHT = "5.3125rem";
+  const KEY_RATIO = 102 / 85;
 
   /**
    * Where a visitor goes to install Velvet. The setup service redirects its
@@ -80,45 +113,49 @@
     "velvet=$(mktemp -d)",
     `curl -sL https://velvet.li${MAN_PAGES_ARCHIVE} | tar -xz -C "$velvet"`,
     '"$velvet"/velvet-man-pages/install.sh && rm -rf "$velvet"',
-  ].join("\n");
+  ] as const;
 
   /**
    * What an installation gives you, drawn from the README so the page and the
    * repository cannot describe the product differently.
+   *
+   * Each carries the one word its card is filed under. The number comes from
+   * the position rather than being written down, so inserting one in the middle
+   * cannot leave two cards claiming the same figure.
    */
   const CAPABILITIES = [
     {
-      icon: "activity",
+      topic: "Checks",
       title: "Checks that run on GitHub",
       description:
         "Direct IPv4 GET and HEAD checks from GitHub-hosted runners, every five minutes, with response-time samples four times a day.",
     },
     {
-      icon: "warning-2",
+      topic: "Incidents",
       title: "Incidents that open themselves",
       description:
         "A confirmed failure opens a GitHub issue, and a recovery closes it. Planned maintenance stays visible as a neutral event in the history.",
     },
     {
-      icon: "chart",
+      topic: "History",
       title: "A year of history",
       description:
         "Up to 365 days of availability, response times, incidents, and maintenance, kept on a dedicated branch rather than in a database.",
     },
     {
-      icon: "color-swatch",
+      topic: "Designs",
       title: "A page somebody designed",
       description:
         "Four curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, and selectable history ranges.",
     },
     {
-      icon: "global",
+      topic: "Domain",
       title: "Your own domain",
       description:
         "Published through GitHub Pages, with a custom domain when you want one, and no server or database anywhere in the picture.",
     },
     {
-      icon: "shield-tick",
+      topic: "Secrecy",
       title: "Nothing leaks into the open",
       description:
         "Endpoint URLs and secrets never enter the published documents, and invalid data leaves the last valid snapshot untouched.",
@@ -148,7 +185,7 @@
     {
       title: "The page builds from that snapshot",
       description:
-        "GitHub Pages renders the status page, its social card, and its SEO files, and keeps doing so whether or not the setup service is up.",
+        "GitHub Pages renders the status page, its social card, and its SEO files, whether or not the setup service is up.",
     },
   ];
 </script>
@@ -157,238 +194,299 @@
   The shell rather than the mount point carries the site class here, because on
   this page it is the shell that holds the bar, the content, and the credit.
 -->
-<div
-  class="website-shell velvet-site"
-  style={`--step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px; --step-card-content-inset: ${STEP_CARD_CONTENT_INSET}px`}
->
+<div class="website-shell velvet-site">
   <SiteHeader />
 
-  <main>
-    <section class="hero column">
-      <div class="brand-block">
-        <VelvetToolBrand subtitle="STATUS PAGES" />
-      </div>
-      <p class="lead">
-        <!-- The one break on the site placed by hand, asked for deliberately.
-             It balances the sentence at the width the hero is read at, and the
-             rule against hand-set breaks holds everywhere else. -->
-        GitHub-native status monitoring and a polished status page,<br />
-        without a server or a database. Just five steps away.
-      </p>
-      <div class="hero-actions">
-        <SquircleButton.Root
-          href={ONBOARDING_URL}
-          label="Create your status page"
-          variant="primary"
-          data-onboarding-link
-        >
-          <SquircleButton.Icon><Icon name="flash" /></SquircleButton.Icon>
-          <SquircleButton.Label>Create</SquircleButton.Label>
-        </SquircleButton.Root>
-        <SquircleButton.Root
-          href={REPOSITORY_URL}
-          label="Github, read the source"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <SquircleButton.Icon>
-            <i class="ph-duotone ph-github-logo"></i>
-          </SquircleButton.Icon>
-          <SquircleButton.Label>Github</SquircleButton.Label>
-        </SquircleButton.Root>
-      </div>
-    </section>
+  <!--
+    The cut every picture on the page takes, defined once. Zero-sized and
+    hidden, because it is a definition rather than a drawing.
+  -->
+  <svg
+    width="0"
+    height="0"
+    aria-hidden="true"
+    focusable="false"
+    class="shape-defs"
+  >
+    <defs>
+      <clipPath id="velvet-shot-cut" clipPathUnits="objectBoundingBox">
+        <path d={SHOT_BOX.path} transform={SHOT_BOX.transform} />
+      </clipPath>
+      <clipPath id="velvet-tile-cut" clipPathUnits="objectBoundingBox">
+        <path d={TILE_BOX.path} transform={TILE_BOX.transform} />
+      </clipPath>
+    </defs>
+  </svg>
 
-    <section class="showcase" aria-label="A published Velvet status page">
-      <div class="showcase-plate">
-        <a href={ONBOARDING_URL} tabindex="-1" aria-hidden="true">
-          <CRTSquircle.Root>
-            <img
-              src={screenshotUrl}
-              alt="A Velvet status page showing services, uptime bars, and a response-time chart"
-              width="1770"
-              height="1328"
-              fetchpriority="high"
-              decoding="async"
-            />
-          </CRTSquircle.Root>
+  <main>
+    <section class="hero">
+      <!--
+        The light and the rings the opening section sits in. All of it is
+        decoration and none of it is announced: what the section says is in the
+        two columns above it.
+      -->
+      <div class="orbit" aria-hidden="true">
+        <span class="ring ring-outer"></span>
+        <span class="ring ring-inner"></span>
+        <span class="orbit-track"><span class="orbit-mark"></span></span>
+      </div>
+
+      <div class="hero-inner velvet-page">
+        <div class="hero-text">
+          <p class="status-line">
+            <span class="status-lamp"></span>
+            All systems nominal
+          </p>
+
+          <!--
+            The mark at the size the page is named at, with the scale taking its
+            width from the word above it rather than from the column, so the two
+            ends of the colours meet the two ends of the letters.
+          -->
+          <span class="hero-brand">
+            <VelvetWordmark />
+            <span class="hero-scale" aria-hidden="true">
+              <RainbowScale />
+            </span>
+          </span>
+
+          <h1>
+            <!-- The one break on the site placed by hand, asked for
+                 deliberately. It balances the line at the width the opening is
+                 read at, and the rule against hand-set breaks holds
+                 everywhere else. -->
+            Status pages,<br />flown from orbit
+          </h1>
+          <p class="lead">
+            <!-- The same sentence the README opens with, so the public page and
+                 the repository cannot end up describing Velvet differently. A
+                 test holds the two together, which is why changing this one
+                 meant changing that one. -->
+            Velvet monitors websites and HTTP endpoints from GitHub Actions and
+            publishes a polished status page through GitHub Pages.
+            <!-- Two lines after the long sentence, and the breaks are the
+                 content rather than a way of balancing it: what makes the claim
+                 is the cadence of what Velvet does without, then how long it
+                 takes. They are stated here rather than left to wrapping,
+                 because a wrap would put the pair together at some widths and
+                 apart at others, which is the one thing this arrangement cannot
+                 survive. -->
+            <br />No extra server. No database.
+            <br />Just five steps away.
+          </p>
+
+          <div class="hero-actions">
+            <SquircleButton.Root
+              href={ONBOARDING_URL}
+              label="Create your status page"
+              variant="primary"
+              size={KEY_HEIGHT}
+              ratio={KEY_RATIO}
+              data-onboarding-link
+            >
+              <SquircleButton.Icon><Icon name="flash" /></SquircleButton.Icon>
+              <SquircleButton.Label>Create</SquircleButton.Label>
+            </SquircleButton.Root>
+            <SquircleButton.Root
+              href={REPOSITORY_URL}
+              label="Github, read the source"
+              size={KEY_HEIGHT}
+              ratio={KEY_RATIO}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <SquircleButton.Icon>
+                <i class="ph-duotone ph-github-logo"></i>
+              </SquircleButton.Icon>
+              <SquircleButton.Label>Github</SquircleButton.Label>
+            </SquircleButton.Root>
+          </div>
+        </div>
+
+        <!--
+          Decoration for anything reading the page aloud, and out of the tab
+          order with it: everything this link leads to is already reachable from
+          the key beside it.
+        -->
+        <a
+          class="hero-shot"
+          href={ONBOARDING_URL}
+          tabindex="-1"
+          aria-hidden="true"
+        >
+          <SquircleFrame.Outline
+            width={SHOT_BOX.width}
+            height={SHOT_BOX.height}
+          />
+          <img
+            src={screenshotUrl}
+            alt="A Velvet status page showing services, uptime bars, and a response-time chart"
+            width="1770"
+            height="1328"
+            fetchpriority="high"
+            decoding="async"
+          />
         </a>
       </div>
     </section>
 
-    <section class="column" aria-labelledby="capabilities-title">
-      <div class="card-inset">
-          <div class="velvet-section-heading">
-            <div class="velvet-section-title">
-              <span class="marker" aria-hidden="true">//</span>
-              <h2 id="capabilities-title">What an installation gives you</h2>
-            </div>
-            <p>
-              Velvet monitors websites and HTTP endpoints from GitHub Actions,
-              records incidents and planned maintenance in GitHub Issues, and
-              publishes the result as a static page.
-            </p>
+    <section class="band" aria-labelledby="capabilities-title">
+      <div class="velvet-page">
+        <div class="velvet-section-heading">
+          <div class="velvet-section-title">
+            <span class="marker" aria-hidden="true">//</span>
+            <h2 id="capabilities-title">What an installation gives you</h2>
           </div>
-          <ul class="capabilities">
-            {#each CAPABILITIES as capability (capability.title)}
-              <li>
-                <SquircleCard.Root>
-                  <SquircleCard.Body>
-                    <div class="entry">
-                      <Icon name={capability.icon} />
-                      <div>
-                        <h3>{capability.title}</h3>
-                        <p>{capability.description}</p>
-                      </div>
-                    </div>
-                  </SquircleCard.Body>
-                </SquircleCard.Root>
-              </li>
-            {/each}
-          </ul>
+          <p>
+            Checks run on GitHub-hosted runners, incidents live in GitHub
+            Issues, and the result is published as a static page.
+          </p>
+        </div>
+        <ul class="capabilities">
+          {#each CAPABILITIES as capability, index (capability.title)}
+            <li>
+              <SquircleCard.Root>
+                <SquircleCard.Body>
+                  <div class="entry">
+                    <p class="eyebrow">
+                      {String(index + 1).padStart(2, "0")}
+                      <span aria-hidden="true">/</span>
+                      {capability.topic}
+                    </p>
+                    <h3>{capability.title}</h3>
+                    <p class="entry-copy">{capability.description}</p>
+                  </div>
+                </SquircleCard.Body>
+              </SquircleCard.Root>
+            </li>
+          {/each}
+        </ul>
       </div>
     </section>
 
-    <section class="column" aria-labelledby="themes-title">
-      <div class="card-inset">
-          <div class="velvet-section-heading">
-            <div class="velvet-section-title">
-              <span class="marker" aria-hidden="true">//</span>
-              <h2 id="themes-title">Four designs to publish in</h2>
-            </div>
-            <p>
-              Each is a whole page rather than a palette: its own typefaces, its
-              own shapes, its own way of drawing a month of days. They ship with
-              Velvet, so a page names one and gets it, and nothing has to be
-              assembled from thirty colour fields to arrive somewhere nobody
-              designed.
-            </p>
+    <section class="band band-deep" aria-labelledby="pipeline-title">
+      <div class="velvet-page">
+        <div class="velvet-section-heading">
+          <div class="velvet-section-title">
+            <span class="marker" aria-hidden="true">//</span>
+            <h2 id="pipeline-title">How it works</h2>
           </div>
-          <!-- The cut, defined once. Zero-sized and hidden, because it is a
-               definition rather than a drawing. -->
-          <svg width="0" height="0" aria-hidden="true" focusable="false" class="shape-defs">
-            <defs>
-              <clipPath id="velvet-theme-tile" clipPathUnits="objectBoundingBox">
-                <path d={TILE_CONTENT_PATH} transform={TILE_CONTENT_TRANSFORM} />
-              </clipPath>
-            </defs>
-          </svg>
-          <ul class="themes">
-            {#each GALLERY_DESIGNS as design (design.id)}
-              <li>
-                <figure>
+        </div>
+        <ol class="pipeline">
+          {#each PIPELINE as stage, index (stage.title)}
+            <li>
+              <span class="pipeline-number" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <h3>{stage.title}</h3>
+              <p>{stage.description}</p>
+            </li>
+          {/each}
+        </ol>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="themes-title">
+      <div class="velvet-page">
+        <div class="velvet-section-heading">
+          <div class="velvet-section-title">
+            <span class="marker" aria-hidden="true">//</span>
+            <h2 id="themes-title">Four designs to start from</h2>
+          </div>
+        </div>
+        <ul class="themes">
+          {#each GALLERY_DESIGNS as design (design.id)}
+            <li>
+              <figure>
+                <!-- The design's own construction: a shape in the colour of the
+                     line, holding a shape the size of the picture one pixel
+                     inside it. One hairline, following the curve, and nothing
+                     to keep in step with a second. -->
+                <span class="shot-seat">
                   <span class="shot">
-                    <SquircleFrame.Outline
-                      width={TILE_WIDTH}
-                      height={TILE_HEIGHT}
-                    />
+                  <span class="shot-wall">
+                  <span class="shot-picture">
                     <img
                       src={design.picture}
                       alt={`A Velvet status page in the ${design.name} design`}
                       loading="lazy"
                       decoding="async"
                     />
+                    <span class="shot-shade" aria-hidden="true"></span>
                   </span>
-                  <figcaption>
-                    {design.name} <span class="era">{design.era}</span>
-                  </figcaption>
-                </figure>
-              </li>
-            {/each}
-          </ul>
+                  </span>
+                  </span>
+                </span>
+                <!--
+                  The period stays beside the name, because it is half of what
+                  the name means: the mockup's caption carries the name alone,
+                  but shortening a caption in a picture of a page is not the
+                  same as deciding a reader no longer needs the year.
+
+                  It stays inline rather than becoming a flex item, because the
+                  space between the two is a real space: whitespace between flex
+                  items is dropped, and the caption would then be read aloud as
+                  one word. Set apart by colour rather than by weight, because
+                  the label face is carried at one weight and asking for a
+                  lighter one would get the same file back.
+                -->
+                <figcaption>
+                  {design.name} <span class="era">{design.era}</span>
+                </figcaption>
+              </figure>
+            </li>
+          {/each}
+        </ul>
       </div>
     </section>
 
-    <section class="column" aria-labelledby="pipeline-title">
-      <div class="card-inset">
-          <div class="velvet-section-heading">
-            <div class="velvet-section-title">
-              <span class="marker" aria-hidden="true">//</span>
-              <h2 id="pipeline-title">How it works</h2>
-            </div>
-            <p>
-              GitHub is part of the platform rather than a place to host it.
-              Scheduling, incidents, generated data, and the public site each
-              live in something GitHub already provides.
-            </p>
-          </div>
-          <ol class="pipeline">
-            {#each PIPELINE as stage, index (stage.title)}
-              <li>
-                <SquircleCard.Root>
-                  <SquircleCard.Body>
-                    <div class="entry">
-                      <span class="pipeline-number" aria-hidden="true">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <div>
-                        <h3>{stage.title}</h3>
-                        <p>{stage.description}</p>
-                      </div>
-                    </div>
-                  </SquircleCard.Body>
-                </SquircleCard.Root>
-              </li>
-            {/each}
-          </ol>
-      </div>
-    </section>
+    <section class="band band-deep" aria-labelledby="manual-title">
+      <div class="manual velvet-page">
+        <BrassTerminal.Root commands={MAN_PAGES_INSTALL} />
 
-    <section class="column" aria-labelledby="manual-title">
-      <StepCard.Root>
-        <div class="card-inset">
-          <div class="velvet-section-heading">
-            <div class="velvet-section-title">
-              <span class="marker" aria-hidden="true">//</span>
-              <h2 id="manual-title">Read it in your terminal</h2>
-            </div>
-            <p>
-              Velvet ships three manual pages: velvet(7) for the architecture,
-              velvet-config(1) for the local Configurator, and velvet.yml(5) for
-              every configuration option there is. They install into your own
-              home directory and ask for no administrator rights.
-            </p>
-          </div>
-          <div class="manual">
-            <CodeBlock
-              code={MAN_PAGES_INSTALL}
-              language="sh"
-              copyable
-              label="Copy these commands"
-            />
-            <SquircleButton.Root
-              href={MAN_PAGES_ARCHIVE}
-              label="Download the manual"
-              size="var(--manual-key-size)"
-              ratio={6 / 5}
-              download
-            >
-              <SquircleButton.Icon>
-                <Icon name="document-download" />
-              </SquircleButton.Icon>
-              <SquircleButton.Label>Download</SquircleButton.Label>
-            </SquircleButton.Root>
-          </div>
+        <div class="manual-text">
+          <h2 id="manual-title">Read it in your terminal</h2>
+          <p>
+            Three man pages: velvet(7) for the architecture, velvet-config(1)
+            for the Configurator, and velvet.yml(5) for every option there is.
+            They install into your home directory and ask for no administrator
+            rights.
+          </p>
+          <SquircleButton.Root
+            href={MAN_PAGES_ARCHIVE}
+            label="Download the manual"
+            size={KEY_HEIGHT}
+            ratio={KEY_RATIO}
+            download
+          >
+            <SquircleButton.Icon>
+              <Icon name="document-download" />
+            </SquircleButton.Icon>
+            <SquircleButton.Label>Download</SquircleButton.Label>
+          </SquircleButton.Root>
         </div>
-      </StepCard.Root>
+      </div>
     </section>
 
-    <section class="closing column" aria-labelledby="start-title">
-      <h2 id="start-title">Ready in a couple of minutes</h2>
-      <p>
-        The browser setup asks for a repository and page name, your services,
-        and an optional custom domain. After you approve it on GitHub it creates
-        the repository, enables Pages, starts monitoring, and waits for the
-        first deployment.
-      </p>
-      <SquircleButton.Root
-        href={ONBOARDING_URL}
-        label="Create your status page"
-        variant="primary"
-      >
-        <SquircleButton.Icon><Icon name="flash" /></SquircleButton.Icon>
-        <SquircleButton.Label>Create</SquircleButton.Label>
-      </SquircleButton.Root>
+    <section class="band closing" aria-labelledby="start-title">
+      <div class="velvet-page">
+        <h2 id="start-title">Ready in a couple of minutes</h2>
+        <p>
+          The browser setup asks for a repository, your services, an optional
+          domain and one of the four designs. After you approve it on GitHub it
+          does the rest.
+        </p>
+        <SquircleButton.Root
+          href={ONBOARDING_URL}
+          label="Create your status page"
+          variant="primary"
+          size={KEY_HEIGHT}
+          ratio={KEY_RATIO}
+        >
+          <SquircleButton.Icon><Icon name="flash" /></SquircleButton.Icon>
+          <SquircleButton.Label>Create</SquircleButton.Label>
+        </SquircleButton.Root>
+      </div>
     </section>
   </main>
 
@@ -413,143 +511,223 @@
     --setup-text-small: var(--velvet-text-small);
     --setup-font: var(--velvet-font);
     --setup-heading-font: var(--velvet-font-heading);
-    --tool-brand-accent: var(--setup-accent);
-    --tool-brand-text: var(--setup-text);
-    --tool-brand-heading-font: var(--setup-heading-font);
 
     min-height: 100vh;
     font-family: var(--setup-font);
     font-size: var(--setup-text-body);
   }
-  /* The page itself spans the window and each section decides how wide it sits,
-     rather than the picture escaping a narrower parent. A viewport-width
-     breakout would include the scrollbar on systems that reserve room for one,
-     which is horizontal scrolling nobody asked for. */
+
+  /* Nothing between the sections. Each draws its own rule at the top, so the
+     page reads as a column of bands rather than as a stack of cards floating
+     on a backdrop. */
   main {
-    display: grid;
-    gap: 3.5rem;
-    padding: clamp(2.5rem, 6vw, 4.5rem) 0 6rem;
+    display: block;
   }
-  /* The site's own measure, shared with the header and the footer, so the
-     page reads as one column rather than as three of different widths. */
-  .column {
-    width: min(100% - 2 * var(--velvet-page-inset), var(--velvet-page-width));
-    justify-self: center;
+
+  .shape-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
   }
+
+  /*
+    The opening section, and the only one with light behind it.
+
+    It clips, because the rings are drawn larger than the section and hang off
+    its top right corner. Positioned so they can.
+  */
   .hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(3rem, 7vw, 4.75rem) clamp(3.5rem, 8vw, 5.25rem);
+    background: radial-gradient(
+      120% 90% at 80% 8%,
+      var(--velvet-hero-glow) 0%,
+      var(--velvet-base) 60%
+    );
+  }
+
+  /*
+    The rings, and the mark travelling around them.
+
+    Anchored to the section's top right corner rather than to the column, so
+    they keep the same relation to the light behind them however wide the window
+    is. The mark is a child of a box the size of the outer ring, and that box is
+    what turns: one transform on one element, which is what keeps the whole
+    thing on the compositor rather than laying the page out again every frame.
+  */
+  .orbit {
+    position: absolute;
+    top: -190px;
+    right: -140px;
+    width: 660px;
+    height: 660px;
+    pointer-events: none;
+  }
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+  }
+  .ring-outer {
+    inset: 0;
+    border: 1px solid var(--velvet-orbit-ring);
+  }
+  .ring-inner {
+    top: 70px;
+    right: 70px;
+    width: 520px;
+    height: 520px;
+    border: 1px solid var(--velvet-orbit-ring-inner);
+  }
+  .orbit-track {
+    position: absolute;
+    inset: 0;
+    animation: velvet-orbit var(--velvet-orbit-period) linear infinite;
+  }
+  .orbit-mark {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    border-radius: 50%;
+    background: var(--velvet-accent);
+  }
+  @keyframes velvet-orbit {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* The two columns the opening is read in: what it says, and what it looks
+     like. The picture is given a length and the text takes the rest, because
+     the picture has a size it wants to be read at whilst the text does not. */
+  .hero-inner {
+    position: relative;
     display: grid;
-    justify-items: center;
-    text-align: center;
+    grid-template-columns: minmax(0, 1fr) 470px;
+    gap: 3.25rem;
+    align-items: center;
   }
-  .brand-block {
-    width: min(100%, 270px);
-    --tool-brand-width: 100%;
-    --tool-brand-wordmark-size: clamp(3.5rem, 16vw, 4rem);
-    --tool-brand-subtitle-size: clamp(0.95rem, 2.5vw, 1.2rem);
-    --tool-brand-scale-gap: 0.625rem;
-    --tool-brand-subtitle-gap: 0.9rem;
+
+  /* The line above the mark, which says the product is up by being a working
+     instance of the thing it sells. */
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0 0 1.75rem;
+    color: var(--velvet-accent);
+    font-family: var(--velvet-font-label);
+    font-size: var(--velvet-text-label);
+    font-weight: 700;
+    letter-spacing: var(--velvet-tracking-wide);
+    line-height: 1;
+    text-transform: uppercase;
   }
+  /* The operational colour, so it means the same thing here as it does on a
+     status page. */
+  .status-lamp {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--velvet-operational);
+    animation: velvet-lamp 3.2s ease-in-out infinite;
+  }
+  @keyframes velvet-lamp {
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.4);
+    }
+  }
+
+  /* Sized by the word it holds, so the scale beneath spans exactly the mark. */
+  .hero-brand {
+    --velvet-wordmark-size: clamp(3.25rem, 8vw, 5.75rem);
+
+    display: block;
+    width: fit-content;
+    line-height: 0.92;
+  }
+  .hero-scale {
+    display: block;
+    height: 5px;
+    margin-top: 1.125rem;
+  }
+
+  /* Only the size differs from the title every other page carries; the leading
+     is the one the site states, so two headings in the same face do not sit at
+     two different rhythms. */
+  .hero-text h1 {
+    margin: 1.875rem 0 1.25rem;
+    color: var(--velvet-text);
+    font-size: var(--velvet-text-intro);
+    text-transform: uppercase;
+    text-wrap: pretty;
+  }
+  /* No measure of its own. The column it sits in is already the measure, and a
+     paragraph capped short of it reads as text breaking in the middle of the
+     available space, because that is what it is. Measured before this: the cap
+     stood at 480px in a column 678 wide, so every line broke 198px early. The
+     column cannot run away either, since the page is capped at 1200 and the
+     picture beside it holds a fixed 470. */
   .lead {
-    margin: 3.5rem 0 0;
-    color: color-mix(in srgb, var(--setup-muted) 78%, var(--setup-text));
-    font-size: var(--setup-text-lead);
-    line-height: 1.4;
+    margin: 0 0 2.25rem;
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-lead);
+    line-height: 1.55;
+    text-wrap: pretty;
   }
-  /* Both buttons the same width, which a flex row cannot do without giving one
-     of them a length. The columns take their size from the wider label, so the
-     pair stays balanced whatever the labels say. */
-  /* The buttons are square and size themselves, so the row places them and
+  /* The keys are square-ish and size themselves, so the row places them and
      states no width of its own. */
   .hero-actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-top: 2.5rem;
+    gap: 1rem;
   }
-  /* The one section that is not a column. It spans the window as a band with a
-     rule above and below, whilst the picture inside stays the size it was. */
-  .showcase {
-    display: grid;
-    border-top: 1px solid color-mix(in srgb, var(--setup-muted) 26%, transparent);
-    border-bottom: 1px solid color-mix(in srgb, var(--setup-muted) 26%, transparent);
-  }
-  /* Carries the band's colour and the fade, so the two rules stay solid from
-     edge to edge whilst the tint behind the picture dissolves before it
-     reaches them. Both layers are stacked here rather than on the section for
-     that reason. */
-  /* The tint behind the screenshot, supplied here rather than baked into the
-     picture, so it runs out to both edges whilst the picture stays the size it
-     was. Partly transparent, so the board backdrop keeps showing through
-     rather than being covered by a solid panel. */
-  .showcase-plate {
-    display: grid;
-    justify-items: center;
-    padding: 2.5rem 1rem 1.5rem;
-    /* The page's own indigo and violet, kept quiet. The contrast in this
-       section is meant to come from the themed page in the picture, so the
-       surface behind it stays part of the site. */
-    background: linear-gradient(
-      135deg,
-      rgba(21, 24, 36, 0.55) 0%,
-      rgba(36, 42, 77, 0.55) 38%,
-      rgba(58, 44, 82, 0.55) 74%,
-      rgba(74, 47, 87, 0.55) 100%
-    );
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0,
-      #000 30%,
-      #000 70%,
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      transparent 0,
-      #000 30%,
-      #000 70%,
-      transparent 100%
-    );
-  }
-  /* The picture is transparent apart from the window and its shadow, so it
-     needs no rounding or shadow of its own here. */
-  /* The link is the grid item, and a centred grid item is sized by its
-     contents. With the picture still loading those contents are narrower than
-     the cap, so the width has to be stated here rather than on the image, or
-     the band reserves too little and the cards below it move when the file
-     arrives. Measured at 208px short on a desktop width before this. */
-  /* The link is the grid item, and a centred grid item is sized by its
-     contents. With the picture still loading those contents are narrower than
-     the cap, so the width has to be stated here rather than on the image, or
-     the band reserves too little and the cards below it move when the file
-     arrives. Measured at 208px short on a desktop width before this. */
-  .showcase-plate a {
-    width: 100%;
-    /* The tube is its own frame now, so this is the width of the screen itself
-       rather than of a window plus the transparent margin around it. Smaller
-       than that window was, because a screen showing a page reads at a size a
-       screen would be rather than at the size of a picture of one. */
-    max-width: 720px;
-  }
-  .showcase img {
-    width: 100%;
-    height: auto;
+
+  /* The picture, in the same frame the design tiles take. */
+  .hero-shot {
+    position: relative;
     display: block;
-    /* Claims the box before the picture is fetched. Stated here rather than
-       left to the width and height attributes, because the picture loads
-       lazily and the ratio has to hold whilst it is still absent. It is the
-       file's own, 2010 by 1536. */
+    color: color-mix(in srgb, var(--velvet-text-muted) 55%, transparent);
+    /* Claimed before the file arrives, so nothing below moves when it does. */
     aspect-ratio: 4 / 3;
   }
-  .card-inset {
-    padding: var(--step-card-content-inset, 16px);
+  .hero-shot img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: top center;
+    clip-path: url(#velvet-shot-cut);
+  }
+
+  /* Every section below the opening: a rule at the top and one measure inside,
+     with the deeper ones set a shade back so two neighbours are told apart
+     without either drawing a box. */
+  .band {
+    padding-block: clamp(3rem, 6vw, 5rem);
+    border-top: 1px solid var(--velvet-rule);
+  }
+  .band-deep {
+    background: var(--velvet-surface-band);
   }
 
   .marker {
     color: var(--setup-accent);
     font-family: var(--setup-heading-font);
     font-size: var(--velvet-text-heading);
-    font-weight: 600;
+    font-weight: 400;
     line-height: 1.1;
   }
   h2 {
@@ -557,212 +735,417 @@
     color: var(--setup-text);
     font-family: var(--setup-heading-font);
     font-size: var(--velvet-text-heading);
-    font-weight: 600;
-    letter-spacing: -0.025em;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
   }
   .velvet-section-heading p {
     margin: 0;
+    max-width: 41rem;
     color: var(--setup-muted);
     font-size: var(--setup-text-copy);
-    line-height: 1.5;
+    line-height: 1.6;
+    text-wrap: pretty;
   }
-  .capabilities,
-  .pipeline {
+
+  /* Three across, so each card is nearer square. A squircle far from square
+     reads as a capsule. The floor is what a tile measures at the page's own
+     width, which keeps the shape whatever a card's text turns out to be: at
+     1200px a third of the row is 387px, and three quarters of that is 290. */
+  .capabilities {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  /* Three across rather than two, so each card is nearer square. A squircle far
-     from square reads as a capsule, and these are the shortest cards on the
-     page. Narrower cards need a wider share of themselves kept clear, because
-     the icon sits at the left where the curve has already begun to pull in. */
-  .capabilities {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  /*
-    A card inside a card. It lifts itself off the one behind it with the raised
-    surface, and takes a smaller safe inset than the outer card because it is
-    wide and shallow: the curve pulls in hardest towards the corners, and on a
-    box far from square the vertical share of a percentage inset is already
-    generous. The minimum height keeps it from flattening into a capsule, which
-    is what a squircle becomes when its box is.
-  */
-  .capabilities li,
-  .pipeline li {
-    /* Lifted off the card behind it, and translucent to the same degree, so the
-       board shows through both rather than through one of them. */
-    --squircle-card-surface: color-mix(
-      in srgb,
-      var(--velvet-surface-raised) 74%,
-      transparent
-    );
-    /* Turned down, because a card inside another does not need to cast as far
-       as the one it sits in. */
-    --squircle-card-shadow-strength: 0.16;
-    --squircle-card-safe-inset: 7.5%;
-    display: grid;
-    min-height: 14rem;
-  }
-  /* The narrower of the two, and its icon sits at the left where the curve has
-     already begun to pull in, so it keeps a wider share of itself clear. */
   .capabilities li {
-    --squircle-card-safe-inset: 10.5%;
+    /* Lifted off the page behind it, and given a wider share of itself to keep
+       clear, because the eyebrow starts at the left where the curve has already
+       begun to pull in. */
+    --squircle-card-surface: var(--velvet-surface-card);
+    --squircle-card-safe-inset: 9%;
+
+    display: grid;
+    min-height: 18rem;
   }
   .entry {
-    display: flex;
-    align-items: start;
-    gap: 0.85rem;
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
   }
-  .capabilities :global(svg) {
-    color: var(--setup-accent);
-    width: var(--velvet-text-ornament);
-    height: var(--velvet-text-ornament);
-  }
-  .pipeline-number {
-    flex: none;
-    color: var(--setup-accent);
-    font-family: var(--setup-heading-font);
-    font-size: var(--velvet-text-ornament);
-    font-weight: 600;
+  /* The line a card is filed under. The figure and the word are one label, so
+     the slash between them is drawn rather than read aloud. */
+  .eyebrow {
+    margin: 0;
+    color: var(--velvet-accent);
+    font-family: var(--velvet-font-label);
+    font-size: var(--velvet-text-label);
+    font-weight: 700;
+    letter-spacing: var(--velvet-tracking-eyebrow);
     line-height: 1;
+    text-shadow: var(--velvet-text-engraved);
+    text-transform: uppercase;
   }
-  h3 {
-    margin: 0 0 0.3rem;
-    color: var(--setup-text);
-    font-size: var(--setup-text-body);
-    font-weight: 650;
-  }
-  /* One step up the scale from the text beneath it, so the title of a card
-     leads rather than merely starting the paragraph. */
-  .capabilities h3,
-  .pipeline h3 {
+  /* Pressed into the card rather than laid on it, which is what the card's own
+     raised edge asks for: something standing above the page carries its writing
+     cut into its face. */
+  .entry h3 {
+    margin: 0;
+    color: var(--velvet-text);
     font-size: var(--velvet-text-copy);
+    font-weight: 400;
+    line-height: 1.22;
+    text-shadow: var(--velvet-text-engraved);
   }
-  /* A step up from the site's small text, because these paragraphs carry the
-     substance of both sections rather than annotating something else. */
-  .capabilities p,
+  .entry-copy {
+    margin: 0;
+    color: var(--velvet-text-muted);
+    font-size: var(--velvet-text-body);
+    line-height: 1.55;
+    text-shadow: var(--velvet-text-engraved);
+    text-wrap: pretty;
+  }
+
+  /* Four across and no cards. Each step is a rule with a number under it, so
+     the section reads as a sequence rather than as four more panels. */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pipeline li {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--velvet-orbit-ring);
+  }
+  /* The one place a figure stands alone rather than beside a word, which is
+     what the numeral face is for. */
+  .pipeline-number {
+    display: block;
+    margin-bottom: 1.125rem;
+    color: var(--velvet-accent);
+    font-family: var(--velvet-font-numeral);
+    font-size: var(--velvet-text-ornament);
+    line-height: 1.1;
+  }
+  .pipeline h3 {
+    margin: 0 0 0.625rem;
+    color: var(--velvet-text);
+    font-size: var(--velvet-text-copy);
+    font-weight: 400;
+    line-height: 1.25;
+  }
   .pipeline p {
     margin: 0;
-    color: var(--setup-muted);
+    color: var(--velvet-text-dim);
     font-size: var(--velvet-text-body);
-    line-height: 1.5;
+    line-height: 1.6;
+    text-wrap: pretty;
   }
-  /* Two across, because a status page in a quarter of this card is too small
-     to read anything from. */
+
+  /* Two across, because a status page in a quarter of this row is too small to
+     read anything from. */
   .themes {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 3rem var(--velvet-side-by-side-gap);
     margin: 0;
     padding: 0;
     list-style: none;
   }
   .themes figure {
     display: grid;
-    gap: 0.6rem;
+    gap: 1.125rem;
     margin: 0;
   }
   /* The tile carries the shape and the picture fills it, because a squircle is
      a path rather than a radius and a path clips the box it is set on. The
-     ratio is claimed before the file arrives, so the cards below do not move
-     when it does. */
-  .shape-defs {
-    position: absolute;
-    width: 0;
-    height: 0;
+     ratio is claimed before the file arrives, so nothing below moves when it
+     does. The pictures are photographed at five by four, so filling crops
+     nothing. */
+  /*
+    A picture set into the page rather than laid on it.
+
+    The edge is a band the width of the recess, drawn from shadow at the top
+    through to a lit face at the bottom, which is what a surface cut into
+    something looks like: the light comes from above, so the near wall of the
+    cut is dark and the far one catches it. Both stops are mixed rather than
+    stepped, so the band turns rather than banding.
+
+    Drawn as a shape holding a shape, the way the design draws its tiles, so the
+    band follows the curve. A border cannot: it is painted outside the padding
+    box and the clip cuts it away along every corner.
+  */
+  /*
+    The surface the cut is made in.
+
+    A recess is a relationship between a floor and the plane around it, and this
+    page has no plane: the tiles sit on flat page colour, so an edge drawn with
+    a gradient reads as a bordered picture rather than as a picture set below
+    something. This casts a hairline of light along the far lip, on the side the
+    light comes from last, which is the one mark that says there is a surface
+    there at all.
+
+    It sits on the wrapper rather than on the shape, because a filter is applied
+    before the clip on the same element and the clip would cut the light away.
+  */
+  .themes .shot-seat {
+    display: block;
+    filter: drop-shadow(-1px -1px 0 rgb(0 0 0 / 0.55))
+      drop-shadow(1px 1px 0 color-mix(in srgb, var(--velvet-edge-light) 55%, transparent));
   }
   .themes .shot {
-    color: color-mix(in srgb, var(--velvet-text-muted) 55%, transparent);
+    display: block;
+    padding: var(--velvet-edge-lip);
+    aspect-ratio: 5 / 4;
+    clip-path: url(#velvet-tile-cut);
+    background: linear-gradient(
+      var(--velvet-light-angle),
+      var(--velvet-edge-shadow) 0%,
+      var(--velvet-rule) 46%,
+      var(--velvet-edge-light) 100%
+    );
+  }
+  /*
+    The wall below the lip: the same edge, a little further down and a little
+    less lit.
+
+    A second ring rather than one band with a gradient across it, because the
+    band follows a curve and a gradient runs in a straight line: across the top
+    of the shape the two directions agree, and down the sides they are at right
+    angles to each other. Two shapes, one inside the other, dim in the direction
+    the cut actually goes whatever part of the curve they are on.
+  */
+  .themes .shot-wall {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: calc(var(--velvet-edge-depth) - var(--velvet-edge-lip));
+    box-sizing: border-box;
+    clip-path: url(#velvet-tile-cut);
+    background: linear-gradient(
+      var(--velvet-light-angle),
+      color-mix(
+          in srgb,
+          var(--velvet-edge-shadow) var(--velvet-edge-inner-dim),
+          #000000
+        )
+        0%,
+      color-mix(
+          in srgb,
+          var(--velvet-rule) var(--velvet-edge-inner-dim),
+          #000000
+        )
+        46%,
+      color-mix(
+          in srgb,
+          var(--velvet-edge-light) var(--velvet-edge-inner-dim),
+          #000000
+        )
+        100%
+    );
+  }
+  .themes .shot-picture {
     position: relative;
     display: block;
-    aspect-ratio: 5 / 4;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    clip-path: url(#velvet-tile-cut);
+    background: var(--velvet-surface-card);
   }
-  /* Fills the shape rather than sitting inside it, cut at the inner edge of the
-     wide line so the frame closes around it. A status page is taller than it is
-     wide, so a tile near square shows the headline, the range row and several
-     services rather than a headline and one row of days. The pictures are
-     photographed at five by four, which is the ratio above, so filling crops
-     nothing. */
-  .themes img {
+  /*
+    The shadow the near wall of the cut throws across what sits in it.
+
+    A layer rather than an inset shadow, because an inset shadow bands the
+    element's own rectangle and the clip then cuts it away at every corner,
+    which leaves a shade with straight sides and open corners. This is clipped
+    by the same shape the picture is, so it turns with it.
+
+    Two shadows, one per wall. The near one reaches about half way in and is
+    gone before the middle, so what it darkens is the wall of the cut and what a
+    reader looks at is still the picture. The far one is barely there and barely
+    wide: a lit wall still casts something where it meets what sits below it,
+    and without it that edge reads as the picture ending rather than as the
+    recess turning.
+
+    The far one takes the near one's angle plus half a turn, so the two stay
+    opposite each other however the light is moved.
+  */
+  .themes .shot-shade {
     position: absolute;
     inset: 0;
+    pointer-events: none;
+    background:
+      /* Where the two walls meet, the shade gathers. A straight gradient is as
+         dark along the middle of an edge as it is in the corner, and a cut
+         never is: the corner is the one place light reaches from neither side.
+         Placed at the corner the light comes from, which the angle names. */
+      radial-gradient(
+        34% 34% at 0% 0%,
+        rgb(0 0 0 / 0.46) 0%,
+        rgb(0 0 0 / 0.14) 40%,
+        transparent 66%
+      ),
+      linear-gradient(
+        calc(var(--velvet-light-angle) + 180deg),
+        rgb(0 0 0 / 0.24) 0%,
+        rgb(0 0 0 / 0.08) 3%,
+        transparent 7%
+      ),
+      /* What the near lip throws onto the floor. Hard against the wall and gone
+         within a tenth of the way in: a shadow that carries on to the middle is
+         a vignette, and a vignette says photograph rather than edge. */
+      linear-gradient(
+        var(--velvet-light-angle),
+        rgb(0 0 0 / 0.72) 0%,
+        rgb(0 0 0 / 0.4) 3.5%,
+        rgb(0 0 0 / 0.16) 7%,
+        transparent 13%
+      ),
+      /* The floor itself, which lies below the surface and is lit as such. Even
+         across the picture, because what makes something read as deeper is that
+         all of it receives less, not that its edges are darker. */
+      linear-gradient(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.14));
+  }
+  .themes img {
     width: 100%;
     height: 100%;
     display: block;
     object-fit: cover;
-    clip-path: url(#velvet-theme-tile);
+    object-position: top center;
   }
+  /* A step above the page's other labels. This one names a whole design rather
+     than annotating something beside it, and it is the only writing under a
+     picture that fills half the row. */
   .themes figcaption {
+    color: var(--velvet-text-muted);
+    font-family: var(--velvet-font-label);
+    font-size: var(--velvet-text-small);
+    font-weight: 700;
+    letter-spacing: var(--velvet-tracking-label);
     text-align: center;
-    color: var(--setup-muted);
-    font-size: var(--setup-text-small);
-    font-weight: 650;
+    text-transform: uppercase;
   }
-
-  /* The period a design belongs to, which is half of what its name means. It
-     stays inline rather than becoming a flex item, because the space between
-     the two is a real space: whitespace between flex items is dropped, and the
-     caption would then be read aloud as one word. Set apart by weight rather
-     than by a colour of its own, since the caption is already the quietest
-     text on the page. */
   .themes .era {
-    font-weight: 400;
+    color: var(--velvet-text-dim);
     font-variant-numeric: tabular-nums;
   }
-  /* The commands and the button sit side by side whilst there is room for
-     both, and the block of commands takes whatever the button leaves. */
-  /*
-    The block of commands and the key beside it, the same height.
 
-    One value states it and both take it: the key is square, so it is also its
-    width, and the block carries it as a floor. Neither can be measured from the
-    other, because the key refuses to be stretched and the block's height is its
-    three lines of code.
+  /* The machine and what it is for, side by side and each given half the row.
+     Equal columns rather than a length and a remainder, because neither is
+     subordinate to the other here: one shows the commands and the other says
+     what they install. */
+  /*
+    The machine and what it is for, side by side, at the gap the pictures above
+    are set at.
+
+    The terminal's column is 70px narrower than an even half, and the text takes
+    what that leaves. The machine scales as a whole, so a narrower column is a
+    smaller machine rather than a cropped one, and at an even half it stood
+    larger than the paragraph it illustrates.
   */
   .manual {
-    --manual-key-size: 7rem;
-
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns:
+      calc((100% - var(--velvet-side-by-side-gap)) / 2 - 70px)
+      minmax(0, 1fr);
+    gap: var(--velvet-side-by-side-gap);
     align-items: center;
-    gap: 1rem;
   }
-  .manual :global(.code-block) {
-    min-height: var(--manual-key-size);
+  /* A column rather than a run of blocks, so the key starts where the heading
+     and the paragraph start. Left to block layout the key centred itself in the
+     column and sat 233px in from the text above it. */
+  .manual-text {
+    display: grid;
+    justify-items: start;
   }
-  /* The block takes whatever the button leaves, and scrolls inside itself
-     rather than reporting its longest line upwards as a minimum width. */
-  .manual :global(.code-block) {
-    flex: 1 1 22rem;
-    min-width: 0;
+  .manual-text h2 {
+    margin-bottom: 1rem;
   }
-  .closing {
+  /* No measure of its own: half the row already is one. The two paragraphs that
+     do keep a cap, the one under a section heading and the one before the
+     closing key, each stand in the full page width, where an uncapped line runs
+     to about a hundred characters. This one stood 56px short of a column that
+     was 568 wide. */
+  .manual-text p {
+    margin: 0 0 2.5rem;
+    color: var(--setup-muted);
+    font-size: var(--setup-text-copy);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .closing :global(.velvet-page) {
     display: grid;
     justify-items: center;
     gap: 1rem;
     text-align: center;
   }
+  .closing h2 {
+    font-size: var(--velvet-text-title);
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+  }
   .closing p {
-    margin: 0;
+    margin: 0 0 1.25rem;
+    max-width: 39rem;
     color: var(--setup-muted);
     font-size: var(--setup-text-copy);
-    line-height: 1.5;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  /* Neither the ring nor the lamp says anything the page does not say in words,
+     so both simply stop rather than being replaced by something quieter. */
+  @media (prefers-reduced-motion: reduce) {
+    .orbit-track,
+    .status-lamp {
+      animation: none;
+    }
+  }
+
+  /* The picture stops earning its column before the text does, so the opening
+     stacks first and the rows below it follow further down. */
+  @media (max-width: 960px) {
+    .hero-inner {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2.5rem;
+    }
+    .capabilities,
+    .pipeline {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    /*
+      Stacked, and the case stops overhanging.
+
+      Once the terminal has the whole column there is nothing beside it to
+      overhang into but the page's own inset, and that inset is narrower than
+      the overhang on a phone: measured at a 375px window, the case reached 4px
+      past the document and the whole page scrolled sideways.
+    */
+    .manual {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 3rem;
+    }
   }
   @media (max-width: 720px) {
     .capabilities,
     .pipeline,
-    /* A status page shown a third of a phone wide says nothing about a theme,
+    /* A status page shown a third of a phone wide says nothing about a design,
        so the previews take the full column here rather than half of it. */
     .themes {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
-    /* Stacked once a row of two would be cramped, still matching each other. */
-    .hero-actions {
-      flex-direction: column;
-      align-items: center;
+    /* The rings are drawn for a wide window and crowd the text on a narrow one,
+       where there is no column beside them for them to sit over. */
+    .orbit {
+      display: none;
     }
   }
 </style>

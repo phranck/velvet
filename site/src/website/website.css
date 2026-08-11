@@ -1,22 +1,43 @@
 @import "../lib/velvet-tokens.css";
 @import "../lib/velvet-board-shell.css";
-@import "../lib/board-backdrop.css";
 @import "../lib/velvet-surface.css";
 
 /**
- * The faces every velvet.li page sets its text in.
+ * The surface every page on the site is drawn on, and the faces it is read in.
  *
- * Stated here rather than left to the board shell, because `app.css` names a
- * different family on `body` for the tools and that declaration wins over the
- * shell's rule on `:root`. This file is loaded after it by the four entries
- * that make up the site and by nothing else, so the tools keep their own face.
+ * The surface is flat, and stated here rather than taken from
+ * `board-backdrop.css`, which the onboarding still uses. That file lays a
+ * circuit board behind the page under two coloured washes, and this site has
+ * neither: what depth it has comes from the gradient the start page's opening
+ * section draws for itself and from the bands that separate one section from
+ * the next.
  *
- * Without this the start page was the only page in Barlow, since its shell
- * remaps the family for itself, whilst the reference, the changelog, and the
- * references page all rendered in Inter with no condensed headings at all.
+ * The faces are stated here rather than left to the board shell, because
+ * `app.css` names a different family on `body` for the tools and that
+ * declaration wins over the shell's rule on `:root`. This file is loaded after
+ * it by the five entries that make up the site and by nothing else, so the
+ * tools keep their own face.
+ *
+ * Without this the start page was the only page in the site's own face, since
+ * its shell remaps the family for itself, whilst the reference, the changelog,
+ * and the references page all rendered in Inter with no heading face at all.
  */
 html {
+  background: var(--velvet-base);
   scroll-behavior: smooth;
+}
+
+/**
+ * Nothing behind the page.
+ *
+ * `app.css` is loaded by every surface and lays a fixed layer of its own behind
+ * the document, drawn in the status page's default indigo. `board-backdrop.css`
+ * used to replace that layer wholesale for this site; with the board gone,
+ * removing the layer is all that is left to do, and saying so explicitly is
+ * what stops the indigo showing through the warm surface above.
+ */
+body::before {
+  content: none;
 }
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -25,6 +46,8 @@ html {
 }
 
 body {
+  min-width: 320px;
+  color: var(--velvet-text);
   font-family: var(--velvet-font);
   /* The size as well as the face. `app.css` states 18px on `body` for the
      tools, and the start page's shell was the only thing that set the token
@@ -33,6 +56,17 @@ body {
   font-size: var(--velvet-text-body);
 }
 
+/**
+ * Every heading, in the one weight the heading face has.
+ *
+ * Workbench ships a single weight and carries its emphasis in its drawing, so
+ * asking for a bolder one would only get a synthesised smear of it. What sets a
+ * heading apart here is its size and its face, not its weight.
+ *
+ * Capitals are not set here. The mockup uppercases the line that opens a
+ * section and leaves the title of a card alone, so it is a decision each
+ * heading makes rather than one the document makes for all of them.
+ */
 h1,
 h2,
 h3,
@@ -40,7 +74,7 @@ h4,
 h5,
 h6 {
   font-family: var(--velvet-font-heading);
-  font-weight: 600;
+  font-weight: 400;
 }
 
 /**
@@ -93,12 +127,129 @@ h6 {
      The names stay the ones in velvet-tokens.css, so there is still one
      vocabulary; only the site's own values are stated here. */
   --velvet-text-small: 1rem;
-  --velvet-text-body: 1.125rem;
+  --velvet-text-body: 1.25rem;
   --velvet-text-copy: 1.375rem;
+  --velvet-text-lead: 1.4375rem;
   --velvet-text-heading: clamp(1.625rem, 3.2vw, 2.125rem);
-  --velvet-text-intro: 2.25rem;
-  --velvet-text-title: clamp(2.25rem, 6vw, 3.25rem);
-  --velvet-text-ornament: 2rem;
+  --velvet-text-intro: clamp(1.75rem, 4vw, 2.5rem);
+  --velvet-text-title: clamp(2.25rem, 6vw, 3rem);
+  --velvet-text-ornament: 3rem;
+
+  /* An uppercase label set in the label face. Two sizes, because the eyebrow
+     over a section and the caption under a picture are read at the same size
+     whilst the index heading beside a document is read a step below it. */
+  --velvet-text-label: 0.75rem;
+  --velvet-text-label-small: 0.6875rem;
+
+  /* How far apart a label's letters stand. Three steps rather than the seven
+     the mockup happens to contain, because the differences between .08em and
+     .1em, or between .14em and .16em, are not differences a reader can see and
+     keeping them would mean seven values nobody could choose between.
+
+     `label` is what a navigation item, a version and a caption take. `eyebrow`
+     is the line that names a section or a column. `wide` is reserved for a
+     label standing alone with nothing beside it, where the extra air is what
+     makes it read as a heading rather than as a stray word. */
+  --velvet-tracking-label: 0.1em;
+  --velvet-tracking-eyebrow: 0.16em;
+  --velvet-tracking-wide: 0.2em;
+
+  /* The light the opening section sits in, warmed towards the accent and put
+     off to one side, so the page has a source rather than an even wash. */
+  --velvet-hero-glow: color-mix(in srgb, var(--velvet-accent) 8%, var(--velvet-base));
+  /* The two rings drawn behind it, and the mark travelling around them. Warm
+     greys of their own rather than the accent thinned, because a ring mixed
+     from the accent comes out pink at this strength whilst these have to read
+     as metal catching a little light. The outer one is nearer the eye. */
+  --velvet-orbit-ring: #2e251b;
+  --velvet-orbit-ring-inner: #221b14;
+  /* How long the mark takes to go once round. Slow enough that a reader
+     notices it only if they stay. */
+  --velvet-orbit-period: 100s;
+
+  /* The space between two things standing side by side: two pictures of a
+     status page, or the terminal and what it is for. One value, so a reader
+     going down the page meets one rhythm rather than a different one per
+     section. */
+  --velvet-side-by-side-gap: 2.75rem;
+
+  /*
+    Where the light stands on this page, and the two tones an edge is drawn
+    between when it catches that light.
+
+    One set for two opposite things. An edge is lit on the face turned towards
+    the light and shaded on the face turned away, and whether that reads as a
+    cut or as a raised surface is only which way round the two are put: a recess
+    is shaded at the top left and lit at the bottom right, and something
+    embossed is the same pair the other way about.
+
+    The lit tone is kept well short of the text colour, because an edge catches
+    light rather than carrying a highlight, and a bright one reads as a line
+    drawn around something rather than as its shape.
+  */
+  --velvet-edge-shadow: #030303;
+  --velvet-edge-light: color-mix(
+    in srgb,
+    var(--velvet-surface-raised) 80%,
+    var(--velvet-text)
+  );
+  /*
+    Lettering pressed into the surface it sits on.
+
+    The same light as everything else: shade on the side it comes from, a trace
+    of it on the side it lands. Light text on a dark surface cannot be engraved
+    the way dark text on a light one is, by being darker than what it sits on,
+    because that is what would make it unreadable. What carries it here is the
+    shade above the letters, and the trace below is kept faint enough that the
+    text is still text rather than an effect.
+  */
+  --velvet-text-engraved:
+    -1px -1px 0 rgb(0 0 0 / 0.6),
+    1px 1px 0 color-mix(in srgb, var(--velvet-edge-light) 26%, transparent);
+
+  /* How much of its tone the inner ring keeps. A cut of any depth is lit at the
+     lip and a little less so further down, and this is that little: enough to
+     read as a wall turning away, not enough to read as a second line. */
+  --velvet-edge-inner-dim: 92%;
+  /* How much of the depth the outer ring takes. The rest is the inner one. */
+  --velvet-edge-lip: 2px;
+  /* The direction a gradient runs away from that light. A straight diagonal is
+     135; this is five degrees past it, so the light sits a little higher than
+     the corner and what it casts falls more across the top edge than down the
+     left one. Everything on the page that is lit at all reads this, so nothing
+     can end up lit from somewhere else. */
+  --velvet-light-angle: 140deg;
+  /* How deep it reads, which is how wide the band is drawn. */
+  --velvet-edge-depth: 3px;
+}
+
+/**
+ * The title of a page, and the paragraph that opens it.
+ *
+ * Stated once here because the documentation, the changelog, the references and
+ * the attributions had each written the same two rules out, and the four `h1`
+ * rules agreed property for property. Kept apart they agree until somebody
+ * changes one.
+ *
+ * The capitals are what every line that opens something on this site takes. The
+ * start page's opening line states its own size and wins on specificity, so it
+ * is not an exception to this rule but a heading with a size of its own.
+ */
+h1 {
+  font-size: var(--velvet-text-title);
+  letter-spacing: -0.02em;
+  /* Workbench carries tall capitals with square terminals, and set tight they
+     read as one block rather than as two lines. This is the leading a two-line
+     title needs to come apart. */
+  line-height: 1.18;
+  margin-block: 0 1rem;
+  text-transform: uppercase;
+}
+
+.lede {
+  margin-block: 0 2.5rem;
+  color: var(--velvet-text-muted);
+  font-size: var(--velvet-text-copy);
 }
 
 /** The one measure everything on the site is laid out in. */
@@ -118,7 +269,13 @@ h6 {
  */
 .velvet-indexed-page {
   display: grid;
-  grid-template-columns: 1fr;
+  /* `minmax(0, …)` rather than a bare `1fr`, in both arrangements. A grid track
+     sized `1fr` still refuses to go below the minimum width of what it holds,
+     and a reference table's header row is wider than a phone: the column grew
+     to fit it, the page grew with the column, and the whole document scrolled
+     sideways instead of the table scrolling inside its own wrapper. Measured on
+     the documentation at a 500px window before this: the document reported 667. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 2.5rem;
   padding: 2.5rem 0 6rem;
 }
