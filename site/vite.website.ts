@@ -55,6 +55,11 @@ export default defineConfig({
       // preload, since a face carried by the render-blocking stylesheet cannot
       // miss the window `font-display: optional` gives it.
       preloadFonts: [
+        /* The icon face, which blocks like the rest and must therefore be on
+           its way with them. Left out, it arrived after the first paint and
+           moved the key it sits on: measured on a cold load of the built site
+           as the one remaining layout shift, at 0.0068. */
+        /^phosphor-duotone-subset-.*\.woff2$/,
         /^plaster-latin-400-normal-.*\.woff2$/,
         /^datatype-latin-wght-normal-.*\.woff2$/,
         /^space-mono-latin-700-normal-.*\.woff2$/,

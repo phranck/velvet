@@ -69,18 +69,31 @@ body::before {
 }
 
 /**
- * The rings themselves, on a second layer so they can turn without the light
- * behind them turning with it.
+ * The rings themselves, on a second layer so they sit over the light rather
+ * than in it.
  *
- * One element carries all five as repeating radial gradients: a hairline at a
- * given radius, transparent either side of it. Stated in `vmax` so a ring keeps
- * its size against the larger side of the window rather than stretching with
+ * Five of them at four sizes, drawn as hairlines: a radial gradient that is
+ * transparent either side of one radius. Stated in `vmax` so a ring keeps its
+ * size against the larger side of the window rather than stretching with
  * whichever way it is resized.
+ *
+ * They do not turn, and that is deliberate. A rotating backdrop has to be
+ * larger than the window at every angle or its own edge sweeps through the
+ * page, and the margin needed for that grows with the aspect ratio: measured
+ * at a 1658 by 1756 window, a layer inset by 20vmax had an inscribed radius of
+ * 1180.2px where it needed 1207.5, and a 21 by 9 window would need 33vmax. The
+ * layer that satisfies every ratio is a square of 150vmax, which at this window
+ * is 2634 pixels on a side and roughly seven megapixels to rasterise, for a
+ * turn nobody can perceive at one revolution per fifteen minutes.
+ *
+ * What moves instead is a mark travelling one of the rings, which the opening
+ * section already carries: an orrery is marks going round, not the rings
+ * themselves spinning.
  */
 body::after {
   content: "";
   position: fixed;
-  inset: -20vmax;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
   opacity: 0.55;
@@ -115,63 +128,6 @@ body::after {
       var(--velvet-orbit-ring) 118vmax,
       transparent 118.1vmax
     );
-  animation: velvet-orrery calc(var(--velvet-orbit-period) * 9) linear infinite;
-}
-
-/*
-  The whole system turns, slowly enough that a reader notices it only if they
-  stay. One transform on one element, so it stays on the compositor and the page
-  is never laid out again for it.
-*/
-@keyframes velvet-orrery {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Neither layer says anything the page does not say in words, so the turning
-   simply stops rather than slowing down. */
-@media (prefers-reduced-motion: reduce) {
-  body::after {
-    animation: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-}
-
-body {
-  min-width: 320px;
-  color: var(--velvet-text);
-  font-family: var(--velvet-font);
-  /* The size as well as the face. `app.css` states 18px on `body` for the
-     tools, and the start page's shell was the only thing that set the token
-     instead, so the other three pages ran two pixels larger than the page they
-     are measured against. */
-  font-size: var(--velvet-text-body);
-}
-
-/**
- * Every heading, in the one weight the heading face has.
- *
- * Workbench ships a single weight and carries its emphasis in its drawing, so
- * asking for a bolder one would only get a synthesised smear of it. What sets a
- * heading apart here is its size and its face, not its weight.
- *
- * Capitals are not set here. The mockup uppercases the line that opens a
- * section and leaves the title of a card alone, so it is a decision each
- * heading makes rather than one the document makes for all of them.
- */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--velvet-font-heading);
-  font-weight: 400;
 }
 
 /**

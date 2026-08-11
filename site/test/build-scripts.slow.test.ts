@@ -245,13 +245,16 @@ test("gives the website everything a search engine and a social platform read", 
     "datatype-latin-wght-normal-",
     "space-mono-latin-700-normal-",
     "audiowide-latin-400-normal-",
+    // The icon face blocks like the rest, so it is on its way with them. Left
+    // out, it arrived after the first paint and moved the key it sits on.
+    "phosphor-duotone-subset-",
   ]) {
     assert.ok(
       preloaded.some((file) => file.startsWith(face)),
       `${face} is not preloaded`,
     );
   }
-  assert.equal(preloaded.length, 4, "only the faces the page fetches are preloaded");
+  assert.equal(preloaded.length, 5, "only the faces the page fetches are preloaded");
 
   const emitted = await readdir(resolve(outDir, "assets"));
   for (const file of preloaded) {

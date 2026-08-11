@@ -3,9 +3,21 @@
  *
  * Declared here rather than through the stylesheets `@fontsource` ships, for one
  * reason: those state `font-display: swap`, and swap is what makes a heading
- * appear in one face and then change to another. `optional` does not swap. The
- * browser gives the file a moment, uses it if it arrived, and otherwise keeps
- * the stand-in for the whole of that load and swaps nothing.
+ * appear in one face and then change to another.
+ *
+ * `block` is what these state instead. The browser holds the text back until
+ * the file arrives and then draws it once, correctly, so nothing is ever seen
+ * in one face and then in another and no size settles after the fact.
+ *
+ * `optional` was the earlier answer and it was the wrong one. It gives a file
+ * about a hundred milliseconds and, if it misses that window, uses the stand-in
+ * for the whole of that visit rather than the face the page is designed in.
+ * Measured on the start page: Datatype and Plaster both missed it, so the page
+ * rendered in the stand-ins throughout, at the stand-ins' metrics.
+ *
+ * What makes `block` cost nothing here is that every one of these is served
+ * from this origin, subset to Latin, and named in the preload list each page
+ * carries, so the file is already on its way before the stylesheet asks for it.
  *
  * Only what a status page also renders belongs in this file. Velvet's own tools
  * set their text in the faces `velvet-retro-typefaces.css` declares, and that
@@ -17,10 +29,10 @@
 /**
  * The wordmark, which is drawn as text rather than as outlines.
  *
- * `optional` matters most here: Plaster looks like nothing else on the page, so
- * a swap into it is the most visible change a reader can be shown. There is no
- * metric-matched stand-in for a display face, so on a load slow enough to miss
- * the window the wordmark reads in a plain face for that visit.
+ * `block` matters most here: Plaster looks like nothing else on the page, so a
+ * swap into it is the most visible change a reader can be shown, and there is
+ * no metric-matched stand-in for a display face to swap from. Held back until
+ * it arrives, the mark is only ever seen as itself.
  *
  * A status page draws the mark in its footer, which is why this face sits here
  * rather than beside the tools' own.
@@ -29,7 +41,7 @@
   font-family: "Plaster";
   font-style: normal;
   font-weight: 400;
-  font-display: optional;
+  font-display: block;
   src: url("@fontsource/plaster/files/plaster-latin-400-normal.woff2") format("woff2");
 }
 
@@ -41,16 +53,13 @@
  * what the surfaces actually use: ordinary text and the one badge that sets
  * itself bolder.
  *
- * `optional` for the same reason as the face above, with one difference worth
- * knowing: monospace stand-ins are already fixed-width, and Fira Code advances
- * by the same 0.6em they do, so a load that misses the window changes the
- * shapes but not the column, and nothing shifts.
+ * `block` for the same reason as the face above.
  */
 @font-face {
   font-family: "Fira Code";
   font-style: normal;
   font-weight: 400;
-  font-display: optional;
+  font-display: block;
   src:
     url("@fontsource/fira-code/files/fira-code-latin-400-normal.woff2")
     format("woff2");
@@ -60,7 +69,7 @@
   font-family: "Fira Code";
   font-style: normal;
   font-weight: 600;
-  font-display: optional;
+  font-display: block;
   src:
     url("@fontsource/fira-code/files/fira-code-latin-600-normal.woff2")
     format("woff2");

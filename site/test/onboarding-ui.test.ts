@@ -129,17 +129,17 @@ test("uses the local Datatype family for onboarding typography", async () => {
   ]) {
     assert.ok(typefaces.includes(file), `${file} is not declared`);
   }
-  // Read past the comments, which name `swap` in order to explain why it is not
-  // used here.
+  // Read past the comments, which name the other values in order to explain why
+  // they are not used here.
   const declarations = typefaces.replaceAll(/\/\*[\s\S]*?\*\//g, "");
   // Counted against the faces that actually fetch a file rather than against a
-  // fixed number, so adding one cannot quietly ship without `optional`. The
+  // fixed number, so adding one cannot quietly ship without it. The
   // metric-matched stand-ins declare no `src: url()` and are not among them.
   const fetched = (declarations.match(/@font-face\s*\{[^}]*url\(/g) ?? []).length;
   assert.equal(
-    (declarations.match(/font-display:\s*optional/g) ?? []).length,
+    (declarations.match(/font-display:\s*block/g) ?? []).length,
     fetched,
-    "every fetched face is optional, or a heading changes shape after the first paint",
+    "every fetched face blocks, or the page is drawn once in one face and again in another",
   );
   assert.match(tokens, /--velvet-font:\s*"Datatype"/);
   assert.match(tokens, /--velvet-text-caption:\s*0\.8125rem/);

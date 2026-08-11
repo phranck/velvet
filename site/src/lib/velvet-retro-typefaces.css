@@ -9,9 +9,9 @@
  * This file imports that one, so the website, the onboarding and the
  * Configurator each name a single stylesheet and get both sets.
  *
- * Every face is declared `font-display: optional`, for the reason stated in the
- * file this imports: `optional` never swaps, so no heading appears in one face
- * and then changes to another.
+ * Every face is declared `font-display: block`, for the reason stated in the
+ * file this imports: the text is held back until its face arrives and drawn
+ * once, so nothing is seen in one face and then in another.
  *
  * The files are the ones `@fontsource` ships. Only the declaration is ours.
  */
@@ -35,7 +35,7 @@
   font-family: "Datatype";
   font-style: normal;
   font-weight: 100 900;
-  font-display: optional;
+  font-display: block;
   src:
     url("@fontsource-variable/datatype/files/datatype-latin-wght-normal.woff2")
     format("woff2-variations");
@@ -51,7 +51,7 @@
   font-family: "Workbench";
   font-style: normal;
   font-weight: 400;
-  font-display: optional;
+  font-display: block;
   src:
     url("@fontsource/workbench/files/workbench-latin-400-normal.woff2")
     format("woff2");
@@ -68,7 +68,7 @@
   font-family: "Space Mono";
   font-style: normal;
   font-weight: 700;
-  font-display: optional;
+  font-display: block;
   src:
     url("@fontsource/space-mono/files/space-mono-latin-700-normal.woff2")
     format("woff2");
@@ -79,7 +79,7 @@
   font-family: "Audiowide";
   font-style: normal;
   font-weight: 400;
-  font-display: optional;
+  font-display: block;
   src:
     url("@fontsource/audiowide/files/audiowide-latin-400-normal.woff2")
     format("woff2");
@@ -96,13 +96,13 @@
   font-family: "Doto";
   font-style: normal;
   font-weight: 600;
-  font-display: optional;
+  font-display: block;
   src: url("@fontsource/doto/files/doto-latin-600-normal.woff2") format("woff2");
 }
 
 /**
- * Stand-ins for the two faces the surface is laid out in, for the moment before
- * the real ones arrive and for the whole of a load slow enough that they do not.
+ * Stand-ins for the two faces the surface is laid out in, for a load slow enough
+ * that the faces never arrive and the browser gives up waiting for them.
  *
  * Both are monospaced and both advance by 0.5em, whilst the monospace a reader
  * already has advances by more, so neither can be left to fall through: the
