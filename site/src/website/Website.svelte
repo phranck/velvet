@@ -473,8 +473,8 @@
         <h2 id="start-title">Ready in a couple of minutes</h2>
         <p>
           The browser setup asks for a repository, your services, an optional
-          domain and one of the four designs. After you approve it on GitHub it
-          does the rest.
+          domain and one of our curated designs. After you approve it on GitHub
+          it does the rest.
         </p>
         <SquircleButton.Root
           href={ONBOARDING_URL}
