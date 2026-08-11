@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+
   import VelvetWordmark from "../VelvetWordmark.svelte";
   import * as CRTSquircle from "../crt-squircle";
   import {
@@ -49,24 +51,26 @@
    */
   let {
     commands,
+    finish = "brass",
     model = "MODEL 2103",
+    children,
   }: {
-    commands: readonly string[];
+    /**
+     * The lines the key copies, where the machine carries one.
+     *
+     * Its presence is what decides whether the front has a key at all, rather
+     * than a flag beside it: a terminal with nothing to copy has no key, and a
+     * key that copies nothing is a control that does nothing.
+     */
+    commands?: readonly string[];
+    /** The metal it is made of. */
+    finish?: "brass" | "anthracite";
+    /** What is lettered on the front, beside the mark. */
     model?: string;
+    /** What the screen shows. */
+    children: Snippet;
   } = $props();
 
-  /**
-   * The banner above the commands.
-   *
-   * A machine of this vintage announced itself before it did anything, and the
-   * greeting is the one every terminal on a screen has been quoting since 1983.
-   */
-  const BANNER = "UNIX System V Release 3.2";
-  const RULE = "===========================================================";
-  const GREETING = "GREETINGS PROFESSOR FALKEN";
-  const SUBJECT = "** Velvet man pages **";
-  const MAN_PAGES = "velvet(7) velvet-config(1) velvet.yml(5)";
-  const COPIED = "* COPIED *";
 
   /**
    * The rim the tube is bonded into, cut with the same curve as the glass it
@@ -97,8 +101,8 @@
   itself: the frame takes whatever width it is given and declares itself a
   container, and the case reads that width back as `cqw` to work out its scale.
 -->
-<div class="frame" data-brass-terminal>
-<div class="case">
+<div class="frame" data-terminal>
+<div class="case" class:anthracite={finish === "anthracite"} data-finish={finish}>
   <svg width="0" height="0" aria-hidden="true" focusable="false" class="shape">
     <defs>
       <clipPath id={rimId} clipPathUnits="objectBoundingBox">
@@ -114,34 +118,7 @@
     <span class="bezel-patina" aria-hidden="true"></span>
     <div class="lip">
       <div class="rim" style={`clip-path: url(#${rimId})`}>
-        <CRTSquircle.Root>
-          <div class="listing">
-            <div class="banner">
-              <span class="dim">{BANNER}</span>
-              <span class="copied" data-terminal-copied>{COPIED}</span>
-            </div>
-            <div class="dim">{RULE}</div>
-            <div class="blank"></div>
-            <div>{GREETING}</div>
-            <div class="blank"></div>
-            <div class="subject">{SUBJECT}</div>
-            <!-- The command is marked rather than the line it sits on, so the
-                 script reads back exactly what would be typed and not the
-                 prompt drawn in front of it. However the glass wraps a long
-                 line, the element still holds the whole command. -->
-            {#each commands as command (command)}
-              <div>
-                <span class="prompt" aria-hidden="true">$</span><span
-                  data-terminal-command>{command}</span
-                >
-              </div>
-            {/each}
-            <div class="blank"></div>
-            <div class="pages">
-              {MAN_PAGES}<span class="caret" aria-hidden="true"></span>
-            </div>
-          </div>
-        </CRTSquircle.Root>
+        <CRTSquircle.Root>{@render children()}</CRTSquircle.Root>
       </div>
     </div>
   </div>
@@ -162,16 +139,18 @@
     </div>
 
     <div class="controls">
-      <button
-        type="button"
-        class="key"
-        data-copy-terminal
-        aria-label="Copy the install commands"
-        disabled
-      >
-        <span class="cap" aria-hidden="true"></span>
-        <span class="key-label" aria-hidden="true">COPY</span>
-      </button>
+      {#if commands}
+        <button
+          type="button"
+          class="key"
+          data-copy-terminal
+          aria-label="Copy the install commands"
+          disabled
+        >
+          <span class="cap" aria-hidden="true"></span>
+          <span class="key-label" aria-hidden="true">COPY</span>
+        </button>
+      {/if}
 
       <span class="vents" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span>
@@ -210,6 +189,39 @@
   */
   .case {
     --u: calc(100cqw / 620);
+
+    /*
+      The metal the case is made of.
+
+      Every tone the drawing uses is named here, so a second finish is one block
+      rather than twenty edits scattered through the gradients. The two washes
+      are channels rather than colours, because each is used at a dozen
+      different strengths and only its hue changes between finishes.
+    */
+    --metal-lit: #b5a34e;
+    --metal-face: #a69444;
+    --metal-body: #98873a;
+    --metal-deep: #7c6c25;
+    --metal-edge: #6b5e24;
+    --metal-lip-deep: #786826;
+    --metal-lip-body: #8a782f;
+    --metal-lip-face: #9a883a;
+    --metal-rim-deep: #332c0e;
+    --metal-rim-body: #4a4116;
+    --metal-rim-face: #665a21;
+    --metal-panel-lit: #6b5d23;
+    --metal-panel-face: #5f5220;
+    --metal-panel-deep: #4e431a;
+    --metal-slot-lit: #4a4015;
+    --metal-slot-deep: #241f06;
+    --metal-collar: #2e2809;
+    --metal-lettering: #2a2409;
+    --metal-lettering-quiet: #463d16;
+    --metal-lettering-hard: #171304;
+    --metal-pointer: #c3b472;
+    /* What the light leaves on it, and what it leaves in the hollows. */
+    --metal-sheen: 255 247 205;
+    --metal-shade: 46 38 10;
     --brass-noise-bezel: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%274%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%20opacity%3D%270.5%27%2F%3E%3C%2Fsvg%3E");
     --brass-noise-panel: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.9%27%20numOctaves%3D%274%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%20opacity%3D%270.5%27%2F%3E%3C%2Fsvg%3E");
     /* How worn the case is, as the strength of the noise multiplied over it.
@@ -218,6 +230,44 @@
 
     position: relative;
     filter: drop-shadow(0 calc(30 * var(--u)) calc(58 * var(--u)) rgba(0, 0, 0, 0.72));
+  }
+  /*
+    The same machine in anthracite.
+
+    A neutral ramp of the same shape: the brass one runs from a lit face at the
+    top to a shadowed one at the bottom, and so does this, at the same distances
+    apart. What changes is the hue and how much of it there is, which is why the
+    two washes matter as much as the ramp: a warm sheen over a grey metal reads
+    as brass under a filter rather than as steel.
+  */
+  /* Named as a class rather than read off the attribute beside it, because
+     Svelte keeps a selector it can see a `class:` directive for and strips one
+     that depends on an attribute it cannot follow. The attribute stays because
+     it says the same thing to anybody reading the document. */
+  .case.anthracite {
+    --metal-lit: #4c4f55;
+    --metal-face: #43464c;
+    --metal-body: #3a3d43;
+    --metal-deep: #2c2f34;
+    --metal-edge: #24262a;
+    --metal-lip-deep: #2b2e33;
+    --metal-lip-body: #34373d;
+    --metal-lip-face: #3d4046;
+    --metal-rim-deep: #121316;
+    --metal-rim-body: #1b1d21;
+    --metal-rim-face: #26282d;
+    --metal-panel-lit: #292c31;
+    --metal-panel-face: #23262a;
+    --metal-panel-deep: #1c1e22;
+    --metal-slot-lit: #1e2024;
+    --metal-slot-deep: #0c0d0f;
+    --metal-collar: #0f1012;
+    --metal-lettering: #101114;
+    --metal-lettering-quiet: #1c1e22;
+    --metal-lettering-hard: #08090a;
+    --metal-pointer: #8d939c;
+    --metal-sheen: 232 236 242;
+    --metal-shade: 10 11 13;
   }
   .shape {
     position: absolute;
@@ -239,26 +289,26 @@
     background:
       linear-gradient(
         90deg,
-        rgba(48, 40, 10, 0.44) 0%,
-        rgba(48, 40, 10, 0.12) 4%,
-        rgba(255, 247, 205, 0.1) 8%,
+        rgb(var(--metal-shade) / 0.44) 0%,
+        rgb(var(--metal-shade) / 0.12) 4%,
+        rgb(var(--metal-sheen) / 0.1) 8%,
         transparent 20%,
         transparent 80%,
-        rgba(255, 247, 205, 0.1) 92%,
-        rgba(48, 40, 10, 0.12) 96%,
-        rgba(48, 40, 10, 0.44) 100%
+        rgb(var(--metal-sheen) / 0.1) 92%,
+        rgb(var(--metal-shade) / 0.12) 96%,
+        rgb(var(--metal-shade) / 0.44) 100%
       ),
       linear-gradient(
         180deg,
-        #b5a34e 0%,
-        #a69444 30%,
-        #98873a 66%,
-        #7c6c25 100%
+        var(--metal-lit) 0%,
+        var(--metal-face) 30%,
+        var(--metal-body) 66%,
+        var(--metal-deep) 100%
       );
     box-shadow:
-      inset 0 calc(3 * var(--u)) 0 rgba(255, 247, 205, 0.44),
-      inset 0 calc(-14 * var(--u)) calc(24 * var(--u)) rgba(46, 38, 10, 0.5),
-      0 0 0 calc(1 * var(--u)) #6b5e24;
+      inset 0 calc(3 * var(--u)) 0 rgb(var(--metal-sheen) / 0.44),
+      inset 0 calc(-14 * var(--u)) calc(24 * var(--u)) rgb(var(--metal-shade) / 0.5),
+      0 0 0 calc(1 * var(--u)) var(--metal-edge);
   }
   /* The grain of the brushed metal, multiplied so it darkens the brass rather
      than laying grey over it. */
@@ -285,24 +335,24 @@
     border-radius: calc(52 * var(--u));
     pointer-events: none;
     background:
-      radial-gradient(76% 60% at 50% 32%, rgba(255, 250, 215, 0.12), transparent 62%),
-      linear-gradient(112deg, transparent 26.8%, rgba(255, 248, 210, 0.16) 27.1%, transparent 27.4%),
-      linear-gradient(104deg, transparent 61%, rgba(255, 248, 210, 0.11) 61.25%, transparent 61.5%),
-      linear-gradient(74deg, transparent 39%, rgba(38, 30, 6, 0.26) 39.3%, transparent 39.6%),
-      linear-gradient(88deg, transparent 72%, rgba(38, 30, 6, 0.2) 72.2%, transparent 72.4%),
-      linear-gradient(126deg, transparent 14%, rgba(255, 248, 210, 0.09) 14.3%, transparent 14.6%),
-      repeating-linear-gradient(96deg, rgba(40, 32, 8, 0.07) 0 1px, transparent 1px 7px),
-      repeating-linear-gradient(3deg, rgba(40, 32, 8, 0.05) 0 1px, transparent 1px 13px),
-      radial-gradient(11% 26% at 3% 52%, rgba(38, 30, 6, 0.4), transparent 72%),
-      radial-gradient(11% 26% at 97% 52%, rgba(38, 30, 6, 0.38), transparent 72%),
-      radial-gradient(26% 12% at 50% 99%, rgba(38, 30, 6, 0.34), transparent 74%),
-      radial-gradient(22% 10% at 50% 1%, rgba(38, 30, 6, 0.24), transparent 74%),
-      radial-gradient(7% 6% at 80% 17%, rgba(34, 27, 5, 0.36), transparent 70%),
-      radial-gradient(5% 4% at 15% 13%, rgba(34, 27, 5, 0.32), transparent 70%),
-      radial-gradient(4% 3.5% at 62% 88%, rgba(34, 27, 5, 0.3), transparent 70%),
-      radial-gradient(3% 2.6% at 33% 8%, rgba(34, 27, 5, 0.34), transparent 68%),
-      radial-gradient(1.6% 2.4% at 8% 22%, rgba(26, 20, 4, 0.55), transparent 62%),
-      radial-gradient(1.4% 2.2% at 92% 74%, rgba(26, 20, 4, 0.5), transparent 62%);
+      radial-gradient(76% 60% at 50% 32%, rgb(var(--metal-sheen) / 0.12), transparent 62%),
+      linear-gradient(112deg, transparent 26.8%, rgb(var(--metal-sheen) / 0.16) 27.1%, transparent 27.4%),
+      linear-gradient(104deg, transparent 61%, rgb(var(--metal-sheen) / 0.11) 61.25%, transparent 61.5%),
+      linear-gradient(74deg, transparent 39%, rgb(var(--metal-shade) / 0.26) 39.3%, transparent 39.6%),
+      linear-gradient(88deg, transparent 72%, rgb(var(--metal-shade) / 0.2) 72.2%, transparent 72.4%),
+      linear-gradient(126deg, transparent 14%, rgb(var(--metal-sheen) / 0.09) 14.3%, transparent 14.6%),
+      repeating-linear-gradient(96deg, rgb(var(--metal-shade) / 0.07) 0 1px, transparent 1px 7px),
+      repeating-linear-gradient(3deg, rgb(var(--metal-shade) / 0.05) 0 1px, transparent 1px 13px),
+      radial-gradient(11% 26% at 3% 52%, rgb(var(--metal-shade) / 0.4), transparent 72%),
+      radial-gradient(11% 26% at 97% 52%, rgb(var(--metal-shade) / 0.38), transparent 72%),
+      radial-gradient(26% 12% at 50% 99%, rgb(var(--metal-shade) / 0.34), transparent 74%),
+      radial-gradient(22% 10% at 50% 1%, rgb(var(--metal-shade) / 0.24), transparent 74%),
+      radial-gradient(7% 6% at 80% 17%, rgb(var(--metal-shade) / 0.36), transparent 70%),
+      radial-gradient(5% 4% at 15% 13%, rgb(var(--metal-shade) / 0.32), transparent 70%),
+      radial-gradient(4% 3.5% at 62% 88%, rgb(var(--metal-shade) / 0.3), transparent 70%),
+      radial-gradient(3% 2.6% at 33% 8%, rgb(var(--metal-shade) / 0.34), transparent 68%),
+      radial-gradient(1.6% 2.4% at 8% 22%, rgb(var(--metal-shade) / 0.55), transparent 62%),
+      radial-gradient(1.4% 2.2% at 92% 74%, rgb(var(--metal-shade) / 0.5), transparent 62%);
   }
 
   /* The lip the glass is seated in, lit from below so it reads as an edge
@@ -312,85 +362,21 @@
     padding: calc(16 * var(--u));
     border-radius: calc(40 * var(--u));
     background:
-      repeating-linear-gradient(92deg, rgba(38, 30, 6, 0.07) 0 1px, transparent 1px 6px),
-      radial-gradient(30% 40% at 12% 84%, rgba(34, 27, 5, 0.3), transparent 70%),
-      radial-gradient(24% 34% at 88% 16%, rgba(34, 27, 5, 0.26), transparent 70%),
-      linear-gradient(180deg, #786826 0%, #8a782f 26%, #9a883a 62%, #a69444 100%);
+      repeating-linear-gradient(92deg, rgb(var(--metal-shade) / 0.07) 0 1px, transparent 1px 6px),
+      radial-gradient(30% 40% at 12% 84%, rgb(var(--metal-shade) / 0.3), transparent 70%),
+      radial-gradient(24% 34% at 88% 16%, rgb(var(--metal-shade) / 0.26), transparent 70%),
+      linear-gradient(180deg, var(--metal-lip-deep) 0%, var(--metal-lip-body) 26%, var(--metal-lip-face) 62%, var(--metal-face) 100%);
     box-shadow:
-      inset 0 calc(-3 * var(--u)) 0 rgba(255, 247, 205, 0.3),
-      inset 0 calc(4 * var(--u)) calc(9 * var(--u)) rgba(46, 38, 10, 0.42),
-      0 calc(2 * var(--u)) 0 rgba(255, 247, 205, 0.26);
+      inset 0 calc(-3 * var(--u)) 0 rgb(var(--metal-sheen) / 0.3),
+      inset 0 calc(4 * var(--u)) calc(9 * var(--u)) rgb(var(--metal-shade) / 0.42),
+      0 calc(2 * var(--u)) 0 rgb(var(--metal-sheen) / 0.26);
   }
   /* The dark rim the tube is bonded into. Cut with the glass curve rather than
      rounded, so its edge and the tube's stay concentric all the way round. */
   .rim {
     position: relative;
     padding: calc(4 * var(--u));
-    background: linear-gradient(180deg, #332c0e 0%, #4a4116 60%, #665a21 100%);
-  }
-
-  /*
-    What the screen says.
-
-    Sized in `cqw` against the tube, which is a size container, so the listing
-    scales with the machine rather than with the window: a terminal shown small
-    keeps its proportions instead of showing four words per line.
-  */
-  .listing {
-    width: 60ch;
-    max-width: 100%;
-    font: 400 3.04cqw/1.5 var(--velvet-font-heading);
-  }
-  .banner {
-    display: flex;
-    justify-content: space-between;
-    gap: calc(16 * var(--u));
-  }
-  .dim {
-    opacity: 0.5;
-  }
-  /* Printed at all times and only revealed, so the line it sits on keeps its
-     width and nothing on the screen moves when the key is pressed. */
-  .copied {
-    visibility: hidden;
-    margin-right: 1ch;
-  }
-  /* The blank lines a terminal leaves between one part of its output and the
-     next. An empty line of its own height, which is what the machine would
-     actually have printed, rather than a margin between two paragraphs. */
-  .blank {
-    height: 1.5em;
-  }
-  .subject {
-    opacity: 0.75;
-  }
-  .prompt {
-    opacity: 0.6;
-  }
-  .pages {
-    opacity: 0.55;
-  }
-  /* The block a terminal leaves where the next character would go. It blinks by
-     stepping between two states rather than fading, because that is what a
-     hardware cursor does. */
-  .caret {
-    display: inline-block;
-    width: 0.5em;
-    height: 1.05em;
-    margin-left: 0.6em;
-    background: currentColor;
-    vertical-align: -0.15em;
-    animation: velvet-caret 1.1s step-end infinite;
-  }
-  @keyframes velvet-caret {
-    0%,
-    49% {
-      opacity: 1;
-    }
-    50%,
-    100% {
-      opacity: 0;
-    }
+    background: linear-gradient(180deg, var(--metal-rim-deep) 0%, var(--metal-rim-body) 60%, var(--metal-rim-face) 100%);
   }
 
   /*
@@ -409,11 +395,11 @@
     align-items: center;
     justify-content: space-between;
     gap: calc(22 * var(--u));
-    background: linear-gradient(180deg, #6b5d23 0%, #5f5220 56%, #4e431a 100%);
+    background: linear-gradient(180deg, var(--metal-panel-lit) 0%, var(--metal-panel-face) 56%, var(--metal-panel-deep) 100%);
     box-shadow:
-      inset 0 calc(7 * var(--u)) calc(13 * var(--u)) rgba(38, 31, 6, 0.6),
-      inset 0 calc(-2 * var(--u)) 0 rgba(255, 247, 205, 0.12),
-      0 calc(1 * var(--u)) 0 rgba(46, 38, 10, 0.5);
+      inset 0 calc(7 * var(--u)) calc(13 * var(--u)) rgb(var(--metal-shade) / 0.6),
+      inset 0 calc(-2 * var(--u)) 0 rgb(var(--metal-sheen) / 0.12),
+      0 calc(1 * var(--u)) 0 rgb(var(--metal-shade) / 0.5);
   }
   /* The panel's own wear: a sheen to the right of the key, a shadow to the left
      of the mark, the darkening along the bottom edge, and one scratch. */
@@ -423,10 +409,10 @@
     border-radius: 0 0 calc(24 * var(--u)) calc(24 * var(--u));
     pointer-events: none;
     background:
-      radial-gradient(16% 60% at 78% 50%, rgba(255, 248, 210, 0.1), transparent 70%),
-      radial-gradient(10% 50% at 26% 52%, rgba(34, 27, 5, 0.28), transparent 72%),
-      radial-gradient(30% 22% at 50% 100%, rgba(30, 24, 4, 0.34), transparent 74%),
-      linear-gradient(97deg, transparent 44%, rgba(255, 248, 210, 0.1) 44.3%, transparent 44.6%);
+      radial-gradient(16% 60% at 78% 50%, rgb(var(--metal-sheen) / 0.1), transparent 70%),
+      radial-gradient(10% 50% at 26% 52%, rgb(var(--metal-shade) / 0.28), transparent 72%),
+      radial-gradient(30% 22% at 50% 100%, rgb(var(--metal-shade) / 0.34), transparent 74%),
+      linear-gradient(97deg, transparent 44%, rgb(var(--metal-sheen) / 0.1) 44.3%, transparent 44.6%);
   }
   .panel-wear {
     position: absolute;
@@ -454,7 +440,7 @@
     background: var(--crt-phosphor, #7dff9b);
     box-shadow:
       0 0 calc(12 * var(--u)) color-mix(in srgb, var(--crt-phosphor, #7dff9b) 95%, transparent),
-      0 0 0 calc(4 * var(--u)) #2e2809,
+      0 0 0 calc(4 * var(--u)) var(--metal-collar),
       inset 0 calc(-1 * var(--u)) calc(1 * var(--u)) rgba(120, 70, 0, 0.6);
   }
   /* Stamped into the metal rather than printed on it, which is the highlight
@@ -464,9 +450,9 @@
 
     display: inline-block;
     width: fit-content;
-    color: #2a2409;
+    color: var(--metal-lettering);
     line-height: 1;
-    text-shadow: 0 calc(1 * var(--u)) 0 rgba(255, 247, 205, 0.34);
+    text-shadow: 0 calc(1 * var(--u)) 0 rgb(var(--metal-sheen) / 0.34);
   }
   /*
     The model line under the mark.
@@ -536,8 +522,8 @@
     border-radius: calc(5 * var(--u));
     background: linear-gradient(180deg, #f2472f 0%, #d5291a 56%, #a31a0e 100%);
     box-shadow:
-      0 0 0 calc(4 * var(--u)) #2e2809,
-      0 0 0 calc(5 * var(--u)) rgba(255, 247, 205, 0.16),
+      0 0 0 calc(4 * var(--u)) var(--metal-collar),
+      0 0 0 calc(5 * var(--u)) rgb(var(--metal-sheen) / 0.16),
       0 calc(3 * var(--u)) 0 #55110a,
       0 calc(4 * var(--u)) calc(6 * var(--u)) rgba(28, 10, 4, 0.6),
       inset 0 calc(1 * var(--u)) 0 rgba(255, 196, 180, 0.6);
@@ -548,15 +534,15 @@
   .key:active .cap {
     transform: translateY(calc(3 * var(--u)));
     box-shadow:
-      0 0 0 calc(4 * var(--u)) #2e2809,
-      0 0 0 calc(5 * var(--u)) rgba(255, 247, 205, 0.16),
+      0 0 0 calc(4 * var(--u)) var(--metal-collar),
+      0 0 0 calc(5 * var(--u)) rgb(var(--metal-sheen) / 0.16),
       0 0 0 #55110a,
       0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(28, 10, 4, 0.7),
       inset 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(80, 8, 2, 0.6);
   }
   .key:focus-visible .cap {
     box-shadow:
-      0 0 0 calc(4 * var(--u)) #2e2809,
+      0 0 0 calc(4 * var(--u)) var(--metal-collar),
       0 0 0 calc(6 * var(--u)) var(--velvet-accent),
       0 calc(3 * var(--u)) 0 #55110a,
       0 calc(4 * var(--u)) calc(6 * var(--u)) rgba(28, 10, 4, 0.6),
@@ -566,14 +552,14 @@
   .key-label {
     display: block;
     width: calc(66 * var(--u));
-    color: #171304;
+    color: var(--metal-lettering-hard);
     font-family: "IBM Plex Mono", monospace;
     font-size: calc(10 * var(--u));
     font-weight: 700;
     line-height: 1;
     letter-spacing: 0.18em;
     text-align: center;
-    text-shadow: 0 calc(1 * var(--u)) 0 rgba(255, 247, 205, 0.34);
+    text-shadow: 0 calc(1 * var(--u)) 0 rgb(var(--metal-sheen) / 0.34);
   }
 
   /* The slots the case breathes through, cut into the panel rather than laid on
@@ -588,8 +574,8 @@
     width: calc(30 * var(--u));
     height: calc(3 * var(--u));
     border-radius: calc(2 * var(--u));
-    background: linear-gradient(180deg, #4a4015, #241f06);
-    box-shadow: 0 calc(1 * var(--u)) 0 rgba(255, 247, 205, 0.22);
+    background: linear-gradient(180deg, var(--metal-slot-lit), var(--metal-slot-deep));
+    box-shadow: 0 calc(1 * var(--u)) 0 rgb(var(--metal-sheen) / 0.22);
   }
 
   .knobs {
@@ -604,9 +590,9 @@
     border-radius: 50%;
     background: radial-gradient(circle at 36% 28%, #4e4739, #141210 74%);
     box-shadow:
-      0 0 0 calc(4 * var(--u)) #2e2809,
-      0 0 0 calc(5 * var(--u)) rgba(255, 247, 205, 0.16),
-      0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(28, 22, 4, 0.65),
+      0 0 0 calc(4 * var(--u)) var(--metal-collar),
+      0 0 0 calc(5 * var(--u)) rgb(var(--metal-sheen) / 0.16),
+      0 calc(2 * var(--u)) calc(4 * var(--u)) rgb(var(--metal-shade) / 0.65),
       inset 0 calc(1 * var(--u)) 0 rgba(255, 255, 255, 0.16);
   }
   /* The pointer on each knob, turned to a different setting, because two
@@ -619,7 +605,7 @@
     height: calc(8 * var(--u));
     margin-left: calc(-1 * var(--u));
     border-radius: calc(1 * var(--u));
-    background: #c3b472;
+    background: var(--metal-pointer);
     transform-origin: 50% calc(9 * var(--u));
   }
   .knob-left span {
@@ -641,14 +627,11 @@
     width: calc(40 * var(--u));
     height: calc(13 * var(--u));
     border-radius: 0 0 calc(7 * var(--u)) calc(7 * var(--u));
-    background: linear-gradient(180deg, #4a4016, #2c2709);
+    background: linear-gradient(180deg, var(--metal-slot-lit), var(--metal-slot-deep));
   }
 
-  /* The caret says nothing the listing does not, so it simply rests. */
+  /* The one thing on the case that moves rests under reduced motion. */
   @media (prefers-reduced-motion: reduce) {
-    .caret {
-      animation: none;
-    }
     .cap {
       transition: none;
     }

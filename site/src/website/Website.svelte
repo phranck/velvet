@@ -4,7 +4,7 @@
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
-  import * as BrassTerminal from "../components/brass-terminal";
+  import * as Terminal from "../components/terminal";
   import * as SquircleCard from "../components/squircle-card";
   // The README's screenshot, imported from where it already lives rather than
   // copied here, so the page and the repository can never show different ones.
@@ -17,7 +17,6 @@
   // that does.
   import { GALLERY_DESIGNS } from "./design-gallery.js";
   import * as SquircleButton from "../components/squircle-button";
-  import * as SquircleFrame from "../components/squircle-frame";
   import {
     SQUIRCLE_CONTENT_INSET,
     createSquircleRectPath,
@@ -304,6 +303,10 @@
         </div>
 
         <!--
+          The same machine the man pages are read off, in anthracite rather than
+          brass, so the page opens on the thing it closes on and a reader meets
+          one object twice rather than two.
+
           Decoration for anything reading the page aloud, and out of the tab
           order with it: everything this link leads to is already reachable from
           the key beside it.
@@ -314,18 +317,16 @@
           tabindex="-1"
           aria-hidden="true"
         >
-          <SquircleFrame.Outline
-            width={SHOT_BOX.width}
-            height={SHOT_BOX.height}
-          />
-          <img
-            src={screenshotUrl}
-            alt="A Velvet status page showing services, uptime bars, and a response-time chart"
-            width="1770"
-            height="1328"
-            fetchpriority="high"
-            decoding="async"
-          />
+          <Terminal.Root finish="anthracite">
+            <img
+              src={screenshotUrl}
+              alt="A Velvet status page showing services, uptime bars, and a response-time chart"
+              width="1770"
+              height="1328"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </Terminal.Root>
         </a>
       </div>
     </section>
@@ -442,7 +443,9 @@
 
     <section class="band band-deep" aria-labelledby="manual-title">
       <div class="manual velvet-page">
-        <BrassTerminal.Root commands={MAN_PAGES_INSTALL} />
+        <Terminal.Root commands={MAN_PAGES_INSTALL}>
+          <Terminal.Listing commands={MAN_PAGES_INSTALL} />
+        </Terminal.Root>
 
         <div class="manual-text">
           <h2 id="manual-title">Read it in your terminal</h2>
@@ -693,23 +696,17 @@
     gap: 1rem;
   }
 
-  /* The picture, in the same frame the design tiles take. */
   .hero-shot {
-    position: relative;
     display: block;
-    color: color-mix(in srgb, var(--velvet-text-muted) 55%, transparent);
-    /* Claimed before the file arrives, so nothing below moves when it does. */
-    aspect-ratio: 4 / 3;
   }
-  .hero-shot img {
-    position: absolute;
-    inset: 0;
+  /* The tube states the shape and clips it, so the picture only has to fill it.
+     Its own four by three matches the glass, so filling crops nothing. */
+  .hero-shot :global(img) {
     width: 100%;
     height: 100%;
     display: block;
     object-fit: cover;
     object-position: top center;
-    clip-path: url(#velvet-shot-cut);
   }
 
   /* Every section below the opening: a rule at the top and one measure inside,

@@ -28,16 +28,113 @@ html {
 }
 
 /**
- * Nothing behind the page.
+ * What stands behind the page: an orrery, drawn once and left to turn.
  *
  * `app.css` is loaded by every surface and lays a fixed layer of its own behind
- * the document, drawn in the status page's default indigo. `board-backdrop.css`
- * used to replace that layer wholesale for this site; with the board gone,
- * removing the layer is all that is left to do, and saying so explicitly is
- * what stops the indigo showing through the warm surface above.
+ * the document, drawn in the status page's default indigo. This replaces that
+ * layer wholesale rather than merely removing it, which is also what stops the
+ * indigo showing through the warm surface above.
+ *
+ * Five rings at four sizes, two washes of warm light, and a grain over the lot.
+ * All of it is drawn with gradients rather than fetched, so it costs nothing to
+ * download and is sharp at any size, and all of it lives on one fixed layer:
+ * a background with `fixed` attachment is repositioned on every scroll frame
+ * and lags during a fast one, whilst a fixed layer is composited once.
+ *
+ * The rings are conic rather than radial. A radial gradient draws a disc and a
+ * ring cut from one needs two stops per edge; a repeating conic gradient masked
+ * to a band draws the band directly, which is what lets one element carry a
+ * ring that fades away round its own circumference rather than a flat circle.
  */
 body::before {
-  content: none;
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    /* The light the page stands in: one source off the top right and a second,
+       weaker one low and left, so the surface is lit rather than tinted. */
+    radial-gradient(
+      120% 90% at 82% -6%,
+      var(--velvet-hero-glow) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      90% 70% at 8% 108%,
+      color-mix(in srgb, var(--velvet-accent) 5%, transparent) 0%,
+      transparent 64%
+    ),
+    var(--velvet-base);
+}
+
+/**
+ * The rings themselves, on a second layer so they can turn without the light
+ * behind them turning with it.
+ *
+ * One element carries all five as repeating radial gradients: a hairline at a
+ * given radius, transparent either side of it. Stated in `vmax` so a ring keeps
+ * its size against the larger side of the window rather than stretching with
+ * whichever way it is resized.
+ */
+body::after {
+  content: "";
+  position: fixed;
+  inset: -20vmax;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.55;
+  background:
+    radial-gradient(
+      circle 62vmax at 84% 4%,
+      transparent 61.9vmax,
+      var(--velvet-orbit-ring) 62vmax,
+      transparent 62.1vmax
+    ),
+    radial-gradient(
+      circle 46vmax at 84% 4%,
+      transparent 45.9vmax,
+      var(--velvet-orbit-ring-inner) 46vmax,
+      transparent 46.1vmax
+    ),
+    radial-gradient(
+      circle 88vmax at 10% 96%,
+      transparent 87.9vmax,
+      var(--velvet-orbit-ring-inner) 88vmax,
+      transparent 88.1vmax
+    ),
+    radial-gradient(
+      circle 34vmax at 6% 42%,
+      transparent 33.9vmax,
+      var(--velvet-orbit-ring-inner) 34vmax,
+      transparent 34.1vmax
+    ),
+    radial-gradient(
+      circle 118vmax at 96% 70%,
+      transparent 117.9vmax,
+      var(--velvet-orbit-ring) 118vmax,
+      transparent 118.1vmax
+    );
+  animation: velvet-orrery calc(var(--velvet-orbit-period) * 9) linear infinite;
+}
+
+/*
+  The whole system turns, slowly enough that a reader notices it only if they
+  stay. One transform on one element, so it stays on the compositor and the page
+  is never laid out again for it.
+*/
+@keyframes velvet-orrery {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Neither layer says anything the page does not say in words, so the turning
+   simply stops rather than slowing down. */
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    animation: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   html {

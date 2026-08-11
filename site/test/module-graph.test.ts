@@ -241,12 +241,12 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // steps, the theme cards and the icon picker draw the outline themselves and
   // read its insets from `lib/squircle`, so the geometry is stated once even
   // where the markup is not.
-  "squircle-frame": ["configurator", "references", "status page", "website"],
+  "squircle-frame": ["configurator", "references", "status page"],
   "squircle-card": ["website"],
   // The key the start page asks with, in the same shape.
   "squircle-button": ["website"],
   // The machine the install commands are read off, and the tube inside it.
-  "brass-terminal": ["website"],
+  "terminal": ["website"],
   "crt-squircle": ["website"],
   "required-field": ["configurator", "onboarding"],
   "service-editor": ["configurator", "onboarding"],

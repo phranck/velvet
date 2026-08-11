@@ -79,7 +79,7 @@
    */
   if (navigator.clipboard) {
     for (const key of document.querySelectorAll("[data-copy-terminal]")) {
-      const terminal = key.closest("[data-brass-terminal]");
+      const terminal = key.closest("[data-terminal]");
       if (!terminal) continue;
       const commands = [
         ...terminal.querySelectorAll("[data-terminal-command]"),
