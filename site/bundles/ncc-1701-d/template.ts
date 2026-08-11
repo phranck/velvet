@@ -239,7 +239,7 @@ export function template(data: BundleData): string {
   const reporting =
     state !== "operational" && visibleEvents(data.incidents.events).length > 0;
 
-  return `<main class="status-page ncc-1701-d-page" data-layout="grouped" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
+  return `<main class="ncc-1701-d-page" data-layout="grouped" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
     <div class="status-band status-band--nav">
       <div class="status-nav"></div>
     </div>

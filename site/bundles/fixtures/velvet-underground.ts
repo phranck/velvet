@@ -31,13 +31,13 @@ const MINUTE_MS = 60_000;
 const SECONDS_PER_DAY = 86_400;
 
 /**
- * The moment every mockup is rendered as though it were now.
+ * The moment this installation is rendered as though it were now.
  *
  * Fixed rather than taken from the clock. The strip labels days, the chart
  * labels hours, and both would otherwise move between two screenshots of an
- * unchanged theme.
+ * unchanged design.
  */
-export const GENERATED_AT = "2026-03-22T14:35:00.000Z";
+const GENERATED_AT = "2026-03-22T14:35:00.000Z";
 
 /** How long this fictional installation has been monitoring. */
 const MONITORING_DAYS = 300;
@@ -197,7 +197,7 @@ function checksFor(
   }));
 }
 
-export const statusDocument: StatusDocument = {
+const statusDocument: StatusDocument = {
   schemaVersion: 1,
   generatedAt: GENERATED_AT,
   monitoringStartedAt: new Date(
@@ -270,7 +270,7 @@ function isMissing(plan: ServicePlan, time: number): boolean {
   return false;
 }
 
-export const responseTimesDocument: ResponseTimesDocument = {
+const responseTimesDocument: ResponseTimesDocument = {
   schemaVersion: 1,
   generatedAt: GENERATED_AT,
   monitoringStartedAt: statusDocument.monitoringStartedAt,
@@ -295,7 +295,7 @@ export const responseTimesDocument: ResponseTimesDocument = {
   ),
 };
 
-export const incidentsDocument: IncidentsDocument = {
+const incidentsDocument: IncidentsDocument = {
   schemaVersion: 1,
   generatedAt: GENERATED_AT,
   events: [
@@ -339,52 +339,32 @@ export const incidentsDocument: IncidentsDocument = {
 };
 
 /**
- * The configuration the mockups render under.
- *
- * The name is the one `site/demo/velvet.yml` uses, so the mockups and the
- * screenshot workflow describe the same fictional installation.
- *
- * Only the fields the page reads are set. It is not passed through
- * `loadConfig`, because that function fetches `config.json` over the network,
- * and a mockup has no server to fetch from.
- */
-export const mockConfig = {
-  name: "Velvet Underground Inc.",
-  layout: "grouped" as const,
-  defaultRange: "month" as const,
-  serial: 42,
-  version: "1.5.3",
-  icons: {
-    website: "globe",
-    api: "brackets",
-    cdn: "cloud",
-    mail: "envelope",
-    database: "database",
-  } as Record<string, string>,
-};
-
-/**
  * The whole fixture, in the shape a bundle is handed.
  *
- * `mockConfig` above is what the mockups read; this is the same installation
- * expressed as `BundleData`, so the fixture serves both whilst the two
- * arrangements exist side by side.
+ * The name is the one `site/demo/velvet.yml` uses, so this fixture and the
+ * screenshot workflow describe the same fictional installation.
  */
 export const velvetUnderground: BundleData = {
   dataVersion: BUNDLE_DATA_VERSION,
   generatedAt: GENERATED_AT,
   site: {
-    name: mockConfig.name,
+    name: "Velvet Underground Inc.",
     // None, which is what a published installation shows unless its operator
     // wrote links into `velvet.yml` by hand. The other seven cases carry the
     // three the default fixture holds, so a design is still proved against a
     // bar that has them.
     navigation: [],
-    layout: mockConfig.layout,
-    defaultRange: mockConfig.defaultRange,
-    serial: mockConfig.serial,
-    version: mockConfig.version,
-    icons: mockConfig.icons,
+    layout: "grouped",
+    defaultRange: "month",
+    serial: 42,
+    version: "1.5.4",
+    icons: {
+      website: "globe",
+      api: "brackets",
+      cdn: "cloud",
+      mail: "envelope",
+      database: "database",
+    },
     configuredAt: {
       label: "setup.velvet.li/configurator",
       href: "https://setup.velvet.li/configurator/",

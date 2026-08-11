@@ -14,10 +14,16 @@
 import { FIXTURES } from "../bundles/fixtures/index.js";
 import { INSTALLED_DESIGNS } from "../src/lib/bundles/installed.js";
 
-const picker = document.querySelector<HTMLSelectElement>("#fixture");
-const what = document.querySelector<HTMLElement>("#fixture-what");
-const host = document.querySelector<HTMLElement>("#designs");
-if (!picker || !what || !host) throw new Error("The gallery is missing a part.");
+/** One part of this page, or a failure naming which one is missing. */
+function part<Element extends HTMLElement>(selector: string): Element {
+  const found = document.querySelector<Element>(selector);
+  if (!found) throw new Error(`The gallery has no ${selector}.`);
+  return found;
+}
+
+const picker = part<HTMLSelectElement>("#fixture");
+const summary = part("#fixture-what");
+const host = part("#designs");
 
 for (const fixture of FIXTURES) {
   const option = document.createElement("option");
@@ -27,7 +33,12 @@ for (const fixture of FIXTURES) {
 }
 
 /** The frame for one design, and the head above it naming what it is. */
-function panel(id: string, name: string, era: string, description: string): HTMLElement {
+function panel(
+  id: string,
+  name: string,
+  era: string | undefined,
+  description: string,
+): HTMLElement {
   const block = document.createElement("section");
   block.className = "design";
 
@@ -38,7 +49,7 @@ function panel(id: string, name: string, era: string, description: string): HTML
   title.textContent = name;
   const when = document.createElement("span");
   when.className = "design-era";
-  when.textContent = era;
+  when.textContent = era ?? "";
   const open = document.createElement("a");
   open.className = "design-open";
   open.textContent = "open on its own";
@@ -68,7 +79,7 @@ const frames = INSTALLED_DESIGNS.map((design) => {
 /** Points every frame at the chosen installation. */
 function show(fixtureName: string): void {
   const fixture = FIXTURES.find((candidate) => candidate.name === fixtureName);
-  what.textContent = fixture?.what ?? "";
+  summary.textContent = fixture?.what ?? "";
   for (const block of frames) {
     const address = `./design.html?design=${encodeURIComponent(block.dataset.design ?? "")}&fixture=${encodeURIComponent(fixtureName)}`;
     const frame = block.querySelector("iframe");

@@ -19,6 +19,7 @@
     "src/**/*.svelte",
     "test/**/*.ts",
     "bundles/**/*.ts",
+    "gallery/**/*.ts",
     "scripts/bundles.ts",
     "scripts/verify-bundles.ts",
     "scripts/conformance.ts",

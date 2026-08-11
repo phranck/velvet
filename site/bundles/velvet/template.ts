@@ -259,7 +259,7 @@ export function template(data: BundleData): string {
   const reporting =
     state !== "operational" && visibleEvents(data.incidents.events).length > 0;
 
-  return `<main class="status-page velvet-page" data-layout="${layout}" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
+  return `<main class="velvet-page" data-layout="${layout}" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
     ${navigation(data)}
     ${hero(data, state)}
     <div class="status-band status-band--body">
