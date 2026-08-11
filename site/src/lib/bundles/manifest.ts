@@ -3,12 +3,10 @@
  * loads one.
  *
  * The rule the manifest exists to enforce is that nothing about a design is
- * discovered by inspecting its stylesheet. Two hacks in the mockups did exactly
- * that: the toolbar read `--layout-cards` out of the computed style to decide
- * which layout buttons to offer, and the page read `--service-display-display`
- * to decide whether a reading went into a panel or into an overlay. Both are
- * facts about a design, both were kept in a place meant for values, and both
- * are fields here instead.
+ * discovered by inspecting its stylesheet. Which layouts a design supports and
+ * whether it reads on a panel or in an overlay are facts about the design, so
+ * they are fields here rather than values something has to go looking for in a
+ * computed style.
  *
  * A manifest is parsed rather than trusted. `parseBundleManifest` returns either
  * the manifest or the list of everything wrong with it, because a design with

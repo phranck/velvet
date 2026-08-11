@@ -16,15 +16,16 @@ never selects an element it was not handed, and never declares a style outside
 the element it was given.
 
 Everything a plugin draws is described by options the bundle passes, so two
-designs using the same plugin do not have to look alike. Where the mockups used
-to read a shared token set out of the stylesheet, a plugin now takes a style
-object — or a function returning one, for a design whose values come from its own
-custom properties.
+designs using the same plugin do not have to look alike. A plugin takes a style
+object, or a function returning one for a design whose values come from its own
+custom properties. A function is re-read on every paint, which is what lets a
+drawing follow a stylesheet that arrived after the script did.
 
-## The four
+## The five
 
 | Plugin | What it is | Why it is worth sharing |
 | --- | --- | --- |
+| `status` | The arithmetic behind every figure a page prints | What a figure *is* is not a design decision: 99.97 per cent over thirty days is the same number in every design, and a page printing a different one is wrong rather than distinctive. Two rules in it are the ones a second implementation gets wrong, and both turn a page into a lie: a day before monitoring began is not a perfect day, and a day nothing was measured on is not an operational one |
 | `uptime-strip` | A month of days drawn on a canvas | 695ms of rasterisation as elements against 315ms as a canvas, over six expand-all cycles at 90 days with four services. It also carries the rule that decides a day's colour, which is the one place where a plausible-looking mistake shows a green day where nothing was measured |
 | `response-chart` | The range arithmetic and the curve | `monotonePath` is what the product draws with, so no design can show a smoother line than the real page would |
 | `disclosure` | A panel that animates its own height | Two frames longer than 32ms out of roughly 250, measured in WebKit expanding and collapsing six services, which is what the same page produces with no animation at all |

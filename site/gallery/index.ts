@@ -4,7 +4,7 @@
  * This page carries no design and shares nothing with the ones it shows. A
  * frame is a document, so a design's stylesheet, its script and its typefaces
  * stay inside it, and two designs on one screen cannot reach each other or the
- * page holding them. That is what the mockup toolbar could only promise.
+ * page holding them.
  *
  * The one control is which installation to render. The fixtures are the cases
  * the conformance suite runs against, so a design that looks wrong here is a
