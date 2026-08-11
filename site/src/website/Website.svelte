@@ -241,41 +241,6 @@
       </div>
     </section>
 
-    <section class="column" aria-labelledby="pipeline-title">
-      <div class="card-inset">
-          <div class="velvet-section-heading">
-            <div class="velvet-section-title">
-              <span class="marker" aria-hidden="true">//</span>
-              <h2 id="pipeline-title">How it works</h2>
-            </div>
-            <p>
-              GitHub is part of the platform rather than a place to host it.
-              Scheduling, incidents, generated data, and the public site each
-              live in something GitHub already provides.
-            </p>
-          </div>
-          <ol class="pipeline">
-            {#each PIPELINE as stage, index (stage.title)}
-              <li>
-                <SquircleCard.Root>
-                  <SquircleCard.Body>
-                    <div class="entry">
-                      <span class="pipeline-number" aria-hidden="true">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <div>
-                        <h3>{stage.title}</h3>
-                        <p>{stage.description}</p>
-                      </div>
-                    </div>
-                  </SquircleCard.Body>
-                </SquircleCard.Root>
-              </li>
-            {/each}
-          </ol>
-      </div>
-    </section>
-
     <section class="column" aria-labelledby="themes-title">
       <div class="card-inset">
           <div class="velvet-section-heading">
@@ -323,6 +288,41 @@
               </li>
             {/each}
           </ul>
+      </div>
+    </section>
+
+    <section class="column" aria-labelledby="pipeline-title">
+      <div class="card-inset">
+          <div class="velvet-section-heading">
+            <div class="velvet-section-title">
+              <span class="marker" aria-hidden="true">//</span>
+              <h2 id="pipeline-title">How it works</h2>
+            </div>
+            <p>
+              GitHub is part of the platform rather than a place to host it.
+              Scheduling, incidents, generated data, and the public site each
+              live in something GitHub already provides.
+            </p>
+          </div>
+          <ol class="pipeline">
+            {#each PIPELINE as stage, index (stage.title)}
+              <li>
+                <SquircleCard.Root>
+                  <SquircleCard.Body>
+                    <div class="entry">
+                      <span class="pipeline-number" aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <h3>{stage.title}</h3>
+                        <p>{stage.description}</p>
+                      </div>
+                    </div>
+                  </SquircleCard.Body>
+                </SquircleCard.Root>
+              </li>
+            {/each}
+          </ol>
       </div>
     </section>
 
