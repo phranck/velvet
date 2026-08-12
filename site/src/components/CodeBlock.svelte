@@ -122,9 +122,12 @@
   pre > code {
     /* Its own size rather than a fraction of the prose around it, so a page
        reading a step larger does not carry the code with it. */
-    font-family: var(--font-mono);
-    font-size: var(--velvet-text-code, 0.9375rem);
-    line-height: 1.7;
+    font-family: var(--velvet-font-figure, var(--font-mono));
+    font-size: var(--velvet-text-code, 1.3125rem);
+    font-weight: 600;
+    /* Tighter than prose takes, because the dot face reads at a larger size and
+       the leading that suits a paragraph pulls its lines apart at this one. */
+    line-height: 1.35;
   }
   .line {
     display: block;
@@ -135,7 +138,7 @@
     font-style: italic;
   }
   .key {
-    color: var(--velvet-accent, #8ca5ff);
+    color: var(--velvet-accent, #e07a3f);
   }
   .string {
     color: #9ece6a;
@@ -160,7 +163,7 @@
     padding: 0;
     border: 0;
     background: none;
-    color: var(--velvet-text-muted, #979aa8);
+    color: var(--velvet-text-muted, #9c948a);
     /* The way back from the copied colour, and only that way. The rule below
        turns the transition off whilst the mark is being set, so the green
        arrives at once and drains away afterwards. */
@@ -173,7 +176,7 @@
   }
   .copy:hover,
   .copy:focus-visible {
-    color: var(--velvet-text, #efedf5);
+    color: var(--velvet-text, #f2eadf);
   }
   /* Global, because the attribute is set by the page's script after the copy
      succeeds and never appears in this markup. Left scoped, Svelte finds no

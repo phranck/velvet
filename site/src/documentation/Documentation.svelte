@@ -1,7 +1,6 @@
 <script lang="ts">
   import * as Card from "../components/card";
   import * as TopicIndex from "../components/topic-index";
-  import Icon from "../components/Icon.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import ReleaseNotes from "../components/release-notes/ReleaseNotes.svelte";
@@ -57,10 +56,7 @@
       nobody can repair for its owner.
     -->
     <aside class="warning" aria-labelledby="warning-title">
-      <div class="warning-head">
-        <Icon name="danger" />
-        <h2 id="warning-title">Editing this file by hand is not the supported path</h2>
-      </div>
+      <h2 id="warning-title">Editing this file by hand is not the supported path</h2>
       <p>
         Velvet writes and updates <code>velvet.yml</code> through the
         Configurator, which validates every change before it reaches your
@@ -109,24 +105,15 @@
   main h2 {
     margin-inline: var(--velvet-card-text-inset);
   }
-  h1 {
-    font-size: var(--velvet-text-title);
-    line-height: 1.1;
-    margin-block: 0 1rem;
-  }
-  .lede {
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-copy);
-    margin-block: 0 2.5rem;
-  }
   /* The same treatment a code word gets inside a card. A filename set in an
      opening paragraph is the same thing as a filename set in a reference, and
      it drew no background at all before, so the two read as different kinds of
      word on one page. */
   .lede code,
   .warning code {
-    font-family: var(--font-mono);
-    font-size: 0.9em;
+    font-family: var(--velvet-font-figure, var(--font-mono));
+    font-size: var(--velvet-text-code-inline);
+    font-weight: 600;
     padding: var(--velvet-code-inset);
     border-radius: var(--velvet-code-radius);
     background: var(--velvet-code-tint);
@@ -148,28 +135,17 @@
      which sets all four sides and reset the inline margins this rule had just
      given them. Measured at a 1440px window: both sat at 445, the notice's
      padding edge, rather than at 461. */
-  .warning-head,
+  .warning h2,
   .warning p {
     margin-inline: var(--velvet-card-text-inset);
   }
-  /* The mark and the heading share a row, which is what puts them on the same
-     centre line. Held apart, the mark aligned to the top of a two-line heading
-     and read as sitting above it. */
-  .warning-head {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-block: 0 0.6rem;
-  }
-  .warning :global(svg) {
-    color: #d29922;
-    width: var(--velvet-text-intro);
-    height: var(--velvet-text-intro);
-  }
+  /* A step below the headings that open a topic, because this notice stands
+     above the reference rather than inside its outline, and a line the size of
+     a chapter title reads as one. */
   .warning h2 {
-    margin: 0;
-    color: #d29922;
-    font-size: var(--velvet-text-heading);
+    margin-block: 0 0.6rem;
+    color: var(--velvet-degraded);
+    font-size: var(--velvet-text-lead);
     line-height: 1.2;
   }
   .warning p {

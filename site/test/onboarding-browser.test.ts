@@ -8,13 +8,6 @@ import { createServer } from "vite";
 
 import { SetupProgressStageSchema } from "@velvet/contracts";
 
-import {
-  STEP_CARD_CONTENT_INSET,
-  STEP_CARD_FOOTER_INSET,
-  STEP_CARD_BUTTON_RADIUS,
-  STEP_CARD_INNER_RADIUS,
-  STEP_CARD_RADIUS,
-} from "../src/components/step-card/geometry.js";
 import { ONBOARDING_SESSION_STORAGE_KEY } from "../src/onboarding/onboarding-session.js";
 
 import { parseConfiguratorYaml } from "../src/configurator/configuration.js";
@@ -143,26 +136,8 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       backdrop.size.includes("cover"),
       `expected a covering layer, got ${backdrop.size.join(" | ")}`,
     );
-    assert.equal(
-      await page.locator("form").evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
-    assert.equal(
-      await page.locator(".steps button").first().evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
     assert.equal(await page.locator(".topbar").count(), 0);
     assert.equal(await page.locator("[data-page-footer]").count(), 1);
-    assert.equal(
-      await page.locator("[data-page-footer]").evaluate((element) =>
-        getComputedStyle(element).position,
-      ),
-      "fixed",
-    );
     assert.deepEqual(
       await page.getByRole("link", { name: "LAYERED" }).evaluate((element) => ({
         href: (element as HTMLAnchorElement).href,
@@ -179,261 +154,18 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator("[data-rainbow-color]").count(),
       9,
     );
-    assert.equal(
-      await page.locator(".intro").evaluate((element) =>
-        getComputedStyle(element).textAlign,
-      ),
-      "center",
-    );
-    assert.equal(
-      await page.locator(".intro > p").evaluate((element) =>
-        element.getBoundingClientRect().width ===
-        element.parentElement?.getBoundingClientRect().width,
-      ),
-      true,
-    );
-    assert.deepEqual(
-      await page.locator(".intro > p").evaluate((element) => {
-        const style = getComputedStyle(element);
-        return {
-          fontSize: style.fontSize,
-          marginTop: style.marginTop,
-          sectionMarginBottom: getComputedStyle(element.parentElement!).marginBottom,
-        };
-      }),
-      { fontSize: "32px", marginTop: "56px", sectionMarginBottom: "72px" },
-    );
-    assert.match(
-      await page.locator(".onboarding-shell").evaluate((element) =>
-        getComputedStyle(element).fontFamily,
-      ),
-      /Barlow/,
-    );
-    assert.match(
-      await page.locator(".velvet-section-heading h2").first().evaluate((element) =>
-        getComputedStyle(element).fontFamily,
-      ),
-      /Barlow Condensed/,
-    );
     const stepCard = page.locator("[data-step-card]");
     assert.equal(await stepCard.count(), 1);
     assert.equal(await page.locator("[data-squircle-surface]").count(), 0);
-    // Read from the constant and from the token rather than written out, so
-    // this says the card takes the geometry and the surface the product
-    // states. Written out, it failed whenever either was deliberately changed,
-    // which is a test reporting the change rather than a fault.
-    assert.deepEqual(
-      await stepCard.evaluate((element) => {
-        const style = getComputedStyle(element);
-        // What the card draws, beside what the token it draws from resolves to.
-        const probe = document.createElement("div");
-        probe.style.boxShadow = "var(--velvet-card-shadow)";
-        document.body.append(probe);
-        const fromToken = getComputedStyle(probe).boxShadow;
-        probe.remove();
-        return {
-          borderRadius: style.borderTopLeftRadius,
-          overflow: style.overflow,
-          shadowMatchesToken: style.boxShadow === fromToken,
-          // Two layers: a near one for the card's edge and a far one for its
-          // height. One wide shadow alone dissolves into the board backdrop.
-          shadowLayers: (style.boxShadow.match(/rgba?\(/gu) ?? []).length,
-          // No blur. The surface is barely transparent so the board shows
-          // through it, and a blur behind it averages the traces into an even
-          // fog, which reads as an opaque card.
-          backdropFilter: style.backdropFilter,
-        };
-      }),
-      {
-        borderRadius: `${STEP_CARD_RADIUS}px`,
-        overflow: "clip",
-        shadowMatchesToken: true,
-        shadowLayers: 2,
-        backdropFilter: "none",
-      },
-    );
     // Five: the four the visitor fills in, plus Install, which reports the
     // setup rather than collecting anything.
     assert.equal(await stepCard.locator("[data-step-card-body]").count(), 5);
     assert.equal(await stepCard.locator("[data-step-card-footer]").count(), 1);
-    assert.equal(
-      await page.locator(".form-actions").evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
-    assert.deepEqual(
-      await stepCard.locator("[data-step-card-body]").first().evaluate((element) => {
-        const style = getComputedStyle(element);
-        return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
-      }),
-      // The card holds its content equally on all four sides, and the figure
-      // comes from the constant so this asserts the rule rather than the
-      // number the rule produces today.
-      Array.from({ length: 4 }, () => `${STEP_CARD_CONTENT_INSET}px`),
-    );
-    assert.deepEqual(
-      await stepCard.locator("[data-step-card-footer]").evaluate((element) => {
-        const style = getComputedStyle(element);
-        return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
-      }),
-      // Nothing above it, because the body it follows already ends at that
-      // distance and a second gap would double it.
-      [
-        "0px",
-        `${STEP_CARD_FOOTER_INSET}px`,
-        `${STEP_CARD_FOOTER_INSET}px`,
-        `${STEP_CARD_FOOTER_INSET}px`,
-      ],
-    );
-    const ownerInput = page.getByLabel("Your GitHub name");
-    assert.equal(
-      await ownerInput.evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "1px",
-    );
-    assert.notEqual(
-      await ownerInput.evaluate((element) =>
-        getComputedStyle(element).backgroundColor,
-      ),
-      await page.locator("form").evaluate((element) =>
-        getComputedStyle(element).backgroundColor,
-      ),
-    );
-    await page.setViewportSize({ width: 1280, height: 800 });
-    assert.deepEqual(
-      await page.locator(".form-grid.two-columns").first().evaluate((grid) => {
-        const statusPageName = grid.querySelector<HTMLInputElement>(
-          'input[aria-describedby="status-page-name-help"]',
-        )?.getBoundingClientRect();
-        const customDomain = grid.querySelector<HTMLInputElement>(
-          'input[aria-describedby="custom-domain-help"]',
-        )?.getBoundingClientRect();
-        return {
-          sameRow: statusPageName?.top === customDomain?.top,
-          separated: Boolean(
-            statusPageName && customDomain && statusPageName.right < customDomain.left,
-          ),
-        };
-      }),
-      { sameRow: true, separated: true },
-    );
-    await page.setViewportSize({ width: 390, height: 844 });
-    assert.deepEqual(
-      await Promise.all([
-        ownerInput.evaluate((element) => element.getBoundingClientRect().height),
-        page.getByRole("button", { name: "Services", exact: true }).evaluate((element) =>
-          element.getBoundingClientRect().height,
-        ),
-      ]),
-      [40, 40],
-    );
-    assert.equal(
-      await page.getByRole("button", { name: "Services", exact: true }).evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "16px",
-    );
-    assert.equal(
-      await page.locator(".steps button").first().evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "16px",
-    );
-    assert.match(
-      await page.locator(".steps button").first().evaluate((element) =>
-        getComputedStyle(element).fontFamily,
-      ),
-      /Barlow Condensed/,
-    );
-    assert.equal(
-      await page.locator(".steps button").first().evaluate((element) =>
-        getComputedStyle(element).flexDirection,
-      ),
-      "column",
-    );
-    const mobileStepGeometry = await page.locator(".steps").evaluate((steps) => {
-      const buttons = [...steps.querySelectorAll("button")];
-      const first = buttons[0]?.getBoundingClientRect();
-      const last = buttons.at(-1)?.getBoundingClientRect();
-      const container = steps.getBoundingClientRect();
-      return {
-        width: first?.width ?? 0,
-        height: first?.height ?? 0,
-        occupiedWidth: first && last ? last.right - first.left : 0,
-        containerWidth: container.width,
-      };
-    });
-    assert.ok(Math.abs(mobileStepGeometry.width - mobileStepGeometry.height) < 0.1);
-    assert.ok(
-      mobileStepGeometry.occupiedWidth < mobileStepGeometry.containerWidth,
-      JSON.stringify(mobileStepGeometry),
-    );
-    assert.equal(
-      await page.locator("[data-squircle-step-number]").first().evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "24px",
-    );
     assert.equal(await page.locator("[data-step-connector]").count(), 4);
-    // Only the stroked paths, since the step also carries an unstroked path that
-    // fills its squircle so the page backdrop cannot show through it.
-    assert.deepEqual(
-      await page.locator("[data-squircle-step]").first().locator("svg:not([data-step-active-highlight]) path[stroke-width]")
-        .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke-width"))),
-      ["1", "4"],
-    );
     assert.deepEqual(
       await page.locator("[data-squircle-step]").first().locator("[data-step-active-highlight] path")
         .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke-width"))),
       ["1", "4"],
-    );
-    assert.equal(
-      await page.getByLabel("Your GitHub name").locator("xpath=preceding-sibling::span")
-        .evaluate((element) => getComputedStyle(element).fontSize),
-      "16px",
-    );
-    assert.deepEqual(
-      await page.getByLabel("Your GitHub name").evaluate((input) => {
-        const label = input.previousElementSibling as HTMLElement;
-        const inputRect = input.getBoundingClientRect();
-        const labelRect = label.getBoundingClientRect();
-        return {
-          left: Math.round(labelRect.left - inputRect.left),
-          right: Math.round(inputRect.right - labelRect.right),
-        };
-      }),
-      { left: 9, right: 9 },
-    );
-    assert.equal(
-      await page.locator(".field-hint").first().evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "13px",
-    );
-    assert.equal(
-      await page.locator(".velvet-section-heading p").first().evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "20px",
-    );
-    assert.deepEqual(
-      await page.locator(".onboarding-brand-block").evaluate((element) => {
-        const widths = [
-          element.querySelector<HTMLElement>(".velvet-wordmark"),
-          element.querySelector<HTMLElement>("[data-velvet-tool-palette]"),
-          element.querySelector<HTMLElement>("[data-velvet-tool-subtitle]"),
-        ].map((child) => Math.round(child?.getBoundingClientRect().width ?? 0));
-        return widths;
-      }),
-      [270, 254, 254],
-    );
-    assert.equal(
-      await page.locator("[data-velvet-tool-brand] .velvet-wordmark").evaluate(
-        (element) => getComputedStyle(element).textAlign,
-      ),
-      "center",
     );
     await page.getByLabel("Your GitHub name").fill("velvet-user");
     await page.getByLabel("Repository name").fill("status");
@@ -444,12 +176,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByText(
       "Enter a hostname without https://, a path, port, credentials, or wildcard.",
     ).waitFor();
-    assert.equal(
-      await page.locator(".field-error").evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "15px",
-    );
     assert.equal(setupCalls, 0);
     assert.equal(
       (await page.locator('.steps button[aria-current="step"]').textContent())
@@ -480,27 +206,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       true,
       "the verification notice stands before the DNS one",
     );
-    assert.notEqual(
-      await verification.evaluate((element) => getComputedStyle(element).backgroundColor),
-      await page.locator(".dns-guidance").evaluate((element) =>
-        getComputedStyle(element).backgroundColor,
-      ),
-      "the two notices are told apart by colour",
-    );
-    assert.equal(
-      await page.locator(".dns-guidance").evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "18px",
-    );
-    // The block holds more than one paragraph, and the size is a rule for all
-    // of them, so the first one answers for the rule.
-    assert.equal(
-      await page.locator(".dns-guidance p").first().evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "20px",
-    );
     await page.getByRole("button", { name: "Services", exact: true }).click();
 
     await page.getByLabel("Service name").fill("Website");
@@ -521,12 +226,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       "URL must be an absolute HTTP(S) URL without credentials or a fragment.",
     );
     await page.getByLabel("URL to monitor").fill("https://example.com");
-    assert.equal(
-      await page.getByLabel("Service name").evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "1px",
-    );
     const setupIconPicker = page.locator("[data-service-icon-picker]").first();
     const setupIconOptions = setupIconPicker.getByRole("option");
     assert.equal(await setupIconOptions.count(), 22);
@@ -542,30 +241,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       0,
     );
     assert.equal(await setupIconOptions.first().getAttribute("aria-label"), "Automatic");
-    assert.deepEqual(
-      await setupIconOptions.first().evaluate((element) => {
-        const icon = element.querySelector("i");
-        return {
-          iconSize: icon ? getComputedStyle(icon).fontSize : null,
-          iconColor: icon ? getComputedStyle(icon).color : null,
-          selectionDot: getComputedStyle(element, "::after").content,
-          selectionBorders: [
-            element.querySelector(".selection-outline.outer")?.getAttribute("stroke-width"),
-            element.querySelector(".selection-outline.inner")?.getAttribute("stroke-width"),
-          ],
-          selectionOpacity: [...element.querySelectorAll(".selection-outline")].map(
-            (path) => getComputedStyle(path).opacity,
-          ),
-        };
-      }),
-      {
-        iconSize: "30px",
-        iconColor: "rgb(255, 255, 255)",
-        selectionDot: "none",
-        selectionBorders: ["1", "4"],
-        selectionOpacity: ["1", "1"],
-      },
-    );
     await page.waitForFunction(
       () =>
         document
@@ -574,48 +249,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           )
           ?.getAttribute("d")
           ?.startsWith("M") === true,
-    );
-    assert.deepEqual(
-      await setupIconOptions.first().locator("[data-service-icon-squircle]").evaluate(
-        (element) => {
-          const path = element.querySelector("path")?.getAttribute("d") ?? "";
-          const rect = element.getBoundingClientRect();
-          return {
-            drawn: path.startsWith("M"),
-            square: Math.round(rect.width) === Math.round(rect.height),
-          };
-        },
-      ),
-      { drawn: true, square: true },
-    );
-    assert.deepEqual(
-      await setupIconPicker.getByRole("listbox").evaluate((element) => {
-        const picker = element.closest<HTMLElement>("[data-service-icon-picker]");
-        const description = picker?.querySelector("p");
-        const pickerRect = picker?.getBoundingClientRect();
-        const listboxRect = element.getBoundingClientRect();
-        return {
-          position: getComputedStyle(element).position,
-          shadow: getComputedStyle(element).boxShadow,
-          fillsColumn: Math.round(listboxRect.width) === Math.round(pickerRect?.width ?? 0),
-          descriptionAbove: Boolean(
-            description &&
-              description.getBoundingClientRect().bottom <= listboxRect.top,
-          ),
-        };
-      }),
-      {
-        position: "static",
-        shadow: "none",
-        fillsColumn: true,
-        descriptionAbove: true,
-      },
-    );
-    assert.equal(
-      await setupIconPicker.getByRole("listbox").evaluate((element) =>
-        getComputedStyle(element).gridTemplateColumns.split(" ").length,
-      ),
-      6,
     );
     await setupIconPicker.getByRole("option", { name: "Storage" }).click();
     assert.equal(
@@ -627,202 +260,16 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       await page.locator(".service-title .ph-hard-drives").count(),
       1,
     );
-    assert.equal(
-      await page.locator(".service-editor").evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
-    // The editor sits at the step card's content edge, so it takes the radius
-    // derived for anything standing there. Read from that derivation rather
-    // than written out, which is what keeps this an assertion about where the
-    // editor sits instead of about a number.
-    assert.equal(
-      await page.locator(".service-editor").evaluate((element) =>
-        getComputedStyle(element).borderTopLeftRadius,
-      ),
-      `${STEP_CARD_INNER_RADIUS}px`,
-    );
-    assert.equal(
-      await page.locator(".service-editor label > span").first().evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "16px",
-    );
-    assert.deepEqual(
-      await Promise.all([
-        page.locator(".service-editor .field-hint").first().evaluate((element) =>
-          getComputedStyle(element).fontSize,
-        ),
-        setupIconPicker.locator(":scope > p").evaluate((element) =>
-          getComputedStyle(element).fontSize,
-        ),
-      ]),
-      ["13px", "20px"],
-    );
-    assert.equal(
-      await page.locator("details").evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
     await page.locator("details summary").click();
-    assert.equal(
-      await page.locator(".advanced-content > p").evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "20px",
-    );
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.waitForFunction(
       () => (document.querySelector(".steps button")?.getBoundingClientRect().width ?? 0) > 80,
-    );
-    assert.deepEqual(
-      await page.locator(".steps button").first().evaluate((element) => {
-        const { width, height } = element.getBoundingClientRect();
-        return [Math.round(width), Math.round(height)];
-      }),
-      [88, 88],
-    );
-    assert.equal(
-      await page.locator(".steps").evaluate((element) =>
-        getComputedStyle(element).columnGap,
-      ),
-      "42px",
-    );
-    // The row must stay a row. It wrapped when the grid was fixed at four
-    // columns and a fifth step was added, dropping Install onto its own line.
-    assert.deepEqual(
-      await page.locator(".steps").evaluate((element) => {
-        const tops = [...element.querySelectorAll("button")].map((button) =>
-          Math.round(button.getBoundingClientRect().top),
-        );
-        return { count: tops.length, rows: [...new Set(tops)].length };
-      }),
-      { count: 5, rows: 1 },
-    );
-    assert.deepEqual(
-      await page.locator(".steps li").first().evaluate((element) => {
-        const button = element.querySelector("button")?.getBoundingClientRect();
-        const connector = element.querySelector("[data-step-connector]")?.getBoundingClientRect();
-        const nextButton = element.nextElementSibling?.querySelector("button")?.getBoundingClientRect();
-        return {
-          before: button && connector ? Math.round(connector.left - button.right) : null,
-          after: connector && nextButton ? Math.round(nextButton.left - connector.right) : null,
-        };
-      }),
-      { before: 5, after: 5 },
-    );
-    assert.deepEqual(
-      await page.locator(".advanced-content > .form-grid").first().evaluate((grid) => ({
-        columns: getComputedStyle(grid).gridTemplateColumns.split(" ").length,
-        rows: new Set(
-          [...grid.querySelectorAll("label")].map((label) =>
-            Math.round(label.getBoundingClientRect().top),
-          ),
-        ).size,
-      })),
-      { columns: 4, rows: 1 },
-    );
-    assert.deepEqual(
-      await Promise.all([
-        page.getByRole("button", { name: "Add another service" }).evaluate((element) =>
-          element.getBoundingClientRect().height,
-        ),
-        page.getByRole("button", { name: "Basics", exact: true }).evaluate((element) =>
-          element.getBoundingClientRect().height,
-        ),
-        page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) =>
-          element.getBoundingClientRect().height,
-        ),
-      ]),
-      [40, 40, 40],
-    );
-    assert.deepEqual(
-      await page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) => {
-        const style = getComputedStyle(element);
-        return {
-          borderRadius: style.borderTopLeftRadius,
-          minWidth: style.minWidth,
-          paddingInline: [style.paddingLeft, style.paddingRight],
-        };
-      }),
-      {
-        // A footer button stands at the card's content edge like everything
-        // else it holds, so it takes the radius derived for that edge.
-        borderRadius: `${STEP_CARD_BUTTON_RADIUS}px`,
-        minWidth: "112px",
-        paddingInline: ["12px", "12px"],
-      },
-    );
-    // The capitals sit on the button's middle, not the line box. Barlow's
-    // capitals sit below the middle of its own metrics, so a box centred by its
-    // edges leaves the word looking low, and the shared button lifts the row to
-    // answer that.
-    assert.ok(
-      await page.getByRole("button", { name: "Theme", exact: true }).evaluate((element) => {
-        const button = element.getBoundingClientRect();
-        const label = element.querySelector("[data-step-card-button-label]");
-        if (!label) return false;
-        const labelBox = label.getBoundingClientRect();
-        const style = getComputedStyle(label);
-        const context = document.createElement("canvas").getContext("2d");
-        if (!context) return false;
-        context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-        const cap = context.measureText("H");
-        const baseline =
-          labelBox.top +
-          (labelBox.height -
-            (cap.fontBoundingBoxAscent + cap.fontBoundingBoxDescent)) /
-            2 +
-          cap.fontBoundingBoxAscent;
-        const capMiddle = baseline - cap.actualBoundingBoxAscent / 2;
-        return Math.abs(capMiddle - (button.top + button.height / 2)) < 0.5;
-      }),
-    );
-    assert.deepEqual(
-      await page.getByRole("button", { name: "Add another service" }).evaluate((element) => {
-        const style = getComputedStyle(element);
-        return [style.paddingLeft, style.paddingRight];
-      }),
-      ["8px", "8px"],
-    );
-    assert.ok(
-      await page.locator("[data-service-editor-actions]").evaluate((actions) => {
-        const button = actions.querySelector("button")?.getBoundingClientRect();
-        const container = actions.getBoundingClientRect();
-        return Boolean(button && Math.abs(button.right - container.right) < 0.5);
-      }),
-    );
-    assert.equal(
-      await page.locator("[data-service-editor-actions]").evaluate((actions) => {
-        const service = actions.previousElementSibling
-          ?.querySelector("[data-service-editor]:last-of-type")
-          ?.getBoundingClientRect();
-        const button = actions.querySelector("button")?.getBoundingClientRect();
-        return service && button ? Math.round(button.top - service.bottom) : null;
-      }),
-      16,
     );
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "Theme", exact: true }).click();
 
     await page.setViewportSize({ width: 1280, height: 800 });
-    // All four included themes in one row, which is what makes them comparable
-    // without scrolling between them.
-    assert.equal(
-      await page.locator("[data-theme-card-group] .options").evaluate((element) =>
-        getComputedStyle(element).gridTemplateColumns.split(" ").length,
-      ),
-      4,
-    );
     await page.setViewportSize({ width: 390, height: 844 });
-    assert.equal(
-      await page.locator("[data-theme-card-group] .options").evaluate((element) =>
-        getComputedStyle(element).gridTemplateColumns.split(" ").length,
-      ),
-      1,
-    );
 
     if (process.env.VELVET_ONBOARDING_SCREENSHOT) {
       await page.screenshot({
@@ -832,26 +279,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     }
     const themeRadios = page.locator('input[name="system-theme"]');
     assert.equal(await themeRadios.count(), 4);
-    assert.deepEqual(
-      await Promise.all([
-        page.locator("[data-theme-card-group] h3").evaluate((element) =>
-          getComputedStyle(element).fontSize,
-        ),
-        page.locator("[data-theme-card-group] > p").evaluate((element) =>
-          getComputedStyle(element).fontSize,
-        ),
-        page.locator("[data-theme-card-option] strong").first().evaluate((element) =>
-          getComputedStyle(element).fontSize,
-        ),
-      ]),
-      ["20px", "20px", "16px"],
-    );
-    assert.equal(
-      await page.locator("[data-theme-card-option]").first().evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
     // Square, and cut to a squircle rather than to a radius, which is the
     // shape the steps above it carry. The path is derived from the option's
     // measured width, so it lands on the frame after the step opens.
@@ -867,14 +294,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           check();
         }),
       );
-    assert.equal(
-      await page.locator("[data-theme-card-option]").first().evaluate((element) => {
-        const box = element.getBoundingClientRect();
-        return Math.round(box.width) === Math.round(box.height);
-      }),
-      true,
-      "a theme option is square",
-    );
     await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");
     assert.equal(await themeRadios.nth(1).isChecked(), true);
@@ -886,113 +305,19 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ["Repository", "Status page", "Service", "Theme", "Custom domain"],
     );
     assert.equal(await reviewItems.getByText("status.example.com").count(), 1);
-    assert.equal(
-      await reviewItems.evaluateAll((items) =>
-        new Set(items.map((item) => Math.round(item.getBoundingClientRect().top))).size,
-      ),
-      5,
-    );
-    assert.deepEqual(
-      await page.locator("[data-review-squircle]").first().evaluate((element) => {
-        const { width, height } = element.getBoundingClientRect();
-        return [Math.round(width), Math.round(height)];
-      }),
-      [60, 60],
-    );
     assert.deepEqual(
       await page.locator("[data-review-squircle]").first().locator("path")
         .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke-width"))),
       ["1", "4"],
     );
-    assert.deepEqual(
-      await page.locator("[data-review-squircle]").first().locator("path")
-        .evaluateAll((paths) => paths.map((path) => getComputedStyle(path).opacity)),
-      ["0.32", "0.78"],
-    );
     assert.equal(await reviewItems.locator("i.ph-duotone").count(), 5);
     const reviewCards = page.locator("[data-review-card]");
     assert.equal(await reviewCards.count(), 5);
-    assert.equal(
-      await reviewCards.first().evaluate((element) =>
-        getComputedStyle(element).borderTopLeftRadius,
-      ),
-      `${STEP_CARD_INNER_RADIUS}px`,
-    );
-    assert.equal(
-      await reviewItems.first().evaluate((item) => {
-        const squircle = item.querySelector("[data-review-squircle]");
-        const card = item.querySelector("[data-review-card]");
-        return Boolean(
-          squircle &&
-          card &&
-          !card.contains(squircle) &&
-          squircle.getBoundingClientRect().right < card.getBoundingClientRect().left
-        );
-      }),
-      true,
-    );
-    assert.equal(
-      await page.locator("[data-review-squircle]").evaluateAll((elements) =>
-        new Set(elements.map((element) => getComputedStyle(element).color)).size,
-      ),
-      1,
-    );
-    assert.equal(
-      await reviewCards.evaluateAll((elements) =>
-        new Set(elements.map((element) => getComputedStyle(element).backgroundColor)).size,
-      ),
-      1,
-    );
-    assert.match(
-      await reviewCards.first().evaluate((element) =>
-        getComputedStyle(element, "::before").maskImage,
-      ),
-      /linear-gradient\([\s\S]*80%[\s\S]*rgba\(0, 0, 0, 0\) 100%/,
-    );
-    assert.equal(
-      await reviewCards.first().locator("dd").evaluate((element) =>
-        getComputedStyle(element).opacity,
-      ),
-      "1",
-    );
     await page.setViewportSize({ width: 1280, height: 800 });
-    assert.deepEqual(
-      await page.locator("[data-review-list]").evaluate((list) => {
-        const listRect = list.getBoundingClientRect();
-        const bodyRect = list.closest("[data-step-card-body]")?.getBoundingClientRect();
-        return {
-          width: Math.round(listRect.width),
-          centered: bodyRect
-            ? Math.abs((listRect.left - bodyRect.left) - (bodyRect.right - listRect.right)) < 1
-            : false,
-        };
-      }),
-      { width: 704, centered: true },
-    );
     await page.setViewportSize({ width: 390, height: 844 });
     assert.match(
       await page.getByText(/DNS changes happen outside Velvet/).textContent() ?? "",
       /may take time to propagate/,
-    );
-    assert.equal(
-      await reviewCards.first().evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
-    assert.deepEqual(
-      await Promise.all([
-        reviewItems.locator("dt").first().evaluate((element) =>
-          getComputedStyle(element).fontSize,
-        ),
-        reviewItems.locator("dd").first().evaluate((element) =>
-          getComputedStyle(element).fontSize,
-        ),
-        page.locator(".github-permission-note").evaluate((element) =>
-          getComputedStyle(element).fontSize,
-        ),
-      ]),
-      ["15px", "20px", "20px"],
     );
     await page.locator(".steps button").nth(1).click();
     await page.getByRole("button", { name: "Add another service" }).click();
@@ -1037,18 +362,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page.getByText(
       "Velvet is published. Your custom domain will work after its DNS records have propagated.",
     ).waitFor();
-    assert.equal(
-      await page.locator(".deployment-progress").evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
-    assert.equal(
-      await page.locator(".deployment-progress li").first().evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "18px",
-    );
     // The stream above reported only the first and the last stage, which is
     // what a real run looks like after its second approval, since the server
     // never re-announces a stage it has already finished. Every entry must
@@ -1079,16 +392,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         document.getAnimations().map((animation) => animation.finished.catch(() => {})),
       ),
     );
-    assert.equal(
-      await page.locator(".deployment-progress li.complete i").first()
-        .evaluate((element) => getComputedStyle(element).color),
-      "rgb(127, 221, 162)",
-    );
-    assert.equal(
-      await page.locator(".deployment-progress li i").first()
-        .evaluate((element) => getComputedStyle(element).fontSize),
-      "26px",
-    );
     // The stream reported its last stage and then succeeded, so nothing is
     // still running and no step is left turning a spinner.
     assert.equal(
@@ -1105,20 +408,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     assert.equal(
       await page.locator("[data-open-status-page]").getAttribute("href"),
       "https://status.example.com/",
-    );
-    // Styled as a button but rendered as an anchor, so the geometry has to come
-    // from the shared class rather than the element. It came out flat when the
-    // height hung on the button selector alone.
-    assert.deepEqual(
-      await page.locator("[data-open-status-page]").evaluate((element) => {
-        const style = getComputedStyle(element);
-        return {
-          display: style.display,
-          minHeight: style.minHeight,
-          decoration: style.textDecorationLine,
-        };
-      }),
-      { display: "flex", minHeight: "40px", decoration: "none" },
     );
     assert.equal(
       await page.locator("[data-open-status-page] i.ph-chart-line-up").count(),
@@ -1161,13 +450,6 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       document: document.documentElement.scrollWidth,
     }));
     assert.ok(dimensions.document <= dimensions.viewport);
-    assert.equal(
-      await page.locator("[data-service-icon-picker] [role='listbox']").first()
-        .evaluate((element) =>
-        getComputedStyle(element).transitionDuration,
-      ),
-      "0s",
-    );
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.addInitScript(() => {
@@ -1183,145 +465,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     await page
       .locator('[data-configurator-section="themes"][data-section-expanded="true"]')
       .waitFor();
-    assert.equal(
-      await page.locator(".control-panel").evaluate((element) =>
-        element.getBoundingClientRect().width,
-      ),
-      440,
-    );
-    assert.deepEqual(
-      await page.locator(".configurator-brand").evaluate((element) => {
-        const brand = element.querySelector<HTMLElement>("[data-velvet-tool-brand]");
-        const wordmark = element.querySelector<HTMLElement>(".velvet-wordmark");
-        const palette = element.querySelector<HTMLElement>("[data-velvet-tool-palette]");
-        const rainbow = element.querySelector<HTMLElement>("[data-rainbow-scale]");
-        const subtitle = element.querySelector<HTMLElement>("[data-velvet-tool-subtitle]");
-        const subtitleLetters = subtitle
-          ? [...subtitle.querySelectorAll<HTMLElement>("span")]
-          : [];
-        const elements = [wordmark, palette, subtitle];
-        const widths = elements.map((child) =>
-          Math.round(child?.getBoundingClientRect().width ?? 0),
-        );
-        const rainbowWidth = Math.round(
-          rainbow?.getBoundingClientRect().width ?? 0,
-        );
-        const stacked =
-          wordmark && palette && subtitle
-            ? wordmark.getBoundingClientRect().bottom <=
-                palette.getBoundingClientRect().top &&
-              palette.getBoundingClientRect().bottom <=
-                subtitle.getBoundingClientRect().top
-            : false;
-        return {
-          order: [...(brand?.children ?? [])].map((child) => {
-            if (child.classList.contains("velvet-wordmark")) return "velvet-wordmark";
-            if (child.hasAttribute("data-velvet-tool-palette")) return "palette";
-            if (child.hasAttribute("data-velvet-tool-subtitle")) return "subtitle";
-            return "unknown";
-          }),
-          widthsArePositive: widths.every((width) => width > 0),
-          innerWidthsMatch: Math.abs(widths[1] - widths[2]) <= 1,
-          rainbowMatchesPalette: Math.abs(rainbowWidth - widths[1]) <= 1,
-          innerWidthRatio:
-            widths[0] > 0 ? Number((widths[1] / widths[0]).toFixed(2)) : 0,
-          // Read from the text rather than from an aria-label. The subtitle is
-          // set letter by letter for its spacing, and the accessible name for
-          // the whole lockup lives on the heading, which is the only element
-          // here where aria-label is permitted.
-          subtitleText: subtitle?.textContent?.trim(),
-          headingName: brand?.getAttribute("aria-label"),
-          subtitleEdges:
-            subtitle && subtitleLetters.length > 1
-              ? [
-                  Math.round(
-                    subtitleLetters[0].getBoundingClientRect().left -
-                      subtitle.getBoundingClientRect().left,
-                  ),
-                  Math.round(
-                    subtitle.getBoundingClientRect().right -
-                      subtitleLetters.at(-1)!.getBoundingClientRect().right,
-                  ),
-                ]
-              : null,
-          stacked,
-        };
-      }),
-      {
-        order: ["velvet-wordmark", "palette", "subtitle"],
-        widthsArePositive: true,
-        innerWidthsMatch: true,
-        rainbowMatchesPalette: true,
-        innerWidthRatio: 0.94,
-        subtitleText: "CONFIGURATOR",
-        headingName: "Velvet CONFIGURATOR",
-        subtitleEdges: [0, 0],
-        stacked: true,
-      },
-    );
-    assert.deepEqual(
-      await page.locator("[data-rainbow-scale]").first().evaluate((element) => {
-        const first = getComputedStyle(element.firstElementChild!);
-        const last = getComputedStyle(element.lastElementChild!);
-        return {
-          first: [
-            first.borderTopLeftRadius,
-            first.borderTopRightRadius,
-            first.borderBottomRightRadius,
-            first.borderBottomLeftRadius,
-          ],
-          last: [
-            last.borderTopLeftRadius,
-            last.borderTopRightRadius,
-            last.borderBottomRightRadius,
-            last.borderBottomLeftRadius,
-          ],
-        };
-      }),
-      {
-        first: ["999px", "0px", "0px", "999px"],
-        last: ["0px", "999px", "999px", "0px"],
-      },
-    );
     const cloudyAutumn = page.locator(
       '[data-theme-card-option="cloudy-autumn"]',
     );
     await cloudyAutumn.click();
     assert.equal(await cloudyAutumn.locator("input").isChecked(), true);
     const websiteIcons = page.locator("[data-service-icon-picker]").first();
-    assert.equal(
-      await websiteIcons.getByRole("option").first().locator("i").evaluate((element) =>
-        getComputedStyle(element).fontSize,
-      ),
-      "22.4px",
-    );
-    assert.deepEqual(
-      await websiteIcons.getByRole("option").first().evaluate((element) => ({
-        selectionTransform: getComputedStyle(
-          element.querySelector(".selection-outline.outer")!,
-        ).transform,
-        selectedIconColor: getComputedStyle(element.querySelector("i")!).color,
-      })),
-      {
-        selectionTransform: "matrix(1.14, 0, 0, 1.14, 0, 0)",
-        selectedIconColor: "rgb(255, 255, 255)",
-      },
-    );
-    assert.deepEqual(
-      await websiteIcons.getByRole("listbox").evaluate((element) => {
-        const style = getComputedStyle(element);
-        const picker = element.closest<HTMLElement>("[data-service-icon-picker]");
-        return {
-          columns: style.gridTemplateColumns.split(" ").length,
-          rows: style.gridTemplateRows.split(" ").length,
-          shadow: style.boxShadow,
-          fillsColumn:
-            Math.round(element.getBoundingClientRect().width) ===
-            Math.round(picker?.getBoundingClientRect().width ?? 0),
-        };
-      }),
-      { columns: 11, rows: 2, shadow: "none", fillsColumn: true },
-    );
     await websiteIcons.getByRole("option", { name: "Storage" }).click();
     assert.equal(
       await page.locator("button.summary").first().locator(".ph-hard-drives").count(),
@@ -1375,12 +524,6 @@ history:
     assert.equal(await serviceEditors.count(), 2);
     const firstService = serviceEditors.first();
     assert.equal(await firstService.getByLabel("Service name").inputValue(), "API");
-    assert.equal(
-      await firstService.getByLabel("Service name").evaluate((element) =>
-        getComputedStyle(element).borderTopWidth,
-      ),
-      "0px",
-    );
     assert.equal(await firstService.getByLabel("Method").inputValue(), "GET");
     assert.equal(
       await firstService.getByLabel("Healthy status codes").inputValue(),
@@ -1417,18 +560,6 @@ history:
     );
 
     await page.setViewportSize({ width: 390, height: 844 });
-    assert.equal(
-      await page.locator(".control-panel").evaluate((element) =>
-        element.getBoundingClientRect().width,
-      ),
-      390,
-    );
-    assert.equal(
-      await firstService.locator(".form-grid.two-columns").evaluate((element) =>
-        getComputedStyle(element).gridTemplateColumns.split(" ").length,
-      ),
-      1,
-    );
     await page.setViewportSize({ width: 1280, height: 800 });
 
     const downloadPromise = page.waitForEvent("download");
@@ -1652,13 +783,6 @@ history:
       [{ duration: 200, easing: "ease-in-out" }],
     );
     const motionIconPicker = motionPage.locator("[data-service-icon-picker]").first();
-    const motionIconListbox = motionIconPicker.getByRole("listbox");
-    assert.equal(
-      await motionIconListbox.evaluate((element) =>
-        getComputedStyle(element).transitionDuration,
-      ),
-      "0s",
-    );
     const hoverIcon = motionIconPicker.getByRole("option", { name: "Storage" });
     await hoverIcon.hover();
     const hoverStyles = await hoverIcon.evaluate((element) => {

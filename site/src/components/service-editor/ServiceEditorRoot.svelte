@@ -373,7 +373,7 @@
     padding: 0 0.75rem;
     /* A single line centred in the control reads low for the same reason a
        button's word does. */
-    padding-block: 0 var(--velvet-cap-shift, 0.078em);
+    padding-block: 0 var(--velvet-cap-shift, 0em);
     border: 0;
     border-radius: var(--service-editor-control-radius, 0.55rem);
     outline: none;

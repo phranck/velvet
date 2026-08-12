@@ -182,11 +182,27 @@
   code {
     /* The token already carries its own fallbacks, so nothing is repeated
        after it. The fallback here is for a surface that defines no token. */
-    font-family: var(--font-mono);
-    font-size: 0.875em;
+    font-family: var(--velvet-font-figure, var(--font-mono));
+    font-size: var(--velvet-text-code-inline, 1.375rem);
+    font-weight: 600;
     padding: var(--velvet-code-inset, 0.125em 0.375em);
     border-radius: var(--velvet-code-radius, 0.25rem);
     background: var(--velvet-code-tint, color-mix(in srgb, currentColor 10%, transparent));
+    /* A package name too long for its column breaks across two lines, and the
+       tinted field has to break with it. Left at `slice`, the field is drawn
+       once across both lines: the first gets the left rounding and the left
+       padding, the last gets the right, and where the break falls there is
+       neither, so the word reads as torn rather than wrapped. `clone` draws the
+       field again on each line, whole. */
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    /* `anywhere` rather than the `break-word` the cells already state. The two
+       break a long word the same way, but only `anywhere` counts towards the
+       narrowest a column will agree to be, and a table is laid out from those
+       figures. With `break-word` a name held its full length against the
+       column: measured on the attributions table, it asked for 1269 pixels in
+       the 1200 it had and the whole table scrolled sideways. */
+    overflow-wrap: anywhere;
   }
 
   /* The scroll lives on this wrapper rather than the table, because a table is
@@ -223,8 +239,26 @@
     padding: 0.5rem 0.75rem;
     vertical-align: top;
   }
+  /* The first column names the thing the rest of the row describes: a
+     configuration key, a group of them, a component, a workflow. A name broken
+     across two lines is read as two names, and a key especially so, since a
+     reader has to copy it exactly. It stays on one line, and where that makes
+     the table wider than the card, the table scrolls inside its own wrapper,
+     which is what the wrapper is for. */
+  th:first-child,
+  td:first-child {
+    white-space: nowrap;
+  }
+  /* The label face, as everywhere else on the site that names a thing rather
+     than saying it. A column heading is not prose, and setting it apart by
+     weight alone left it reading as the first row of the table. */
   th {
-    font-weight: 650;
+    color: var(--velvet-accent);
+    font-family: var(--velvet-font-label);
+    font-size: var(--velvet-text-label-small, 0.6875rem);
+    font-weight: 700;
+    letter-spacing: var(--velvet-tracking-eyebrow, 0.16em);
+    text-transform: uppercase;
     white-space: nowrap;
   }
   /* Banded rather than ruled. A rule between every row draws as many lines as

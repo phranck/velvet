@@ -51,16 +51,6 @@
   h2 {
     margin-inline: var(--velvet-card-text-inset);
   }
-  h1 {
-    font-size: var(--velvet-text-title);
-    line-height: 1.1;
-    margin-block: 0 1rem;
-  }
-  .lede {
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-copy);
-    margin-block: 0 2.5rem;
-  }
   h2 {
     margin-block: 3.5rem 0.75rem;
     scroll-margin-top: 5.5rem;
@@ -73,12 +63,12 @@
   h2:first-child {
     margin-block-start: 0;
   }
-  /* The first column names the component, and a name broken across two lines
-     is read as two entries. It runs on one line and the table scrolls inside
-     its own frame instead, which it already does. */
-  :global(td:first-child),
-  :global(th:first-child) {
+  /* The second column carries nothing but a version number or the date an asset
+     was retrieved, and both are read as one value. A date breaks at its hyphens
+     given the chance, and the column is narrow enough to take it: measured at
+     95px, all three dates stood as `2026-` over `08-01`. */
+  :global(td:nth-child(2)),
+  :global(th:nth-child(2)) {
     white-space: nowrap;
   }
-
 </style>

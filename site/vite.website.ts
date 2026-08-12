@@ -44,15 +44,26 @@ export default defineConfig({
       root: import.meta.dirname,
       component: "/src/website/Website.svelte",
       mountId: "website",
-      // The faces the page is set in. All four are preloaded now that they are
-      // declared `font-display: optional`: under that, a file which arrives
-      // late is not used at all for this load, so preloading decides whether
-      // the real face is seen rather than only how soon.
+      // Every face the page is set in, because they are declared
+      // `font-display: optional`: under that a file which arrives late is not
+      // used at all for this load, so preloading decides whether the real face
+      // is seen rather than only how soon. A face left out here is a face the
+      // page never renders, however far down it would have appeared.
+      // Workbench and Doto are not named here and do not need to be: both are
+      // under Vite's 4kB inline limit, so they arrive inside the stylesheet as
+      // data URIs rather than as files. That is a stronger guarantee than a
+      // preload, since a face carried by the render-blocking stylesheet cannot
+      // miss the window `font-display: optional` gives it.
       preloadFonts: [
+        /* The icon face, which blocks like the rest and must therefore be on
+           its way with them. Left out, it arrived after the first paint and
+           moved the key it sits on: measured on a cold load of the built site
+           as the one remaining layout shift, at 0.0068. */
+        /^phosphor-duotone-subset-.*\.woff2$/,
         /^plaster-latin-400-normal-.*\.woff2$/,
-        /^barlow-latin-400-normal-.*\.woff2$/,
-        /^barlow-latin-600-normal-.*\.woff2$/,
-        /^barlow-condensed-latin-600-normal-.*\.woff2$/,
+        /^datatype-latin-wght-normal-.*\.woff2$/,
+        /^space-mono-latin-700-normal-.*\.woff2$/,
+        /^audiowide-latin-400-normal-.*\.woff2$/,
       ],
     }),
   ],

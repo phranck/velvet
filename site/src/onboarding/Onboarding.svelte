@@ -1372,7 +1372,7 @@
     /* A single line centred in the control reads low for the same reason a
        button's word does. A textarea stacks from the top and takes its own
        padding below. */
-    padding-block: 0 var(--velvet-cap-shift, 0.078em);
+    padding-block: 0 var(--velvet-cap-shift, 0em);
     border: var(--setup-input-border);
     border-radius: var(--setup-control-radius);
     outline: none;

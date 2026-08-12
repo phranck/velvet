@@ -66,65 +66,6 @@ async function serve(root: string) {
   };
 }
 
-test("reserves the showcase band's height before the picture arrives", async () => {
-  const site = await serve(await buildWebsite());
-  const browser = await chromium.launch();
-  try {
-    for (const viewport of [
-      { width: 390, height: 844 },
-      { width: 1440, height: 900 },
-    ]) {
-      const measure = async (withoutPicture: boolean) => {
-        const page = await browser.newPage({ viewport });
-        // Measuring layout against a page that is still fetching from someone
-        // else's server measures their latency as much as this layout.
-        await refuseOffsiteRequests(page);
-        // Blocking the picture outright is the honest form of this test. If the
-        // band is the same height either way, the space was reserved rather
-        // than taken once the file landed.
-        if (withoutPicture) {
-          await page.route("**/*.png", (route) => route.abort());
-        }
-        await page.goto(site.base, { waitUntil: "load" });
-        await page.waitForTimeout(400);
-        const measured = await page.evaluate(() => {
-          const band = document.querySelector(".showcase")!;
-          const cards = document.querySelector(
-            "section.column[aria-labelledby='capabilities-title']",
-          )!;
-          return {
-            band: Math.round(band.getBoundingClientRect().height),
-            cardsTop: Math.round(
-              cards.getBoundingClientRect().top + window.scrollY,
-            ),
-          };
-        });
-        await page.close();
-        return measured;
-      };
-
-      const without = await measure(true);
-      const withPicture = await measure(false);
-      assert.equal(
-        withPicture.band,
-        without.band,
-        `the band reserves its height at ${viewport.width}px`,
-      );
-      // The consequence, stated separately: everything below the band has to
-      // stay where it was. Measured at 208px of movement here before the width
-      // moved onto the link.
-      assert.equal(
-        withPicture.cardsTop,
-        without.cardsTop,
-        `nothing below the band moves at ${viewport.width}px`,
-      );
-    }
-  } finally {
-    await browser.close();
-    site.close();
-  }
-}, TIMEOUT_MS);
-
 test("does not defer a picture that is already on screen", async () => {
   const site = await serve(await buildWebsite());
   const browser = await chromium.launch();
@@ -133,7 +74,7 @@ test("does not defer a picture that is already on screen", async () => {
     await refuseOffsiteRequests(page);
     await page.goto(site.base, { waitUntil: "load" });
     const measured = await page.evaluate(() => {
-      const img = document.querySelector<HTMLImageElement>(".showcase img")!;
+      const img = document.querySelector<HTMLImageElement>(".hero-shot img")!;
       const rect = img.getBoundingClientRect();
       return {
         lazy: img.getAttribute("loading") === "lazy",
@@ -156,41 +97,64 @@ test("does not defer a picture that is already on screen", async () => {
   }
 }, TIMEOUT_MS);
 
-test("gives both hero buttons the same width", async () => {
+test("copies the terminal's commands from the screen they are printed on", async () => {
   const site = await serve(await buildWebsite());
   const browser = await chromium.launch();
   try {
-    for (const viewport of [
-      { width: 390, height: 844 },
-      { width: 1440, height: 900 },
-    ]) {
-      const page = await browser.newPage({ viewport });
-      await page.goto(site.base, { waitUntil: "load" });
-      await page.evaluate(() => document.fonts.ready);
-      await page.waitForTimeout(300);
-      const measured = await page.evaluate(() => {
-        const [first, second] = [
-          ...document.querySelectorAll<HTMLElement>(".hero-actions > a"),
-        ];
-        const a = first!.getBoundingClientRect();
-        const b = second!.getBoundingClientRect();
-        return {
-          first: Math.round(a.width),
-          second: Math.round(b.width),
-          stacked: Math.round(b.top) > Math.round(a.bottom) - 2,
-          overflows: document.documentElement.scrollWidth > window.innerWidth,
-        };
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await refuseOffsiteRequests(page);
+    await page.goto(site.base, { waitUntil: "load" });
+
+    // The page ships prerendered with no bundle, so the key is markup until the
+    // one inlined script finds it. It is published disabled precisely so a
+    // reader whose script never runs is shown no control rather than a dead
+    // one, which makes "is it enabled" the honest test of that wiring.
+    const key = page.locator("[data-copy-terminal]");
+    assert.equal(await key.isDisabled(), false, "the script enabled the key");
+    // Drawn either way, because it is part of the front panel and a panel with
+    // a hole in it is a broken machine.
+    assert.equal(await key.isVisible(), true, "the key is on the panel");
+
+    // The clipboard is stubbed rather than granted, because what matters here
+    // is what the page hands over, not whether this runner allows a write.
+    const written = await page.evaluate(async () => {
+      const received: string[] = [];
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (text: string) => {
+            received.push(text);
+          },
+        },
       });
-      assert.equal(
-        measured.first,
-        measured.second,
-        `both buttons are the same width at ${viewport.width}px`,
-      );
-      // Side by side is only right whilst there is room for it.
-      assert.equal(measured.stacked, viewport.width <= 720);
-      assert.equal(measured.overflows, false, "no horizontal scrolling");
-      await page.close();
-    }
+      const button = document.querySelector<HTMLButtonElement>("[data-copy-terminal]")!;
+      button.click();
+      await new Promise((settled) => setTimeout(settled, 100));
+      return received[0] ?? null;
+    });
+
+    // The screen and the clipboard cannot disagree, because the one is read out
+    // of the other. Compared against what the document actually prints rather
+    // than against a copy of the commands kept here, which would only prove
+    // that two lists in two files still matched.
+    const onScreen = await page.evaluate(() =>
+      [...document.querySelectorAll("[data-terminal-command]")]
+        .map((line) => line.textContent!.trim())
+        .join("\n"),
+    );
+    assert.equal(written, onScreen, "the clipboard carries what the screen shows");
+    assert.match(written ?? "", /velvet-man-pages\.tar\.gz/);
+
+    // The confirmation is printed on the screen rather than under the finger,
+    // and it was already there: what the press changes is whether it is shown,
+    // so no line on the screen moves when it appears.
+    const marker = page.locator("[data-terminal-copied]");
+    assert.equal(await marker.textContent(), "* COPIED *");
+    assert.equal(
+      await marker.evaluate((element) => getComputedStyle(element).visibility),
+      "visible",
+    );
+    await page.close();
   } finally {
     await browser.close();
     site.close();

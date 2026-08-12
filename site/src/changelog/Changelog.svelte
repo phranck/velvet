@@ -60,16 +60,6 @@
   main h2 {
     margin-inline: var(--velvet-card-text-inset);
   }
-  h1 {
-    font-size: var(--velvet-text-title);
-    line-height: 1.1;
-    margin-block: 0 1rem;
-  }
-  .lede {
-    color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-copy);
-    margin-block: 0 2.5rem;
-  }
   main h2 {
     margin-block: 3.5rem 0.75rem;
     /* Clears the sticky bar, so following a release does not land its version

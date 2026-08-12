@@ -1,73 +1,48 @@
 /**
- * The faces Velvet's own surfaces are set in.
+ * The two faces every Velvet surface shares, including a published status page.
  *
  * Declared here rather than through the stylesheets `@fontsource` ships, for one
  * reason: those state `font-display: swap`, and swap is what makes a heading
- * appear in one face and then change to another. `optional` does not swap. The
- * browser gives the file a moment, uses it if it arrived, and otherwise keeps
- * the stand-in for the whole of that load and swaps nothing.
+ * appear in one face and then change to another.
  *
- * Pairing it with the preloads each page carries is what makes the file arrive
- * in that moment on any ordinary connection, and with the metric-matched
- * stand-ins below it means neither the shapes nor the layout change after the
- * first paint. The cost is that a first visit on a slow line reads in the
- * stand-in throughout, which is the trade `optional` is for: no reader watches
- * the page correct itself.
+ * `block` is what these state instead. The browser holds the text back until
+ * the file arrives and then draws it once, correctly, so nothing is ever seen
+ * in one face and then in another and no size settles after the fact.
+ *
+ * `optional` was the earlier answer and it was the wrong one. It gives a file
+ * about a hundred milliseconds and, if it misses that window, uses the stand-in
+ * for the whole of that visit rather than the face the page is designed in.
+ * Measured on the start page: Datatype and Plaster both missed it, so the page
+ * rendered in the stand-ins throughout, at the stand-ins' metrics.
+ *
+ * What makes `block` cost nothing here is that every one of these is served
+ * from this origin, subset to Latin, and named in the preload list each page
+ * carries, so the file is already on its way before the stylesheet asks for it.
+ *
+ * Only what a status page also renders belongs in this file. Velvet's own tools
+ * set their text in the faces `velvet-retro-typefaces.css` declares, and that
+ * file imports this one, so a tool names one stylesheet and gets both.
  *
  * The files are the ones `@fontsource` ships. Only the declaration is ours.
  */
 
-@font-face {
-  font-family: "Barlow";
-  font-style: normal;
-  font-weight: 400;
-  font-display: optional;
-  src:
-    url("@fontsource/barlow/files/barlow-latin-400-normal.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Barlow";
-  font-style: normal;
-  font-weight: 600;
-  font-display: optional;
-  src:
-    url("@fontsource/barlow/files/barlow-latin-600-normal.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Barlow";
-  font-style: normal;
-  font-weight: 700;
-  font-display: optional;
-  src:
-    url("@fontsource/barlow/files/barlow-latin-700-normal.woff2") format("woff2");
-}
-
 /**
  * The wordmark, which is drawn as text rather than as outlines.
  *
- * `optional` matters most here: Plaster looks like nothing else on the page, so
- * a swap into it is the most visible change a reader can be shown. There is no
- * metric-matched stand-in for a display face, so on a load slow enough to miss
- * the window the wordmark reads in a plain face for that visit.
+ * `block` matters most here: Plaster looks like nothing else on the page, so a
+ * swap into it is the most visible change a reader can be shown, and there is
+ * no metric-matched stand-in for a display face to swap from. Held back until
+ * it arrives, the mark is only ever seen as itself.
+ *
+ * A status page draws the mark in its footer, which is why this face sits here
+ * rather than beside the tools' own.
  */
 @font-face {
   font-family: "Plaster";
   font-style: normal;
   font-weight: 400;
-  font-display: optional;
+  font-display: block;
   src: url("@fontsource/plaster/files/plaster-latin-400-normal.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Barlow Condensed";
-  font-style: normal;
-  font-weight: 600;
-  font-display: optional;
-  src:
-    url("@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2")
-    format("woff2");
 }
 
 /**
@@ -78,15 +53,13 @@
  * what the surfaces actually use: ordinary text and the one badge that sets
  * itself bolder.
  *
- * `optional` for the same reason as the faces above, with one difference worth
- * knowing: monospace stand-ins are already fixed-width, so a load that misses
- * the window changes the shapes but not the column, and nothing shifts.
+ * `block` for the same reason as the face above.
  */
 @font-face {
   font-family: "Fira Code";
   font-style: normal;
   font-weight: 400;
-  font-display: optional;
+  font-display: block;
   src:
     url("@fontsource/fira-code/files/fira-code-latin-400-normal.woff2")
     format("woff2");
@@ -96,7 +69,7 @@
   font-family: "Fira Code";
   font-style: normal;
   font-weight: 600;
-  font-display: optional;
+  font-display: block;
   src:
     url("@fontsource/fira-code/files/fira-code-latin-600-normal.woff2")
     format("woff2");
@@ -106,7 +79,7 @@
  * The monospace stack, stated once for every surface.
  *
  * Here rather than in `velvet-tokens.css`, because a status page carries its
- * own themed tokens and does not read that file, whilst all three surfaces do
+ * own themed tokens and does not read that file, whilst all four surfaces do
  * read this one. Declaring the face and naming the stack it stands in belong
  * together anyway.
  *
@@ -117,44 +90,4 @@
  */
 :root {
   --font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-/**
- * Stand-ins for the two faces, for the moment before the real ones arrive and
- * for the whole of a load slow enough that they do not.
- *
- * Each points at a face the reader already has and bends its metrics to
- * Barlow's, so the text occupies exactly the same space either way. Measured at
- * 1000px: Barlow sets a test string 13613 wide against Helvetica's 14525, and
- * Barlow Condensed 14530 against Arial Narrow's 15365. Barlow's own ascent is
- * 1.00em and its descent 0.20em, and the overrides are those divided by the
- * size adjustment, because a browser reads them against the adjusted em.
- *
- * A reader with none of the named faces matches nothing here, and the stack
- * falls through to the generic family.
- */
-@font-face {
-  font-family: "Barlow Fallback";
-  src:
-    local("Helvetica Neue"),
-    local("Arial"),
-    local("Liberation Sans"),
-    local("Segoe UI");
-  size-adjust: 93.75%;
-  ascent-override: 106.67%;
-  descent-override: 21.33%;
-  line-gap-override: 0%;
-}
-
-@font-face {
-  font-family: "Barlow Condensed Fallback";
-  src:
-    local("Arial Narrow"),
-    local("Liberation Sans Narrow"),
-    local("Helvetica Neue Condensed"),
-    local("Segoe UI");
-  size-adjust: 94.56%;
-  ascent-override: 105.75%;
-  descent-override: 21.15%;
-  line-gap-override: 0%;
 }

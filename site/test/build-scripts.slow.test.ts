@@ -227,28 +227,34 @@ test("gives the website everything a search engine and a social platform read", 
 
   // The faces are declared `font-display: optional`, which means a file that
   // does not arrive in the browser's short window is not used for that load at
-  // all. Preloading is therefore what decides whether a reader sees Barlow or
-  // the metric-matched stand-in, rather than only how soon. All four are
-  // listed, the heading face included: under the previous `swap` a late file
-  // still arrived and swapped, so preloading it bought nothing and this test
-  // recorded that.
+  // all. Preloading is therefore what decides whether a reader sees the real
+  // face or the metric-matched stand-in, rather than only how soon. Every face
+  // the page is set in is listed, including the ones that appear only far down
+  // it: the decision is made once for the whole load, so a face left out is a
+  // face the page never renders.
   const preloaded = [
     ...html.matchAll(/<link rel="preload" as="font"[^>]*href="\.\/assets\/([^"]+)"/g),
   ].map(([, file]) => file);
   // Matched on the prefix, because the build appends a hash that may itself
   // contain a hyphen, so splitting the name apart is not reliable.
+  // The heading face and the figure face are absent on purpose: both are under
+  // Vite's 4kB inline limit and arrive inside the stylesheet as data URIs, so
+  // there is no file to preload and no window for them to miss.
   for (const face of [
     "plaster-latin-400-normal-",
-    "barlow-latin-400-normal-",
-    "barlow-latin-600-normal-",
-    "barlow-condensed-latin-600-normal-",
+    "datatype-latin-wght-normal-",
+    "space-mono-latin-700-normal-",
+    "audiowide-latin-400-normal-",
+    // The icon face blocks like the rest, so it is on its way with them. Left
+    // out, it arrived after the first paint and moved the key it sits on.
+    "phosphor-duotone-subset-",
   ]) {
     assert.ok(
       preloaded.some((file) => file.startsWith(face)),
       `${face} is not preloaded`,
     );
   }
-  assert.equal(preloaded.length, 4, "only the faces the page is set in are preloaded");
+  assert.equal(preloaded.length, 5, "only the faces the page fetches are preloaded");
 
   const emitted = await readdir(resolve(outDir, "assets"));
   for (const file of preloaded) {

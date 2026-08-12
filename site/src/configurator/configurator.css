@@ -2,7 +2,7 @@
 /* The faces this tool sets its text in. It drew in one machine's own interface
    face before, so it needed none, and its preview reached for the status page's
    Inter without ever loading it. */
-@import "../lib/velvet-typefaces.css";
+@import "../lib/velvet-retro-typefaces.css";
 html,
 body,
 #configurator {
@@ -30,9 +30,10 @@ input {
   font: inherit;
 }
 
-/* Every heading in Velvet is set condensed. Stated here rather than in the
-   component, because a Svelte rule does not reach the headings its children
-   render, and half of this tool's headings come from shared components.
+/* Every heading in Velvet is set in the heading face. Stated here rather than
+   in the component, because a Svelte rule does not reach the headings its
+   children render, and half of this tool's headings come from shared
+   components.
    Deliberately weak, at one element, so the rules that give a group label the
    code face still win. */
 :is(h1, h2, h3, h4, h5, h6) {

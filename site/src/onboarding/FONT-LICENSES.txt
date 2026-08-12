@@ -1,5 +1,22 @@
-Barlow and Barlow Condensed
-Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
+Datatype
+Copyright 2026 The Datatype Project Authors
+(https://github.com/franktisellano/datatype)
+
+Workbench
+Copyright 2021 The Workbench Project Authors
+(https://github.com/jenskutilek/homecomputer-fonts)
+
+Space Mono
+Copyright 2016 The Space Mono Project Authors
+(https://github.com/googlefonts/spacemono)
+
+Audiowide
+Copyright (c) 2012 by Brian J. Bonislawsky DBA Astigmatic (AOETI)
+(astigma@astigmatic.com)
+Reserved Font Name: Audiowide
+
+Doto
+Copyright 2024 The Doto Project Authors (https://github.com/oliverlalan/Doto)
 
 Plaster
 Copyright (c) 2011, Sorkin Type Co (www.sorkintype.com)

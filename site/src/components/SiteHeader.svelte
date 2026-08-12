@@ -1,6 +1,5 @@
 <script lang="ts">
   import { VELVET_VERSION } from "../lib/velvet-version.generated.js";
-  import Icon from "./Icon.svelte";
   import RainbowScale from "./RainbowScale.svelte";
   import VelvetWordmark from "./VelvetWordmark.svelte";
 
@@ -23,31 +22,18 @@
     current?: "documentation" | "changelog" | "references" | "attributions";
   } = $props();
 
+  /**
+   * The four pages the bar offers, without icons.
+   *
+   * The labels are set in the label face at a size where an icon beside them
+   * would be the larger of the two, and four uppercase words read as a row of
+   * their own without anything pointing at them.
+   */
   const SECTIONS = [
-    {
-      id: "documentation",
-      label: "Documentation",
-      href: "/documentation",
-      icon: "book",
-    },
-    {
-      id: "changelog",
-      label: "Changelog",
-      href: "/changelog",
-      icon: "clock",
-    },
-    {
-      id: "references",
-      label: "References",
-      href: "/references",
-      icon: "profile-2user",
-    },
-    {
-      id: "attributions",
-      label: "Attributions",
-      href: "/attributions",
-      icon: "shield-tick",
-    },
+    { id: "documentation", label: "Documentation", href: "/documentation" },
+    { id: "changelog", label: "Changelog", href: "/changelog" },
+    { id: "references", label: "References", href: "/references" },
+    { id: "attributions", label: "Attributions", href: "/attributions" },
   ] as const;
 </script>
 
@@ -95,8 +81,7 @@
               href={section.href}
               aria-current={section.id === current ? "page" : undefined}
             >
-              <Icon name={section.icon} size="1.25rem" />
-              <span>{section.label}</span>
+              {section.label}
             </a>
           </li>
         {/each}
@@ -106,69 +91,68 @@
 </div>
 
 <style>
-  /* Frosted rather than solid, so the board backdrop keeps moving underneath
-     it whilst the text on the bar stays readable over whatever scrolls past. */
+  /* Frosted rather than solid, so the page keeps travelling underneath it
+     whilst the text on the bar stays readable over whatever scrolls past. */
   .band {
     position: sticky;
     top: 0;
     z-index: 20;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: color-mix(in srgb, var(--velvet-base) 72%, transparent);
+    /* Saturated as well as blurred, so what passes under the bar keeps its
+       colour instead of greying out the way a plain blur leaves it. */
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    background: color-mix(in srgb, var(--velvet-base) 68%, transparent);
+    border-bottom: 1px solid var(--velvet-rule);
   }
   /* The inset comes from `.velvet-page`, which every page on the site shares,
      so the wordmark starts exactly where the text beneath it does. */
+  /* Everything in the bar stands on one line, which is the wordmark's. A flex
+     container hands its own baseline to its parent from its first item, so the
+     mark answers for the brand and the first menu item for the navigation, and
+     both are then set against the same line. */
   .site-header {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
     gap: 0.5rem 1.5rem;
-    padding: 1.25rem 0;
+    padding: 1.375rem 0;
   }
-  /* The mark and the version sit on one row, aligned along the baseline of the
-     word rather than centred, so the number reads as a subtext of the mark
-     instead of floating beside it. */
+  /* The mark and the version share that line, so the number reads as a subtext
+     of the mark rather than floating beside it. */
   .brand {
     display: flex;
     align-items: baseline;
-    gap: 1.25rem;
+    gap: 1.125rem;
   }
   /* The mark is sized by the brand rather than by the text scale, because it is
      a mark and not a heading. Everything else in this bar takes a token. */
   .home {
     display: block;
     color: inherit;
-    font-size: 1.5rem;
+    font-size: 1.625rem;
     text-decoration: none;
   }
-  /* Drawn as a gradient across the line rather than in one colour, the way the
-     status hero draws its headline: the text carries the gradient through
-     `background-clip`, so `color` is transparent and only the letters are
-     painted. It runs from the page's own text colour into the muted one, so it
-     fades away from the mark it follows rather than towards an arbitrary
-     shade. */
+  /* A version is a literal rather than prose, so it takes the label face along
+     with everything else in this bar that is not a sentence.
+
+     It is one flat tone rather than the gradient it carried before. The bar now
+     holds four labels in the same face and size, and a fifth drawn differently
+     from all of them read as a control rather than as a note. */
   .version {
-    background: linear-gradient(
-      90deg,
-      var(--velvet-text) 0%,
-      var(--velvet-text-muted) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    /* The same face the site sets code in, because a version is a literal
-       rather than prose. It brings even figures with it, so the number does not
-       shift as it changes. */
-    font-family: var(--font-mono);
-    font-size: var(--velvet-text-caption);
+    color: var(--velvet-text-dim);
+    font-family: var(--velvet-font-label);
+    font-size: var(--velvet-text-label);
+    font-weight: 700;
+    letter-spacing: var(--velvet-tracking-label);
     line-height: 1;
     white-space: nowrap;
   }
-  /* The slashes lead the eye from the mark to the number, so they carry the
-     weight rather than the number they introduce. */
+  /* The slashes lead the eye from the mark to the number, so they are drawn in
+     the edge colour: present enough to point, quiet enough not to be read as a
+     word of their own. */
   .version span {
-    font-weight: 700;
+    color: var(--velvet-edge);
   }
   /* Thinner than the start page's, which stands at 5px under a mark four times
      this size. Its width follows the mark above it rather than being set, so
@@ -176,32 +160,30 @@
   .home .scale {
     display: block;
     height: 2px;
-    margin-top: 0.3rem;
+    margin-top: 0.1875rem;
   }
   ul {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    gap: 0.375rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
   nav a {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    /* Sized by what it holds rather than by a fixed height, which is what makes
-       the tint behind the current page sit close around its label instead of
-       standing as a block in the bar. The item measured 44px against a 20px
-       icon before this, so eleven of every twenty-two were empty above and
-       below. */
-    padding: 0.5rem 0.75rem;
+    display: block;
+    padding: 0.625rem 1.125rem;
     /* Its own, rather than the radius a card gives what sits inside it. Nothing
        here is nested in a card: these are items in a bar, and taking that value
        only meant they moved whenever a card's padding did. */
     border-radius: 12px;
     color: var(--velvet-text-muted);
-    font-size: var(--velvet-text-small);
+    font-family: var(--velvet-font-label);
+    font-size: var(--velvet-text-label);
+    font-weight: 700;
+    letter-spacing: var(--velvet-tracking-label);
+    line-height: 1;
+    text-transform: uppercase;
     text-decoration: none;
   }
 
@@ -210,13 +192,12 @@
     color: var(--velvet-text);
     background: color-mix(in srgb, currentColor 8%, transparent);
   }
-  /* The page a reader is already on: the accent, over the accent at a tenth
-     of its strength. The reference carries that tint on a pseudo-element,
-     which is why reading the element's own background reported none. Measured
-     there as the accent at 0.1 alpha. */
+  /* The page a reader is already on: the accent, over the accent kept faint
+     behind it. Colour alone would ask a reader to compare two tones against
+     each other before knowing where they are. */
   nav a[aria-current="page"] {
     color: var(--velvet-accent);
-    background: color-mix(in srgb, var(--velvet-accent) 10%, transparent);
+    background: var(--velvet-accent-tint);
   }
   /* Hovering the current page must not wash its tint away, which the shared
      hover rule would do by replacing the background with a neutral one. */
@@ -226,19 +207,14 @@
     background: color-mix(in srgb, var(--velvet-accent) 16%, transparent);
   }
 
-  /* Narrow enough and the labels cost more than they say, so the items keep
-     their icons alone and the row stays on one line. */
+  /* Narrow enough and the row cannot hold four labels at this tracking, so the
+     items give up their side padding first and wrap onto a second line after
+     that. The labels themselves stay: without icons they are the only thing an
+     item has to say. */
   @media (max-width: 560px) {
-    nav a span {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
     nav a {
-      padding: 0 0.6rem;
+      padding: 0.5rem 0.5rem;
+      letter-spacing: 0.06em;
     }
   }
 </style>

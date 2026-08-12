@@ -1,5 +1,21 @@
 const SQUIRCLE_SEGMENTS = 64;
 
+/**
+ * How square a squircle is, as the exponent its parameterisation is raised to.
+ *
+ * A superellipse |x|^n + |y|^n = 1 drawn from an angle takes each coordinate to
+ * the power 2/n, so a smaller exponent here is a larger n and a squarer shape.
+ *
+ * `SURFACE` is Velvet's own shape, and everything the product draws takes it:
+ * cards, keys, frames, the tick. `GLASS` is squarer, and one thing takes it,
+ * which is the tube in the terminal. A cathode ray tube's face is flatter than
+ * a rounded rectangle at its corners and rounder than one along its sides, and
+ * that is what tells a reader they are looking at glass rather than at another
+ * card.
+ */
+export const SQUIRCLE_SURFACE_EXPONENT = 1 / 2;
+export const SQUIRCLE_GLASS_EXPONENT = 1 / 3;
+
 function formatCoordinate(value: number): string {
   return Number(value.toFixed(3)).toString();
 }
@@ -30,6 +46,8 @@ function point(x: number, y: number): string {
  * @param inset - How far inside the box the path is drawn, so a stroke on it
  *   stays within the element.
  * @param segments - How many points the curve is drawn with.
+ * @param exponent - How square the shape is. Defaults to Velvet's own surface;
+ *   see {@link SQUIRCLE_GLASS_EXPONENT} for the one thing that differs.
  * @returns An SVG path, or an empty string where the box leaves no room.
  */
 export function createSquircleRectPath(
@@ -37,6 +55,7 @@ export function createSquircleRectPath(
   height: number,
   inset = 0,
   segments = SQUIRCLE_SEGMENTS,
+  exponent = SQUIRCLE_SURFACE_EXPONENT,
 ): string {
   if (!Number.isFinite(width) || !Number.isFinite(height)) return "";
   if (width <= 0 || height <= 0) return "";
@@ -57,8 +76,9 @@ export function createSquircleRectPath(
     const angle = (index / segmentCount) * Math.PI * 2;
     const cosine = Math.cos(angle);
     const sine = Math.sin(angle);
-    const x = centreX + radiusX * Math.sign(cosine) * Math.sqrt(Math.abs(cosine));
-    const y = centreY + radiusY * Math.sign(sine) * Math.sqrt(Math.abs(sine));
+    const x =
+      centreX + radiusX * Math.sign(cosine) * Math.abs(cosine) ** exponent;
+    const y = centreY + radiusY * Math.sign(sine) * Math.abs(sine) ** exponent;
     return `${index === 0 ? "M" : "L"}${point(x, y)}`;
   }).join(" ")} Z`;
 }
@@ -84,14 +104,19 @@ export const SQUIRCLE_PATH = createSquirclePath(100, 3);
 /**
  * The geometry of Velvet's double outline, stated once.
  *
- * A thin line at the edge and a thick one just inside it. These four numbers
+ * A thin line at the edge and a thicker one just inside it. These four numbers
  * were written out separately in the onboarding's steps and in the theme cards,
  * which is how one shape becomes two that merely resemble each other.
+ *
+ * They describe, from the outside in: a 1px line flush against the edge, a 2px
+ * gap, and a 3px line. A stroke straddles its path, so a line of width w drawn
+ * flush from d to d+w sits on a path at d + w/2. That is where each inset comes
+ * from, and it is why they are not round numbers.
  */
-export const SQUIRCLE_OUTER_PATH_INSET = 1;
+export const SQUIRCLE_OUTER_PATH_INSET = 0.5;
 export const SQUIRCLE_OUTER_STROKE_WIDTH = 1;
-export const SQUIRCLE_INNER_PATH_INSET = 5.5;
-export const SQUIRCLE_INNER_STROKE_WIDTH = 4;
+export const SQUIRCLE_INNER_PATH_INSET = 4.5;
+export const SQUIRCLE_INNER_STROKE_WIDTH = 3;
 
 /**
  * Where the thick inner line stops and the content it frames begins.

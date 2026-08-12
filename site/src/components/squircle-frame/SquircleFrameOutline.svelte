@@ -68,13 +68,25 @@
   {#if filled}
     <path d={outerPath} class="fill" stroke="none"></path>
   {/if}
+  <!--
+    Both lines keep their stated width whatever size the frame is drawn at.
+
+    Without this the width is multiplied by however far the viewBox was scaled
+    to reach the element, so the same frame drew a 0.82px line around a picture
+    470 wide and a 1.02px line around one 587 wide. Two frames on one page, at
+    two weights, from one component.
+
+    `non-scaling-stroke` is honoured under a uniform scale, which is what the
+    measured form has: the box is stated at the ratio it is drawn at, so both
+    axes are scaled by the same factor.
+  -->
   <path
     d={outerPath}
     fill="none"
     stroke="currentColor"
     stroke-width={SQUIRCLE_OUTER_STROKE_WIDTH}
     stroke-linejoin="round"
-    vector-effect={measured ? undefined : "non-scaling-stroke"}
+    vector-effect="non-scaling-stroke"
   ></path>
   <path
     d={innerPath}
@@ -82,7 +94,7 @@
     stroke="currentColor"
     stroke-width={SQUIRCLE_INNER_STROKE_WIDTH}
     stroke-linejoin="round"
-    vector-effect={measured ? undefined : "non-scaling-stroke"}
+    vector-effect="non-scaling-stroke"
   ></path>
 </svg>
 

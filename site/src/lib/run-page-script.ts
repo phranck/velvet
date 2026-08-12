@@ -19,7 +19,20 @@ import pageScript from "./page-script.js?raw";
  */
 export function runPageScriptWhilstDeveloping(): void {
   if (!import.meta.env.DEV) return;
-  const element = document.createElement("script");
-  element.textContent = pageScript;
-  document.body.append(element);
+
+  const run = () => {
+    const element = document.createElement("script");
+    element.textContent = pageScript;
+    document.body.append(element);
+    element.remove();
+  };
+
+  run();
+
+  // Again after every hot update. Svelte replaces the markup it owns, and the
+  // controls this script enables come back disabled, which reads as a dead
+  // button rather than as a page that has been re-rendered. The script wires
+  // each control once and installs its document listeners once, so running it
+  // again costs nothing.
+  import.meta.hot?.on("vite:afterUpdate", run);
 }

@@ -116,7 +116,7 @@
     primary: {
       surface: "var(--velvet-accent)",
       edge: "color-mix(in srgb, var(--velvet-accent) 45%, #000000)",
-      foreground: "#10131c",
+      foreground: "var(--velvet-on-accent)",
     },
     secondary: {
       surface: "var(--velvet-surface-raised)",
@@ -178,8 +178,12 @@
        key rather than a shorter one. */
     height: var(--squircle-button-size);
     aspect-ratio: var(--squircle-button-ratio);
-    align-self: center;
-    justify-self: center;
+    /* Where the key sits is the page's decision, not this component's. It
+       claimed the centre of its own cell before, which a `justify-self` on the
+       item enforces over any `justify-items` the container states: a key placed
+       in a left-ranged column still centred itself and stood 233px in from the
+       text above it. What this does refuse is being resized, which is a
+       property of the key rather than of where it was put. */
     flex: none;
     display: grid;
     /* The icon takes what it needs and the label the rest, so two keys whose
@@ -208,7 +212,12 @@
 
     /* The label's size, stated once. The icon derives its own from it, so the
        two move together rather than being two numbers to keep in step. */
-    --squircle-button-label-size: var(--velvet-text-copy);
+    /* The word on the key, and through it the picture above it, which derives
+       its own size from this. Its own value rather than a step of the reading
+       scale: a key is a control the size of a thumb, not a line of prose, and
+       taking the copy size put a 42px picture inside an 85px key with six
+       pixels of padding left over. */
+    --squircle-button-label-size: 1.0625rem;
     /* What the key is drawn with now, which the states below change. */
     --squircle-button-edge: var(--squircle-button-edge-rest);
     --squircle-button-edge-width: var(--squircle-button-edge-width-rest);

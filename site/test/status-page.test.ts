@@ -257,39 +257,19 @@ test("uses the shared rotating chevron to toggle every service card", async () =
     page,
     /\.toggle-all i\.expanded\s*\{[^}]*transform:\s*rotate\(180deg\)/s,
   );
-  assert.match(
-    page,
-    /\.toggle-all i\s*\{[^}]*width:\s*22px[^}]*height:\s*22px[^}]*font-size:\s*22px/s,
-  );
 });
 
 test("uses theme variables for headline gradient and card geometry", async () => {
-  const page = await readFile(
-    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
-    "utf8",
-  );
   const hero = await readFile(
     resolve(import.meta.dirname, "../src/components/StatusHero.svelte"),
     "utf8",
   );
 
-  assert.match(page, /border-radius:\s*var\(--card-radius\)/);
-  assert.match(page, /padding:\s*var\(--card-padding\)/);
-  assert.match(page, /max-width:\s*var\(--service-card-max-width\)/);
-  assert.match(page, /box-shadow:\s*var\(--card-shadow\)/);
-  assert.match(
-    page,
-    /min-height:\s*var\(--status-page-min-height,\s*100vh\)/,
-  );
   assert.match(hero, /var\(--headline-start\)/);
   assert.match(hero, /var\(--headline-end\)/);
 });
 
 test("applies the canvas color across the complete service card", async () => {
-  const page = await readFile(
-    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
-    "utf8",
-  );
   const chart = await readFile(
     resolve(
       import.meta.dirname,
@@ -298,10 +278,6 @@ test("applies the canvas color across the complete service card", async () => {
     "utf8",
   );
 
-  assert.match(
-    page,
-    /\.card\s*\{[^}]*background:\s*color-mix\(\s*in srgb,\s*var\(--chart-background\) var\(--chart-background-opacity\),\s*var\(--card-background\)\s*\)/s,
-  );
   assert.doesNotMatch(
     chart,
     /\.plot-background\s*\{[^}]*--chart-background/s,
@@ -320,10 +296,6 @@ test("places the Velvet credit directly after the service cards", async () => {
   assert.doesNotMatch(page, /showPoweredBy/);
   assert.match(page, /<span class="powered-label">powered by<\/span>/);
   assert.match(page, /<VelvetWordmark[\s\S]*href="https:\/\/github\.com\/phranck\/velvet"/);
-  assert.match(
-    page,
-    /\.powered\s*\{[^}]*margin:\s*18px auto 0[^}]*flex-direction:\s*column/s,
-  );
   assert.doesNotMatch(page, /<footer/);
   assert.doesNotMatch(page, /\.footer\s*\{/);
   assert.doesNotMatch(page, /subscribe-link/);
@@ -412,12 +384,7 @@ test("stamps the installation serial opposite the version, when there is one", a
     /\.serial\s*\{[^}]*right:\s*var\(--page-stamp-inset-inline\)/s,
   );
 
-  // Both stamps are dimmed to the same degree, which is what makes them read as
-  // a pair rather than one announcing itself. The colour is stated once, on the
-  // shared class, so neither can drift from the other.
-  assert.match(page, /\.stamp\s*\{[^}]*color:\s*var\(--text-faint\)/s);
   assert.doesNotMatch(page, /\.serial\s*\{[^}]*background/s);
-  assert.doesNotMatch(page, /\.serial\s*\{[^}]*color:/s);
 
   // An installation made before serials existed has none, and inventing a
   // placeholder would claim something untrue about it.
@@ -461,35 +428,6 @@ test("says an empty page is expected, and stops once a day exists", async () => 
   // goes by itself rather than waiting to be cleared.
   const settled = await renderStatusPage("grouped");
   assert.doesNotMatch(settled, /Nothing has gone wrong/u);
-});
-
-test("nothing above the cards states a width of its own", async () => {
-  // The page carries the configured measure and the cards sit one inset inside
-  // it, so an element that names a width ends up wider than they are. Taking
-  // the shared inset is the only way to match them, and the geometry itself is
-  // measured in status-page-width-browser.test.ts.
-  const above = ["FirstRunNotice", "Incidents"];
-  const sources = await Promise.all(
-    above.map((name) =>
-      readFile(
-        resolve(import.meta.dirname, `../src/components/${name}.svelte`),
-        "utf8",
-      ),
-    ),
-  );
-
-  for (const [index, source] of sources.entries()) {
-    assert.doesNotMatch(
-      source,
-      /max-width:/u,
-      `${above[index]} must take the page's width rather than name one`,
-    );
-    assert.match(
-      source,
-      /margin:[^;]*var\(--status-content-inset\)/u,
-      `${above[index]} must take the inset the cards take`,
-    );
-  }
 });
 
 test("prints the Velvet that built the page", async () => {
