@@ -112,6 +112,20 @@
      The tools already set their own captions at this size, so it is stated
      here once and reached from there rather than repeated. */
   --velvet-text-caption: 0.8125rem;
+  /* An uppercase label set in the label face: a navigation item, the version
+     beside the wordmark, the caption under a picture, the eyebrow over a
+     section. Shared rather than stated per surface, because `SiteHeader` reads
+     both of these and every Velvet surface draws that bar. Left with the site
+     alone, onboarding's version fell back to the reading size and stood at 16px
+     against the site's 13. */
+  --velvet-text-label: 0.8125rem;
+  --velvet-text-label-small: 0.6875rem;
+  /* How far apart such a label's letters stand. Three steps, because the
+     differences between .08em and .1em, or between .14em and .16em, are not
+     differences a reader can see. */
+  --velvet-tracking-label: 0.1em;
+  --velvet-tracking-eyebrow: 0.16em;
+  --velvet-tracking-wide: 0.2em;
   /* Code, in two sizes, both larger than the prose around them rather than
      smaller as code usually is. It is set in the dot face, and a letter built
      from a matrix of dots needs the room to hold enough of them to be read at
