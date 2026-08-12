@@ -526,22 +526,14 @@
 
 <style>
   .website-shell {
-    /* The same tokens the onboarding defines, so a visitor crossing from here
-       into setup does not meet a second palette. */
-    --setup-accent: var(--velvet-accent);
-    --setup-base: var(--velvet-base);
-    --setup-panel: var(--velvet-surface-card);
-    --setup-panel-raised: var(--velvet-surface-raised);
-    --setup-text: var(--velvet-text);
-    --setup-muted: var(--velvet-text-muted);
+    /* The two names this surface sets for itself. Everything else in the setup
+       namespace comes from velvet-tokens.css, which is what keeps a visitor
+       crossing from here into setup from meeting a second palette.
+
+       A key here is taller than a control in a form, and the lead is the site's
+       reading size rather than the onboarding's working one. */
     --setup-control-height: 2.75rem;
-    --setup-text-body: var(--velvet-text-body);
-    --setup-text-copy: var(--velvet-text-copy);
     --setup-text-lead: var(--velvet-text-lead);
-    --setup-text-intro: var(--velvet-text-intro);
-    --setup-text-small: var(--velvet-text-small);
-    --setup-font: var(--velvet-font);
-    --setup-heading-font: var(--velvet-font-heading);
 
     min-height: 100vh;
     font-family: var(--setup-font);

@@ -141,14 +141,21 @@ test("uses the local Datatype family for onboarding typography", async () => {
   assert.match(tokens, /--velvet-text-caption:\s*0\.8125rem/);
   assert.match(tokens, /--velvet-text-small:\s*0\.9375rem/);
   assert.match(tokens, /--velvet-text-body:\s*1rem/);
-  assert.match(onboarding, /--setup-text-small:\s*var\(--velvet-text-small\)/);
-  assert.match(onboarding, /--setup-text-body:\s*var\(--velvet-text-body\)/);
+  // The aliases the onboarding shares with the website are declared in the
+  // token file, because both surfaces stated them and one had already drifted.
+  // Asserted there rather than here for the reason the comment at the top of
+  // this test gives: what matters is that the chain reaches a token, not which
+  // file states the link.
+  assert.match(tokens, /--setup-text-small:\s*var\(--velvet-text-small\)/);
+  assert.match(tokens, /--setup-text-body:\s*var\(--velvet-text-body\)/);
+  assert.match(tokens, /--setup-text-intro:\s*var\(--velvet-text-intro\)/);
+  assert.match(tokens, /--setup-text-copy:\s*var\(--velvet-text-copy\)/);
+  // These two the onboarding states for itself, because a form is worked
+  // through rather than read and the website sets both a step larger.
   assert.match(onboarding, /--setup-text-lead:\s*1\.125rem/);
   // The caption size is shared with the website, which sets a version at it, so
   // the value is stated once and reached from here.
   assert.match(onboarding, /--setup-text-caption:\s*var\(--velvet-text-caption\)/);
-  assert.match(onboarding, /--setup-text-intro:\s*var\(--velvet-text-intro\)/);
-  assert.match(onboarding, /--setup-text-copy:\s*var\(--velvet-text-copy\)/);
   assert.match(onboarding, /--setup-card-copy:\s*var\(--setup-text-copy\)/);
   assert.match(
     onboarding,
