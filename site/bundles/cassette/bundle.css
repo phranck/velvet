@@ -135,7 +135,10 @@
   --text-size-badge: 11px;
   --text-size-lead: 16px;
   --text-size-section: 14px;
-  --text-size-service: 40px;
+  /* The plate's face is a display one and sets wide, so it is smaller here than
+     a script would be: Database measures 163px at this size against 192 at 40,
+     and every 14 pixels the plate takes is one cell fewer on the panel. */
+  --text-size-service: 34px;
   --text-size-headline: 30px;
   --text-size-hero-glyph: 44px;
   --text-size-ornament: 20px;
@@ -822,7 +825,7 @@
     part of the row and the panel is never a fraction of a cell wide.
   */
   --badge-width: 40px;
-  --service-name-min: 112px;
+  --service-name-min: 168px;
   --service-display-frame: calc(
     2 * var(--service-display-edge-width) + var(--service-display-inset) - 0.33px +
       var(--service-display-inset) - 4.47px
@@ -847,8 +850,11 @@
     prints lands on exactly one of them.
 
     The figures come from the face itself, rasterised at 150px and read back:
-    its dots stand fifteen units apart and are nine across, and the first
-    column stands 7 to the right of where a character begins. A figure reaches
+    its dots are square, nine units on a side, standing fifteen apart, and the
+    first column's edge stands 0.48 to the right of where a character begins,
+    read at the size it is set in rather than scaled from the large one. Square,
+    because that is what the face draws: read back at 150px, a dot is a block of
+    solid pixels with hard edges rather than a disc. A figure reaches
     from 98 above the baseline to 8 above it, and a letter with a descender
     from 68 above to 22 below, which is nine rows between them rather than the
     seven either one uses.
@@ -862,8 +868,11 @@
     The cell is the character's own advance by the line's own height: the
     tracking is a tenth of the size, so a character takes seven steps rather
     than six, and the leading of 1.2 makes a line twenty-four pixels. The
-    baseline sits 18.67 down that line, which puts the first row of dots at 5.6
-    and the ninth at 21.6.
+    The baseline is read from the face rather than worked out from the size:
+    the rasteriser rounds the metrics to whole pixels, so at twenty pixels the
+    ascent is 19 and not the 18.67 that scaling from fifteen would give. Read
+    back at that size, the first row of a figure stands at 6.08 down the line
+    and the last row of a descender at 21.92, which is the 1.98 step used here.
 
     It is laid on the content box, so the grid starts where the first character
     does, and it is one static layer: opening a row changes the panel's height
@@ -872,7 +881,7 @@
   /* The glass itself, without the lattice: the protocol windows are cut from
      the same sheet and are too small to carry a dot pattern. */
   --display-glass: linear-gradient(to bottom, #060c0f, #0b1015);
-  --service-display-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 24'><g fill='%2314232b'><circle cx='0.93' cy='5.60' r='.6'/><circle cx='2.93' cy='5.60' r='.6'/><circle cx='4.93' cy='5.60' r='.6'/><circle cx='6.93' cy='5.60' r='.6'/><circle cx='8.93' cy='5.60' r='.6'/><circle cx='0.93' cy='7.60' r='.6'/><circle cx='2.93' cy='7.60' r='.6'/><circle cx='4.93' cy='7.60' r='.6'/><circle cx='6.93' cy='7.60' r='.6'/><circle cx='8.93' cy='7.60' r='.6'/><circle cx='0.93' cy='9.60' r='.6'/><circle cx='2.93' cy='9.60' r='.6'/><circle cx='4.93' cy='9.60' r='.6'/><circle cx='6.93' cy='9.60' r='.6'/><circle cx='8.93' cy='9.60' r='.6'/><circle cx='0.93' cy='11.60' r='.6'/><circle cx='2.93' cy='11.60' r='.6'/><circle cx='4.93' cy='11.60' r='.6'/><circle cx='6.93' cy='11.60' r='.6'/><circle cx='8.93' cy='11.60' r='.6'/><circle cx='0.93' cy='13.60' r='.6'/><circle cx='2.93' cy='13.60' r='.6'/><circle cx='4.93' cy='13.60' r='.6'/><circle cx='6.93' cy='13.60' r='.6'/><circle cx='8.93' cy='13.60' r='.6'/><circle cx='0.93' cy='15.60' r='.6'/><circle cx='2.93' cy='15.60' r='.6'/><circle cx='4.93' cy='15.60' r='.6'/><circle cx='6.93' cy='15.60' r='.6'/><circle cx='8.93' cy='15.60' r='.6'/><circle cx='0.93' cy='17.60' r='.6'/><circle cx='2.93' cy='17.60' r='.6'/><circle cx='4.93' cy='17.60' r='.6'/><circle cx='6.93' cy='17.60' r='.6'/><circle cx='8.93' cy='17.60' r='.6'/><circle cx='0.93' cy='19.60' r='.6'/><circle cx='2.93' cy='19.60' r='.6'/><circle cx='4.93' cy='19.60' r='.6'/><circle cx='6.93' cy='19.60' r='.6'/><circle cx='8.93' cy='19.60' r='.6'/><circle cx='0.93' cy='21.60' r='.6'/><circle cx='2.93' cy='21.60' r='.6'/><circle cx='4.93' cy='21.60' r='.6'/><circle cx='6.93' cy='21.60' r='.6'/><circle cx='8.93' cy='21.60' r='.6'/></g></svg>");
+  --service-display-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 24'><g fill='%2314232b'><rect x='0.48' y='5.48' width='1.2' height='1.2'/><rect x='2.48' y='5.48' width='1.2' height='1.2'/><rect x='4.48' y='5.48' width='1.2' height='1.2'/><rect x='6.48' y='5.48' width='1.2' height='1.2'/><rect x='8.48' y='5.48' width='1.2' height='1.2'/><rect x='0.48' y='7.46' width='1.2' height='1.2'/><rect x='2.48' y='7.46' width='1.2' height='1.2'/><rect x='4.48' y='7.46' width='1.2' height='1.2'/><rect x='6.48' y='7.46' width='1.2' height='1.2'/><rect x='8.48' y='7.46' width='1.2' height='1.2'/><rect x='0.48' y='9.44' width='1.2' height='1.2'/><rect x='2.48' y='9.44' width='1.2' height='1.2'/><rect x='4.48' y='9.44' width='1.2' height='1.2'/><rect x='6.48' y='9.44' width='1.2' height='1.2'/><rect x='8.48' y='9.44' width='1.2' height='1.2'/><rect x='0.48' y='11.42' width='1.2' height='1.2'/><rect x='2.48' y='11.42' width='1.2' height='1.2'/><rect x='4.48' y='11.42' width='1.2' height='1.2'/><rect x='6.48' y='11.42' width='1.2' height='1.2'/><rect x='8.48' y='11.42' width='1.2' height='1.2'/><rect x='0.48' y='13.40' width='1.2' height='1.2'/><rect x='2.48' y='13.40' width='1.2' height='1.2'/><rect x='4.48' y='13.40' width='1.2' height='1.2'/><rect x='6.48' y='13.40' width='1.2' height='1.2'/><rect x='8.48' y='13.40' width='1.2' height='1.2'/><rect x='0.48' y='15.38' width='1.2' height='1.2'/><rect x='2.48' y='15.38' width='1.2' height='1.2'/><rect x='4.48' y='15.38' width='1.2' height='1.2'/><rect x='6.48' y='15.38' width='1.2' height='1.2'/><rect x='8.48' y='15.38' width='1.2' height='1.2'/><rect x='0.48' y='17.36' width='1.2' height='1.2'/><rect x='2.48' y='17.36' width='1.2' height='1.2'/><rect x='4.48' y='17.36' width='1.2' height='1.2'/><rect x='6.48' y='17.36' width='1.2' height='1.2'/><rect x='8.48' y='17.36' width='1.2' height='1.2'/><rect x='0.48' y='19.34' width='1.2' height='1.2'/><rect x='2.48' y='19.34' width='1.2' height='1.2'/><rect x='4.48' y='19.34' width='1.2' height='1.2'/><rect x='6.48' y='19.34' width='1.2' height='1.2'/><rect x='8.48' y='19.34' width='1.2' height='1.2'/><rect x='0.48' y='21.32' width='1.2' height='1.2'/><rect x='2.48' y='21.32' width='1.2' height='1.2'/><rect x='4.48' y='21.32' width='1.2' height='1.2'/><rect x='6.48' y='21.32' width='1.2' height='1.2'/><rect x='8.48' y='21.32' width='1.2' height='1.2'/></g></svg>");
   --service-display-cell-advance: 14px;
   --service-display-cell-size: var(--service-display-cell-advance) 24px;
   --service-display-fill: var(--service-display-cell), var(--display-glass);
@@ -894,8 +903,10 @@
   --uptime-font: var(--service-display-font);
   --service-name-tracking: normal;
   --service-name-transform: none;
-  --service-name-weight: 700;
-  --service-name-font: "Tangerine", cursive;
+  /* The one weight the face ships; asking for a heavier one only gets a
+     synthesised smear of it. */
+  --service-name-weight: 400;
+  --service-name-font: "Atomic Age", var(--font-display);
   --service-name-clip: text;
   /* Pressed into the face: dark where the light does not reach over its top
      edge, and a hairline of the metal along the bottom. */
@@ -911,30 +922,33 @@
     No plate at all any more: the letters are the metal. A gradient runs down
     them from a lit top edge through the body of the brass to a dark foot, with
     a second highlight where a polished surface catches the light again, and
-    the whole of it is clipped to the letters. Tangerine at 700 is the
-    engraver's script such a badge is cut in, and its bold is the weight with
-    enough body to hold a gradient.
+    the whole of it is clipped to the letters. Atomic Age is the face such a
+    badge is cut in, and its strokes are broad enough to hold a gradient.
 
-    Every band stays a brass tone. The letters are the metal, so a band that
-    goes to nearly black takes the letterform away where the eye reads it: the
-    darkest one measures 2.9:1 against the face behind it, and the foot 2.4:1.
+    Eight stops rather than eleven, and none of them dark. A face with broad
+    strokes shows a gradient as areas rather than as an edge, so a band that
+    drops to a shadow reads as a stain on the letter instead of as the turn of a
+    polished surface. The darkest point of this one measures 5.2:1 against the
+    face behind it and the turn at the middle 8.2:1, so the metal stays metal
+    the whole way down.
+
+    Every stop keeps its yellow. A highlight mixed towards white rather than
+    towards gold reads as silver, and on a face with strokes this broad that
+    band covers enough of the letter to change what the metal is.
   */
   --service-name-padding: 0px 2px;
   --service-name-radius: 0px;
   --service-name-shadow: none;
   --service-name-fill: linear-gradient(
     to bottom,
-    #fffbe9 0%,
-    #ffe9a8 10%,
-    #d9ad4c 26%,
-    #8a6418 44%,
-    #7b5716 51%,
-    #c99a34 57%,
-    #ffeeb4 66%,
-    #fffdf2 71%,
-    #e2b64e 78%,
-    #9a7420 90%,
-    #6d4d14 100%
+    #ffeec9 0%,
+    #f2d38f 18%,
+    #e5bb63 40%,
+    #d2a341 49%,
+    #ffe9ae 57%,
+    #edc97a 74%,
+    #d6ac57 90%,
+    #b98d38 100%
   );
   --service-name-colour: transparent;
   --service-name-stroke: 0px;

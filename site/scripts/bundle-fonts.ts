@@ -54,6 +54,7 @@ const BUNDLES: Record<string, Face[]> = {
     { package: "plaster", family: "Plaster", weights: [400] },
   ],
   cassette: [
+    { package: "atomic-age", family: "Atomic Age", weights: [400] },
     { package: "audiowide", family: "Audiowide", weights: [400] },
     { package: "doto", family: "Doto", weights: [400, 600, 700] },
     {
@@ -63,7 +64,6 @@ const BUNDLES: Record<string, Face[]> = {
       italic: [400],
     },
     { package: "monoton", family: "Monoton", weights: [400] },
-    { package: "tangerine", family: "Tangerine", weights: [400, 700] },
     { package: "plaster", family: "Plaster", weights: [400] },
   ],
   "twenty-forty-nine": [
