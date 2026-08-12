@@ -13,18 +13,48 @@
  * the next.
  *
  * The faces are stated here rather than left to the board shell, because
- * `app.css` names a different family on `body` for the tools and that
- * declaration wins over the shell's rule on `:root`. This file is loaded after
- * it by the five entries that make up the site and by nothing else, so the
- * tools keep their own face.
- *
- * Without this the start page was the only page in the site's own face, since
- * its shell remaps the family for itself, whilst the reference, the changelog,
- * and the references page all rendered in Inter with no heading face at all.
+ * `app.css` names a different family and a size of its own on `body` for the
+ * tools, and a declaration on the element itself wins over anything the shell
+ * states on `:root`. This file is loaded after it by the five entries that make
+ * up the site and by nothing else, so the tools keep their own face.
  */
 html {
   background: var(--velvet-base);
   scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/**
+ * The face and the size a page is read in.
+ *
+ * The size as well as the face, because `app.css` states 18px on `body` for the
+ * tools whilst this site reads a step larger, and a page that takes the site's
+ * own scale everywhere except its plain paragraphs is two different pages.
+ */
+body {
+  font-family: var(--velvet-font);
+  font-size: var(--velvet-text-body);
+}
+
+/**
+ * Every heading on the site, in the heading face.
+ *
+ * `font-weight` is stated because a browser sets a heading in bold by default
+ * and Workbench publishes one weight. Left at the default, the browser draws
+ * the missing weight itself by thickening the one it has.
+ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--velvet-font-heading);
+  font-weight: 400;
 }
 
 /**
@@ -143,7 +173,7 @@ body::after {
  * window edge on a narrow screen.
  */
 :root {
-  --velvet-page-width: 1200px;
+  --velvet-page-width: 1280px;
   --velvet-page-inset: clamp(1rem, 5vw, 4rem);
 
   /* Card geometry, stated once so the relationship between the three is
@@ -191,7 +221,7 @@ body::after {
   /* An uppercase label set in the label face. Two sizes, because the eyebrow
      over a section and the caption under a picture are read at the same size
      whilst the index heading beside a document is read a step below it. */
-  --velvet-text-label: 0.75rem;
+  --velvet-text-label: 0.8125rem;
   --velvet-text-label-small: 0.6875rem;
 
   /* How far apart a label's letters stand. Three steps rather than the seven

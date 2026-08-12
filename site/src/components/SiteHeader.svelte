@@ -106,22 +106,23 @@
   }
   /* The inset comes from `.velvet-page`, which every page on the site shares,
      so the wordmark starts exactly where the text beneath it does. */
+  /* Everything in the bar stands on one line, which is the wordmark's. A flex
+     container hands its own baseline to its parent from its first item, so the
+     mark answers for the brand and the first menu item for the navigation, and
+     both are then set against the same line. */
   .site-header {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
     gap: 0.5rem 1.5rem;
     padding: 1.375rem 0;
   }
-  /* The mark and the version sit on one row, aligned along their bottom edges
-     rather than centred, so the number reads as a subtext of the mark instead
-     of floating beside it. The bottom edge rather than the baseline, because
-     the mark carries the scale beneath it and the baseline it would align to
-     is the word's, which leaves the number sitting on top of the colours. */
+  /* The mark and the version share that line, so the number reads as a subtext
+     of the mark rather than floating beside it. */
   .brand {
     display: flex;
-    align-items: flex-end;
+    align-items: baseline;
     gap: 1.125rem;
   }
   /* The mark is sized by the brand rather than by the text scale, because it is
@@ -133,15 +134,12 @@
     text-decoration: none;
   }
   /* A version is a literal rather than prose, so it takes the label face along
-     with everything else in this bar that is not a sentence. It sits clear of
-     the bottom of the row, because the mark beside it ends at its scale and a
-     number level with those colours reads as part of them.
+     with everything else in this bar that is not a sentence.
 
      It is one flat tone rather than the gradient it carried before. The bar now
      holds four labels in the same face and size, and a fifth drawn differently
      from all of them read as a control rather than as a note. */
   .version {
-    margin-bottom: 0.5625rem;
     color: var(--velvet-text-dim);
     font-family: var(--velvet-font-label);
     font-size: var(--velvet-text-label);
@@ -162,7 +160,7 @@
   .home .scale {
     display: block;
     height: 2px;
-    margin-top: 0.4375rem;
+    margin-top: 0.1875rem;
   }
   ul {
     display: flex;
