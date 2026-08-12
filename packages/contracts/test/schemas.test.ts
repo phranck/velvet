@@ -13,6 +13,7 @@ import {
   VelvetConfigurationSchema,
   VelvetReleaseManifestSchema,
   VelvetVersionLockSchema,
+  validateVelvetConfiguration,
 } from "../src/index.js";
 
 test("all public documents require the same explicit schema version", () => {
@@ -99,4 +100,58 @@ test("published update schemas match their TypeScript schema sources", () => {
       JSON.parse(JSON.stringify(schema)),
     );
   }
+});
+
+/**
+ * A value for every status-page field the schema declares, so the normalizer
+ * can be asked to carry all of them at once.
+ *
+ * A field added to the schema without a value here fails the check below, which
+ * is what keeps this list complete.
+ */
+const EVERY_STATUS_PAGE_FIELD: Record<string, unknown> = {
+  name: "Example Status",
+  customDomain: "status.example.com",
+  design: "cassette",
+  layout: "cards",
+  defaultRange: "7d",
+  logoHeight: 96,
+  logoUrl: "./logo.svg",
+  navigation: [{ title: "Home", href: "https://example.com" }],
+  icons: { website: "ph-globe" },
+  theme: { name: "Custom" },
+  fonts: { sans: "Inter", mono: "Fira Code" },
+  seo: { description: "Live service status." },
+};
+
+/**
+ * The normalizer builds the status page field by field, so a field the schema
+ * accepts and it does not copy is dropped between what somebody writes and what
+ * gets published. `design` was dropped that way, and an installation naming one
+ * published the page Velvet ships instead.
+ */
+test("the normalizer carries every status-page field the schema declares", () => {
+  const declared = Object.keys(
+    VelvetConfigurationSchema.properties.statusPage.properties,
+  );
+  assert.deepEqual(
+    declared.filter((field) => !(field in EVERY_STATUS_PAGE_FIELD)),
+    [],
+    "a status-page field the schema declares has no value in this test",
+  );
+
+  const result = validateVelvetConfiguration({
+    schemaVersion: 1,
+    repository: { owner: "example", name: "status" },
+    statusPage: EVERY_STATUS_PAGE_FIELD,
+    services: [{ name: "Website", url: "https://example.com" }],
+  } as never);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.deepEqual(
+    declared.filter((field) => !(field in result.data.statusPage)),
+    [],
+    "the normalizer dropped a field the schema declares",
+  );
 });
