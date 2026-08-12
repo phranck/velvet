@@ -6,7 +6,7 @@ Velvet watches your websites and tells the people who rely on them whether every
 
 When an address stops answering, Velvet opens an issue in your repository and marks that service as down. When it answers again, the issue closes and the page says so. Planned work can be announced beforehand and shows up as a notice rather than as a fault.
 
-The page keeps up to a year of history, comes in four designs, and can live on an address of your own. Nothing runs on a server you have to rent, because all of it happens inside GitHub.
+The page keeps a record of what was found, so a visitor sees how things have been going and not only how they are right now. You choose how it looks, and it can live on an address of your own. Nothing runs on a server you have to rent, because all of it happens inside GitHub.
 
 ## What stays yours
 
