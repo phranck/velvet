@@ -2213,12 +2213,7 @@
   border: var(--service-display-edge-width) var(--rule-style)
     var(--service-display-edge-colour);
   border-radius: var(--service-display-radius);
-  background: var(--service-display-fill);
-  /* The cells start where the first character does, so the grid is laid on the
-     content box rather than on the panel's outer edge. The glass behind it
-     fills the whole panel. */
-  background-origin: content-box, padding-box;
-  background-size: var(--service-display-cell-size, auto), auto;
+  background: var(--display-glass);
   box-shadow: var(--service-display-shadow);
   color: var(--service-display-colour);
   font-family: var(--service-display-font);
@@ -2234,12 +2229,19 @@
   align-items: baseline;
   gap: var(--space-row);
   min-width: 0;
-  /* Whole cells, so a figure ranged right ends on one and starts on one. The
-     panel's own width comes from the row it sits in and is any number of
-     pixels; what is left over after the last whole cell stays dark at the end
-     of the line. A browser without `round()` leaves the line at that width and
-     the reading is off its cell, which is what it was before this. */
+  /* Whole cells, and the cells are drawn here rather than on the panel.
+
+     The panel's width comes from the row it sits in, and the name beside it
+     decides that, so it is any number of pixels. A grid laid on the panel would
+     therefore end in a part of a cell. Laid on the line, which is rounded down
+     to whole ones, every cell that is drawn is a whole cell, and what the panel
+     has left over is plain glass.
+
+     A browser without `round()` leaves the line at the panel's own width, which
+     is where this stood before. */
   width: round(down, 100%, var(--service-display-cell-advance, 1px));
+  background: var(--service-display-cell);
+  background-size: var(--service-display-cell-size, auto);
   /* One line each. A reading longer than the panel is cut rather than wrapped,
      the way a real one runs out of characters. */
   overflow: hidden;
