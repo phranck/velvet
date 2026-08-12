@@ -179,7 +179,6 @@ function service(
   return `<article class="service" data-service-id="${escape(entry.id)}" data-open="false">
     <button class="service-summary" type="button" aria-expanded="false" aria-controls="details-${escape(entry.id)}" aria-label="${escape([entry.name, `${figure} uptime`, spoken].filter(Boolean).join(", "))}">
       <span class="service-name">${escape(entry.name)}</span>
-      ${protocols(entry)}
       <span class="service-display">
         <span class="service-display-line">
           <span class="service-display-main">${escape(STATE_WORD[entry.status] ?? "No data")}</span>
@@ -196,6 +195,7 @@ function service(
     </div>
     <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
+        ${protocols(entry)}
         <div class="chart-host"></div>
       </div>
     </div>

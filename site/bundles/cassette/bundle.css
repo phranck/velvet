@@ -257,13 +257,39 @@
     stand, and a lamp behind it warming the whole face. The trace runs across
     that scale the way the tuning needle does.
   */
-  /* The scale is a window in the same plate as the panel above it, so it takes
-     the panel's corners and the panel's cut. No rim, for the same reason. */
+  /*
+    The scale is a window in the same plate as the panel above it, cut with a
+    larger corner because it is a larger window: the panel's 5px reads as a
+    square hole at 856 by 200, where this reads as milled. No rim, because a
+    hole in a plate has none.
+  */
   --chart-plot-inset: 0px;
   --chart-plot-edge-width: 0px;
   --chart-plot-edge-colour: transparent;
-  --chart-plot-radius: var(--service-display-radius);
-  --chart-plot-shadow: var(--service-display-shadow);
+  --chart-plot-radius: 9px;
+  /*
+    The four walls of the cut, over everything in the window.
+
+    The light stands above and a little to the left, which is the same light
+    the case is drawn by. So the wall under the top edge is in shadow and
+    throws furthest, the wall behind the leading edge throws a shorter one
+    across, the trailing one less again, and the wall at the foot is the one
+    the light reaches: a hairline of bare metal along the bottom of the cut.
+
+    The panel above states one shadow for all of this, which is enough at 623
+    by 53 and not at 856 by 200: a single throw from the top edge leaves the
+    other three sides flat, and a flat side reads as a printed rectangle rather
+    than as a hole.
+  */
+  --chart-plot-shadow: inset 0 5px 8px rgb(0 0 0 / 0.8),
+    inset 4px 0 7px rgb(0 0 0 / 0.45), inset -4px 0 7px rgb(0 0 0 / 0.35),
+    inset 0 -2px 1px rgb(0 0 0 / 0.5),
+    inset 0 -1px 0 rgb(232 220 196 / 0.14);
+  /* The lip the cut leaves in the plate at its lower edge, outside the window
+     rather than in it. It sits on the plot itself, because the window clips
+     its own contents and an outset shadow drawn by a child is cut away with
+     them. */
+  --chart-plot-lip: 0 1px 0 rgb(232 220 196 / 0.09);
   --chart-plot-fill: radial-gradient(
       ellipse 80% 130% at 50% 100%,
       rgb(232 163 61 / 0.22),
@@ -286,6 +312,11 @@
      their two lengths are stated here. */
   --chart-tick-colour: rgb(232 220 196 / 0.45);
   --chart-tick-major-colour: rgb(232 220 196 / 0.8);
+  /* How far the scale stands clear of the foot of the window, in the drawing's
+     own units. The two lengths in `script.ts` carry the same five units back
+     down again, so a mark reaches below the line it is lifted to and only its
+     head is where the lift puts it. */
+  --chart-tick-lift: -1px;
   --chart-head-margin: 0px;
   /* Air above the caption, so it stands with the window it names rather than
      under the line of dates it follows. Measured: 25px over it and 9px under
@@ -843,16 +874,15 @@
      text, so the conformance suite holds it to 4.5:1 against the unlit window
      behind it, and this measures 4.51:1. */
   --badge-absent-colour: #867760;
-  /* Plate, badges and readout all run the full height of the row, so the three
-     stand level the way instruments on one faceplate do. */
+  /* Plate and readout both run the full height of the row, so the two stand
+     level the way instruments on one faceplate do. */
   --service-name-self: stretch;
-  /* The two windows stand one above the other as a pair, close together and
-     centred against the panel beside them, rather than pushed to the ends of
-     whatever height the row happens to have. */
+  /* Side by side on one line, because the pair stands at the leading edge of
+     the caption over the plot rather than in the row above it. */
   --protocols-self: center;
-  --protocols-justify: center;
-  --protocols-direction: column;
-  --protocols-align: flex-start;
+  --protocols-justify: flex-start;
+  --protocols-direction: row;
+  --protocols-align: center;
   /*
     The readout.
 
@@ -881,11 +911,11 @@
   */
   --service-display-inset: 6px;
   /*
-    What the panel is not: the row's own padding, the three gaps, the two
-    windows, the key, and the least the name plate may be squeezed to. The panel
-    takes the whole cells that are left over after those, and the name plate
-    takes whatever the rounding leaves, which is why the plate is the elastic
-    part of the row and the panel is never a fraction of a cell wide.
+    What the panel is not: the two gaps, the key, and the least the name plate
+    may be squeezed to. The panel takes the whole cells that are left over after
+    those, and the name plate takes whatever the rounding leaves, which is why
+    the plate is the elastic part of the row and the panel is never a fraction
+    of a cell wide.
   */
   --badge-width: 40px;
   --service-name-min: 168px;
@@ -894,7 +924,7 @@
       var(--service-display-inset) - 4.47px
   );
   --service-display-reserve: calc(
-    3 * var(--space-row) + var(--badge-width) + var(--disclosure-mark-width) +
+    2 * var(--space-row) + var(--disclosure-mark-width) +
       var(--service-name-min)
   );
   --service-display-padding: calc(var(--service-display-inset) - 5px)
@@ -2658,6 +2688,23 @@
   overflow: hidden;
 }
 
+/*
+  Whatever a design labels its plot with, standing at the leading edge of the
+  caption over it.
+
+  Laid over the panel rather than given a column beside the chart, because the
+  caption is centred on the window and a column of its own would take that
+  centring away from it. Its box is as deep as the caption's line and it
+  centres what it holds in that, so the two read on one line however tall
+  either happens to be.
+*/
+.service-details > .service-protocols {
+  position: absolute;
+  inset-block-start: var(--chart-head-space);
+  inset-inline-start: 0;
+  min-height: calc(var(--text-size-caption) * var(--text-leading-body));
+}
+
 .service-details {
   /* Its own edge rather than the page's, because a design may want the panel
      to be a filled field with no outline at all. */
@@ -2781,6 +2828,11 @@
     var(--chart-plot-edge-colour);
   border-radius: var(--chart-plot-radius, var(--control-radius));
   background: var(--chart-plot-fill);
+  /* Anything a design draws outside the window rather than in it, such as the
+     lip a cut leaves in the surface around it. It belongs here rather than on
+     the layer below, because the window clips its own contents and an outset
+     shadow drawn by a child is cut away with them. */
+  box-shadow: var(--chart-plot-lip, none);
 }
 
 /*
@@ -2937,6 +2989,22 @@
   eye finds the long ones first, and both are zero in a design that prints no
   scale.
 */
+/*
+  The scale stands clear of the foot of the window rather than on it.
+
+  Its marks are drawn from the time axis, which is the last row of the drawing,
+  so left alone they run into the wall of the cut and the corner radius takes
+  the bite out of the two at either end. Lifting the whole group puts them on
+  the glass with the plate's edge below them.
+
+  The length is in the drawing's own units, because a transform on an SVG group
+  is read in the local coordinate system: six units come to 8.0px at the width
+  a card gives the plot here.
+*/
+.chart-ticks {
+  transform: translateY(var(--chart-tick-lift, 0));
+}
+
 .chart-tick {
   stroke: var(--chart-tick-colour);
   stroke-width: var(--rule-width);

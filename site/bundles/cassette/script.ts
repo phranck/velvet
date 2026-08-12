@@ -79,8 +79,8 @@ const CHART_GEOMETRY = {
   pointRadius: 3,
   tooltipWidth: 140,
   fill: 0.32,
-  tickMinor: 4,
-  tickMajor: 8,
+  tickMinor: 9,
+  tickMajor: 13,
 } as const;
 
 /** One state colour, as the stylesheet resolved it. */
