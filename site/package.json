@@ -13,7 +13,7 @@
     "designs:screenshots": "bun scripts/design-screenshots.ts",
     "dev": "vite",
     "documentation:build": "vite build --config vite.documentation.ts",
-    "generated:build": "bun run --filter @velvet/contracts build && bun run scripts/subset-icon-font.ts",
+    "generated:build": "bun run --filter @velvet/contracts build && bun run scripts/subset-icon-font.ts && bun run scripts/write-theme-defaults.ts",
     "icons:build": "bun scripts/build-iconsax.ts",
     "plate:render": "bun scripts/render-brushed-plate.ts",
     "man-pages:build": "bun scripts/build-man-pages.ts",

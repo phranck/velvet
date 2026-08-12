@@ -1,44 +1,22 @@
 @import "./lib/velvet-typefaces.css";
+/*
+  The values a theme replaces, derived from the same resolver that replaces
+  them. Written by scripts/write-theme-defaults.ts; see the file itself for why
+  they are not stated here.
+*/
+@import "./lib/velvet-theme-defaults.generated.css";
 
+/*
+  What no theme touches. Every name below is either derived from one the theme
+  sets, or belongs to the page rather than to the palette, which is why these
+  are written by hand whilst the ones above are not.
+*/
 :root {
-  --accent: #6366f1;
   --accent-bright: color-mix(in srgb, var(--accent), #ffffff 16%);
-  --grid-operational: #6366f1;
-  --grid-degraded: #d29922;
-  --grid-outage: #f85149;
+  /* The neutral a planned maintenance window is drawn in. Not a theme value:
+     the other three grid states are configurable and this one is deliberately
+     not, because maintenance is an event rather than a health state. */
   --grid-maintenance: #8b919b;
-  --grid-no-data: #1c2029;
-  --protocol-ipv4: #7c7ef3;
-  --protocol-ipv6: #38bdf8;
-
-  --background-start: #0e1018;
-  --background-end: #0a0b0f;
-  --cloudy-blobs:
-    radial-gradient(
-      52% 41% at 12% 0%,
-      color-mix(in srgb, var(--accent) 13%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      46% 36% at 88% 4%,
-      color-mix(in srgb, var(--accent-bright) 10%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      58% 45% at 50% 100%,
-      color-mix(in srgb, var(--accent) 8%, transparent),
-      transparent 70%
-    );
-
-  --card-background: #0e1015;
-  --card-border: #1c2029;
-  --card-separator: #14171f;
-  --card-border-width: 1px;
-
-  --text-primary: #e8eaed;
-  --text-secondary: #8b919b;
-  --text-tertiary: #565b65;
-
   --accent-deg: var(--grid-degraded);
   --accent-down: var(--grid-outage);
   --bg: var(--background-end);
