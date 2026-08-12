@@ -107,6 +107,44 @@ export const firstDay: BundleData = buildFixture(
 );
 
 /**
+ * A month carrying every state a day can be in.
+ *
+ * Days that answered, days that lost a little time, days that lost most of it,
+ * and days that recorded nothing at all, all in one row. The case every other
+ * fixture misses: those show a row of one state each, and none of them says
+ * whether a reader could tell the four apart where they stand side by side.
+ *
+ * A day counts as an outage once it loses three tenths of what was monitored,
+ * so the figures below are seconds of a full day: 1800 and 600 are degraded,
+ * 43200 and 60000 are outages.
+ */
+export const everyDayState: BundleData = buildFixture(
+  spec({
+    monitoringDays: 30,
+    services: [
+      {
+        id: "website",
+        name: "Website",
+        status: "operational",
+        protocols: ["ipv4", "ipv6"],
+        responseTimeMs: 96,
+        gaps: [3, 4, 11, 19, 26],
+        outages: { 2: 1800, 8: 43200, 15: 600, 22: 60000 },
+      },
+      {
+        id: "api",
+        name: "API",
+        status: "operational",
+        protocols: ["ipv4"],
+        responseTimeMs: 128,
+        gaps: [1, 12, 13, 20, 27],
+        outages: { 5: 900, 9: 54000, 17: 2400 },
+      },
+    ],
+  }),
+);
+
+/**
  * Everything unknown.
  *
  * Nothing has answered, no response time exists, and every figure a design

@@ -67,6 +67,40 @@ export interface UptimeStripStyle {
   narrowRadius: number;
   /** Whether a segment carries the light-catching gradient. */
   gloss: boolean;
+  /**
+   * Which way that gradient reads: a segment standing out of the track, or one
+   * sunk into it.
+   *
+   * `raised` lights the top edge and shades the foot, which is a bar sitting on
+   * a surface. `sunken` does the opposite, so the same bar reads as a window cut
+   * into the plate with the light falling in from above. A design emulating a
+   * machine wants the second one wherever its other parts are recessed.
+   *
+   * Absent reads as `raised`, which is what every design drew before there was
+   * a choice.
+   */
+  relief?: "raised" | "sunken";
+  /**
+   * What the segment under the pointer does.
+   *
+   * `grow` stands it up to `hoverHeight`, which is a bar rising out of the row.
+   * `lighten` leaves every segment at its own height and brightens the one
+   * under the pointer instead, which is what a lamp behind a plate does and the
+   * only answer available to a design whose segments are sunk into one.
+   *
+   * A day nothing was measured on stays as it is either way: there is no lamp
+   * behind it to turn up.
+   *
+   * Absent reads as `grow`.
+   */
+  hover?: "grow" | "lighten";
+  /**
+   * How much white goes into the hovered segment under `lighten`, from 0 to 1.
+   *
+   * Absent reads as 0.28, which is a step somebody notices without the colour
+   * losing which state it stands for.
+   */
+  hoverLighten?: number;
   /** Where a segment sits in the track: centred, or grown from one edge. */
   align: "center" | "top" | "bottom";
   /** How many stacked pieces one segment is drawn as. One is a solid bar. */
@@ -101,6 +135,7 @@ export const DEFAULT_UPTIME_STRIP_STYLE: UptimeStripStyle = {
   radius: 2,
   narrowRadius: 999,
   gloss: true,
+  relief: "raised",
   align: "center",
   pieces: 1,
   pieceGap: 2,
@@ -330,9 +365,17 @@ export function createUptimeStrip(
       0,
       (surfaceHeight + style.height) / 2,
     );
-    gloss.addColorStop(0, "rgba(255, 255, 255, 0.22)");
-    gloss.addColorStop(0.42, "rgba(255, 255, 255, 0.05)");
-    gloss.addColorStop(1, "rgba(0, 0, 0, 0.12)");
+    if (style.relief === "sunken") {
+      // The light falls in from above and lands on the far wall, so the top of
+      // the segment is in shadow and its foot catches the light.
+      gloss.addColorStop(0, "rgba(0, 0, 0, 0.42)");
+      gloss.addColorStop(0.45, "rgba(0, 0, 0, 0.1)");
+      gloss.addColorStop(1, "rgba(255, 255, 255, 0.16)");
+    } else {
+      gloss.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+      gloss.addColorStop(0.42, "rgba(255, 255, 255, 0.05)");
+      gloss.addColorStop(1, "rgba(0, 0, 0, 0.12)");
+    }
 
     // The 90-day view packs the strip with three times as many segments as the
     // 30-day one, so each is about a quarter as wide and takes the narrow
@@ -345,7 +388,9 @@ export function createUptimeStrip(
     days.forEach((day, index) => {
       const place = slot(index, days.length, width, style.gap);
       const lifted = index === hovered;
-      const drawnHeight = lifted ? style.hoverHeight : style.height;
+      const lightens = style.hover === "lighten";
+      const drawnHeight =
+        lifted && !lightens ? style.hoverHeight : style.height;
       // Where the segment sits in the track. Centred keeps the strip
       // symmetrical and lets a segment under the pointer grow both ways;
       // anchored to an edge it grows only away from that edge, which is what a
@@ -359,7 +404,15 @@ export function createUptimeStrip(
       // A day nothing was measured on carries an edge instead of the gloss:
       // nothing was recorded, so there is no surface to catch light.
       const empty = !day.hasData && day.maintenance.length === 0;
-      const colour = statusColour(day, style);
+      const base = statusColour(day, style);
+      // Mixed rather than replaced, so a lit segment is the same state a shade
+      // brighter and no design has to name a second colour per state.
+      const colour =
+        lifted && lightens && !empty
+          ? `color-mix(in srgb, #ffffff ${Math.round(
+              (style.hoverLighten ?? 0.28) * 100,
+            )}%, ${base})`
+          : base;
       const edge = empty
         ? style.ghostEdge
         : day.maintenance.length > 0

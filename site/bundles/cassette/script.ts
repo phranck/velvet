@@ -47,6 +47,12 @@ const STRIP_GEOMETRY = {
   narrowRadius: 2,
   trackRadius: 2,
   gloss: true,
+  // Sunk into the plate, like the display and the protocol windows beside it.
+  relief: "sunken",
+  // A segment cut into the plate cannot rise out of it, so the day under the
+  // pointer lights up instead of standing up.
+  hover: "lighten",
+  hoverLighten: 0.38,
   align: "center",
   pieces: 4,
   pieceGap: 2,
@@ -320,7 +326,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         data.status.generatedAt,
         data.status.monitoringStartedAt,
       );
-      row.uptime.textContent = `${figure} uptime`;
+      row.uptime.textContent = `${figure} Uptime`;
       // Rewritten with the figure, because the label replaces the contents and
       // the figure is half of what the row says.
       row.summary.setAttribute(

@@ -15,6 +15,7 @@ import type { BundleData } from "../../src/lib/bundles/data.js";
 import {
   allWell,
   everythingUnknown,
+  everyDayState,
   firstDay,
   ipv6Only,
   longNames,
@@ -53,6 +54,11 @@ export const FIXTURES: readonly Fixture[] = [
     name: "everything-unknown",
     what: "nothing has answered and no figure exists",
     data: everythingUnknown,
+  },
+  {
+    name: "every-day-state",
+    what: "answered, degraded, out and unrecorded days in one row",
+    data: everyDayState,
   },
   { name: "one-service", what: "one service", data: oneService },
   { name: "twenty-services", what: "twenty services", data: twentyServices },
