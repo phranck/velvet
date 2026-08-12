@@ -91,8 +91,6 @@
   --state-ghost-edge: ;
   --protocol-ipv4: #e8a33d;
   --protocol-ipv6: #8fae5a;
-  --protocol-ipv4-offset: 3px;
-  --protocol-ipv6-offset: -3px;
 
   /* ── Typography ───────────────────────────────────────────────────────── */
   /* One face throughout, because a machine of this period had one printer and
@@ -777,8 +775,11 @@
   /* Plate, badges and readout all run the full height of the row, so the three
      stand level the way instruments on one faceplate do. */
   --service-name-self: stretch;
-  --protocols-self: stretch;
-  --protocols-justify: space-between;
+  /* The two windows stand one above the other as a pair, close together and
+     centred against the panel beside them, rather than pushed to the ends of
+     whatever height the row happens to have. */
+  --protocols-self: center;
+  --protocols-justify: center;
   --protocols-direction: column;
   --protocols-align: flex-start;
   /*
@@ -796,8 +797,39 @@
   --service-display-display: grid;
   --service-display-line-display: flex;
   --service-display-main-display: block;
-  --service-display-flex: 1 1 auto;
-  --service-display-padding: 4px 10px 5px;
+  --service-display-flex: 0 0 auto;
+  /*
+    One inset all round, measured to the dots rather than to the cells.
+
+    A cell is wider and taller than the dots in it, because the blank column
+    between characters and the space under the last row belong to the cell. The
+    figures below take that out: the first dot's edge stands 0.33 into its cell
+    and 5.0 down it, the last stands 4.47 short of the cell's right edge and 1.8
+    short of its foot. Subtracting each from the inset leaves the same gap of
+    metal on all four sides.
+  */
+  --service-display-inset: 6px;
+  /*
+    What the panel is not: the row's own padding, the three gaps, the two
+    windows, the key, and the least the name plate may be squeezed to. The panel
+    takes the whole cells that are left over after those, and the name plate
+    takes whatever the rounding leaves, which is why the plate is the elastic
+    part of the row and the panel is never a fraction of a cell wide.
+  */
+  --badge-width: 40px;
+  --service-name-min: 112px;
+  --service-display-frame: calc(
+    2 * var(--service-display-edge-width) + var(--service-display-inset) - 0.33px +
+      var(--service-display-inset) - 4.47px
+  );
+  --service-display-reserve: calc(
+    3 * var(--space-row) + var(--badge-width) + var(--disclosure-mark-width) +
+      var(--service-name-min)
+  );
+  --service-display-padding: calc(var(--service-display-inset) - 5px)
+    calc(var(--service-display-inset) - 4.47px)
+    calc(var(--service-display-inset) - 1.8px)
+    calc(var(--service-display-inset) - 0.33px);
   --service-display-edge-width: 1px;
   --service-display-edge-colour: #16202a;
   --service-display-radius: 3px;
@@ -865,7 +897,7 @@
   --service-display-shadow: inset 0 2px 4px rgb(0 0 0 / 0.75),
     inset 0 -1px 0 rgb(0 0 0 / 0.5), 0 1px 0 rgb(232 220 196 / 0.09);
   --service-name-display: grid;
-  --service-name-flex: 0 1 auto;
+  --service-name-flex: 1 1 auto;
   --service-name-trim: normal;
   --service-name-leading: 1.15;
   /*
@@ -2043,6 +2075,9 @@
 
 .service-summary {
   grid-area: summary;
+  /* The panel measures itself against this row, so the row has to be something
+     a length can be taken from. */
+  container-type: inline-size;
   display: flex;
   align-items: center;
   gap: var(--space-row);
@@ -2079,7 +2114,12 @@
   align-self: var(--service-name-self);
   place-items: center;
   min-width: 0;
+  /* One line, cut where it runs out. A plate of this kind is engraved once and
+     is the size it is; a name too long for it is read as far as it goes. */
+  overflow: hidden;
   padding: var(--service-name-padding);
+  text-overflow: ellipsis;
+  white-space: nowrap;
   border-radius: var(--service-name-radius);
   /*
     The service's own colour where the theme lists one, and the design's fill
@@ -2143,6 +2183,10 @@
 }
 
 .protocol-badge {
+  box-sizing: border-box;
+  /* A window in a plate is a stated size, not the size of the word in it, so
+     the row's arithmetic can count on it. */
+  width: var(--badge-width, auto);
   padding: var(--badge-padding-block) var(--badge-padding-inline);
   border: var(--badge-border-width) var(--rule-style)
     var(--badge-edge, var(--surface-rule));
@@ -2208,6 +2252,17 @@
 .service-display {
   display: var(--service-display-display);
   flex: var(--service-display-flex);
+  /* Whole cells and nothing beyond them: the width the row leaves is rounded
+     down to a cell, and the frame around them is added back so the rounding
+     applies to what is inside rather than to the outer edge. Without `round()`
+     the flex above decides the width, which is where this stood before. */
+  width: calc(
+    round(
+        down,
+        calc(100cqw - var(--service-display-reserve) - var(--service-display-frame)),
+        var(--service-display-cell-advance, 1px)
+      ) + var(--service-display-frame)
+  );
   min-width: 0;
   padding: var(--service-display-padding);
   border: var(--service-display-edge-width) var(--rule-style)
@@ -2240,6 +2295,10 @@
      A browser without `round()` leaves the line at the panel's own width, which
      is where this stood before. */
   width: round(down, 100%, var(--service-display-cell-advance, 1px));
+  /* What the last whole cell leaves over is split between the two ends, so the
+     block of cells stands in the middle of the panel rather than against one
+     edge with the remainder showing at the other. */
+  margin-inline: auto;
   background: var(--service-display-cell);
   background-size: var(--service-display-cell-size, auto);
   /* One line each. A reading longer than the panel is cut rather than wrapped,
