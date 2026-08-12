@@ -576,6 +576,7 @@ function normalizeConfiguration(
                 : parseHttpUrl(statusPage.logoUrl)!,
             }
           : {}),
+        ...(statusPage.design ? { design: statusPage.design } : {}),
         ...(statusPage.theme ? { theme: structuredClone(statusPage.theme) } : {}),
         ...(statusPage.fonts ? { fonts: { ...statusPage.fonts } } : {}),
         ...(statusPage.seo ? { seo: { ...statusPage.seo } } : {}),

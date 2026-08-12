@@ -13,11 +13,7 @@ import {
   type ServiceDraft,
 } from "../components/service-editor/model.js";
 import { validateServiceDrafts } from "../components/service-editor/validation.js";
-import {
-  SYSTEM_THEMES,
-  canonicalSystemTheme,
-  systemThemeById,
-} from "./system-themes.js";
+import { DESIGNS, designById } from "../lib/designs.js";
 
 export {
   createHeaderDraft,
@@ -42,7 +38,14 @@ export interface OnboardingDraft {
    */
   description: string;
   customDomain: string;
-  themeId: string;
+  /**
+   * The design the page is published in, named by its bundle directory.
+   *
+   * These are the same four designs the start page shows, read from one list so
+   * that the page offering them and the setup choosing between them cannot
+   * disagree about which exist.
+   */
+  designId: string;
   services: ServiceDraft[];
   /**
    * Whether this installation may be named as a reference on velvet.li.
@@ -141,7 +144,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     statusPageName: "Status",
     description: "",
     customDomain: "",
-    themeId: SYSTEM_THEMES[0].id,
+    designId: DESIGNS[0].id,
     services: [createServiceDraft()],
     listInGallery: false,
     privateRepository: false,
@@ -152,8 +155,8 @@ export function buildSetupRequest(
   draft: OnboardingDraft,
 ): OnboardingValidationResult {
   const errors: Record<string, string> = {};
-  const theme = systemThemeById(draft.themeId);
-  if (!theme) errors.themeId = "Choose one of the available system themes.";
+  const design = designById(draft.designId);
+  if (!design) errors.designId = "Choose one of the designs Velvet ships.";
   const customDomain = draft.customDomain.trim()
     ? normalizeCustomDomain(draft.customDomain)
     : null;
@@ -169,7 +172,7 @@ export function buildSetupRequest(
   }
   if (
     Object.keys(errors).length > 0 ||
-    !theme ||
+    !design ||
     !serviceValidation.success
   ) {
     return { success: false, errors };
@@ -183,7 +186,7 @@ export function buildSetupRequest(
     },
     statusPage: {
       name: draft.statusPageName.trim(),
-      theme: canonicalSystemTheme(theme),
+      design: design.id,
       ...(customDomain ? { customDomain } : {}),
       // Omitted entirely when blank. The contract caps the description at 300
       // characters and rejects an empty string, so writing one would fail the

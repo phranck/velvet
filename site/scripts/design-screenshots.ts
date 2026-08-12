@@ -32,7 +32,7 @@ import { createServer } from "vite";
 import { readBundles } from "./bundles.js";
 
 const siteRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const directory = join(siteRoot, "src/website/assets/designs");
+const directory = join(siteRoot, "src/assets/designs");
 
 /** The fixture every picture is taken on. */
 const FIXTURE = "all-well";

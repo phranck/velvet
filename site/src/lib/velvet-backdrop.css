@@ -55,6 +55,9 @@ body::before {
       transparent 64%
     ),
     var(--velvet-base);
+  /* The shorthand above sets this back to `repeat`, which is why it is stated
+     after it rather than before. */
+  background-repeat: no-repeat;
 }
 
 /**
@@ -112,4 +115,6 @@ body::after {
       var(--velvet-orbit-ring) 118vmax,
       transparent 118.1vmax
     );
+  /* As above: the shorthand resets it, and neither layer tiles. */
+  background-repeat: no-repeat;
 }

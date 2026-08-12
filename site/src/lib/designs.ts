@@ -1,10 +1,13 @@
 /**
- * The designs the start page shows, with the picture of each.
+ * The designs a page can be published in, with the picture of each.
  *
- * A page is published in one of these. They ship with Velvet as bundles, and
- * each is named here beside its picture: a design without a picture cannot be
- * shown whatever a glob found, so the pair is stated once rather than assembled
- * from two lists that can disagree.
+ * Two surfaces offer them: the start page shows what a page can look like, and
+ * the setup asks which one to publish in. Both read this list, so the two cannot
+ * come to disagree about which designs exist.
+ *
+ * They ship with Velvet as bundles, and each is named here beside its picture: a
+ * design without a picture cannot be shown whatever a glob found, so the pair is
+ * stated once rather than assembled from two lists that can disagree.
  *
  * The manifests are read for the name, the era and the sentence that tells one
  * design from another, so those cannot drift from what the bundle says about
@@ -19,13 +22,14 @@ import ncc1701dManifest from "../../bundles/ncc-1701-d/bundle.json";
 import twentyFortyNineManifest from "../../bundles/twenty-forty-nine/bundle.json";
 import velvetManifest from "../../bundles/velvet/bundle.json";
 
-import cassette from "./assets/designs/cassette.png";
-import ncc1701d from "./assets/designs/ncc-1701-d.png";
-import twentyFortyNine from "./assets/designs/twenty-forty-nine.png";
-import velvet from "./assets/designs/velvet.png";
+import cassette from "../assets/designs/cassette.png";
+import ncc1701d from "../assets/designs/ncc-1701-d.png";
+import twentyFortyNine from "../assets/designs/twenty-forty-nine.png";
+import velvet from "../assets/designs/velvet.png";
 
-/** One design, as the start page names and pictures it. */
-export interface GalleryDesign {
+/** One design, as it is named and pictured wherever it is offered. */
+export interface Design {
+  /** The bundle directory, which is what a configuration names in `design`. */
   id: string;
   name: string;
   /** The period the design belongs to, where its manifest names one. */
@@ -34,7 +38,7 @@ export interface GalleryDesign {
   picture: string;
 }
 
-/** As much of a manifest as this page reads. */
+/** As much of a manifest as this reads. */
 interface NamedManifest {
   id: string;
   name: string;
@@ -42,7 +46,7 @@ interface NamedManifest {
   description: string;
 }
 
-/** Each design, in the order the start page shows them: oldest era last. */
+/** Each design, in the order they are offered: oldest era last. */
 const OFFERED: ReadonlyArray<{ manifest: NamedManifest; picture: string }> = [
   { manifest: velvetManifest, picture: velvet },
   { manifest: cassetteManifest, picture: cassette },
@@ -50,7 +54,7 @@ const OFFERED: ReadonlyArray<{ manifest: NamedManifest; picture: string }> = [
   { manifest: ncc1701dManifest, picture: ncc1701d },
 ];
 
-export const GALLERY_DESIGNS: readonly GalleryDesign[] = OFFERED.map(
+export const DESIGNS: readonly Design[] = OFFERED.map(
   ({ manifest, picture }) => ({
     id: manifest.id,
     name: manifest.name,
@@ -59,3 +63,13 @@ export const GALLERY_DESIGNS: readonly GalleryDesign[] = OFFERED.map(
     picture,
   }),
 );
+
+/**
+ * Finds the design a configuration names.
+ *
+ * @param id - A bundle directory name, as `statusPage.design` carries it.
+ * @returns The design, or nothing when no shipped design answers to that name.
+ */
+export function designById(id: string): Design | undefined {
+  return DESIGNS.find((design) => design.id === id);
+}

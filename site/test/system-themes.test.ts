@@ -73,26 +73,26 @@ test("the theme picker's pictures match the current themes and assets", async ()
 });
 
 /**
- * The start page offers the designs a page can be published in.
+ * The designs a page can be published in, as both surfaces offer them.
  *
  * A design ships with Velvet as a bundle, and the one thing that can go wrong
  * is a design without a picture of it.
  */
-test("the start page offers every design that is meant to be chosen", async () => {
-  const { GALLERY_DESIGNS } = await import("../src/website/design-gallery.js");
+test("every design that is meant to be chosen is offered with its picture", async () => {
+  const { DESIGNS } = await import("../src/lib/designs.js");
   const manifest = JSON.parse(
     await readFile(
-      resolve(import.meta.dirname, "../src/website/assets/designs/manifest.json"),
+      resolve(import.meta.dirname, "../src/assets/designs/manifest.json"),
       "utf8",
     ),
   ) as { fixture: string; designs: Record<string, { file: string }> };
 
   assert.deepEqual(
-    [...GALLERY_DESIGNS.map(({ id }) => id)].sort(),
+    [...DESIGNS.map(({ id }) => id)].sort(),
     Object.keys(manifest.designs).sort(),
   );
-  assert.equal(GALLERY_DESIGNS.length > 0, true);
-  for (const design of GALLERY_DESIGNS) {
+  assert.equal(DESIGNS.length > 0, true);
+  for (const design of DESIGNS) {
     assert.ok(design.picture, `${design.id} has no picture`);
     assert.ok(design.name, `${design.id} has no name`);
     assert.ok(design.description, `${design.id} has no description`);
@@ -104,10 +104,19 @@ test("the start page offers every design that is meant to be chosen", async () =
   // Read from the source rather than from the resolved URL, because the build
   // rewrites those to hashed names and the assertion would then pass whatever
   // the page ended up showing.
-  const startPage = await readFile(
-    resolve(import.meta.dirname, "../src/website/Website.svelte"),
-    "utf8",
-  );
-  assert.match(startPage, /from "\.\/design-gallery\.js"/u);
-  assert.doesNotMatch(startPage, /system-themes/u);
+  //
+  // Both surfaces are read, because one list is the point of it: a start page
+  // advertising four designs whilst the setup offers something else is the
+  // thing this prevents.
+  for (const surface of [
+    "website/Website.svelte",
+    "onboarding/Onboarding.svelte",
+  ]) {
+    const source = await readFile(
+      resolve(import.meta.dirname, `../src/${surface}`),
+      "utf8",
+    );
+    assert.match(source, /from "\.\.\/lib\/designs\.js"/u, surface);
+    assert.doesNotMatch(source, /system-themes/u, surface);
+  }
 });

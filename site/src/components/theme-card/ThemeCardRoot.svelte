@@ -62,6 +62,16 @@
     gap: 0.55rem;
   }
 
+  /* Two to a row before one, because four of them below this are too narrow for
+     the label an option carries. Measured with the longest of them, which needs
+     171px: at a 960px window an option offers 183px and at 900px only 169px, so
+     the second line of the label was cut off there. */
+  @media (max-width: 960px) {
+    .options {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   @media (max-width: 560px) {
     .options {
       grid-template-columns: 1fr;

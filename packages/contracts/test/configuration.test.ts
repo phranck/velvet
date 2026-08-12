@@ -103,6 +103,21 @@ services:
   });
 });
 
+test("carries the named design through to the configuration that gets written", () => {
+  const result = parse(`
+schemaVersion: 1
+repository: { owner: example, name: status }
+statusPage: { name: Example Status, design: cassette }
+services:
+  - { name: Website, url: https://example.com }
+`);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  const statusPage = result.data.statusPage as { design?: string };
+  assert.equal(statusPage.design, "cassette");
+});
+
 test("does not put an installation forward as a reference unless asked", () => {
   const result = parse(`
 schemaVersion: 1

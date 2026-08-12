@@ -130,11 +130,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ["no-repeat"],
       "no background layer tiles",
     );
-    // The circuit-board layer covers instead of repeating, which fits it to the
-    // window and crops it rather than stretching it out of proportion.
-    assert.ok(
-      backdrop.size.includes("cover"),
-      `expected a covering layer, got ${backdrop.size.join(" | ")}`,
+    // Every layer is a gradient painted across the whole fixed element, so each
+    // reports its own size rather than being fitted to the window.
+    assert.deepEqual(
+      [...new Set(backdrop.size)],
+      ["auto"],
+      "a backdrop layer is being sized to something other than the layer itself",
     );
     assert.equal(await page.locator(".topbar").count(), 0);
     assert.equal(await page.locator("[data-page-footer]").count(), 1);
@@ -213,7 +214,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     // checked here, the contract rejected it on Publish instead, which put the
     // message two steps away from the field that caused it.
     await page.getByLabel("URL to monitor").fill("example.com");
-    await page.getByRole("button", { name: "Theme", exact: true }).click();
+    await page.getByRole("button", { name: "Design", exact: true }).click();
     assert.equal(
       await page
         .locator("[data-squircle-step][aria-current='step'] .label")
@@ -266,7 +267,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       () => (document.querySelector(".steps button")?.getBoundingClientRect().width ?? 0) > 80,
     );
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole("button", { name: "Theme", exact: true }).click();
+    await page.getByRole("button", { name: "Design", exact: true }).click();
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -277,8 +278,8 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         fullPage: true,
       });
     }
-    const themeRadios = page.locator('input[name="system-theme"]');
-    assert.equal(await themeRadios.count(), 4);
+    const designRadios = page.locator('input[name="design"]');
+    assert.equal(await designRadios.count(), 4);
     // Square, and cut to a squircle rather than to a radius, which is the
     // shape the steps above it carry. The path is derived from the option's
     // measured width, so it lands on the frame after the step opens.
@@ -294,15 +295,15 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           check();
         }),
       );
-    await themeRadios.first().focus();
+    await designRadios.first().focus();
     await page.keyboard.press("ArrowRight");
-    assert.equal(await themeRadios.nth(1).isChecked(), true);
+    assert.equal(await designRadios.nth(1).isChecked(), true);
     await page.getByRole("button", { name: "Review", exact: true }).click();
     const reviewItems = page.locator("[data-review-item]");
     assert.equal(await reviewItems.count(), 5);
     assert.deepEqual(
       await reviewItems.locator("dt").allTextContents(),
-      ["Repository", "Status page", "Service", "Theme", "Custom domain"],
+      ["Repository", "Status page", "Service", "Design", "Custom domain"],
     );
     assert.equal(await reviewItems.getByText("status.example.com").count(), 1);
     assert.deepEqual(
@@ -324,7 +325,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     const secondService = page.locator("[data-service-editor-item]").nth(1);
     await secondService.getByLabel("Service name").fill("API");
     await secondService.getByLabel("URL to monitor").fill("https://api.example.com");
-    await page.getByRole("button", { name: "Theme", exact: true }).click();
+    await page.getByRole("button", { name: "Design", exact: true }).click();
     await page.getByRole("button", { name: "Review", exact: true }).click();
     assert.deepEqual(
       await page.locator("[data-review-item]").nth(2).evaluate((item) => ({
@@ -991,7 +992,7 @@ history:
         description: "",
         listInGallery: false,
         privateRepository: false,
-        themeId: "velvet-default",
+        designId: "velvet",
         services: [
           {
             id: "conflict-service",

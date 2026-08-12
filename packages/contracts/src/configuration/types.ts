@@ -72,6 +72,8 @@ export interface NormalizedVelvetConfiguration {
     icons: Record<string, string>;
     customDomain?: string;
     logoUrl?: string;
+    /** The design the page is published in, named by its bundle directory. */
+    design?: string;
     theme?: VelvetThemeInput;
     fonts?: { sans?: string; mono?: string };
     seo?: VelvetConfigurationInput["statusPage"]["seo"];

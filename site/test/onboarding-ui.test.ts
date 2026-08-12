@@ -152,7 +152,7 @@ test("uses the local Datatype family for onboarding typography", async () => {
   assert.match(onboarding, /--setup-card-copy:\s*var\(--setup-text-copy\)/);
   assert.match(
     onboarding,
-    /Tell Velvet what to watch, choose a theme, and publish through your[\s\S]*GitHub account\./,
+    /Tell Velvet what to watch, choose a design, and publish through your[\s\S]*GitHub account\./,
   );
 });
 
