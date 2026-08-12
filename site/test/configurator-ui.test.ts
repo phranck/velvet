@@ -304,10 +304,7 @@ test("restores persisted section state before the first details render", async (
     "utf8",
   );
 
-  assert.match(
-    source,
-    /let sectionState = \$state\(readStoredSectionState\(\)\)/,
-  );
+  assert.match(source, /let sectionState = \$state\(readSectionState\(\)\)/);
   assert.doesNotMatch(source, /onMount\(\(\) => \{\s*try \{\s*sectionState/);
 });
 
@@ -347,11 +344,19 @@ test("collapses the complete sidebar into a persistent narrow rail", async () =>
     "utf8",
   );
 
-  assert.match(configurator, /SIDEBAR_STORAGE_KEY/);
   assert.match(configurator, /createScrollCompensation/);
   assert.match(configurator, /bind:this=\{controlScroll\}/);
-  assert.match(configurator, /parseSidebarCollapsed/);
-  assert.match(configurator, /serializeSidebarCollapsed/);
+  // Read and written through section-state.ts, which holds the storage key
+  // beside the code that serialises what is stored.
+  assert.match(configurator, /readSidebarCollapsed\(\)/);
+  assert.match(configurator, /writeSidebarCollapsed\(/);
+  const sectionState = await readFile(
+    resolve(import.meta.dirname, "../src/configurator/section-state.ts"),
+    "utf8",
+  );
+  assert.match(sectionState, /SIDEBAR_STORAGE_KEY/);
+  assert.match(sectionState, /parseSidebarCollapsed/);
+  assert.match(sectionState, /serializeSidebarCollapsed/);
   assert.match(configurator, /class:collapsed=\{sidebarCollapsed\}/);
   assert.match(configurator, /inert=\{sidebarCollapsed\}/);
   assert.match(
@@ -386,7 +391,7 @@ test("places the expanded sidebar control in its scrolling header and keeps a pe
   );
   assert.match(
     configurator,
-    /function toggleSidebar\(\): void \{[\s\S]*persistSidebarCollapsed\(sidebarCollapsed\);/,
+    /function toggleSidebar\(\): void \{[\s\S]*writeSidebarCollapsed\(sidebarCollapsed\);/,
   );
 });
 
