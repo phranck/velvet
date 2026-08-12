@@ -122,9 +122,12 @@
   pre > code {
     /* Its own size rather than a fraction of the prose around it, so a page
        reading a step larger does not carry the code with it. */
-    font-family: var(--font-mono);
-    font-size: var(--velvet-text-code, 0.9375rem);
-    line-height: 1.7;
+    font-family: var(--velvet-font-figure, var(--font-mono));
+    font-size: var(--velvet-text-code, 1.3125rem);
+    font-weight: 600;
+    /* Tighter than prose takes, because the dot face reads at a larger size and
+       the leading that suits a paragraph pulls its lines apart at this one. */
+    line-height: 1.35;
   }
   .line {
     display: block;

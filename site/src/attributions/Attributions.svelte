@@ -63,12 +63,12 @@
   h2:first-child {
     margin-block-start: 0;
   }
-  /* The first column names the component, and a name broken across two lines
-     is read as two entries. It runs on one line and the table scrolls inside
-     its own frame instead, which it already does. */
-  :global(td:first-child),
-  :global(th:first-child) {
+  /* The second column carries nothing but a version number or the date an asset
+     was retrieved, and both are read as one value. A date breaks at its hyphens
+     given the chance, and the column is narrow enough to take it: measured at
+     95px, all three dates stood as `2026-` over `08-01`. */
+  :global(td:nth-child(2)),
+  :global(th:nth-child(2)) {
     white-space: nowrap;
   }
-
 </style>
