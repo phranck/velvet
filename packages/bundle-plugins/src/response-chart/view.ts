@@ -101,6 +101,17 @@ export interface ResponseChartOptions {
   /** The class put on the hover reading, which lives on the document's layer. */
   tooltipClassName?: string;
   /**
+   * Whether the pointer's reading is shown beside it at all.
+   *
+   * A design whose plot already names what the pointer stands on, or which
+   * wants nothing floating over the page, turns it off. The strip the pointer
+   * rides on and the drawing itself are unaffected.
+   *
+   * Absent reads as shown, which is what every design did before there was a
+   * choice.
+   */
+  tooltip?: boolean;
+  /**
    * What each series is drawn in, or a function returning it.
    *
    * Read once per render rather than once per pointer move. The hover reading
@@ -313,7 +324,10 @@ export function createChartView(
     values: Array<{ protocol: "ipv4" | "ipv6"; responseTimeMs: number }>;
   } | null = null;
   // On the document's own layer, for the reasons the overlay plugin records.
-  const tooltip = createOverlay(options.tooltipClassName ?? "chart-reading");
+  const tooltip =
+    options.tooltip === false
+      ? null
+      : createOverlay(options.tooltipClassName ?? "chart-reading");
 
   /**
    * The box the drawing itself occupies.
@@ -377,7 +391,7 @@ export function createChartView(
       row.append(key, label, reading);
       body.append(row);
     }
-    tooltip.show(body, () => {
+    tooltip?.show(body, () => {
       if (activeTimestamp !== timestamp) return null;
       const box = plotBox();
       if (box.width === 0) return null;
@@ -428,7 +442,7 @@ export function createChartView(
       plotHost.removeAttribute("tabindex");
       // Nothing to read, so nothing may be left hanging over the page.
       pendingReading = null;
-      tooltip.hide();
+      tooltip?.hide();
       return;
     }
     plotHost.setAttribute("tabindex", "0");
@@ -713,7 +727,7 @@ export function createChartView(
       );
       pendingReading = null;
     } else {
-      tooltip.hide();
+      tooltip?.hide();
       report?.(null);
     }
   }
@@ -785,7 +799,7 @@ export function createChartView(
       plotHost.removeEventListener("blur", clearHover);
       plotHost.removeEventListener("keydown", onKeyDown);
       plotHost.removeEventListener("focus", onFocus);
-      tooltip.destroy();
+      tooltip?.destroy();
       host.textContent = "";
     },
   };

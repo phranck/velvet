@@ -191,6 +191,10 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
       }),
       chart: createChartView(chartHost, entry.id, entry.name, data.generatedAt, {
         style: CHART_GEOMETRY,
+        // Nothing floats over this page: the scale is read where the pointer
+        // stands on it, and the panel above already says what the service is
+        // doing.
+        tooltip: false,
         report: (reading) => readOut(row, reading),
       }),
       chartBuilt: false,
