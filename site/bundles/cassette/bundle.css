@@ -38,7 +38,11 @@
 
   /* ── Surface ──────────────────────────────────────────────────────────── */
   --surface-base: #191714;
-  --surface-card: #14120f;
+  /* The faceplate, and it has to read as one: a plate at the page's own tone is
+     not a part standing on a surface, it is the surface. This measures 1.30:1
+     against the page, where the two used to sit at 1.045:1 and only the wooden
+     cheeks told them apart. */
+  --surface-card: #332c23;
   --surface-rule: #3b342a;
   --surface-popover: #0d0b09;
 
@@ -349,8 +353,9 @@
     ),
     repeating-linear-gradient(
       to right,
-      rgb(232 220 196 / 0.028) 0 1px,
-      transparent 1px 3px
+      rgb(255 246 226 / 0.05) 0 1px,
+      rgb(0 0 0 / 0.05) 1px 2px,
+      transparent 2px 3px
     ),
     repeating-linear-gradient(
       to bottom,
@@ -408,44 +413,40 @@
     height. The socket is sunk into the head, so it is placed on that point and
     the two are concentric.
 
-    Two insets, because the plate at the foot is reached from the other edge
-    whilst the head inside it is still drawn from its own top: 42% down from
-    one edge is 58% up from the other.
+    One inset, at either end, because the head's rings are struck at the middle
+    of their box: a circle of radius 7 in a box of 15 stands 0.5 clear of both
+    edges, where one struck at 42% of the height stood 0.7 over the top and was
+    cut by it.
   */
-  --case-socket-inset: calc(
-    var(--case-screw-inset) + 0.42 * var(--case-screw) - var(--case-socket) / 2
-  );
-  --case-socket-inset-up: calc(
-    var(--case-screw-inset) + 0.58 * var(--case-screw) - var(--case-socket) / 2
-  );
+  --case-socket-inset: calc((var(--case-plate) - var(--case-socket)) / 2);
   --card-ornament-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), radial-gradient(
-      circle 7px at 50% 42%,
-      #c3b89c 0 26%,
-      #8f8570 26% 62%,
-      #5d543f 62% 84%,
-      #2a251d 84% 96%,
+      circle 7px at 50% 50%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
     ),
     radial-gradient(
-      circle 7px at 50% 42%,
-      #c3b89c 0 26%,
-      #8f8570 26% 62%,
-      #5d543f 62% 84%,
-      #2a251d 84% 96%,
+      circle 7px at 50% 50%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), radial-gradient(
-      circle 7px at 50% 42%,
-      #c3b89c 0 26%,
-      #8f8570 26% 62%,
-      #5d543f 62% 84%,
-      #2a251d 84% 96%,
+      circle 7px at 50% 50%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), radial-gradient(
-      circle 7px at 50% 42%,
-      #c3b89c 0 26%,
-      #8f8570 26% 62%,
-      #5d543f 62% 84%,
-      #2a251d 84% 96%,
+      circle 7px at 50% 50%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), linear-gradient(#c8752a 0 0),
     linear-gradient(#e8dcc4 0 0), linear-gradient(#7d5a33 0 0),
@@ -460,8 +461,8 @@
     calc(100% - 32px) var(--case-plate), calc(100% - 32px) var(--case-plate);
   --card-ornament-position: left 30px top var(--case-socket-inset),
     right 30px top var(--case-socket-inset),
-    left 30px bottom var(--case-socket-inset-up),
-    right 30px bottom var(--case-socket-inset-up),
+    left 30px bottom var(--case-socket-inset),
+    right 30px bottom var(--case-socket-inset),
     left 26px top var(--case-screw-inset),
     right 26px top var(--case-screw-inset),
     left 26px bottom var(--case-screw-inset),
@@ -941,14 +942,14 @@
   --service-name-shadow: none;
   --service-name-fill: linear-gradient(
     to bottom,
-    #ffeec9 0%,
-    #f2d38f 18%,
-    #e5bb63 40%,
-    #d2a341 49%,
-    #ffe9ae 57%,
-    #edc97a 74%,
-    #d6ac57 90%,
-    #b98d38 100%
+    #ffe7a8 0%,
+    #f5cf6a 18%,
+    #e6b53f 40%,
+    #d09b22 49%,
+    #ffe08a 57%,
+    #edc356 74%,
+    #d5a534 90%,
+    #b8871c 100%
   );
   --service-name-colour: transparent;
   --service-name-stroke: 0px;

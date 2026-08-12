@@ -15,7 +15,7 @@
     },
     "actions/monitor": {
       "name": "@velvet/monitor-action",
-      "version": "1.5.4",
+      "version": "1.1.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/github-incidents": "1.0.0",
@@ -29,7 +29,7 @@
     },
     "apps/setup-service": {
       "name": "@velvet/setup-service",
-      "version": "1.5.4",
+      "version": "1.1.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/template-files": "1.0.0",
@@ -50,7 +50,7 @@
     },
     "packages/contracts": {
       "name": "@velvet/contracts",
-      "version": "1.5.4",
+      "version": "1.1.0",
       "dependencies": {
         "@sinclair/typebox": "^0.34.52",
         "js-yaml": "^4.1.0",
@@ -64,7 +64,7 @@
     },
     "packages/github-incidents": {
       "name": "@velvet/github-incidents",
-      "version": "1.5.4",
+      "version": "1.1.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/monitor": "1.0.0",
@@ -79,7 +79,7 @@
     },
     "packages/monitor": {
       "name": "@velvet/monitor",
-      "version": "1.5.4",
+      "version": "1.1.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
       },
@@ -91,7 +91,7 @@
     },
     "packages/template-files": {
       "name": "@velvet/template-files",
-      "version": "1.5.4",
+      "version": "1.1.0",
       "dependencies": {
         "@velvet/contracts": "workspace:*",
         "js-yaml": "^4.1.0",
@@ -118,6 +118,7 @@
       },
       "devDependencies": {
         "@fontsource/antonio": "^5.3.0",
+        "@fontsource/atomic-age": "^5.3.0",
         "@fontsource/ibm-plex-mono": "^5.3.0",
         "@fontsource/inter": "^5.3.0",
         "@fontsource/jura": "^5.3.0",
@@ -216,6 +217,8 @@
     "@fontsource-variable/datatype": ["@fontsource-variable/datatype@5.3.0", "", {}, "sha512-fef78rI8kaFfh4THBluetPjkWjA3twvQWGWOi5yZahLzHyDoi7TevYnu8Io2TtMhIYZhSBQwlN4bh6pOWt2pWg=="],
 
     "@fontsource/antonio": ["@fontsource/antonio@5.3.0", "", {}, "sha512-LB0XN3BDXKLWsHaR9qouHKGs6PT7NhVmIOPv+a3Kv8UpZSZs67lLH7vX99pOXE0v0rh9bToJQWqvO6X0fiVKxA=="],
+
+    "@fontsource/atomic-age": ["@fontsource/atomic-age@5.3.0", "", {}, "sha512-iJblW2gBYDdquAqTokbG5NOgj1Z8Eur3hpAlP+4qb8S9FZ31Pz0E53Yoq5iPg5t3M7njoUH9mfu9kv7yCinIHg=="],
 
     "@fontsource/audiowide": ["@fontsource/audiowide@5.3.0", "", {}, "sha512-ECBdWgQPaCSuwlFyeXzV0i2DAGq0SKID7jxD1oHhYTObx3wz26YKs3F9Ic/EO369Anzld9IqxflRukJm6nVxpw=="],
 

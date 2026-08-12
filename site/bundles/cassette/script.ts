@@ -53,6 +53,9 @@ const STRIP_GEOMETRY = {
   // pointer lights up instead of standing up.
   hover: "lighten",
   hoverLighten: 0.38,
+  // A little more than the default, so the stack reads as lit from above at a
+  // glance rather than on inspection.
+  reliefSpread: 0.26,
   align: "center",
   pieces: 4,
   pieceGap: 2,

@@ -101,6 +101,17 @@ export interface UptimeStripStyle {
    * losing which state it stands for.
    */
   hoverLighten?: number;
+  /**
+   * How far apart the blocks of one segment are lit, from 0 to 1.
+   *
+   * Only read where `relief` is `sunken` and a segment is drawn as more than
+   * one block. The blocks are flat, and this is the whole distance between the
+   * darkest at the top and the lightest at the foot, spread evenly and centred
+   * on the state's own colour.
+   *
+   * Absent reads as 0.16.
+   */
+  reliefSpread?: number;
   /** Where a segment sits in the track: centred, or grown from one edge. */
   align: "center" | "top" | "bottom";
   /** How many stacked pieces one segment is drawn as. One is a solid bar. */
@@ -359,30 +370,24 @@ export function createUptimeStrip(
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, surfaceHeight);
 
-    const gloss = context.createLinearGradient(
-      0,
-      (surfaceHeight - style.height) / 2,
-      0,
-      (surfaceHeight + style.height) / 2,
-    );
-    if (style.relief === "sunken") {
-      // The light falls in from above and lands on the far wall, so the top of
-      // the segment is in shadow and its foot catches the light.
-      gloss.addColorStop(0, "rgba(0, 0, 0, 0.42)");
-      gloss.addColorStop(0.45, "rgba(0, 0, 0, 0.1)");
-      gloss.addColorStop(1, "rgba(255, 255, 255, 0.16)");
-    } else {
-      gloss.addColorStop(0, "rgba(255, 255, 255, 0.22)");
-      gloss.addColorStop(0.42, "rgba(255, 255, 255, 0.05)");
-      gloss.addColorStop(1, "rgba(0, 0, 0, 0.12)");
-    }
-
     // The 90-day view packs the strip with three times as many segments as the
     // 30-day one, so each is about a quarter as wide and takes the narrow
     // radius. The year view does not, and that is not an oversight: 365 days
     // are grouped into 53 weekly buckets, which makes each bar roughly twice as
     // wide as a 90-day one.
     const radius = range === "quarter" ? style.narrowRadius : style.radius;
+    // The light a raised segment catches, across its own height. A sunken one
+    // is shaded by the ramp below instead.
+    const gloss = context.createLinearGradient(
+      0,
+      (surfaceHeight - style.height) / 2,
+      0,
+      (surfaceHeight + style.height) / 2,
+    );
+    gloss.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+    gloss.addColorStop(0.42, "rgba(255, 255, 255, 0.05)");
+    gloss.addColorStop(1, "rgba(0, 0, 0, 0.12)");
+
     const pieces = Math.max(1, Math.min(8, Math.round(style.pieces)));
 
     days.forEach((day, index) => {
@@ -432,26 +437,63 @@ export function createUptimeStrip(
       const first = index === 0 ? cap : fitted;
       const last = index === days.length - 1 ? cap : fitted;
 
+      /*
+        A stack lit from above.
+
+        Each block is one flat colour, because a block is a lamp behind a window
+        rather than a curved surface, and a gradient inside it would be a
+        highlight nothing casts. What changes is the block: the one at the top
+        stands deepest in the shadow of the plate and each one below it catches
+        a little more of the light. The steps are symmetrical about the state's
+        own colour, so a column of them still reads as that colour.
+      */
+      const ramp = (piece: number): string => {
+        if (style.relief !== "sunken" || pieces < 2) return colour;
+        const spread = style.reliefSpread ?? 0.16;
+        const step = (piece / (pieces - 1) - 0.5) * spread * 100;
+        const towards = step >= 0 ? "#ffffff" : "#000000";
+        return `color-mix(in srgb, ${towards} ${Math.abs(step).toFixed(1)}%, ${colour})`;
+      };
+
+      // The recess each block sits in, in the block's own coordinates so every
+      // one of them is lit alike. Built once per segment and moved to each
+      // block, rather than one per block.
+      const recess =
+        style.relief === "sunken"
+          ? context.createLinearGradient(0, 0, 0, pieceHeight)
+          : null;
+      if (recess) {
+        recess.addColorStop(0, "rgba(0, 0, 0, 0.42)");
+        recess.addColorStop(0.45, "rgba(0, 0, 0, 0.1)");
+        recess.addColorStop(1, "rgba(255, 255, 255, 0.16)");
+      }
+
       for (let piece = 0; piece < pieces; piece += 1) {
         const pieceY = y + piece * (pieceHeight + style.pieceGap);
+        if (recess) context.save();
+        if (recess) context.translate(0, pieceY);
+        const top = recess ? 0 : pieceY;
         context.beginPath();
-        context.roundRect(place.x, pieceY, place.width, pieceHeight, [
+        context.roundRect(place.x, top, place.width, pieceHeight, [
           first,
           last,
           last,
           first,
         ]);
-        context.fillStyle = colour;
+        context.fillStyle = ramp(piece);
         context.fill();
         if (!empty && style.gloss) {
-          context.fillStyle = gloss;
+          context.fillStyle = recess ?? gloss;
           context.fill();
         }
-        if (!edge) continue;
+        if (!edge) {
+          if (recess) context.restore();
+          continue;
+        }
         context.beginPath();
         context.roundRect(
           place.x + 0.5,
-          pieceY + 0.5,
+          top + 0.5,
           Math.max(place.width - 1, 0),
           Math.max(pieceHeight - 1, 0),
           [
@@ -464,6 +506,7 @@ export function createUptimeStrip(
         context.strokeStyle = edge;
         context.lineWidth = 1;
         context.stroke();
+        if (recess) context.restore();
       }
     });
   }
