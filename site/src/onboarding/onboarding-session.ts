@@ -3,6 +3,7 @@ import {
   type SetupLogo,
 } from "@velvet/contracts";
 
+import { DESIGNS } from "../lib/designs.js";
 import type {
   AssertionValueType,
   OnboardingDraft,
@@ -102,7 +103,10 @@ function parseDraft(value: unknown): OnboardingDraft {
       typeof value.listInGallery !== "boolean") ||
     (value.privateRepository !== undefined &&
       typeof value.privateRepository !== "boolean") ||
-    typeof value.themeId !== "string" ||
+    // Absent in a session stored whilst the step still offered palettes, and
+    // tolerated for the same reason as the fields above: a draft somebody has
+    // filled in is not worth discarding over the one answer that has moved.
+    (value.designId !== undefined && typeof value.designId !== "string") ||
     !Array.isArray(value.services) ||
     value.services.length === 0
   ) {
@@ -121,7 +125,7 @@ function parseDraft(value: unknown): OnboardingDraft {
     // A session stored before the question existed keeps what those
     // installations received, which was a public repository.
     privateRepository: value.privateRepository ?? false,
-    themeId: value.themeId,
+    designId: value.designId ?? DESIGNS[0].id,
     services: value.services.map(parseService),
     // Setup leaves the page for GitHub and returns to a fresh load, so a logo
     // that did not survive this is a logo the request never carries.

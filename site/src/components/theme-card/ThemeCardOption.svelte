@@ -13,6 +13,7 @@
 
   let {
     name,
+    era = "",
     value,
     screenshot,
     selected,
@@ -20,6 +21,12 @@
     onSelect,
   }: {
     name: string;
+    /**
+     * The period the option belongs to, shown after the name.
+     *
+     * Empty where an option has none, and then nothing is drawn for it.
+     */
+    era?: string;
     value: string;
     screenshot: string;
     selected: boolean;
@@ -60,7 +67,7 @@
       preview holds a fixed share of it.
     -->
     <img src={screenshot} alt="" loading="lazy" decoding="async" />
-    <strong>{name}</strong>
+    <strong>{name}{#if era}<span class="era">{era}</span>{/if}</strong>
   </span>
   <svg
     class="outline"
@@ -142,6 +149,15 @@
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .era {
+    /* Set apart in CSS rather than by a space in the markup, which Svelte
+       strips at the start of an element. */
+    margin-inline-start: 0.4em;
+    /* Read as what the name belongs to rather than as part of the name, which
+       is how the start page sets the same pair. */
+    color: var(--picker-muted, #6f7280);
+    font-variant-numeric: tabular-nums;
   }
   .outline {
     position: absolute;

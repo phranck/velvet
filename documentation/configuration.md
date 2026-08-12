@@ -200,7 +200,7 @@ Velvet cannot do this for you, because it belongs to your GitHub account and you
 
 ## Themes
 
-The browser setup shows the four system themes as cards you can pick from. The Configurator offers the same four and lets you change every field below afterwards.
+The browser setup asks which design your page is published in and writes that as `design`, so a page it creates carries no theme at all. The Configurator offers the four system themes and lets you change every field below afterwards.
 
 If you write a `theme` block yourself, it has to have a `name`.
 

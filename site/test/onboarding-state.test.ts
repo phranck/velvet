@@ -42,6 +42,54 @@ test("builds a canonical minimal website check with contract defaults", () => {
   assert.deepEqual(result.request.configuration.services[0].checks[0].jsonAssertions, []);
 });
 
+test("publishes the page in the chosen design and writes no theme", () => {
+  const draft = createOnboardingDraft();
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.designId = "cassette";
+  draft.services = [
+    {
+      ...createServiceDraft("website"),
+      name: "Website",
+      url: "https://example.com",
+    },
+  ];
+
+  const result = buildSetupRequest(draft);
+
+  assert.equal(result.success, true);
+  if (!result.success) return;
+  assert.equal(result.request.configuration.statusPage.design, "cassette");
+  // A design brings its own appearance, so a theme written beside it would
+  // describe something the published page does not read.
+  assert.equal("theme" in result.request.configuration.statusPage, false);
+});
+
+test("refuses a design no shipped bundle answers to", () => {
+  const draft = createOnboardingDraft();
+  draft.repositoryOwner = "velvet-user";
+  draft.repositoryName = "status";
+  draft.statusPageName = "My Status";
+  draft.designId = "no-such-design";
+  draft.services = [
+    {
+      ...createServiceDraft("website"),
+      name: "Website",
+      url: "https://example.com",
+    },
+  ];
+
+  const result = buildSetupRequest(draft);
+
+  assert.equal(result.success, false);
+  if (result.success) return;
+  assert.equal(
+    result.errors.designId,
+    "Choose one of the designs Velvet ships.",
+  );
+});
+
 test("normalizes an optional custom-domain hostname before setup", () => {
   const draft = Object.assign(createOnboardingDraft(), {
     customDomain: "  Status.Example.COM  ",

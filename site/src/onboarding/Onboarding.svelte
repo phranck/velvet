@@ -34,9 +34,9 @@
     type SetupProgressStage,
   } from "./state.js";
   import SquircleStep from "./SquircleStep.svelte";
-  import { SYSTEM_THEMES, systemThemeById } from "./system-themes.js";
+  import { DESIGNS, designById } from "../lib/designs.js";
 
-  const STEPS = ["Basics", "Services", "Theme", "Review", "Publish"] as const;
+  const STEPS = ["Basics", "Services", "Design", "Review", "Publish"] as const;
   /** Publishing is its own step, and the last one. */
   const INSTALL_STEP = STEPS.length - 1;
   const REVIEW_STEP = INSTALL_STEP - 1;
@@ -207,7 +207,7 @@
   const progressDetail = $derived<Partial<Record<SetupProgressStage, string>>>({
     "creating-repository": `${draft.repositoryOwner.trim()}/${draft.repositoryName.trim()}`,
   });
-  const selectedTheme = $derived(systemThemeById(draft.themeId));
+  const selectedDesign = $derived(designById(draft.designId));
   const previousStepLabel = $derived(step > 0 ? STEPS[step - 1] : "");
   const nextStepLabel = $derived(
     step < STEPS.length - 1 ? STEPS[step + 1] : "",
@@ -564,7 +564,7 @@
   <main>
     <section class="intro">
       <p>
-        Tell Velvet what to watch, choose a theme, and publish through your
+        Tell Velvet what to watch, choose a design, and publish through your
         GitHub account.
       </p>
     </section>
@@ -797,31 +797,32 @@
         <RequiredField.Legend />
       </StepCard.Body>
 
-      <StepCard.Body active={step === 2} labelledBy="theme-title">
+      <StepCard.Body active={step === 2} labelledBy="design-title">
         <div class="velvet-section-heading">
           <div class="velvet-section-title">
             <span>03</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
-            <h2 id="theme-title">Choose a starting theme</h2>
+            <h2 id="design-title">Choose a design</h2>
           </div>
-          <p>Choose how your status page looks when it first goes live. You can change every visual detail later in the Configurator.</p>
+          <p>A design brings its own colours, typefaces and layout with it. Your page is published in the one you choose here, and naming another design in the configuration publishes it in that one instead.</p>
         </div>
         <ThemeCard.Root
-          legend="System themes"
-          description="Select one of the four included themes. Each preview shows its starting appearance."
+          legend="Designs"
+          description="Select one of the four designs Velvet ships. Each picture is a page published in that design."
         >
-          {#each SYSTEM_THEMES as theme (theme.id)}
+          {#each DESIGNS as design (design.id)}
             <ThemeCard.Option
-              name={theme.name}
-              value={theme.id}
-              screenshot={theme.screenshot}
-              selected={draft.themeId === theme.id}
-              radioName="system-theme"
-              onSelect={(value) => (draft.themeId = value)}
+              name={design.name}
+              era={design.era}
+              value={design.id}
+              screenshot={design.picture}
+              selected={draft.designId === design.id}
+              radioName="design"
+              onSelect={(value) => (draft.designId = value)}
             />
           {/each}
         </ThemeCard.Root>
-        {#if errors.themeId}<small class="field-error">{errors.themeId}</small>{/if}
+        {#if errors.designId}<small class="field-error">{errors.designId}</small>{/if}
       </StepCard.Body>
 
       <StepCard.Body active={step === 3} labelledBy="publish-title">
@@ -850,8 +851,8 @@
             icon="ph-stack"
           />
           <ReviewList.Item
-            label="Theme"
-            value={selectedTheme?.name ?? "Choose a theme"}
+            label="Design"
+            value={selectedDesign?.name ?? "Choose a design"}
             icon="ph-palette"
           />
           {#if customDomain}
