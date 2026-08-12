@@ -39,10 +39,11 @@
   /* ── Surface ──────────────────────────────────────────────────────────── */
   --surface-base: #191714;
   /* The faceplate, and it has to read as one: a plate at the page's own tone is
-     not a part standing on a surface, it is the surface. This measures 1.30:1
-     against the page, where the two used to sit at 1.045:1 and only the wooden
-     cheeks told them apart. */
-  --surface-card: #332c23;
+     not a part standing on a surface, it is the surface. Graphite rather than
+     the warm brown around it, because the plate is metal and the cheeks either
+     side of it are wood, and a machine of this period puts exactly those two
+     next to each other. */
+  --surface-card: #141518;
   --surface-rule: #3b342a;
   --surface-popover: #0d0b09;
 
@@ -337,10 +338,17 @@
     The faceplate.
 
     A component of this period is a brushed metal front bolted between two
-    walnut cheeks, and all three are one surface here: the cheeks are the first
-    layer, drawn from both edges inwards, the brushing is a fine vertical
-    striping across the face, and the moulding grain that was already here runs
-    under both.
+    walnut cheeks, and both are one surface here: the cheeks are the first
+    layer, drawn from both edges inwards, and the brushing is a tile that
+    repeats under them.
+
+    The tile is computed rather than photographed, by
+    `site/scripts/render-brushed-plate.ts`: noise smeared along one axis and
+    left alone across it, which is what a wheel leaves on a plate. It carries no
+    colour, only light and dark at a low alpha, so the plate's own colour stays
+    where this file states it. Redraw it with:
+
+        bun run --cwd site plate:render
   */
   --card-texture: linear-gradient(
       to right,
@@ -351,18 +359,11 @@
         calc(100% - var(--cassette-cheek) + 2px),
       #4a301c calc(100% - var(--cassette-cheek) + 2px) 100%
     ),
-    repeating-linear-gradient(
-      to right,
-      rgb(255 246 226 / 0.05) 0 1px,
-      rgb(0 0 0 / 0.05) 1px 2px,
-      transparent 2px 3px
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      rgb(232 220 196 / 0.022) 0 1px,
-      transparent 1px 4px
-    );
-  --card-texture-size: auto;
+    url("./assets/plate.png");
+  /* The cheeks span the plate, the brushing repeats at the size it was drawn
+     at. Stated per layer, because a tile scaled to the card would stretch its
+     scratches into whatever shape the row happens to be. */
+  --card-texture-size: auto, 256px 256px;
   /*
     The label head.
 
@@ -391,10 +392,6 @@
     because a gradient cannot be a hexagon and two background layers cannot be
     made to intersect. Every socket stands above its own head, so all four come
     first in the list.
-
-    The stripes belong to the head alone. They are what the make prints across
-    the top of its inlay, and a printed band is not something a case repeats at
-    the other end: the foot is the same plate without them.
 
     Both run between the cheeks rather than across them, because the plate is
     metal and the wood is bolted to either side of it.
@@ -448,15 +445,31 @@
       color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
       color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
-    ), linear-gradient(#c8752a 0 0),
-    linear-gradient(#e8dcc4 0 0), linear-gradient(#7d5a33 0 0),
+    ),
+    /* The face lies behind everything that closes the case, so each of them
+       throws onto it. The light stands a little up and to the left, which is
+       why the lid throws furthest, the cheek on that side throws a shorter one
+       across, and the floor barely throws at all. */
+    linear-gradient(to bottom, rgb(0 0 0 / 0.5), transparent),
+    linear-gradient(to right, rgb(0 0 0 / 0.38), transparent),
+    linear-gradient(to top, rgb(0 0 0 / 0.32), transparent),
+    /* The thickness of each plate, as the edge it turns towards the light and
+       the one it turns away. */
+    linear-gradient(rgb(255 246 226 / 0.16) 0 0),
+    linear-gradient(rgb(0 0 0 / 0.55) 0 0),
+    linear-gradient(rgb(255 246 226 / 0.1) 0 0),
+    linear-gradient(rgb(0 0 0 / 0.5) 0 0),
     linear-gradient(#3b342a 0 0), linear-gradient(#3b342a 0 0);
   --card-ornament-size: var(--case-socket) var(--case-socket),
     var(--case-socket) var(--case-socket),
     var(--case-socket) var(--case-socket),
     var(--case-socket) var(--case-socket), var(--case-screw) var(--case-screw),
     var(--case-screw) var(--case-screw), var(--case-screw) var(--case-screw),
-    var(--case-screw) var(--case-screw), calc(100% - 32px) 3px,
+    var(--case-screw) var(--case-screw),
+    calc(100% - 32px) 16px,
+    10px calc(100% - 2 * var(--case-plate)),
+    calc(100% - 32px) 10px,
+    calc(100% - 32px) 1px, calc(100% - 32px) 1px,
     calc(100% - 32px) 1px, calc(100% - 32px) 1px,
     calc(100% - 32px) var(--case-plate), calc(100% - 32px) var(--case-plate);
   --card-ornament-position: left 30px top var(--case-socket-inset),
@@ -468,9 +481,11 @@
     left 26px bottom var(--case-screw-inset),
     right 26px bottom var(--case-screw-inset),
     left 16px top var(--case-plate),
-    left 16px top calc(var(--case-plate) + 5px),
-    left 16px top calc(var(--case-plate) + 9px), left 16px top,
-    left 16px bottom;
+    left var(--cassette-cheek) top var(--case-plate),
+    left 16px bottom var(--case-plate),
+    left 16px top, left 16px top var(--case-plate),
+    left 16px bottom var(--case-plate), left 16px bottom,
+    left 16px top, left 16px bottom;
   --notices-gap: var(--space-tight);
   --notices-arm-space: 0px;
   --notices-arm-image: none;

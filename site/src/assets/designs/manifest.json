@@ -12,8 +12,8 @@
   "designs": {
     "cassette": {
       "file": "cassette.png",
-      "imageSha256": "3ea602b779a512b4092e3f9c1bf79a4739cb8ac64265a3945c562d4ba1f7215f",
-      "bundleSha256": "d9ae4fdfd47896af67993277b7a679a399316b0b1ae63d19282d235060fcf1d2"
+      "imageSha256": "602a01af66d800c2b4976d9910530456039754bea04f1c17f2ede5050dbd3eb8",
+      "bundleSha256": "ccd77f1f942339d931f13f3deafd4ed2b694a54e50fbc9a221b9cab31d1a2aca"
     },
     "ncc-1701-d": {
       "file": "ncc-1701-d.png",
