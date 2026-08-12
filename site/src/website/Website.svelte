@@ -372,6 +372,14 @@
             <span class="marker" aria-hidden="true">//</span>
             <h2 id="pipeline-title">How it works</h2>
           </div>
+          <p>
+            Four steps, and every one of them happens inside your own
+            repository. You write down what should be watched, GitHub runs the
+            checks on its own schedule, each run leaves its result on a branch
+            of its own, and the page is built from that result. Nothing in this
+            waits on a service of ours, so your page goes on building whether
+            or not anything of ours is running.
+          </p>
         </div>
         <ol class="pipeline">
           {#each PIPELINE as stage, index (stage.title)}
@@ -396,8 +404,12 @@
           </div>
           <p>
             Four of them are finished and tested today, and you pick one while
-            you set your page up. There will be more as time goes on. If you
-            have a particular one in mind,
+            you set your page up. Each arrives whole, with the typefaces it is
+            drawn in and the icons it needs, so a published page asks nobody
+            else for anything. The choice is a field in your configuration, so
+            changing your mind later is a change to one file rather than a
+            rebuild. There will be more as time goes on, and if you have a
+            particular one in mind,
             <a class="mail" href="mailto:themerequest@velvet.li"
               >write to us<Icon name="sms" /></a
             >.
@@ -458,10 +470,14 @@
         <div class="manual-text">
           <h2 id="manual-title">Read it in your terminal</h2>
           <p>
-            Three man pages: velvet(7) for the architecture, velvet-config(1)
-            for the Configurator, and velvet.yml(5) for every option there is.
-            They install into your home directory and ask for no administrator
-            rights.
+            There are man pages for the architecture, velvet(7), for the
+            Configurator, velvet-config(1), and for every option there is,
+            velvet.yml(5). They install into your home directory and ask for no
+            administrator rights.
+          </p>
+          <p>
+            In time Velvet will be workable from a terminal alone. A command
+            line tool for that is still to come.
           </p>
           <SquircleButton.Root
             href={MAN_PAGES_ARCHIVE}
@@ -766,9 +782,12 @@
        capital, it stands centred against the word beside it. */
     transform: translateY(0.18em);
   }
+  /* Two thirds of the page rather than a measure of its own, so the line under
+     a section heading is stated as a share of the width everything else on the
+     page is held to and follows it when that width moves. */
   .velvet-section-heading p {
     margin: 0;
-    max-width: 41rem;
+    max-width: calc(var(--velvet-page-width) * 2 / 3);
     color: var(--setup-muted);
     font-size: var(--setup-text-copy);
     line-height: 1.6;
@@ -1101,11 +1120,18 @@
      to about a hundred characters. This one stood 56px short of a column that
      was 568 wide. */
   .manual-text p {
-    margin: 0 0 2.5rem;
+    margin: 0 0 1rem;
     color: var(--setup-muted);
     font-size: var(--setup-text-copy);
     line-height: 1.6;
     text-wrap: pretty;
+  }
+  /* The last one stands clear of the key beneath it, whilst the paragraphs in
+     between are only a paragraph apart. Stated on the last rather than on the
+     key, because the key is a component and the room above it belongs to what
+     it follows. */
+  .manual-text p:last-of-type {
+    margin-bottom: 2.5rem;
   }
 
   .closing :global(.velvet-page) {
