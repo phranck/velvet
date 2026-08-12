@@ -1299,7 +1299,7 @@
   .velvet-section-title > span {
     color: var(--setup-accent);
     font-family: var(--setup-heading-font);
-    font-size: clamp(1.5rem, 3vw, 1.875rem);
+    font-size: var(--velvet-text-heading);
     font-weight: 600;
     letter-spacing: 0.08em;
     line-height: 1.1;
@@ -1312,7 +1312,7 @@
     margin: 0;
     color: var(--setup-text);
     font-family: var(--setup-heading-font);
-    font-size: clamp(1.5rem, 3vw, 1.875rem);
+    font-size: var(--velvet-text-heading);
     font-weight: 600;
     letter-spacing: -0.025em;
   }
@@ -1493,8 +1493,8 @@
     margin: 0.6rem 0 0;
     padding: 0.7rem 0.9rem;
     border-radius: var(--step-card-inner-radius);
-    background: color-mix(in srgb, #d29922 12%, transparent);
-    color: #d29922;
+    background: color-mix(in srgb, var(--velvet-degraded) 12%, transparent);
+    color: var(--velvet-degraded);
     font-size: var(--setup-card-copy);
     line-height: 1.5;
   }
