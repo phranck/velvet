@@ -1137,6 +1137,13 @@
   }
 
   .onboarding-shell {
+    /* The measure this surface is laid out in, narrower than the site's own.
+       This is a form, and a form is read at a reading width rather than at the
+       width of a page. Stated as the shared token rather than only on the form,
+       so the bar above it is held to the same column: with the site's 1280 the
+       wordmark stood at 189 whilst the form began at 349, which is two columns
+       stacked rather than one surface. */
+    --velvet-page-width: 960px;
     --setup-accent: var(--velvet-accent);
     /* The page's own base tone, matching the last background layer in
        onboarding.css. Anything that has to hide the board backdrop fills with
