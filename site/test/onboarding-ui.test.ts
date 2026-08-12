@@ -23,13 +23,7 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   const currentYear = new Date().getFullYear();
 
   assert.match(html, /Velvet/);
-  assert.match(html, /ONBOARDING/);
   assert.match(html, /data-rainbow-scale/);
-  assert.ok(
-    html.indexOf("data-velvet-tool-palette") <
-      html.indexOf("data-velvet-tool-subtitle"),
-    "the rainbow scale should render above the onboarding subtitle",
-  );
   assert.equal(html.match(/data-rainbow-color/g)?.length, 9);
   assert.doesNotMatch(html, /Set up Velvet/);
   assert.doesNotMatch(html, /Your status page, without local setup/);
@@ -67,7 +61,9 @@ test("renders the focused onboarding flow with progressive advanced checks", asy
   assert.equal(html.match(/data-review-squircle/g)?.length, 4);
   // One heading per step, Install included.
   assert.equal(html.match(/data-step-title-separator/g)?.length, 5);
-  assert.equal(html.match(/>\/\/</g)?.length, 5);
+  // Six rather than five: one before each step title, and one more in the bar
+  // before the version, which onboarding now takes from the site.
+  assert.equal(html.match(/>\/\/</g)?.length, 6);
   assert.doesNotMatch(html, /data-form-actions-card/);
   assert.match(html, new RegExp(`© ${currentYear} by`));
   assert.match(html, /href="https:\/\/layered\.work"/);
@@ -143,8 +139,8 @@ test("uses the local Datatype family for onboarding typography", async () => {
   );
   assert.match(tokens, /--velvet-font:\s*"Datatype"/);
   assert.match(tokens, /--velvet-text-caption:\s*0\.8125rem/);
-  assert.match(tokens, /--velvet-text-small:\s*0\.9375rem/);
-  assert.match(tokens, /--velvet-text-body:\s*1rem/);
+  assert.match(tokens, /--velvet-text-small:\s*1rem/);
+  assert.match(tokens, /--velvet-text-body:\s*1\.25rem/);
   assert.match(onboarding, /--setup-text-small:\s*var\(--velvet-text-small\)/);
   assert.match(onboarding, /--setup-text-body:\s*var\(--velvet-text-body\)/);
   assert.match(onboarding, /--setup-text-lead:\s*1\.125rem/);
@@ -156,7 +152,7 @@ test("uses the local Datatype family for onboarding typography", async () => {
   assert.match(onboarding, /--setup-card-copy:\s*var\(--setup-text-copy\)/);
   assert.match(
     onboarding,
-    /Tell Velvet what to watch, choose a theme,<br \/>[\s\S]*and publish through your GitHub account\./,
+    /Tell Velvet what to watch, choose a theme, and publish through your[\s\S]*GitHub account\./,
   );
 });
 
@@ -290,16 +286,13 @@ test("uses the shared theme and icon components in onboarding and configurator",
   );
   assert.match(
     onboarding,
-    /import VelvetToolBrand from "\.\.\/components\/VelvetToolBrand\.svelte"/,
+    /import SiteHeader from "\.\.\/components\/SiteHeader\.svelte"/,
   );
   assert.match(
     configurator,
     /<div class="configurator-brand">\s*<VelvetToolBrand subtitle="CONFIGURATOR" \/>\s*<\/div>/,
   );
-  assert.match(
-    onboarding,
-    /<div class="onboarding-brand-block">\s*<VelvetToolBrand subtitle="ONBOARDING" \/>\s*<\/div>/,
-  );
+  assert.match(onboarding, /<SiteHeader navigation=\{false\} \/>/);
   assert.match(toolBrand, /import RainbowScale from "\.\/RainbowScale\.svelte"/);
   assert.match(toolBrand, /import VelvetWordmark from "\.\/VelvetWordmark\.svelte"/);
   assert.match(toolBrand, /data-velvet-tool-brand/);

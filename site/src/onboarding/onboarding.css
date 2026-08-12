@@ -1,6 +1,6 @@
 @import "../lib/velvet-tokens.css";
 @import "../lib/velvet-board-shell.css";
-@import "../lib/board-backdrop.css";
+@import "../lib/velvet-backdrop.css";
 @import "../lib/velvet-surface.css";
 
 #onboarding {

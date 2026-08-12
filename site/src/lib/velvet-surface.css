@@ -83,3 +83,16 @@
   align-items: center;
   gap: 0.75rem;
 }
+
+/**
+ * The one measure a Velvet surface is laid out in.
+ *
+ * Shared, so the bar, the content and the credit stand in one column on the
+ * site and in browser onboarding alike. Before this the rule lived with the
+ * site alone, and onboarding took the same bar without the measure it is built
+ * for, which left the wordmark against the window edge.
+ */
+.velvet-page {
+  width: min(100% - 2 * var(--velvet-page-inset), var(--velvet-page-width));
+  margin-inline: auto;
+}

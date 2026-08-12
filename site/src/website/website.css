@@ -1,16 +1,14 @@
 @import "../lib/velvet-tokens.css";
 @import "../lib/velvet-board-shell.css";
+@import "../lib/velvet-backdrop.css";
 @import "../lib/velvet-surface.css";
 
 /**
- * The surface every page on the site is drawn on, and the faces it is read in.
+ * The faces every page on the site is read in.
  *
- * The surface is flat, and stated here rather than taken from
- * `board-backdrop.css`, which the onboarding still uses. That file lays a
- * circuit board behind the page under two coloured washes, and this site has
- * neither: what depth it has comes from the gradient the start page's opening
- * section draws for itself and from the bands that separate one section from
- * the next.
+ * The surface it stands on comes from `velvet-backdrop.css`, which browser
+ * onboarding stands on as well, so the two are one surface rather than two that
+ * happen to agree.
  *
  * The faces are stated here rather than left to the board shell, because
  * `app.css` names a different family and a size of its own on `body` for the
@@ -29,153 +27,13 @@ html {
 }
 
 /**
- * The face and the size a page is read in.
+ * What this site states for itself, on top of what every Velvet surface shares.
  *
- * The size as well as the face, because `app.css` states 18px on `body` for the
- * tools whilst this site reads a step larger, and a page that takes the site's
- * own scale everywhere except its plain paragraphs is two different pages.
- */
-body {
-  font-family: var(--velvet-font);
-  font-size: var(--velvet-text-body);
-}
-
-/**
- * Every heading on the site, in the heading face.
- *
- * `font-weight` is stated because a browser sets a heading in bold by default
- * and Workbench publishes one weight. Left at the default, the browser draws
- * the missing weight itself by thickening the one it has.
- */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--velvet-font-heading);
-  font-weight: 400;
-}
-
-/**
- * What stands behind the page: an orrery, drawn once and left to turn.
- *
- * `app.css` is loaded by every surface and lays a fixed layer of its own behind
- * the document, drawn in the status page's default indigo. This replaces that
- * layer wholesale rather than merely removing it, which is also what stops the
- * indigo showing through the warm surface above.
- *
- * Five rings at four sizes, two washes of warm light, and a grain over the lot.
- * All of it is drawn with gradients rather than fetched, so it costs nothing to
- * download and is sharp at any size, and all of it lives on one fixed layer:
- * a background with `fixed` attachment is repositioned on every scroll frame
- * and lags during a fast one, whilst a fixed layer is composited once.
- *
- * The rings are conic rather than radial. A radial gradient draws a disc and a
- * ring cut from one needs two stops per edge; a repeating conic gradient masked
- * to a band draws the band directly, which is what lets one element carry a
- * ring that fades away round its own circumference rather than a flat circle.
- */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    /* The light the page stands in: one source off the top right and a second,
-       weaker one low and left, so the surface is lit rather than tinted. */
-    radial-gradient(
-      120% 90% at 82% -6%,
-      var(--velvet-hero-glow) 0%,
-      transparent 62%
-    ),
-    radial-gradient(
-      90% 70% at 8% 108%,
-      color-mix(in srgb, var(--velvet-accent) 5%, transparent) 0%,
-      transparent 64%
-    ),
-    var(--velvet-base);
-}
-
-/**
- * The rings themselves, on a second layer so they sit over the light rather
- * than in it.
- *
- * Five of them at four sizes, drawn as hairlines: a radial gradient that is
- * transparent either side of one radius. Stated in `vmax` so a ring keeps its
- * size against the larger side of the window rather than stretching with
- * whichever way it is resized.
- *
- * They do not turn, and that is deliberate. A rotating backdrop has to be
- * larger than the window at every angle or its own edge sweeps through the
- * page, and the margin needed for that grows with the aspect ratio: measured
- * at a 1658 by 1756 window, a layer inset by 20vmax had an inscribed radius of
- * 1180.2px where it needed 1207.5, and a 21 by 9 window would need 33vmax. The
- * layer that satisfies every ratio is a square of 150vmax, which at this window
- * is 2634 pixels on a side and roughly seven megapixels to rasterise, for a
- * turn nobody can perceive at one revolution per fifteen minutes.
- *
- * What moves instead is a mark travelling one of the rings, which the opening
- * section already carries: an orrery is marks going round, not the rings
- * themselves spinning.
- */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.55;
-  background:
-    radial-gradient(
-      circle 62vmax at 84% 4%,
-      transparent 61.9vmax,
-      var(--velvet-orbit-ring) 62vmax,
-      transparent 62.1vmax
-    ),
-    radial-gradient(
-      circle 46vmax at 84% 4%,
-      transparent 45.9vmax,
-      var(--velvet-orbit-ring-inner) 46vmax,
-      transparent 46.1vmax
-    ),
-    radial-gradient(
-      circle 88vmax at 10% 96%,
-      transparent 87.9vmax,
-      var(--velvet-orbit-ring-inner) 88vmax,
-      transparent 88.1vmax
-    ),
-    radial-gradient(
-      circle 34vmax at 6% 42%,
-      transparent 33.9vmax,
-      var(--velvet-orbit-ring-inner) 34vmax,
-      transparent 34.1vmax
-    ),
-    radial-gradient(
-      circle 118vmax at 96% 70%,
-      transparent 117.9vmax,
-      var(--velvet-orbit-ring) 118vmax,
-      transparent 118.1vmax
-    );
-}
-
-/**
- * One width for the whole site.
- *
- * The header, every page's content, and the footer are held to it, so a page
- * reads as a single column from the wordmark to the call to action. Before
- * this a changelog at a 1600px window put the header across 1472 pixels, the
- * content across 768, and its opening paragraph across 544, which is three
- * different columns stacked on top of each other.
- *
- * The inset is the same one the header always used, so nothing touches the
- * window edge on a narrow screen.
+ * The faces, the reading size and the heading rule come from
+ * `velvet-board-shell.css`, and the page width from `velvet-tokens.css`, so
+ * browser onboarding is set the same way from the same values.
  */
 :root {
-  --velvet-page-width: 1280px;
-  --velvet-page-inset: clamp(1rem, 5vw, 4rem);
-
   /* Card geometry, stated once so the relationship between the three is
      visible rather than arithmetic somebody has to redo.
 
@@ -204,20 +62,6 @@ body::after {
     0px
   );
 
-  /* The site reads a step larger than the tools do. It is a page somebody
-     reads, whilst the onboarding and the Configurator are surfaces somebody
-     works in, and a form set at reading size wastes the room it needs.
-     The names stay the ones in velvet-tokens.css, so there is still one
-     vocabulary; only the site's own values are stated here. */
-  --velvet-text-small: 1rem;
-  --velvet-text-body: 1.25rem;
-  --velvet-text-copy: 1.375rem;
-  --velvet-text-lead: 1.4375rem;
-  --velvet-text-heading: clamp(1.625rem, 3.2vw, 2.125rem);
-  --velvet-text-intro: clamp(1.75rem, 4vw, 2.5rem);
-  --velvet-text-title: clamp(2.25rem, 6vw, 3rem);
-  --velvet-text-ornament: 3rem;
-
   /* An uppercase label set in the label face. Two sizes, because the eyebrow
      over a section and the caption under a picture are read at the same size
      whilst the index heading beside a document is read a step below it. */
@@ -237,17 +81,10 @@ body::after {
   --velvet-tracking-eyebrow: 0.16em;
   --velvet-tracking-wide: 0.2em;
 
-  /* The light the opening section sits in, warmed towards the accent and put
-     off to one side, so the page has a source rather than an even wash. */
-  --velvet-hero-glow: color-mix(in srgb, var(--velvet-accent) 8%, var(--velvet-base));
-  /* The two rings drawn behind it, and the mark travelling around them. Warm
-     greys of their own rather than the accent thinned, because a ring mixed
-     from the accent comes out pink at this strength whilst these have to read
-     as metal catching a little light. The outer one is nearer the eye. */
-  --velvet-orbit-ring: #2e251b;
-  --velvet-orbit-ring-inner: #221b14;
-  /* How long the mark takes to go once round. Slow enough that a reader
-     notices it only if they stay. */
+  /* How long the mark travelling the opening section's ring takes to go once
+     round. Slow enough that a reader notices it only if they stay. The ring
+     itself and the light behind it come from `velvet-backdrop.css`, which every
+     Velvet surface shares. */
   --velvet-orbit-period: 100s;
 
   /* The space between two things standing side by side: two pictures of a
@@ -333,12 +170,6 @@ h1 {
   margin-block: 0 2.5rem;
   color: var(--velvet-text-muted);
   font-size: var(--velvet-text-copy);
-}
-
-/** The one measure everything on the site is laid out in. */
-.velvet-page {
-  width: min(100% - 2 * var(--velvet-page-inset), var(--velvet-page-width));
-  margin-inline: auto;
 }
 
 /**

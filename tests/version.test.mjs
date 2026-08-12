@@ -94,16 +94,6 @@ test("the website states it in the module its header reads", async () => {
   assert.equal(stated, version, `the website states ${stated}`);
 });
 
-test("the board backdrop prints it on its silkscreen", async () => {
-  // Only the revision is compared, not the whole file. The generator stamps the
-  // current year into the copyright line, so comparing bytes would turn every
-  // first of January into a failure no change caused.
-  const backdrop = await read("site/src/onboarding/pcb-backdrop.svg");
-  const printed = backdrop.match(/STATUS BOARD REV (\d+\.\d+\.\d+)/u)?.[1];
-
-  assert.equal(printed, version, `the silkscreen reads ${printed}`);
-});
-
 test("the release notes are titled with it", async () => {
   // These are what the Configurator shows somebody an update is offered to, and
   // they are compiled into the artefact verbatim. A stale title offers Velvet

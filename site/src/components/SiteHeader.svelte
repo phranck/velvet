@@ -18,8 +18,18 @@
    */
   let {
     current,
+    navigation = true,
   }: {
     current?: "documentation" | "changelog" | "references" | "attributions";
+    /**
+     * Whether the bar offers the four pages.
+     *
+     * Browser onboarding takes the same bar without them. It is a sequence of
+     * five steps, and a bar that offers a way out of one is a bar that leads
+     * somebody out of it. The mark, the version and the scale are the same, so
+     * the two surfaces read as one product rather than as two.
+     */
+    navigation?: boolean;
   } = $props();
 
   /**
@@ -73,20 +83,22 @@
       </span>
     </div>
 
-    <nav aria-label="Main">
-      <ul>
-        {#each SECTIONS as section (section.id)}
-          <li>
-            <a
-              href={section.href}
-              aria-current={section.id === current ? "page" : undefined}
-            >
-              {section.label}
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </nav>
+    {#if navigation}
+      <nav aria-label="Main">
+        <ul>
+          {#each SECTIONS as section (section.id)}
+            <li>
+              <a
+                href={section.href}
+                aria-current={section.id === current ? "page" : undefined}
+              >
+                {section.label}
+              </a>
+            </li>
+          {/each}
+        </ul>
+      </nav>
+    {/if}
   </header>
 </div>
 
