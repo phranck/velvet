@@ -4,15 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#0e1015" />
+    <meta name="theme-color" content="#0d0c0b" />
     <title>Status</title>
     <meta name="description" content="Live service status." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-    />
+    <!--
+      No face is fetched here. Every design a page can be published in declares
+      the faces it uses in its own `assets/fonts.css` and ships the files beside
+      it, so a published page asks nobody for a font. Three links to Google
+      stood here and fetched Inter a second time, which the Velvet design
+      already carries: every visitor to every status page reached Google before
+      the page could draw, and the promise that a published page loads nothing
+      from anybody else was not kept.
+    -->
     <link rel="icon" href="./src/assets/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="./src/assets/favicon-96.png" sizes="96x96" />
     <link rel="icon" href="./src/assets/favicon-128.png" sizes="128x128" />

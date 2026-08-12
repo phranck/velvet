@@ -37,37 +37,67 @@ const CARD = { width: 1200, height: 630 };
  * palette, and board backdrop, because it is the page, restyled for the frame.
  */
 const CARD_LAYOUT = `
+  /* Everything the card does not say. The bar names pages a reader cannot
+     follow from an image, the picture beside the opening column is a second
+     subject competing with the first, the keys cannot be pressed, and every
+     band below the opening section is a page rather than a card. */
+  .band,
+  .hero-shot,
   .hero-actions,
-  .showcase,
-  .page-footer,
-  main > section.column:not(.hero) {
+  main > section:not(.hero),
+  .page-footer {
     display: none !important;
   }
-  main {
-    width: min(100% - 5rem, 1040px) !important;
+  /* One column, centred, rather than the two the page opens on. The right one
+     held the picture that is now hidden, so the left one would otherwise sit
+     against the edge with half the card empty beside it. */
+  .hero {
     min-height: 100vh;
-    /* Both axes. The page lets this element fill the width and centres its
-       sections inside it, so constraining the width here without centring what
-       is left leaves the whole card hanging off the left edge. */
-    margin-inline: auto !important;
     padding: 0 !important;
     align-content: center;
   }
+  .hero-inner {
+    grid-template-columns: 1fr !important;
+    justify-items: center;
+    gap: 0 !important;
+  }
+  .hero-text {
+    max-width: 52rem;
+    text-align: center;
+  }
+  /* The mark takes its own width from the word it draws, and the scale beneath
+     takes its width from the mark, so centring the column is not enough: the
+     block has to be centred within it as well. */
+  .hero-brand {
+    margin-inline: auto;
+  }
+  /* Larger than the page sets them, because a card is read at a glance and at
+     a fraction of the size a browser shows it. */
+  .hero-text h1 {
+    font-size: 3.25rem !important;
+  }
+  /* Balanced rather than merely wrapped. The page asks for a pretty wrap, which
+     only protects the last line from being left short; in a frame this wide the
+     opening sentence still fell as two full lines and two words alone under
+     them. A balanced wrap divides it evenly instead, which is what a line of
+     type on a card wants and what a paragraph in a column does not. */
   .lead {
-    margin-top: 3rem !important;
-    font-size: 2.25rem !important;
+    max-width: 50rem;
+    margin-inline: auto !important;
+    margin-bottom: 0 !important;
+    font-size: 1.625rem !important;
+    text-wrap: balance !important;
   }
-  .brand-block {
-    width: min(100%, 330px) !important;
+  .status-line {
+    justify-content: center;
   }
-  /* The board carries its own silkscreened "VELVET" near its lower edge, which
-     lands inside a frame this short and reads as the wordmark printed twice.
-     Anchoring the artwork to the top and enlarging it pushes that block past
-     the bottom of the card. Only the board layer is resized; the two lit
-     corners keep their own sizing. */
-  body {
-    background-position: center top !important;
-    background-size: auto, auto, 150% auto, auto !important;
+  /* The light and the rings the page opens in. On the page they fill a tall
+     section and reach well past the opening column; in a frame this wide and
+     this short they sat mostly outside it, so the card came out flat black
+     where the page is lit. Brought in and enlarged, the card is lit the way
+     the page is. */
+  .hero .orbit {
+    inset: -60% -10% !important;
   }
 `;
 
