@@ -15,7 +15,7 @@
   // The designs a page can be published in, read from the manifests that ship
   // with Velvet, so this page cannot offer one that does not exist or miss one
   // that does.
-  import { GALLERY_DESIGNS } from "./design-gallery.js";
+  import { DESIGNS } from "../lib/designs.js";
   import * as SquircleButton from "../components/squircle-button";
   import {
     SQUIRCLE_CONTENT_INSET,
@@ -420,7 +420,7 @@
           </p>
         </div>
         <ul class="themes">
-          {#each GALLERY_DESIGNS as design (design.id)}
+          {#each DESIGNS as design (design.id)}
             <li>
               <figure>
                 <!-- The design's own construction: a shape in the colour of the
