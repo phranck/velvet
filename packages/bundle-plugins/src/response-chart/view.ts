@@ -11,7 +11,7 @@
  * which is the same function the product uses, so no design can show a smoother
  * or uglier line than the real page would.
  *
- * Version 1.
+ * Version 2.
  */
 
 import {
@@ -21,13 +21,14 @@ import {
   monotonePath,
   nearestResponseTimestamp,
   responseRangeWindow,
+  responseScaleTicks,
   responseValuesAtTimestamp,
 } from "./arithmetic.js";
 import type { RangeKey, ResponseSeries } from "../data.js";
 import { createOverlay } from "../overlay/index.js";
 
 /** The version a manifest names to use this plugin. */
-export const VERSION = 1;
+export const VERSION = 2;
 
 /** How each range is named at the left edge of the plot. */
 const RANGE_LABEL: Record<RangeKey, string> = {
@@ -56,11 +57,13 @@ export interface ResponseChartStyle {
   tooltipWidth: number;
   /** The opacity of the area under the curve; zero draws none. */
   fill: number;
-  /** How far apart the ticks of a printed scale stand. Zero draws none. */
-  tickStep: number;
-  /** Every how many ticks a long one is drawn. */
-  tickMajorEvery: number;
-  /** How far a short tick reaches up from the time axis. */
+  /**
+   * How far a short tick reaches up from the time axis. Zero on both lengths
+   * draws no scale at all.
+   *
+   * Only the two lengths are a design's. Where the ticks stand follows from
+   * how long the window is, which `responseScaleTicks` decides.
+   */
   tickMinor: number;
   /** How far a long tick reaches up from the time axis. */
   tickMajor: number;
@@ -76,8 +79,6 @@ export const DEFAULT_RESPONSE_CHART_STYLE: ResponseChartStyle = {
   pointRadius: 3,
   tooltipWidth: 136,
   fill: 0,
-  tickStep: 0,
-  tickMajorEvery: 4,
   tickMinor: 0,
   tickMajor: 0,
 };
@@ -497,10 +498,11 @@ export function createChartView(
     const maximum = step * steps;
 
     const window = responseRangeWindow(range, generatedAt);
-    const xFor = (timestamp: string): number =>
+    const xForTime = (time: number): number =>
       plotLeft +
-      ((Date.parse(timestamp) - window.start) / (window.end - window.start)) *
+      ((time - window.start) / (window.end - window.start)) *
         (plotRight - plotLeft);
+    const xFor = (timestamp: string): number => xForTime(Date.parse(timestamp));
     const yFor = (value: number): number =>
       plotBottom - (value / maximum) * (plotBottom - plotTop);
 
@@ -599,6 +601,70 @@ export function createChartView(
       }
     }
 
+    /*
+      The printed scale.
+
+      Drawn here rather than as a background on the plot, because it belongs
+      between the readings and the two labels under them and both of those are
+      in the drawing's own units: a scale positioned in pixels would drift away
+      from them as the chart scales. A design that prints none sets its tick
+      heights to zero and this draws nothing.
+
+      It stands above the readings and below the pointer, which is the order a
+      scale printed on the glass of a dial is read in: the trace runs behind
+      the marks, and whatever the reader slides across them runs in front.
+    */
+    if (tokens.tickMajor > 0 || tokens.tickMinor > 0) {
+      const ticks = svg("g", { class: "chart-ticks", "aria-hidden": "true" });
+      for (const tick of responseScaleTicks(window)) {
+        const x = xForTime(tick.at);
+        // Every tick stands on the time axis and reaches up by its own
+        // length, which is how a printed scale is set: the foot is the
+        // measure and the head says how important the mark is.
+        ticks.append(
+          svg("line", {
+            class: tick.major ? "chart-tick chart-tick--major" : "chart-tick",
+            x1: x,
+            y1: plotBottom - (tick.major ? tokens.tickMajor : tokens.tickMinor),
+            x2: x,
+            y2: plotBottom,
+          }),
+        );
+      }
+      root.append(ticks);
+    }
+
+    const axes = svg("g", { class: "chart-axis", "aria-hidden": "true" });
+    // The two sides of the plot, drawn as lines rather than left to the grid.
+    // A design may want them stronger than the grid, and they are what the
+    // readings are measured against.
+    axes.append(
+      svg("line", {
+        class: "chart-axis-line chart-axis-line--value",
+        x1: plotLeft,
+        y1: plotTop,
+        x2: plotLeft,
+        y2: plotBottom,
+      }),
+      svg("line", {
+        class: "chart-axis-line chart-axis-line--time",
+        x1: plotLeft,
+        y1: plotBottom,
+        x2: plotRight,
+        y2: plotBottom,
+      }),
+    );
+    root.append(axes);
+
+    /*
+      The pointer, last of everything drawn inside the plot.
+
+      A receiver of this period is read through a strip of plexiglass laid over
+      the printed scale, so the strip and its hairline stand in front of the
+      marks and the trace alike. Drawn after both for exactly that reason: an
+      SVG paints in document order, and a pointer behind the scale it points at
+      is not a pointer.
+    */
     if (activeTimestamp) {
       const values = responseValuesAtTimestamp(filtered, activeTimestamp);
       if (values.length > 0) {
@@ -647,58 +713,6 @@ export function createChartView(
       }
     }
 
-    /*
-      The printed scale.
-
-      Drawn here rather than as a background on the plot, because it belongs
-      between the readings and the two labels under them and both of those are
-      in the drawing's own units: a scale positioned in pixels would drift away
-      from them as the chart scales. A design that prints none sets its tick
-      heights to zero and this draws nothing.
-    */
-    if (tokens.tickStep > 0 && (tokens.tickMajor > 0 || tokens.tickMinor > 0)) {
-      const ticks = svg("g", { class: "chart-ticks", "aria-hidden": "true" });
-      let index = 0;
-      for (let x = plotLeft; x <= plotRight + 0.01; x += tokens.tickStep) {
-        const major = index % Math.max(1, tokens.tickMajorEvery) === 0;
-        // Every tick stands on the time axis and reaches up by its own
-        // length, which is how a printed scale is set: the foot is the
-        // measure and the head says how important the mark is.
-        ticks.append(
-          svg("line", {
-            class: major ? "chart-tick chart-tick--major" : "chart-tick",
-            x1: x,
-            y1: plotBottom - (major ? tokens.tickMajor : tokens.tickMinor),
-            x2: x,
-            y2: plotBottom,
-          }),
-        );
-        index += 1;
-      }
-      root.append(ticks);
-    }
-
-    const axes = svg("g", { class: "chart-axis", "aria-hidden": "true" });
-    // The two sides of the plot, drawn as lines rather than left to the grid.
-    // A design may want them stronger than the grid, and they are what the
-    // readings are measured against.
-    axes.append(
-      svg("line", {
-        class: "chart-axis-line chart-axis-line--value",
-        x1: plotLeft,
-        y1: plotTop,
-        x2: plotLeft,
-        y2: plotBottom,
-      }),
-      svg("line", {
-        class: "chart-axis-line chart-axis-line--time",
-        x1: plotLeft,
-        y1: plotBottom,
-        x2: plotRight,
-        y2: plotBottom,
-      }),
-    );
-    root.append(axes);
     axisFrom.textContent = RANGE_LABEL[range];
 
     const description = withSamples

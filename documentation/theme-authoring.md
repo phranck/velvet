@@ -172,7 +172,7 @@ A plugin owns behaviour, never markup. It draws into an element the design gives
 | --- | --- | --- |
 | `status` | The arithmetic behind every figure | 99.97 per cent over thirty days is the same number in every design. Two rules in it are the ones a second implementation gets wrong, and both turn a page into a lie: a day before monitoring began is not a perfect day, and a day nothing was measured on is not an operational one |
 | `uptime-strip` | A month of days on a canvas, and the rule that decides a day's colour | 695ms of rasterisation as elements against 315ms as a canvas, over six expand-all cycles at 90 days with four services |
-| `response-chart` | The range arithmetic and the curve | `monotonePath` is what the product draws with, so no design can show a smoother line than the real page would |
+| `response-chart` | The range arithmetic, the curve, and the time scale | `monotonePath` is what the product draws with, so no design can show a smoother line than the real page would, and `responseScaleTicks` is what places a mark, so no design can print a scale that divides the window into anything the window is not made of |
 | `disclosure` | A panel that animates its own height | Two frames longer than 32ms out of roughly 250, measured in WebKit expanding and collapsing six services, which is what the same page produces with no animation at all |
 | `overlay` | A floating reading on the document's own layer | `position: fixed` escapes `overflow` but not `clip-path`, so the only thing that works is not being a descendant |
 
@@ -225,7 +225,11 @@ The curve is drawn by `monotonePath` from `site/src/lib/response-chart.ts`, impo
 
 This is not full comparability, and it should not be mistaken for it. Each service's axis still ends at its own rounded maximum. Sharing one axis across every service would fix that, at the cost of flattening a fast service into a line along the floor. That trade was put to phranck on 2026-08-10 and the per-service axis was kept.
 
+**The time scale is divided by the window rather than by the drawing.** A design states the two tick lengths and nothing else; `responseScaleTicks` decides where a mark stands. It picks the finest unit out of hour, six hours, day, two days, week, month and year whose count does not pass sixty, and counts back from the right edge so that "now" always carries a long mark. A window of thirty days therefore carries a mark a day and a long one every five, a window of a year carries a mark a week, and a window of six hours on a fresh installation carries a mark an hour. Before this the step was a fixed distance across the drawing, which came to 81 marks in every range alike and said nothing about time at all.
+
 **A reading with no neighbour is drawn as a ring**, filled with the panel's own colour so it sits on the panel rather than on the page. A service in a running outage produces a run of them, which is what it looks like when a measurement stands alone.
+
+**The pointer is drawn last, after the scale.** An SVG paints in document order, so a scale appended after the crosshair stands in front of it. The order inside the plot is the grid, the value figures, the traces, the printed scale, the two axis lines, and then the strip the pointer rides on. Whatever a design draws over the plot from CSS, such as the shadow of a window cut into a plate, lies over all of it.
 
 **The reading under the pointer may go to the design instead.** Both drawings take an optional reporter, one string per line. Given one, they hand over what they would have shown and draw no overlay; given none, they behave as before. `cassette` uses it to read on a panel of its own, which is what a machine of that period does.
 

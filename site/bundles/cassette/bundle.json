@@ -16,7 +16,7 @@
   "plugins": [
     { "name": "status", "version": 1 },
     { "name": "uptime-strip", "version": 1 },
-    { "name": "response-chart", "version": 1 },
+    { "name": "response-chart", "version": 2 },
     { "name": "disclosure", "version": 1 }
   ]
 }

@@ -2,6 +2,7 @@ import type { RangeKey, ResponseSeries } from "../data.js";
 
 type ResponseSamples = ResponseSeries[number]["samples"];
 
+const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 const RANGE_MS: Record<RangeKey, number> = {
   day: DAY_MS,
@@ -10,6 +11,38 @@ const RANGE_MS: Record<RangeKey, number> = {
   quarter: 90 * DAY_MS,
   year: 365 * DAY_MS,
 };
+
+/**
+ * The units a printed scale may divide a window into, finest first.
+ *
+ * A tick stands for a length of time rather than for a distance across the
+ * drawing, so which unit it is follows from how long the window is rather than
+ * from what the window is called. That is what lets one rule serve a window of
+ * six hours and one of six years alike.
+ *
+ * Each unit carries the grouping a reader of that unit expects: quarter days
+ * on an hourly scale, whole days on a six-hourly one, five days on a daily
+ * one, four weeks on a weekly one, and a quarter on a monthly one.
+ */
+const SCALE_UNITS: Array<{ every: number; majorEvery: number }> = [
+  { every: HOUR_MS, majorEvery: 6 },
+  { every: 6 * HOUR_MS, majorEvery: 4 },
+  { every: DAY_MS, majorEvery: 5 },
+  { every: 2 * DAY_MS, majorEvery: 5 },
+  { every: 7 * DAY_MS, majorEvery: 4 },
+  { every: 30 * DAY_MS, majorEvery: 3 },
+  { every: 365 * DAY_MS, majorEvery: 5 },
+];
+
+/**
+ * How many ticks a scale carries before it reads as a band rather than a
+ * scale.
+ *
+ * The widest plot a design draws measures 856px, where sixty ticks stand
+ * 14.3px apart. Below that the marks stop being separable and the scale says
+ * nothing the two end labels do not.
+ */
+const MOST_TICKS = 60;
 
 export function monotonePath(points: Array<{ x: number; y: number }>): string {
   if (points.length === 0) return "";
@@ -94,6 +127,41 @@ export function responseRangeWindow(
 ): { start: number; end: number } {
   const end = Date.parse(generatedAt);
   return { start: end - RANGE_MS[range], end };
+}
+
+/**
+ * The ticks of a printed scale across a window of time.
+ *
+ * Counted back from the window's end, so the right edge always carries a long
+ * tick: a scale of this kind is read from now backwards, and a remainder
+ * shorter than the unit belongs at the far end where nothing stands against
+ * it.
+ *
+ * Where each tick falls is the arithmetic's rather than a design's, on the
+ * same grounds the curve is: a scale that divides a window of thirty days into
+ * anything but days is telling a reader something about time that is not true
+ * of what they are looking at.
+ *
+ * @param window - The stretch of time the plot covers.
+ * @returns One entry per tick, earliest first, each saying when it stands and
+ *   whether it is a long one. Empty where the window has no length.
+ */
+export function responseScaleTicks(window: {
+  start: number;
+  end: number;
+}): Array<{ at: number; major: boolean }> {
+  const span = window.end - window.start;
+  if (span <= 0) return [];
+  const unit =
+    SCALE_UNITS.find(({ every }) => span / every <= MOST_TICKS) ??
+    SCALE_UNITS.at(-1)!;
+  const ticks: Array<{ at: number; major: boolean }> = [];
+  for (let step = 0; ; step += 1) {
+    const at = window.end - step * unit.every;
+    if (at < window.start) break;
+    ticks.push({ at, major: step % unit.majorEvery === 0 });
+  }
+  return ticks.reverse();
 }
 
 export function filterResponseSeries(

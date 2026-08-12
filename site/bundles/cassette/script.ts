@@ -63,10 +63,12 @@ const STRIP_GEOMETRY = {
 
 /**
  * The plot: the lit scale of a receiver. The trace runs from edge to edge with
- * no value axis, and a printed scale of ticks hangs below it, every fourth one
- * drawn long. The ticks are in the drawing's own units rather than in pixels,
- * because they belong between the readings and the two range labels and both of
- * those scale with the drawing.
+ * no value axis, and a printed scale of ticks hangs below it.
+ *
+ * The two lengths are all this design states about that scale. How far apart
+ * the marks stand is the plugin's, because it follows from how long the window
+ * is: an hour apart over a day, a day apart over a month, a week apart over a
+ * year.
  */
 const CHART_GEOMETRY = {
   height: 150,
@@ -77,8 +79,6 @@ const CHART_GEOMETRY = {
   pointRadius: 3,
   tooltipWidth: 140,
   fill: 0.32,
-  tickStep: 8,
-  tickMajorEvery: 4,
   tickMinor: 4,
   tickMajor: 8,
 } as const;
