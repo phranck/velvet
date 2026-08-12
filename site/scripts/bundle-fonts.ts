@@ -64,6 +64,7 @@ const BUNDLES: Record<string, Face[]> = {
       italic: [400],
     },
     { package: "monoton", family: "Monoton", weights: [400] },
+    { package: "nova-mono", family: "Nova Mono", weights: [400] },
     { package: "plaster", family: "Plaster", weights: [400] },
   ],
   "twenty-forty-nine": [

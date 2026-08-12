@@ -169,7 +169,13 @@
   --detail-edge-width: 0px;
   --detail-edge-colour: var(--surface-rule);
   --detail-fill: transparent;
-  --chart-rule-width: var(--rule-width);
+  /* Nothing above the plot: the window's own edge is what separates it from
+     the plate, and a rule drawn there is a second separator for one thing. */
+  --chart-rule-width: 0px;
+  /* The scale reads itself: the trace's colours are the two protocol windows
+     above it, and a key repeating them is a caption for something already
+     labelled. */
+  --chart-legend-display: none;
   --chart-rule-colour: var(--surface-rule);
   /* The opened panel is not a card, so it adds nothing of its own: everything
      inside the case stands the same distance from it, which is the card's
@@ -179,7 +185,10 @@
   --card-radius-base: 12px;
   --card-radius: 12px;
   --card-clip: none;
-  --card-border-width: 1px;
+  /* No line around the case: what ends it is the wood at its sides and the
+     plates at its ends, and a rule drawn over those reads as a frame the object
+     does not have. */
+  --card-border-width: 0px;
   --card-shadow: 0 10px 22px rgb(0 0 0 / 0.55);
   --control-radius: 5px;
   --control-border-width: 1px;
@@ -248,9 +257,13 @@
     stand, and a lamp behind it warming the whole face. The trace runs across
     that scale the way the tuning needle does.
   */
+  /* The scale is a window in the same plate as the panel above it, so it takes
+     the panel's corners and the panel's cut. No rim, for the same reason. */
   --chart-plot-inset: 0px;
   --chart-plot-edge-width: 0px;
-  --chart-plot-edge-colour: #4a4033;
+  --chart-plot-edge-colour: transparent;
+  --chart-plot-radius: var(--service-display-radius);
+  --chart-plot-shadow: var(--service-display-shadow);
   --chart-plot-fill: radial-gradient(
       ellipse 80% 130% at 50% 100%,
       rgb(232 163 61 / 0.22),
@@ -271,8 +284,8 @@
      long, hanging under the graph with the range's two ends below it. */
   --chart-tick-colour: rgb(232 220 196 / 0.45);
   --chart-tick-major-colour: rgb(232 220 196 / 0.8);
-  --chart-head-margin: var(--space-block);
-  --chart-head-space: var(--space-tight);
+  --chart-head-margin: 0px;
+  --chart-head-space: 0px;
   /* The gap between the drawing and the two ends of the range under it. */
   --chart-axis-space: 5px;
   /* Room over the highest reading for its own figure plus ten pixels of air
@@ -611,10 +624,10 @@
     lamp is out until the key is down. Down means the response times are
     showing, which is what the key is for.
   */
-  /* Flush with the foot of the display beside it, lifted by three pixels, so
-     the key and the panel close on the same line. */
-  --disclosure-mark-self: flex-end;
-  --disclosure-mark-offset: 3px;
+  /* The plate and the key are one part of the face, and that part stands in
+     the middle of the panel beside it. */
+  --disclosure-mark-self: center;
+  --disclosure-mark-offset: 0px;
   /* Wide enough for the word on the plate above the key, which the key takes
      as well so the two are one column: OPEN measures 27px, and this leaves it
      four and a half either side of the frame. */
@@ -708,7 +721,9 @@
   --disclosure-label-colour-on: #ff8b78;
   --disclosure-label-glow-on: 0 0 4px rgb(255 90 69 / 0.95),
     0 0 10px rgb(255 90 69 / 0.7), 0 0 20px rgb(255 60 40 / 0.45);
-  --disclosure-stack-gap: 3px;
+  /* The same gap the two protocol windows keep, because these sit in the same
+     face and nothing about them is a different distance. */
+  --disclosure-stack-gap: var(--space-hair);
   /* A grid, so the lamp in the middle of the key is a box that can be sized
      and centred rather than an inline sliver. */
   --disclosure-mark-display: inline-grid;
@@ -723,6 +738,14 @@
   /* The name is written on the sun above, so the bar does not repeat it. */
   --range-label-display: none;
   --range-label-colour: var(--text-2);
+  --axis-font: "Nova Mono", var(--font-meta);
+  /* The plate is anodised, so it is black at the surface only: a cut through
+     that skin lays the aluminium open, and the letters are that bare metal
+     rather than a lighter shade of the coating. The shadow above each of them
+     is the wall of the cut. Nothing below it: a lit lip there reads as a grey
+     line under the letters rather than as an edge. */
+  --axis-colour: #b4b7bb;
+  --axis-engraving: 0 -1px 1px rgb(0 0 0 / 0.85);
   --range-button-colour: var(--text-3);
   /* The control that opens every row at once answers to nothing. */
   --toggle-hover-fill: transparent;
@@ -854,9 +877,11 @@
     calc(var(--service-display-inset) - 4.47px)
     calc(var(--service-display-inset) - 1.8px)
     calc(var(--service-display-inset) - 0.33px);
-  --service-display-edge-width: 1px;
+  /* No rim: a window cut into a plate has none, and the protocol windows beside
+     it are drawn without one. What says it is sunk is the shadow falling in. */
+  --service-display-edge-width: 0px;
   --service-display-edge-colour: #16202a;
-  --service-display-radius: 3px;
+  --service-display-radius: 5px;
   /*
     The dots that are not lit, as the cells they belong to.
 
@@ -926,8 +951,10 @@
   --service-name-clip: text;
   /* Pressed into the face: dark where the light does not reach over its top
      edge, and a hairline of the metal along the bottom. */
-  --service-display-shadow: inset 0 2px 4px rgb(0 0 0 / 0.75),
-    inset 0 -1px 0 rgb(0 0 0 / 0.5), 0 1px 0 rgb(232 220 196 / 0.09);
+  /* One pixel deeper than it was, so the cut reads at the size these windows
+     are drawn at. */
+  --service-display-shadow: inset 0 3px 5px rgb(0 0 0 / 0.78),
+    inset 0 -1px 0 rgb(0 0 0 / 0.55), 0 1px 0 rgb(232 220 196 / 0.09);
   --service-name-display: grid;
   --service-name-flex: 1 1 auto;
   --service-name-trim: normal;
@@ -945,7 +972,7 @@
     strokes shows a gradient as areas rather than as an edge, so a band that
     drops to a shadow reads as a stain on the letter instead of as the turn of a
     polished surface. The darkest point of this one measures 5.2:1 against the
-    face behind it and the turn at the middle 8.2:1, so the metal stays metal
+    face behind it and the turn at the middle 7.5:1, so the metal stays metal
     the whole way down.
 
     Every stop keeps its yellow. A highlight mixed towards white rather than
@@ -2566,9 +2593,18 @@
   display: flex;
   justify-content: space-between;
   margin: var(--space-hair) var(--row-inset) 0;
-  color: var(--text-3);
-  font-family: var(--font-meta);
+  color: var(--axis-colour, var(--text-3));
+  /* Its own face, because a scale printed on a plate is not set in the face the
+     panel prints with. */
+  font-family: var(--axis-font, var(--font-meta));
   font-size: var(--text-size-caption);
+  /* Stamped as a label is stamped, in capitals. */
+  text-transform: var(--label-transform);
+  /* Cut into the plate rather than printed on it: a hairline of the plate's own
+     light along the lower edge of every letter, and the shadow of the cut above
+     it. The letters keep their own colour, so the reading stays at 4.6:1
+     against the metal and the engraving is what the two lines do. */
+  text-shadow: var(--axis-engraving, none);
 }
 
 /* ── Service details ──────────────────────────────────────────────────────── */
@@ -2599,62 +2635,11 @@
   background: var(--detail-fill);
 }
 
-.protocol-readings {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-row);
-  flex-wrap: wrap;
-}
-
-.protocol-separator {
-  flex: none;
-  color: var(--text-3);
-  font-family: var(--font-meta);
-  line-height: 1;
-}
-
-.protocol-reading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-hair);
-  min-width: 0;
-}
-
-.protocol-reading::before {
-  content: "";
-  width: var(--dot-size);
-  height: var(--dot-size);
-  border-radius: var(--dot-radius);
-  background: var(--state-operational);
-  flex: none;
-}
-
-.protocol-reading[data-status="degraded"]::before {
-  background: var(--state-degraded);
-}
-
-.protocol-reading[data-status="outage"]::before {
-  background: var(--state-outage);
-}
-
-.protocol-reading[data-status="unknown"]::before {
-  background: var(--state-no-data);
-}
-
 .protocol-name {
   font-family: var(--font-meta);
   font-size: var(--text-size-badge);
   font-weight: var(--meta-weight);
   line-height: 1;
-}
-
-.protocol-reading[data-protocol="ipv4"] .protocol-name {
-  color: var(--protocol-ipv4);
-}
-
-.protocol-reading[data-protocol="ipv6"] .protocol-name {
-  color: var(--protocol-ipv6);
 }
 
 .protocol-value {
@@ -2690,9 +2675,6 @@
      that draws no rule between the readings and the chart wants them closer
      than two stacked blocks would be. */
   margin-top: var(--chart-head-margin);
-  /* Its own value rather than the general tight step, because where a rule is
-     drawn above it, a caption sitting directly under that rule needs more air
-     than two stacked rows do. */
   padding-top: var(--chart-head-space);
   /* Its own rule rather than the page's, because a design may separate the
      chart from the readings above it by space alone. */
@@ -2710,7 +2692,7 @@
 }
 
 .chart-legend {
-  display: flex;
+  display: var(--chart-legend-display, flex);
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-hair) var(--space-row);
@@ -2754,8 +2736,38 @@
   padding: var(--chart-plot-inset);
   border: var(--chart-plot-edge-width) var(--rule-style)
     var(--chart-plot-edge-colour);
-  border-radius: var(--control-radius);
+  border-radius: var(--chart-plot-radius, var(--control-radius));
   background: var(--chart-plot-fill);
+}
+
+/*
+  Everything the window holds is cut off at its own edge: the trace, the ticks
+  and the strip the pointer rides on all end where the plate begins, rather than
+  running out over it.
+*/
+.chart-plot {
+  overflow: hidden;
+}
+
+/*
+  The cut, over everything inside the window.
+
+  An inset shadow on the plot itself falls under its contents, which puts the
+  plexiglass strip and the trace in front of the plate's own edge. They run
+  behind it, so the shadow is drawn as a layer of its own above them and takes
+  no pointer, or it would swallow the hover the strip follows.
+*/
+.chart-plot {
+  position: relative;
+}
+
+.chart-plot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--chart-plot-shadow, none);
+  pointer-events: none;
 }
 
 .chart-svg {

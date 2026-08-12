@@ -52,7 +52,7 @@ const STRIP_GEOMETRY = {
   // A segment cut into the plate cannot rise out of it, so the day under the
   // pointer lights up instead of standing up.
   hover: "lighten",
-  hoverLighten: 0.38,
+  hoverLighten: 0.52,
   // A little more than the default, so the stack reads as lit from above at a
   // glance rather than on inspection.
   reliefSpread: 0.26,
