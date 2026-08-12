@@ -62,6 +62,20 @@ html {
     0px
   );
 
+  /* The site reads a step larger than a surface somebody works in. It is a page
+     somebody reads, whilst onboarding is a form somebody fills, and a form set
+     at reading size spends room on every label and hint it has. The names stay
+     the ones in velvet-tokens.css, so there is one vocabulary; only the values
+     a page wants are stated here. */
+  --velvet-text-small: 1rem;
+  --velvet-text-body: 1.25rem;
+  --velvet-text-copy: 1.375rem;
+  --velvet-text-lead: 1.4375rem;
+  --velvet-text-heading: clamp(1.625rem, 3.2vw, 2.125rem);
+  --velvet-text-intro: clamp(1.75rem, 4vw, 2.5rem);
+  --velvet-text-title: clamp(2.25rem, 6vw, 3rem);
+  --velvet-text-ornament: 3rem;
+
   /* An uppercase label set in the label face. Two sizes, because the eyebrow
      over a section and the caption under a picture are read at the same size
      whilst the index heading beside a document is read a step below it. */

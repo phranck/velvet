@@ -139,8 +139,8 @@ test("uses the local Datatype family for onboarding typography", async () => {
   );
   assert.match(tokens, /--velvet-font:\s*"Datatype"/);
   assert.match(tokens, /--velvet-text-caption:\s*0\.8125rem/);
-  assert.match(tokens, /--velvet-text-small:\s*1rem/);
-  assert.match(tokens, /--velvet-text-body:\s*1\.25rem/);
+  assert.match(tokens, /--velvet-text-small:\s*0\.9375rem/);
+  assert.match(tokens, /--velvet-text-body:\s*1rem/);
   assert.match(onboarding, /--setup-text-small:\s*var\(--velvet-text-small\)/);
   assert.match(onboarding, /--setup-text-body:\s*var\(--velvet-text-body\)/);
   assert.match(onboarding, /--setup-text-lead:\s*1\.125rem/);

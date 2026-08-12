@@ -20,10 +20,18 @@ body {
   min-height: 100%;
   margin: 0;
   /* Stated on `body` as well as on `:root` above, because `app.css` sets a face
-     and a size on `body` for the status page, and an element's own rule beats
-     anything it would otherwise inherit. Without this a surface's `body` named
-     a face it never fetches and read at the status page's 18px. */
+     on `body` for the status page, and an element's own rule beats anything it
+     would otherwise inherit. Without this a surface's `body` named a face it
+     never fetches. */
   font-family: var(--velvet-font);
+}
+
+/* The reading size, on `body` alone and never on `html`.
+   `html` is the root every `rem` on the page is measured against. A size given
+   there in `rem` is measured against itself, so `1.25rem` turns 16px into 20 and
+   every other `rem` on the page grows by a quarter with it. Set here for a
+   moment on 2026-08-12, it made every text on velvet.li a quarter too large. */
+body {
   font-size: var(--velvet-text-body);
 }
 
