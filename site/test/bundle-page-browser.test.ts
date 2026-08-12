@@ -180,3 +180,91 @@ test(
   },
   BROWSER_TIMEOUT_MS,
 );
+
+/**
+ * Cassette prints its readings on a lattice of unlit dots, and a reading that
+ * does not stand on that lattice is the one fault in the panel a reader sees
+ * immediately and no figure in the stylesheet reports.
+ *
+ * The panel is built entirely of whole cells: its width is rounded down to one,
+ * each line is rounded down again, and every character advances by exactly one.
+ * Anything else on a line has to be a whole number of cells as well, which is
+ * what the gap between two readings kept getting wrong: the page's own row step
+ * is 12px against a cell of 14, so the figure at the end of the first line sat
+ * two pixels short of a column for the whole width of the panel.
+ *
+ * The widths below are chosen because the fault only shows whilst the line is
+ * tight enough that the figure is not pushed flush against the trailing edge,
+ * which lands on a column whatever the gap is. Measured on the ordinary
+ * fixture, that is every page measure from 316px to 510px.
+ */
+test(
+  "every reading on the readout starts on a column of its lattice",
+  async () => {
+    const built = await buildDesignPage("cassette");
+    const server = Bun.serve({
+      port: 0,
+      fetch: async (request) => {
+        const path = new URL(request.url).pathname;
+        const file = Bun.file(join(built.outDir, path === "/" ? "index.html" : path));
+        return (await file.exists())
+          ? new Response(file)
+          : new Response(null, { status: 404 });
+      },
+    });
+
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+      await refuseOffsiteRequests(page);
+      await page.goto(`http://127.0.0.1:${server.port}/`);
+      await page.locator(".cassette-page").first().waitFor();
+      await page.evaluate(() => document.fonts.ready);
+
+      for (const width of [520, 640, 900, 1280]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.waitForTimeout(60);
+        const off = await page.evaluate(() => {
+          const cell = Number.parseFloat(
+            getComputedStyle(
+              document.querySelector(".service-display")!,
+            ).getPropertyValue("--service-display-cell-advance"),
+          );
+          const inkLeft = (element: Element): number => {
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            return range.getBoundingClientRect().left;
+          };
+          const wrong: Array<{ text: string; short: number }> = [];
+          for (const line of document.querySelectorAll(".service-display-line")) {
+            const left = line.getBoundingClientRect().left;
+            if (line.getBoundingClientRect().width < cell) continue;
+            const readings = line.querySelector(".service-display-main")
+              ? [...line.children]
+              : [line];
+            for (const reading of readings) {
+              if (!reading.textContent?.trim()) continue;
+              const short = (((inkLeft(reading) - left) % cell) + cell) % cell;
+              if (short > 0.05) {
+                wrong.push({ text: reading.textContent.trim().slice(0, 20), short });
+              }
+            }
+          }
+          return { cell, wrong };
+        });
+        assert.deepEqual(
+          off.wrong,
+          [],
+          `at ${width}px the readout stands off its ${off.cell}px lattice`,
+        );
+      }
+
+      await page.close();
+    } finally {
+      await browser.close();
+      await server.stop(true);
+      await built.cleanup();
+    }
+  },
+  BROWSER_TIMEOUT_MS,
+);

@@ -901,6 +901,9 @@
   */
   --service-display-display: grid;
   --service-display-line-display: flex;
+  /* One cell between the two readings on a line, so the second one starts on a
+     column of the lattice like the first. */
+  --service-display-line-gap: var(--service-display-cell-advance);
   --service-display-main-display: block;
   --service-display-flex: 0 0 auto;
   /*
@@ -2399,7 +2402,13 @@
 .service-display-line {
   display: var(--service-display-line-display);
   align-items: baseline;
-  gap: var(--space-row);
+  /*
+    Whole cells, because everything on this line lands on the lattice behind
+    it. The page's own row step is not a cell, so a reading standing after a
+    gap of one sits between two columns of dots for the whole width of the
+    panel.
+  */
+  gap: var(--service-display-line-gap, 0px);
   min-width: 0;
   /* Whole cells, and the cells are drawn here rather than on the panel.
 
