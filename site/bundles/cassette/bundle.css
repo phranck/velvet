@@ -804,23 +804,29 @@
   /*
     The dots that are not lit, as the cells they belong to.
 
-    A panel of this kind is a row of five-by-seven cells, not a field of dots,
-    so this draws one cell and repeats it: five columns and seven rows of unlit
+    A panel of this kind is a row of five-by-nine cells, not a field of dots,
+    so this draws one cell and repeats it: five columns and nine rows of unlit
     dots, with the space between cells left dark. Every character the panel
     prints lands on exactly one of them.
 
     The figures come from the face itself, rasterised at 150px and read back:
-    its dots stand fifteen units apart and are nine across, seven rows of them
-    reach from 98 above the baseline to 8 above it, and the first column stands
-    7 to the right of where a character begins. At fifteen pixels that is a
-    step of 1.5, a dot of 0.9, a first row centre 9.8 above the baseline, and a
-    first column centre 0.7 in.
+    its dots stand fifteen units apart and are nine across, and the first
+    column stands 7 to the right of where a character begins. A figure reaches
+    from 98 above the baseline to 8 above it, and a letter with a descender
+    from 68 above to 22 below, which is nine rows between them rather than the
+    seven either one uses.
+
+    The panel is set at twenty pixels because that is what puts the raster on
+    whole ones: a step is a tenth of the size, so fifteen gave 1.5 and every
+    second dot landed on a different half of a pixel, which is what made the
+    field mush together. At twenty the step is 2, the cell is 14 by 24, and
+    every dot in it rasterises alike.
 
     The cell is the character's own advance by the line's own height: the
-    tracking is a tenth of the size, so a character takes seven steps of 1.5
-    rather than six, and the leading of 1.2 makes a line eighteen pixels. The
-    baseline sits fourteen pixels down that line, which is what puts the first
-    row of dots at 4.2 and the last at 13.2.
+    tracking is a tenth of the size, so a character takes seven steps rather
+    than six, and the leading of 1.2 makes a line twenty-four pixels. The
+    baseline sits 18.67 down that line, which puts the first row of dots at 5.6
+    and the ninth at 21.6.
 
     It is laid on the content box, so the grid starts where the first character
     does, and it is one static layer: opening a row changes the panel's height
@@ -829,9 +835,9 @@
   /* The glass itself, without the lattice: the protocol windows are cut from
      the same sheet and are too small to carry a dot pattern. */
   --display-glass: linear-gradient(to bottom, #060c0f, #0b1015);
-  --service-display-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10.5 18'><g fill='%2314232b'><circle cx='0.7' cy='4.2' r='.45'/><circle cx='2.2' cy='4.2' r='.45'/><circle cx='3.7' cy='4.2' r='.45'/><circle cx='5.2' cy='4.2' r='.45'/><circle cx='6.7' cy='4.2' r='.45'/><circle cx='0.7' cy='5.7' r='.45'/><circle cx='2.2' cy='5.7' r='.45'/><circle cx='3.7' cy='5.7' r='.45'/><circle cx='5.2' cy='5.7' r='.45'/><circle cx='6.7' cy='5.7' r='.45'/><circle cx='0.7' cy='7.2' r='.45'/><circle cx='2.2' cy='7.2' r='.45'/><circle cx='3.7' cy='7.2' r='.45'/><circle cx='5.2' cy='7.2' r='.45'/><circle cx='6.7' cy='7.2' r='.45'/><circle cx='0.7' cy='8.7' r='.45'/><circle cx='2.2' cy='8.7' r='.45'/><circle cx='3.7' cy='8.7' r='.45'/><circle cx='5.2' cy='8.7' r='.45'/><circle cx='6.7' cy='8.7' r='.45'/><circle cx='0.7' cy='10.2' r='.45'/><circle cx='2.2' cy='10.2' r='.45'/><circle cx='3.7' cy='10.2' r='.45'/><circle cx='5.2' cy='10.2' r='.45'/><circle cx='6.7' cy='10.2' r='.45'/><circle cx='0.7' cy='11.7' r='.45'/><circle cx='2.2' cy='11.7' r='.45'/><circle cx='3.7' cy='11.7' r='.45'/><circle cx='5.2' cy='11.7' r='.45'/><circle cx='6.7' cy='11.7' r='.45'/><circle cx='0.7' cy='13.2' r='.45'/><circle cx='2.2' cy='13.2' r='.45'/><circle cx='3.7' cy='13.2' r='.45'/><circle cx='5.2' cy='13.2' r='.45'/><circle cx='6.7' cy='13.2' r='.45'/></g></svg>");
-  --service-display-cell-advance: 10.5px;
-  --service-display-cell-size: var(--service-display-cell-advance) 18px;
+  --service-display-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 24'><g fill='%2314232b'><circle cx='0.93' cy='5.60' r='.6'/><circle cx='2.93' cy='5.60' r='.6'/><circle cx='4.93' cy='5.60' r='.6'/><circle cx='6.93' cy='5.60' r='.6'/><circle cx='8.93' cy='5.60' r='.6'/><circle cx='0.93' cy='7.60' r='.6'/><circle cx='2.93' cy='7.60' r='.6'/><circle cx='4.93' cy='7.60' r='.6'/><circle cx='6.93' cy='7.60' r='.6'/><circle cx='8.93' cy='7.60' r='.6'/><circle cx='0.93' cy='9.60' r='.6'/><circle cx='2.93' cy='9.60' r='.6'/><circle cx='4.93' cy='9.60' r='.6'/><circle cx='6.93' cy='9.60' r='.6'/><circle cx='8.93' cy='9.60' r='.6'/><circle cx='0.93' cy='11.60' r='.6'/><circle cx='2.93' cy='11.60' r='.6'/><circle cx='4.93' cy='11.60' r='.6'/><circle cx='6.93' cy='11.60' r='.6'/><circle cx='8.93' cy='11.60' r='.6'/><circle cx='0.93' cy='13.60' r='.6'/><circle cx='2.93' cy='13.60' r='.6'/><circle cx='4.93' cy='13.60' r='.6'/><circle cx='6.93' cy='13.60' r='.6'/><circle cx='8.93' cy='13.60' r='.6'/><circle cx='0.93' cy='15.60' r='.6'/><circle cx='2.93' cy='15.60' r='.6'/><circle cx='4.93' cy='15.60' r='.6'/><circle cx='6.93' cy='15.60' r='.6'/><circle cx='8.93' cy='15.60' r='.6'/><circle cx='0.93' cy='17.60' r='.6'/><circle cx='2.93' cy='17.60' r='.6'/><circle cx='4.93' cy='17.60' r='.6'/><circle cx='6.93' cy='17.60' r='.6'/><circle cx='8.93' cy='17.60' r='.6'/><circle cx='0.93' cy='19.60' r='.6'/><circle cx='2.93' cy='19.60' r='.6'/><circle cx='4.93' cy='19.60' r='.6'/><circle cx='6.93' cy='19.60' r='.6'/><circle cx='8.93' cy='19.60' r='.6'/><circle cx='0.93' cy='21.60' r='.6'/><circle cx='2.93' cy='21.60' r='.6'/><circle cx='4.93' cy='21.60' r='.6'/><circle cx='6.93' cy='21.60' r='.6'/><circle cx='8.93' cy='21.60' r='.6'/></g></svg>");
+  --service-display-cell-advance: 14px;
+  --service-display-cell-size: var(--service-display-cell-advance) 24px;
   --service-display-fill: var(--service-display-cell), var(--display-glass);
   /* The panel glows in the hue of the sun's lowest band, so the machine and the
      poster above it are lit by one colour rather than two. */
@@ -842,7 +848,7 @@
      step below it, with the unlit dots at 1.21:1. */
   --service-display-colour-quiet: #4aaed3;
   --service-display-font: "Doto", ui-monospace, monospace;
-  --service-display-size: 15px;
+  --service-display-size: 20px;
   --service-display-leading: 1.2;
   --service-display-tracking: 0.1em;
   --service-display-transform: uppercase;
