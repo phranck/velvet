@@ -21,7 +21,7 @@ This file records third-party components and assets used by Velvet. The status p
 | [Doto](https://github.com/google/fonts/blob/main/ofl/doto/OFL.txt) | 5.3.0 | OFL-1.1 | Latin 400, 600 and 700 font files are bundled with the Cassette design, and the Latin 600 file with Velvet browser tools. They print a value in this face, and velvet.li sets every word of code in it as well, in a block and inside a sentence alike. |
 | [IBM Plex Mono](https://github.com/IBM/plex/blob/master/LICENSE.txt) | 5.3.0 | OFL-1.1 | Latin 400, 500, 600 and 400 italic font files are bundled with the Cassette design. |
 | [Monoton](https://github.com/google/fonts/blob/main/ofl/monoton/OFL.txt) | 5.3.0 | OFL-1.1 | The Latin 400 font file is bundled with the Cassette design. |
-| [Tangerine](https://github.com/google/fonts/blob/main/ofl/tangerine/OFL.txt) | 5.3.0 | OFL-1.1 | Latin 400 and 700 font files are bundled with the Cassette design. |
+| [Atomic Age](https://github.com/google/fonts/blob/main/ofl/atomicage/OFL.txt) | 5.3.0 | OFL-1.1 | The Latin 400 font file is bundled with the Cassette design. |
 | [Rajdhani](https://github.com/google/fonts/blob/main/ofl/rajdhani/OFL.txt) | 5.3.0 | OFL-1.1 | Latin 300, 400, 500, 600 and 700 font files are bundled with the Twenty Forty-Nine design. |
 | [Share Tech Mono](https://github.com/google/fonts/blob/main/ofl/sharetechmono/OFL.txt) | 5.3.0 | OFL-1.1 | The Latin 400 font file is bundled with the Twenty Forty-Nine design. |
 | [Antonio](https://github.com/google/fonts/blob/main/ofl/antonio/OFL.txt) | 5.3.0 | OFL-1.1 | Latin 400, 600 and 700 font files are bundled with the NCC-1701-D design. |
