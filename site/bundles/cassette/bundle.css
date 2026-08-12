@@ -280,23 +280,41 @@
   --chart-needle-width: 7px;
   --chart-needle-fill: rgb(232 220 196 / 0.10);
   --chart-needle-edge: rgb(232 220 196 / 0.22);
-  /* The printed scale: a tick every 8 units of the drawing, every fourth one
-     long, hanging under the graph with the range's two ends below it. */
+  /* The printed scale, standing on the foot of the plot with the range's two
+     ends below it. A mark is a length of time rather than a distance across
+     the drawing, so how far apart they stand follows from the window and only
+     their two lengths are stated here. */
   --chart-tick-colour: rgb(232 220 196 / 0.45);
   --chart-tick-major-colour: rgb(232 220 196 / 0.8);
   --chart-head-margin: 0px;
-  --chart-head-space: 0px;
+  /* Air above the caption, so it stands with the window it names rather than
+     under the line of dates it follows. Measured: 25px over it and 9px under
+     it, against 16 and 9 with none. */
+  --chart-head-space: var(--space-tight);
   /* The gap between the drawing and the two ends of the range under it. */
   --chart-axis-space: 5px;
   /* Room over the highest reading for its own figure plus ten pixels of air
      to the top of the box. */
   --chart-grid-colour: var(--surface-rule);
   --chart-grid-alpha: 100%;
-  --chart-axis-text-size: var(--text-size-chart-label);
   --chart-axis-colour: var(--surface-rule);
-  --chart-axis-text-colour: var(--text-3);
-  --chart-axis-text-alpha: 100%;
   --chart-axis-alpha: 100%;
+  /*
+    The caption stands over the middle of the window rather than at its leading
+    edge, because the plot spans both of the chart's columns and this design
+    draws no legend beside it.
+
+    Indented by a whole step of its own tracking, which moves the letters by
+    half of one. Tracking is added after the last letter as well as between
+    them, so a centred line sits half a step left of the box it is centred in;
+    an indent takes that much off the width the line is then centred in, so it
+    shifts the line by half of what it states. Measured at 1.68px of tracking:
+    the letters centre on 828.50 against the window's own 828.50, where an
+    indent of half a step left them at 828.08.
+  */
+  --chart-caption-column: 1 / -1;
+  --chart-caption-align: center;
+  --chart-caption-indent: var(--label-tracking);
   /* The figures print on the glass beside the ticks, the way a scale of this
      period carries its own readings. */
   --chart-scale-display: block;
@@ -738,14 +756,20 @@
   /* The name is written on the sun above, so the bar does not repeat it. */
   --range-label-display: none;
   --range-label-colour: var(--text-2);
-  --axis-font: "Nova Mono", var(--font-meta);
-  /* The plate is anodised, so it is black at the surface only: a cut through
-     that skin lays the aluminium open, and the letters are that bare metal
-     rather than a lighter shade of the coating. The shadow above each of them
-     is the wall of the cut. Nothing below it: a lit lip there reads as a grey
-     line under the letters rather than as an edge. */
-  --axis-colour: #b4b7bb;
-  --axis-engraving: 0 -1px 1px rgb(0 0 0 / 0.85);
+  /*
+    The plate's legends.
+
+    Three of them: the caption over the plot, the two ends of the strip's
+    window, and the two ends of the plot's. A faceplate is printed once, so all
+    three carry one legend in the display face, at the caption's size, weight,
+    tracking and capitals, in one ink. Measured on the plate: 6.59:1.
+  */
+  --axis-font: var(--font-display);
+  --axis-colour: var(--text-2);
+  --axis-size: var(--text-size-caption);
+  --axis-weight: var(--display-weight);
+  --axis-tracking: var(--label-tracking);
+  --axis-transform: var(--label-transform);
   --range-button-colour: var(--text-3);
   /* The control that opens every row at once answers to nothing. */
   --toggle-hover-fill: transparent;
@@ -1015,18 +1039,15 @@
  * Structure, and nothing that decides how the page looks.
  *
  * Every colour, radius, font, spacing step, border width, shadow and duration
- * below comes from a custom property that a theme file defines. This file may
- * not contain a single literal of any of those, and that restriction is what
- * makes the claim in `documentation/theme-authoring.md` testable rather than
- * merely stated: `verify.ts` greps this file for literals and fails on a hit.
+ * below comes from a custom property declared above, so a value is changed in
+ * one place and everything reading it follows.
  *
- * Four kinds of value are allowed here and are not design decisions:
+ * Three kinds of value stand here directly, and none of them is a design
+ * decision:
  *
  *   - structural zeroes and resets, such as `margin: 0` or `border: 0`
  *   - relational values, such as `1fr`, `100%`, `auto` and `min-content`
  *   - the derived geometry below, which computes one value from another
- *   - the mockup toolbar at the foot of this file, which is not part of the
- *     page under review and is deliberately outside every theme's reach
  *
  * The card geometry follows the rule that a nested radius is the outer radius
  * less the inset, and that text meeting a curve stands in by half the radius.
@@ -2588,23 +2609,40 @@
   background: var(--series-colour);
 }
 
-.strip-axis {
-  grid-area: axis;
+/*
+  The two ends of the window a strip is read across, and the two ends of the
+  one a plot is read across.
+
+  Both are the same legend, and a design states it once through the `--axis-`
+  properties: they name what is printed on a surface rather than what belongs
+  to either row.
+*/
+.strip-axis,
+.chart-axis-row {
   display: flex;
   justify-content: space-between;
-  margin: var(--space-hair) var(--row-inset) 0;
   color: var(--axis-colour, var(--text-3));
-  /* Its own face, because a scale printed on a plate is not set in the face the
-     panel prints with. */
   font-family: var(--axis-font, var(--font-meta));
-  font-size: var(--text-size-caption);
-  /* Stamped as a label is stamped, in capitals. */
-  text-transform: var(--label-transform);
-  /* Cut into the plate rather than printed on it: a hairline of the plate's own
-     light along the lower edge of every letter, and the shadow of the cut above
-     it. The letters keep their own colour, so the reading stays at 4.6:1
-     against the metal and the engraving is what the two lines do. */
-  text-shadow: var(--axis-engraving, none);
+  font-size: var(--axis-size, var(--text-size-caption));
+  font-weight: var(--axis-weight, inherit);
+  letter-spacing: var(--axis-tracking, normal);
+  text-transform: var(--axis-transform, none);
+}
+
+/*
+  Tracking is added after the last letter as well as between them, so a label
+  ranged to the trailing edge stops one step short of it whilst its box ends
+  flush. The negative margin takes that step back, which is the same correction
+  the credit's label carries at the foot of the page.
+*/
+.strip-axis > :last-child,
+.chart-axis-row > :last-child {
+  margin-inline-end: calc(-1 * var(--axis-tracking, 0px));
+}
+
+.strip-axis {
+  grid-area: axis;
+  margin: var(--space-hair) var(--row-inset) 0;
 }
 
 /* ── Service details ──────────────────────────────────────────────────────── */
@@ -2682,12 +2720,17 @@
 }
 
 .chart-caption {
+  /* Over the whole chart or only over its first column, which is what decides
+     whether the caption names the plot or labels the row the legend shares. */
+  grid-column: var(--chart-caption-column);
   margin: 0;
   color: var(--text-2);
   font-family: var(--font-display);
   font-size: var(--text-size-caption);
   font-weight: var(--display-weight);
   letter-spacing: var(--label-tracking);
+  text-align: var(--chart-caption-align);
+  text-indent: var(--chart-caption-indent);
   text-transform: var(--label-transform);
 }
 
@@ -2785,14 +2828,9 @@
 */
 .chart-axis-row {
   grid-column: 1 / -1;
-  display: flex;
-  justify-content: space-between;
   /* Its own distance from the drawing, with the grid's row gap taken back off
      so the token states the whole of it. */
   margin-block-start: calc(var(--chart-axis-space) - var(--space-tight));
-  color: var(--chart-axis-text-colour);
-  font-family: var(--font-meta);
-  font-size: var(--chart-axis-text-size);
 }
 
 .chart-empty {
@@ -2963,18 +3001,6 @@
 
 .chart-tooltip circle {
   fill: var(--series-colour);
-}
-
-/* The two ends of the range, in the same source the axes and the scale take,
-   so everything naming the plot reads as one set of marks. */
-.chart-axis text {
-  fill: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-axis-text-colour)) var(--chart-axis-text-alpha),
-    transparent
-  );
-  font-family: var(--font-meta);
-  font-size: var(--text-size-chart-label);
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */

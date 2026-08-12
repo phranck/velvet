@@ -1,5 +1,5 @@
 /*
-  The faces this design carries: Atomic Age, Audiowide, Doto, IBM Plex Mono, Monoton, Nova Mono, Plaster.
+  The faces this design carries: Atomic Age, Audiowide, Doto, IBM Plex Mono, Monoton, Plaster.
 
   Written by site/scripts/bundle-fonts.ts together with the files it
   names, so a rule cannot point at a face nobody copied. Every one of
@@ -85,14 +85,6 @@
   font-weight: 400;
   font-display: swap;
   src: url("./fonts/monoton-latin-400-normal.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Nova Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/nova-mono-latin-400-normal.woff2") format("woff2");
 }
 
 @font-face {

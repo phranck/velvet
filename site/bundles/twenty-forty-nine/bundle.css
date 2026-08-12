@@ -525,18 +525,15 @@
  * Structure, and nothing that decides how the page looks.
  *
  * Every colour, radius, font, spacing step, border width, shadow and duration
- * below comes from a custom property that a theme file defines. This file may
- * not contain a single literal of any of those, and that restriction is what
- * makes the claim in `documentation/theme-authoring.md` testable rather than
- * merely stated: `verify.ts` greps this file for literals and fails on a hit.
+ * below comes from a custom property declared above, so a value is changed in
+ * one place and everything reading it follows.
  *
- * Four kinds of value are allowed here and are not design decisions:
+ * Three kinds of value stand here directly, and none of them is a design
+ * decision:
  *
  *   - structural zeroes and resets, such as `margin: 0` or `border: 0`
  *   - relational values, such as `1fr`, `100%`, `auto` and `min-content`
  *   - the derived geometry below, which computes one value from another
- *   - the mockup toolbar at the foot of this file, which is not part of the
- *     page under review and is deliberately outside every theme's reach
  *
  * The card geometry follows the rule that a nested radius is the outer radius
  * less the inset, and that text meeting a curve stands in by half the radius.
