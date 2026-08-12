@@ -280,11 +280,15 @@
     by 53 and not at 856 by 200: a single throw from the top edge leaves the
     other three sides flat, and a flat side reads as a printed rectangle rather
     than as a hole.
+
+    One throw per wall and no more. Blurred throws add where they meet, so a
+    fifth one darkening the foot stood under the hairline that lights it and
+    the two corners at the top carried the sum of two. The fill below already
+    darkens towards the bottom, which is the third thing that was adding.
   */
-  --chart-plot-shadow: inset 0 5px 8px rgb(0 0 0 / 0.8),
-    inset 4px 0 7px rgb(0 0 0 / 0.45), inset -4px 0 7px rgb(0 0 0 / 0.35),
-    inset 0 -2px 1px rgb(0 0 0 / 0.5),
-    inset 0 -1px 0 rgb(232 220 196 / 0.14);
+  --chart-plot-shadow: inset 0 4px 6px rgb(0 0 0 / 0.45),
+    inset 3px 0 5px rgb(0 0 0 / 0.22), inset -3px 0 5px rgb(0 0 0 / 0.18),
+    inset 0 -1px 0 rgb(232 220 196 / 0.12);
   /* The lip the cut leaves in the plate at its lower edge, outside the window
      rather than in it. It sits on the plot itself, because the window clips
      its own contents and an outset shadow drawn by a child is cut away with
