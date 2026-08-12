@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 1.0.1 (2026-08-12)
+
+A status page is now published in the design its configuration names.
+
+Until now that name was lost on the way. Writing `statusPage.design` into your `velvet.yml` got you the page Velvet ships, and nothing said why. The check that reads a configuration takes it apart field by field, and this one field was never copied across.
+
+The browser setup offers those four designs where it used to offer four colour palettes. Each one is shown with its name, the period it comes from, and a picture of a page published in it, and what you choose there is written as `design`.
+
+The setup also stands in one column again, because the bar above the form began at a different edge from the form beneath it. The layer the setup is drawn on no longer tiles either: the shorthand that paints it puts back a property that had been set before it.
+
 ## Version 1.0.0 (2026-08-12)
 
 Velvet watches your websites and tells the people who rely on them whether everything is working.

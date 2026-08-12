@@ -1,12 +1,10 @@
-# Velvet 1.0.0
+# Velvet 1.0.1
 
-## What Velvet does
+## What this update fixes
 
-Velvet watches your websites and tells the people who rely on them whether everything is working. Every five minutes GitHub asks each address you listed whether it answers, and four times a day it also notes how long that answer took. Out of this Velvet builds a page anybody can look at.
+A status page is published in the design its configuration names. If your `velvet.yml` names one under `statusPage.design`, this update is what makes it take effect: the check that reads a configuration took it apart field by field and never copied that one field across, so the page Velvet ships was published instead.
 
-When an address stops answering, Velvet opens an issue in your repository and marks that service as down. When it answers again, the issue closes and the page says so. Planned work can be announced beforehand and shows up as a notice rather than as a fault.
-
-The page keeps a record of what was found, so a visitor sees how things have been going and not only how they are right now. You choose how it looks, and it can live on an address of your own. Nothing runs on a server you have to rent, because all of it happens inside GitHub.
+The browser setup offers the four designs where it used to offer four colour palettes. Each one is shown with its name, the period it comes from, and a picture of a page published in it.
 
 ## What stays yours
 
