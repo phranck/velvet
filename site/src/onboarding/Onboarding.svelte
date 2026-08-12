@@ -1244,13 +1244,17 @@
     margin-bottom: 4.5rem;
     text-align: center;
   }
+  /* The lead size rather than the intro one. This is the sentence that opens
+     the surface, not a title: the intro size belonged to it whilst the mark
+     stood above it and carried the page, and with the mark in the bar it was
+     the largest thing on the page and read as a heading. */
   .intro > p:last-child {
     width: 100%;
     max-width: none;
     margin: 3.5rem 0 0;
     color: color-mix(in srgb, var(--setup-muted) 78%, var(--setup-text));
-    font-size: var(--setup-text-intro);
-    line-height: 1.3;
+    font-size: var(--velvet-text-lead);
+    line-height: 1.4;
   }
   .steps {
     /* Five tiles and four gaps come to 86% of the window at these rates, so the

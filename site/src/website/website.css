@@ -76,25 +76,6 @@ html {
   --velvet-text-title: clamp(2.25rem, 6vw, 3rem);
   --velvet-text-ornament: 3rem;
 
-  /* An uppercase label set in the label face. Two sizes, because the eyebrow
-     over a section and the caption under a picture are read at the same size
-     whilst the index heading beside a document is read a step below it. */
-  --velvet-text-label: 0.8125rem;
-  --velvet-text-label-small: 0.6875rem;
-
-  /* How far apart a label's letters stand. Three steps rather than the seven
-     the mockup happens to contain, because the differences between .08em and
-     .1em, or between .14em and .16em, are not differences a reader can see and
-     keeping them would mean seven values nobody could choose between.
-
-     `label` is what a navigation item, a version and a caption take. `eyebrow`
-     is the line that names a section or a column. `wide` is reserved for a
-     label standing alone with nothing beside it, where the extra air is what
-     makes it read as a heading rather than as a stray word. */
-  --velvet-tracking-label: 0.1em;
-  --velvet-tracking-eyebrow: 0.16em;
-  --velvet-tracking-wide: 0.2em;
-
   /* How long the mark travelling the opening section's ring takes to go once
      round. Slow enough that a reader notices it only if they stay. The ring
      itself and the light behind it come from `velvet-backdrop.css`, which every
