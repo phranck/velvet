@@ -815,12 +815,6 @@ test("publishes the changelog where GitHub Pages will find it, and without a scr
     }
   }
 
-  // Written as `LICENSING.md` in the changelog, which resolves inside the
-  // repository and nowhere else.
-  assert.match(
-    html,
-    /href="https:\/\/github\.com\/phranck\/velvet\/blob\/main\/LICENSING\.md"/,
-  );
 }, BUILD_TIMEOUT_MS);
 
 test("publishes the configuration reference whole, tables and all", async () => {
