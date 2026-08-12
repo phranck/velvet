@@ -782,6 +782,14 @@
        capital, it stands centred against the word beside it. */
     transform: translateY(0.18em);
   }
+  /* The heading block stands a little in from the page edge, because what
+     usually follows it is rounded and a curve pulls its own content away from
+     that edge. The steps below this one are not: they are columns under a rule,
+     and a rule begins where the page begins. Measured before this, the heading
+     and its line stood at 205 whilst the first step stood at 189. */
+  section[aria-labelledby="pipeline-title"] .velvet-section-heading {
+    margin-inline: 0;
+  }
   /* Two thirds of the page rather than a measure of its own, so the line under
      a section heading is stated as a share of the width everything else on the
      page is held to and follows it when that width moves. */
