@@ -42,6 +42,8 @@
   import { bundleDataFor } from "../lib/bundles/host.js";
   import { installedDesign } from "../lib/bundles/installed.js";
   import { DEFAULT_CONFIGURATION_FILENAME } from "./configuration-filename.js";
+  import { writeClipboard } from "../lib/clipboard.js";
+  import { downloadFile } from "../lib/download.js";
   import {
     loadConfigurationFileHandle,
     pickConfigurationFile,
@@ -65,11 +67,11 @@
   } from "./scroll-motion";
   import {
     CONFIGURATOR_SECTION_IDS,
-    parseSidebarCollapsed,
-    parseSectionState,
-    serializeSidebarCollapsed,
-    serializeSectionState,
+    readSectionState,
+    readSidebarCollapsed,
     setAllSectionState,
+    writeSectionState,
+    writeSidebarCollapsed,
     type ConfiguratorSectionId,
     type ConfiguratorSectionState,
   } from "./section-state";
@@ -92,8 +94,6 @@
   }
 
   const DEFAULT_SETTINGS = parseConfiguratorYaml("").settings;
-  const SECTION_STORAGE_KEY = "velvet.configurator.sections.v1";
-  const SIDEBAR_STORAGE_KEY = "velvet.configurator.sidebar.v1";
   const RESTORED_SESSION = loadConfiguratorSession(
     typeof localStorage === "undefined" ? null : localStorage,
   );
@@ -128,30 +128,6 @@
     { key: "textTertiary", label: "Text Tertiary" },
   ];
 
-  function readStoredSectionState() {
-    try {
-      return parseSectionState(
-        typeof localStorage === "undefined"
-          ? null
-          : localStorage.getItem(SECTION_STORAGE_KEY),
-      );
-    } catch {
-      return parseSectionState(null);
-    }
-  }
-
-  function readStoredSidebarCollapsed(): boolean {
-    try {
-      return parseSidebarCollapsed(
-        typeof localStorage === "undefined"
-          ? null
-          : localStorage.getItem(SIDEBAR_STORAGE_KEY),
-      );
-    } catch {
-      return false;
-    }
-  }
-
   let layout = $state<VelvetLayout>(INITIAL_SETTINGS.layout);
   let themeConfiguration = $state<ConfiguratorTheme>(
     cloneConfiguratorTheme(INITIAL_SETTINGS.theme),
@@ -162,9 +138,9 @@
       ? null
       : cloneConfiguratorServices(INITIAL_SETTINGS.services),
   );
-  let sectionState = $state(readStoredSectionState());
+  let sectionState = $state(readSectionState());
 
-  let sidebarCollapsed = $state(readStoredSidebarCollapsed());
+  let sidebarCollapsed = $state(readSidebarCollapsed());
   let importedDocument = $state<ConfiguratorDocument | null>(
     RESTORED_SESSION?.importedDocument ?? null,
   );
@@ -455,28 +431,6 @@
     services.splice(index, 1);
   }
 
-  function persistSectionState(value: ConfiguratorSectionState): void {
-    try {
-      localStorage.setItem(
-        SECTION_STORAGE_KEY,
-        serializeSectionState(value),
-      );
-    } catch {
-      // The configurator still works when local storage is unavailable.
-    }
-  }
-
-  function persistSidebarCollapsed(value: boolean): void {
-    try {
-      localStorage.setItem(
-        SIDEBAR_STORAGE_KEY,
-        serializeSidebarCollapsed(value),
-      );
-    } catch {
-      // The configurator still works when local storage is unavailable.
-    }
-  }
-
   function changeSectionState(
     nextState: ConfiguratorSectionState,
   ): void {
@@ -495,7 +449,7 @@
       );
     }
     sectionState = nextState;
-    persistSectionState(nextState);
+    writeSectionState(nextState);
   }
 
   function toggleSection(
@@ -512,7 +466,7 @@
 
   function toggleSidebar(): void {
     sidebarCollapsed = !sidebarCollapsed;
-    persistSidebarCollapsed(sidebarCollapsed);
+    writeSidebarCollapsed(sidebarCollapsed);
   }
 
   async function importFile(file: File | undefined): Promise<void> {
@@ -607,15 +561,7 @@
       }
     }
 
-    const blob = new Blob([source], { type: "application/yaml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    downloadFile(filename, source, "application/yaml;charset=utf-8");
     selectedBaseline = exportedSettingsFingerprint(value);
     notice = `Downloaded ${filename}.`;
     importError = "";
@@ -640,27 +586,6 @@
     importError = "";
   }
 
-  async function writeClipboard(source: string): Promise<void> {
-    if (navigator.clipboard?.writeText) {
-      try {
-        await navigator.clipboard.writeText(source);
-        return;
-      } catch {
-        // file:// pages may deny the modern Clipboard API; use the local fallback.
-      }
-    }
-
-    const textarea = document.createElement("textarea");
-    textarea.value = source;
-    textarea.setAttribute("readonly", "");
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.append(textarea);
-    textarea.select();
-    const copied = document.execCommand("copy");
-    textarea.remove();
-    if (!copied) throw new Error("This browser blocked clipboard access.");
-  }
 </script>
 
 <div class="configurator">
