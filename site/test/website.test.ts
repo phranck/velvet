@@ -106,9 +106,15 @@ test("binds the published output to velvet.li and publishes nothing into the tre
   // GitHub Pages serves a directory index, so the entry has to arrive as
   // index.html rather than website.html. `renameHtmlEntry` names its plugin
   // after the entry it renames.
-  const plugins = (viteConfig.plugins ?? []).flat(Infinity) as { name?: string }[];
+  // Flattened by hand rather than with `flat(Infinity)`, because Vite's
+  // PluginOption is recursive and resolving it that way makes the compiler
+  // give up with "Type instantiation is excessively deep".
+  const plugins = (viteConfig.plugins ?? []) as unknown[];
+  const named = plugins
+    .flatMap((plugin) => (Array.isArray(plugin) ? (plugin as unknown[]) : [plugin]))
+    .map((plugin) => (plugin as { name?: string } | null)?.name);
   assert.ok(
-    plugins.some((plugin) => plugin?.name === "velvet-website-index-filename"),
+    named.includes("velvet-website-index-filename"),
     "the website entry is not renamed to index.html",
   );
 
