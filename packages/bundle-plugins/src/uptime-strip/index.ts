@@ -463,9 +463,13 @@ export function createUptimeStrip(
           ? context.createLinearGradient(0, 0, 0, pieceHeight)
           : null;
       if (recess) {
-        recess.addColorStop(0, "rgba(0, 0, 0, 0.42)");
-        recess.addColorStop(0.45, "rgba(0, 0, 0, 0.1)");
-        recess.addColorStop(1, "rgba(255, 255, 255, 0.16)");
+        // A hole punched through a plate: the wall the light misses runs a
+        // third of the way down, the one it lands on is a narrow band at the
+        // foot, and the floor between them is flat.
+        recess.addColorStop(0, "rgba(0, 0, 0, 0.64)");
+        recess.addColorStop(0.36, "rgba(0, 0, 0, 0.12)");
+        recess.addColorStop(0.84, "rgba(0, 0, 0, 0)");
+        recess.addColorStop(1, "rgba(255, 255, 255, 0.2)");
       }
 
       for (let piece = 0; piece < pieces; piece += 1) {
