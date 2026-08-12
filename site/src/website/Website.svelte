@@ -341,6 +341,10 @@
           <p>
             Checks run on GitHub-hosted runners, incidents live in GitHub
             Issues, and the result is published as a beautiful static page.
+            Nothing runs on a machine of yours, and there is no account to open
+            anywhere else, because all of it uses what a repository already
+            brings with it. Everything below belongs to an installation from its
+            first run rather than being something to switch on afterwards.
           </p>
         </div>
         <ul class="capabilities">
