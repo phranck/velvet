@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 import { EMBEDDED_THEME_REGISTRY } from "../configurator/theme-registry.js";
 import { canonicalSystemTheme } from "../lib/configuration-theme.js";
+import { isRecord } from "../lib/records.js";
 
 export interface ThemeScreenshotManifestEntry {
   file: string;
@@ -76,6 +77,3 @@ function isManifest(value: unknown): value is ThemeScreenshotManifest {
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
