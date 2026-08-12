@@ -1241,6 +1241,26 @@
     /* The tool's namespace keeps its name, but the value is the one every
        surface shares rather than a stack of its own. */
     --tool-mono: var(--font-mono);
+    /* The sizes this tool is read at, stated once here rather than as a pixel
+       number at each of the twenty-two places that used to name one. A tool is
+       worked in rather than read, so the scale sits below the site's, which is
+       the two-scales-one-vocabulary case velvet-tokens.css describes. Two of
+       the five are the shared value exactly and say so by pointing at it.
+
+       `control` is what a button, a field, and a switch label are set in;
+       `body` is a sentence in the panel; `small` is a hint or a subheading;
+       `caption` labels the preview; `icon` is a glyph inside a control. */
+    --tool-text-control: 1.0625rem;
+    --tool-text-body: var(--velvet-text-body);
+    --tool-text-small: var(--velvet-text-small);
+    --tool-text-caption: 0.75rem;
+    --tool-icon: 1.375rem;
+    /* What is written on an accented button. Near-black rather than the panel
+       colour, for the reason --velvet-on-accent gives: the accent is bright
+       enough to carry dark text, and a label in the surface colour reads as a
+       hole rather than as a word. Its own value whilst the six raw tool
+       colours below are still raw; see #524. */
+    --tool-on-accent: #10131c;
     min-height: 100vh;
     display: grid;
     grid-template-columns: minmax(720px, 1fr) auto;
@@ -1319,10 +1339,10 @@
     outline-offset: 2px;
   }
   .sidebar-toggle i {
-    width: 22px;
-    height: 22px;
+    width: var(--tool-icon);
+    height: var(--tool-icon);
     display: inline-block;
-    font-size: 22px;
+    font-size: var(--tool-icon);
     line-height: 1;
     transition: transform 160ms ease-in-out;
   }
@@ -1349,7 +1369,7 @@
     margin-bottom: 12px;
     color: var(--tool-muted);
     font-family: var(--tool-mono);
-    font-size: 15px;
+    font-size: var(--tool-text-small);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -1395,12 +1415,12 @@
     border-radius: 8px;
     cursor: pointer;
     font: inherit;
-    font-size: 17px;
+    font-size: var(--tool-text-control);
     font-weight: 600;
     text-align: center;
   }
   .button i {
-    font-size: 17px;
+    font-size: var(--tool-text-control);
   }
   .button.secondary {
     background: var(--tool-panel-raised);
@@ -1409,7 +1429,7 @@
   .button.primary {
     border-color: color-mix(in srgb, var(--tool-accent) 60%, var(--tool-line));
     background: var(--tool-accent);
-    color: #10131c;
+    color: var(--tool-on-accent);
   }
   .button:hover {
     filter: brightness(1.08);
@@ -1427,13 +1447,13 @@
     gap: 8px;
     padding: 7px 22px 3px;
     color: var(--tool-text);
-    font-size: 17px;
+    font-size: var(--tool-text-control);
     font-weight: 650;
     text-align: center;
   }
   .theme-status strong {
     color: var(--tool-accent);
-    font-size: 15px;
+    font-size: var(--tool-text-small);
     letter-spacing: 0.03em;
     text-transform: uppercase;
   }
@@ -1456,7 +1476,7 @@
   .message p {
     margin: 0;
     color: var(--tool-muted);
-    font-size: 16px;
+    font-size: var(--tool-text-body);
     line-height: 1.45;
   }
   .message .error {
@@ -1480,7 +1500,7 @@
     color: var(--tool-muted);
     cursor: pointer;
     font: inherit;
-    font-size: 16px;
+    font-size: var(--tool-text-body);
   }
   .section-toolbar button:hover {
     color: var(--tool-text);
@@ -1491,12 +1511,12 @@
     outline-offset: 3px;
   }
   .section-toolbar i {
-    width: 22px;
-    height: 22px;
+    width: var(--tool-icon);
+    height: var(--tool-icon);
     display: inline-block;
     flex: none;
     color: var(--tool-accent);
-    font-size: 22px;
+    font-size: var(--tool-icon);
     line-height: 1;
     transition: transform 160ms ease-in-out;
   }
@@ -1509,7 +1529,7 @@
   .section-help {
     margin: 5px 0 13px;
     color: var(--tool-muted);
-    font-size: 16px;
+    font-size: var(--tool-text-body);
     line-height: 1.4;
   }
   .color-list {
@@ -1529,7 +1549,7 @@
     margin: 0;
     padding: 0 0.25rem;
     color: var(--tool-muted);
-    font-size: 15px;
+    font-size: var(--tool-text-small);
     line-height: 1.4;
   }
   .text-control {
@@ -1537,7 +1557,7 @@
     gap: 7px;
     margin-top: 14px;
     color: var(--tool-text);
-    font-size: 17px;
+    font-size: var(--tool-text-control);
     font-weight: 550;
   }
   .text-control input {
@@ -1549,7 +1569,7 @@
     background: var(--tool-input);
     color: var(--tool-text);
     font: inherit;
-    font-size: 17px;
+    font-size: var(--tool-text-control);
   }
   .text-control input:focus-visible {
     border-color: var(--tool-accent);
@@ -1571,7 +1591,7 @@
     border-bottom: 1px solid var(--tool-line);
     color: var(--tool-muted);
     font-family: var(--tool-mono);
-    font-size: 15px;
+    font-size: var(--tool-text-small);
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1597,7 +1617,7 @@
     padding: 7px 8px;
     border-radius: 6px;
     color: var(--tool-muted);
-    font-size: 17px;
+    font-size: var(--tool-text-control);
     font-weight: 600;
     text-align: center;
   }
@@ -1613,7 +1633,7 @@
     display: block;
     margin-bottom: 7px;
     color: var(--tool-muted);
-    font-size: 16px;
+    font-size: var(--tool-text-body);
   }
   .line-styles {
     grid-template-columns: repeat(3, 1fr);
@@ -1638,12 +1658,12 @@
   }
   .switch-row strong {
     color: var(--tool-text);
-    font-size: 17px;
+    font-size: var(--tool-text-control);
   }
   .switch-row div > span {
     margin-top: 2px;
     color: var(--tool-muted);
-    font-size: 15px;
+    font-size: var(--tool-text-small);
   }
   .switch {
     position: relative;
@@ -1656,7 +1676,7 @@
   }
   .switch > span[aria-hidden="true"] {
     width: 38px;
-    height: 22px;
+    height: var(--tool-icon);
     display: block;
     padding: 3px;
     border: 1px solid var(--tool-line);
@@ -1711,7 +1731,7 @@
     color: var(--tool-text);
     cursor: pointer;
     font: inherit;
-    font-size: 16px;
+    font-size: var(--tool-text-body);
   }
   .sidebar-footer {
     display: flex;
@@ -1751,21 +1771,21 @@
   }
   .preview-header div > span {
     font-family: var(--tool-mono);
-    font-size: 12px;
+    font-size: var(--tool-text-caption);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .preview-header strong {
     margin-top: 3px;
     color: var(--tool-text);
-    font-size: 15px;
+    font-size: var(--tool-text-small);
   }
   .preview-size {
     padding: 5px 8px;
     border: 1px solid var(--tool-line);
     border-radius: 6px;
     font-family: var(--tool-mono);
-    font-size: 12px;
+    font-size: var(--tool-text-caption);
   }
   .preview-surface {
     min-width: 720px;
