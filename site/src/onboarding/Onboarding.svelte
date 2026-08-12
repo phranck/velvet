@@ -1138,33 +1138,24 @@
   }
 
   .onboarding-shell {
-    --setup-accent: var(--velvet-accent);
-    /* The page's own base tone, matching the last background layer in
-       onboarding.css. Anything that has to hide the board backdrop fills with
-       this rather than inventing a shade. */
-    --setup-base: var(--velvet-base);
-    --setup-panel: var(--velvet-surface-card);
-    --setup-panel-raised: var(--velvet-surface-raised);
+    /* What this surface sets for itself. The rest of the setup namespace comes
+       from velvet-tokens.css.
+
+       The control height and the lead are the two the website states
+       differently: a form is worked through rather than read, so both are a
+       step below the site's. */
     --setup-card: var(--velvet-rule);
     --setup-input: #11131a;
     --setup-input-border: 1px solid
       color-mix(in srgb, var(--setup-text) 14%, transparent);
-    --setup-text: var(--velvet-text);
-    --setup-muted: var(--velvet-text-muted);
     --setup-error: #ff8d9a;
     --setup-success: #7fdda2;
     --setup-control-height: 2.5rem;
     --setup-control-radius: 0.55rem;
-    --setup-text-small: var(--velvet-text-small);
-    --setup-text-body: var(--velvet-text-body);
     --setup-text-lead: 1.125rem;
     --setup-text-caption: var(--velvet-text-caption);
-    --setup-text-intro: var(--velvet-text-intro);
-    --setup-text-copy: var(--velvet-text-copy);
     --setup-card-copy: var(--setup-text-copy);
     --setup-button-font-size: var(--setup-text-body);
-    --setup-font: var(--velvet-font);
-    --setup-heading-font: var(--velvet-font-heading);
     --consent-text: var(--setup-text);
     --consent-muted: var(--setup-muted);
     --consent-accent: var(--setup-accent);
