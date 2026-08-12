@@ -4,6 +4,7 @@ import {
   type ConfiguratorDocument,
   type ConfiguratorSettings,
 } from "./configuration.js";
+import { isRecord } from "../lib/records.js";
 
 export const CONFIGURATOR_SESSION_STORAGE_KEY =
   "velvet.configurator.session.v1";
@@ -108,6 +109,3 @@ function parseStoredSession(value: unknown): StoredConfiguratorSession {
   return value as unknown as StoredConfiguratorSession;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
