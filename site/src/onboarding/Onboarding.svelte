@@ -2,7 +2,7 @@
   import { MAX_SETUP_LOGO_BYTES } from "@velvet/contracts";
   import { onMount, tick } from "svelte";
   import ConsentCheckbox from "../components/ConsentCheckbox.svelte";
-  import VelvetToolBrand from "../components/VelvetToolBrand.svelte";
+  import SiteHeader from "../components/SiteHeader.svelte";
   import * as RequiredField from "../components/required-field";
   import * as PageFooter from "../components/page-footer";
   import * as ReviewList from "../components/review-list";
@@ -553,14 +553,19 @@
   class="onboarding-shell"
   style={`--step-card-radius: ${STEP_CARD_RADIUS}px; --step-card-inner-radius: ${STEP_CARD_INNER_RADIUS}px`}
 >
+  <!--
+    The site's own bar, without the four pages it offers there. This is a
+    sequence of five steps, and a bar that offers a way out of one leads
+    somebody out of it, whilst the mark, the version and the scale are what make
+    this the same product as the page they arrived from.
+  -->
+  <SiteHeader navigation={false} />
+
   <main>
     <section class="intro">
-      <div class="onboarding-brand-block">
-        <VelvetToolBrand subtitle="ONBOARDING" />
-      </div>
       <p>
-        Tell Velvet what to watch, choose a theme,<br />
-        and publish through your GitHub account.
+        Tell Velvet what to watch, choose a theme, and publish through your
+        GitHub account.
       </p>
     </section>
 
@@ -1222,8 +1227,13 @@
     border: 0;
     outline: none;
   }
+  /* Narrower than the bar above it, and deliberately so. The bar carries the
+     page measure every Velvet surface shares, whilst this holds a form: a
+     column of labelled fields read at a reading width rather than stretched to
+     the width of a page. The inset is the site's, so both step back from the
+     window edge by the same amount on a narrow screen. */
   main {
-    width: min(100% - 2rem, 960px);
+    width: min(100% - 2 * var(--velvet-page-inset), 960px);
     margin: 0 auto;
     padding: clamp(2.5rem, 6vw, 4.5rem) 0 7rem;
   }
@@ -1234,25 +1244,6 @@
     margin-bottom: 4.5rem;
     text-align: center;
   }
-  .onboarding-brand-block {
-    width: min(100%, 270px);
-    --tool-brand-width: 100%;
-    --tool-brand-wordmark-size: clamp(3.5rem, 16vw, 4rem);
-    --tool-brand-accent: var(--setup-accent);
-    --tool-brand-text: var(--setup-text);
-    --tool-brand-heading-font: var(--setup-heading-font);
-    --tool-brand-subtitle-size: clamp(0.95rem, 2.5vw, 1.2rem);
-    --tool-brand-scale-gap: 0.625rem;
-    --tool-brand-subtitle-gap: 0.9rem;
-  }
-  /* Set to match the board's silkscreen: white, monospace, and at the size the
-     identity block prints its small lines. It sits over the backdrop rather
-     than in it, because that SVG is generated at build time. */
-  /* The unit number, kept as the page's small print rather than painted onto
-     the board. The backdrop is a generated SVG used as a CSS background, so it
-     could never have carried a live value anyway. */
-  /* Inverted, the way a board prints a value meant to be read rather than
-     skimmed. */
   .intro > p:last-child {
     width: 100%;
     max-width: none;
@@ -1801,12 +1792,6 @@
   @media (max-width: 720px) {
     .two-columns {
       grid-template-columns: 1fr;
-    }
-    /* The intro carries a hard break that balances the two lines on a wide
-       screen. Narrow enough and that break lands mid-thought, so the sentence
-       is left to wrap on its own instead. */
-    .intro > p:last-child br {
-      display: none;
     }
   }
 

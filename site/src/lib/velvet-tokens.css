@@ -128,20 +128,30 @@
      word came out at one size in a paragraph and another in an opening line. */
   --velvet-text-code: 1.3125rem;
   --velvet-text-code-inline: 1.375rem;
-  --velvet-text-small: 0.9375rem;
-  --velvet-text-body: 1rem;
-  --velvet-text-copy: 1.25rem;
+  /* One scale for every Velvet surface.
+     The site used to read a step larger than the tools, on the grounds that a
+     page is read whilst a form is worked in. That left the same token name
+     carrying two values, so a component moved between the two surfaces changed
+     size for reasons its own stylesheet did not state. phranck settled it on
+     2026-08-12 in favour of one scale, and this is it. */
+  --velvet-text-small: 1rem;
+  --velvet-text-body: 1.25rem;
+  --velvet-text-copy: 1.375rem;
   /* The step between a paragraph and a heading, for the one line a page opens
-     with. Nothing else stood between 1.25rem and the 1.5rem floor of
-     `--velvet-text-heading`, which left a lead either reading as body copy or
-     as a heading it is not. */
-  --velvet-text-lead: 1.5rem;
-  --velvet-text-heading: clamp(1.5rem, 3vw, 1.875rem);
-  --velvet-text-intro: 2rem;
-  --velvet-text-title: clamp(2rem, 6vw, 3rem);
+     with. Without it a lead reads either as body copy or as a heading it is
+     not. */
+  --velvet-text-lead: 1.4375rem;
+  --velvet-text-heading: clamp(1.625rem, 3.2vw, 2.125rem);
+  --velvet-text-intro: clamp(1.75rem, 4vw, 2.5rem);
+  --velvet-text-title: clamp(2.25rem, 6vw, 3rem);
   /* A glyph standing beside text rather than in it: a section icon, the number
      of a step, the mark on a notice. */
-  --velvet-text-ornament: 1.75rem;
+  --velvet-text-ornament: 3rem;
+
+  /* One width for every Velvet surface, and the inset that keeps it off the
+     window edge on a narrow screen. */
+  --velvet-page-width: 1280px;
+  --velvet-page-inset: clamp(1rem, 5vw, 4rem);
 
   /* A name or a filename set in a sentence. The tint is mixed from the colour
      of the text it stands in, so the same three values carry a code word on a

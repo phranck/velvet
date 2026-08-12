@@ -180,12 +180,15 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // a reason to show one. The published status page renders its design into its
   // own document rather than into a frame.
   "DesignPreview.svelte": ["configurator"],
-  "VelvetToolBrand.svelte": ["configurator", "onboarding"],
-  // The site's own chrome, on every page of it.
+  "VelvetToolBrand.svelte": ["configurator"],
+  // Velvet's own bar. Onboarding takes it without the four pages, so the two
+  // surfaces carry one mark, one version and one scale rather than each
+  // drawing its own.
   "SiteHeader.svelte": [
     "attributions",
     "changelog",
     "documentation",
+    "onboarding",
     "references",
     "website",
   ],

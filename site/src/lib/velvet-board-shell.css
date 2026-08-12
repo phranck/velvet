@@ -1,10 +1,11 @@
 /**
- * What a tool drawn on the board backdrop starts from: the faces, the colour
- * scheme, and the surface behind everything.
+ * What a Velvet surface starts from: the faces, the colour scheme, and the
+ * size it is read at.
  *
- * Separate from velvet-tokens.css because the Configurator shares the values
- * but not this shell. It draws its own frame rather than sitting on the board,
- * so it reaches for the faces directly and takes none of the rules below.
+ * Loaded by velvet.li and by browser onboarding, which is what makes the two
+ * one surface rather than two that happen to agree. Separate from
+ * velvet-tokens.css because the Configurator shares the values but not these
+ * rules: it draws its own frame and reaches for the faces directly.
  */
 @import "./velvet-retro-typefaces.css";
 
@@ -19,10 +20,28 @@ body {
   min-height: 100%;
   margin: 0;
   /* Stated on `body` as well as on `:root` above, because `app.css` sets a face
-     on `body` for the status page and an element's own rule beats anything it
-     would otherwise inherit. Without this the onboarding's `body` named a face
-     the onboarding never fetches. */
+     and a size on `body` for the status page, and an element's own rule beats
+     anything it would otherwise inherit. Without this a surface's `body` named
+     a face it never fetches and read at the status page's 18px. */
   font-family: var(--velvet-font);
+  font-size: var(--velvet-text-body);
+}
+
+/**
+ * Every heading, in the heading face.
+ *
+ * `font-weight` is stated because a browser sets a heading in bold by default
+ * and Workbench publishes one weight. Left at the default, the browser draws
+ * the missing weight itself by thickening the one it has.
+ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--velvet-font-heading);
+  font-weight: 400;
 }
 
 button,

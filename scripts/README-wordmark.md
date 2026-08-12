@@ -58,8 +58,6 @@ with open("scripts/velvet-wordmark.json", "w") as handle:
     handle.write("\n")
 ```
 
-Then redraw the board with `bun scripts/build-pcb-backdrop.mjs`, and check the result with `--contrast`, which raises every layer to a strength the artwork can be judged at and is never shipped.
-
 Redraw the mark as well, from the `site` directory, with `bun scripts/generate-mark.ts` followed by `bun scripts/generate-favicons.ts`. The first writes the mark and the icon, and the second rasterises the icon into the sizes a browser and a home screen need.
 
 ## Licensing

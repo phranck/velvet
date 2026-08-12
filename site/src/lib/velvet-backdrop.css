@@ -1,0 +1,115 @@
+/**
+ * What Velvet's own surfaces stand on: an orrery, drawn once and left still.
+ *
+ * Shared by velvet.li and by browser onboarding, so the two are one surface
+ * rather than two that happen to use the same colours. It replaces the circuit
+ * board both of them used to stand on, which was drawn by a generator, shipped
+ * as a 135kB file, and carried compliance marks that had to be attributed.
+ *
+ * Everything here is drawn with gradients rather than fetched, so it costs
+ * nothing to download and is sharp at any size, and all of it lives on two
+ * fixed layers: a background with `fixed` attachment is repositioned on every
+ * scroll frame and lags during a fast one, whilst a fixed layer is composited
+ * once.
+ *
+ * Import after `velvet-tokens.css`, which supplies the base and the accent
+ * these are mixed from.
+ */
+
+:root {
+  /* The light a surface stands in, warmed towards the accent and put off to
+     one side, so it has a source rather than an even wash. */
+  --velvet-hero-glow: color-mix(in srgb, var(--velvet-accent) 8%, var(--velvet-base));
+  /* The rings drawn behind it. Warm greys of their own rather than the accent
+     thinned, because a ring mixed from the accent comes out pink at this
+     strength whilst these have to read as metal catching a little light. The
+     outer one is nearer the eye. */
+  --velvet-orbit-ring: #2e251b;
+  --velvet-orbit-ring-inner: #221b14;
+}
+
+/**
+ * The light itself: one source off the top right and a second, weaker one low
+ * and left, so the surface is lit rather than tinted.
+ *
+ * `app.css` is loaded by every surface and lays a fixed layer of its own behind
+ * the document, drawn in the status page's default indigo. This replaces that
+ * layer wholesale rather than merely removing it, which is also what stops the
+ * indigo showing through the warm surface above.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 90% at 82% -6%,
+      var(--velvet-hero-glow) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      90% 70% at 8% 108%,
+      color-mix(in srgb, var(--velvet-accent) 5%, transparent) 0%,
+      transparent 64%
+    ),
+    var(--velvet-base);
+}
+
+/**
+ * The rings, on a second layer so they sit over the light rather than in it.
+ *
+ * Five of them at four sizes, drawn as hairlines: a radial gradient that is
+ * transparent either side of one radius. Stated in `vmax` so a ring keeps its
+ * size against the larger side of the window rather than stretching with
+ * whichever way it is resized.
+ *
+ * They do not turn, and that is deliberate. A rotating backdrop has to be
+ * larger than the window at every angle or its own edge sweeps through the
+ * page, and the margin needed for that grows with the aspect ratio: measured
+ * at a 1658 by 1756 window, a layer inset by 20vmax had an inscribed radius of
+ * 1180.2px where it needed 1207.5, and a 21 by 9 window would need 33vmax. The
+ * layer that satisfies every ratio is a square of 150vmax, which at that window
+ * is 2634 pixels on a side and roughly seven megapixels to rasterise, for a
+ * turn nobody can perceive at one revolution per fifteen minutes.
+ */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.55;
+  background:
+    radial-gradient(
+      circle 62vmax at 84% 4%,
+      transparent 61.9vmax,
+      var(--velvet-orbit-ring) 62vmax,
+      transparent 62.1vmax
+    ),
+    radial-gradient(
+      circle 46vmax at 84% 4%,
+      transparent 45.9vmax,
+      var(--velvet-orbit-ring-inner) 46vmax,
+      transparent 46.1vmax
+    ),
+    radial-gradient(
+      circle 88vmax at 10% 96%,
+      transparent 87.9vmax,
+      var(--velvet-orbit-ring-inner) 88vmax,
+      transparent 88.1vmax
+    ),
+    radial-gradient(
+      circle 34vmax at 6% 42%,
+      transparent 33.9vmax,
+      var(--velvet-orbit-ring-inner) 34vmax,
+      transparent 34.1vmax
+    ),
+    radial-gradient(
+      circle 118vmax at 96% 70%,
+      transparent 117.9vmax,
+      var(--velvet-orbit-ring) 118vmax,
+      transparent 118.1vmax
+    );
+}

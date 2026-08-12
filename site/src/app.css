@@ -96,8 +96,8 @@ html {
   decides where the backdrop sits, not which layer it is rasterised into; the
   same trace measured 7127ms with it and 5809ms without.
 
-  board-backdrop.css does this for the website and the onboarding, which load it
-  in place of this one.
+  velvet-backdrop.css does this for the website and the onboarding, which load
+  it in place of this one.
 */
 body::before {
   content: "";

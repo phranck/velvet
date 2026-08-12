@@ -14,7 +14,7 @@
  * `--check` reports what would change and exits non-zero instead of writing,
  * which is what a gate wants.
  */
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dirname, "..");
@@ -46,13 +46,6 @@ const VERSIONED_MANIFESTS = [
  * version has to be kept in step.
  */
 const DEPENDANT_MANIFESTS = [...VERSIONED_MANIFESTS, "site/package.json"];
-
-/** The backdrop generator, what it writes, and how its silkscreen reads. */
-const BACKDROP = {
-  script: "scripts/build-pcb-backdrop.mjs",
-  output: "site/src/onboarding/pcb-backdrop.svg",
-  revision: /STATUS BOARD REV (\d+\.\d+\.\d+)/u,
-};
 
 /**
  * The module the website reads its version from.
@@ -153,52 +146,6 @@ async function synchroniseSiteVersion(version) {
   return true;
 }
 
-/**
- * Brings the board backdrop's silkscreen to the current version.
- *
- * Only the revision it prints is compared, not the whole file. The generator
- * puts the current year in the copyright line, so comparing the bytes would
- * turn every first of January into a red gate that no change caused.
- *
- * @param version - The version the silkscreen should read.
- * @returns Whether the backdrop stated something else.
- */
-async function synchroniseBackdrop(version) {
-  const output = resolve(repositoryRoot, BACKDROP.output);
-  const shipped = await readFile(output, "utf8").catch(() => "");
-  const printed = shipped.match(BACKDROP.revision)?.[1];
-
-  // Produced beside the shipped file and compared, rather than trusting the
-  // revision it prints. The version is one of several things the generator
-  // decides, and comparing only that would leave a change to the artwork out of
-  // the file it is drawn into.
-  const draft = `${output}.draft`;
-  const result = Bun.spawnSync(
-    ["bun", resolve(repositoryRoot, BACKDROP.script), "--out", draft],
-    { cwd: repositoryRoot, stdout: "pipe", stderr: "pipe" },
-  );
-  if (!result.success) {
-    console.error(result.stderr.toString().trim());
-    process.exit(1);
-  }
-  const produced = await readFile(draft, "utf8");
-
-  // Everything but the copyright year, which the generator stamps from today
-  // and which would otherwise make this differ every first of January.
-  const comparable = (svg) => svg.replace(/Copyright © \d{4}/u, "Copyright ©");
-  if (comparable(produced) === comparable(shipped)) {
-    await rm(draft, { force: true });
-    return false;
-  }
-  if (checkOnly) {
-    await rm(draft, { force: true });
-    return printed !== version || true;
-  }
-  await writeFile(output, produced, "utf8");
-  await rm(draft, { force: true });
-  return true;
-}
-
 const version = await sourceVersion();
 const report = [];
 
@@ -209,9 +156,6 @@ for (const path of DEPENDANT_MANIFESTS) {
 }
 if (await synchroniseSiteVersion(version)) {
   report.push(`${SITE_VERSION_MODULE}: the website states ${version}`);
-}
-if (await synchroniseBackdrop(version)) {
-  report.push(`${BACKDROP.output}: the silkscreen reads ${version}`);
 }
 
 if (report.length === 0) {
