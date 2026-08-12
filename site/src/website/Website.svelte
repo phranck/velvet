@@ -137,15 +137,15 @@
     },
     {
       topic: "History",
-      title: "A year of history",
+      title: "A history worth keeping",
       description:
-        "Up to 365 days of availability, response times, incidents, and maintenance, kept on a dedicated branch rather than in a database.",
+        "Availability, response times, incidents, and maintenance, kept on a dedicated branch rather than in a database, for as far back as you ask for.",
     },
     {
       topic: "Designs",
       title: "A page somebody designed",
       description:
-        "Four curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, and selectable history ranges.",
+        "Curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, and selectable history ranges.",
     },
     {
       topic: "Domain",
@@ -392,7 +392,7 @@
         <div class="velvet-section-heading">
           <div class="velvet-section-title">
             <span class="marker" aria-hidden="true">//</span>
-            <h2 id="themes-title">Four designs to start from</h2>
+            <h2 id="themes-title">Different designs to start from</h2>
           </div>
         </div>
         <ul class="themes">
