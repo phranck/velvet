@@ -74,7 +74,10 @@ const CHART_GEOMETRY = {
   height: 150,
   insetInline: 0,
   insetBlock: 22,
-  gridLines: 3,
+  // Five rules, so the dial carries four figures rather than two. A scale of
+  // this kind is read by the figure nearest the needle, and two of them across
+  // the whole face leave most of it unlabelled.
+  gridLines: 5,
   lineWidth: 2,
   pointRadius: 3,
   tooltipWidth: 140,

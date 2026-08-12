@@ -20,6 +20,7 @@ import {
   filterResponseSeries,
   monotonePath,
   nearestResponseTimestamp,
+  responseAxisStep,
   responseRangeWindow,
   responseScaleTicks,
   responseValuesAtTimestamp,
@@ -147,9 +148,6 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * because the ratio of the plot is a design decision.
  */
 const VIEW_WIDTH = 640;
-
-/** What one grid line stands apart from the next by, in milliseconds. */
-const AXIS_STEP = 20;
 
 /** How many points survive downsampling, matching `MAX_POINTS` in the component. */
 const MAX_POINTS = 96;
@@ -479,22 +477,14 @@ export function createChartView(
     }
 
     /*
-      The axis is drawn in steps of twenty milliseconds, and its top is whatever
-      number of those steps the readings need rather than the highest reading
-      itself.
-
-      Scaling to the highest reading made every service look alike: one running
-      at 96ms and one at 412ms both filled the plot to the top, and the shape
-      said nothing about how slow either was. With a fixed step the trace sits
-      where the readings put it, and the labels are figures a reader can compare
-      from one service to the next.
-
-      The step grows in multiples of twenty where it has to, so a slow service
-      does not end up with twenty-five lines across it.
+      The axis climbs in a round figure, and its top is that figure times the
+      number of steps rather than the highest reading itself. How many steps
+      there are is the design's, because that is how dense a grid it wants;
+      what each one is worth is the arithmetic's, because a figure beside a
+      grid line is read against the next service along.
     */
     const steps = Math.max(1, tokens.gridLines - 1);
-    const step =
-      AXIS_STEP * Math.max(1, Math.ceil(highest / (AXIS_STEP * steps)));
+    const step = responseAxisStep(highest, steps);
     const maximum = step * steps;
 
     const window = responseRangeWindow(range, generatedAt);

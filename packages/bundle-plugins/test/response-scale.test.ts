@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 
-import { responseScaleTicks } from "../src/response-chart/arithmetic.js";
+import {
+  responseAxisStep,
+  responseScaleTicks,
+} from "../src/response-chart/arithmetic.js";
 
 /**
  * The printed scale is the one part of a chart that claims something about
@@ -79,4 +82,51 @@ test("no window crowds the scale past sixty marks", () => {
 test("a window with no length carries no scale", () => {
   assert.deepEqual(responseScaleTicks({ start: NOW, end: NOW }), []);
   assert.deepEqual(responseScaleTicks({ start: NOW, end: NOW - DAY }), []);
+});
+
+/**
+ * The value axis is read by the figure beside each line, and a reader compares
+ * one service against the next by those figures. What is checked here is that
+ * they stay figures anybody reads at a glance, whatever the readings are, and
+ * that the axis still holds them without standing far above them.
+ */
+
+const ALLOWED_MANTISSAS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+
+/** Whether a step is one of the allowed figures times a power of ten. */
+function isRoundFigure(step: number): boolean {
+  const power = 10 ** Math.floor(Math.log10(step));
+  return ALLOWED_MANTISSAS.some(
+    (mantissa) => Math.abs(mantissa * power - step) < 1e-9,
+  );
+}
+
+test("every step is a figure a reader takes at a glance", () => {
+  for (let highest = 1; highest <= 20_000; highest += 1) {
+    for (const steps of [2, 4, 6]) {
+      const step = responseAxisStep(highest, steps);
+      assert.ok(
+        isRoundFigure(step),
+        `${highest}ms over ${steps} steps produced ${step}`,
+      );
+    }
+  }
+});
+
+test("the axis holds the readings without standing far above them", () => {
+  for (let highest = 40; highest <= 20_000; highest += 1) {
+    for (const steps of [2, 4, 6]) {
+      const top = responseAxisStep(highest, steps) * steps;
+      assert.ok(top >= highest, `${highest}ms over ${steps} steps topped at ${top}`);
+      assert.ok(
+        top <= highest * 1.5,
+        `${highest}ms over ${steps} steps topped at ${top}`,
+      );
+    }
+  }
+});
+
+test("a service answering in single milliseconds keeps a floor", () => {
+  assert.equal(responseAxisStep(3, 4), 10);
+  assert.equal(responseAxisStep(0, 4), 10);
 });

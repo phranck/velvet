@@ -164,6 +164,50 @@ export function responseScaleTicks(window: {
   return ticks.reverse();
 }
 
+/**
+ * The figures a value axis is allowed to climb in, as multiples of a power of
+ * ten.
+ *
+ * A reader compares one service against the next by the figures beside the
+ * grid, so those figures have to be ones anybody reads without working them
+ * out. 150 and 400 are such figures at any magnitude; 220 and 1060 are what a
+ * fixed step of twenty milliseconds produces once the readings leave the range
+ * it was chosen for.
+ */
+const AXIS_MANTISSAS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+
+/**
+ * The smallest step an axis climbs in, in milliseconds.
+ *
+ * Below this the figures start repeating as the plot rounds them, and a
+ * service answering in single milliseconds says nothing more with a grid at
+ * two than with one at ten.
+ */
+const SMALLEST_AXIS_STEP = 10;
+
+/**
+ * What one grid line stands apart from the next by, in milliseconds.
+ *
+ * The top of the axis is this times the number of steps rather than the
+ * highest reading itself. Scaling to the reading made every service look
+ * alike: one running at 96ms and one at 412ms both filled the plot to the top,
+ * and the shape said nothing about how slow either was.
+ *
+ * @param highest - The largest reading the plot has to hold.
+ * @param steps - How many gaps stand between the floor and the top.
+ * @returns A round figure at least as large as an even share of the readings.
+ */
+export function responseAxisStep(highest: number, steps: number): number {
+  const wanted = Math.max(highest, 0) / Math.max(1, steps);
+  if (wanted <= SMALLEST_AXIS_STEP) return SMALLEST_AXIS_STEP;
+  const power = 10 ** Math.floor(Math.log10(wanted));
+  for (const mantissa of AXIS_MANTISSAS) {
+    const candidate = mantissa * power;
+    if (candidate >= wanted) return candidate;
+  }
+  return 10 * power;
+}
+
 export function filterResponseSeries(
   series: ResponseSeries,
   range: RangeKey,
