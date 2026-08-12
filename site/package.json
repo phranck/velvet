@@ -20,6 +20,7 @@
     "prebuild": "bun run generated:build",
     "preconfigurator:build": "bun run generated:build",
     "preonboarding:build": "bun run generated:build",
+    "prerelease-drift": "bun run generated:build",
     "pretest": "bun run generated:build",
     "pretest:builds": "bun run generated:build",
     "pretypecheck": "bun run --filter @velvet/contracts build",
