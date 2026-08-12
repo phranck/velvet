@@ -1,10 +1,10 @@
-# Velvet 1.0.1
+# Velvet 1.1.0
 
-## What this update fixes
+## What this update changes
 
-A status page is published in the design its configuration names. If your `velvet.yml` names one under `statusPage.design`, this update is what makes it take effect: the check that reads a configuration took it apart field by field and never copied that one field across, so the page Velvet ships was published instead.
+The Cassette design is built as the machine it emulates. Its readout is a real dot-matrix panel: one character size throughout, brightness as the only difference, and a grid of separate five-by-nine cells with every character standing on exactly one of them. The days of a service are sunk into the faceplate, the day under the pointer lights up rather than standing up, and the name on each plate is cut in brass that stays legible at every point of its depth.
 
-The browser setup offers the four designs where it used to offer four colour palettes. Each one is shown with its name, the period it comes from, and a picture of a page published in it.
+If your page is published in another design, nothing about it changes. A design can now say how its strip of days is read, and the three that say nothing are drawn exactly as before.
 
 ## What stays yours
 
