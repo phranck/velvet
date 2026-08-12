@@ -1,11 +1,19 @@
 /*
-  The faces this design carries: Doto, IBM Plex Mono, Monoton, Tangerine, Plaster.
+  The faces this design carries: Audiowide, Doto, IBM Plex Mono, Monoton, Tangerine, Plaster.
 
   Written by site/scripts/bundle-fonts.ts together with the files it
   names, so a rule cannot point at a face nobody copied. Every one of
   them is published under the SIL Open Font License 1.1, and the licence
   travels beside the files in assets/fonts/.
 */
+
+@font-face {
+  font-family: "Audiowide";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/audiowide-latin-400-normal.woff2") format("woff2");
+}
 
 @font-face {
   font-family: "Doto";

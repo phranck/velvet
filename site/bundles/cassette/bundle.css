@@ -1247,10 +1247,13 @@
      the band it would leave this colour written on itself. */
   background: var(--surface-base);
   color: var(--sun-band-middle);
+  /* The one place this face appears: a name on a poster of this period is
+     lettered rather than set, and this is that hand. It ships with the design
+     like every other face here, so the page still asks nobody for a font. */
+  font-family: "Audiowide", var(--font-display);
   font-size: var(--group-name-size);
-  /* The heaviest the face ships, because this name stands on a graphic rather
-     than in a line of text and has to hold its own against it. */
-  font-weight: 700;
+  /* The single weight the face carries. */
+  font-weight: 400;
   letter-spacing: var(--group-name-tracking);
   line-height: 1.2;
   text-align: center;

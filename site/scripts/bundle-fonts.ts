@@ -54,6 +54,7 @@ const BUNDLES: Record<string, Face[]> = {
     { package: "plaster", family: "Plaster", weights: [400] },
   ],
   cassette: [
+    { package: "audiowide", family: "Audiowide", weights: [400] },
     { package: "doto", family: "Doto", weights: [400, 600, 700] },
     {
       package: "ibm-plex-mono",
