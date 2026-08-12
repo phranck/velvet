@@ -40,8 +40,26 @@ const HEADLINE: Record<string, string> = {
  * fact about the row. Hidden from assistive technology, since the button
  * around it already says what it does.
  */
-function key(): string {
-  return `<span class="disclosure-mark" aria-hidden="true"></span>`;
+/**
+ * The key that opens something, on its own or under the plate naming what it
+ * opens.
+ *
+ * A row's key carries the plate, because that is the part of the face reporting
+ * whether the plot below it is out. The control in the bar opens every row at
+ * once and names itself in words beside the ranges, so it is the key alone.
+ *
+ * @param labelled - Whether to draw the plate above the key.
+ * @returns The markup for the key, decorative throughout: what it does is said
+ *   by the control around it.
+ */
+function key(labelled = false): string {
+  const plate = labelled
+    ? `<span class="disclosure-label">OPEN</span>`
+    : "";
+  return `<span class="disclosure-stack" aria-hidden="true">
+      ${plate}
+      <span class="disclosure-mark"></span>
+    </span>`;
 }
 
 /**
@@ -49,11 +67,15 @@ function key(): string {
  *
  * The mark is emitted without a glyph inside it, because the shape is what this
  * design shows there and a picture would be a second thing saying the same.
+ *
+ * The page's name is written across the sun's middle band, which is where a
+ * poster of this period prints it, so the range bar below shows no label.
  */
 function hero(data: BundleData, state: string): string {
   return `<div class="status-band status-band--hero">
     <div class="status-hero">
       <span class="status-hero-mark" aria-hidden="true"></span>
+      <p class="status-hero-name">${escape(data.site.name)}</p>
       <h1 class="status-hero-title">${escape(HEADLINE[state] ?? HEADLINE.unknown!)}</h1>
       <p class="status-hero-updated">Last updated ${escape(formatUpdated(data.generatedAt))}</p>
     </div>
@@ -107,6 +129,7 @@ function rangeBar(data: BundleData): string {
     </button>
   </div>`;
 }
+
 
 /**
  * Both protocol lamps, always.
@@ -184,11 +207,11 @@ function service(
       <span class="service-display">
         <span class="service-display-line">
           <span class="service-display-main">${escape(STATE_WORD[entry.status] ?? "No data")}</span>
-          <span class="service-uptime">${escape(figure)} uptime</span>
+          <span class="service-uptime">${escape(figure)} Uptime</span>
         </span>
         <span class="service-display-line">${escape(window?.description ?? "")}</span>
       </span>
-      ${key()}
+      ${key(true)}
     </button>
     <div class="uptime-strip-host"></div>
     <div class="strip-axis">

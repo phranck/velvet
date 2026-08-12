@@ -62,18 +62,37 @@
   --accent-quiet: rgb(232 163 61 / 0.16);
 
   /* ── State ────────────────────────────────────────────────────────────── */
-  /* Olive for a working system, amber for a slow one, and a red that leaves
-     the amber family entirely so a failure cannot be read as a warning. */
-  --state-operational: #8fae5a;
-  --state-degraded: #d99a2e;
-  --state-outage: #c9463f;
-  --state-no-data: #3d2c1d;
-  --state-maintenance: #6f8794;
+  /*
+    The sun's own bands, dimmed to the same degree, because the readings and the
+    mark above them are one object's colours rather than two palettes.
+
+    Dimmed rather than taken straight: a band is printed ink on a poster and a
+    reading is a lamp behind a plate, so the same hue has to sit darker here to
+    belong to the machine.
+  */
+  --state-dim: 70%;
+  --state-operational: color-mix(in srgb, var(--sun-olive) var(--state-dim), #000000);
+  --state-degraded: color-mix(in srgb, var(--sun-amber) var(--state-dim), #000000);
+  --state-outage: color-mix(in srgb, var(--sun-oxide) var(--state-dim), #000000);
+  /* One tone for everything the page has no measurement for: the bar of a day
+     nothing was recorded on, the lamp beside it, and the headline that says so.
+     The plate's own colour lifted a little, so such a day reads as bare metal
+     showing through rather than as a reading of its own. */
+  --state-no-data: color-mix(in srgb, var(--surface-card) 94%, #ffffff);
+  --state-maintenance: color-mix(in srgb, var(--sun-slate) var(--state-dim), #000000);
   --state-maintenance-edge: #9fb4c0;
-  --state-unknown-mark: var(--state-ghost-edge);
-  --state-ghost-edge: #8d8770;
+  /* Not the bar's tone: that one is the plate barely lifted, and a headline
+     written in it could not be read. */
+  --state-unknown-mark: #8d8770;
+  /* Empty, so the strip draws no outline around a day nothing was measured on.
+     Here that day is bare plate, and a line around it would draw a frame around
+     nothing. The mark above states its own colour rather than reading this one,
+     because the headline still needs one. */
+  --state-ghost-edge: ;
   --protocol-ipv4: #e8a33d;
   --protocol-ipv6: #8fae5a;
+  --protocol-ipv4-offset: 3px;
+  --protocol-ipv6-offset: -3px;
 
   /* ── Typography ───────────────────────────────────────────────────────── */
   /* One face throughout, because a machine of this period had one printer and
@@ -98,7 +117,11 @@
   --group-name-size: var(--text-size-caption);
   --group-name-weight: var(--display-weight);
   --group-name-tracking: var(--label-tracking);
-  --uptime-size: var(--text-size-caption);
+  /* A panel of this kind has one character size and nothing else, so the figure
+     standing in it is the panel's size and only its brightness sets it apart.
+     The size also keeps the line on the dot lattice: 15px at a leading of 1.2
+     is eighteen pixels, which is twelve steps of it. */
+  --uptime-size: var(--service-display-size);
   --stamp-display: block;
   --stamp-tracking: var(--label-tracking);
   --display-tracking: 0.1em;
@@ -369,7 +392,31 @@
 
     Both run between the cheeks rather than across them, because the plate is
     metal and the wood is bolted to either side of it.
+
+    A screw stands in the middle of the plate it closes, at either end, so the
+    two insets below are the plate less the part, halved, rather than a figure
+    picked per end.
   */
+  --case-plate: 22px;
+  --case-screw: 15px;
+  --case-socket: 7px;
+  --case-screw-inset: calc((var(--case-plate) - var(--case-screw)) / 2);
+  /*
+    Where the head's rings are actually drawn, which is not the middle of its
+    box: the dome is lit from above, so the rings are struck at 42% of the
+    height. The socket is sunk into the head, so it is placed on that point and
+    the two are concentric.
+
+    Two insets, because the plate at the foot is reached from the other edge
+    whilst the head inside it is still drawn from its own top: 42% down from
+    one edge is 58% up from the other.
+  */
+  --case-socket-inset: calc(
+    var(--case-screw-inset) + 0.42 * var(--case-screw) - var(--case-socket) / 2
+  );
+  --case-socket-inset-up: calc(
+    var(--case-screw-inset) + 0.58 * var(--case-screw) - var(--case-socket) / 2
+  );
   --card-ornament-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), radial-gradient(
       circle 7px at 50% 42%,
       #c3b89c 0 26%,
@@ -402,14 +449,25 @@
     ), linear-gradient(#c8752a 0 0),
     linear-gradient(#e8dcc4 0 0), linear-gradient(#7d5a33 0 0),
     linear-gradient(#3b342a 0 0), linear-gradient(#3b342a 0 0);
-  --card-ornament-size: 7px 7px, 7px 7px, 7px 7px, 7px 7px, 15px 15px,
-    15px 15px, 15px 15px, 15px 15px, calc(100% - 32px) 3px,
-    calc(100% - 32px) 1px, calc(100% - 32px) 1px, calc(100% - 32px) 22px,
-    calc(100% - 32px) 22px;
-  --card-ornament-position: left 30px top 8px, right 30px top 8px,
-    left 30px bottom 10px, right 30px bottom 10px, left 26px top 4px,
-    right 26px top 4px, left 26px bottom 6px, right 26px bottom 6px,
-    left 16px top 22px, left 16px top 27px, left 16px top 31px, left 16px top,
+  --card-ornament-size: var(--case-socket) var(--case-socket),
+    var(--case-socket) var(--case-socket),
+    var(--case-socket) var(--case-socket),
+    var(--case-socket) var(--case-socket), var(--case-screw) var(--case-screw),
+    var(--case-screw) var(--case-screw), var(--case-screw) var(--case-screw),
+    var(--case-screw) var(--case-screw), calc(100% - 32px) 3px,
+    calc(100% - 32px) 1px, calc(100% - 32px) 1px,
+    calc(100% - 32px) var(--case-plate), calc(100% - 32px) var(--case-plate);
+  --card-ornament-position: left 30px top var(--case-socket-inset),
+    right 30px top var(--case-socket-inset),
+    left 30px bottom var(--case-socket-inset-up),
+    right 30px bottom var(--case-socket-inset-up),
+    left 26px top var(--case-screw-inset),
+    right 26px top var(--case-screw-inset),
+    left 26px bottom var(--case-screw-inset),
+    right 26px bottom var(--case-screw-inset),
+    left 16px top var(--case-plate),
+    left 16px top calc(var(--case-plate) + 5px),
+    left 16px top calc(var(--case-plate) + 9px), left 16px top,
     left 16px bottom;
   --notices-gap: var(--space-tight);
   --notices-arm-space: 0px;
@@ -462,7 +520,7 @@
   --hero-areas: "mark" "title" "updated";
   --hero-columns: auto;
   --hero-mark-size: var(--text-size-hero-glyph);
-  --hero-gap: var(--space-tight) var(--space-row);
+  --hero-gap: var(--space-section) var(--space-row);
   --hero-title-trail: 0px;
   --hero-title-trim: normal;
   --hero-updated-trim: normal;
@@ -493,17 +551,37 @@
   --hero-mark-shape-display: block;
   --hero-mark-shape-size: 172px;
   --hero-mark-shape-radius: 999px;
+  /* Five bands and the four gaps between them fill the disc, so a band is what
+     the gaps leave. Stating it this way is what keeps the disc symmetric about
+     its middle and puts the centre of the middle band at 50%, which is where
+     the name is written. */
+  --sun-gap: 3%;
+  --sun-band: calc((100% - 4 * var(--sun-gap)) / 5);
+  /* The five bands, top to bottom. The states below are these same five, so
+     they are named here rather than written into the gradient. */
+  --sun-shell: #7d5a33;
+  --sun-oxide: #c8752a;
+  --sun-amber: #e8a33d;
+  --sun-olive: #8fae5a;
+  --sun-slate: #6f8794;
+  --sun-band-middle: var(--sun-amber);
   --hero-mark-shape-fill: linear-gradient(
     to bottom,
-    #7d5a33 0 17%,
-    transparent 17% 20%,
-    #c8752a 20% 37%,
-    transparent 37% 40%,
-    #e8a33d 40% 57%,
-    transparent 57% 60%,
-    #8fae5a 60% 77%,
-    transparent 77% 80%,
-    #6f8794 80% 100%
+    var(--sun-shell) 0 var(--sun-band),
+    transparent var(--sun-band) calc(var(--sun-band) + var(--sun-gap)),
+    var(--sun-oxide) calc(var(--sun-band) + var(--sun-gap))
+      calc(2 * var(--sun-band) + var(--sun-gap)),
+    transparent calc(2 * var(--sun-band) + var(--sun-gap))
+      calc(2 * var(--sun-band) + 2 * var(--sun-gap)),
+    var(--sun-band-middle) calc(2 * var(--sun-band) + 2 * var(--sun-gap))
+      calc(3 * var(--sun-band) + 2 * var(--sun-gap)),
+    transparent calc(3 * var(--sun-band) + 2 * var(--sun-gap))
+      calc(3 * var(--sun-band) + 3 * var(--sun-gap)),
+    var(--sun-olive) calc(3 * var(--sun-band) + 3 * var(--sun-gap))
+      calc(4 * var(--sun-band) + 3 * var(--sun-gap)),
+    transparent calc(4 * var(--sun-band) + 3 * var(--sun-gap))
+      calc(4 * var(--sun-band) + 4 * var(--sun-gap)),
+    var(--sun-slate) calc(4 * var(--sun-band) + 4 * var(--sun-gap)) 100%
   );
   /* No pictures anywhere in this design, so what opens a row is a character
      the way a machine of the period would print one. */
@@ -516,47 +594,99 @@
     lamp is out until the key is down. Down means the response times are
     showing, which is what the key is for.
   */
-  --disclosure-mark-self: flex-start;
-  --disclosure-mark-width: 30px;
+  /* Flush with the foot of the display beside it, lifted by three pixels, so
+     the key and the panel close on the same line. */
+  --disclosure-mark-self: flex-end;
+  --disclosure-mark-offset: 3px;
+  /* Wide enough for the word on the plate above the key, which the key takes
+     as well so the two are one column: OPEN measures 27px, and this leaves it
+     four and a half either side of the frame. */
+  --disclosure-mark-width: 38px;
   --disclosure-mark-height: 22px;
   --disclosure-mark-radius: 3px;
+  /*
+    Brushed brass rather than aluminium, so the key belongs to the same metal
+    the name is cut in.
+
+    Three layers, in the order light meets them: the sheen where the face is
+    domed, the brushing, and the metal itself. The brushing runs along the
+    key's long side, because that is the direction a face like this is drawn
+    across the wheel, and it is a pair of hairlines rather than a texture: one
+    catching the light and one in its shadow, repeated every two pixels.
+
+    Each face is the machined grey it was, warmed by this much towards the
+    accent, which is what keeps the three states in step.
+  */
+  /* The same machined face, in brass rather than aluminium: every grey below is
+     warmed by this much towards the accent, which keeps the three states in
+     step and leaves the shape of the key exactly as it was. */
+  --key-warmth: 22%;
   --disclosure-mark-fill: radial-gradient(
       ellipse 120% 90% at 50% 38%,
       rgb(255 255 255 / 0.22),
       transparent 70%
     ),
-    linear-gradient(to bottom, #cfcdc7 0%, #a5a29b 52%, #8b887f 100%);
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #cfcdc7) 0%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #a5a29b) 52%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8b887f) 100%
+    );
   --disclosure-mark-fill-hover: radial-gradient(
       ellipse 120% 90% at 50% 38%,
       rgb(255 255 255 / 0.34),
       transparent 70%
     ),
-    linear-gradient(to bottom, #e2e0da 0%, #b6b3ac 52%, #9a978f 100%);
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #e2e0da) 0%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #b6b3ac) 52%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #9a978f) 100%
+    );
   --disclosure-mark-fill-pressed: radial-gradient(
       ellipse 120% 90% at 50% 62%,
       rgb(255 255 255 / 0.14),
       transparent 70%
     ),
-    linear-gradient(to bottom, #98958d 0%, #b0ada6 55%, #c4c1ba 100%);
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #98958d) 0%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #b0ada6) 55%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c4c1ba) 100%
+    );
   --disclosure-mark-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65),
     inset 0 -1px 0 rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.55);
   --disclosure-mark-shadow-pressed: inset 0 2px 3px rgb(0 0 0 / 0.5),
     inset 0 -1px 0 rgb(255 255 255 / 0.35);
+  /*
+    The lamp in the middle of the key, and the label above it.
+
+    Red, because it reports that the plot below is open rather than that
+    anything is well. It sits in a bore drilled through the face, so the same
+    inset ring is on it whether it is lit or out: a lamp does not rise out of
+    its hole when somebody switches it on.
+  */
   --disclosure-led-size: 7px;
   --disclosure-led-fill: radial-gradient(
     circle at 50% 35%,
-    #375c33 0 55%,
-    #1d2f1b 55% 100%
+    #5c3733 0 55%,
+    #2f1b1b 55% 100%
   );
   --disclosure-led-fill-on: radial-gradient(
     circle at 50% 35%,
-    #d6ffb8 0 30%,
-    #6ee34a 30% 60%,
-    #2f8f21 60% 100%
+    #ffd9d2 0 30%,
+    #ff5a45 30% 60%,
+    #a41f12 60% 100%
   );
-  --disclosure-led-glow: inset 0 1px 1px rgb(0 0 0 / 0.6);
-  --disclosure-led-glow-on: inset 0 1px 1px rgb(0 0 0 / 0.35),
-    0 0 7px rgb(110 227 74 / 0.85), 0 0 16px rgb(110 227 74 / 0.5);
+  --disclosure-led-glow: inset 0 1px 2px rgb(0 0 0 / 0.75);
+  --disclosure-led-glow-on: inset 0 1px 2px rgb(0 0 0 / 0.75),
+    0 0 7px rgb(255 90 69 / 0.85), 0 0 16px rgb(255 90 69 / 0.5);
+  /* The plate above the key, which is the same window as a protocol's and
+     carries the same word whether the plot is open or shut. */
+  --disclosure-label-colour: #6b4a44;
+  --disclosure-label-colour-on: #ff5a45;
+  --disclosure-label-glow-on: 0 0 6px rgb(255 90 69 / 0.55);
+  --disclosure-stack-gap: 3px;
   /* A grid, so the lamp in the middle of the key is a box that can be sized
      and centred rather than an inline sliver. */
   --disclosure-mark-display: inline-grid;
@@ -568,7 +698,8 @@
   );
   --hero-title-colour: var(--text-1);
   --hero-updated-colour: var(--text-3);
-  --range-label-display: block;
+  /* The name is written on the sun above, so the bar does not repeat it. */
+  --range-label-display: none;
   --range-label-colour: var(--text-2);
   --range-button-colour: var(--text-3);
   /* The control that opens every row at once answers to nothing. */
@@ -619,14 +750,29 @@
   */
   --protocols-single-display: inline-flex;
   --badge-absent-display: block;
-  --badge-fill: color-mix(in srgb, currentColor 12%, #0d0b07);
+  /* A window cut into the same plate as the display beside it, so it takes the
+     display's glass and its shadow rather than resembling them. The protocol
+     keeps its colour in the lettering, which is what a lit character on that
+     glass looks like.
+
+     No frame around it: a hole in a plate has no rim, and the shadow falling
+     into it is what says it is sunk. The lettering is the panel's own face at
+     the weight a character generator prints. */
+  --badge-fill: var(--display-glass);
+  --badge-border-width: 0px;
+  --badge-font: var(--service-display-font);
+  --badge-weight: 700;
   --badge-glow: 0 0 6px color-mix(in srgb, currentColor 55%, transparent);
+  --badge-shadow: var(--service-display-shadow);
   --badge-absent-edge: #2b2519;
   --badge-absent-fill: #0d0b07;
   /* An unlit lamp is a reading, so it is dimmer than a lit one and it is
      still read: the letters are what say which protocol went unmeasured.
      Lifted from #4a4235, which measured 1.99:1 inside the dark lamp, to the
      lowest value reaching 4.51:1 there. */
+  /* A protocol nothing answered on is written faintly, and no fainter: this is
+     text, so the conformance suite holds it to 4.5:1 against the unlit window
+     behind it, and this measures 4.51:1. */
   --badge-absent-colour: #867760;
   /* Plate, badges and readout all run the full height of the row, so the three
      stand level the way instruments on one faceplate do. */
@@ -653,7 +799,7 @@
   --service-display-flex: 1 1 auto;
   --service-display-padding: 4px 10px 5px;
   --service-display-edge-width: 1px;
-  --service-display-edge-colour: #16241f;
+  --service-display-edge-colour: #16202a;
   --service-display-radius: 3px;
   /*
     The dots that are not lit, on the same lattice as the ones that are.
@@ -671,25 +817,30 @@
     one blank dot column between characters, which is how such a panel spaces
     them anyway.
   */
+  /* The glass itself, without the lattice: the protocol windows are cut from
+     the same sheet and are too small to carry a dot pattern. */
+  --display-glass: linear-gradient(to bottom, #060c0f, #0b1015);
   --service-display-fill: radial-gradient(
       circle 0.6px at 50% 50%,
-      #14281f 0 100%,
+      #14232b 0 100%,
       transparent 100%
     )
       0.925px 0.1px / 1.5px 1.5px,
-    linear-gradient(to bottom, #060f0d, #0b1512);
-  --service-display-colour: #8ff8dd;
-  /* Two steps down from the reading itself: what the reading is of, then the
-     standing figure. Measured on the glass: 15.07:1, 10.20:1 and 5.50:1, with
-     the unlit dots at 1.23:1. */
-  --service-display-colour-quiet: #4ad3b4;
-  --service-display-colour-faint: #2e9a84;
+    var(--display-glass);
+  /* The panel glows in the hue of the sun's lowest band, so the machine and the
+     poster above it are lit by one colour rather than two. */
+  --service-display-colour: #8fd6f8;
+  /* One step down from the reading itself, and what everything but the reading
+     is set in: the line saying what the reading is of, and the standing uptime
+     figure. Measured on the glass: 12.15:1 for the reading and 7.66:1 for the
+     step below it, with the unlit dots at 1.21:1. */
+  --service-display-colour-quiet: #4aaed3;
   --service-display-font: "Doto", ui-monospace, monospace;
   --service-display-size: 15px;
   --service-display-leading: 1.2;
   --service-display-tracking: 0.1em;
   --service-display-transform: uppercase;
-  --service-display-glow: 0 0 7px rgb(110 240 205 / 0.55);
+  --service-display-glow: 0 0 7px rgb(110 200 240 / 0.55);
   --uptime-colour: currentColor;
   --uptime-font: var(--service-display-font);
   --service-name-tracking: normal;
@@ -714,6 +865,10 @@
     the whole of it is clipped to the letters. Tangerine at 700 is the
     engraver's script such a badge is cut in, and its bold is the weight with
     enough body to hold a gradient.
+
+    Every band stays a brass tone. The letters are the metal, so a band that
+    goes to nearly black takes the letterform away where the eye reads it: the
+    darkest one measures 2.9:1 against the face behind it, and the foot 2.4:1.
   */
   --service-name-padding: 0px 2px;
   --service-name-radius: 0px;
@@ -724,13 +879,13 @@
     #ffe9a8 10%,
     #d9ad4c 26%,
     #8a6418 44%,
-    #4a340c 51%,
+    #7b5716 51%,
     #c99a34 57%,
     #ffeeb4 66%,
     #fffdf2 71%,
     #e2b64e 78%,
     #9a7420 90%,
-    #5c410f 100%
+    #6d4d14 100%
   );
   --service-name-colour: transparent;
   --service-name-stroke: 0px;
@@ -1021,10 +1176,9 @@
 
   The no-data fill is what an unrecorded day is painted in, so it is a shade
   off the page by design and measures little more than 1:1 against it in every
-  theme, which is invisible for anything in the foreground. The ghost edge
-  is legible, but it belongs to the strip: a theme that wants its unrecorded
-  days drawn without an outline sets it to nothing, and the headline would go
-  with it.
+  theme, which is invisible for anything in the foreground. This design draws
+  no edge around such a day either, which is why `--state-ghost-edge` is empty
+  and the mark below states a colour of its own.
 */
 .cassette-page[data-status="unknown"] {
   --status-colour: var(--state-unknown-mark);
@@ -1070,6 +1224,37 @@
   border-radius: var(--hero-mark-shape-radius);
   background: var(--hero-mark-shape-fill);
   pointer-events: none;
+}
+
+/*
+  The page's name, written across the sun's middle band.
+
+  It shares the mark's cell rather than standing in one of its own, so it is
+  centred on the disc, and the disc's middle band is centred there too. The
+  border is that band's own colour. The plate behind it is the page's surface,
+  because a name may be longer than the disc is wide and the part that reaches
+  past it would otherwise be written on the band's colour at one end and on the
+  page at the other.
+*/
+.status-hero-name {
+  grid-area: mark;
+  z-index: 1;
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  border: 3px solid var(--sun-band-middle);
+  border-radius: 7px;
+  /* The page's own surface rather than the hero's, which is transparent: over
+     the band it would leave this colour written on itself. */
+  background: var(--surface-base);
+  color: var(--sun-band-middle);
+  font-size: var(--group-name-size);
+  /* The heaviest the face ships, because this name stands on a graphic rather
+     than in a line of text and has to hold its own against it. */
+  font-weight: 700;
+  letter-spacing: var(--group-name-tracking);
+  line-height: 1.2;
+  text-align: center;
+  text-transform: var(--label-transform);
 }
 
 .status-hero-title {
@@ -1944,12 +2129,15 @@
 
 .protocol-badge {
   padding: var(--badge-padding-block) var(--badge-padding-inline);
-  border: var(--badge-border-width) var(--rule-style) var(--surface-rule);
+  border: var(--badge-border-width) var(--rule-style)
+    var(--badge-edge, var(--surface-rule));
   border-radius: var(--badge-radius);
   background: var(--badge-fill);
+  box-shadow: var(--badge-shadow, none);
   color: var(--text-2);
-  font-family: var(--font-meta);
+  font-family: var(--badge-font, var(--font-meta));
   font-size: var(--text-size-badge);
+  font-weight: var(--badge-weight, inherit);
   line-height: 1;
   text-shadow: var(--badge-glow);
 }
@@ -1963,11 +2151,18 @@
   display: var(--protocols-single-display);
 }
 
+/*
+  The two windows are set towards each other, so the pair reads as one part of
+  the face rather than as two plates with a channel between them. Moved rather
+  than spaced, because the row's own layout is what holds them where they are.
+*/
 .protocol-badge[data-protocol="ipv4"] {
+  translate: 0 var(--protocol-ipv4-offset, 0px);
   color: var(--protocol-ipv4);
 }
 
 .protocol-badge[data-protocol="ipv6"] {
+  translate: 0 var(--protocol-ipv6-offset, 0px);
   color: var(--protocol-ipv6);
 }
 
@@ -2053,7 +2248,9 @@
 }
 
 .service-display .service-uptime {
-  color: var(--service-display-colour-faint);
+  color: var(--service-display-colour-quiet);
+  /* Written as the panel prints it rather than shouted with the readings. */
+  text-transform: none;
 }
 
 /*
@@ -2064,6 +2261,48 @@
   means "this opens" is a design decision; the element is undisplayed wherever
   the chevron is drawn instead, so no design shows both.
 */
+/*
+  The key and the plate above it, as one part of the face.
+
+  They are the same width because they are cut into the same panel: the plate
+  takes the key's width rather than the width of the word on it. The pair is
+  aligned as a whole, so the key alone no longer carries an offset.
+*/
+.disclosure-stack {
+  flex: none;
+  display: grid;
+  align-self: var(--disclosure-mark-self);
+  justify-items: center;
+  gap: var(--disclosure-stack-gap, 0px);
+  margin-block-end: var(--disclosure-mark-offset, 0px);
+}
+
+.disclosure-label {
+  box-sizing: border-box;
+  width: var(--disclosure-mark-width);
+  padding-block: var(--badge-padding-block);
+  border: var(--badge-border-width) var(--rule-style)
+    var(--badge-edge, var(--surface-rule));
+  border-radius: var(--badge-radius);
+  background: var(--badge-fill);
+  box-shadow: var(--badge-shadow, none);
+  color: var(--disclosure-label-colour);
+  font-family: var(--badge-font, var(--font-meta));
+  font-size: var(--text-size-badge);
+  font-weight: var(--badge-weight, inherit);
+  line-height: 1;
+  text-align: center;
+}
+
+.service[data-open="true"] .disclosure-label {
+  color: var(--disclosure-label-colour-on);
+  text-shadow: var(--disclosure-label-glow-on);
+}
+
+.disclosure-stack .disclosure-mark {
+  align-self: center;
+}
+
 .disclosure-mark {
   flex: none;
   display: var(--disclosure-mark-display);
