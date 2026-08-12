@@ -340,7 +340,7 @@
           </div>
           <p>
             Checks run on GitHub-hosted runners, incidents live in GitHub
-            Issues, and the result is published as a static page.
+            Issues, and the result is published as a beautiful static page.
           </p>
         </div>
         <ul class="capabilities">
@@ -394,6 +394,14 @@
             <span class="marker" aria-hidden="true">//</span>
             <h2 id="themes-title">Different designs to start from</h2>
           </div>
+          <p>
+            Four of them are finished and tested today, and you pick one while
+            you set your page up. There will be more as time goes on. If you
+            have a particular one in mind,
+            <a class="mail" href="mailto:themerequest@velvet.li"
+              >write to us<Icon name="sms" /></a
+            >.
+          </p>
         </div>
         <ul class="themes">
           {#each GALLERY_DESIGNS as design (design.id)}
@@ -735,6 +743,28 @@
     font-weight: 400;
     letter-spacing: -0.01em;
     text-transform: uppercase;
+  }
+  /* A link inside one of these paragraphs, which until now none of them had.
+     The accent and a rule under the words, because the paragraph is set in the
+     muted colour and a link that only differs by being clickable is a link
+     nobody sees. The mark sits after the words and rides the cap height, so it
+     reads as belonging to them rather than sitting on the line below. */
+  .velvet-section-heading p .mail {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35em;
+    color: var(--velvet-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+  .velvet-section-heading p .mail :global(svg) {
+    width: 1em;
+    height: 1em;
+    /* Its box has no baseline of its own, so aligning it by one puts it on the
+       line. Dropped by the distance from the baseline to the middle of a
+       capital, it stands centred against the word beside it. */
+    transform: translateY(0.18em);
   }
   .velvet-section-heading p {
     margin: 0;
