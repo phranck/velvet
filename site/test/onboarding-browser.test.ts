@@ -130,11 +130,12 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       ["no-repeat"],
       "no background layer tiles",
     );
-    // The circuit-board layer covers instead of repeating, which fits it to the
-    // window and crops it rather than stretching it out of proportion.
-    assert.ok(
-      backdrop.size.includes("cover"),
-      `expected a covering layer, got ${backdrop.size.join(" | ")}`,
+    // Every layer is a gradient painted across the whole fixed element, so each
+    // reports its own size rather than being fitted to the window.
+    assert.deepEqual(
+      [...new Set(backdrop.size)],
+      ["auto"],
+      "a backdrop layer is being sized to something other than the layer itself",
     );
     assert.equal(await page.locator(".topbar").count(), 0);
     assert.equal(await page.locator("[data-page-footer]").count(), 1);
