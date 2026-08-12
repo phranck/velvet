@@ -802,31 +802,37 @@
   --service-display-edge-colour: #16202a;
   --service-display-radius: 3px;
   /*
-    The dots that are not lit, on the same lattice as the ones that are.
+    The dots that are not lit, as the cells they belong to.
 
-    Every figure here comes from the face, measured on a canvas at 100px: its
-    dots stand a tenth of the size apart, are eight hundredths across, and the
-    first of them sits forty-five thousandths in from where a character begins.
-    At fifteen pixels that is a step of 1.5, a dot of 1.2, and a first centre
-    at 10.675 from the panel's edge, which is its padding plus 0.675. The tile
-    carries its dot in the middle, so the pattern starts half a step earlier.
+    A panel of this kind is a row of five-by-seven cells, not a field of dots,
+    so this draws one cell and repeats it: five columns and seven rows of unlit
+    dots, with the space between cells left dark. Every character the panel
+    prints lands on exactly one of them.
 
-    Two things keep the whole line on that lattice. The leading is 1.2, so a
-    line is eighteen pixels, which is twelve steps. And the tracking is a tenth
-    of the size, so a character takes seven steps rather than six and a bit:
-    one blank dot column between characters, which is how such a panel spaces
-    them anyway.
+    The figures come from the face itself, rasterised at 150px and read back:
+    its dots stand fifteen units apart and are nine across, seven rows of them
+    reach from 98 above the baseline to 8 above it, and the first column stands
+    7 to the right of where a character begins. At fifteen pixels that is a
+    step of 1.5, a dot of 0.9, a first row centre 9.8 above the baseline, and a
+    first column centre 0.7 in.
+
+    The cell is the character's own advance by the line's own height: the
+    tracking is a tenth of the size, so a character takes seven steps of 1.5
+    rather than six, and the leading of 1.2 makes a line eighteen pixels. The
+    baseline sits fourteen pixels down that line, which is what puts the first
+    row of dots at 4.2 and the last at 13.2.
+
+    It is laid on the content box, so the grid starts where the first character
+    does, and it is one static layer: opening a row changes the panel's height
+    and nothing about what is painted here.
   */
   /* The glass itself, without the lattice: the protocol windows are cut from
      the same sheet and are too small to carry a dot pattern. */
   --display-glass: linear-gradient(to bottom, #060c0f, #0b1015);
-  --service-display-fill: radial-gradient(
-      circle 0.6px at 50% 50%,
-      #14232b 0 100%,
-      transparent 100%
-    )
-      0.925px 0.1px / 1.5px 1.5px,
-    var(--display-glass);
+  --service-display-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10.5 18'><g fill='%2314232b'><circle cx='0.7' cy='4.2' r='.45'/><circle cx='2.2' cy='4.2' r='.45'/><circle cx='3.7' cy='4.2' r='.45'/><circle cx='5.2' cy='4.2' r='.45'/><circle cx='6.7' cy='4.2' r='.45'/><circle cx='0.7' cy='5.7' r='.45'/><circle cx='2.2' cy='5.7' r='.45'/><circle cx='3.7' cy='5.7' r='.45'/><circle cx='5.2' cy='5.7' r='.45'/><circle cx='6.7' cy='5.7' r='.45'/><circle cx='0.7' cy='7.2' r='.45'/><circle cx='2.2' cy='7.2' r='.45'/><circle cx='3.7' cy='7.2' r='.45'/><circle cx='5.2' cy='7.2' r='.45'/><circle cx='6.7' cy='7.2' r='.45'/><circle cx='0.7' cy='8.7' r='.45'/><circle cx='2.2' cy='8.7' r='.45'/><circle cx='3.7' cy='8.7' r='.45'/><circle cx='5.2' cy='8.7' r='.45'/><circle cx='6.7' cy='8.7' r='.45'/><circle cx='0.7' cy='10.2' r='.45'/><circle cx='2.2' cy='10.2' r='.45'/><circle cx='3.7' cy='10.2' r='.45'/><circle cx='5.2' cy='10.2' r='.45'/><circle cx='6.7' cy='10.2' r='.45'/><circle cx='0.7' cy='11.7' r='.45'/><circle cx='2.2' cy='11.7' r='.45'/><circle cx='3.7' cy='11.7' r='.45'/><circle cx='5.2' cy='11.7' r='.45'/><circle cx='6.7' cy='11.7' r='.45'/><circle cx='0.7' cy='13.2' r='.45'/><circle cx='2.2' cy='13.2' r='.45'/><circle cx='3.7' cy='13.2' r='.45'/><circle cx='5.2' cy='13.2' r='.45'/><circle cx='6.7' cy='13.2' r='.45'/></g></svg>");
+  --service-display-cell-advance: 10.5px;
+  --service-display-cell-size: var(--service-display-cell-advance) 18px;
+  --service-display-fill: var(--service-display-cell), var(--display-glass);
   /* The panel glows in the hue of the sun's lowest band, so the machine and the
      poster above it are lit by one colour rather than two. */
   --service-display-colour: #8fd6f8;
@@ -2202,6 +2208,11 @@
     var(--service-display-edge-colour);
   border-radius: var(--service-display-radius);
   background: var(--service-display-fill);
+  /* The cells start where the first character does, so the grid is laid on the
+     content box rather than on the panel's outer edge. The glass behind it
+     fills the whole panel. */
+  background-origin: content-box, padding-box;
+  background-size: var(--service-display-cell-size, auto), auto;
   box-shadow: var(--service-display-shadow);
   color: var(--service-display-colour);
   font-family: var(--service-display-font);
@@ -2217,6 +2228,12 @@
   align-items: baseline;
   gap: var(--space-row);
   min-width: 0;
+  /* Whole cells, so a figure ranged right ends on one and starts on one. The
+     panel's own width comes from the row it sits in and is any number of
+     pixels; what is left over after the last whole cell stays dark at the end
+     of the line. A browser without `round()` leaves the line at that width and
+     the reading is off its cell, which is what it was before this. */
+  width: round(down, 100%, var(--service-display-cell-advance, 1px));
   /* One line each. A reading longer than the panel is cut rather than wrapped,
      the way a real one runs out of characters. */
   overflow: hidden;
