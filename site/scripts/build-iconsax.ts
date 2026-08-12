@@ -56,6 +56,7 @@ const WANTED: Readonly<Record<string, string>> = {
   global: "a custom domain",
   "profile-2user": "who runs Velvet",
   "shield-tick": "nothing leaks into the open",
+  sms: "writing to us about a design",
   "warning-2": "incidents that open themselves",
 };
 

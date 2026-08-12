@@ -21,11 +21,15 @@
 </span>
 
 <style>
+  /* One line of text rather than a row of two boxes, so the space before the
+     name is the same space that stands between every other pair of words here.
+     As a flex row it was a `gap` instead, and a gap is a length: at 0.2rem it
+     measured 3.2px whilst a space in this face measures 8.4, and the name sat
+     visibly closer to `by` than `by` did to `2026`. No length gets this right
+     for long, because the face is chosen elsewhere and a space is as wide as
+     that face says. */
   .credit {
     grid-column: var(--page-footer-credit-column, 2);
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
   }
   .credit a {
     color: var(--velvet-text);

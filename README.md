@@ -22,8 +22,8 @@ Velvet monitors websites and HTTP endpoints from GitHub Actions, records inciden
 - Five-minute status checks and separate six-hour response-time samples.
 - Automatic incident creation after confirmed failures and automatic recovery.
 - Planned maintenance that remains visible as a neutral history event.
-- Up to 365 days of availability, response-time, incident, and maintenance data.
-- Four curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, custom domains, and selectable history ranges.
+- Availability, response-time, incident, and maintenance data, kept for as far back as the installation asks for.
+- Curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, custom domains, and selectable history ranges.
 - No analytics of any kind. A published status page loads no third-party script, the browser setup reports to nobody, and there is no setting that would change either.
 - A static GitHub Pages site that keeps working independently of the optional browser setup service.
 
