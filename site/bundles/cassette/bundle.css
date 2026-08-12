@@ -682,8 +682,13 @@
   /* The plate above the key, which is the same window as a protocol's and
      carries the same word whether the plot is open or shut. */
   --disclosure-label-colour: #6b4a44;
-  --disclosure-label-colour-on: #ff5a45;
-  --disclosure-label-glow-on: 0 0 6px rgb(255 90 69 / 0.55);
+  /* Lit, the word is a filament rather than a printed legend: the letters go
+     to the hot end of the same red, and the halo is two throws, a tight one at
+     the glyph and a wide one spilling onto the glass, which is what the lamp in
+     the key below does. */
+  --disclosure-label-colour-on: #ff8b78;
+  --disclosure-label-glow-on: 0 0 4px rgb(255 90 69 / 0.95),
+    0 0 10px rgb(255 90 69 / 0.7), 0 0 20px rgb(255 60 40 / 0.45);
   --disclosure-stack-gap: 3px;
   /* A grid, so the lamp in the middle of the key is a box that can be sized
      and centred rather than an inline sliver. */
