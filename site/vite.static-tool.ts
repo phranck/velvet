@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { createServer, type Plugin } from "vite";
+import { createServer, defineConfig, type Plugin, type UserConfig } from "vite";
 
 /**
  * Points the icon face at the subset built for this repository.
@@ -280,4 +280,102 @@ export function prerenderStaticEntry(options: {
       }
     },
   };
+}
+
+/**
+ * The faces every prerendered page on velvet.li is set in.
+ *
+ * These preloaded nothing at all before, and under `font-display: optional` a
+ * file that arrives late is not used for this load, so preloading is what
+ * decides whether the real face is seen rather than only how soon. A face left
+ * out here is a face the page never renders, however far down it would have
+ * appeared.
+ *
+ * Workbench and Doto are not named and do not need to be: both are under Vite's
+ * 4kB inline limit, so they arrive inside the stylesheet as data URIs rather
+ * than as files. That is a stronger guarantee than a preload, since a face
+ * carried by the render-blocking stylesheet cannot miss the window
+ * `font-display: optional` gives it.
+ *
+ * The icon face blocks like the rest and must therefore be on its way with
+ * them. Left out, it arrived after the first paint and moved the key it sits
+ * on: measured on a cold load of the built site as the one remaining layout
+ * shift, at 0.0068.
+ */
+export const PRERENDERED_PAGE_FONTS: readonly RegExp[] = [
+  /^phosphor-duotone-subset-.*\.woff2$/,
+  /^plaster-latin-400-normal-.*\.woff2$/,
+  /^datatype-latin-wght-normal-.*\.woff2$/,
+  /^space-mono-latin-700-normal-.*\.woff2$/,
+];
+
+/**
+ * The configuration a prerendered page on velvet.li is built with.
+ *
+ * Each such page is a build of its own rather than a second entry beside the
+ * others, because Rollup splits anything two entries share into a common chunk.
+ * That put the wordmark's styles in a stylesheet the prerendered start page does
+ * not load, and left that page preloading a bundle it never runs. Separate
+ * builds share nothing and each page carries exactly what it needs.
+ *
+ * Separate builds, but one configuration: the four that existed before shared 42
+ * of their 68 non-empty lines, including the comment above, which stood in the
+ * repository four times. A page added by copying one of them added a fifth copy
+ * before it added anything else.
+ *
+ * @param options.name - The page, which names its entry HTML, its mount element
+ *   and, for a page under the website, its directory. `attributions` means
+ *   `attributions.html`, `<div id="attributions">`, and `/attributions`.
+ * @param options.root - Vite root the component resolves against.
+ * @param options.component - Component path, as Vite would import it.
+ * @param options.outDir - Where the build writes.
+ * @param options.publicDir - Copied verbatim into the output. Absent for a page
+ *   inside the website, because the website has already published whatever
+ *   belongs at the root and this page's own assets live beside it.
+ * @param options.emptyOutDir - Whether to clear the output first. False for a
+ *   page inside the website's directory, which the website build owns and has
+ *   already cleared, so such a page has to run after it rather than before.
+ * @param options.extraPreloadFonts - Faces this page needs beyond the shared
+ *   set, which is worth doing only for text in the first screenful.
+ */
+export function staticPage(options: {
+  name: string;
+  root: string;
+  component: string;
+  outDir: string;
+  publicDir?: string;
+  emptyOutDir?: boolean;
+  extraPreloadFonts?: readonly RegExp[];
+}): UserConfig {
+  const entry = `${options.name}.html`;
+  return defineConfig({
+    // Stated rather than inherited from NODE_ENV. Anything that builds this from
+    // inside another tool passes its own environment down, and the test runner
+    // sets NODE_ENV=test, which was enough to make Svelte scope its styles under
+    // a different scheme than the one the render used. What gets published must
+    // not depend on what happened to be exported in the shell that built it.
+    mode: "production",
+    base: "./",
+    publicDir: options.publicDir ?? false,
+    plugins: [
+      phosphorWoff2Only,
+      svelte(),
+      renameHtmlEntry(entry),
+      // After the rename, because it rewrites the entry under its final name.
+      prerenderStaticEntry({
+        root: options.root,
+        component: options.component,
+        mountId: options.name,
+        preloadFonts: [
+          ...PRERENDERED_PAGE_FONTS,
+          ...(options.extraPreloadFonts ?? []),
+        ],
+      }),
+    ],
+    build: {
+      outDir: options.outDir,
+      emptyOutDir: options.emptyOutDir ?? false,
+      rollupOptions: { input: entry },
+    },
+  });
 }
