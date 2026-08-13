@@ -180,6 +180,9 @@
   /* The opened panel is not a card, so it adds nothing of its own: everything
      inside the case stands the same distance from it, which is the card's
      padding plus the inset every row shares. */
+  /* Closer under the name than a page's own block step: the name labels the
+     panel below it, and a full step read as two separate things. */
+  --detail-space-before: var(--space-hair);
   --detail-space-after: var(--row-inset);
   --detail-padding: 0px;
   --card-radius-base: 12px;
@@ -737,8 +740,16 @@
       oklch(from var(--key-base) calc(l + 0.044) c h) 52%,
       oklch(from var(--key-base) calc(l - 0.027) c h) 100%
     );
-  /* Pressed, the face sits below the plate and the lighting turns over: the top
-     edge falls into shadow and the light reaches the foot instead. */
+  /*
+    Pressed, the face sits below the plate and the lighting turns over: the top
+    edge falls into shadow and the light reaches the foot instead.
+
+    The whole face is darker with it, because a key that has gone down sits
+    deeper in the plate and catches less light. Turning the lighting over
+    without lowering it left the pressed key measurably brighter than the
+    resting one, at 0.715 mean lightness against 0.704, which reads as lit
+    rather than as depressed.
+  */
   --disclosure-mark-fill-pressed: radial-gradient(
       ellipse 120% 90% at 50% 62%,
       rgb(255 255 255 / 0.14),
@@ -746,9 +757,9 @@
     ),
     linear-gradient(
       to bottom,
-      oklch(from var(--key-base) calc(l - 0.033) c h) 0%,
-      oklch(from var(--key-base) calc(l + 0.028) c h) 55%,
-      oklch(from var(--key-base) calc(l + 0.077) c h) 100%
+      oklch(from var(--key-base) calc(l - 0.083) c h) 0%,
+      oklch(from var(--key-base) calc(l - 0.022) c h) 55%,
+      oklch(from var(--key-base) calc(l + 0.027) c h) 100%
     );
   --disclosure-mark-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65),
     inset 0 -1px 0 rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.55);
@@ -1042,6 +1053,14 @@
   --service-display-tracking: 0.1em;
   --service-display-transform: uppercase;
   --service-display-glow: 0 0 7px rgb(110 200 240 / 0.55);
+  /*
+    The word beside the figure, which the panel writes rather than the data.
+
+    Its length is the width's decision: a narrow panel prints the reading and
+    as much of the word as the lattice has room for, and the figure is what a
+    reader came for either way.
+  */
+  --uptime-word: " Uptime";
   --uptime-colour: currentColor;
   --uptime-font: var(--service-display-font);
   --service-name-tracking: normal;
@@ -2131,7 +2150,7 @@
     service's own figures are not symmetric, because its head carries a printed
     band this device has no room for.
   */
-  padding-block: calc(var(--case-plate) + var(--space-tight));
+  padding-block: calc(var(--case-plate) + var(--space-block));
   padding-inline: calc(var(--cassette-cheek) + var(--space-section));
 }
 
@@ -2155,6 +2174,41 @@
 .range-card .ranges {
   flex: 0 0 auto;
   gap: var(--space-section);
+}
+
+/* Its own padding is what the control carries when it stands loose in a bar.
+   In the device it is one key among four, so it stands on their line. */
+.range-card .toggle-all {
+  padding: 0;
+}
+
+/*
+  The chosen range, which is the key that is down.
+
+  Its plate is lit rather than merely coloured, in the amber of the indicator
+  lamp this machine reads everything else by. The key beneath takes the pressed
+  face and the lit lamp a service's key takes when its row is open, so the two
+  controls say the same thing the same way.
+*/
+.range-button[aria-pressed="true"] .disclosure-label {
+  color: var(--range-label-colour-on);
+  text-shadow: var(--range-label-glow-on);
+}
+
+.range-button[aria-pressed="true"] .disclosure-mark {
+  background: var(--disclosure-mark-fill-pressed);
+  box-shadow: var(--disclosure-mark-shadow-pressed);
+}
+
+.range-button[aria-pressed="true"] .disclosure-mark::before {
+  background: var(--range-led-fill-on);
+  box-shadow: var(--range-led-glow-on);
+}
+
+@media (hover: hover) {
+  .range-button:not([aria-pressed="true"]):hover .disclosure-mark {
+    background: var(--disclosure-mark-fill-hover);
+  }
 }
 
 
@@ -2578,12 +2632,18 @@
      to show, so neither is dropped to keep the other on one line. */
   flex-wrap: wrap;
   /*
-    Whole cells, because everything on this line lands on the lattice behind
-    it. The page's own row step is not a cell, so a reading standing after a
-    gap of one sits between two columns of dots for the whole width of the
-    panel.
+    Whole cells across, because everything on this line lands on the lattice
+    behind it. The page's own row step is not a cell, so a reading standing
+    after a gap of one sits between two columns of dots for the whole width of
+    the panel.
+
+    Nothing between the rows. A cell is 14 wide and 24 tall, so the same figure
+    used down the panel put a wrapped reading 62px below the top of its line
+    where the lattice repeats every 24, and every dot beneath the wrap stood
+    off its own row. The lines stack on the lattice instead.
   */
-  gap: var(--service-display-line-gap, 0px);
+  column-gap: var(--service-display-line-gap, 0px);
+  row-gap: 0;
   min-width: 0;
   /* Whole cells, and the cells are drawn here rather than on the panel.
 
@@ -2629,6 +2689,10 @@
      and still lost its last characters without a mark, so a narrow panel read
      `THE LA` rather than `THE LAST 30 D…`. */
   display: block;
+}
+
+.service-uptime::after {
+  content: var(--uptime-word, "");
 }
 
 .service-uptime {
@@ -2908,7 +2972,7 @@
   --edge-width: var(--detail-edge-width);
   --edge-colour: var(--detail-edge-colour);
 
-  margin: var(--space-block) var(--row-inset) var(--detail-space-after);
+  margin: var(--detail-space-before) var(--row-inset) var(--detail-space-after);
   /* Its own padding rather than the card's. A design whose card has none still
      needs the readings inside the panel to stand off its edges, and the chart
      is the one that would otherwise run into the bottom of it. */
@@ -3398,6 +3462,69 @@
   margin-inline-end: var(--stamp-inset-inline);
 }@media (max-width: 560px) {
   /*
+    The poster comes off the wall on a phone.
+
+    The sun is 172px of disc with the installation's name lettered across its
+    middle band, which is most of a phone's first screen before a single
+    reading. The headline says what the page is for, and the name is on the
+    browser's own tab, so what goes is the picture rather than the information.
+  */
+  .cassette-page {
+    --hero-mark-shape-display: none;
+    --hero-mark-shape-size: 0px;
+  }
+
+  .status-hero-name {
+    display: none;
+  }
+
+  /*
+    A service's face is laid out in two rows on a phone.
+
+    The readout takes the whole width, because it is what the row is for and a
+    panel narrow enough to sit beside two lamps and a key reads four characters
+    at a time. Beneath it the lamps stand at one cheek and the key at the other,
+    both turned onto one line so the band they sit in is as shallow as it can
+    be. Nothing changes size: a key is the same key and a plate the same plate
+    as on a desk, only their arrangement moves.
+  */
+  .service-summary {
+    flex-wrap: wrap;
+    row-gap: var(--space-hair);
+  }
+
+  .cassette-page {
+    /* Two characters where a desk has seven, because the panel is a third as
+       wide and the figure is what the line is for. */
+    --uptime-word: " Up";
+    /* Nothing stands beside the readout any more, so nothing is reserved out
+       of its width but its own frame. */
+    --service-display-reserve: 0px;
+    /* The two lamps turn onto one line, as does the key and its plate. */
+    --protocols-direction: row;
+    --protocols-justify: flex-start;
+  }
+
+  .service-summary .service-display {
+    flex: 1 0 100%;
+  }
+
+  .service-summary .service-protocols {
+    flex: 1 1 auto;
+  }
+
+  .service-summary .disclosure-stack {
+    grid-auto-flow: column;
+    align-items: center;
+  }
+
+  /* Air between the strip's dates and the name beneath them, which a narrow
+     card has less of than a wide one. */
+  .service-name {
+    margin-block-start: calc(var(--service-name-space) + 15px);
+  }
+
+  /*
     On a phone every component in the rack is one width.
 
     The device sizes itself to its row of keys, which reads as deliberate
@@ -3409,9 +3536,29 @@
     width: 100%;
   }
 
+  /*
+    The device's keys stay on one line whatever the width.
+
+    They are four keys of a stated size rather than labels that grow with their
+    text, so they fit where a row of words would not, and a rack's controls
+    standing in two rows is not the object this draws.
+  */
   .range-card .range-bar {
-    justify-content: space-between;
-    gap: var(--space-block);
+    flex-wrap: nowrap;
+    /* Even air at both ends and between the two groups, rather than the three
+       ranges pinned to one cheek and the key to the other. */
+    justify-content: space-evenly;
+    gap: 0;
+  }
+
+  /* The step between the ranges is not one of the things a narrow screen
+     changes. Three keys stand the same distance apart wherever the device is
+     read, and what gives way instead is the air around the group. */
+
+  /* The case keeps its cheeks and a little metal inside them, and gives the
+     rest of its width to the keys. */
+  .range-card {
+    padding-inline: calc(var(--cassette-cheek) + var(--space-hair));
   }
 
   /* The range buttons and the expand control need more room than a phone has

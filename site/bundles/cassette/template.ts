@@ -212,7 +212,7 @@ function service(
       <span class="service-display">
         <span class="service-display-line">
           <span class="service-display-main">${escape(STATE_WORD[entry.status] ?? "No data")}</span>
-          <span class="service-uptime">${escape(figure)} Uptime</span>
+          <span class="service-uptime">${escape(figure)}</span>
         </span>
         <span class="service-display-line">${escape(window?.description ?? "")}</span>
       </span>
