@@ -32,26 +32,73 @@ const HEADLINE: Record<string, string> = {
   outage: "Major service outage",
 };
 
+/** What a window on this page is: its class, its lines, and how it is measured. */
+type VfdOptions = {
+  /**
+   * The class naming this particular window, such as `protocol-badge`. It names
+   * the window's lines as well, so a readout whose role is `service-display`
+   * carries `service-display-line` inside it.
+   */
+  role: string;
+  /**
+   * What the window reads, one entry per line, already escaped and already
+   * marked up. A window given a single line is that line and carries the
+   * lattice itself; one given several holds them as children.
+   */
+  lines: string[];
+  /**
+   * `cells` for a window as wide as the characters it reads, `row` for one that
+   * takes whatever the row it stands in has left over. Only the readout is
+   * measured the second way, because what it has is what the key and the lamps
+   * beside it leave.
+   */
+  width?: "cells" | "row";
+  /** Anything the window carries besides its class, escaped and led by a space. */
+  attributes?: string;
+};
+
 /**
- * The key that opens a row.
+ * A vacuum fluorescent display, which every window on this page is one of.
  *
- * It carries no text of its own: the stylesheet states the two characters,
- * because which character says "this opens" is a design decision rather than a
- * fact about the row. Hidden from assistive technology, since the button
- * around it already says what it does.
+ * Seven stand on a service: its readout, its two protocol lamps and the display
+ * over its key, with the four keys of the device above making the rest. They
+ * are one instrument in two sizes, so the markup is written here once and the
+ * stylesheet decides how large a window is and how many characters it holds.
+ *
+ * A window reading several lines carries them as children, and each of those
+ * stands on the lattice of unlit dots. One reading a single line is that line
+ * and shows no lattice, because at the size the small windows are set the dots
+ * no longer land on whole pixels: the reasoning, and the figures behind it, are
+ * in the stylesheet beside the drawing.
+ *
+ * @param options - Which window this is, what it reads, and how it is measured.
+ * @returns The window's markup.
  */
+function vfd({ role, lines, width = "cells", attributes = "" }: VfdOptions): string {
+  const measured = width === "cells" ? " vfd--sized" : "";
+  if (lines.length === 1) {
+    return `<span class="${role} vfd${measured}"${attributes}>${lines[0]}</span>`;
+  }
+  const body = lines
+    .map((line) => `<span class="${role}-line vfd-line">${line}</span>`)
+    .join("");
+  return `<span class="${role} vfd${measured}"${attributes}>${body}</span>`;
+}
+
 /**
- * The key that opens something, on its own or under the plate naming what it
+ * The key that opens something, on its own or under the window naming what it
  * opens.
  *
- * A row's key carries the plate, because that is the part of the face reporting
- * whether the plot below it is out. The control in the bar opens every row at
- * once and names itself in words beside the ranges, so it is the key alone.
+ * A row's key carries the window, because that is the part of the face
+ * reporting whether the plot below it is out. The control in the bar opens
+ * every row at once and names itself in words beside the ranges, so it is the
+ * key alone.
  *
- * @param labelled - Whether to draw the plate above the key.
+ * @param plate - The window standing over the key, or nothing for a bare one.
  * @returns The markup for the key, decorative throughout: what it does is said
  *   by the control around it.
  */
+
 function key(plate = ""): string {
   return `<span class="disclosure-stack" aria-hidden="true">
       ${plate}
@@ -60,17 +107,17 @@ function key(plate = ""): string {
 }
 
 /**
- * The plate above the key, which carries a printed word.
+ * The display over the key, which carries a printed word.
  *
  * Its own function rather than a flag on `key`, so the caller states what the
  * stack holds instead of switching a child on. The control that opens every row
- * at once carries no plate and simply passes nothing.
+ * at once carries no display and simply passes nothing.
  *
  * @param word - What is printed on it.
- * @returns The plate's markup.
+ * @returns The display's markup.
  */
 function keyPlate(word: string): string {
-  return `<span class="disclosure-label">${escape(word)}</span>`;
+  return vfd({ role: "disclosure-label", lines: [escape(word)] });
 }
 
 /**
@@ -174,9 +221,11 @@ function protocols(service: BundleData["status"]["services"][number]): string {
     .map((protocol) => {
       const check = service.checks.find((entry) => entry.protocol === protocol);
       const status = check ? ` data-status="${escape(check.status)}"` : "";
-      return `<span class="protocol-badge" data-protocol="${protocol}" data-present="${String(Boolean(check))}"${status}>${
-        protocol === "ipv6" ? "IPv6" : "IPv4"
-      }</span>`;
+      return vfd({
+        role: "protocol-badge",
+        lines: [protocol === "ipv6" ? "IPv6" : "IPv4"],
+        attributes: ` data-protocol="${protocol}" data-present="${String(Boolean(check))}"${status}`,
+      });
     })
     .join("");
   const single =
@@ -207,15 +256,18 @@ function service(
     .map((check) => (check.protocol === "ipv6" ? "IPv6" : "IPv4"))
     .join(" and ");
   const window = RANGES.find((option) => option.key === data.site.defaultRange);
+  const readout = vfd({
+    role: "service-display",
+    width: "row",
+    lines: [
+      `<span class="service-display-main">${escape(STATE_WORD[entry.status] ?? "No data")}</span>` +
+        `<span class="service-uptime">${escape(figure)}</span>`,
+      escape(window?.description ?? ""),
+    ],
+  });
   return `<article class="service" data-service-id="${escape(entry.id)}" data-open="false">
     <button class="service-summary" type="button" aria-expanded="false" aria-controls="details-${escape(entry.id)}" aria-label="${escape([entry.name, `${figure} uptime`, spoken].filter(Boolean).join(", "))}">
-      <span class="service-display">
-        <span class="service-display-line">
-          <span class="service-display-main">${escape(STATE_WORD[entry.status] ?? "No data")}</span>
-          <span class="service-uptime">${escape(figure)}</span>
-        </span>
-        <span class="service-display-line">${escape(window?.description ?? "")}</span>
-      </span>
+      ${readout}
       ${protocols(entry)}
       ${key(keyPlate("OPEN"))}
     </button>

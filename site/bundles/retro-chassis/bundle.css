@@ -124,7 +124,7 @@
      standing in it is the panel's size and only its brightness sets it apart.
      The size also keeps the line on the dot lattice: 15px at a leading of 1.2
      is eighteen pixels, which is twelve steps of it. */
-  --uptime-size: var(--service-display-size);
+  --uptime-size: var(--vfd-size);
   --stamp-display: block;
   --stamp-tracking: var(--label-tracking);
   --display-tracking: 0.1em;
@@ -238,10 +238,6 @@
   --control-padding-block: 3px;
   --toggle-padding-inline: var(--control-padding-inline);
   --control-padding-inline: 9px;
-  /* A window carries a printed word, and a word printed too small on a plate
-     of this period is a word nobody printed. */
-  --badge-padding-block: 3px;
-  --badge-padding-inline: 6px;
   --tooltip-padding-block: 7px;
   --tooltip-padding-inline: 11px;
   /* The stamps below the rack begin where the metal of a faceplate does. */
@@ -689,17 +685,18 @@
     lamp is out until the key is down. Down means the response times are
     showing, which is what the key is for.
   */
-  /* The plate and the key are one part of the face, and that part stands in
+  /* The display and the key are one part of the face, and that part stands in
      the middle of the panel beside it. */
-  /* Top of the row, so the OPEN plate and the first protocol lamp beside it
+  /* Top of the row, so the OPEN display and the first protocol lamp beside it
      stand on one line. The two stacks are different heights, so centring each
      of them puts their first elements 3.5px apart. */
   --disclosure-mark-self: start;
   --disclosure-mark-offset: 0px;
-  /* Wide enough for the word on the plate above the key, which the key takes
-     as well so the two are one column: OPEN measures 29px at the plate's own
-     size, and this leaves it six either side of the frame. */
-  --disclosure-mark-width: 41px;
+  /* The key is as wide as the window above it, because the two are one column
+     cut into the same plate. That width is four cells of the small display, so
+     the key follows whatever the display is set at rather than stating a figure
+     that has to be corrected whenever the other one moves. */
+  --disclosure-mark-width: var(--vfd-small-width);
   --disclosure-mark-height: 22px;
   --disclosure-mark-radius: 3px;
   /*
@@ -793,7 +790,7 @@
   /*
     The chosen range, lit in the amber of the indicator lamp.
 
-    Amber rather than the red the OPEN plate takes, because these two say
+    Amber rather than the red the OPEN display takes, because these two say
     different things: red reports that a plot is showing, and this reports which
     window everything on the page is read over. The machine's own indicator
     colour is what a setting is announced in.
@@ -809,31 +806,8 @@
   );
   --range-led-glow-on: inset 0 1px 2px rgb(0 0 0 / 0.75),
     0 0 7px rgb(255 176 58 / 0.85), 0 0 16px rgb(255 176 58 / 0.5);
-  /*
-    What a lit panel does to the chamfer around its hole.
-
-    The chamfer's four faces are lit by the room, and the panel behind the hole
-    lights them a second time from inside. What that changes most is the face
-    under the head: it turns away from the room and is the darkest thing on the
-    plate, so it is the one surface where light from behind is the only light
-    there is. The foot is already the lit face and takes least.
-
-    That turns the facets over. Unlit, the room lights the foot and leaves the
-    head black; lit, the panel is the brighter source and it stands behind the
-    hole, so the head becomes the bright face and the foot the quiet one. Half
-    strength on each made the two cancel out and the chamfer read as an even
-    ring, which is a sticker and not a cut. `currentColor` is the colour
-    the letters glow in, so red announces a plot and amber a setting without
-    either being named twice.
-  */
-  --plate-lit-head: color-mix(in srgb, currentColor 78%, var(--plate-chamfer-head));
-  --plate-lit-left: color-mix(in srgb, currentColor 34%, var(--plate-chamfer-left));
-  --plate-lit-right: color-mix(in srgb, currentColor 40%, var(--plate-chamfer-right));
-  --plate-lit-foot: color-mix(in srgb, currentColor 9%, var(--plate-chamfer-foot));
-  /* What reaches the brushed metal just outside the hole. */
-  --plate-lit-spill: 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
-  /* The plate above the key, which is the same window as a protocol's and
-     carries the same word whether the plot is open or shut. */
+  /* The display over the key, which is the same instrument as a protocol's
+     and carries the same word whether the plot is open or shut. */
   --disclosure-label-colour: #6b4a44;
   /* Lit, the word is a filament rather than a printed legend: the letters go
      to the hot end of the same red, and the halo is two throws, a tight one at
@@ -926,17 +900,14 @@
   */
   --protocols-single-display: inline-flex;
   --badge-absent-display: block;
-  /* A window cut into the same plate as the display beside it, so it takes the
-     display's glass and its shadow rather than resembling them. The protocol
+  /* A window cut into the same plate as the readout beside it, and the same
+     instrument: the same glass, the same face, the same glow. The protocol
      keeps its colour in the lettering, which is what a lit character on that
      glass looks like.
 
      No frame around it: a hole in a plate has no rim, and the shadow falling
-     into it is what says it is sunk. The lettering is the panel's own face at
-     the weight a character generator prints. */
+     into it is what says it is sunk. */
   --badge-border-width: 0px;
-  --badge-font: var(--service-display-font);
-  --badge-weight: 700;
   --badge-glow: 0 0 6px color-mix(in srgb, currentColor 55%, transparent);
   --badge-absent-edge: #2b2519;
   --badge-absent-fill: #0d0b07;
@@ -948,13 +919,51 @@
      text, so the conformance suite holds it to 4.5:1 against the unlit window
      behind it, and this measures 4.51:1. */
   --badge-absent-colour: #867760;
+  /*
+    What a small window reads: four characters on one line.
+
+    Four because that is the longest word any of them carries, so IPv4, IPv6 and
+    OPEN each fill their window and the three ranges stand centred in theirs.
+    The size is its own rather than the readout's, because a panel and a lamp
+    are not the same instrument, and 20px in a window this wide would print two
+    characters.
+  */
+  --vfd-small-size: 13px;
+  --vfd-small-columns: 4;
+  --vfd-small-lines: 1;
+  --vfd-weight: 700;
+  /*
+    The glass either side of the characters.
+
+    A cell carries its own gap at the trailing edge and none at the leading one:
+    the face puts a character's first column 0.48 units into its cell and its
+    last 4.32 short of the end. Across four cells that leaves 0.3px of glass on
+    the left against 2.8 on the right, which is what made OPEN look pushed
+    against one wall. This stands the same distance off both.
+  */
+  --vfd-small-inset: 4px;
+  /*
+    What those four cells come to across.
+
+    Stated here as well as on the window itself, because the row reserves the
+    width of the two lamps before either lamp exists, and a reservation cannot
+    ask an element that is not laid out yet. It is the same arithmetic `.vfd`
+    does and it reads the same size, so the two agree by construction rather
+    than by being kept in step.
+  */
+  --vfd-small-width: calc(
+    var(--vfd-small-columns) *
+      (var(--vfd-glyph-advance) + var(--vfd-tracking-ratio)) *
+      var(--vfd-small-size) + 2 * var(--vfd-small-inset) +
+      2 * var(--plate-chamfer)
+  );
   /* Plate and readout both run the full height of the row, so the two stand
      level the way instruments on one faceplate do. */
   --service-name-self: stretch;
   /* Side by side on one line, because the pair stands at the leading edge of
      the caption over the plot rather than in the row above it. */
   /* Aligned to the top of the row, as the key beside them is, so the first
-     lamp and the OPEN plate stand on one line. Centred, the two stacks are
+     lamp and the OPEN display stand on one line. Centred, the two stacks are
      different heights and their first elements never meet. */
   --protocols-self: start;
   --protocols-justify: center;
@@ -964,22 +973,38 @@
   --protocols-direction: column;
   --protocols-align: stretch;
   /*
-    The readout.
+    The vacuum fluorescent display, which every window on this page is one of.
 
-    A vacuum fluorescent display: the blue-green of a phosphor tube on
-    near-black glass, glowing into the surface around it. It reads two lines,
-    the uptime figure sits at the end of the first, and everything another
-    design would show in an overlay is read out here rather than drawn over the
-    page.
+    The blue-green of a phosphor tube on near-black glass, glowing into the
+    surface around it. Seven of them stand on a page: the readout of each
+    service, its two protocol lamps, the display over its key, and the four keys
+    of the device above. They differ in how large their characters are, in how
+    many of them fit, and in whether the lattice of unlit dots is drawn behind
+    them, which only the readout is large enough to carry.
 
     Doto is a dot-matrix face, so the dots are the letters rather than a
     texture laid over them.
+
+    Everything below is a ratio of the character size rather than a length, so
+    a window states its size and the cell, the line and the lattice follow. The
+    ratios are the face's own, read back from it rather than chosen: a
+    character advances 0.6 of its size, the tracking adds a tenth, and the
+    leading of 1.2 is what makes a line. `.vfd` is where the three are
+    multiplied out, because a custom property holding `var()` resolves on the
+    element that declares it, and a window setting a size of its own has to
+    compute its own cell from it.
   */
+  --vfd-font: "Doto", ui-monospace, monospace;
+  --vfd-glyph-advance: 0.6;
+  --vfd-tracking-ratio: 0.1;
+  --vfd-leading: 1.2;
+  --vfd-transform: uppercase;
+  /* The panel glows in the hue of the sun's lowest band, so the machine and the
+     poster above it are lit by one colour rather than two. */
+  --vfd-colour: #8fd6f8;
+  --vfd-glow: 0 0 7px rgb(110 200 240 / 0.55);
   --service-display-display: grid;
   --service-display-line-display: flex;
-  /* One cell between the two readings on a line, so the second one starts on a
-     column of the lattice like the first. */
-  --service-display-line-gap: var(--service-display-cell-advance);
   --service-display-main-display: block;
   --service-display-flex: 0 0 auto;
   /*
@@ -997,9 +1022,9 @@
     What the panel is not: the gaps, the key, and the two protocol lamps beside
     it. The panel takes the whole cells left over after those, so it is never a
     fraction of a cell wide. The name used to be reserved here as well and is
-    not any more, because it stands under the strip.
+    not any more, because it stands under the strip. The lamps' own width is
+    stated with the small windows above.
   */
-  --badge-width: 43px;
   --service-display-frame: calc(
     2 * var(--plate-chamfer) + var(--service-display-inset) - 0.33px +
       var(--service-display-inset) - 4.47px
@@ -1009,7 +1034,7 @@
      to the readout: at 375px that reserve was more than three times what the
      readout itself was left with. */
   --service-display-reserve: calc(
-    3 * var(--space-row) + var(--disclosure-mark-width) + var(--badge-width)
+    3 * var(--space-row) + var(--disclosure-mark-width) + var(--vfd-small-width)
   );
   --service-display-padding: calc(var(--service-display-inset) - 5px)
     calc(var(--service-display-inset) - 4.47px)
@@ -1034,11 +1059,16 @@
     from 68 above to 22 below, which is nine rows between them rather than the
     seven either one uses.
 
-    The panel is set at twenty pixels because that is what puts the raster on
+    The readout is set at twenty pixels because that is what puts the raster on
     whole ones: a step is a tenth of the size, so fifteen gave 1.5 and every
     second dot landed on a different half of a pixel, which is what made the
     field mush together. At twenty the step is 2, the cell is 14 by 24, and
     every dot in it rasterises alike.
+
+    Only the readout carries it. At the thirteen pixels the small windows are
+    set at no dot lands on a whole pixel, and no smaller size fixes that: every
+    size below twenty leaves them soft. So the small windows show the glass
+    without the lattice.
 
     The cell is the character's own advance by the line's own height: the
     tracking is a tenth of the size, so a character takes seven steps rather
@@ -1052,28 +1082,24 @@
     It is laid on the content box, so the grid starts where the first character
     does, and it is one static layer: opening a row changes the panel's height
     and nothing about what is painted here.
+
+    The drawing is stated once at the size the readout sets and scaled by
+    `background-size` everywhere else, so a window a third as large shows the
+    same lattice a third as large rather than a second drawing of its own.
   */
-  /* The glass itself, without the lattice: the protocol windows are cut from
-     the same sheet and are too small to carry a dot pattern. */
+  /* The glass itself, without the lattice, for anything that carries the sheet
+     but not the dots. */
   --display-glass: linear-gradient(to bottom, #060c0f, #0b1015);
-  --service-display-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 24'><g fill='%2314232b'><rect x='0.48' y='5.48' width='1.2' height='1.2'/><rect x='2.48' y='5.48' width='1.2' height='1.2'/><rect x='4.48' y='5.48' width='1.2' height='1.2'/><rect x='6.48' y='5.48' width='1.2' height='1.2'/><rect x='8.48' y='5.48' width='1.2' height='1.2'/><rect x='0.48' y='7.46' width='1.2' height='1.2'/><rect x='2.48' y='7.46' width='1.2' height='1.2'/><rect x='4.48' y='7.46' width='1.2' height='1.2'/><rect x='6.48' y='7.46' width='1.2' height='1.2'/><rect x='8.48' y='7.46' width='1.2' height='1.2'/><rect x='0.48' y='9.44' width='1.2' height='1.2'/><rect x='2.48' y='9.44' width='1.2' height='1.2'/><rect x='4.48' y='9.44' width='1.2' height='1.2'/><rect x='6.48' y='9.44' width='1.2' height='1.2'/><rect x='8.48' y='9.44' width='1.2' height='1.2'/><rect x='0.48' y='11.42' width='1.2' height='1.2'/><rect x='2.48' y='11.42' width='1.2' height='1.2'/><rect x='4.48' y='11.42' width='1.2' height='1.2'/><rect x='6.48' y='11.42' width='1.2' height='1.2'/><rect x='8.48' y='11.42' width='1.2' height='1.2'/><rect x='0.48' y='13.40' width='1.2' height='1.2'/><rect x='2.48' y='13.40' width='1.2' height='1.2'/><rect x='4.48' y='13.40' width='1.2' height='1.2'/><rect x='6.48' y='13.40' width='1.2' height='1.2'/><rect x='8.48' y='13.40' width='1.2' height='1.2'/><rect x='0.48' y='15.38' width='1.2' height='1.2'/><rect x='2.48' y='15.38' width='1.2' height='1.2'/><rect x='4.48' y='15.38' width='1.2' height='1.2'/><rect x='6.48' y='15.38' width='1.2' height='1.2'/><rect x='8.48' y='15.38' width='1.2' height='1.2'/><rect x='0.48' y='17.36' width='1.2' height='1.2'/><rect x='2.48' y='17.36' width='1.2' height='1.2'/><rect x='4.48' y='17.36' width='1.2' height='1.2'/><rect x='6.48' y='17.36' width='1.2' height='1.2'/><rect x='8.48' y='17.36' width='1.2' height='1.2'/><rect x='0.48' y='19.34' width='1.2' height='1.2'/><rect x='2.48' y='19.34' width='1.2' height='1.2'/><rect x='4.48' y='19.34' width='1.2' height='1.2'/><rect x='6.48' y='19.34' width='1.2' height='1.2'/><rect x='8.48' y='19.34' width='1.2' height='1.2'/><rect x='0.48' y='21.32' width='1.2' height='1.2'/><rect x='2.48' y='21.32' width='1.2' height='1.2'/><rect x='4.48' y='21.32' width='1.2' height='1.2'/><rect x='6.48' y='21.32' width='1.2' height='1.2'/><rect x='8.48' y='21.32' width='1.2' height='1.2'/></g></svg>");
-  --service-display-cell-advance: 14px;
-  --service-display-cell-size: var(--service-display-cell-advance) 24px;
-  --service-display-fill: var(--service-display-cell), var(--display-glass);
-  /* The panel glows in the hue of the sun's lowest band, so the machine and the
-     poster above it are lit by one colour rather than two. */
-  --service-display-colour: #8fd6f8;
+  --vfd-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 24'><g fill='%2314232b'><rect x='0.48' y='5.48' width='1.2' height='1.2'/><rect x='2.48' y='5.48' width='1.2' height='1.2'/><rect x='4.48' y='5.48' width='1.2' height='1.2'/><rect x='6.48' y='5.48' width='1.2' height='1.2'/><rect x='8.48' y='5.48' width='1.2' height='1.2'/><rect x='0.48' y='7.46' width='1.2' height='1.2'/><rect x='2.48' y='7.46' width='1.2' height='1.2'/><rect x='4.48' y='7.46' width='1.2' height='1.2'/><rect x='6.48' y='7.46' width='1.2' height='1.2'/><rect x='8.48' y='7.46' width='1.2' height='1.2'/><rect x='0.48' y='9.44' width='1.2' height='1.2'/><rect x='2.48' y='9.44' width='1.2' height='1.2'/><rect x='4.48' y='9.44' width='1.2' height='1.2'/><rect x='6.48' y='9.44' width='1.2' height='1.2'/><rect x='8.48' y='9.44' width='1.2' height='1.2'/><rect x='0.48' y='11.42' width='1.2' height='1.2'/><rect x='2.48' y='11.42' width='1.2' height='1.2'/><rect x='4.48' y='11.42' width='1.2' height='1.2'/><rect x='6.48' y='11.42' width='1.2' height='1.2'/><rect x='8.48' y='11.42' width='1.2' height='1.2'/><rect x='0.48' y='13.40' width='1.2' height='1.2'/><rect x='2.48' y='13.40' width='1.2' height='1.2'/><rect x='4.48' y='13.40' width='1.2' height='1.2'/><rect x='6.48' y='13.40' width='1.2' height='1.2'/><rect x='8.48' y='13.40' width='1.2' height='1.2'/><rect x='0.48' y='15.38' width='1.2' height='1.2'/><rect x='2.48' y='15.38' width='1.2' height='1.2'/><rect x='4.48' y='15.38' width='1.2' height='1.2'/><rect x='6.48' y='15.38' width='1.2' height='1.2'/><rect x='8.48' y='15.38' width='1.2' height='1.2'/><rect x='0.48' y='17.36' width='1.2' height='1.2'/><rect x='2.48' y='17.36' width='1.2' height='1.2'/><rect x='4.48' y='17.36' width='1.2' height='1.2'/><rect x='6.48' y='17.36' width='1.2' height='1.2'/><rect x='8.48' y='17.36' width='1.2' height='1.2'/><rect x='0.48' y='19.34' width='1.2' height='1.2'/><rect x='2.48' y='19.34' width='1.2' height='1.2'/><rect x='4.48' y='19.34' width='1.2' height='1.2'/><rect x='6.48' y='19.34' width='1.2' height='1.2'/><rect x='8.48' y='19.34' width='1.2' height='1.2'/><rect x='0.48' y='21.32' width='1.2' height='1.2'/><rect x='2.48' y='21.32' width='1.2' height='1.2'/><rect x='4.48' y='21.32' width='1.2' height='1.2'/><rect x='6.48' y='21.32' width='1.2' height='1.2'/><rect x='8.48' y='21.32' width='1.2' height='1.2'/></g></svg>");
+  /* What the readout is set at, and what every window takes unless it states a
+     size of its own. */
+  --vfd-size: 20px;
+  --vfd-tracking: calc(var(--vfd-tracking-ratio) * 1em);
   /* One step down from the reading itself, and what everything but the reading
      is set in: the line saying what the reading is of, and the standing uptime
      figure. Measured on the glass: 12.15:1 for the reading and 7.66:1 for the
      step below it, with the unlit dots at 1.21:1. */
-  --service-display-colour-quiet: #4aaed3;
-  --service-display-font: "Doto", ui-monospace, monospace;
-  --service-display-size: 20px;
-  --service-display-leading: 1.2;
-  --service-display-tracking: 0.1em;
-  --service-display-transform: uppercase;
-  --service-display-glow: 0 0 7px rgb(110 200 240 / 0.55);
+  --vfd-colour-quiet: #4aaed3;
   /*
     The word beside the figure, which the panel writes rather than the data.
 
@@ -1083,7 +1109,7 @@
   */
   --uptime-word: " Uptime";
   --uptime-colour: currentColor;
-  --uptime-font: var(--service-display-font);
+  --uptime-font: var(--vfd-font);
   --service-name-tracking: normal;
   --service-name-transform: none;
   /* The one weight the face ships; asking for a heavier one only gets a
@@ -1109,14 +1135,32 @@
     four colours are not a gradient: a milled edge has facets, not a fade.
   */
   --plate-chamfer: 2px;
-  --plate-chamfer-head: #05070a;
-  --plate-chamfer-left: #262a30;
-  --plate-chamfer-right: #14171b;
-  --plate-chamfer-foot: #444a52;
-  /* What the cut throws inward past its own chamfer, and the lip of metal the
-     plate keeps below the hole. */
-  --service-display-shadow: inset 0 2px 3px rgb(0 0 0 / 0.62),
-    0 1px 0 rgb(232 220 196 / 0.09);
+  /*
+    The four walls, under a light standing above and a little to the left.
+
+    Each wall is flat and turns its own way, so each has one brightness: the
+    head turns away and is black, the foot turns into the light and is the
+    brightest, and of the two sides it is the right one that faces a light
+    coming from the left.
+
+    The foot is the figure that matters, because it is what a reader sees as the
+    edge. It cannot be brighter than the plate the hole is cut into by more than
+    the angle allows, which is 1.77 times. The plate renders at #23221c, so the
+    foot sits here. Brighter than this and the wall reads as a grey bar laid
+    under the glass.
+
+    These four are the whole of it. A window whose word lights up keeps them
+    unchanged: what lights is the word, and the metal it is cut into is the same
+    metal either way.
+  */
+  --plate-chamfer-head: #08090a;
+  --plate-chamfer-left: #0c0d0e;
+  --plate-chamfer-right: #232629;
+  --plate-chamfer-foot: #2c3035;
+  /* What the cut throws inward past its own chamfer. Nothing outside it: the
+     foot of the chamfer is already the lit edge, and a second bright line under
+     the hole only made that edge look twice as thick as the other three. */
+  --service-display-shadow: inset 0 2px 3px rgb(0 0 0 / 0.62);
   /* Its own row beneath the strip, so it takes the full measure and needs
      neither a flex share nor a width reserved out of the readout's. `block`
      rather than `grid`, because text-overflow only acts on a block container
@@ -2074,7 +2118,7 @@
 /*
   A range is a key, so the button around it carries nothing of its own.
 
-  What a reader sees is the plate and the key inside it, both of which are the
+  What a reader sees is the display and the key inside it, both of which are the
   parts a service is already built from. The button is the hit area and the
   place the pressed state is announced from, and it is drawn nowhere.
 */
@@ -2535,7 +2579,7 @@
 }
 
 
-/* Side by side in most designs. One stacks them, because two small plates
+/* Side by side in most designs. One stacks them, because two small displays
    above each other is how the machine it copies labels a pair of inputs. */
 .service-protocols {
   display: inline-flex;
@@ -2548,16 +2592,31 @@
 }
 
 /*
-  The glass, cut into the plate three times.
+  A vacuum fluorescent display, cut into the plate.
 
-  The readout, the two protocol lamps and the plate above the key are one
-  window in three sizes: the same sheet, the same shadow falling into it, no rim
-  on any of them. Stated once, because three copies of it are three things that
-  have to be kept alike and one that eventually is not.
+  Every window on the page carries this: the readout, the two protocol lamps
+  beside it, the display over each key, and the four keys of the device above.
+  They are one part in two sizes, so the glass, the chamfer, the face and the
+  glow are said here once rather than at each of them.
+
+  Four things decide a window, and the class takes them as properties: how
+  large its characters are, how many stand on a line, how many lines it reads,
+  and what colour it lights them in. Everything else follows from the first.
+
+  The three products below sit on this class rather than on the page, and that
+  placement is the whole reason it exists. A custom property holding `var()` is
+  resolved on the element that declares it, so a cell computed at the root is
+  the root's cell, and a window setting a size of its own would go on being
+  given it. Computed here, each window computes its own.
 */
-.service-display,
-.protocol-badge,
-.disclosure-label {
+.vfd {
+  --vfd-cell-advance: calc(
+    (var(--vfd-glyph-advance) + var(--vfd-tracking-ratio)) * var(--vfd-size)
+  );
+  --vfd-cell-height: calc(var(--vfd-leading) * var(--vfd-size));
+  --vfd-cell-size: var(--vfd-cell-advance) var(--vfd-cell-height);
+
+  box-sizing: border-box;
   background: var(--display-glass);
   box-shadow: var(--service-display-shadow);
   border-style: solid;
@@ -2566,31 +2625,82 @@
   border-right-color: var(--plate-chamfer-right);
   border-bottom-color: var(--plate-chamfer-foot);
   border-left-color: var(--plate-chamfer-left);
+  color: var(--vfd-colour);
+  font-family: var(--vfd-font);
+  font-size: var(--vfd-size);
+  font-weight: var(--vfd-weight, inherit);
+  line-height: var(--vfd-leading);
+  letter-spacing: var(--vfd-tracking);
+  text-transform: var(--vfd-transform);
+  text-shadow: var(--vfd-glow);
 }
 
 /*
-  The two small windows, which differ from the readout in carrying a single
-  printed word rather than a reading, and from each other only in their width,
-  their colour and what they do with the word.
+  A line of characters on the lattice, which only the readout has.
+
+  The dots belong to the line rather than to the window, because a window is as
+  wide as the row it stands in and a lattice laid on it would end in part of a
+  cell. The line is rounded down to whole ones and centred in what is left, so
+  every cell drawn is a whole cell and the remainder is plain glass at both
+  ends.
+
+  A browser without `round()` leaves the line at the window's own width, which
+  is where this stood before.
+*/
+.vfd-line {
+  width: round(down, 100%, var(--vfd-cell-advance, 1px));
+  margin-inline: auto;
+  background-image: var(--vfd-cell);
+  background-size: var(--vfd-cell-size, auto);
+}
+
+/*
+  A window sized by what it reads rather than by what it says.
+
+  Its width is the number of characters it holds, so the six small windows come
+  out one size whatever word each of them prints, and that size follows the
+  face rather than being a figure somebody picked. The chamfer stands outside
+  those cells, which is what `border-box` is doing here.
+*/
+.vfd--sized {
+  width: calc(
+    var(--vfd-columns) * var(--vfd-cell-advance) + 2 * var(--vfd-inset, 0px) +
+      2 * var(--plate-chamfer)
+  );
+  height: calc(
+    var(--vfd-lines) * var(--vfd-cell-height) + 2 * var(--plate-chamfer)
+  );
+  /* No `border` shorthand here. The chamfer is drawn as four border colours,
+     and a shorthand after them throws all four away. */
+  border-radius: var(--badge-radius);
+  /*
+    Centred, and pulled back by the step the tracking adds after the last
+    character. Tracking is put between the letters and after them alike, so a
+    centred word sits half a step to the left of the box it is centred in. An
+    indent takes that much off the width the word is centred in, which moves it
+    by half of what it states, and half a step is exactly what is wanted here.
+  */
+  text-align: center;
+  text-indent: var(--vfd-tracking);
+}
+
+/*
+  The six small windows: the two protocol lamps of every service, the display over
+  its key, and the four keys of the device above.
+
+  All of them are one instrument in one size, so what sets them apart is the
+  word they print and the colour they print it in. Both read the same three
+  properties, which is what keeps a lamp and a key plate the same object.
 */
 .protocol-badge,
 .disclosure-label {
-  box-sizing: border-box;
-  padding-block: var(--badge-padding-block);
-  /* No `border` shorthand here. The chamfer above is drawn as four border
-     colours, and a shorthand after them throws all four away. */
-  border-radius: var(--badge-radius);
-  font-family: var(--badge-font, var(--font-meta));
-  font-size: var(--text-size-badge);
-  font-weight: var(--badge-weight, inherit);
-  line-height: 1;
+  --vfd-size: var(--vfd-small-size);
+  --vfd-columns: var(--vfd-small-columns);
+  --vfd-lines: var(--vfd-small-lines);
+  --vfd-inset: var(--vfd-small-inset);
 }
 
 .protocol-badge {
-  /* A window in a plate is a stated size, not the size of the word in it, so
-     the row's arithmetic can count on it. */
-  width: var(--badge-width, auto);
-  padding-inline: var(--badge-padding-inline);
   color: var(--text-2);
   text-shadow: var(--badge-glow);
 }
@@ -2654,21 +2764,14 @@
     round(
         down,
         calc(100cqw - var(--service-display-reserve) - var(--service-display-frame)),
-        var(--service-display-cell-advance, 1px)
+        var(--vfd-cell-advance, 1px)
       ) + var(--service-display-frame)
   );
   min-width: 0;
   padding: var(--service-display-padding);
-  /* No `border` shorthand here either: the chamfer above is four border
-     colours, and a shorthand after them throws all four away. */
+  /* No `border` shorthand here either: the chamfer is four border colours, and
+     a shorthand after them throws all four away. */
   border-radius: var(--service-display-radius);
-  color: var(--service-display-colour);
-  font-family: var(--service-display-font);
-  font-size: var(--service-display-size);
-  line-height: var(--service-display-leading);
-  letter-spacing: var(--service-display-tracking);
-  text-transform: var(--service-display-transform);
-  text-shadow: var(--service-display-glow);
 }
 
 .service-display-line {
@@ -2684,31 +2787,15 @@
     after a gap of one sits between two columns of dots for the whole width of
     the panel.
 
-    Nothing between the rows. A cell is 14 wide and 24 tall, so the same figure
-    used down the panel put a wrapped reading 62px below the top of its line
-    where the lattice repeats every 24, and every dot beneath the wrap stood
-    off its own row. The lines stack on the lattice instead.
+    Nothing between the rows. A cell is 14 wide and 24 tall at the readout's own
+    size, so the same figure used down the panel put a wrapped reading 62px
+    below the top of its line where the lattice repeats every 24, and every dot
+    beneath the wrap stood off its own row. The lines stack on the lattice
+    instead.
   */
-  column-gap: var(--service-display-line-gap, 0px);
+  column-gap: var(--vfd-cell-advance, 0px);
   row-gap: 0;
   min-width: 0;
-  /* Whole cells, and the cells are drawn here rather than on the panel.
-
-     The panel's width comes from the row it sits in, and the name beside it
-     decides that, so it is any number of pixels. A grid laid on the panel would
-     therefore end in a part of a cell. Laid on the line, which is rounded down
-     to whole ones, every cell that is drawn is a whole cell, and what the panel
-     has left over is plain glass.
-
-     A browser without `round()` leaves the line at the panel's own width, which
-     is where this stood before. */
-  width: round(down, 100%, var(--service-display-cell-advance, 1px));
-  /* What the last whole cell leaves over is split between the two ends, so the
-     block of cells stands in the middle of the panel rather than against one
-     edge with the remainder showing at the other. */
-  margin-inline: auto;
-  background: var(--service-display-cell);
-  background-size: var(--service-display-cell-size, auto);
   /* One line each. A reading longer than the panel is cut rather than wrapped,
      the way a real one runs out of characters. */
   overflow: hidden;
@@ -2729,7 +2816,7 @@
 }
 
 .service-display-line + .service-display-line {
-  color: var(--service-display-colour-quiet);
+  color: var(--vfd-colour-quiet);
   /* A block, so the cut above shows as a cut. The first line is a flex row
      because it carries the state word and the figure side by side, and
      `text-overflow` does not act on a flex container: this line held only text
@@ -2758,7 +2845,7 @@
 }
 
 .service-display .service-uptime {
-  color: var(--service-display-colour-quiet);
+  color: var(--vfd-colour-quiet);
   /* Written as the panel prints it rather than shouted with the readings. */
   text-transform: none;
 }
@@ -2772,11 +2859,11 @@
   the chevron is drawn instead, so no design shows both.
 */
 /*
-  The key and the plate above it, as one part of the face.
+  The key and the display above it, as one part of the face.
 
-  They are the same width because they are cut into the same panel: the plate
-  takes the key's width rather than the width of the word on it. The pair is
-  aligned as a whole, so the key alone no longer carries an offset.
+  They are the same width because they are cut into the same panel, and it is
+  now the display that states it: four cells across, which the key reads. The
+  pair is aligned as a whole, so the key alone carries no offset.
 */
 .disclosure-stack {
   flex: none;
@@ -2787,12 +2874,12 @@
   margin-block-end: var(--disclosure-mark-offset, 0px);
 }
 
+/* The window over the key, which says the same word whether the plot is open
+   or shut and only changes what it is lit in. Its width comes from its own
+   four cells, and the key below reads that same width, so the two are one
+   column cut into the plate. */
 .disclosure-label {
-  /* The key's own width, so the plate and the key beneath it are one column
-     cut into the same panel. */
-  width: var(--disclosure-mark-width);
   color: var(--disclosure-label-colour);
-  text-align: center;
 }
 
 /* Both keys that open something: a service's own, and the one that opens every
@@ -2801,24 +2888,6 @@
 .toggle-all.is-expanded .disclosure-label {
   color: var(--disclosure-label-colour-on);
   text-shadow: var(--disclosure-label-glow-on);
-}
-
-/*
-  Every window whose word is lit, throwing onto the walls of its own cut.
-
-  One rule for all of them, because the glow takes `currentColor` and each of
-  these already carries the colour it is lit in: the two protocol lamps in
-  their protocol's, an open plot in red, and the chosen range in amber.
-*/
-.protocol-badge[data-present="true"],
-.service[data-open="true"] .disclosure-label,
-.toggle-all.is-expanded .disclosure-label,
-.range-button[aria-pressed="true"] .disclosure-label {
-  border-top-color: var(--plate-lit-head);
-  border-right-color: var(--plate-lit-right);
-  border-bottom-color: var(--plate-lit-foot);
-  border-left-color: var(--plate-lit-left);
-  box-shadow: var(--service-display-shadow), var(--plate-lit-spill);
 }
 
 .disclosure-stack .disclosure-mark {
