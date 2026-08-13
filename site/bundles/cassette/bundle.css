@@ -1060,16 +1060,22 @@
   --service-name-padding: 0px 2px;
   --service-name-radius: 0px;
   --service-name-shadow: none;
+  /* Brass, lit a little further than the plate around it. Each stop is lifted
+     in lightness and saturation, the darker ones more than the lighter, so the
+     whole letter reads brighter without the top stops burning out to white:
+     the foot moves 41.6 to 48.0 in lightness whilst the crown moves 82.9 to
+     86.2. The hue stays where it was, a touch under 45 degrees, because past
+     that brass turns to gold paint. */
   --service-name-fill: linear-gradient(
     to bottom,
-    #ffe7a8 0%,
-    #f5cf6a 18%,
-    #e6b53f 40%,
-    #d09b22 49%,
-    #ffe08a 57%,
-    #edc356 74%,
-    #d5a534 90%,
-    #b8871c 100%
+    #ffedb9 0%,
+    #fada7b 18%,
+    #eec452 40%,
+    #e4b02d 49%,
+    #ffe69d 57%,
+    #f3d068 74%,
+    #dfb546 90%,
+    #daa31a 100%
   );
   --service-name-colour: transparent;
   --service-name-stroke: 0px;
