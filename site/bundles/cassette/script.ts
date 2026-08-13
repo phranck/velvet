@@ -22,6 +22,12 @@ import {
   type ChartView,
 } from "@velvet/bundle-plugins/response-chart";
 import {
+  readOpen,
+  readRange,
+  writeOpen,
+  writeRange,
+} from "@velvet/bundle-plugins/preferences";
+import {
   barsForRange,
   rangeLabel,
   uptimeForRange,
@@ -122,7 +128,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
   const page = root.querySelector<HTMLElement>(".cassette-page") ?? root;
   const undo: Array<() => void> = [];
   const rows: Row[] = [];
-  let range = data.site.defaultRange as RangeKey;
+  let range = readRange(data.site.defaultRange as RangeKey);
 
   /**
    * The strip's appearance as it stands now.
@@ -278,6 +284,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
     row.open = open;
     row.root.dataset.open = String(open);
     row.summary.setAttribute("aria-expanded", String(open));
+    writeOpen(row.id, open);
     if (open && !row.chartBuilt) {
       row.chart.update(
         data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id),
@@ -324,6 +331,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
   /** Switches the range and refreshes everything that depends on it. */
   function selectRange(next: RangeKey): void {
     range = next;
+    writeRange(next);
     for (const button of buttons) {
       button.setAttribute("aria-pressed", String(button.dataset.range === next));
     }
@@ -343,7 +351,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         data.status.generatedAt,
         data.status.monitoringStartedAt,
       );
-      row.uptime.textContent = `${figure} Uptime`;
+      row.uptime.textContent = figure;
       // Rewritten with the figure, because the label replaces the contents and
       // the figure is half of what the row says.
       row.summary.setAttribute(
@@ -403,6 +411,14 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
   if (powered) watch.observe(powered);
   undo.push(() => watch.disconnect());
 
+  // The markup was written with the installation's own default, so the keys
+  // have to be told which window this visitor actually left the page on.
+  for (const button of buttons) {
+    button.setAttribute("aria-pressed", String(button.dataset.range === range));
+  }
+  // Whatever this visitor left open, before the first draw, so a restored row
+  // is drawn open rather than opening itself once the page is already there.
+  for (const row of rows) setOpen(row, readOpen(row.id));
   reflectToggleAll();
   refresh();
   placeMark(false);

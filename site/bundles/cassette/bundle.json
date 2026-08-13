@@ -10,13 +10,31 @@
     "styles": "bundle.css",
     "script": "script.ts"
   },
-  "layouts": ["cards"],
+  "layouts": [
+    "cards"
+  ],
   "readings": "panel",
   "preview": "assets/preview.svg",
   "plugins": [
-    { "name": "status", "version": 1 },
-    { "name": "uptime-strip", "version": 1 },
-    { "name": "response-chart", "version": 2 },
-    { "name": "disclosure", "version": 1 }
+    {
+      "name": "status",
+      "version": 1
+    },
+    {
+      "name": "uptime-strip",
+      "version": 1
+    },
+    {
+      "name": "response-chart",
+      "version": 2
+    },
+    {
+      "name": "disclosure",
+      "version": 1
+    },
+    {
+      "name": "preferences",
+      "version": 1
+    }
   ]
 }
