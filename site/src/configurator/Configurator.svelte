@@ -59,6 +59,7 @@
   import {
     exportedSettingsFingerprint,
     isConfiguratorDirty,
+    openStateDiffers,
     saveShortcutAction,
   } from "./configurator-state";
   import {
@@ -322,10 +323,11 @@
     const nextOpenMap = Object.fromEntries(
       configuredServices.map(({ id }) => [id, previewOpenMap[id] ?? true]),
     );
-    if (JSON.stringify(nextOpenMap) !== JSON.stringify(previewOpenMap)) {
+    if (openStateDiffers(nextOpenMap, previewOpenMap)) {
       previewOpenMap = nextOpenMap;
     }
   });
+
 
   $effect(() => {
     persistConfiguratorSession(
