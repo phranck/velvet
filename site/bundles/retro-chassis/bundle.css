@@ -809,6 +809,17 @@
   );
   --range-led-glow-on: inset 0 1px 2px rgb(0 0 0 / 0.75),
     0 0 7px rgb(255 176 58 / 0.85), 0 0 16px rgb(255 176 58 / 0.5);
+  /*
+    What a lit window throws onto the walls of its own cut.
+
+    A window is sunk into the plate, so light coming from inside it falls on
+    the four walls around it before it reaches the reader. It takes
+    `currentColor`, which on a lit plate is already the colour the letters
+    glow in, so red announces a plot and amber a setting without either being
+    named twice.
+  */
+  --plate-rim-glow: inset 0 0 7px
+    color-mix(in srgb, currentColor 42%, transparent);
   /* The plate above the key, which is the same window as a protocol's and
      carries the same word whether the plot is open or shut. */
   --disclosure-label-colour: #6b4a44;
@@ -2175,7 +2186,7 @@
 
 .range-card .ranges {
   flex: 0 0 auto;
-  gap: var(--space-section);
+  gap: var(--space-block);
 }
 
 /* Its own padding is what the control carries when it stands loose in a bar.
@@ -2750,9 +2761,26 @@
   text-align: center;
 }
 
-.service[data-open="true"] .disclosure-label {
+/* Both keys that open something: a service's own, and the one that opens every
+   service at once. The plate reports the same state either way. */
+.service[data-open="true"] .disclosure-label,
+.toggle-all.is-expanded .disclosure-label {
   color: var(--disclosure-label-colour-on);
   text-shadow: var(--disclosure-label-glow-on);
+}
+
+/*
+  Every window whose word is lit, throwing onto the walls of its own cut.
+
+  One rule for all of them, because the glow takes `currentColor` and each of
+  these already carries the colour it is lit in: the two protocol lamps in
+  their protocol's, an open plot in red, and the chosen range in amber.
+*/
+.protocol-badge[data-present="true"],
+.service[data-open="true"] .disclosure-label,
+.toggle-all.is-expanded .disclosure-label,
+.range-button[aria-pressed="true"] .disclosure-label {
+  box-shadow: var(--service-display-shadow), var(--plate-rim-glow);
 }
 
 .disclosure-stack .disclosure-mark {
