@@ -682,7 +682,10 @@
   */
   /* The plate and the key are one part of the face, and that part stands in
      the middle of the panel beside it. */
-  --disclosure-mark-self: center;
+  /* Top of the row, so the OPEN plate and the first protocol lamp beside it
+     stand on one line. The two stacks are different heights, so centring each
+     of them puts their first elements 3.5px apart. */
+  --disclosure-mark-self: start;
   --disclosure-mark-offset: 0px;
   /* Wide enough for the word on the plate above the key, which the key takes
      as well so the two are one column: OPEN measures 27px, and this leaves it
@@ -890,7 +893,10 @@
   --service-name-self: stretch;
   /* Side by side on one line, because the pair stands at the leading edge of
      the caption over the plot rather than in the row above it. */
-  --protocols-self: center;
+  /* Aligned to the top of the row, as the key beside them is, so the first
+     lamp and the OPEN plate stand on one line. Centred, the two stacks are
+     different heights and their first elements never meet. */
+  --protocols-self: start;
   --protocols-justify: center;
   /* One above the other, in the gap between the readout and the key. Two lamps
      side by side wanted the width of the readout; stacked they want the height
@@ -1045,6 +1051,25 @@
      and the shadow under it. */
   --service-name-rule-height: 6px;
   --service-name-rule-gap: 16px;
+  /*
+    What the rounding leaves over, and half of it.
+
+    The readout takes whole cells, so the row is left with whatever did not
+    make up a full one. That remainder collected at the trailing edge, which
+    put the key 34.8px off the right cheek whilst the readout stood 16px off
+    the left. Half of it is added to the leading inset instead, so the panel
+    sits between the cheeks rather than against one of them, at every width the
+    rounding happens to produce.
+  */
+  --service-row-slack: calc(
+    (100cqw - var(--service-display-reserve) - var(--service-display-frame)) -
+      round(
+        down,
+        calc(100cqw - var(--service-display-reserve) - var(--service-display-frame)),
+        var(--service-display-cell-advance, 1px)
+      )
+  );
+  --service-row-inset-start: calc(var(--row-inset) + var(--service-row-slack) / 2);
   /*
     A half-round bar, the curved side towards the reader.
 
@@ -2265,7 +2290,11 @@
   align-items: center;
   gap: var(--space-row);
   width: 100%;
-  padding: 0 var(--row-inset);
+  /* The readout stands off the left cheek by what the key stands off the right
+     one. The key is narrower than the space its stack reserves, so the right
+     gap came out at 34.8px against 16 on the left, and the panel looked pushed
+     against the woodwork. */
+  padding: 0 var(--row-inset) 0 var(--service-row-inset-start);
   border: 0;
   background: none;
   color: inherit;
