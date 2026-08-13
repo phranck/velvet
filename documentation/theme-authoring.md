@@ -341,7 +341,7 @@ Everything here was found by building. Each is a case where a design would have 
 2. **Copy the closest existing bundle.** The table in section 1 says what each one is. Copying is the intended way: designs are redundant on purpose.
 3. **Rename the root class and the directory**, and write the manifest.
 4. **Decide the shape, the strip and the plot deliberately.** This is what separates a design from a recolour. Ask what a panel *is* here: a box, a field beside a rail, a chamfered plate, a bracketed region, or nothing. Then ask what a day *is*: a block, a capsule, a tick, a stack, or part of one divided run.
-5. **Name the faces in `site/scripts/bundle-fonts.ts` and run `bundles:fonts`.** A design that shows no icons gets no icon face.
+5. **Name the faces in `site/scripts/bundle-faces.ts` and run `bundles:fonts`.** A design that shows no icons gets no icon face. Add each face to `THIRD_PARTY_NOTICES.md` in the same step, because that file is what ships as the attribution and `site/test/third-party-notices.test.ts` holds the two lists against each other.
 6. **Run both gates.** `bundles:verify` first, because it fails in a second; then `bundles:conform`. Expect failures on the first run; every design had them.
 7. **Drive it in the gallery and read figures back.** All five ranges, all three overlays, every fixture, the disclosure, the chart's arrow keys, both layouts if the manifest claims both, and 320, 375 and 430 pixels wide.
 8. **Then look at it.** Measuring proves the geometry; only looking catches a shape that is technically correct and visually wrong. Both are required, and in that order.
