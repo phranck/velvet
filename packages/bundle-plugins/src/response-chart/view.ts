@@ -554,14 +554,20 @@ export function createChartView(
     const yFor = (value: number): number =>
       plotBottom - (value / maximum) * (plotBottom - plotTop);
 
+    /*
+      The drawing carries no name of its own, and no `title`.
+
+      Its host is the graphic: `plotHost` takes `role="img"` and an `aria-label`
+      naming the service and reading out every series, which is more than a
+      title could say. A second name inside it made one graphic announce itself
+      twice, and an SVG `title` is also what a browser shows as a tooltip, so
+      Safari put one over the plot for as long as the pointer was on it.
+    */
     const root = svg("svg", {
       class: "chart-svg",
       viewBox: `0 0 ${VIEW_WIDTH} ${tokens.height}`,
-      role: "img",
+      "aria-hidden": "true",
     });
-    const title = svg("title");
-    title.textContent = `Response time history for ${serviceName}`;
-    root.append(title);
 
     if (tokens.fill > 0) {
       const defs = svg("defs");
