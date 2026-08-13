@@ -810,16 +810,28 @@
   --range-led-glow-on: inset 0 1px 2px rgb(0 0 0 / 0.75),
     0 0 7px rgb(255 176 58 / 0.85), 0 0 16px rgb(255 176 58 / 0.5);
   /*
-    What a lit window throws onto the walls of its own cut.
+    What a lit panel does to the chamfer around its hole.
 
-    A window is sunk into the plate, so light coming from inside it falls on
-    the four walls around it before it reaches the reader. It takes
-    `currentColor`, which on a lit plate is already the colour the letters
-    glow in, so red announces a plot and amber a setting without either being
-    named twice.
+    The chamfer's four faces are lit by the room, and the panel behind the hole
+    lights them a second time from inside. What that changes most is the face
+    under the head: it turns away from the room and is the darkest thing on the
+    plate, so it is the one surface where light from behind is the only light
+    there is. The foot is already the lit face and takes least.
+
+    That turns the facets over. Unlit, the room lights the foot and leaves the
+    head black; lit, the panel is the brighter source and it stands behind the
+    hole, so the head becomes the bright face and the foot the quiet one. Half
+    strength on each made the two cancel out and the chamfer read as an even
+    ring, which is a sticker and not a cut. `currentColor` is the colour
+    the letters glow in, so red announces a plot and amber a setting without
+    either being named twice.
   */
-  --plate-rim-glow: inset 0 0 7px
-    color-mix(in srgb, currentColor 42%, transparent);
+  --plate-lit-head: color-mix(in srgb, currentColor 78%, var(--plate-chamfer-head));
+  --plate-lit-left: color-mix(in srgb, currentColor 34%, var(--plate-chamfer-left));
+  --plate-lit-right: color-mix(in srgb, currentColor 40%, var(--plate-chamfer-right));
+  --plate-lit-foot: color-mix(in srgb, currentColor 9%, var(--plate-chamfer-foot));
+  /* What reaches the brushed metal just outside the hole. */
+  --plate-lit-spill: 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
   /* The plate above the key, which is the same window as a protocol's and
      carries the same word whether the plot is open or shut. */
   --disclosure-label-colour: #6b4a44;
@@ -989,7 +1001,7 @@
   */
   --badge-width: 43px;
   --service-display-frame: calc(
-    2 * var(--service-display-edge-width) + var(--service-display-inset) - 0.33px +
+    2 * var(--plate-chamfer) + var(--service-display-inset) - 0.33px +
       var(--service-display-inset) - 4.47px
   );
   /* What still stands beside the readout, which is the key and the gaps
@@ -1003,10 +1015,6 @@
     calc(var(--service-display-inset) - 4.47px)
     calc(var(--service-display-inset) - 1.8px)
     calc(var(--service-display-inset) - 0.33px);
-  /* No rim: a window cut into a plate has none, and the protocol windows beside
-     it are drawn without one. What says it is sunk is the shadow falling in. */
-  --service-display-edge-width: 0px;
-  --service-display-edge-colour: #16202a;
   --service-display-radius: 5px;
   /*
     The dots that are not lit, as the cells they belong to.
@@ -1087,8 +1095,28 @@
      edge, and a hairline of the metal along the bottom. */
   /* One pixel deeper than it was, so the cut reads at the size these windows
      are drawn at. */
-  --service-display-shadow: inset 0 3px 5px rgb(0 0 0 / 0.78),
-    inset 0 -1px 0 rgb(0 0 0 / 0.55), 0 1px 0 rgb(232 220 196 / 0.09);
+  /*
+    A hole milled through the faceplate, with a 45 degree chamfer round it.
+
+    A chamfer is four surfaces rather than four walls, and each turns a
+    different way to the light, which stands above and a little to the left as
+    it does over the whole case. So the face under the head turns down and away
+    and is the darkest thing on the plate; the one at the foot turns up into
+    the light and is the brightest; the left takes more than the right.
+
+    Drawn as a border, because a border's four sides meet at 45 degrees. That
+    is the chamfer itself rather than an impression of one, and it is why these
+    four colours are not a gradient: a milled edge has facets, not a fade.
+  */
+  --plate-chamfer: 2px;
+  --plate-chamfer-head: #05070a;
+  --plate-chamfer-left: #262a30;
+  --plate-chamfer-right: #14171b;
+  --plate-chamfer-foot: #444a52;
+  /* What the cut throws inward past its own chamfer, and the lip of metal the
+     plate keeps below the hole. */
+  --service-display-shadow: inset 0 2px 3px rgb(0 0 0 / 0.62),
+    0 1px 0 rgb(232 220 196 / 0.09);
   /* Its own row beneath the strip, so it takes the full measure and needs
      neither a flex share nor a width reserved out of the readout's. `block`
      rather than `grid`, because text-overflow only acts on a block container
@@ -2532,6 +2560,12 @@
 .disclosure-label {
   background: var(--display-glass);
   box-shadow: var(--service-display-shadow);
+  border-style: solid;
+  border-width: var(--plate-chamfer);
+  border-top-color: var(--plate-chamfer-head);
+  border-right-color: var(--plate-chamfer-right);
+  border-bottom-color: var(--plate-chamfer-foot);
+  border-left-color: var(--plate-chamfer-left);
 }
 
 /*
@@ -2543,8 +2577,8 @@
 .disclosure-label {
   box-sizing: border-box;
   padding-block: var(--badge-padding-block);
-  border: var(--badge-border-width) var(--rule-style)
-    var(--badge-edge, var(--surface-rule));
+  /* No `border` shorthand here. The chamfer above is drawn as four border
+     colours, and a shorthand after them throws all four away. */
   border-radius: var(--badge-radius);
   font-family: var(--badge-font, var(--font-meta));
   font-size: var(--text-size-badge);
@@ -2625,8 +2659,8 @@
   );
   min-width: 0;
   padding: var(--service-display-padding);
-  border: var(--service-display-edge-width) var(--rule-style)
-    var(--service-display-edge-colour);
+  /* No `border` shorthand here either: the chamfer above is four border
+     colours, and a shorthand after them throws all four away. */
   border-radius: var(--service-display-radius);
   color: var(--service-display-colour);
   font-family: var(--service-display-font);
@@ -2780,7 +2814,11 @@
 .service[data-open="true"] .disclosure-label,
 .toggle-all.is-expanded .disclosure-label,
 .range-button[aria-pressed="true"] .disclosure-label {
-  box-shadow: var(--service-display-shadow), var(--plate-rim-glow);
+  border-top-color: var(--plate-lit-head);
+  border-right-color: var(--plate-lit-right);
+  border-bottom-color: var(--plate-lit-foot);
+  border-left-color: var(--plate-lit-left);
+  box-shadow: var(--service-display-shadow), var(--plate-lit-spill);
 }
 
 .disclosure-stack .disclosure-mark {
