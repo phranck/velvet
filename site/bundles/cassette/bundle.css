@@ -1040,7 +1040,7 @@
      to one yellow tone: a stripe, not a moulding. These are the same brass
      read at the scale a moulding is seen at, which is a lit edge, the metal,
      and the shadow under it. */
-  --service-name-rule-height: 7px;
+  --service-name-rule-height: 6px;
   --service-name-rule-gap: 16px;
   /*
     A half-round bar, the curved side towards the reader.
