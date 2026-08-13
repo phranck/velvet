@@ -1052,25 +1052,6 @@
   --service-name-rule-height: 6px;
   --service-name-rule-gap: 16px;
   /*
-    What the rounding leaves over, and half of it.
-
-    The readout takes whole cells, so the row is left with whatever did not
-    make up a full one. That remainder collected at the trailing edge, which
-    put the key 34.8px off the right cheek whilst the readout stood 16px off
-    the left. Half of it is added to the leading inset instead, so the panel
-    sits between the cheeks rather than against one of them, at every width the
-    rounding happens to produce.
-  */
-  --service-row-slack: calc(
-    (100cqw - var(--service-display-reserve) - var(--service-display-frame)) -
-      round(
-        down,
-        calc(100cqw - var(--service-display-reserve) - var(--service-display-frame)),
-        var(--service-display-cell-advance, 1px)
-      )
-  );
-  --service-row-inset-start: calc(var(--row-inset) + var(--service-row-slack) / 2);
-  /*
     A half-round bar, the curved side towards the reader.
 
     The section runs across the thickness rather than down a slope. On a round
@@ -2288,13 +2269,21 @@
   container-type: inline-size;
   display: flex;
   align-items: center;
+  /*
+    The readout takes whole cells, so the row is left with whatever did not
+    make up a full one. Centred, that remainder is halved between the two ends
+    instead of collecting at the trailing one, which is what puts the readout
+    off the left cheek by exactly what the key stands off the right.
+
+    Shared by the layout rather than worked out and added to the leading inset.
+    A length in `cqw` is measured against the nearest ancestor container, and
+    this row is the container the readout asks, not one it can ask itself, so
+    such a figure would follow the window's width rather than the row's.
+  */
+  justify-content: center;
   gap: var(--space-row);
   width: 100%;
-  /* The readout stands off the left cheek by what the key stands off the right
-     one. The key is narrower than the space its stack reserves, so the right
-     gap came out at 34.8px against 16 on the left, and the panel looked pushed
-     against the woodwork. */
-  padding: 0 var(--row-inset) 0 var(--service-row-inset-start);
+  padding: 0 var(--row-inset);
   border: 0;
   background: none;
   color: inherit;
