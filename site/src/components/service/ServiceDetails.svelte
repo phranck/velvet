@@ -17,6 +17,7 @@
     responseSeries,
     range,
     generatedAt,
+    monitoringStartedAt,
     open,
     id,
     chart,
@@ -27,6 +28,7 @@
     responseSeries: ResponseTimesDocument["series"];
     range: RangeKey;
     generatedAt: string;
+    monitoringStartedAt: string;
     open: boolean;
     id: string;
     chart: VelvetTheme["chart"];
@@ -69,6 +71,7 @@
       series={responseSeries}
       {range}
       {generatedAt}
+      {monitoringStartedAt}
       {chart}
     />
   </div>

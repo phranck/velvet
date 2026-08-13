@@ -39,12 +39,12 @@ const service: Service = {
 test("derives uptime bars from Velvet daily availability", () => {
   const bars = barsForRange(
     service,
-    "week",
+    "month",
     "2026-07-27T12:00:00.000Z",
     "2026-07-26T00:00:00.000Z",
   );
 
-  assert.equal(bars.length, 7);
+  assert.equal(bars.length, 30);
   assert.equal(bars[4]?.hasData, false);
   assert.deepEqual(bars.slice(-2).map(({ status, minutesDown, hasData }) => ({
     status,
@@ -60,7 +60,7 @@ test("computes range uptime from monitored and unavailable seconds", () => {
   assert.equal(
     uptimeForRange(
       service,
-      "week",
+      "month",
       "2026-07-27T12:00:00.000Z",
       "2026-07-26T00:00:00.000Z",
     ),
@@ -141,9 +141,9 @@ test("marks completed maintenance on the affected service day without changing a
 
   const [day] = barsForRange(
     operationalService,
-    "day",
+    "all",
     "2026-07-27T12:00:00.000Z",
-    "2026-07-26T00:00:00.000Z",
+    "2026-07-27T00:00:00.000Z",
     [maintenance],
   );
 
@@ -167,9 +167,9 @@ test("marks completed maintenance on the affected service day without changing a
   assert.equal(
     uptimeForRange(
       operationalService,
-      "day",
+      "all",
       "2026-07-27T12:00:00.000Z",
-      "2026-07-26T00:00:00.000Z",
+      "2026-07-27T00:00:00.000Z",
     ),
     "100.00%",
   );
@@ -189,9 +189,9 @@ test("keeps outage priority and deduplicates maintenance in aggregated bars", ()
 
   const bars = barsForRange(
     service,
-    "year",
+    "all",
     "2026-07-27T12:00:00.000Z",
-    "2026-07-26T00:00:00.000Z",
+    "2026-01-01T00:00:00.000Z",
     [maintenance],
   );
   const latest = bars.at(-1);

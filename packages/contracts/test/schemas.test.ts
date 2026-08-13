@@ -114,7 +114,7 @@ const EVERY_STATUS_PAGE_FIELD: Record<string, unknown> = {
   customDomain: "status.example.com",
   design: "cassette",
   layout: "cards",
-  defaultRange: "7d",
+  defaultRange: "90d",
   logoHeight: 96,
   logoUrl: "./logo.svg",
   navigation: [{ title: "Home", href: "https://example.com" }],

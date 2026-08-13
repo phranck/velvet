@@ -23,6 +23,7 @@ test("fills the 90-day preview range with 82 days of dummy response data", () =>
   const { start, end } = responseRangeWindow(
     "quarter",
     PREVIEW_RESPONSE_TIMES.generatedAt,
+    PREVIEW_STATUS.monitoringStartedAt,
   );
 
   for (const series of [websiteIpv4, backendIpv4]) {

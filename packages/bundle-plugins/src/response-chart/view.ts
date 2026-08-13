@@ -27,18 +27,10 @@ import {
 } from "./arithmetic.js";
 import type { RangeKey, ResponseSeries } from "../data.js";
 import { createOverlay } from "../overlay/index.js";
+import { rangeLabel } from "../status.js";
 
 /** The version a manifest names to use this plugin. */
 export const VERSION = 2;
-
-/** How each range is named at the left edge of the plot. */
-const RANGE_LABEL: Record<RangeKey, string> = {
-  day: "24h ago",
-  week: "7 days ago",
-  month: "30 days ago",
-  quarter: "90 days ago",
-  year: "1 year ago",
-};
 
 /** Everything the chart needs in order to lay itself out. */
 export interface ResponseChartStyle {
@@ -248,6 +240,7 @@ export function createChartView(
   serviceId: string,
   serviceName: string,
   generatedAt: string,
+  monitoringStartedAt: string,
   options: ResponseChartOptions = {},
 ): ChartView {
   const report = options.report;
@@ -314,7 +307,7 @@ export function createChartView(
   */
   let filtered: Series = [];
   let timestamps: string[] = [];
-  let rangeWindow = responseRangeWindow(range, generatedAt);
+  let rangeWindow = responseRangeWindow(range, generatedAt, monitoringStartedAt);
   /*
     The frame a render is waiting on, or 0 whilst none is.
 
@@ -374,9 +367,14 @@ export function createChartView(
    * pointer handlers read these rather than deriving them per event.
    */
   function deriveState(): void {
-    filtered = filterResponseSeries(series, range, generatedAt);
+    filtered = filterResponseSeries(
+      series,
+      range,
+      generatedAt,
+      monitoringStartedAt,
+    );
     timestamps = availableResponseTimestamps(filtered);
-    rangeWindow = responseRangeWindow(range, generatedAt);
+    rangeWindow = responseRangeWindow(range, generatedAt, monitoringStartedAt);
   }
 
   /**
@@ -727,7 +725,7 @@ export function createChartView(
       pointRadius: tokens.pointRadius,
     };
 
-    axisFrom.textContent = RANGE_LABEL[range];
+    axisFrom.textContent = rangeLabel(range, monitoringStartedAt);
 
     const description = withSamples
       .map((entry) => {

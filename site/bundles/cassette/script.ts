@@ -23,6 +23,7 @@ import {
 } from "@velvet/bundle-plugins/response-chart";
 import {
   barsForRange,
+  rangeLabel,
   uptimeForRange,
   type RangeKey,
 } from "@velvet/bundle-plugins/status";
@@ -192,7 +193,13 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         style: stripStyle,
         report: (reading) => readOut(row, reading),
       }),
-      chart: createChartView(chartHost, entry.id, entry.name, data.generatedAt, {
+      chart: createChartView(
+        chartHost,
+        entry.id,
+        entry.name,
+        data.generatedAt,
+        data.status.monitoringStartedAt,
+        {
         style: CHART_GEOMETRY,
         // Nothing floats over this page: the scale is read where the pointer
         // stands on it, and the panel above already says what the service is
@@ -326,7 +333,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
 
   /** Redraws every service for the current range. */
   function refresh(): void {
-    const from = rangeNamed(range).from;
+    const from = rangeLabel(range, data.status.monitoringStartedAt);
     for (const row of rows) {
       const entry = data.status.services.find(({ id }) => id === row.id);
       if (!entry) continue;

@@ -144,13 +144,13 @@ test(
         `.service[data-service-id="${first.id}"] .service-uptime`,
       );
       const before = await figure.textContent();
-      await page.locator('.range-button[data-range="week"]').click();
+      await page.locator('.range-button[data-range="quarter"]').click();
       const after = await figure.textContent();
       assert.equal(
         after?.includes(
           uptimeForRange(
             first,
-            "week",
+            "quarter",
             built.status.generatedAt,
             built.status.monitoringStartedAt,
           ),

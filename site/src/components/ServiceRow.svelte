@@ -17,6 +17,7 @@
     rangeLabel,
     range,
     generatedAt,
+    monitoringStartedAt,
     responseSeries,
     icon,
     open,
@@ -29,6 +30,7 @@
     rangeLabel: string;
     range: RangeKey;
     generatedAt: string;
+    monitoringStartedAt: string;
     responseSeries: ResponseTimesDocument["series"];
     icon: string;
     open: boolean;
@@ -58,6 +60,7 @@
     {responseSeries}
     {range}
     {generatedAt}
+    {monitoringStartedAt}
     {open}
     id={detailsId}
     {chart}

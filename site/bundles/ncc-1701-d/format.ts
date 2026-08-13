@@ -8,18 +8,22 @@
  * one `Intl.DateTimeFormat`.
  */
 
-/** The five ranges, in the order and with the labels the product uses. */
+/**
+ * The three ranges, in the order and with the labels the product uses.
+ *
+ * None of them carries what stands at its far end, because `all` reaches back
+ * to the day the installation began and that is a different date on every one.
+ * `rangeLabel` in the status plugin answers it from the data instead.
+ */
 export const RANGES = [
-  { key: "day", label: "24h", description: "The last 24 hours", from: "24h ago" },
-  { key: "week", label: "7d", description: "The last 7 days", from: "7 days ago" },
-  { key: "month", label: "30d", description: "The last 30 days", from: "30 days ago" },
-  { key: "quarter", label: "90d", description: "The last 90 days", from: "90 days ago" },
-  { key: "year", label: "1yr", description: "The last 12 months", from: "1 year ago" },
+  { key: "month", label: "30d", description: "The last 30 days" },
+  { key: "quarter", label: "90d", description: "The last 90 days" },
+  { key: "all", label: "All", description: "Everything measured" },
 ] as const;
 
 /** One range by key, falling back to the month a page opens in. */
 export function rangeNamed(key: string): (typeof RANGES)[number] {
-  return RANGES.find((option) => option.key === key) ?? RANGES[2];
+  return RANGES.find((option) => option.key === key) ?? RANGES[0];
 }
 
 const EVENT_TIME = new Intl.DateTimeFormat("en-GB", {

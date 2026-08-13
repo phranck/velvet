@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { RangeKey, ResponseTimesDocument } from "../../lib/types";
-  import { RANGE_LABEL } from "../../lib/data";
+  import { rangeLabel } from "../../lib/data";
   import {
     availableResponseTimestamps,
     downsampleResponseSamples,
@@ -23,6 +23,7 @@
     series,
     range,
     generatedAt,
+    monitoringStartedAt,
     chart,
   }: {
     serviceId: string;
@@ -30,6 +31,7 @@
     series: ResponseSeries;
     range: RangeKey;
     generatedAt: string;
+    monitoringStartedAt: string;
     chart: VelvetTheme["chart"];
   } = $props();
 
@@ -47,7 +49,7 @@
   const descriptionId = $derived(`response-chart-${serviceId}-description`);
   const summaryId = $derived(`response-chart-${serviceId}-summary`);
   const filteredSeries = $derived(
-    filterResponseSeries(series, range, generatedAt),
+    filterResponseSeries(series, range, generatedAt, monitoringStartedAt),
   );
   const preparedSeries = $derived.by(() =>
     filteredSeries.map((entry) => ({
@@ -173,7 +175,7 @@
   }
 
   function xForTimestamp(timestamp: string): number {
-    const { start, end } = responseRangeWindow(range, generatedAt);
+    const { start, end } = responseRangeWindow(range, generatedAt, monitoringStartedAt);
     return (
       PLOT_LEFT +
       ((Date.parse(timestamp) - start) / (end - start)) *
@@ -196,7 +198,7 @@
       1,
       Math.max(0, (event.clientX - rect.left) / rect.width),
     );
-    const { start, end } = responseRangeWindow(range, generatedAt);
+    const { start, end } = responseRangeWindow(range, generatedAt, monitoringStartedAt);
     activeTimestamp = nearestResponseTimestamp(
       hoverTimestamps,
       start + ratio * (end - start),
@@ -379,7 +381,7 @@
           </g>
         {/if}
         <g class="axis-labels mono" aria-hidden="true">
-          <text x={PLOT_LEFT} y="140">{RANGE_LABEL[range]}</text>
+          <text x={PLOT_LEFT} y="140">{rangeLabel(range, monitoringStartedAt)}</text>
           <text x={PLOT_RIGHT} y="140" text-anchor="end">Now</text>
         </g>
       </svg>

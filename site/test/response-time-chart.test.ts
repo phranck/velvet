@@ -29,8 +29,9 @@ async function renderChart(
       serviceId: "website",
       serviceName: "Website",
       series,
-      range: "day",
+      range: "month",
       generatedAt: "2026-07-27T12:00:00.000Z",
+      monitoringStartedAt: "2026-07-26T00:00:00.000Z",
       chart,
     })
     .catch(() => "");
@@ -142,13 +143,15 @@ test("renders a single response sample as an intentional point", async () => {
 });
 
 test("renders an explicit empty state when the selected range has no samples", async () => {
+  // Well outside the thirty days the chart is rendered over below, so the
+  // series exists and the window still holds none of it.
   const html = await renderChart([
     {
       serviceId: "website",
       checkId: "website-ipv4",
       protocol: "ipv4",
       samples: [
-        { timestamp: "2026-07-20T12:00:00.000Z", responseTimeMs: 90 },
+        { timestamp: "2026-05-01T12:00:00.000Z", responseTimeMs: 90 },
       ],
     },
   ]);

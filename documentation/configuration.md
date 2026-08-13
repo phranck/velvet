@@ -176,7 +176,7 @@ statusPage:
 | `logoHeight` | no | `72` | Display height from `16` through `256` px. |
 | `design` | no | the page Velvet ships | The design the page is published in, named by its bundle. A design carries its own appearance, so `theme` and `fonts` do not apply to one. A name no installed design answers to stops the build rather than publishing a different design under your domain. |
 | `layout` | no | `grouped` | `grouped` for one shared service card or `cards` for one card per service. |
-| `defaultRange` | no | `30d` | Initial range: `24h`, `7d`, `30d`, `90d`, or `1yr`. A visitor's saved choice wins later. |
+| `defaultRange` | no | `30d` | Initial range: `30d`, `90d`, or `all`. `all` reaches back to the day your installation began measuring, so it grows with it. A visitor's saved choice wins later. |
 | `navigation` | no | `[]` | Up to 16 links with `title` and `href`. **None of the four designs draws them.** A published page carries the installation's name and its readings and nothing else, so links written here reach the page's data and are shown nowhere. |
 | `theme` | no | Velvet Default | Theme name plus optional semantic visual overrides. |
 | `fonts.sans` | no | the reader's own sans-serif | CSS font-family for normal interface text. Left unset, the page uses whatever sans-serif the reader's machine supplies, because the page itself fetches no typeface. A name given here has to be a face your visitors already have. |
