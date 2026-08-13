@@ -879,12 +879,10 @@
      No frame around it: a hole in a plate has no rim, and the shadow falling
      into it is what says it is sunk. The lettering is the panel's own face at
      the weight a character generator prints. */
-  --badge-fill: var(--display-glass);
   --badge-border-width: 0px;
   --badge-font: var(--service-display-font);
   --badge-weight: 700;
   --badge-glow: 0 0 6px color-mix(in srgb, currentColor 55%, transparent);
-  --badge-shadow: var(--service-display-shadow);
   --badge-absent-edge: #2b2519;
   --badge-absent-fill: #0d0b07;
   /* An unlit lamp is a reading, so it is dimmer than a lit one and it is
@@ -2427,22 +2425,45 @@
   gap: var(--space-hair);
 }
 
-.protocol-badge {
+/*
+  The glass, cut into the plate three times.
+
+  The readout, the two protocol lamps and the plate above the key are one
+  window in three sizes: the same sheet, the same shadow falling into it, no rim
+  on any of them. Stated once, because three copies of it are three things that
+  have to be kept alike and one that eventually is not.
+*/
+.service-display,
+.protocol-badge,
+.disclosure-label {
+  background: var(--display-glass);
+  box-shadow: var(--service-display-shadow);
+}
+
+/*
+  The two small windows, which differ from the readout in carrying a single
+  printed word rather than a reading, and from each other only in their width,
+  their colour and what they do with the word.
+*/
+.protocol-badge,
+.disclosure-label {
   box-sizing: border-box;
-  /* A window in a plate is a stated size, not the size of the word in it, so
-     the row's arithmetic can count on it. */
-  width: var(--badge-width, auto);
-  padding: var(--badge-padding-block) var(--badge-padding-inline);
+  padding-block: var(--badge-padding-block);
   border: var(--badge-border-width) var(--rule-style)
     var(--badge-edge, var(--surface-rule));
   border-radius: var(--badge-radius);
-  background: var(--badge-fill);
-  box-shadow: var(--badge-shadow, none);
-  color: var(--text-2);
   font-family: var(--badge-font, var(--font-meta));
   font-size: var(--text-size-badge);
   font-weight: var(--badge-weight, inherit);
   line-height: 1;
+}
+
+.protocol-badge {
+  /* A window in a plate is a stated size, not the size of the word in it, so
+     the row's arithmetic can count on it. */
+  width: var(--badge-width, auto);
+  padding-inline: var(--badge-padding-inline);
+  color: var(--text-2);
   text-shadow: var(--badge-glow);
 }
 
@@ -2513,8 +2534,6 @@
   border: var(--service-display-edge-width) var(--rule-style)
     var(--service-display-edge-colour);
   border-radius: var(--service-display-radius);
-  background: var(--display-glass);
-  box-shadow: var(--service-display-shadow);
   color: var(--service-display-colour);
   font-family: var(--service-display-font);
   font-size: var(--service-display-size);
@@ -2631,19 +2650,10 @@
 }
 
 .disclosure-label {
-  box-sizing: border-box;
+  /* The key's own width, so the plate and the key beneath it are one column
+     cut into the same panel. */
   width: var(--disclosure-mark-width);
-  padding-block: var(--badge-padding-block);
-  border: var(--badge-border-width) var(--rule-style)
-    var(--badge-edge, var(--surface-rule));
-  border-radius: var(--badge-radius);
-  background: var(--badge-fill);
-  box-shadow: var(--badge-shadow, none);
   color: var(--disclosure-label-colour);
-  font-family: var(--badge-font, var(--font-meta));
-  font-size: var(--text-size-badge);
-  font-weight: var(--badge-weight, inherit);
-  line-height: 1;
   text-align: center;
 }
 

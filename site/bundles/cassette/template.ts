@@ -52,14 +52,25 @@ const HEADLINE: Record<string, string> = {
  * @returns The markup for the key, decorative throughout: what it does is said
  *   by the control around it.
  */
-function key(labelled = false): string {
-  const plate = labelled
-    ? `<span class="disclosure-label">OPEN</span>`
-    : "";
+function key(plate = ""): string {
   return `<span class="disclosure-stack" aria-hidden="true">
       ${plate}
       <span class="disclosure-mark"></span>
     </span>`;
+}
+
+/**
+ * The plate above the key, which carries a printed word.
+ *
+ * Its own function rather than a flag on `key`, so the caller states what the
+ * stack holds instead of switching a child on. The control that opens every row
+ * at once carries no plate and simply passes nothing.
+ *
+ * @param word - What is printed on it.
+ * @returns The plate's markup.
+ */
+function keyPlate(word: string): string {
+  return `<span class="disclosure-label">${escape(word)}</span>`;
 }
 
 /**
@@ -186,7 +197,7 @@ function service(
         <span class="service-display-line">${escape(window?.description ?? "")}</span>
       </span>
       ${protocols(entry)}
-      ${key(true)}
+      ${key(keyPlate("OPEN"))}
     </button>
     <div class="uptime-strip-host"></div>
     <div class="strip-axis">
