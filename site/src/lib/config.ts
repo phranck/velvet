@@ -78,14 +78,25 @@ export interface VelvetConfig {
   seo?: { title?: string; description?: string; image?: string };
 }
 
-const DEFAULTS: Omit<VelvetConfig, "owner" | "repo" | "dataBaseUrl"> = {
+/**
+ * What a configuration is filled up with where it says nothing.
+ *
+ * `theme` is deliberately absent. The return below states it explicitly and so
+ * overrides both this and the loaded document, which made the entry here a
+ * value nothing ever read whilst reading as though it were the theme a silent
+ * configuration gets. That theme comes from `resolveTheme(undefined)`, which is
+ * the same call the return makes for a document naming no theme.
+ */
+const DEFAULTS: Omit<
+  VelvetConfig,
+  "owner" | "repo" | "dataBaseUrl" | "theme"
+> = {
   dataBranch: "main",
   name: "Status",
   navbar: [{ title: "Status", href: "/" }],
   layout: "grouped",
   defaultRange: "month",
   logoHeight: 72,
-  theme: resolveTheme(),
   icons: {},
 };
 
