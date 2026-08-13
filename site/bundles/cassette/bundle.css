@@ -1040,12 +1040,34 @@
      to one yellow tone: a stripe, not a moulding. These are the same brass
      read at the scale a moulding is seen at, which is a lit edge, the metal,
      and the shadow under it. */
-  --service-name-rule-height: 5px;
+  --service-name-rule-height: 7px;
   --service-name-rule-gap: 16px;
-  /* The height the fill is drawn over, which is the height of a capital, so
-     the moulding is a strip of the same metal rather than the whole gradient
-     compressed. */
-  --service-name-rule-scale: 1em;
+  /*
+    A half-round bar, the curved side towards the reader.
+
+    The section runs across the thickness, not down a slope, which is what
+    every earlier attempt drew. On a round bar lit from above the brightest
+    point is not the top edge: the top edge is the silhouette and turns away,
+    the highlight sits a little below it where the surface faces the light
+    square on, and from there the metal darkens as the curve rolls under. The
+    bottom edge is silhouette again and darkest of all.
+
+    Eight stops with soft steps between them, because a curve has no steps. The
+    letters' fill is the same brass read down a face rather than across a bar,
+    which is why it cannot be used here unchanged.
+  */
+  --service-name-rule-fill: linear-gradient(
+    to bottom,
+    #6b4d0a 0%,
+    #a2740f 8%,
+    #e8bd44 18%,
+    #fff8dc 30%,
+    #ffe9a8 40%,
+    #e8bd44 56%,
+    #c9942a 70%,
+    #8a6410 85%,
+    #4a350a 100%
+  );
   /* The moulding stands off the plate: a dark line under it and a thread of
      light along its crown, which is what the letters get from their own glow. */
   /* Down onto the middle of the capitals. The row centres on the line box,
@@ -2291,17 +2313,13 @@
   content: "";
   height: var(--service-name-rule-height);
   border-radius: calc(var(--service-name-rule-height) / 2);
-  /* The letters' own fill and the letters' own shadow, at the letters' own
-     scale: the gradient is laid out over the height of a capital and the
-     moulding shows the band of it that falls where the moulding sits. Given
-     the strip's own five pixels instead, all eight stops are squeezed into
-     them and the brass flattens to one tone. */
-  background-image: var(--service-name-fill);
-  background-size: 100% var(--service-name-rule-scale);
-  background-position: center;
+  /* The section across the bar, so it is drawn over the strip's own height
+     rather than a capital's. */
+  background-image: var(--service-name-rule-fill);
   -webkit-background-clip: border-box;
   background-clip: border-box;
-  box-shadow: var(--service-name-glow);
+  /* What a bar standing off the faceplate throws onto it. */
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
   translate: 0 var(--service-name-rule-shift);
 }
 
