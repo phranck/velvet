@@ -485,34 +485,38 @@
     cut by it.
   */
   --case-socket-inset: calc((var(--case-plate) - var(--case-socket)) / 2);
+  /* The screw heads are the machined grey they were, warmed by this much
+     towards the accent, which is what makes them brass rather than steel and
+     keeps all four in step. */
+  --case-warmth: 22%;
   --card-ornament-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), radial-gradient(
       circle 7px at 50% 50%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #2a251d) 84% 96%,
       transparent 96%
     ),
     radial-gradient(
       circle 7px at 50% 50%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), radial-gradient(
       circle 7px at 50% 50%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), radial-gradient(
       circle 7px at 50% 50%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #2a251d) 84% 96%,
       transparent 96%
     ),
     /* The face lies behind everything that closes the case, so each of them
@@ -694,22 +698,21 @@
   --disclosure-mark-height: 22px;
   --disclosure-mark-radius: 3px;
   /*
-    Brushed brass rather than aluminium, so the key belongs to the same metal
-    the name is cut in.
+    The metal the key is cut from, and the only colour it is given.
 
-    Three layers, in the order light meets them: the sheen where the face is
-    domed, the brushing, and the metal itself. The brushing runs along the
-    key's long side, because that is the direction a face like this is drawn
-    across the wheel, and it is a pair of hairlines rather than a texture: one
-    catching the light and one in its shadow, repeated every two pixels.
-
-    Each face is the machined grey it was, warmed by this much towards the
-    accent, which is what keeps the three states in step.
+    Every face below is this one lightness-shifted, so the key is one metal in
+    three lightings rather than three sets of colours that have to be kept in
+    step. `oklch(from …)` moves the lightness and leaves the chroma and the hue
+    where they are, which is what a curved metal face does: it goes lighter
+    towards the light and darker as it rolls away, and it stays the same brass
+    throughout. Lightening towards white instead drains the yellow out of the
+    crown, and a face whose highlight has no colour in it reads as aluminium.
   */
-  /* The same machined face, in brass rather than aluminium: every grey below is
-     warmed by this much towards the accent, which keeps the three states in
-     step and leaves the shape of the key exactly as it was. */
-  --key-warmth: 22%;
+  --key-base: #a89a7c;
+  /*
+    The dome, lit from above: the crown catches the light, the middle is the
+    metal itself, and the face darkens as it turns under.
+  */
   --disclosure-mark-fill: radial-gradient(
       ellipse 120% 90% at 50% 38%,
       rgb(255 255 255 / 0.22),
@@ -717,10 +720,12 @@
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #cfcdc7) 0%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #a5a29b) 52%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8b887f) 100%
+      oklch(from var(--key-base) calc(l + 0.107) c h) 0%,
+      var(--key-base) 52%,
+      oklch(from var(--key-base) calc(l - 0.066) c h) 100%
     );
+  /* The same dome under a stronger light, so the whole face lifts rather than
+     only its crown. */
   --disclosure-mark-fill-hover: radial-gradient(
       ellipse 120% 90% at 50% 38%,
       rgb(255 255 255 / 0.34),
@@ -728,10 +733,12 @@
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #e2e0da) 0%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #b6b3ac) 52%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #9a978f) 100%
+      oklch(from var(--key-base) calc(l + 0.152) c h) 0%,
+      oklch(from var(--key-base) calc(l + 0.044) c h) 52%,
+      oklch(from var(--key-base) calc(l - 0.027) c h) 100%
     );
+  /* Pressed, the face sits below the plate and the lighting turns over: the top
+     edge falls into shadow and the light reaches the foot instead. */
   --disclosure-mark-fill-pressed: radial-gradient(
       ellipse 120% 90% at 50% 62%,
       rgb(255 255 255 / 0.14),
@@ -739,9 +746,9 @@
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #98958d) 0%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #b0ada6) 55%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c4c1ba) 100%
+      oklch(from var(--key-base) calc(l - 0.033) c h) 0%,
+      oklch(from var(--key-base) calc(l + 0.028) c h) 55%,
+      oklch(from var(--key-base) calc(l + 0.077) c h) 100%
     );
   --disclosure-mark-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65),
     inset 0 -1px 0 rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.55);
