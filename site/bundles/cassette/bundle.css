@@ -3397,6 +3397,23 @@
   justify-self: end;
   margin-inline-end: var(--stamp-inset-inline);
 }@media (max-width: 560px) {
+  /*
+    On a phone every component in the rack is one width.
+
+    The device sizes itself to its row of keys, which reads as deliberate
+    beside a wide service and as arbitrary once the services are as narrow as
+    the screen. Here it takes the same width they do, and its keys spread
+    across that instead of huddling in the middle.
+  */
+  .range-card {
+    width: 100%;
+  }
+
+  .range-card .range-bar {
+    justify-content: space-between;
+    gap: var(--space-block);
+  }
+
   /* The range buttons and the expand control need more room than a phone has
      beside a group name, so the row wraps rather than pushing the last control
      past the edge. Measured at 320px before this: the control stood 18px
