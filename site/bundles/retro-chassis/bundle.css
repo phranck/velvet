@@ -942,6 +942,9 @@
     against one wall. This stands the same distance off both.
   */
   --vfd-small-inset: 4px;
+  /* Less above and below, because the line already carries its own leading
+     whilst a cell carries no gap at its leading edge. */
+  --vfd-small-inset-block: 2px;
   /*
     What those four cells come to across.
 
@@ -2657,18 +2660,26 @@
 /*
   A window sized by what it reads rather than by what it says.
 
-  Its width is the number of characters it holds, so the six small windows come
-  out one size whatever word each of them prints, and that size follows the
-  face rather than being a figure somebody picked. The chamfer stands outside
-  those cells, which is what `border-box` is doing here.
+  Its width is the number of characters it holds and its height the number of
+  lines, so the six small windows come out one size whatever word each of them
+  prints, and that size follows the face rather than being a figure somebody
+  picked. Glass stands round the characters on all four sides, less of it above
+  and below than beside, because a line already carries its own leading and the
+  cells do not. The chamfer sits outside that, which is what `border-box` is
+  doing here.
 */
 .vfd--sized {
+  display: grid;
+  /* The characters sit in the middle of the glass rather than at the top of it,
+     which is where a box taller than its line would otherwise leave them. */
+  align-content: center;
   width: calc(
     var(--vfd-columns) * var(--vfd-cell-advance) + 2 * var(--vfd-inset, 0px) +
       2 * var(--plate-chamfer)
   );
   height: calc(
-    var(--vfd-lines) * var(--vfd-cell-height) + 2 * var(--plate-chamfer)
+    var(--vfd-lines) * var(--vfd-cell-height) +
+      2 * var(--vfd-inset-block, 0px) + 2 * var(--plate-chamfer)
   );
   /* No `border` shorthand here. The chamfer is drawn as four border colours,
      and a shorthand after them throws all four away. */
@@ -2698,6 +2709,7 @@
   --vfd-columns: var(--vfd-small-columns);
   --vfd-lines: var(--vfd-small-lines);
   --vfd-inset: var(--vfd-small-inset);
+  --vfd-inset-block: var(--vfd-small-inset-block);
 }
 
 .protocol-badge {
