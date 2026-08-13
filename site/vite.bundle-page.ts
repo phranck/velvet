@@ -38,7 +38,7 @@ import { bundleDataFor, layoutFor, selectBundle } from "./src/lib/bundles/host.j
 import type { BundleData } from "./src/lib/bundles/data.js";
 import type { BundleManifest } from "./src/lib/bundles/manifest.js";
 import { readBundles } from "./scripts/bundles.js";
-import { fileAt, fileByUrl } from "./vite.status-prerender.js";
+import { embeddable, fileAt, fileByUrl } from "./vite.status-prerender.js";
 
 /** The document the design is rendered into, before the design fills it. */
 export const DESIGN_ENTRY_HTML = "status-design.html";
@@ -72,22 +72,6 @@ export function designNamedIn(configPath: string): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-/**
- * Escapes a JSON payload for embedding inside a script element.
- *
- * A document sequence inside the payload would otherwise end the element early
- * and the rest of it would be parsed as markup. The data comes from a
- * repository's own configuration and incident text, so it is not Velvet's to
- * trust.
- */
-function embeddable(value: unknown): string {
-  return JSON.stringify(value)
-    .replaceAll("<", "\\u003c")
-    .replaceAll(">", "\\u003e")
-    .replaceAll(" ", "\\u2028")
-    .replaceAll(" ", "\\u2029");
 }
 
 /** Everything the plugin needs to know before it can build anything. */

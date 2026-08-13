@@ -52,7 +52,10 @@ const STRIP_GEOMETRY = {
   // A segment cut into the plate cannot rise out of it, so the day under the
   // pointer lights up instead of standing up.
   hover: "lighten",
-  hoverLighten: 0.38,
+  hoverLighten: 0.52,
+  // A little more than the default, so the stack reads as lit from above at a
+  // glance rather than on inspection.
+  reliefSpread: 0.26,
   align: "center",
   pieces: 4,
   pieceGap: 2,
@@ -60,24 +63,27 @@ const STRIP_GEOMETRY = {
 
 /**
  * The plot: the lit scale of a receiver. The trace runs from edge to edge with
- * no value axis, and a printed scale of ticks hangs below it, every fourth one
- * drawn long. The ticks are in the drawing's own units rather than in pixels,
- * because they belong between the readings and the two range labels and both of
- * those scale with the drawing.
+ * no value axis, and a printed scale of ticks hangs below it.
+ *
+ * The two lengths are all this design states about that scale. How far apart
+ * the marks stand is the plugin's, because it follows from how long the window
+ * is: an hour apart over a day, a day apart over a month, a week apart over a
+ * year.
  */
 const CHART_GEOMETRY = {
   height: 150,
   insetInline: 0,
   insetBlock: 22,
-  gridLines: 3,
+  // Five rules, so the dial carries four figures rather than two. A scale of
+  // this kind is read by the figure nearest the needle, and two of them across
+  // the whole face leave most of it unlabelled.
+  gridLines: 5,
   lineWidth: 2,
   pointRadius: 3,
   tooltipWidth: 140,
   fill: 0.32,
-  tickStep: 8,
-  tickMajorEvery: 4,
-  tickMinor: 4,
-  tickMajor: 8,
+  tickMinor: 9,
+  tickMajor: 13,
 } as const;
 
 /** One state colour, as the stylesheet resolved it. */
@@ -188,6 +194,10 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
       }),
       chart: createChartView(chartHost, entry.id, entry.name, data.generatedAt, {
         style: CHART_GEOMETRY,
+        // Nothing floats over this page: the scale is read where the pointer
+        // stands on it, and the panel above already says what the service is
+        // doing.
+        tooltip: false,
         report: (reading) => readOut(row, reading),
       }),
       chartBuilt: false,

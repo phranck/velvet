@@ -47,10 +47,15 @@ export const fileByUrl: FetchImplementation = async (input) => {
  * repository's own configuration and incident text, so it is not Velvet's to
  * trust.
  *
+ * Exported because both publish paths write a payload into a script element,
+ * and which of the two runs is decided by the configuration of the repository
+ * the page is built for. One definition, so a change to what is escaped cannot
+ * reach one path and miss the other.
+ *
  * @param value - The state to embed.
  * @returns JSON that cannot terminate the element that carries it.
  */
-function embeddable(value: unknown): string {
+export function embeddable(value: unknown): string {
   return JSON.stringify(value)
     .replaceAll("<", "\\u003c")
     .replaceAll(">", "\\u003e")

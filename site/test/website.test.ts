@@ -93,14 +93,30 @@ test("binds the published output to velvet.li and publishes nothing into the tre
   );
   assert.equal(cname.trim(), "velvet.li");
 
-  const viteConfig = await readFile(
-    resolve(import.meta.dirname, "../vite.website.ts"),
-    "utf8",
+  // Read as the resolved configuration rather than as the text of the file,
+  // because what matters is where the build writes and under what name, not
+  // how the configuration happens to be spelt. Asserted against the source, it
+  // broke when the four page configurations were factored into `staticPage`
+  // whilst producing byte-identical output.
+  const viteConfig = (await import("../vite.website.js")).default;
+  assert.equal(
+    viteConfig.build?.outDir,
+    resolve(import.meta.dirname, "../dist-website"),
   );
   // GitHub Pages serves a directory index, so the entry has to arrive as
-  // index.html rather than website.html.
-  assert.match(viteConfig, /renameHtmlEntry\("website\.html"\)/);
-  assert.match(viteConfig, /outDir: websiteOutDir/);
+  // index.html rather than website.html. `renameHtmlEntry` names its plugin
+  // after the entry it renames.
+  // Flattened by hand rather than with `flat(Infinity)`, because Vite's
+  // PluginOption is recursive and resolving it that way makes the compiler
+  // give up with "Type instantiation is excessively deep".
+  const plugins = (viteConfig.plugins ?? []) as unknown[];
+  const named = plugins
+    .flatMap((plugin) => (Array.isArray(plugin) ? (plugin as unknown[]) : [plugin]))
+    .map((plugin) => (plugin as { name?: string } | null)?.name);
+  assert.ok(
+    named.includes("velvet-website-index-filename"),
+    "the website entry is not renamed to index.html",
+  );
 
   // Unlike onboarding/ and configurator/, which the setup service serves out of
   // the repository, this build is uploaded by the workflow. Committing it would

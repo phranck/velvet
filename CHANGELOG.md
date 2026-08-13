@@ -1,5 +1,23 @@
 # Changelog
 
+## Version 1.1.0 (2026-08-13)
+
+The Cassette design is now built as the machine it emulates.
+
+Its readout is a real dot-matrix panel: one character size, brightness as the only difference between what it says and what it says it about, and a grid of separate five-by-nine cells with every character standing on exactly one of them. The panel takes whole cells and nothing beyond them, with the same margin of metal on all four sides.
+
+The sun above the services is symmetric, its five colours are the ones the readings below are drawn in, and the page's name is lettered across its middle band.
+
+The days of a service are sunk into the faceplate rather than sitting on it, the day under the pointer lights up instead of standing up, and a day nothing was measured on is the plate barely lifted. The service name is cut in brass that stays brass at every point of its depth: it used to go almost black in the middle, where the eye reads it.
+
+The screws that close a faceplate stand in the middle of their plate and their sockets sit concentric with their heads.
+
+A design can now say how its strip is read and what the day under the pointer does. The three other designs say nothing and are unchanged.
+
+Two corrections reach a published page. The typeface notices copied into every installation now credit Atomic Age, which the Cassette design has always carried and which was named nowhere: its licence shipped beside the file all along, so only the published summary was short. They also no longer credit Tangerine, which no design carries.
+
+A page published without a design starts in the colours it ends in. Eight of the values it was drawn from before the theme arrived disagreed with the theme that replaced them, so a page built before its first check had run repainted once the browser had read its configuration.
+
 ## Version 1.0.1 (2026-08-12)
 
 A status page is now published in the design its configuration names.

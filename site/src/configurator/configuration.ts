@@ -27,6 +27,7 @@ import {
   normalizeThemeConfiguration,
   resolveTheme,
 } from "../lib/theme.js";
+import { isRecord } from "../lib/records.js";
 
 export type ConfiguratorTheme = ReturnType<typeof normalizeThemeConfiguration>;
 export type ConfiguratorDocument = Record<string, unknown>;
@@ -416,10 +417,6 @@ function configuratorThemeFromCanonical(
       ...(lineStyle === undefined ? {} : { ipv4LineStyle: lineStyle }),
     },
   } as NonNullable<Parameters<typeof resolveTheme>[0]>;
-}
-
-function isRecord(value: unknown): value is ConfiguratorDocument {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function validateHexTheme(theme: ReturnType<typeof resolveTheme>): void {

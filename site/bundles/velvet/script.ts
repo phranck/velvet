@@ -67,8 +67,6 @@ const CHART_GEOMETRY = {
   pointRadius: 3,
   tooltipWidth: 136,
   fill: 0.28,
-  tickStep: 0,
-  tickMajorEvery: 4,
   tickMinor: 0,
   tickMajor: 0,
 } as const;

@@ -9,6 +9,7 @@ import type {
   OnboardingDraft,
   ServiceDraft,
 } from "./state.js";
+import { isRecord } from "../lib/records.js";
 
 export const ONBOARDING_SESSION_STORAGE_KEY = "velvet.onboarding.session.v1";
 
@@ -222,6 +223,3 @@ function assertionValueType(value: unknown): value is AssertionValueType {
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

@@ -153,30 +153,6 @@ function protocols(service: BundleData["status"]["services"][number]): string {
   return `<span class="service-protocols" aria-label="Protocol reachability" data-single="${String(single)}">${badges}</span>`;
 }
 
-/** What each protocol last answered, behind the key that opens the row. */
-function readings(service: BundleData["status"]["services"][number]): string {
-  return service.checks
-    .map((check, index) => {
-      const separator =
-        index > 0
-          ? `<span class="protocol-separator" aria-hidden="true">|</span>`
-          : "";
-      const name = check.protocol === "ipv6" ? "IPv6" : "IPv4";
-      const latency =
-        check.responseTimeMs === null
-          ? "unavailable"
-          : `${Math.round(check.responseTimeMs)} ms`;
-      return `${separator}<div class="protocol-reading" role="listitem" data-protocol="${escape(check.protocol)}" data-status="${escape(check.status)}">
-        <span class="protocol-name">${name}</span>
-        <span class="protocol-value">
-          <strong class="protocol-state">${escape(check.status === "operational" ? "up" : check.status)}</strong>
-          <span class="protocol-latency">${escape(latency)}</span>
-        </span>
-      </div>`;
-    })
-    .join("");
-}
-
 /**
  * One service, as a component in the rack.
  *
@@ -203,7 +179,6 @@ function service(
   return `<article class="service" data-service-id="${escape(entry.id)}" data-open="false">
     <button class="service-summary" type="button" aria-expanded="false" aria-controls="details-${escape(entry.id)}" aria-label="${escape([entry.name, `${figure} uptime`, spoken].filter(Boolean).join(", "))}">
       <span class="service-name">${escape(entry.name)}</span>
-      ${protocols(entry)}
       <span class="service-display">
         <span class="service-display-line">
           <span class="service-display-main">${escape(STATE_WORD[entry.status] ?? "No data")}</span>
@@ -220,7 +195,7 @@ function service(
     </div>
     <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
-        <div class="protocol-readings" role="list" aria-label="Protocol status">${readings(entry)}</div>
+        ${protocols(entry)}
         <div class="chart-host"></div>
       </div>
     </div>

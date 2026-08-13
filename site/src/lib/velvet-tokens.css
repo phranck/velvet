@@ -185,4 +185,28 @@
      field carries more air above and after the word than below and before it.
      The pixel comes off the two sides that have it to spare. */
   --velvet-code-inset: calc(0.125em - 1px) calc(0.375em - 1px) 0.125em 0.375em;
+
+  /* The setup namespace, which the onboarding and the website both draw in.
+     Declared here rather than in each of them, because both stated the same
+     twelve aliases and a comment in one of them said so without anything
+     making it true. --setup-text-lead had already drifted apart by the time
+     that was noticed.
+
+     Two names are deliberately absent and stay with the surface that sets
+     them. --setup-control-height differs because a form and a page are worked
+     with differently, and --setup-text-lead because of the two scales the type
+     section above describes: one vocabulary, two scales. A surface that needs
+     its own value states it after this file, under the same name. */
+  --setup-accent: var(--velvet-accent);
+  --setup-base: var(--velvet-base);
+  --setup-panel: var(--velvet-surface-card);
+  --setup-panel-raised: var(--velvet-surface-raised);
+  --setup-text: var(--velvet-text);
+  --setup-muted: var(--velvet-text-muted);
+  --setup-font: var(--velvet-font);
+  --setup-heading-font: var(--velvet-font-heading);
+  --setup-text-small: var(--velvet-text-small);
+  --setup-text-body: var(--velvet-text-body);
+  --setup-text-copy: var(--velvet-text-copy);
+  --setup-text-intro: var(--velvet-text-intro);
 }

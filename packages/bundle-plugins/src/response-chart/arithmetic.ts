@@ -2,6 +2,7 @@ import type { RangeKey, ResponseSeries } from "../data.js";
 
 type ResponseSamples = ResponseSeries[number]["samples"];
 
+const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 const RANGE_MS: Record<RangeKey, number> = {
   day: DAY_MS,
@@ -10,6 +11,38 @@ const RANGE_MS: Record<RangeKey, number> = {
   quarter: 90 * DAY_MS,
   year: 365 * DAY_MS,
 };
+
+/**
+ * The units a printed scale may divide a window into, finest first.
+ *
+ * A tick stands for a length of time rather than for a distance across the
+ * drawing, so which unit it is follows from how long the window is rather than
+ * from what the window is called. That is what lets one rule serve a window of
+ * six hours and one of six years alike.
+ *
+ * Each unit carries the grouping a reader of that unit expects: quarter days
+ * on an hourly scale, whole days on a six-hourly one, five days on a daily
+ * one, four weeks on a weekly one, and a quarter on a monthly one.
+ */
+const SCALE_UNITS: Array<{ every: number; majorEvery: number }> = [
+  { every: HOUR_MS, majorEvery: 6 },
+  { every: 6 * HOUR_MS, majorEvery: 4 },
+  { every: DAY_MS, majorEvery: 5 },
+  { every: 2 * DAY_MS, majorEvery: 5 },
+  { every: 7 * DAY_MS, majorEvery: 4 },
+  { every: 30 * DAY_MS, majorEvery: 3 },
+  { every: 365 * DAY_MS, majorEvery: 5 },
+];
+
+/**
+ * How many ticks a scale carries before it reads as a band rather than a
+ * scale.
+ *
+ * The widest plot a design draws measures 856px, where sixty ticks stand
+ * 14.3px apart. Below that the marks stop being separable and the scale says
+ * nothing the two end labels do not.
+ */
+const MOST_TICKS = 60;
 
 export function monotonePath(points: Array<{ x: number; y: number }>): string {
   if (points.length === 0) return "";
@@ -94,6 +127,85 @@ export function responseRangeWindow(
 ): { start: number; end: number } {
   const end = Date.parse(generatedAt);
   return { start: end - RANGE_MS[range], end };
+}
+
+/**
+ * The ticks of a printed scale across a window of time.
+ *
+ * Counted back from the window's end, so the right edge always carries a long
+ * tick: a scale of this kind is read from now backwards, and a remainder
+ * shorter than the unit belongs at the far end where nothing stands against
+ * it.
+ *
+ * Where each tick falls is the arithmetic's rather than a design's, on the
+ * same grounds the curve is: a scale that divides a window of thirty days into
+ * anything but days is telling a reader something about time that is not true
+ * of what they are looking at.
+ *
+ * @param window - The stretch of time the plot covers.
+ * @returns One entry per tick, earliest first, each saying when it stands and
+ *   whether it is a long one. Empty where the window has no length.
+ */
+export function responseScaleTicks(window: {
+  start: number;
+  end: number;
+}): Array<{ at: number; major: boolean }> {
+  const span = window.end - window.start;
+  if (span <= 0) return [];
+  const unit =
+    SCALE_UNITS.find(({ every }) => span / every <= MOST_TICKS) ??
+    SCALE_UNITS.at(-1)!;
+  const ticks: Array<{ at: number; major: boolean }> = [];
+  for (let step = 0; ; step += 1) {
+    const at = window.end - step * unit.every;
+    if (at < window.start) break;
+    ticks.push({ at, major: step % unit.majorEvery === 0 });
+  }
+  return ticks.reverse();
+}
+
+/**
+ * The figures a value axis is allowed to climb in, as multiples of a power of
+ * ten.
+ *
+ * A reader compares one service against the next by the figures beside the
+ * grid, so those figures have to be ones anybody reads without working them
+ * out. 150 and 400 are such figures at any magnitude; 220 and 1060 are what a
+ * fixed step of twenty milliseconds produces once the readings leave the range
+ * it was chosen for.
+ */
+const AXIS_MANTISSAS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+
+/**
+ * The smallest step an axis climbs in, in milliseconds.
+ *
+ * Below this the figures start repeating as the plot rounds them, and a
+ * service answering in single milliseconds says nothing more with a grid at
+ * two than with one at ten.
+ */
+const SMALLEST_AXIS_STEP = 10;
+
+/**
+ * What one grid line stands apart from the next by, in milliseconds.
+ *
+ * The top of the axis is this times the number of steps rather than the
+ * highest reading itself. Scaling to the reading made every service look
+ * alike: one running at 96ms and one at 412ms both filled the plot to the top,
+ * and the shape said nothing about how slow either was.
+ *
+ * @param highest - The largest reading the plot has to hold.
+ * @param steps - How many gaps stand between the floor and the top.
+ * @returns A round figure at least as large as an even share of the readings.
+ */
+export function responseAxisStep(highest: number, steps: number): number {
+  const wanted = Math.max(highest, 0) / Math.max(1, steps);
+  if (wanted <= SMALLEST_AXIS_STEP) return SMALLEST_AXIS_STEP;
+  const power = 10 ** Math.floor(Math.log10(wanted));
+  for (const mantissa of AXIS_MANTISSAS) {
+    const candidate = mantissa * power;
+    if (candidate >= wanted) return candidate;
+  }
+  return 10 * power;
 }
 
 export function filterResponseSeries(

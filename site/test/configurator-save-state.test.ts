@@ -42,13 +42,22 @@ test("reports a download when direct file saves are unavailable", async () => {
 });
 
 test("attaches the fallback download link before activating it", async () => {
-  const configurator = await readFile(
-    resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
+  // In lib/download.ts since the Configurator handed the fallback over. A
+  // detached anchor is ignored by some browsers, so the order is the point.
+  const download = await readFile(
+    resolve(import.meta.dirname, "../src/lib/download.ts"),
     "utf8",
   );
 
   assert.match(
-    configurator,
+    download,
     /document\.body\.append\(anchor\);\s*anchor\.click\(\);\s*anchor\.remove\(\);/,
+  );
+  assert.match(
+    await readFile(
+      resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
+      "utf8",
+    ),
+    /downloadFile\(filename, source, "application\/yaml;charset=utf-8"\)/,
   );
 });

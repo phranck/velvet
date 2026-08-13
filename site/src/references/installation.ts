@@ -11,6 +11,8 @@
  * choose, since an installation may name a custom domain.
  */
 
+import { isRecord } from "../lib/records.js";
+
 /** What the setup service discloses about a consenting installation. */
 export interface Reference {
   statusPageName: string;
@@ -94,9 +96,6 @@ async function readJson(
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 /**
  * Reduces every service's state to the one the page is in.

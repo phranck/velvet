@@ -38,7 +38,12 @@
 
   /* ── Surface ──────────────────────────────────────────────────────────── */
   --surface-base: #191714;
-  --surface-card: #14120f;
+  /* The faceplate, and it has to read as one: a plate at the page's own tone is
+     not a part standing on a surface, it is the surface. Graphite rather than
+     the warm brown around it, because the plate is metal and the cheeks either
+     side of it are wood, and a machine of this period puts exactly those two
+     next to each other. */
+  --surface-card: #141518;
   --surface-rule: #3b342a;
   --surface-popover: #0d0b09;
 
@@ -135,7 +140,10 @@
   --text-size-badge: 11px;
   --text-size-lead: 16px;
   --text-size-section: 14px;
-  --text-size-service: 40px;
+  /* The plate's face is a display one and sets wide, so it is smaller here than
+     a script would be: Database measures 163px at this size against 192 at 40,
+     and every 14 pixels the plate takes is one cell fewer on the panel. */
+  --text-size-service: 34px;
   --text-size-headline: 30px;
   --text-size-hero-glyph: 44px;
   --text-size-ornament: 20px;
@@ -161,7 +169,13 @@
   --detail-edge-width: 0px;
   --detail-edge-colour: var(--surface-rule);
   --detail-fill: transparent;
-  --chart-rule-width: var(--rule-width);
+  /* Nothing above the plot: the window's own edge is what separates it from
+     the plate, and a rule drawn there is a second separator for one thing. */
+  --chart-rule-width: 0px;
+  /* The scale reads itself: the trace's colours are the two protocol windows
+     above it, and a key repeating them is a caption for something already
+     labelled. */
+  --chart-legend-display: none;
   --chart-rule-colour: var(--surface-rule);
   /* The opened panel is not a card, so it adds nothing of its own: everything
      inside the case stands the same distance from it, which is the card's
@@ -171,7 +185,10 @@
   --card-radius-base: 12px;
   --card-radius: 12px;
   --card-clip: none;
-  --card-border-width: 1px;
+  /* No line around the case: what ends it is the wood at its sides and the
+     plates at its ends, and a rule drawn over those reads as a frame the object
+     does not have. */
+  --card-border-width: 0px;
   --card-shadow: 0 10px 22px rgb(0 0 0 / 0.55);
   --control-radius: 5px;
   --control-border-width: 1px;
@@ -240,9 +257,43 @@
     stand, and a lamp behind it warming the whole face. The trace runs across
     that scale the way the tuning needle does.
   */
+  /*
+    The scale is a window in the same plate as the panel above it, cut with a
+    larger corner because it is a larger window: the panel's 5px reads as a
+    square hole at 856 by 200, where this reads as milled. No rim, because a
+    hole in a plate has none.
+  */
   --chart-plot-inset: 0px;
   --chart-plot-edge-width: 0px;
-  --chart-plot-edge-colour: #4a4033;
+  --chart-plot-edge-colour: transparent;
+  --chart-plot-radius: 9px;
+  /*
+    The four walls of the cut, over everything in the window.
+
+    The light stands above and a little to the left, which is the same light
+    the case is drawn by. So the wall under the top edge is in shadow and
+    throws furthest, the wall behind the leading edge throws a shorter one
+    across, the trailing one less again, and the wall at the foot is the one
+    the light reaches: a hairline of bare metal along the bottom of the cut.
+
+    The panel above states one shadow for all of this, which is enough at 623
+    by 53 and not at 856 by 200: a single throw from the top edge leaves the
+    other three sides flat, and a flat side reads as a printed rectangle rather
+    than as a hole.
+
+    One throw per wall and no more. Blurred throws add where they meet, so a
+    fifth one darkening the foot stood under the hairline that lights it and
+    the two corners at the top carried the sum of two. The fill below already
+    darkens towards the bottom, which is the third thing that was adding.
+  */
+  --chart-plot-shadow: inset 0 4px 6px rgb(0 0 0 / 0.45),
+    inset 3px 0 5px rgb(0 0 0 / 0.22), inset -3px 0 5px rgb(0 0 0 / 0.18),
+    inset 0 -1px 0 rgb(232 220 196 / 0.12);
+  /* The lip the cut leaves in the plate at its lower edge, outside the window
+     rather than in it. It sits on the plot itself, because the window clips
+     its own contents and an outset shadow drawn by a child is cut away with
+     them. */
+  --chart-plot-lip: 0 1px 0 rgb(232 220 196 / 0.09);
   --chart-plot-fill: radial-gradient(
       ellipse 80% 130% at 50% 100%,
       rgb(232 163 61 / 0.22),
@@ -259,11 +310,21 @@
   --chart-needle-width: 7px;
   --chart-needle-fill: rgb(232 220 196 / 0.10);
   --chart-needle-edge: rgb(232 220 196 / 0.22);
-  /* The printed scale: a tick every 8 units of the drawing, every fourth one
-     long, hanging under the graph with the range's two ends below it. */
+  /* The printed scale, standing on the foot of the plot with the range's two
+     ends below it. A mark is a length of time rather than a distance across
+     the drawing, so how far apart they stand follows from the window and only
+     their two lengths are stated here. */
   --chart-tick-colour: rgb(232 220 196 / 0.45);
   --chart-tick-major-colour: rgb(232 220 196 / 0.8);
-  --chart-head-margin: var(--space-block);
+  /* How far the scale stands clear of the foot of the window, in the drawing's
+     own units. The two lengths in `script.ts` carry the same five units back
+     down again, so a mark reaches below the line it is lifted to and only its
+     head is where the lift puts it. */
+  --chart-tick-lift: -1px;
+  --chart-head-margin: 0px;
+  /* Air above the caption, so it stands with the window it names rather than
+     under the line of dates it follows. Measured: 25px over it and 9px under
+     it, against 16 and 9 with none. */
   --chart-head-space: var(--space-tight);
   /* The gap between the drawing and the two ends of the range under it. */
   --chart-axis-space: 5px;
@@ -271,11 +332,24 @@
      to the top of the box. */
   --chart-grid-colour: var(--surface-rule);
   --chart-grid-alpha: 100%;
-  --chart-axis-text-size: var(--text-size-chart-label);
   --chart-axis-colour: var(--surface-rule);
-  --chart-axis-text-colour: var(--text-3);
-  --chart-axis-text-alpha: 100%;
   --chart-axis-alpha: 100%;
+  /*
+    The caption stands over the middle of the window rather than at its leading
+    edge, because the plot spans both of the chart's columns and this design
+    draws no legend beside it.
+
+    Indented by a whole step of its own tracking, which moves the letters by
+    half of one. Tracking is added after the last letter as well as between
+    them, so a centred line sits half a step left of the box it is centred in;
+    an indent takes that much off the width the line is then centred in, so it
+    shifts the line by half of what it states. Measured at 1.68px of tracking:
+    the letters centre on 828.50 against the window's own 828.50, where an
+    indent of half a step left them at 828.08.
+  */
+  --chart-caption-column: 1 / -1;
+  --chart-caption-align: center;
+  --chart-caption-indent: var(--label-tracking);
   /* The figures print on the glass beside the ticks, the way a scale of this
      period carries its own readings. */
   --chart-scale-display: block;
@@ -330,10 +404,17 @@
     The faceplate.
 
     A component of this period is a brushed metal front bolted between two
-    walnut cheeks, and all three are one surface here: the cheeks are the first
-    layer, drawn from both edges inwards, the brushing is a fine vertical
-    striping across the face, and the moulding grain that was already here runs
-    under both.
+    walnut cheeks, and both are one surface here: the cheeks are the first
+    layer, drawn from both edges inwards, and the brushing is a tile that
+    repeats under them.
+
+    The tile is computed rather than photographed, by
+    `site/scripts/render-brushed-plate.ts`: noise smeared along one axis and
+    left alone across it, which is what a wheel leaves on a plate. It carries no
+    colour, only light and dark at a low alpha, so the plate's own colour stays
+    where this file states it. Redraw it with:
+
+        bun run --cwd site plate:render
   */
   --card-texture: linear-gradient(
       to right,
@@ -344,17 +425,11 @@
         calc(100% - var(--cassette-cheek) + 2px),
       #4a301c calc(100% - var(--cassette-cheek) + 2px) 100%
     ),
-    repeating-linear-gradient(
-      to right,
-      rgb(232 220 196 / 0.028) 0 1px,
-      transparent 1px 3px
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      rgb(232 220 196 / 0.022) 0 1px,
-      transparent 1px 4px
-    );
-  --card-texture-size: auto;
+    url("./assets/plate.png");
+  /* The cheeks span the plate, the brushing repeats at the size it was drawn
+     at. Stated per layer, because a tile scaled to the card would stretch its
+     scratches into whatever shape the row happens to be. */
+  --card-texture-size: auto, 256px 256px;
   /*
     The label head.
 
@@ -384,10 +459,6 @@
     made to intersect. Every socket stands above its own head, so all four come
     first in the list.
 
-    The stripes belong to the head alone. They are what the make prints across
-    the top of its inlay, and a printed band is not something a case repeats at
-    the other end: the foot is the same plate without them.
-
     Both run between the cheeks rather than across them, because the plate is
     metal and the wood is bolted to either side of it.
 
@@ -405,68 +476,82 @@
     height. The socket is sunk into the head, so it is placed on that point and
     the two are concentric.
 
-    Two insets, because the plate at the foot is reached from the other edge
-    whilst the head inside it is still drawn from its own top: 42% down from
-    one edge is 58% up from the other.
+    One inset, at either end, because the head's rings are struck at the middle
+    of their box: a circle of radius 7 in a box of 15 stands 0.5 clear of both
+    edges, where one struck at 42% of the height stood 0.7 over the top and was
+    cut by it.
   */
-  --case-socket-inset: calc(
-    var(--case-screw-inset) + 0.42 * var(--case-screw) - var(--case-socket) / 2
-  );
-  --case-socket-inset-up: calc(
-    var(--case-screw-inset) + 0.58 * var(--case-screw) - var(--case-socket) / 2
-  );
+  --case-socket-inset: calc((var(--case-plate) - var(--case-socket)) / 2);
   --card-ornament-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), radial-gradient(
-      circle 7px at 50% 42%,
-      #c3b89c 0 26%,
-      #8f8570 26% 62%,
-      #5d543f 62% 84%,
-      #2a251d 84% 96%,
+      circle 7px at 50% 50%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
     ),
     radial-gradient(
-      circle 7px at 50% 42%,
-      #c3b89c 0 26%,
-      #8f8570 26% 62%,
-      #5d543f 62% 84%,
-      #2a251d 84% 96%,
+      circle 7px at 50% 50%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), radial-gradient(
-      circle 7px at 50% 42%,
-      #c3b89c 0 26%,
-      #8f8570 26% 62%,
-      #5d543f 62% 84%,
-      #2a251d 84% 96%,
+      circle 7px at 50% 50%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), radial-gradient(
-      circle 7px at 50% 42%,
-      #c3b89c 0 26%,
-      #8f8570 26% 62%,
-      #5d543f 62% 84%,
-      #2a251d 84% 96%,
+      circle 7px at 50% 50%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
       transparent 96%
-    ), linear-gradient(#c8752a 0 0),
-    linear-gradient(#e8dcc4 0 0), linear-gradient(#7d5a33 0 0),
+    ),
+    /* The face lies behind everything that closes the case, so each of them
+       throws onto it. The light stands a little up and to the left, which is
+       why the lid throws furthest, the cheek on that side throws a shorter one
+       across, and the floor barely throws at all. */
+    linear-gradient(to bottom, rgb(0 0 0 / 0.5), transparent),
+    linear-gradient(to right, rgb(0 0 0 / 0.38), transparent),
+    linear-gradient(to top, rgb(0 0 0 / 0.32), transparent),
+    /* The thickness of each plate, as the edge it turns towards the light and
+       the one it turns away. */
+    linear-gradient(rgb(255 246 226 / 0.16) 0 0),
+    linear-gradient(rgb(0 0 0 / 0.55) 0 0),
+    linear-gradient(rgb(255 246 226 / 0.1) 0 0),
+    linear-gradient(rgb(0 0 0 / 0.5) 0 0),
     linear-gradient(#3b342a 0 0), linear-gradient(#3b342a 0 0);
   --card-ornament-size: var(--case-socket) var(--case-socket),
     var(--case-socket) var(--case-socket),
     var(--case-socket) var(--case-socket),
     var(--case-socket) var(--case-socket), var(--case-screw) var(--case-screw),
     var(--case-screw) var(--case-screw), var(--case-screw) var(--case-screw),
-    var(--case-screw) var(--case-screw), calc(100% - 32px) 3px,
+    var(--case-screw) var(--case-screw),
+    calc(100% - 32px) 16px,
+    10px calc(100% - 2 * var(--case-plate)),
+    calc(100% - 32px) 10px,
+    calc(100% - 32px) 1px, calc(100% - 32px) 1px,
     calc(100% - 32px) 1px, calc(100% - 32px) 1px,
     calc(100% - 32px) var(--case-plate), calc(100% - 32px) var(--case-plate);
   --card-ornament-position: left 30px top var(--case-socket-inset),
     right 30px top var(--case-socket-inset),
-    left 30px bottom var(--case-socket-inset-up),
-    right 30px bottom var(--case-socket-inset-up),
+    left 30px bottom var(--case-socket-inset),
+    right 30px bottom var(--case-socket-inset),
     left 26px top var(--case-screw-inset),
     right 26px top var(--case-screw-inset),
     left 26px bottom var(--case-screw-inset),
     right 26px bottom var(--case-screw-inset),
     left 16px top var(--case-plate),
-    left 16px top calc(var(--case-plate) + 5px),
-    left 16px top calc(var(--case-plate) + 9px), left 16px top,
-    left 16px bottom;
+    left var(--cassette-cheek) top var(--case-plate),
+    left 16px bottom var(--case-plate),
+    left 16px top, left 16px top var(--case-plate),
+    left 16px bottom var(--case-plate), left 16px bottom,
+    left 16px top, left 16px bottom;
   --notices-gap: var(--space-tight);
   --notices-arm-space: 0px;
   --notices-arm-image: none;
@@ -592,10 +677,10 @@
     lamp is out until the key is down. Down means the response times are
     showing, which is what the key is for.
   */
-  /* Flush with the foot of the display beside it, lifted by three pixels, so
-     the key and the panel close on the same line. */
-  --disclosure-mark-self: flex-end;
-  --disclosure-mark-offset: 3px;
+  /* The plate and the key are one part of the face, and that part stands in
+     the middle of the panel beside it. */
+  --disclosure-mark-self: center;
+  --disclosure-mark-offset: 0px;
   /* Wide enough for the word on the plate above the key, which the key takes
      as well so the two are one column: OPEN measures 27px, and this leaves it
      four and a half either side of the frame. */
@@ -682,9 +767,16 @@
   /* The plate above the key, which is the same window as a protocol's and
      carries the same word whether the plot is open or shut. */
   --disclosure-label-colour: #6b4a44;
-  --disclosure-label-colour-on: #ff5a45;
-  --disclosure-label-glow-on: 0 0 6px rgb(255 90 69 / 0.55);
-  --disclosure-stack-gap: 3px;
+  /* Lit, the word is a filament rather than a printed legend: the letters go
+     to the hot end of the same red, and the halo is two throws, a tight one at
+     the glyph and a wide one spilling onto the glass, which is what the lamp in
+     the key below does. */
+  --disclosure-label-colour-on: #ff8b78;
+  --disclosure-label-glow-on: 0 0 4px rgb(255 90 69 / 0.95),
+    0 0 10px rgb(255 90 69 / 0.7), 0 0 20px rgb(255 60 40 / 0.45);
+  /* The same gap the two protocol windows keep, because these sit in the same
+     face and nothing about them is a different distance. */
+  --disclosure-stack-gap: var(--space-hair);
   /* A grid, so the lamp in the middle of the key is a box that can be sized
      and centred rather than an inline sliver. */
   --disclosure-mark-display: inline-grid;
@@ -699,6 +791,20 @@
   /* The name is written on the sun above, so the bar does not repeat it. */
   --range-label-display: none;
   --range-label-colour: var(--text-2);
+  /*
+    The plate's legends.
+
+    Three of them: the caption over the plot, the two ends of the strip's
+    window, and the two ends of the plot's. A faceplate is printed once, so all
+    three carry one legend in the display face, at the caption's size, weight,
+    tracking and capitals, in one ink. Measured on the plate: 6.59:1.
+  */
+  --axis-font: var(--font-display);
+  --axis-colour: var(--text-2);
+  --axis-size: var(--text-size-caption);
+  --axis-weight: var(--display-weight);
+  --axis-tracking: var(--label-tracking);
+  --axis-transform: var(--label-transform);
   --range-button-colour: var(--text-3);
   /* The control that opens every row at once answers to nothing. */
   --toggle-hover-fill: transparent;
@@ -772,16 +878,15 @@
      text, so the conformance suite holds it to 4.5:1 against the unlit window
      behind it, and this measures 4.51:1. */
   --badge-absent-colour: #867760;
-  /* Plate, badges and readout all run the full height of the row, so the three
-     stand level the way instruments on one faceplate do. */
+  /* Plate and readout both run the full height of the row, so the two stand
+     level the way instruments on one faceplate do. */
   --service-name-self: stretch;
-  /* The two windows stand one above the other as a pair, close together and
-     centred against the panel beside them, rather than pushed to the ends of
-     whatever height the row happens to have. */
+  /* Side by side on one line, because the pair stands at the leading edge of
+     the caption over the plot rather than in the row above it. */
   --protocols-self: center;
-  --protocols-justify: center;
-  --protocols-direction: column;
-  --protocols-align: flex-start;
+  --protocols-justify: flex-start;
+  --protocols-direction: row;
+  --protocols-align: center;
   /*
     The readout.
 
@@ -796,6 +901,9 @@
   */
   --service-display-display: grid;
   --service-display-line-display: flex;
+  /* One cell between the two readings on a line, so the second one starts on a
+     column of the lattice like the first. */
+  --service-display-line-gap: var(--service-display-cell-advance);
   --service-display-main-display: block;
   --service-display-flex: 0 0 auto;
   /*
@@ -810,29 +918,31 @@
   */
   --service-display-inset: 6px;
   /*
-    What the panel is not: the row's own padding, the three gaps, the two
-    windows, the key, and the least the name plate may be squeezed to. The panel
-    takes the whole cells that are left over after those, and the name plate
-    takes whatever the rounding leaves, which is why the plate is the elastic
-    part of the row and the panel is never a fraction of a cell wide.
+    What the panel is not: the two gaps, the key, and the least the name plate
+    may be squeezed to. The panel takes the whole cells that are left over after
+    those, and the name plate takes whatever the rounding leaves, which is why
+    the plate is the elastic part of the row and the panel is never a fraction
+    of a cell wide.
   */
   --badge-width: 40px;
-  --service-name-min: 112px;
+  --service-name-min: 168px;
   --service-display-frame: calc(
     2 * var(--service-display-edge-width) + var(--service-display-inset) - 0.33px +
       var(--service-display-inset) - 4.47px
   );
   --service-display-reserve: calc(
-    3 * var(--space-row) + var(--badge-width) + var(--disclosure-mark-width) +
+    2 * var(--space-row) + var(--disclosure-mark-width) +
       var(--service-name-min)
   );
   --service-display-padding: calc(var(--service-display-inset) - 5px)
     calc(var(--service-display-inset) - 4.47px)
     calc(var(--service-display-inset) - 1.8px)
     calc(var(--service-display-inset) - 0.33px);
-  --service-display-edge-width: 1px;
+  /* No rim: a window cut into a plate has none, and the protocol windows beside
+     it are drawn without one. What says it is sunk is the shadow falling in. */
+  --service-display-edge-width: 0px;
   --service-display-edge-colour: #16202a;
-  --service-display-radius: 3px;
+  --service-display-radius: 5px;
   /*
     The dots that are not lit, as the cells they belong to.
 
@@ -842,8 +952,11 @@
     prints lands on exactly one of them.
 
     The figures come from the face itself, rasterised at 150px and read back:
-    its dots stand fifteen units apart and are nine across, and the first
-    column stands 7 to the right of where a character begins. A figure reaches
+    its dots are square, nine units on a side, standing fifteen apart, and the
+    first column's edge stands 0.48 to the right of where a character begins,
+    read at the size it is set in rather than scaled from the large one. Square,
+    because that is what the face draws: read back at 150px, a dot is a block of
+    solid pixels with hard edges rather than a disc. A figure reaches
     from 98 above the baseline to 8 above it, and a letter with a descender
     from 68 above to 22 below, which is nine rows between them rather than the
     seven either one uses.
@@ -857,8 +970,11 @@
     The cell is the character's own advance by the line's own height: the
     tracking is a tenth of the size, so a character takes seven steps rather
     than six, and the leading of 1.2 makes a line twenty-four pixels. The
-    baseline sits 18.67 down that line, which puts the first row of dots at 5.6
-    and the ninth at 21.6.
+    The baseline is read from the face rather than worked out from the size:
+    the rasteriser rounds the metrics to whole pixels, so at twenty pixels the
+    ascent is 19 and not the 18.67 that scaling from fifteen would give. Read
+    back at that size, the first row of a figure stands at 6.08 down the line
+    and the last row of a descender at 21.92, which is the 1.98 step used here.
 
     It is laid on the content box, so the grid starts where the first character
     does, and it is one static layer: opening a row changes the panel's height
@@ -867,7 +983,7 @@
   /* The glass itself, without the lattice: the protocol windows are cut from
      the same sheet and are too small to carry a dot pattern. */
   --display-glass: linear-gradient(to bottom, #060c0f, #0b1015);
-  --service-display-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 24'><g fill='%2314232b'><circle cx='0.93' cy='5.60' r='.6'/><circle cx='2.93' cy='5.60' r='.6'/><circle cx='4.93' cy='5.60' r='.6'/><circle cx='6.93' cy='5.60' r='.6'/><circle cx='8.93' cy='5.60' r='.6'/><circle cx='0.93' cy='7.60' r='.6'/><circle cx='2.93' cy='7.60' r='.6'/><circle cx='4.93' cy='7.60' r='.6'/><circle cx='6.93' cy='7.60' r='.6'/><circle cx='8.93' cy='7.60' r='.6'/><circle cx='0.93' cy='9.60' r='.6'/><circle cx='2.93' cy='9.60' r='.6'/><circle cx='4.93' cy='9.60' r='.6'/><circle cx='6.93' cy='9.60' r='.6'/><circle cx='8.93' cy='9.60' r='.6'/><circle cx='0.93' cy='11.60' r='.6'/><circle cx='2.93' cy='11.60' r='.6'/><circle cx='4.93' cy='11.60' r='.6'/><circle cx='6.93' cy='11.60' r='.6'/><circle cx='8.93' cy='11.60' r='.6'/><circle cx='0.93' cy='13.60' r='.6'/><circle cx='2.93' cy='13.60' r='.6'/><circle cx='4.93' cy='13.60' r='.6'/><circle cx='6.93' cy='13.60' r='.6'/><circle cx='8.93' cy='13.60' r='.6'/><circle cx='0.93' cy='15.60' r='.6'/><circle cx='2.93' cy='15.60' r='.6'/><circle cx='4.93' cy='15.60' r='.6'/><circle cx='6.93' cy='15.60' r='.6'/><circle cx='8.93' cy='15.60' r='.6'/><circle cx='0.93' cy='17.60' r='.6'/><circle cx='2.93' cy='17.60' r='.6'/><circle cx='4.93' cy='17.60' r='.6'/><circle cx='6.93' cy='17.60' r='.6'/><circle cx='8.93' cy='17.60' r='.6'/><circle cx='0.93' cy='19.60' r='.6'/><circle cx='2.93' cy='19.60' r='.6'/><circle cx='4.93' cy='19.60' r='.6'/><circle cx='6.93' cy='19.60' r='.6'/><circle cx='8.93' cy='19.60' r='.6'/><circle cx='0.93' cy='21.60' r='.6'/><circle cx='2.93' cy='21.60' r='.6'/><circle cx='4.93' cy='21.60' r='.6'/><circle cx='6.93' cy='21.60' r='.6'/><circle cx='8.93' cy='21.60' r='.6'/></g></svg>");
+  --service-display-cell: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 24'><g fill='%2314232b'><rect x='0.48' y='5.48' width='1.2' height='1.2'/><rect x='2.48' y='5.48' width='1.2' height='1.2'/><rect x='4.48' y='5.48' width='1.2' height='1.2'/><rect x='6.48' y='5.48' width='1.2' height='1.2'/><rect x='8.48' y='5.48' width='1.2' height='1.2'/><rect x='0.48' y='7.46' width='1.2' height='1.2'/><rect x='2.48' y='7.46' width='1.2' height='1.2'/><rect x='4.48' y='7.46' width='1.2' height='1.2'/><rect x='6.48' y='7.46' width='1.2' height='1.2'/><rect x='8.48' y='7.46' width='1.2' height='1.2'/><rect x='0.48' y='9.44' width='1.2' height='1.2'/><rect x='2.48' y='9.44' width='1.2' height='1.2'/><rect x='4.48' y='9.44' width='1.2' height='1.2'/><rect x='6.48' y='9.44' width='1.2' height='1.2'/><rect x='8.48' y='9.44' width='1.2' height='1.2'/><rect x='0.48' y='11.42' width='1.2' height='1.2'/><rect x='2.48' y='11.42' width='1.2' height='1.2'/><rect x='4.48' y='11.42' width='1.2' height='1.2'/><rect x='6.48' y='11.42' width='1.2' height='1.2'/><rect x='8.48' y='11.42' width='1.2' height='1.2'/><rect x='0.48' y='13.40' width='1.2' height='1.2'/><rect x='2.48' y='13.40' width='1.2' height='1.2'/><rect x='4.48' y='13.40' width='1.2' height='1.2'/><rect x='6.48' y='13.40' width='1.2' height='1.2'/><rect x='8.48' y='13.40' width='1.2' height='1.2'/><rect x='0.48' y='15.38' width='1.2' height='1.2'/><rect x='2.48' y='15.38' width='1.2' height='1.2'/><rect x='4.48' y='15.38' width='1.2' height='1.2'/><rect x='6.48' y='15.38' width='1.2' height='1.2'/><rect x='8.48' y='15.38' width='1.2' height='1.2'/><rect x='0.48' y='17.36' width='1.2' height='1.2'/><rect x='2.48' y='17.36' width='1.2' height='1.2'/><rect x='4.48' y='17.36' width='1.2' height='1.2'/><rect x='6.48' y='17.36' width='1.2' height='1.2'/><rect x='8.48' y='17.36' width='1.2' height='1.2'/><rect x='0.48' y='19.34' width='1.2' height='1.2'/><rect x='2.48' y='19.34' width='1.2' height='1.2'/><rect x='4.48' y='19.34' width='1.2' height='1.2'/><rect x='6.48' y='19.34' width='1.2' height='1.2'/><rect x='8.48' y='19.34' width='1.2' height='1.2'/><rect x='0.48' y='21.32' width='1.2' height='1.2'/><rect x='2.48' y='21.32' width='1.2' height='1.2'/><rect x='4.48' y='21.32' width='1.2' height='1.2'/><rect x='6.48' y='21.32' width='1.2' height='1.2'/><rect x='8.48' y='21.32' width='1.2' height='1.2'/></g></svg>");
   --service-display-cell-advance: 14px;
   --service-display-cell-size: var(--service-display-cell-advance) 24px;
   --service-display-fill: var(--service-display-cell), var(--display-glass);
@@ -889,13 +1005,17 @@
   --uptime-font: var(--service-display-font);
   --service-name-tracking: normal;
   --service-name-transform: none;
-  --service-name-weight: 700;
-  --service-name-font: "Tangerine", cursive;
+  /* The one weight the face ships; asking for a heavier one only gets a
+     synthesised smear of it. */
+  --service-name-weight: 400;
+  --service-name-font: "Atomic Age", var(--font-display);
   --service-name-clip: text;
   /* Pressed into the face: dark where the light does not reach over its top
      edge, and a hairline of the metal along the bottom. */
-  --service-display-shadow: inset 0 2px 4px rgb(0 0 0 / 0.75),
-    inset 0 -1px 0 rgb(0 0 0 / 0.5), 0 1px 0 rgb(232 220 196 / 0.09);
+  /* One pixel deeper than it was, so the cut reads at the size these windows
+     are drawn at. */
+  --service-display-shadow: inset 0 3px 5px rgb(0 0 0 / 0.78),
+    inset 0 -1px 0 rgb(0 0 0 / 0.55), 0 1px 0 rgb(232 220 196 / 0.09);
   --service-name-display: grid;
   --service-name-flex: 1 1 auto;
   --service-name-trim: normal;
@@ -906,30 +1026,33 @@
     No plate at all any more: the letters are the metal. A gradient runs down
     them from a lit top edge through the body of the brass to a dark foot, with
     a second highlight where a polished surface catches the light again, and
-    the whole of it is clipped to the letters. Tangerine at 700 is the
-    engraver's script such a badge is cut in, and its bold is the weight with
-    enough body to hold a gradient.
+    the whole of it is clipped to the letters. Atomic Age is the face such a
+    badge is cut in, and its strokes are broad enough to hold a gradient.
 
-    Every band stays a brass tone. The letters are the metal, so a band that
-    goes to nearly black takes the letterform away where the eye reads it: the
-    darkest one measures 2.9:1 against the face behind it, and the foot 2.4:1.
+    Eight stops rather than eleven, and none of them dark. A face with broad
+    strokes shows a gradient as areas rather than as an edge, so a band that
+    drops to a shadow reads as a stain on the letter instead of as the turn of a
+    polished surface. The darkest point of this one measures 5.2:1 against the
+    face behind it and the turn at the middle 7.5:1, so the metal stays metal
+    the whole way down.
+
+    Every stop keeps its yellow. A highlight mixed towards white rather than
+    towards gold reads as silver, and on a face with strokes this broad that
+    band covers enough of the letter to change what the metal is.
   */
   --service-name-padding: 0px 2px;
   --service-name-radius: 0px;
   --service-name-shadow: none;
   --service-name-fill: linear-gradient(
     to bottom,
-    #fffbe9 0%,
-    #ffe9a8 10%,
-    #d9ad4c 26%,
-    #8a6418 44%,
-    #7b5716 51%,
-    #c99a34 57%,
-    #ffeeb4 66%,
-    #fffdf2 71%,
-    #e2b64e 78%,
-    #9a7420 90%,
-    #6d4d14 100%
+    #ffe7a8 0%,
+    #f5cf6a 18%,
+    #e6b53f 40%,
+    #d09b22 49%,
+    #ffe08a 57%,
+    #edc356 74%,
+    #d5a534 90%,
+    #b8871c 100%
   );
   --service-name-colour: transparent;
   --service-name-stroke: 0px;
@@ -953,18 +1076,15 @@
  * Structure, and nothing that decides how the page looks.
  *
  * Every colour, radius, font, spacing step, border width, shadow and duration
- * below comes from a custom property that a theme file defines. This file may
- * not contain a single literal of any of those, and that restriction is what
- * makes the claim in `documentation/theme-authoring.md` testable rather than
- * merely stated: `verify.ts` greps this file for literals and fails on a hit.
+ * below comes from a custom property declared above, so a value is changed in
+ * one place and everything reading it follows.
  *
- * Four kinds of value are allowed here and are not design decisions:
+ * Three kinds of value stand here directly, and none of them is a design
+ * decision:
  *
  *   - structural zeroes and resets, such as `margin: 0` or `border: 0`
  *   - relational values, such as `1fr`, `100%`, `auto` and `min-content`
  *   - the derived geometry below, which computes one value from another
- *   - the mockup toolbar at the foot of this file, which is not part of the
- *     page under review and is deliberately outside every theme's reach
  *
  * The card geometry follows the rule that a nested radius is the outer radius
  * less the inset, and that text meeting a curve stands in by half the radius.
@@ -2282,7 +2402,13 @@
 .service-display-line {
   display: var(--service-display-line-display);
   align-items: baseline;
-  gap: var(--space-row);
+  /*
+    Whole cells, because everything on this line lands on the lattice behind
+    it. The page's own row step is not a cell, so a reading standing after a
+    gap of one sits between two columns of dots for the whole width of the
+    panel.
+  */
+  gap: var(--service-display-line-gap, 0px);
   min-width: 0;
   /* Whole cells, and the cells are drawn here rather than on the panel.
 
@@ -2526,14 +2652,40 @@
   background: var(--series-colour);
 }
 
-.strip-axis {
-  grid-area: axis;
+/*
+  The two ends of the window a strip is read across, and the two ends of the
+  one a plot is read across.
+
+  Both are the same legend, and a design states it once through the `--axis-`
+  properties: they name what is printed on a surface rather than what belongs
+  to either row.
+*/
+.strip-axis,
+.chart-axis-row {
   display: flex;
   justify-content: space-between;
+  color: var(--axis-colour, var(--text-3));
+  font-family: var(--axis-font, var(--font-meta));
+  font-size: var(--axis-size, var(--text-size-caption));
+  font-weight: var(--axis-weight, inherit);
+  letter-spacing: var(--axis-tracking, normal);
+  text-transform: var(--axis-transform, none);
+}
+
+/*
+  Tracking is added after the last letter as well as between them, so a label
+  ranged to the trailing edge stops one step short of it whilst its box ends
+  flush. The negative margin takes that step back, which is the same correction
+  the credit's label carries at the foot of the page.
+*/
+.strip-axis > :last-child,
+.chart-axis-row > :last-child {
+  margin-inline-end: calc(-1 * var(--axis-tracking, 0px));
+}
+
+.strip-axis {
+  grid-area: axis;
   margin: var(--space-hair) var(--row-inset) 0;
-  color: var(--text-3);
-  font-family: var(--font-meta);
-  font-size: var(--text-size-caption);
 }
 
 /* ── Service details ──────────────────────────────────────────────────────── */
@@ -2547,6 +2699,23 @@
 .service-details-wrap {
   grid-area: details;
   overflow: hidden;
+}
+
+/*
+  Whatever a design labels its plot with, standing at the leading edge of the
+  caption over it.
+
+  Laid over the panel rather than given a column beside the chart, because the
+  caption is centred on the window and a column of its own would take that
+  centring away from it. Its box is as deep as the caption's line and it
+  centres what it holds in that, so the two read on one line however tall
+  either happens to be.
+*/
+.service-details > .service-protocols {
+  position: absolute;
+  inset-block-start: var(--chart-head-space);
+  inset-inline-start: 0;
+  min-height: calc(var(--text-size-caption) * var(--text-leading-body));
 }
 
 .service-details {
@@ -2564,62 +2733,11 @@
   background: var(--detail-fill);
 }
 
-.protocol-readings {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-row);
-  flex-wrap: wrap;
-}
-
-.protocol-separator {
-  flex: none;
-  color: var(--text-3);
-  font-family: var(--font-meta);
-  line-height: 1;
-}
-
-.protocol-reading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-hair);
-  min-width: 0;
-}
-
-.protocol-reading::before {
-  content: "";
-  width: var(--dot-size);
-  height: var(--dot-size);
-  border-radius: var(--dot-radius);
-  background: var(--state-operational);
-  flex: none;
-}
-
-.protocol-reading[data-status="degraded"]::before {
-  background: var(--state-degraded);
-}
-
-.protocol-reading[data-status="outage"]::before {
-  background: var(--state-outage);
-}
-
-.protocol-reading[data-status="unknown"]::before {
-  background: var(--state-no-data);
-}
-
 .protocol-name {
   font-family: var(--font-meta);
   font-size: var(--text-size-badge);
   font-weight: var(--meta-weight);
   line-height: 1;
-}
-
-.protocol-reading[data-protocol="ipv4"] .protocol-name {
-  color: var(--protocol-ipv4);
-}
-
-.protocol-reading[data-protocol="ipv6"] .protocol-name {
-  color: var(--protocol-ipv6);
 }
 
 .protocol-value {
@@ -2655,9 +2773,6 @@
      that draws no rule between the readings and the chart wants them closer
      than two stacked blocks would be. */
   margin-top: var(--chart-head-margin);
-  /* Its own value rather than the general tight step, because where a rule is
-     drawn above it, a caption sitting directly under that rule needs more air
-     than two stacked rows do. */
   padding-top: var(--chart-head-space);
   /* Its own rule rather than the page's, because a design may separate the
      chart from the readings above it by space alone. */
@@ -2665,17 +2780,22 @@
 }
 
 .chart-caption {
+  /* Over the whole chart or only over its first column, which is what decides
+     whether the caption names the plot or labels the row the legend shares. */
+  grid-column: var(--chart-caption-column);
   margin: 0;
   color: var(--text-2);
   font-family: var(--font-display);
   font-size: var(--text-size-caption);
   font-weight: var(--display-weight);
   letter-spacing: var(--label-tracking);
+  text-align: var(--chart-caption-align);
+  text-indent: var(--chart-caption-indent);
   text-transform: var(--label-transform);
 }
 
 .chart-legend {
-  display: flex;
+  display: var(--chart-legend-display, flex);
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-hair) var(--space-row);
@@ -2719,8 +2839,43 @@
   padding: var(--chart-plot-inset);
   border: var(--chart-plot-edge-width) var(--rule-style)
     var(--chart-plot-edge-colour);
-  border-radius: var(--control-radius);
+  border-radius: var(--chart-plot-radius, var(--control-radius));
   background: var(--chart-plot-fill);
+  /* Anything a design draws outside the window rather than in it, such as the
+     lip a cut leaves in the surface around it. It belongs here rather than on
+     the layer below, because the window clips its own contents and an outset
+     shadow drawn by a child is cut away with them. */
+  box-shadow: var(--chart-plot-lip, none);
+}
+
+/*
+  Everything the window holds is cut off at its own edge: the trace, the ticks
+  and the strip the pointer rides on all end where the plate begins, rather than
+  running out over it.
+*/
+.chart-plot {
+  overflow: hidden;
+}
+
+/*
+  The cut, over everything inside the window.
+
+  An inset shadow on the plot itself falls under its contents, which puts the
+  plexiglass strip and the trace in front of the plate's own edge. They run
+  behind it, so the shadow is drawn as a layer of its own above them and takes
+  no pointer, or it would swallow the hover the strip follows.
+*/
+.chart-plot {
+  position: relative;
+}
+
+.chart-plot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--chart-plot-shadow, none);
+  pointer-events: none;
 }
 
 .chart-svg {
@@ -2738,14 +2893,9 @@
 */
 .chart-axis-row {
   grid-column: 1 / -1;
-  display: flex;
-  justify-content: space-between;
   /* Its own distance from the drawing, with the grid's row gap taken back off
      so the token states the whole of it. */
   margin-block-start: calc(var(--chart-axis-space) - var(--space-tight));
-  color: var(--chart-axis-text-colour);
-  font-family: var(--font-meta);
-  font-size: var(--chart-axis-text-size);
 }
 
 .chart-empty {
@@ -2852,6 +3002,22 @@
   eye finds the long ones first, and both are zero in a design that prints no
   scale.
 */
+/*
+  The scale stands clear of the foot of the window rather than on it.
+
+  Its marks are drawn from the time axis, which is the last row of the drawing,
+  so left alone they run into the wall of the cut and the corner radius takes
+  the bite out of the two at either end. Lifting the whole group puts them on
+  the glass with the plate's edge below them.
+
+  The length is in the drawing's own units, because a transform on an SVG group
+  is read in the local coordinate system: six units come to 8.0px at the width
+  a card gives the plot here.
+*/
+.chart-ticks {
+  transform: translateY(var(--chart-tick-lift, 0));
+}
+
 .chart-tick {
   stroke: var(--chart-tick-colour);
   stroke-width: var(--rule-width);
@@ -2916,18 +3082,6 @@
 
 .chart-tooltip circle {
   fill: var(--series-colour);
-}
-
-/* The two ends of the range, in the same source the axes and the scale take,
-   so everything naming the plot reads as one set of marks. */
-.chart-axis text {
-  fill: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-axis-text-colour)) var(--chart-axis-text-alpha),
-    transparent
-  );
-  font-family: var(--font-meta);
-  font-size: var(--text-size-chart-label);
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */
