@@ -122,23 +122,43 @@ function notices(data: BundleData): string {
 }
 
 /** The range controls, with the key that opens every row at the trailing end. */
+/**
+ * The range switch and the expand-all key, as a device of their own.
+ *
+ * A rack of this kind has nothing standing loose between its components, so the
+ * two controls sit in the same case a service does: the same faceplate between
+ * the same walnut cheeks, with the same screws and the same plates closing it.
+ * It is shallower, because it holds one row of keys rather than a readout, a
+ * strip and a plate.
+ *
+ * Every key is the one a service is opened with, and every plate above one is
+ * the window a protocol lamp is cut into. The chosen range is the key that is
+ * down, and its plate is lit.
+ *
+ * @param data - The installation, for the range each page opens in.
+ * @returns The device's markup.
+ */
 function rangeBar(data: BundleData): string {
-  const buttons = RANGES.map(
+  const keys = RANGES.map(
     (option) =>
       `<button class="range-button" type="button" data-range="${option.key}" aria-pressed="${String(
         option.key === data.site.defaultRange,
-      )}" aria-label="${escape(option.description)}">${option.label}</button>`,
+      )}" aria-label="${escape(option.description)}">${key(
+        keyPlate(option.label),
+      )}</button>`,
   ).join("");
-  return `<div class="range-bar">
-    <span class="group-name">${escape(data.site.name.toUpperCase())}</span>
-    <div class="ranges">
-      <span class="range-mark" aria-hidden="true"></span>
-      ${buttons}
+  return `<section class="service-card range-card">
+    <span class="card-ornament" aria-hidden="true"></span>
+    <div class="range-bar">
+      <span class="group-name">${escape(data.site.name.toUpperCase())}</span>
+      <div class="ranges">
+        ${keys}
+      </div>
+      <button class="toggle-all" type="button" aria-label="Expand all" title="Expand all">
+        ${key(keyPlate("OPEN"))}
+      </button>
     </div>
-    <button class="toggle-all" type="button" aria-label="Expand all" title="Expand all">
-      ${key()}
-    </button>
-  </div>`;
+  </section>`;
 }
 
 

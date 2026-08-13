@@ -777,6 +777,25 @@
   --disclosure-led-glow: inset 0 1px 2px rgb(0 0 0 / 0.75);
   --disclosure-led-glow-on: inset 0 1px 2px rgb(0 0 0 / 0.75),
     0 0 7px rgb(255 90 69 / 0.85), 0 0 16px rgb(255 90 69 / 0.5);
+  /*
+    The chosen range, lit in the amber of the indicator lamp.
+
+    Amber rather than the red the OPEN plate takes, because these two say
+    different things: red reports that a plot is showing, and this reports which
+    window everything on the page is read over. The machine's own indicator
+    colour is what a setting is announced in.
+  */
+  --range-label-colour-on: #ffc978;
+  --range-label-glow-on: 0 0 4px rgb(232 163 61 / 0.95),
+    0 0 10px rgb(232 163 61 / 0.7), 0 0 20px rgb(232 140 40 / 0.45);
+  --range-led-fill-on: radial-gradient(
+    circle at 50% 35%,
+    #fff0d2 0 30%,
+    #ffb03a 30% 60%,
+    #a86412 60% 100%
+  );
+  --range-led-glow-on: inset 0 1px 2px rgb(0 0 0 / 0.75),
+    0 0 7px rgb(255 176 58 / 0.85), 0 0 16px rgb(255 176 58 / 0.5);
   /* The plate above the key, which is the same window as a protocol's and
      carries the same word whether the plot is open or shut. */
   --disclosure-label-colour: #6b4a44;
@@ -1862,6 +1881,82 @@
   controls inside that bar is not decoration: on those panels the horizontal
   arm is where the controls live.
 */
+/*
+  The device the two controls sit in.
+
+  A rack of this kind has nothing standing loose between its components, so the
+  range switch and the expand-all key are cased like everything else: the same
+  faceplate, the same walnut cheeks, the same screws and end plates, inherited
+  by carrying the service card's own class.
+
+  It is as wide as the row of keys asks for rather than as wide as the page, and
+  it stands centred over the first service. Shallower too, because it holds one
+  row of keys where a service holds a readout, a strip and a name plate: its
+  head keeps the printed band and its foot the closing plate, and nothing else
+  stands between them.
+*/
+.range-card {
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  margin-block-end: var(--card-gap);
+  /* Clear of the two plates and no further. The service's own figures leave
+     room for a printed band and a name beneath it, neither of which is here. */
+  padding-block-start: calc(var(--case-plate) + var(--space-tight));
+  padding-block-end: calc(var(--case-plate) + var(--space-tight));
+  padding-inline: calc(var(--cassette-cheek) + var(--space-block));
+}
+
+/*
+  The keys in it, in one row.
+
+  The expand-all key stands apart from the three ranges rather than beside them,
+  because it does something else: a section step between them says so without a
+  rule or a legend.
+*/
+.range-card .range-bar {
+  justify-content: center;
+  gap: var(--space-section);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+
+.range-card .ranges {
+  flex: 0 0 auto;
+  gap: var(--space-block);
+}
+
+/*
+  The chosen range, which is the key that is down.
+
+  Its plate is lit rather than merely coloured, in the amber of the indicator
+  lamp this machine reads everything else by. The key beneath takes the pressed
+  face and the lit lamp a service's key takes when its row is open, so the two
+  controls say the same thing the same way.
+*/
+.range-button[aria-pressed="true"] .disclosure-label {
+  color: var(--range-label-colour-on);
+  text-shadow: var(--range-label-glow-on);
+}
+
+.range-button[aria-pressed="true"] .disclosure-mark {
+  background: var(--disclosure-mark-fill-pressed);
+  box-shadow: var(--disclosure-mark-shadow-pressed);
+}
+
+.range-button[aria-pressed="true"] .disclosure-mark::before {
+  background: var(--range-led-fill-on);
+  box-shadow: var(--range-led-glow-on);
+}
+
+@media (hover: hover) {
+  .range-button:not([aria-pressed="true"]):hover .disclosure-mark {
+    background: var(--disclosure-mark-fill-hover);
+  }
+}
+
 .range-bar {
   position: relative;
   display: flex;
@@ -1993,64 +2088,18 @@
 }
 
 /*
-  Tracking is added after the last letter as well as between them, so a centred
-  label carries half a step of empty space on its right and its glyphs sit that
-  far left of the box they are centred in. Indenting by half a step puts them
-  back. Measured at 2.2px of tracking: the box centre and the ink centre both
-  read 975.06, whilst the letters ended 1.1px before it.
+  A range is a key, so the button around it carries nothing of its own.
+
+  What a reader sees is the plate and the key inside it, both of which are the
+  parts a service is already built from. The button is the hit area and the
+  place the pressed state is announced from, and it is drawn nowhere.
 */
 .range-button {
-  font-family: var(--control-font);
-  font-weight: var(--control-weight);
-  letter-spacing: var(--control-tracking);
-  text-indent: calc(var(--control-tracking) / 2);
-  text-transform: var(--control-transform);
-  padding: var(--control-padding-block) var(--control-padding-inline);
-  min-width: var(--control-min-width);
-  border: var(--control-border-width) var(--rule-style) var(--control-idle-edge);
-  border-radius: var(--control-radius);
+  display: block;
+  padding: 0;
+  border: 0;
   background: none;
-  color: var(--range-button-colour);
-  font-size: var(--text-size-control);
   cursor: pointer;
-}
-
-/* Not the chosen one. It already carries the mark, and a neutral hover tint
-   over it replaces what says it is chosen with what says it is hoverable. */
-.range-button:not([aria-pressed="true"]):hover {
-  color: var(--range-button-hover-colour);
-  background: var(--accent-quiet);
-}
-
-.range-button {
-  position: relative;
-}
-
-/*
-  The chosen range may be set larger than the others, and where a design cuts it
-  through the bar rather than laying a filled pill under it, size is most of
-  what says which one is chosen.
-
-  It grows by `transform`, so its box does not. A real font size would lay the
-  row out afresh on every change and push the labels beside it sideways; giving
-  every label the largest one's width instead holds them still but spreads the
-  row out and leaves gaps belonging to nothing. Scaling leaves the row exactly
-  as it is, and the label's own padding keeps the enlarged glyphs clear of its
-  neighbours.
-
-  The mark that cuts through the bar is widened by the same factor, so the gap
-  is the size of what stands in it.
-*/
-.range-button {
-  transition:
-    color var(--motion-hover),
-    background var(--motion-hover),
-    transform var(--motion-range) var(--motion-ease);
-}
-
-.range-button[aria-pressed="true"] {
-  color: var(--control-active-text);
-  transform: scale(var(--control-active-scale));
 }
 
 /* Its own inline padding rather than the range buttons', so it can be brought
