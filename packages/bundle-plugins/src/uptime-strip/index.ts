@@ -356,7 +356,6 @@ export function createUptimeStrip(
   host.append(canvas, hiddenList);
 
   let days: DayStatus[] = [];
-  let range: RangeKey = "month";
   let hovered: number | null = null;
   let width = 0;
   let ratio = 1;
@@ -625,9 +624,8 @@ export function createUptimeStrip(
   ratio = window.devicePixelRatio || 1;
 
   return {
-    update(nextDays, nextRange) {
+    update(nextDays) {
       days = nextDays;
-      range = nextRange;
       hovered = null;
       host.setAttribute("aria-label", summarise(days));
       // What the drawing cannot say. Each day used to carry its own element

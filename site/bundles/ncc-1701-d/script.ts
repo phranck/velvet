@@ -40,7 +40,6 @@ import {
 } from "@velvet/bundle-plugins/uptime-strip";
 
 import type { BundleData } from "../../src/lib/bundles/data.js";
-import { rangeNamed } from "./format.js";
 
 /**
  * The strip's geometry: square segments with a capsule at either end of the

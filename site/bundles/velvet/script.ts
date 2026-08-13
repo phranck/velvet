@@ -40,7 +40,6 @@ import {
 } from "@velvet/bundle-plugins/uptime-strip";
 
 import type { BundleData } from "../../src/lib/bundles/data.js";
-import { rangeNamed } from "./format.js";
 
 /**
  * The strip's geometry, which is `bar` from `site/src/lib/tokens.ts` exactly:
