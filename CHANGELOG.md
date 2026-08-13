@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.1.0 (2026-08-12)
+## Version 1.1.0 (2026-08-13)
 
 The Cassette design is now built as the machine it emulates.
 
@@ -13,6 +13,10 @@ The days of a service are sunk into the faceplate rather than sitting on it, the
 The screws that close a faceplate stand in the middle of their plate and their sockets sit concentric with their heads.
 
 A design can now say how its strip is read and what the day under the pointer does. The three other designs say nothing and are unchanged.
+
+Two corrections reach a published page. The typeface notices copied into every installation now credit Atomic Age, which the Cassette design has always carried and which was named nowhere: its licence shipped beside the file all along, so only the published summary was short. They also no longer credit Tangerine, which no design carries.
+
+A page published without a design starts in the colours it ends in. Eight of the values it was drawn from before the theme arrived disagreed with the theme that replaced them, so a page built before its first check had run repainted once the browser had read its configuration.
 
 ## Version 1.0.1 (2026-08-12)
 
