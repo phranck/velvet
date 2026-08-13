@@ -1637,6 +1637,8 @@
     position: sticky;
     bottom: 0;
     z-index: 2;
+    display: flex;
+    justify-content: center;
     flex: none;
     padding: 10px 22px 14px;
     border-top: 1px solid var(--tool-line);
@@ -1659,10 +1661,6 @@
     cursor: pointer;
     font: inherit;
     font-size: var(--tool-text-body);
-  }
-  .sidebar-footer {
-    display: flex;
-    justify-content: center;
   }
   .preview-workspace {
     grid-column: 1;
