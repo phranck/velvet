@@ -1056,15 +1056,15 @@
   */
   --service-name-rule-fill: linear-gradient(
     to bottom,
-    #4b3607 0%,
-    #71510b 14%,
-    #bb9017 26%,
+    #3d2c06 0%,
+    #5d4209 14%,
+    #997613 26%,
     #ffdb4e 31%,
     #ffc929 36%,
-    #bb9017 45%,
-    #8d681d 64%,
-    #61460b 84%,
-    #342507 100%
+    #997613 45%,
+    #745518 64%,
+    #503909 84%,
+    #2b1e06 100%
   );
   /* The moulding stands off the plate: a dark line under it and a thread of
      light along its crown, which is what the letters get from their own glow. */
