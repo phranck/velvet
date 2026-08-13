@@ -137,7 +137,7 @@
   --text-size-body: 15px;
   --text-size-small: 14px;
   --text-size-caption: 12px;
-  --text-size-badge: 11px;
+  --text-size-badge: 12px;
   --text-size-lead: 16px;
   --text-size-section: 14px;
   /* The plate's face is a display one and sets wide, so it is smaller here than
@@ -238,7 +238,9 @@
   --control-padding-block: 3px;
   --toggle-padding-inline: var(--control-padding-inline);
   --control-padding-inline: 9px;
-  --badge-padding-block: 2px;
+  /* A window carries a printed word, and a word printed too small on a plate
+     of this period is a word nobody printed. */
+  --badge-padding-block: 3px;
   --badge-padding-inline: 6px;
   --tooltip-padding-block: 7px;
   --tooltip-padding-inline: 11px;
@@ -695,9 +697,9 @@
   --disclosure-mark-self: start;
   --disclosure-mark-offset: 0px;
   /* Wide enough for the word on the plate above the key, which the key takes
-     as well so the two are one column: OPEN measures 27px, and this leaves it
-     four and a half either side of the frame. */
-  --disclosure-mark-width: 38px;
+     as well so the two are one column: OPEN measures 29px at the plate's own
+     size, and this leaves it six either side of the frame. */
+  --disclosure-mark-width: 41px;
   --disclosure-mark-height: 22px;
   --disclosure-mark-radius: 3px;
   /*
@@ -974,7 +976,7 @@
     fraction of a cell wide. The name used to be reserved here as well and is
     not any more, because it stands under the strip.
   */
-  --badge-width: 40px;
+  --badge-width: 43px;
   --service-display-frame: calc(
     2 * var(--service-display-edge-width) + var(--service-display-inset) - 0.33px +
       var(--service-display-inset) - 4.47px
