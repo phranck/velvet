@@ -1,7 +1,7 @@
 @import "../lib/velvet-tokens.css";
-/* The faces this tool sets its text in. It drew in one machine's own interface
-   face before, so it needed none, and its preview reached for the status page's
-   Inter without ever loading it. */
+/* The faces this tool sets its text in, fetched here because nothing else it
+   loads brings them: `app.css` carries the palette and names no face of its
+   own. */
 @import "../lib/velvet-retro-typefaces.css";
 html,
 body,
