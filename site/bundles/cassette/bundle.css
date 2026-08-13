@@ -220,7 +220,10 @@
     face has the same margin the whole way round.
   */
   --card-padding-top: 48px;
-  --card-padding-bottom: 38px;
+  /* Fifteen less than the plate carried before the name moved under the strip.
+     With the name down here the foot held 111px between the last day and the
+     plate's lower edge, which read as a gap rather than as a margin. */
+  --card-padding-bottom: 23px;
   --card-gap: 10px;
   --space-hair: 5px;
   --space-tight: 9px;
@@ -482,34 +485,38 @@
     cut by it.
   */
   --case-socket-inset: calc((var(--case-plate) - var(--case-socket)) / 2);
+  /* The screw heads are the machined grey they were, warmed by this much
+     towards the accent, which is what makes them brass rather than steel and
+     keeps all four in step. */
+  --case-warmth: 22%;
   --card-ornament-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><polygon points='9,5 7,8.46 3,8.46 1,5 3,1.54 7,1.54' fill='%23241f18'/></svg>"), radial-gradient(
       circle 7px at 50% 50%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #2a251d) 84% 96%,
       transparent 96%
     ),
     radial-gradient(
       circle 7px at 50% 50%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), radial-gradient(
       circle 7px at 50% 50%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #2a251d) 84% 96%,
       transparent 96%
     ), radial-gradient(
       circle 7px at 50% 50%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c3b89c) 0 26%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8f8570) 26% 62%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #5d543f) 62% 84%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #2a251d) 84% 96%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #c3b89c) 0 26%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #8f8570) 26% 62%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #5d543f) 62% 84%,
+      color-mix(in srgb, var(--accent) var(--case-warmth), #2a251d) 84% 96%,
       transparent 96%
     ),
     /* The face lies behind everything that closes the case, so each of them
@@ -679,7 +686,10 @@
   */
   /* The plate and the key are one part of the face, and that part stands in
      the middle of the panel beside it. */
-  --disclosure-mark-self: center;
+  /* Top of the row, so the OPEN plate and the first protocol lamp beside it
+     stand on one line. The two stacks are different heights, so centring each
+     of them puts their first elements 3.5px apart. */
+  --disclosure-mark-self: start;
   --disclosure-mark-offset: 0px;
   /* Wide enough for the word on the plate above the key, which the key takes
      as well so the two are one column: OPEN measures 27px, and this leaves it
@@ -688,22 +698,21 @@
   --disclosure-mark-height: 22px;
   --disclosure-mark-radius: 3px;
   /*
-    Brushed brass rather than aluminium, so the key belongs to the same metal
-    the name is cut in.
+    The metal the key is cut from, and the only colour it is given.
 
-    Three layers, in the order light meets them: the sheen where the face is
-    domed, the brushing, and the metal itself. The brushing runs along the
-    key's long side, because that is the direction a face like this is drawn
-    across the wheel, and it is a pair of hairlines rather than a texture: one
-    catching the light and one in its shadow, repeated every two pixels.
-
-    Each face is the machined grey it was, warmed by this much towards the
-    accent, which is what keeps the three states in step.
+    Every face below is this one lightness-shifted, so the key is one metal in
+    three lightings rather than three sets of colours that have to be kept in
+    step. `oklch(from …)` moves the lightness and leaves the chroma and the hue
+    where they are, which is what a curved metal face does: it goes lighter
+    towards the light and darker as it rolls away, and it stays the same brass
+    throughout. Lightening towards white instead drains the yellow out of the
+    crown, and a face whose highlight has no colour in it reads as aluminium.
   */
-  /* The same machined face, in brass rather than aluminium: every grey below is
-     warmed by this much towards the accent, which keeps the three states in
-     step and leaves the shape of the key exactly as it was. */
-  --key-warmth: 22%;
+  --key-base: #a89a7c;
+  /*
+    The dome, lit from above: the crown catches the light, the middle is the
+    metal itself, and the face darkens as it turns under.
+  */
   --disclosure-mark-fill: radial-gradient(
       ellipse 120% 90% at 50% 38%,
       rgb(255 255 255 / 0.22),
@@ -711,10 +720,12 @@
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #cfcdc7) 0%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #a5a29b) 52%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #8b887f) 100%
+      oklch(from var(--key-base) calc(l + 0.107) c h) 0%,
+      var(--key-base) 52%,
+      oklch(from var(--key-base) calc(l - 0.066) c h) 100%
     );
+  /* The same dome under a stronger light, so the whole face lifts rather than
+     only its crown. */
   --disclosure-mark-fill-hover: radial-gradient(
       ellipse 120% 90% at 50% 38%,
       rgb(255 255 255 / 0.34),
@@ -722,10 +733,12 @@
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #e2e0da) 0%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #b6b3ac) 52%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #9a978f) 100%
+      oklch(from var(--key-base) calc(l + 0.152) c h) 0%,
+      oklch(from var(--key-base) calc(l + 0.044) c h) 52%,
+      oklch(from var(--key-base) calc(l - 0.027) c h) 100%
     );
+  /* Pressed, the face sits below the plate and the lighting turns over: the top
+     edge falls into shadow and the light reaches the foot instead. */
   --disclosure-mark-fill-pressed: radial-gradient(
       ellipse 120% 90% at 50% 62%,
       rgb(255 255 255 / 0.14),
@@ -733,9 +746,9 @@
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #98958d) 0%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #b0ada6) 55%,
-      color-mix(in srgb, var(--accent) var(--key-warmth), #c4c1ba) 100%
+      oklch(from var(--key-base) calc(l - 0.033) c h) 0%,
+      oklch(from var(--key-base) calc(l + 0.028) c h) 55%,
+      oklch(from var(--key-base) calc(l + 0.077) c h) 100%
     );
   --disclosure-mark-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65),
     inset 0 -1px 0 rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.55);
@@ -833,8 +846,12 @@
   --footer-fill: transparent;
   --footer-align: center;
   --footer-text-align: center;
-  /* One column: the name stays inside the summary and no rail is drawn. */
-  --service-areas: "summary" "strip" "axis" "details";
+  /* One column, and the name on a row of its own beneath the strip.
+     It stood inside the summary until the readout beside it grew to take
+     whatever the row had: the reserve it left was 168px at every window width,
+     so a name longer than that was cut whether the page was 375 or 1440 wide.
+     Down here it has the full measure and the readout has the summary. */
+  --service-areas: "summary" "strip" "axis" "name" "details";
   --service-columns: 1fr;
   --control-font: var(--font-meta);
   --control-weight: var(--meta-weight);
@@ -862,12 +879,10 @@
      No frame around it: a hole in a plate has no rim, and the shadow falling
      into it is what says it is sunk. The lettering is the panel's own face at
      the weight a character generator prints. */
-  --badge-fill: var(--display-glass);
   --badge-border-width: 0px;
   --badge-font: var(--service-display-font);
   --badge-weight: 700;
   --badge-glow: 0 0 6px color-mix(in srgb, currentColor 55%, transparent);
-  --badge-shadow: var(--service-display-shadow);
   --badge-absent-edge: #2b2519;
   --badge-absent-fill: #0d0b07;
   /* An unlit lamp is a reading, so it is dimmer than a lit one and it is
@@ -883,10 +898,16 @@
   --service-name-self: stretch;
   /* Side by side on one line, because the pair stands at the leading edge of
      the caption over the plot rather than in the row above it. */
-  --protocols-self: center;
-  --protocols-justify: flex-start;
-  --protocols-direction: row;
-  --protocols-align: center;
+  /* Aligned to the top of the row, as the key beside them is, so the first
+     lamp and the OPEN plate stand on one line. Centred, the two stacks are
+     different heights and their first elements never meet. */
+  --protocols-self: start;
+  --protocols-justify: center;
+  /* One above the other, in the gap between the readout and the key. Two lamps
+     side by side wanted the width of the readout; stacked they want the height
+     the row already has. */
+  --protocols-direction: column;
+  --protocols-align: stretch;
   /*
     The readout.
 
@@ -918,21 +939,22 @@
   */
   --service-display-inset: 6px;
   /*
-    What the panel is not: the two gaps, the key, and the least the name plate
-    may be squeezed to. The panel takes the whole cells that are left over after
-    those, and the name plate takes whatever the rounding leaves, which is why
-    the plate is the elastic part of the row and the panel is never a fraction
-    of a cell wide.
+    What the panel is not: the gaps, the key, and the two protocol lamps beside
+    it. The panel takes the whole cells left over after those, so it is never a
+    fraction of a cell wide. The name used to be reserved here as well and is
+    not any more, because it stands under the strip.
   */
   --badge-width: 40px;
-  --service-name-min: 168px;
   --service-display-frame: calc(
     2 * var(--service-display-edge-width) + var(--service-display-inset) - 0.33px +
       var(--service-display-inset) - 4.47px
   );
+  /* What still stands beside the readout, which is the key and the gaps
+     around it. The name left this row, so the 168px it reserved here go back
+     to the readout: at 375px that reserve was more than three times what the
+     readout itself was left with. */
   --service-display-reserve: calc(
-    2 * var(--space-row) + var(--disclosure-mark-width) +
-      var(--service-name-min)
+    3 * var(--space-row) + var(--disclosure-mark-width) + var(--badge-width)
   );
   --service-display-padding: calc(var(--service-display-inset) - 5px)
     calc(var(--service-display-inset) - 4.47px)
@@ -1016,8 +1038,54 @@
      are drawn at. */
   --service-display-shadow: inset 0 3px 5px rgb(0 0 0 / 0.78),
     inset 0 -1px 0 rgb(0 0 0 / 0.55), 0 1px 0 rgb(232 220 196 / 0.09);
-  --service-name-display: grid;
-  --service-name-flex: 1 1 auto;
+  /* Its own row beneath the strip, so it takes the full measure and needs
+     neither a flex share nor a width reserved out of the readout's. `block`
+     rather than `grid`, because text-overflow only acts on a block container
+     and a grid one clips mid-letter instead of showing the cut. */
+  --service-name-display: block;
+  --service-name-flex: 0 1 auto;
+  /* The same above as below, so the name sits centred in the space it has
+     rather than pushed against one of its neighbours. */
+  --service-name-space: var(--space-hair);
+  /* The two rules beside the name.
+
+     Their own fill rather than the letters'. That one runs its eight stops
+     across the height of a capital, and pressed into three pixels it flattens
+     to one yellow tone: a stripe, not a moulding. These are the same brass
+     read at the scale a moulding is seen at, which is a lit edge, the metal,
+     and the shadow under it. */
+  --service-name-rule-height: 6px;
+  --service-name-rule-gap: 16px;
+  /*
+    A half-round bar, the curved side towards the reader.
+
+    The section runs across the thickness rather than down a slope. On a round
+    bar lit from above the top edge is silhouette and turns away, the highlight
+    sits below it where the surface faces the light square on, and the metal
+    darkens as the curve rolls under to a dark bottom edge.
+
+    Held below the letters beside it. A moulding is trim and the name is what
+    the plate is for, so the lettering is the brightest brass on the face and
+    this is the same metal in its shadow.
+  */
+  --service-name-rule-fill: linear-gradient(
+    to bottom,
+    #3c2e07 0%,
+    #5b460b 14%,
+    #9a7612 26%,
+    #f1c95c 31%,
+    #e1b847 36%,
+    #9a7612 45%,
+    #7d600f 64%,
+    #503d09 84%,
+    #2c2205 100%
+  );
+  /* The moulding stands off the plate: a dark line under it and a thread of
+     light along its crown, which is what the letters get from their own glow. */
+  /* Down onto the middle of the capitals. The row centres on the line box,
+     which carries an ascender and a descender this name never uses, so
+     centred there the rules ran high of the letters. */
+  --service-name-rule-shift: 3px;
   --service-name-trim: normal;
   --service-name-leading: 1.15;
   /*
@@ -1043,16 +1111,22 @@
   --service-name-padding: 0px 2px;
   --service-name-radius: 0px;
   --service-name-shadow: none;
+  /* Brass, lit a little further than the plate around it. Each stop is lifted
+     in lightness and saturation, the darker ones more than the lighter, so the
+     whole letter reads brighter without the top stops burning out to white:
+     the foot moves 41.6 to 48.0 in lightness whilst the crown moves 82.9 to
+     86.2. The hue stays where it was, a touch under 45 degrees, because past
+     that brass turns to gold paint. */
   --service-name-fill: linear-gradient(
     to bottom,
-    #ffe7a8 0%,
-    #f5cf6a 18%,
-    #e6b53f 40%,
-    #d09b22 49%,
-    #ffe08a 57%,
-    #edc356 74%,
-    #d5a534 90%,
-    #b8871c 100%
+    #ffedb9 0%,
+    #fada7b 18%,
+    #eec452 40%,
+    #e4b02d 49%,
+    #ffe69d 57%,
+    #f3d068 74%,
+    #dfb546 90%,
+    #daa31a 100%
   );
   --service-name-colour: transparent;
   --service-name-stroke: 0px;
@@ -2200,6 +2274,18 @@
   container-type: inline-size;
   display: flex;
   align-items: center;
+  /*
+    The readout takes whole cells, so the row is left with whatever did not
+    make up a full one. Centred, that remainder is halved between the two ends
+    instead of collecting at the trailing one, which is what puts the readout
+    off the left cheek by exactly what the key stands off the right.
+
+    Shared by the layout rather than worked out and added to the leading inset.
+    A length in `cqw` is measured against the nearest ancestor container, and
+    this row is the container the readout asks, not one it can ask itself, so
+    such a figure would follow the window's width rather than the row's.
+  */
+  justify-content: center;
   gap: var(--space-row);
   width: 100%;
   padding: 0 var(--row-inset);
@@ -2227,15 +2313,51 @@
   not depend on which was chosen.
 */
 .service-name {
-  display: var(--service-name-display);
-  flex: var(--service-name-flex);
+  grid-area: name;
+  /* The full measure, so the two rules can run out to the plate's edges with
+     the name held between them. */
+  justify-self: stretch;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--service-name-rule-gap);
+  margin-block: var(--service-name-space);
+  padding-inline: var(--row-inset);
+  min-width: 0;
+}
+
+/*
+  A rule of brass to either side of the name, drawn the way the letters are:
+  the same fill, the same dark edge beneath it. Pseudo-elements rather than
+  markup, and the clip is put back to the border box because these are not
+  letters and clipping a fill to nothing shows nothing.
+*/
+.service-name::before,
+.service-name::after {
+  content: "";
+  height: var(--service-name-rule-height);
+  border-radius: calc(var(--service-name-rule-height) / 2);
+  /* The section across the bar, so it is drawn over the strip's own height
+     rather than a capital's. */
+  background-image: var(--service-name-rule-fill);
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  /* What a bar standing off the faceplate throws onto it. */
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+  translate: 0 var(--service-name-rule-shift);
+}
+
+.service-name-label {
+  min-width: 0;
+  /* Centred under the strip it labels, and set on the row rather than on the
+     text, because the letters carry a clipped fill and centring that by
+     `text-align` leaves the fill measured against the full row. */
+  /* Equal above and below, so the name stands centred between the axis it
+     follows and whatever comes after it. */
   /* A design may run the plate the full height of the row, so it stands level
      with whatever else labels it. The word inside stays centred either way. */
-  align-self: var(--service-name-self);
-  place-items: center;
   min-width: 0;
-  /* One line, cut where it runs out. A plate of this kind is engraved once and
-     is the size it is; a name too long for it is read as far as it goes. */
+  /* One line, cut where it runs out, with the cut shown rather than hidden. */
   overflow: hidden;
   padding: var(--service-name-padding);
   text-overflow: ellipsis;
@@ -2253,10 +2375,10 @@
     declaration block, nothing can undo one without the other.
   */
   background: var(--series-own, var(--service-name-fill));
-  /* Clipped to the letters where a design engraves the name rather than
-     printing it on something: the fill is then the metal and the letters are
-     the window onto it. Both spellings, because the unprefixed one is recent
-     and the prefixed one is what older engines answer to. */
+  /* `background-clip: text` shows the fill above only where there are letters,
+     so the name is made of brass rather than printed on it. Both spellings,
+     because the unprefixed one is recent and the prefixed one is what older
+     engines answer to. */
   -webkit-background-clip: var(--service-name-clip);
   background-clip: var(--service-name-clip);
   /* A design may set the plate into the face rather than on it, which is a
@@ -2271,17 +2393,17 @@
   /* Its own weight, because a design may set its services in a face whose
      usable weight is not the one the rest of the page is set in. */
   font-weight: var(--service-name-weight);
-  /* Its own leading rather than the page's. A plate carrying one word is as
-     tall as that word plus its padding, and reading leading is what made it
-     stand a third taller than the letters in it. */
+  /* Its own leading rather than the page's. One word standing on its own is as
+     tall as that word, and reading leading is what made the row a third taller
+     than the letters in it. */
   line-height: var(--service-name-leading);
   /* Its own casing and tracking, because a design may name its services in a
      script that has no capitals to speak of and no room between letters. */
   letter-spacing: var(--service-name-tracking);
   text-transform: var(--service-name-transform);
-  /* Trimmed to its own letters where a design centres them in a plate. A line
-     box is taller than what is in it and by different amounts above and below,
-     so a centred line box leaves the letters sitting high. */
+  /* Trimmed to its own letters where a design centres them. A line box is
+     taller than what is in it and by different amounts above and below, so a
+     centred line box leaves the letters sitting high. */
   text-box: var(--service-name-trim);
   /* A design may light the lettering rather than print it: a stroke holds the
      shape against a pale plate and the shadow is what a lamp behind it would
@@ -2289,6 +2411,7 @@
   -webkit-text-stroke: var(--service-name-stroke) var(--service-name-stroke-colour);
   text-shadow: var(--service-name-glow);
 }
+
 
 /* Side by side in most designs. One stacks them, because two small plates
    above each other is how the machine it copies labels a pair of inputs. */
@@ -2302,22 +2425,45 @@
   gap: var(--space-hair);
 }
 
-.protocol-badge {
+/*
+  The glass, cut into the plate three times.
+
+  The readout, the two protocol lamps and the plate above the key are one
+  window in three sizes: the same sheet, the same shadow falling into it, no rim
+  on any of them. Stated once, because three copies of it are three things that
+  have to be kept alike and one that eventually is not.
+*/
+.service-display,
+.protocol-badge,
+.disclosure-label {
+  background: var(--display-glass);
+  box-shadow: var(--service-display-shadow);
+}
+
+/*
+  The two small windows, which differ from the readout in carrying a single
+  printed word rather than a reading, and from each other only in their width,
+  their colour and what they do with the word.
+*/
+.protocol-badge,
+.disclosure-label {
   box-sizing: border-box;
-  /* A window in a plate is a stated size, not the size of the word in it, so
-     the row's arithmetic can count on it. */
-  width: var(--badge-width, auto);
-  padding: var(--badge-padding-block) var(--badge-padding-inline);
+  padding-block: var(--badge-padding-block);
   border: var(--badge-border-width) var(--rule-style)
     var(--badge-edge, var(--surface-rule));
   border-radius: var(--badge-radius);
-  background: var(--badge-fill);
-  box-shadow: var(--badge-shadow, none);
-  color: var(--text-2);
   font-family: var(--badge-font, var(--font-meta));
   font-size: var(--text-size-badge);
   font-weight: var(--badge-weight, inherit);
   line-height: 1;
+}
+
+.protocol-badge {
+  /* A window in a plate is a stated size, not the size of the word in it, so
+     the row's arithmetic can count on it. */
+  width: var(--badge-width, auto);
+  padding-inline: var(--badge-padding-inline);
+  color: var(--text-2);
   text-shadow: var(--badge-glow);
 }
 
@@ -2388,8 +2534,6 @@
   border: var(--service-display-edge-width) var(--rule-style)
     var(--service-display-edge-colour);
   border-radius: var(--service-display-radius);
-  background: var(--display-glass);
-  box-shadow: var(--service-display-shadow);
   color: var(--service-display-colour);
   font-family: var(--service-display-font);
   font-size: var(--service-display-size);
@@ -2402,6 +2546,10 @@
 .service-display-line {
   display: var(--service-display-line-display);
   align-items: baseline;
+  /* The state word and the uptime figure sit side by side where the panel is
+     wide enough and stack where it is not. Both are readings the panel exists
+     to show, so neither is dropped to keep the other on one line. */
+  flex-wrap: wrap;
   /*
     Whole cells, because everything on this line lands on the lattice behind
     it. The page's own row step is not a cell, so a reading standing after a
@@ -2448,12 +2596,23 @@
 
 .service-display-line + .service-display-line {
   color: var(--service-display-colour-quiet);
+  /* A block, so the cut above shows as a cut. The first line is a flex row
+     because it carries the state word and the figure side by side, and
+     `text-overflow` does not act on a flex container: this line held only text
+     and still lost its last characters without a mark, so a narrow panel read
+     `THE LA` rather than `THE LAST 30 D…`. */
+  display: block;
 }
 
 .service-uptime {
-  /* Claims whatever the name did not, so the figure and the chevron stay at
-     the trailing edge whether the name grows or is fixed. */
+  /* Claims whatever the state word did not, so the figure stays at the
+     trailing edge of the line. */
   margin-inline-start: auto;
+  /* Never shrinks, and the line above wraps instead. The two together want
+     350px; the panel offers 210 at 375px and 154 at 320. Held on one line, the
+     figure kept its full width and the state word beside it was squeezed to
+     nothing, so a narrow page read the uptime of a service whose state it
+     never said. */
   flex: none;
   color: var(--uptime-colour);
   font-family: var(--uptime-font);
@@ -2491,19 +2650,10 @@
 }
 
 .disclosure-label {
-  box-sizing: border-box;
+  /* The key's own width, so the plate and the key beneath it are one column
+     cut into the same panel. */
   width: var(--disclosure-mark-width);
-  padding-block: var(--badge-padding-block);
-  border: var(--badge-border-width) var(--rule-style)
-    var(--badge-edge, var(--surface-rule));
-  border-radius: var(--badge-radius);
-  background: var(--badge-fill);
-  box-shadow: var(--badge-shadow, none);
   color: var(--disclosure-label-colour);
-  font-family: var(--badge-font, var(--font-meta));
-  font-size: var(--text-size-badge);
-  font-weight: var(--badge-weight, inherit);
-  line-height: 1;
   text-align: center;
 }
 
@@ -2686,6 +2836,13 @@
 .strip-axis {
   grid-area: axis;
   margin: var(--space-hair) var(--row-inset) 0;
+  /* The dates label the strip above them and belong to it, so they are taken
+     out of the flow: the row below then holds the whole space between the last
+     day and the foot of the plate, and the name centres in that rather than in
+     whatever the dates leave. Measured before this, the name sat 34px under the
+     strip and 10px above the foot. */
+  height: 0;
+  overflow: visible;
 }
 
 /* ── Service details ──────────────────────────────────────────────────────── */
@@ -3213,10 +3370,6 @@
   justify-self: end;
   margin-inline-end: var(--stamp-inset-inline);
 }@media (max-width: 560px) {
-  .service-protocols {
-    display: none;
-  }
-
   /* The range buttons and the expand control need more room than a phone has
      beside a group name, so the row wraps rather than pushing the last control
      past the edge. Measured at 320px before this: the control stood 18px
@@ -3236,6 +3389,20 @@
 
   .chart-legend {
     justify-content: flex-start;
+  }
+
+  /* The date beside a notice title takes a fixed width and the title takes what
+     is left, which at 375px was not enough for a word: `DATABASE ENGINE
+     UPGRADE` was clipped to `DATAB ENGIN UPGRA`, three lines cut mid-word.
+     Stacked here, the title has the row and the date follows it. */
+  .notice--incident {
+    grid-template-areas: "title" "meta" "summary";
+    grid-template-columns: 1fr;
+  }
+
+  .notice--maintenance {
+    grid-template-areas: "glyph title" "glyph meta" "glyph summary";
+    grid-template-columns: auto 1fr;
   }
 }@media (prefers-reduced-motion: reduce) {
   .toggle-all-glyph,

@@ -52,14 +52,25 @@ const HEADLINE: Record<string, string> = {
  * @returns The markup for the key, decorative throughout: what it does is said
  *   by the control around it.
  */
-function key(labelled = false): string {
-  const plate = labelled
-    ? `<span class="disclosure-label">OPEN</span>`
-    : "";
+function key(plate = ""): string {
   return `<span class="disclosure-stack" aria-hidden="true">
       ${plate}
       <span class="disclosure-mark"></span>
     </span>`;
+}
+
+/**
+ * The plate above the key, which carries a printed word.
+ *
+ * Its own function rather than a flag on `key`, so the caller states what the
+ * stack holds instead of switching a child on. The control that opens every row
+ * at once carries no plate and simply passes nothing.
+ *
+ * @param word - What is printed on it.
+ * @returns The plate's markup.
+ */
+function keyPlate(word: string): string {
+  return `<span class="disclosure-label">${escape(word)}</span>`;
 }
 
 /**
@@ -178,7 +189,6 @@ function service(
   const window = RANGES.find((option) => option.key === data.site.defaultRange);
   return `<article class="service" data-service-id="${escape(entry.id)}" data-open="false">
     <button class="service-summary" type="button" aria-expanded="false" aria-controls="details-${escape(entry.id)}" aria-label="${escape([entry.name, `${figure} uptime`, spoken].filter(Boolean).join(", "))}">
-      <span class="service-name">${escape(entry.name)}</span>
       <span class="service-display">
         <span class="service-display-line">
           <span class="service-display-main">${escape(STATE_WORD[entry.status] ?? "No data")}</span>
@@ -186,16 +196,17 @@ function service(
         </span>
         <span class="service-display-line">${escape(window?.description ?? "")}</span>
       </span>
-      ${key(true)}
+      ${protocols(entry)}
+      ${key(keyPlate("OPEN"))}
     </button>
     <div class="uptime-strip-host"></div>
     <div class="strip-axis">
       <span class="strip-axis-from"></span>
       <span class="strip-axis-to">Today</span>
     </div>
+    <span class="service-name"><span class="service-name-label">${escape(entry.name)}</span></span>
     <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
-        ${protocols(entry)}
         <div class="chart-host"></div>
       </div>
     </div>
