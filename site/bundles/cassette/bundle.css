@@ -891,9 +891,12 @@
   /* Side by side on one line, because the pair stands at the leading edge of
      the caption over the plot rather than in the row above it. */
   --protocols-self: center;
-  --protocols-justify: flex-start;
-  --protocols-direction: row;
-  --protocols-align: center;
+  --protocols-justify: center;
+  /* One above the other, in the gap between the readout and the key. Two lamps
+     side by side wanted the width of the readout; stacked they want the height
+     the row already has. */
+  --protocols-direction: column;
+  --protocols-align: stretch;
   /*
     The readout.
 
@@ -925,10 +928,10 @@
   */
   --service-display-inset: 6px;
   /*
-    What the panel is not: the two gaps and the key. The panel takes the whole
-    cells left over after those, so it is never a fraction of a cell wide. The
-    name used to be reserved for here as well and is not any more, because it
-    stands under the strip and no longer shares this row.
+    What the panel is not: the gaps, the key, and the two protocol lamps beside
+    it. The panel takes the whole cells left over after those, so it is never a
+    fraction of a cell wide. The name used to be reserved here as well and is
+    not any more, because it stands under the strip.
   */
   --badge-width: 40px;
   --service-display-frame: calc(
@@ -940,7 +943,7 @@
      to the readout: at 375px that reserve was more than three times what the
      readout itself was left with. */
   --service-display-reserve: calc(
-    2 * var(--space-row) + var(--disclosure-mark-width)
+    3 * var(--space-row) + var(--disclosure-mark-width) + var(--badge-width)
   );
   --service-display-padding: calc(var(--service-display-inset) - 5px)
     calc(var(--service-display-inset) - 4.47px)
@@ -3332,10 +3335,6 @@
   justify-self: end;
   margin-inline-end: var(--stamp-inset-inline);
 }@media (max-width: 560px) {
-  .service-protocols {
-    display: none;
-  }
-
   /* The range buttons and the expand control need more room than a phone has
      beside a group name, so the row wraps rather than pushing the last control
      past the edge. Measured at 320px before this: the control stood 18px

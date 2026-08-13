@@ -185,6 +185,7 @@ function service(
         </span>
         <span class="service-display-line">${escape(window?.description ?? "")}</span>
       </span>
+      ${protocols(entry)}
       ${key(true)}
     </button>
     <div class="uptime-strip-host"></div>
@@ -195,7 +196,6 @@ function service(
     <span class="service-name"><span class="service-name-label">${escape(entry.name)}</span></span>
     <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
-        ${protocols(entry)}
         <div class="chart-host"></div>
       </div>
     </div>
