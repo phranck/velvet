@@ -1,34 +1,6 @@
 # Changelog
 
-## Version 1.1.0 (2026-08-13)
-
-The Cassette design is now built as the machine it emulates.
-
-Its readout is a real dot-matrix panel: one character size, brightness as the only difference between what it says and what it says it about, and a grid of separate five-by-nine cells with every character standing on exactly one of them. The panel takes whole cells and nothing beyond them, with the same margin of metal on all four sides.
-
-The sun above the services is symmetric, its five colours are the ones the readings below are drawn in, and the page's name is lettered across its middle band.
-
-The days of a service are sunk into the faceplate rather than sitting on it, the day under the pointer lights up instead of standing up, and a day nothing was measured on is the plate barely lifted. The service name is cut in brass that stays brass at every point of its depth: it used to go almost black in the middle, where the eye reads it.
-
-The screws that close a faceplate stand in the middle of their plate and their sockets sit concentric with their heads.
-
-A design can now say how its strip is read and what the day under the pointer does. The three other designs say nothing and are unchanged.
-
-Two corrections reach a published page. The typeface notices copied into every installation now credit Atomic Age, which the Cassette design has always carried and which was named nowhere: its licence shipped beside the file all along, so only the published summary was short. They also no longer credit Tangerine, which no design carries.
-
-A page published without a design starts in the colours it ends in. Eight of the values it was drawn from before the theme arrived disagreed with the theme that replaced them, so a page built before its first check had run repainted once the browser had read its configuration.
-
-## Version 1.0.1 (2026-08-12)
-
-A status page is now published in the design its configuration names.
-
-Until now that name was lost on the way. Writing `statusPage.design` into your `velvet.yml` got you the page Velvet ships, and nothing said why. The check that reads a configuration takes it apart field by field, and this one field was never copied across.
-
-The browser setup offers those four designs where it used to offer four colour palettes. Each one is shown with its name, the period it comes from, and a picture of a page published in it, and what you choose there is written as `design`.
-
-The setup also stands in one column again, because the bar above the form began at a different edge from the form beneath it. The layer the setup is drawn on no longer tiles either: the shorthand that paints it puts back a property that had been set before it.
-
-## Version 1.0.0 (2026-08-12)
+## Version 1.0.0 (2026-08-13)
 
 Velvet watches your websites and tells the people who rely on them whether everything is working.
 
@@ -36,6 +8,26 @@ You give it a list of addresses. Every five minutes GitHub asks each one whether
 
 When an address stops answering, Velvet opens an issue in your repository and marks that service as down on the page. When it answers again, the issue closes and the page says so. Work you have planned can be announced beforehand, and it shows up as a notice rather than as a fault.
 
-The page keeps a record of what was found, so a visitor sees how things have been going and not only how they are right now. You choose how it looks, and it can live on an address of your own. There is no server to rent and nothing to keep running, because all of it happens inside GitHub. The addresses you watch and anything you keep secret stay in your repository and never appear on the published page.
+The page keeps a record of what was found, so a visitor sees how things have been going and not only how they are right now. There is no server to rent and nothing to keep running, because all of it happens inside GitHub. The addresses you watch and anything you keep secret stay in your repository and never appear on the published page.
 
-Setting it up takes five steps in a browser and no file edited by hand.
+Setting it up takes five steps in a browser and no file edited by hand, and the page can live on an address of your own.
+
+### How your page looks
+
+Your page is published in one of four designs. You choose it during the setup, where each is shown with its name, the period it comes from, and a picture of a page published in it, or by naming it as `design` in your configuration. A design brings its own appearance and its own typefaces with it, so a published page asks nobody else for a font.
+
+Cassette is built as the machine it emulates. Its readout is a real dot-matrix panel: one character size, brightness as the only difference between what it says and what it says it about, and a grid of separate five-by-nine cells with every character standing on exactly one of them. The panel takes whole cells and nothing beyond them, with the same margin of metal on all four sides, and it stands off the walnut cheek beside it by what the key stands off the other one.
+
+The days of a service are sunk into the faceplate rather than sitting on it, the day under the pointer lights up instead of standing up, and a day nothing was measured on is the plate barely lifted. The service name is cut in brass that stays brass at every point of its depth, and the key that opens a row is one brass lit three ways rather than three sets of colours. The screws that close a faceplate stand in the middle of their plate with their sockets concentric to their heads. The sun above the services is symmetric, its five colours are the ones the readings below are drawn in, and the page's name is lettered across its middle band.
+
+A design can say how its strip is read and what the day under the pointer does. A name too long for the line it stands on is shown cut rather than broken off mid-letter.
+
+### How your page behaves
+
+Reading the response times follows the pointer without lagging behind it. Both drawings do their work once per frame rather than once per mouse event, and moving the pointer redraws the pointer alone instead of rebuilding the whole chart and filtering every measurement again for each pixel it travels.
+
+A page starts in the colours it ends in, so one built before its first check has run does not repaint once the browser has read its configuration.
+
+### What is credited
+
+The typeface notices copied into every installation credit every face a design carries, and credit none that no design carries.

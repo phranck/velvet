@@ -1,10 +1,10 @@
-# Velvet 1.1.0
+# Velvet 1.0.0
 
 ## What this update changes
 
-The Cassette design is built as the machine it emulates. Its readout is a real dot-matrix panel: one character size throughout, brightness as the only difference, and a grid of separate five-by-nine cells with every character standing on exactly one of them. The days of a service are sunk into the faceplate, the day under the pointer lights up rather than standing up, and the name on each plate is cut in brass that stays legible at every point of its depth.
+Your page is published in one of four designs, chosen during the setup or named as `design` in your configuration. Each design brings its own appearance and its own typefaces with it, so a published page asks nobody else for a font.
 
-If your page is published in another design, nothing about it changes. A design can now say how its strip of days is read, and the three that say nothing are drawn exactly as before.
+Reading the response times follows the pointer without lagging behind it, and a page starts in the colours it ends in rather than repainting once the browser has read its configuration. A service name too long for the line it stands on is shown cut rather than broken off mid-letter.
 
 ## What stays yours
 
