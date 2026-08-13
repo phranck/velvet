@@ -1,6 +1,6 @@
 {
-  "id": "cassette",
-  "name": "Cassette",
+  "id": "retro-chassis",
+  "name": "Retro Chassis",
   "description": "A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, with a lit name plate, two protocol lamps, a two-line readout and a lamp meter for its days.",
   "era": "1979",
   "version": "1.0.0",

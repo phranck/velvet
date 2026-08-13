@@ -112,7 +112,7 @@ test("published update schemas match their TypeScript schema sources", () => {
 const EVERY_STATUS_PAGE_FIELD: Record<string, unknown> = {
   name: "Example Status",
   customDomain: "status.example.com",
-  design: "cassette",
+  design: "retro-chassis",
   layout: "cards",
   defaultRange: "90d",
   logoHeight: 96,

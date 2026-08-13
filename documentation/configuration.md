@@ -160,7 +160,7 @@ statusPage:
   logoHeight: 72
   layout: grouped
   defaultRange: 30d
-  design: cassette
+  design: retro-chassis
   navigation:
     - title: Website
       href: https://example.com

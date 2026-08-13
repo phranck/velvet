@@ -10,7 +10,7 @@
  * because two things read it: `bundle-fonts.ts` to do the copying, and
  * `test/third-party-notices.test.ts` to check that every face named here is
  * credited and that nothing is credited which no design carries. That test
- * exists because Tangerine was removed from Cassette on 2026-08-12 whilst its
+ * exists because Tangerine was removed from Retro Chassis on 2026-08-12 whilst its
  * dependency and its notice stayed, and the notice is copied into every
  * installation.
  */
@@ -34,7 +34,7 @@ export const BUNDLES: Record<string, Face[]> = {
     { package: "fira-code", family: "Fira Code", weights: [400, 600] },
     { package: "plaster", family: "Plaster", weights: [400] },
   ],
-  cassette: [
+  "retro-chassis": [
     { package: "atomic-age", family: "Atomic Age", weights: [400] },
     { package: "audiowide", family: "Audiowide", weights: [400] },
     { package: "doto", family: "Doto", weights: [400, 600, 700] },

@@ -10,8 +10,8 @@
     "block": 38
   },
   "designs": {
-    "cassette": {
-      "file": "cassette.png",
+    "retro-chassis": {
+      "file": "retro-chassis.png",
       "imageSha256": "1d2c0c0c1ffa67690ff4cbef4416e924e42c2f4dbaa9990420ac55de1954b492",
       "bundleSha256": "190cdc9a73d21cbe2f0a2c46efbe2d5d6d8f94e80c568061854ba5b994687557"
     },

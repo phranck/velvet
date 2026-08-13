@@ -1,5 +1,5 @@
 /**
- * What Cassette does once its markup is on the page.
+ * What Retro Chassis does once its markup is on the page.
  *
  * It is handed the element the template's markup was put into, and the same data
  * the template rendered from. It fetches nothing: everything a range change
@@ -125,7 +125,7 @@ interface Row {
  * @returns The function that undoes everything this attached.
  */
 export function enhance(root: HTMLElement, data: BundleData): () => void {
-  const page = root.querySelector<HTMLElement>(".cassette-page") ?? root;
+  const page = root.querySelector<HTMLElement>(".retro-chassis-page") ?? root;
   const undo: Array<() => void> = [];
   const rows: Row[] = [];
   let range = readRange(data.site.defaultRange as RangeKey);

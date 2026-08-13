@@ -1,5 +1,5 @@
 /**
- * The markup Cassette puts on the page, built from the data it was given.
+ * The markup Retro Chassis puts on the page, built from the data it was given.
  *
  * A rack of separate components. Each service is a brushed faceplate bolted
  * between two walnut cheeks, carrying a recessed name plate lit from behind,
@@ -275,7 +275,7 @@ export function template(data: BundleData): string {
   const reporting =
     state !== "operational" && visibleEvents(data.incidents.events).length > 0;
 
-  return `<main class="cassette-page" data-layout="cards" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
+  return `<main class="retro-chassis-page" data-layout="cards" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
     ${hero(data, state)}
     <div class="status-band status-band--body">
       <div class="status-body">

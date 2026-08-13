@@ -14,7 +14,7 @@ import { BUNDLES } from "../scripts/bundle-faces.js";
  * generated site. A face credited there which nothing carries is a claim made to
  * everybody who installs Velvet.
  *
- * Written after Tangerine was removed from the Cassette design on 2026-08-12
+ * Written after Tangerine was removed from the Retro Chassis design on 2026-08-12
  * whilst its `@fontsource` dependency and its notice both stayed, which nothing
  * reported because nothing compared the two.
  */

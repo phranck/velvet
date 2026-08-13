@@ -52,7 +52,7 @@ preserves what already happened does not raise it.
 import { createUptimeStrip } from "@velvet/bundle-plugins/uptime-strip";
 
 const strip = createUptimeStrip(host, {
-  className: "cassette-strip",
+  className: "retro-chassis-strip",
   style: () => ({ align: "bottom", pieces: 4, operational: "#c8ff9a" }),
 });
 strip.update(days, "month");

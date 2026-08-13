@@ -36,7 +36,7 @@ Then open `http://localhost:5173/gallery/`.
 | Design | Era | What it is |
 | --- | --- | --- |
 | `velvet` | today | The page Velvet publishes now. The baseline the others are compared against rather than a design of its own |
-| `cassette` | 1979 | A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, carrying a recessed name plate lit from behind, two protocol lamps, a two-line readout, a lamp meter for its days, and its response times on the lit scale of a receiver. A striped sun stands behind the status, and there is not one picture anywhere |
+| `retro-chassis` | 1979 | A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, carrying a recessed name plate lit from behind, two protocol lamps, a two-line readout, a lamp meter for its days, and its response times on the lit scale of a receiver. A striped sun stands behind the status, and there is not one picture anywhere |
 | `twenty-forty-nine` | 2049 | A filthy pane of glass with a dim blue readout: corner brackets, edge scales, dotted grids, a vignette to black |
 | `ncc-1701-d` | 2364 | A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards |
 
@@ -44,7 +44,7 @@ Then open `http://localhost:5173/gallery/`.
 
 ### Why it is arranged this way
 
-The previous arrangement was one markup, one structural stylesheet and a set of custom properties every design had to declare. `base.css` read 423 of them, of which 128 were used by exactly one design: 72 by `ncc-1701-d`, 52 by `cassette`, 4 by `twenty-forty-nine`.
+The previous arrangement was one markup, one structural stylesheet and a set of custom properties every design had to declare. `base.css` read 423 of them, of which 128 were used by exactly one design: 72 by `ncc-1701-d`, 52 by `retro-chassis`, 4 by `twenty-forty-nine`.
 
 The count was not the problem. Seven design decisions of one session could not be expressed as a value at all and needed changes to the shared markup or the shared script: the two-line readout, the aluminium key with its lamp, both protocols as lamps, the range labels moving out of the drawing, the printed scale, the pointer, and clipping a fill to the letters of a name. Each of those forced the other three designs to declare properties they set to nothing.
 
@@ -119,7 +119,7 @@ Two consequences are easy to miss.
 bun run --cwd site bundles:fonts
 ```
 
-`site/scripts/bundle-fonts.ts` copies the faces each design names out of its `@fontsource` package into `assets/fonts/`, writes the `@font-face` rules that name them into `assets/fonts.css`, and copies each licence beside the files. It also cuts the Phosphor duotone face down to the glyphs that design actually shows and writes `assets/icons.css`. A design that shows no icons gets neither file, which is how `cassette` pays nothing for a face it never names.
+`site/scripts/bundle-fonts.ts` copies the faces each design names out of its `@fontsource` package into `assets/fonts/`, writes the `@font-face` rules that name them into `assets/fonts.css`, and copies each licence beside the files. It also cuts the Phosphor duotone face down to the glyphs that design actually shows and writes `assets/icons.css`. A design that shows no icons gets neither file, which is how `retro-chassis` pays nothing for a face it never names.
 
 The rules are written by the same script that copies the files, because a `@font-face` names a file that has to exist and the two are one decision. An icon the face does not define fails the script rather than shipping: left to the browser it renders as an empty box, which is how a misremembered name once reached a review.
 
@@ -131,7 +131,7 @@ The property contract asked whether 418 named values existed and resolved, which
 
 ```bash
 bun run --cwd site bundles:conform                                  # every design, every fixture
-bun run --cwd site bundles:conform -- --bundle cassette             # one design
+bun run --cwd site bundles:conform -- --bundle retro-chassis             # one design
 bun run --cwd site bundles:conform -- --fixture long-names          # one case
 ```
 
@@ -158,7 +158,7 @@ It is worth recording, because every one of them had passed the property gates.
 - The tertiary text of the page Velvet publishes measures **2.79:1** on a card, against the 4.5:1 body text needs. Two other designs carried the same fault at **3.69:1** and **3.82:1**. All three are lifted in their bundles to the lowest value that passes, and the shipping product is issue #471.
 - An unlit protocol lamp measured **1.99:1** against its own dark fill. A lamp that is out is a reading, and a reading nobody can read is not one.
 - `ncc-1701-d` came to **338px** in a 320px window: the last range button ended at 337.9 and a notice at 324.2. Three floors came down together, because dropping one of them only moves which element is the widest.
-- `cassette` came to **351px**, with the three lines under the rack measuring 338.5px on one row. They stack below 560px now.
+- `retro-chassis` came to **351px**, with the three lines under the rack measuring 338.5px on one row. They stack below 560px now.
 
 ---
 
@@ -231,7 +231,7 @@ This is not full comparability, and it should not be mistaken for it. Each servi
 
 **The pointer is drawn last, after the scale.** An SVG paints in document order, so a scale appended after the crosshair stands in front of it. The order inside the plot is the grid, the value figures, the traces, the printed scale, the two axis lines, and then the strip the pointer rides on. Whatever a design draws over the plot from CSS, such as the shadow of a window cut into a plate, lies over all of it.
 
-**The reading under the pointer may go to the design instead.** Both drawings take an optional reporter, one string per line. Given one, they hand over what they would have shown and draw no overlay; given none, they behave as before. `cassette` uses it to read on a panel of its own, which is what a machine of that period does.
+**The reading under the pointer may go to the design instead.** Both drawings take an optional reporter, one string per line. Given one, they hand over what they would have shown and draw no overlay; given none, they behave as before. `retro-chassis` uses it to read on a panel of its own, which is what a machine of that period does.
 
 ---
 

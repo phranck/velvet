@@ -34,9 +34,9 @@ test("a stylesheet cannot end the element that carries it", () => {
 
 test("names the design in a way a reader and a screen reader both get", () => {
   const document = bundlePreviewDocument({
-    title: `Cassette "1979" <futurism>`,
+    title: `Retro Chassis "1979" <futurism>`,
     markup: "",
     css: "",
   });
-  assert.match(document, /<title>Cassette &quot;1979&quot; &lt;futurism&gt;<\/title>/);
+  assert.match(document, /<title>Retro Chassis &quot;1979&quot; &lt;futurism&gt;<\/title>/);
 });

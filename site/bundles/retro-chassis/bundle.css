@@ -1,5 +1,5 @@
 /**
- * Cassette, 1979, as a bundle of its own.
+ * Retro Chassis, 1979, as a bundle of its own.
  *
  * Not a terminal with an amber accent. A rack of separate components, and the
  * deck at the middle of it. The design is built from what those objects
@@ -32,7 +32,7 @@
 
 @import "./assets/fonts.css";
 
-.cassette-page {
+.retro-chassis-page {
   /* ── Identity ─────────────────────────────────────────────────────────── */
   --theme-scheme: dark;
 
@@ -107,7 +107,7 @@
   --display-transform: uppercase;
   /*
     Monoton for the one line that names the state, and nowhere else. It draws
-    every stroke as a pair of hairlines, which is the lettering a cassette
+    every stroke as a pair of hairlines, which is the lettering a retro-chassis
     inlay carries, and at paragraph size it stops being readable at all. It
     ships one weight, so the headline takes that rather than the display one.
   */
@@ -243,7 +243,7 @@
   --tooltip-padding-block: 7px;
   --tooltip-padding-inline: 11px;
   /* The stamps below the rack begin where the metal of a faceplate does. */
-  --stamp-inset-inline: var(--cassette-cheek);
+  --stamp-inset-inline: var(--retro-chassis-cheek);
   --dot-size: 7px;
 
   /* ── Availability strip ───────────────────────────────────────────────── */
@@ -405,7 +405,7 @@
   /* ── Arrangement ──────────────────────────────────────────────────────── */
   /* How wide the walnut cheeks are, which is also where the lines below the
      rack begin. */
-  --cassette-cheek: 16px;
+  --retro-chassis-cheek: 16px;
   /*
     The faceplate.
 
@@ -424,12 +424,12 @@
   */
   --card-texture: linear-gradient(
       to right,
-      #4a301c 0 calc(var(--cassette-cheek) - 2px),
-      #2e1d10 calc(var(--cassette-cheek) - 2px) var(--cassette-cheek),
-      transparent var(--cassette-cheek) calc(100% - var(--cassette-cheek)),
-      #2e1d10 calc(100% - var(--cassette-cheek))
-        calc(100% - var(--cassette-cheek) + 2px),
-      #4a301c calc(100% - var(--cassette-cheek) + 2px) 100%
+      #4a301c 0 calc(var(--retro-chassis-cheek) - 2px),
+      #2e1d10 calc(var(--retro-chassis-cheek) - 2px) var(--retro-chassis-cheek),
+      transparent var(--retro-chassis-cheek) calc(100% - var(--retro-chassis-cheek)),
+      #2e1d10 calc(100% - var(--retro-chassis-cheek))
+        calc(100% - var(--retro-chassis-cheek) + 2px),
+      #4a301c calc(100% - var(--retro-chassis-cheek) + 2px) 100%
     ),
     url("./assets/plate.png");
   /* The cheeks span the plate, the brushing repeats at the size it was drawn
@@ -439,7 +439,7 @@
   /*
     The label head.
 
-    A cassette's inlay is a printed band across the top of the card, and every
+    A retro-chassis's inlay is a printed band across the top of the card, and every
     make had its own: TDK a broad stripe over a hairline, BASF two rules in
     sequence, Maxell a gold band on black. It is the one graphic that names the
     make before a word is read, and it is what this design is built on.
@@ -557,7 +557,7 @@
     left 26px bottom var(--case-screw-inset),
     right 26px bottom var(--case-screw-inset),
     left 16px top var(--case-plate),
-    left var(--cassette-cheek) top var(--case-plate),
+    left var(--retro-chassis-cheek) top var(--case-plate),
     left 16px bottom var(--case-plate),
     left 16px top, left 16px top var(--case-plate),
     left 16px bottom var(--case-plate), left 16px bottom,
@@ -1204,10 +1204,10 @@
  * radius once and everything inside it follows.
  */
 
-.cassette-page,
-.cassette-page *,
-.cassette-page *::before,
-.cassette-page *::after {
+.retro-chassis-page,
+.retro-chassis-page *,
+.retro-chassis-page *::before,
+.retro-chassis-page *::after {
   box-sizing: border-box;
 }
 
@@ -1219,9 +1219,9 @@
   either. It is never set to `none`: a keyboard user has nothing else to go on,
   and `:focus-visible` already keeps it away from pointer users.
 */
-.cassette-page a:focus-visible,
-.cassette-page button:focus-visible,
-.cassette-page [tabindex]:focus-visible {
+.retro-chassis-page a:focus-visible,
+.retro-chassis-page button:focus-visible,
+.retro-chassis-page [tabindex]:focus-visible {
   outline: var(--focus-width) solid var(--accent);
   outline-offset: var(--focus-offset);
   border-radius: var(--control-radius);
@@ -1238,7 +1238,7 @@
   has once its own bars have gone, so the second line is what stops a page
   scrolling under a visible address bar.
 */
-.cassette-page {
+.retro-chassis-page {
   color-scheme: var(--theme-scheme);
   display: flex;
   flex-direction: column;
@@ -1263,7 +1263,7 @@
   `site/src/app.css`, where the measured difference over eight expand-all
   cycles was 5809ms against 485ms.
 */
-.cassette-page::before {
+.retro-chassis-page::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -1272,7 +1272,7 @@
   pointer-events: none;
 }
 
-.cassette-page::after {
+.retro-chassis-page::after {
   content: "";
   position: fixed;
   inset: 0;
@@ -1322,7 +1322,7 @@
    A surface that overrides `--card-padding` further down restates these two
    beside it, because descendants inherit the resolved value rather than the
    expression. */
-.cassette-page {
+.retro-chassis-page {
   --card-inner-radius: max(
     calc(var(--card-radius-base) - var(--card-padding)),
     0px
@@ -1340,7 +1340,7 @@
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 /* Takes the height the document has left, so the footer stands at the foot of
    the window on a short page and at the foot of the readings on a long one. */
-.cassette-page {
+.retro-chassis-page {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1435,15 +1435,15 @@
   resolved on `:root` itself. A state colour held further down the tree would
   resolve to nothing there, and the property using it would be dropped.
 */
-.cassette-page {
+.retro-chassis-page {
   --status-colour: var(--state-operational);
 }
 
-.cassette-page[data-status="degraded"] {
+.retro-chassis-page[data-status="degraded"] {
   --status-colour: var(--state-degraded);
 }
 
-.cassette-page[data-status="outage"] {
+.retro-chassis-page[data-status="outage"] {
   --status-colour: var(--state-outage);
 }
 
@@ -1456,7 +1456,7 @@
   no edge around such a day either, which is why `--state-ghost-edge` is empty
   and the mark below states a colour of its own.
 */
-.cassette-page[data-status="unknown"] {
+.retro-chassis-page[data-status="unknown"] {
   --status-colour: var(--state-unknown-mark);
 }
 
@@ -1671,7 +1671,7 @@
   a theme can answer. One draws a limb around this region, and a limb around an
   empty region is a shape with nothing in it.
 */
-.cassette-page[data-notices="none"] .notices {
+.retro-chassis-page[data-notices="none"] .notices {
   display: none;
 }
 
@@ -2151,7 +2151,7 @@
     band this device has no room for.
   */
   padding-block: calc(var(--case-plate) + var(--space-block));
-  padding-inline: calc(var(--cassette-cheek) + var(--space-section));
+  padding-inline: calc(var(--retro-chassis-cheek) + var(--space-section));
 }
 
 /*
@@ -3156,11 +3156,11 @@
 /* One declaration decides a series colour, and everything drawn for that
    series reads it. Adding a third protocol would mean one more rule here. */
 /* By service where the theme lists colours for that, by protocol otherwise. */
-.cassette-page [data-protocol="ipv4"] {
+.retro-chassis-page [data-protocol="ipv4"] {
   --series-colour: var(--series-own, var(--protocol-ipv4));
 }
 
-.cassette-page [data-protocol="ipv6"] {
+.retro-chassis-page [data-protocol="ipv6"] {
   --series-colour: var(--series-next, var(--protocol-ipv6));
 }
 
@@ -3295,7 +3295,7 @@
   pointer-events: none;
 }
 
-.cassette-page linearGradient stop {
+.retro-chassis-page linearGradient stop {
   stop-color: var(--series-colour);
 }
 
@@ -3469,7 +3469,7 @@
     reading. The headline says what the page is for, and the name is on the
     browser's own tab, so what goes is the picture rather than the information.
   */
-  .cassette-page {
+  .retro-chassis-page {
     --hero-mark-shape-display: none;
     --hero-mark-shape-size: 0px;
   }
@@ -3493,7 +3493,7 @@
     row-gap: var(--space-hair);
   }
 
-  .cassette-page {
+  .retro-chassis-page {
     /* Two characters where a desk has seven, because the panel is a third as
        wide and the figure is what the line is for. */
     --uptime-word: " Up";
@@ -3558,7 +3558,7 @@
   /* The case keeps its cheeks and a little metal inside them, and gives the
      rest of its width to the keys. */
   .range-card {
-    padding-inline: calc(var(--cassette-cheek) + var(--space-hair));
+    padding-inline: calc(var(--retro-chassis-cheek) + var(--space-hair));
   }
 
   /* The range buttons and the expand control need more room than a phone has
@@ -3604,7 +3604,7 @@
   }
 
   /* Every optional movement stops, including the backdrop's. */
-  .cassette-page::after,
+  .retro-chassis-page::after,
   .uptime-tooltip {
     animation: none;
   }
@@ -3623,15 +3623,15 @@
     border-top-color: CanvasText;
   }
 }@media (max-width: 560px) {
-  .cassette-page .status-footer-row {
+  .retro-chassis-page .status-footer-row {
     grid-template-columns: 1fr;
     justify-items: center;
     row-gap: var(--space-hair);
   }
 
-  .cassette-page .stamp--build,
-  .cassette-page .status-footer-row .configured,
-  .cassette-page .stamp--serial {
+  .retro-chassis-page .stamp--build,
+  .retro-chassis-page .status-footer-row .configured,
+  .retro-chassis-page .stamp--serial {
     grid-column: 1;
     justify-self: center;
     margin-inline: 0;

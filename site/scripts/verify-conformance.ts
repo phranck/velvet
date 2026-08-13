@@ -3,7 +3,7 @@
  *
  * Run with `bun run --cwd site bundles:conform`, optionally narrowed:
  *
- *   bun scripts/verify-conformance.ts --bundle cassette
+ *   bun scripts/verify-conformance.ts --bundle retro-chassis
  *   bun scripts/verify-conformance.ts --fixture twenty-services
  *
  * It drives Chromium through Playwright, as the rendered gate it replaces did.
