@@ -1045,28 +1045,26 @@
   /*
     A half-round bar, the curved side towards the reader.
 
-    The section runs across the thickness, not down a slope, which is what
-    every earlier attempt drew. On a round bar lit from above the brightest
-    point is not the top edge: the top edge is the silhouette and turns away,
-    the highlight sits a little below it where the surface faces the light
-    square on, and from there the metal darkens as the curve rolls under. The
-    bottom edge is silhouette again and darkest of all.
+    The section runs across the thickness rather than down a slope. On a round
+    bar lit from above the top edge is silhouette and turns away, the highlight
+    sits below it where the surface faces the light square on, and the metal
+    darkens as the curve rolls under to a dark bottom edge.
 
-    Eight stops with soft steps between them, because a curve has no steps. The
-    letters' fill is the same brass read down a face rather than across a bar,
-    which is why it cannot be used here unchanged.
+    Held below the letters beside it. A moulding is trim and the name is what
+    the plate is for, so the lettering is the brightest brass on the face and
+    this is the same metal in its shadow.
   */
   --service-name-rule-fill: linear-gradient(
     to bottom,
-    #6b4d0a 0%,
-    #a2740f 8%,
-    #e8bd44 18%,
-    #fff8dc 30%,
-    #ffe9a8 40%,
-    #e8bd44 56%,
-    #c9942a 70%,
-    #8a6410 85%,
-    #4a350a 100%
+    #4b3607 0%,
+    #71510b 8%,
+    #bb9017 18%,
+    #ffdb4e 30%,
+    #ffc929 40%,
+    #bb9017 56%,
+    #8d681d 70%,
+    #61460b 85%,
+    #342507 100%
   );
   /* The moulding stands off the plate: a dark line under it and a thread of
      light along its crown, which is what the letters get from their own glow. */
