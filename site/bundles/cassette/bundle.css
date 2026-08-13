@@ -1881,82 +1881,6 @@
   controls inside that bar is not decoration: on those panels the horizontal
   arm is where the controls live.
 */
-/*
-  The device the two controls sit in.
-
-  A rack of this kind has nothing standing loose between its components, so the
-  range switch and the expand-all key are cased like everything else: the same
-  faceplate, the same walnut cheeks, the same screws and end plates, inherited
-  by carrying the service card's own class.
-
-  It is as wide as the row of keys asks for rather than as wide as the page, and
-  it stands centred over the first service. Shallower too, because it holds one
-  row of keys where a service holds a readout, a strip and a name plate: its
-  head keeps the printed band and its foot the closing plate, and nothing else
-  stands between them.
-*/
-.range-card {
-  width: max-content;
-  max-width: 100%;
-  margin-inline: auto;
-  margin-block-end: var(--card-gap);
-  /* Clear of the two plates and no further. The service's own figures leave
-     room for a printed band and a name beneath it, neither of which is here. */
-  padding-block-start: calc(var(--case-plate) + var(--space-tight));
-  padding-block-end: calc(var(--case-plate) + var(--space-tight));
-  padding-inline: calc(var(--cassette-cheek) + var(--space-block));
-}
-
-/*
-  The keys in it, in one row.
-
-  The expand-all key stands apart from the three ranges rather than beside them,
-  because it does something else: a section step between them says so without a
-  rule or a legend.
-*/
-.range-card .range-bar {
-  justify-content: center;
-  gap: var(--space-section);
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  background: none;
-}
-
-.range-card .ranges {
-  flex: 0 0 auto;
-  gap: var(--space-block);
-}
-
-/*
-  The chosen range, which is the key that is down.
-
-  Its plate is lit rather than merely coloured, in the amber of the indicator
-  lamp this machine reads everything else by. The key beneath takes the pressed
-  face and the lit lamp a service's key takes when its row is open, so the two
-  controls say the same thing the same way.
-*/
-.range-button[aria-pressed="true"] .disclosure-label {
-  color: var(--range-label-colour-on);
-  text-shadow: var(--range-label-glow-on);
-}
-
-.range-button[aria-pressed="true"] .disclosure-mark {
-  background: var(--disclosure-mark-fill-pressed);
-  box-shadow: var(--disclosure-mark-shadow-pressed);
-}
-
-.range-button[aria-pressed="true"] .disclosure-mark::before {
-  background: var(--range-led-fill-on);
-  box-shadow: var(--range-led-glow-on);
-}
-
-@media (hover: hover) {
-  .range-button:not([aria-pressed="true"]):hover .disclosure-mark {
-    background: var(--disclosure-mark-fill-hover);
-  }
-}
-
 .range-bar {
   position: relative;
   display: flex;
@@ -2179,6 +2103,60 @@
   background-image: var(--card-texture);
   background-size: var(--card-texture-size);
 }
+
+/*
+  The device the two controls sit in.
+
+  A rack of this kind has nothing standing loose between its components, so the
+  range switch and the expand-all key are cased like everything else: the same
+  faceplate, the same walnut cheeks, the same screws and end plates, inherited
+  by carrying the service card's own class.
+
+  It stands after that class rather than before it. Both selectors weigh the
+  same, so the later one wins, and every figure below is one the service card
+  also states.
+
+  It is as wide as its row of keys asks for and stands centred over the first
+  service. Shallower too, because it holds one row of keys where a service holds
+  a readout, a strip and a name plate.
+*/
+.range-card {
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  margin-block-end: var(--card-gap);
+  /*
+    Equal above and below, so the keys stand centred on the faceplate rather
+    than on the case: each end is the closing plate plus the same air. The
+    service's own figures are not symmetric, because its head carries a printed
+    band this device has no room for.
+  */
+  padding-block: calc(var(--case-plate) + var(--space-tight));
+  padding-inline: calc(var(--cassette-cheek) + var(--space-section));
+}
+
+/*
+  The keys in it, in one row, centred.
+
+  The expand-all key stands apart from the three ranges rather than beside them,
+  because it does something else: a wider step between them says so without a
+  rule or a legend.
+*/
+.range-card .range-bar {
+  justify-content: center;
+  align-items: center;
+  gap: calc(2 * var(--space-section));
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+
+.range-card .ranges {
+  flex: 0 0 auto;
+  gap: var(--space-section);
+}
+
 
 /*
   A surface for whatever a theme draws on a card that is neither its rail nor
