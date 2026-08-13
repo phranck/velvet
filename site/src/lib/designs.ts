@@ -17,12 +17,12 @@
  * pages reporting trouble.
  */
 
-import cassetteManifest from "../../bundles/cassette/bundle.json";
+import retroChassisManifest from "../../bundles/retro-chassis/bundle.json";
 import ncc1701dManifest from "../../bundles/ncc-1701-d/bundle.json";
 import twentyFortyNineManifest from "../../bundles/twenty-forty-nine/bundle.json";
 import velvetManifest from "../../bundles/velvet/bundle.json";
 
-import cassette from "../assets/designs/cassette.png";
+import retroChassis from "../assets/designs/retro-chassis.png";
 import ncc1701d from "../assets/designs/ncc-1701-d.png";
 import twentyFortyNine from "../assets/designs/twenty-forty-nine.png";
 import velvet from "../assets/designs/velvet.png";
@@ -49,7 +49,7 @@ interface NamedManifest {
 /** Each design, in the order they are offered: oldest era last. */
 const OFFERED: ReadonlyArray<{ manifest: NamedManifest; picture: string }> = [
   { manifest: velvetManifest, picture: velvet },
-  { manifest: cassetteManifest, picture: cassette },
+  { manifest: retroChassisManifest, picture: retroChassis },
   { manifest: twentyFortyNineManifest, picture: twentyFortyNine },
   { manifest: ncc1701dManifest, picture: ncc1701d },
 ];

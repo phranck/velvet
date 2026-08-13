@@ -57,13 +57,7 @@
   function storedRange(): RangeKey | null {
     try {
       const stored = localStorage.getItem(RANGE_STORAGE_KEY);
-      if (
-        stored === "day" ||
-        stored === "week" ||
-        stored === "month" ||
-        stored === "quarter" ||
-        stored === "year"
-      ) {
+      if (stored === "month" || stored === "quarter" || stored === "all") {
         return stored;
       }
     } catch {

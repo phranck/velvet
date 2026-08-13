@@ -1,5 +1,5 @@
 /**
- * Draws the brushing on a Cassette faceplate as a tile that repeats seamlessly.
+ * Draws the brushing on a Retro Chassis faceplate as a tile that repeats seamlessly.
  *
  * A plate drawn across a wheel carries scratches that run in one direction and
  * are unrelated across it, so the tile is noise that is smeared along x and
@@ -31,7 +31,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const siteRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const output = join(siteRoot, "bundles/cassette/assets/plate.png");
+const output = join(siteRoot, "bundles/retro-chassis/assets/plate.png");
 
 /** How large the tile is. Square, and a power of two, so it scales cleanly. */
 const SIZE = 256;

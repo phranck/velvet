@@ -4,7 +4,7 @@ import { validateStatusDocument } from "@velvet/contracts";
 import {
   barsForRange,
   overallStatus,
-  RANGE_LABEL,
+  rangeLabel,
   STATUS_HERO,
   uptimeForRange,
 } from "../src/lib/data";
@@ -290,7 +290,7 @@ const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http
   <text x="${inR}" y="${cardY + 52}" text-anchor="end" font-family="${FONT}" font-size="${uptimeSize.toFixed(1)}" font-weight="700" fill="${colourFor(first.status)}">${esc(uptime)}</text>
   ${ipv4 && ipv6 ? pillEl(pillV4X, cardY + 31, "IPv4", protocolColour("ipv4"), colourFor(ipv4.status)) + pillEl(pillV6X, cardY + 31, "IPv6", protocolColour("ipv6"), colourFor(ipv6.status)) : ""}
   ${uptimeBars(days, inL, cardY + 88, cardW - 2 * pad)}
-  <text x="${inL}" y="${cardY + 168}" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="${theme.text.tertiary}">${esc(RANGE_LABEL[range])}</text>
+  <text x="${inL}" y="${cardY + 168}" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="${theme.text.tertiary}">${esc(rangeLabel(range, statusDocument.monitoringStartedAt))}</text>
   <text x="${inR}" y="${cardY + 168}" text-anchor="end" font-family="${FONT}" font-size="${labelsSize.toFixed(1)}" fill="${theme.text.tertiary}">Today</text>`
       : ""
   }

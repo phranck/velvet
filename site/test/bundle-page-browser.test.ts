@@ -144,13 +144,13 @@ test(
         `.service[data-service-id="${first.id}"] .service-uptime`,
       );
       const before = await figure.textContent();
-      await page.locator('.range-button[data-range="week"]').click();
+      await page.locator('.range-button[data-range="quarter"]').click();
       const after = await figure.textContent();
       assert.equal(
         after?.includes(
           uptimeForRange(
             first,
-            "week",
+            "quarter",
             built.status.generatedAt,
             built.status.monitoringStartedAt,
           ),
@@ -182,7 +182,7 @@ test(
 );
 
 /**
- * Cassette prints its readings on a lattice of unlit dots, and a reading that
+ * Retro Chassis prints its readings on a lattice of unlit dots, and a reading that
  * does not stand on that lattice is the one fault in the panel a reader sees
  * immediately and no figure in the stylesheet reports.
  *
@@ -201,7 +201,7 @@ test(
 test(
   "every reading on the readout starts on a column of its lattice",
   async () => {
-    const built = await buildDesignPage("cassette");
+    const built = await buildDesignPage("retro-chassis");
     const server = Bun.serve({
       port: 0,
       fetch: async (request) => {
@@ -218,7 +218,7 @@ test(
       const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
       await refuseOffsiteRequests(page);
       await page.goto(`http://127.0.0.1:${server.port}/`);
-      await page.locator(".cassette-page").first().waitFor();
+      await page.locator(".retro-chassis-page").first().waitFor();
       await page.evaluate(() => document.fonts.ready);
 
       for (const width of [520, 640, 900, 1280]) {

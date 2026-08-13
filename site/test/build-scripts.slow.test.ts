@@ -157,7 +157,7 @@ test("publishes the start page as static HTML that loads no script", async () =>
 
   // One picture per design a page can be published in, each pointing at the
   // copy this build emitted.
-  const designs = ["velvet", "cassette", "twenty-forty-nine", "ncc-1701-d"];
+  const designs = ["velvet", "retro-chassis", "twenty-forty-nine", "ncc-1701-d"];
   for (const design of designs) {
     assert.match(
       html,

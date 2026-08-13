@@ -289,11 +289,9 @@ const StatusPageSchema = Type.Object(
     ),
     defaultRange: Type.Optional(
       Type.Union([
-        Type.Literal("24h"),
-        Type.Literal("7d"),
         Type.Literal("30d"),
         Type.Literal("90d"),
-        Type.Literal("1yr"),
+        Type.Literal("all"),
       ]),
     ),
     navigation: Type.Optional(

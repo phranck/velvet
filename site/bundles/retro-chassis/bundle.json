@@ -1,6 +1,6 @@
 {
-  "id": "cassette",
-  "name": "Cassette",
+  "id": "retro-chassis",
+  "name": "Retro Chassis",
   "description": "A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, with a lit name plate, two protocol lamps, a two-line readout and a lamp meter for its days.",
   "era": "1979",
   "version": "1.0.0",
@@ -10,13 +10,31 @@
     "styles": "bundle.css",
     "script": "script.ts"
   },
-  "layouts": ["cards"],
+  "layouts": [
+    "cards"
+  ],
   "readings": "panel",
   "preview": "assets/preview.svg",
   "plugins": [
-    { "name": "status", "version": 1 },
-    { "name": "uptime-strip", "version": 1 },
-    { "name": "response-chart", "version": 2 },
-    { "name": "disclosure", "version": 1 }
+    {
+      "name": "status",
+      "version": 1
+    },
+    {
+      "name": "uptime-strip",
+      "version": 1
+    },
+    {
+      "name": "response-chart",
+      "version": 2
+    },
+    {
+      "name": "disclosure",
+      "version": 1
+    },
+    {
+      "name": "preferences",
+      "version": 1
+    }
   ]
 }

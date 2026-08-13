@@ -5,13 +5,14 @@ import type { ResponseTimesDocument } from "../src/lib/types.js";
 
 type ResponseSeries = ResponseTimesDocument["series"];
 type ResponseSamples = ResponseSeries[number]["samples"];
-type RangeKey = "day" | "week" | "month" | "quarter" | "year";
+type RangeKey = "month" | "quarter" | "all";
 
 interface ResponseChartModule {
   filterResponseSeries(
     series: ResponseSeries,
     range: RangeKey,
     generatedAt: string,
+    monitoringStartedAt: string,
   ): ResponseSeries;
   downsampleResponseSamples(
     samples: ResponseSamples,
@@ -60,16 +61,22 @@ test("filters response samples at every selected range boundary", async () => {
   assert.equal(typeof chart.filterResponseSeries, "function");
   if (!chart.filterResponseSeries) return;
 
+  // `all` reaches back to the day monitoring began, which the sample set puts
+  // a year before the data was written.
+  const monitoringStartedAt = "2025-07-27T12:00:00.000Z";
   const expectedStarts: Record<RangeKey, string> = {
-    day: "2026-07-26T12:00:00.000Z",
-    week: "2026-07-20T12:00:00.000Z",
     month: "2026-06-27T12:00:00.000Z",
     quarter: "2026-04-28T12:00:00.000Z",
-    year: "2025-07-27T12:00:00.000Z",
+    all: "2025-07-27T12:00:00.000Z",
   };
 
   for (const range of Object.keys(expectedStarts) as RangeKey[]) {
-    const filtered = chart.filterResponseSeries(series, range, generatedAt);
+    const filtered = chart.filterResponseSeries(
+      series,
+      range,
+      generatedAt,
+      monitoringStartedAt,
+    );
     assert.equal(filtered[0]?.samples[0]?.timestamp, expectedStarts[range]);
     assert.equal(filtered[0]?.samples.at(-1)?.timestamp, generatedAt);
   }

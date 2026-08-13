@@ -33,6 +33,7 @@ export const PLUGIN_NAMES = [
   "response-chart",
   "disclosure",
   "overlay",
+  "preferences",
 ] as const;
 
 export type PluginName = (typeof PLUGIN_NAMES)[number];
@@ -50,6 +51,7 @@ export const PLUGIN_VERSIONS: Record<PluginName, number> = {
   "response-chart": 2,
   disclosure: 1,
   overlay: 1,
+  preferences: 1,
 };
 
 /** Whether a name is one of the plugins this package offers. */

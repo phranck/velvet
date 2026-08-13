@@ -277,10 +277,20 @@ function summarise(days: DayStatus[]): string {
     : `Availability history: ${parts.join(", ")}.`;
 }
 
-/** Where a segment sits along the strip, in CSS pixels. */
+/**
+ * Where a segment sits along the strip, in CSS pixels.
+ *
+ * The gap gives way before the segment does. At ninety segments on a phone the
+ * gaps alone are wider than the strip, which left every segment a negative
+ * width; the canvas then refused to draw the first of them and the exception
+ * took the whole script down with it, so nothing on the page answered any more.
+ * Here the gap keeps only what is left once every segment has a pixel.
+ */
 function slot(index: number, total: number, width: number, gap: number) {
-  const each = (width - gap * (total - 1)) / total;
-  return { x: index * (each + gap), width: each };
+  const spare = Math.max(0, width - total);
+  const fitted = total > 1 ? Math.min(gap, spare / (total - 1)) : 0;
+  const each = (width - fitted * (total - 1)) / total;
+  return { x: index * (each + fitted), width: each };
 }
 
 /** The segment under a pointer at this offset, or null past either end. */
@@ -346,7 +356,6 @@ export function createUptimeStrip(
   host.append(canvas, hiddenList);
 
   let days: DayStatus[] = [];
-  let range: RangeKey = "month";
   let hovered: number | null = null;
   let width = 0;
   let ratio = 1;
@@ -379,12 +388,12 @@ export function createUptimeStrip(
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, surfaceHeight);
 
-    // The 90-day view packs the strip with three times as many segments as the
-    // 30-day one, so each is about a quarter as wide and takes the narrow
-    // radius. The year view does not, and that is not an oversight: 365 days
-    // are grouped into 53 weekly buckets, which makes each bar roughly twice as
-    // wide as a 90-day one.
-    const radius = range === "quarter" ? style.narrowRadius : style.radius;
+    // A narrow segment takes the narrow radius, decided by how wide the segment
+    // actually came out rather than by which range asked for it. `all` is any
+    // number of segments, from one on an installation's first day to ninety on
+    // an old one, so no range name predicts this.
+    const segment = slot(0, days.length, width, style.gap).width;
+    const radius = segment < style.radius * 4 ? style.narrowRadius : style.radius;
     // The light a raised segment catches, across its own height. A sunken one
     // is shaded by the ramp below instead.
     const gloss = context.createLinearGradient(
@@ -615,9 +624,8 @@ export function createUptimeStrip(
   ratio = window.devicePixelRatio || 1;
 
   return {
-    update(nextDays, nextRange) {
+    update(nextDays) {
       days = nextDays;
-      range = nextRange;
       hovered = null;
       host.setAttribute("aria-label", summarise(days));
       // What the drawing cannot say. Each day used to carry its own element

@@ -54,13 +54,13 @@ test("an installation naming nothing gets the page Velvet ships", () => {
 });
 
 test("an unknown name says what is installed rather than falling back", () => {
-  const chosen = selectBundle("cassette", [
+  const chosen = selectBundle("retro-chassis", [
     manifest(),
     manifest({ id: "vector" }),
   ]);
   assert.equal(chosen.ok, false);
   if (chosen.ok) return;
-  assert.match(chosen.reason, /no design called "cassette"/);
+  assert.match(chosen.reason, /no design called "retro-chassis"/);
   assert.match(chosen.reason, /proof, vector/);
 });
 

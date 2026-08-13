@@ -1,5 +1,5 @@
 /**
- * What Cassette does once its markup is on the page.
+ * What Retro Chassis does once its markup is on the page.
  *
  * It is handed the element the template's markup was put into, and the same data
  * the template rendered from. It fetches nothing: everything a range change
@@ -22,7 +22,14 @@ import {
   type ChartView,
 } from "@velvet/bundle-plugins/response-chart";
 import {
+  readOpen,
+  readRange,
+  writeOpen,
+  writeRange,
+} from "@velvet/bundle-plugins/preferences";
+import {
   barsForRange,
+  rangeLabel,
   uptimeForRange,
   type RangeKey,
 } from "@velvet/bundle-plugins/status";
@@ -118,10 +125,10 @@ interface Row {
  * @returns The function that undoes everything this attached.
  */
 export function enhance(root: HTMLElement, data: BundleData): () => void {
-  const page = root.querySelector<HTMLElement>(".cassette-page") ?? root;
+  const page = root.querySelector<HTMLElement>(".retro-chassis-page") ?? root;
   const undo: Array<() => void> = [];
   const rows: Row[] = [];
-  let range = data.site.defaultRange as RangeKey;
+  let range = readRange(data.site.defaultRange as RangeKey);
 
   /**
    * The strip's appearance as it stands now.
@@ -192,7 +199,13 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         style: stripStyle,
         report: (reading) => readOut(row, reading),
       }),
-      chart: createChartView(chartHost, entry.id, entry.name, data.generatedAt, {
+      chart: createChartView(
+        chartHost,
+        entry.id,
+        entry.name,
+        data.generatedAt,
+        data.status.monitoringStartedAt,
+        {
         style: CHART_GEOMETRY,
         // Nothing floats over this page: the scale is read where the pointer
         // stands on it, and the panel above already says what the service is
@@ -271,6 +284,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
     row.open = open;
     row.root.dataset.open = String(open);
     row.summary.setAttribute("aria-expanded", String(open));
+    writeOpen(row.id, open);
     if (open && !row.chartBuilt) {
       row.chart.update(
         data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id),
@@ -317,6 +331,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
   /** Switches the range and refreshes everything that depends on it. */
   function selectRange(next: RangeKey): void {
     range = next;
+    writeRange(next);
     for (const button of buttons) {
       button.setAttribute("aria-pressed", String(button.dataset.range === next));
     }
@@ -326,7 +341,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
 
   /** Redraws every service for the current range. */
   function refresh(): void {
-    const from = rangeNamed(range).from;
+    const from = rangeLabel(range, data.status.monitoringStartedAt);
     for (const row of rows) {
       const entry = data.status.services.find(({ id }) => id === row.id);
       if (!entry) continue;
@@ -336,7 +351,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         data.status.generatedAt,
         data.status.monitoringStartedAt,
       );
-      row.uptime.textContent = `${figure} Uptime`;
+      row.uptime.textContent = figure;
       // Rewritten with the figure, because the label replaces the contents and
       // the figure is half of what the row says.
       row.summary.setAttribute(
@@ -396,6 +411,14 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
   if (powered) watch.observe(powered);
   undo.push(() => watch.disconnect());
 
+  // The markup was written with the installation's own default, so the keys
+  // have to be told which window this visitor actually left the page on.
+  for (const button of buttons) {
+    button.setAttribute("aria-pressed", String(button.dataset.range === range));
+  }
+  // Whatever this visitor left open, before the first draw, so a restored row
+  // is drawn open rather than opening itself once the page is already there.
+  for (const row of rows) setOpen(row, readOpen(row.id));
   reflectToggleAll();
   refresh();
   placeMark(false);

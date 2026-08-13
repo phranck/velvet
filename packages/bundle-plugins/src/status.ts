@@ -72,32 +72,97 @@ interface RangeSpec {
   bucketDays: number;
 }
 
-/**
- * The five ranges.
- *
- * A year is 53 weekly buckets rather than 365 daily ones, because 365 segments
- * across a card are narrower than the gaps between them.
- */
-const RANGE_SPECS: Record<RangeKey, RangeSpec> = {
-  day: { days: 1, bucketDays: 1 },
-  week: { days: 7, bucketDays: 1 },
+/** The two ranges that are a stated length, whatever the installation is. */
+const FIXED_SPECS: Record<"month" | "quarter", RangeSpec> = {
   month: { days: 30, bucketDays: 1 },
   quarter: { days: 90, bucketDays: 1 },
-  year: { days: 365, bucketDays: 7 },
 };
 
-/** How far back each range reaches, for a design that labels the far end. */
-export const RANGE_LABEL: Record<RangeKey, string> = {
-  day: "24h ago",
-  week: "7 days ago",
-  month: "30 days ago",
-  quarter: "90 days ago",
-  year: "1 year ago",
-};
+/** Whole days from one instant to another, counting both ends. */
+function daysCovered(fromIso: string, toIso: string): number {
+  const from = Date.parse(`${fromIso.slice(0, 10)}T00:00:00.000Z`);
+  const to = Date.parse(`${toIso.slice(0, 10)}T00:00:00.000Z`);
+  return Math.max(1, Math.round((to - from) / DAY_MS) + 1);
+}
 
-/** How many days a range covers, for a design that says so in words. */
-export function daysInRange(range: RangeKey): number {
-  return RANGE_SPECS[range].days;
+/**
+ * How many days one segment stands for, over a window of this length.
+ *
+ * A segment per day is what the strip is drawn for, and it stops being readable
+ * somewhere past ninety of them, where the segments go narrower than the gaps
+ * between them. So the segment grows with the window, first to a week and then
+ * to a month, each step placed where the count would otherwise pass ninety.
+ */
+function bucketForSpan(days: number): number {
+  if (days <= 90) return 1;
+  if (days <= 90 * 7) return 7;
+  return 30;
+}
+
+/**
+ * How long a range is and how much of it one segment covers.
+ *
+ * `all` states neither, because both follow from the installation rather than
+ * from the range: it reaches back to the day monitoring began, and its segments
+ * grow with that distance.
+ *
+ * @param range - The window being read.
+ * @param generatedAt - When the data was written.
+ * @param monitoringStartedAt - The first day this installation measured.
+ * @returns The window's length in days and the days one segment stands for.
+ */
+export function rangeSpec(
+  range: RangeKey,
+  generatedAt: string,
+  monitoringStartedAt: string,
+): RangeSpec {
+  if (range !== "all") return FIXED_SPECS[range];
+  const days = daysCovered(monitoringStartedAt, generatedAt);
+  return { days, bucketDays: bucketForSpan(days) };
+}
+
+/** Built once, because this label is written on every service of every page. */
+const SINCE_DATE = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/**
+ * How far back a range reaches, for a design that labels the far end.
+ *
+ * A stated length names itself. `all` names the day the installation began,
+ * because that day differs per installation and the word "everything" tells a
+ * reader nothing about how much that is.
+ *
+ * @param range - The window being read.
+ * @param monitoringStartedAt - The first day this installation measured.
+ * @returns The label for the leading end of the window.
+ */
+export function rangeLabel(
+  range: RangeKey,
+  monitoringStartedAt: string,
+): string {
+  if (range === "month") return "30 days ago";
+  if (range === "quarter") return "90 days ago";
+  return SINCE_DATE.format(new Date(monitoringStartedAt));
+}
+
+/**
+ * How many days a range covers, for a design that says so in words.
+ *
+ * @param range - The window being read.
+ * @param generatedAt - When the data was written.
+ * @param monitoringStartedAt - The first day this installation measured.
+ * @returns The number of days the window spans.
+ */
+export function daysInRange(
+  range: RangeKey,
+  generatedAt: string,
+  monitoringStartedAt: string,
+): number {
+  return rangeSpec(range, generatedAt, monitoringStartedAt).days;
 }
 
 /** Which state a day's lost time amounts to. */
@@ -171,7 +236,8 @@ function maintenanceForPeriod(
  * @param monitoringStartedAt - When this installation began measuring.
  * @param events - Incidents and maintenance windows, so a segment can be
  *   marked as planned rather than as a failure.
- * @returns One segment per day, or per week in the year range, oldest first.
+ * @returns One segment per day, or per week or month over a longer window,
+ *   oldest first.
  */
 export function barsForRange(
   service: StatusService,
@@ -180,7 +246,7 @@ export function barsForRange(
   monitoringStartedAt: string,
   events: StatusEvent[] = [],
 ): DayStatus[] {
-  const spec = RANGE_SPECS[range];
+  const spec = rangeSpec(range, generatedAt, monitoringStartedAt);
   const availability = new Map(
     service.dailyAvailability.map((day) => [day.date, day]),
   );
@@ -289,7 +355,12 @@ export function uptimeForRange(
   generatedAt: string,
   monitoringStartedAt: string,
 ): string {
-  const dates = new Set(rangeDates(generatedAt, RANGE_SPECS[range].days));
+  const dates = new Set(
+    rangeDates(
+      generatedAt,
+      rangeSpec(range, generatedAt, monitoringStartedAt).days,
+    ),
+  );
   const monitoringStartDate = monitoringStartedAt.slice(0, 10);
   const availability = service.dailyAvailability.filter(
     ({ date }) => dates.has(date) && date >= monitoringStartDate,

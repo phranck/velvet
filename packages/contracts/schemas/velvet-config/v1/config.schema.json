@@ -88,14 +88,6 @@
         "defaultRange": {
           "anyOf": [
             {
-              "const": "24h",
-              "type": "string"
-            },
-            {
-              "const": "7d",
-              "type": "string"
-            },
-            {
               "const": "30d",
               "type": "string"
             },
@@ -104,7 +96,7 @@
               "type": "string"
             },
             {
-              "const": "1yr",
+              "const": "all",
               "type": "string"
             }
           ]

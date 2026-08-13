@@ -4,12 +4,10 @@ type ResponseSamples = ResponseSeries[number]["samples"];
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
-const RANGE_MS: Record<RangeKey, number> = {
-  day: DAY_MS,
-  week: 7 * DAY_MS,
+/** The two ranges that are a stated length, whatever the installation is. */
+const FIXED_RANGE_MS: Record<"month" | "quarter", number> = {
   month: 30 * DAY_MS,
   quarter: 90 * DAY_MS,
-  year: 365 * DAY_MS,
 };
 
 /**
@@ -121,12 +119,27 @@ function pointText(point: { x: number; y: number }): string {
   return `${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
 }
 
+/**
+ * The stretch of time a plot is drawn across.
+ *
+ * `all` has no length of its own and reaches back to the day monitoring began,
+ * so it needs that day rather than a constant.
+ *
+ * @param range - The window being read.
+ * @param generatedAt - When the data was written, which is the window's end.
+ * @param monitoringStartedAt - The first day this installation measured.
+ * @returns The window's two ends, in milliseconds.
+ */
 export function responseRangeWindow(
   range: RangeKey,
   generatedAt: string,
+  monitoringStartedAt: string,
 ): { start: number; end: number } {
   const end = Date.parse(generatedAt);
-  return { start: end - RANGE_MS[range], end };
+  if (range === "all") {
+    return { start: Date.parse(monitoringStartedAt), end };
+  }
+  return { start: end - FIXED_RANGE_MS[range], end };
 }
 
 /**
@@ -212,8 +225,13 @@ export function filterResponseSeries(
   series: ResponseSeries,
   range: RangeKey,
   generatedAt: string,
+  monitoringStartedAt: string,
 ): ResponseSeries {
-  const { start, end } = responseRangeWindow(range, generatedAt);
+  const { start, end } = responseRangeWindow(
+    range,
+    generatedAt,
+    monitoringStartedAt,
+  );
   return series.map((entry) => ({
     ...entry,
     samples: entry.samples.filter(({ timestamp }) => {

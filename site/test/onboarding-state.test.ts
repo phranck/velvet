@@ -47,7 +47,7 @@ test("publishes the page in the chosen design and writes no theme", () => {
   draft.repositoryOwner = "velvet-user";
   draft.repositoryName = "status";
   draft.statusPageName = "My Status";
-  draft.designId = "cassette";
+  draft.designId = "retro-chassis";
   draft.services = [
     {
       ...createServiceDraft("website"),
@@ -60,7 +60,7 @@ test("publishes the page in the chosen design and writes no theme", () => {
 
   assert.equal(result.success, true);
   if (!result.success) return;
-  assert.equal(result.request.configuration.statusPage.design, "cassette");
+  assert.equal(result.request.configuration.statusPage.design, "retro-chassis");
   // A design brings its own appearance, so a theme written beside it would
   // describe something the published page does not read.
   assert.equal("theme" in result.request.configuration.statusPage, false);

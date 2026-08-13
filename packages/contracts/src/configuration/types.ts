@@ -66,7 +66,7 @@ export interface NormalizedVelvetConfiguration {
   statusPage: {
     name: string;
     layout: "grouped" | "cards";
-    defaultRange: "24h" | "7d" | "30d" | "90d" | "1yr";
+    defaultRange: "30d" | "90d" | "all";
     logoHeight: number;
     navigation: Array<{ title: string; href: string }>;
     icons: Record<string, string>;

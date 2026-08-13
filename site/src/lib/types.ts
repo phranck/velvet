@@ -24,4 +24,10 @@ export interface DayStatus {
   maintenance: MaintenanceEvent[];
 }
 
-export type RangeKey = "day" | "week" | "month" | "quarter" | "year";
+/**
+ * The windows a page can be read over.
+ *
+ * `all` has no length of its own. It reaches back to the day monitoring began,
+ * so it is a few hours on an installation's first day and years on an old one.
+ */
+export type RangeKey = "month" | "quarter" | "all";

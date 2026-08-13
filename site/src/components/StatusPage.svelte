@@ -3,7 +3,7 @@
   import {
     barsForRange,
     overallStatus,
-    RANGE_LABEL,
+    rangeLabel,
     uptimeForRange,
     visibleIncidentEvents,
   } from "../lib/data";
@@ -48,11 +48,9 @@
   } = $props();
 
   const ranges: { key: RangeKey; label: string }[] = [
-    { key: "day", label: "24h" },
-    { key: "week", label: "7d" },
     { key: "month", label: "30d" },
     { key: "quarter", label: "90d" },
-    { key: "year", label: "1yr" },
+    { key: "all", label: "All" },
   ];
   /**
    * How often the installed status workflow checks, in minutes.
@@ -170,9 +168,10 @@
         statusDocument.generatedAt,
         statusDocument.monitoringStartedAt,
       )}
-      rangeLabel={RANGE_LABEL[range]}
+      rangeLabel={rangeLabel(range, statusDocument.monitoringStartedAt)}
       {range}
       generatedAt={responseTimesDocument.generatedAt}
+      monitoringStartedAt={statusDocument.monitoringStartedAt}
       responseSeries={responseTimesDocument.series.filter(
         ({ serviceId }) => serviceId === service.id,
       )}
