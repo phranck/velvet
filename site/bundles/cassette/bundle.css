@@ -1035,6 +1035,35 @@
   /* The same above as below, so the name sits centred in the space it has
      rather than pushed against one of its neighbours. */
   --service-name-space: var(--space-hair);
+  /* The two rules beside the name.
+
+     Their own fill rather than the letters'. That one runs its eight stops
+     across the height of a capital, and pressed into three pixels it flattens
+     to one yellow tone: a stripe, not a moulding. These are the same brass
+     read at the scale a moulding is seen at, which is a lit edge, the metal,
+     and the shadow under it. */
+  --service-name-rule-height: 5px;
+  --service-name-rule-gap: 16px;
+  --service-name-rule-fill: linear-gradient(
+    to bottom,
+    #fffae6 0%,
+    #ffeeb4 18%,
+    #f0c95c 19%,
+    #e8bd44 46%,
+    #c9942a 47%,
+    #a2740f 74%,
+    #6b4d0a 75%,
+    #4a350a 100%
+  );
+  /* The moulding stands off the plate: a dark line under it and a thread of
+     light along its crown, which is what the letters get from their own glow. */
+  --service-name-rule-shadow:
+    0 1px 2px rgb(0 0 0 / 0.85),
+    0 2px 4px rgb(0 0 0 / 0.45);
+  /* Down onto the middle of the capitals. The row centres on the line box,
+     which carries an ascender and a descender this name never uses, so
+     centred there the rules ran high of the letters. */
+  --service-name-rule-shift: 3px;
   --service-name-trim: normal;
   --service-name-leading: 1.15;
   /*
@@ -2251,20 +2280,45 @@
 */
 .service-name {
   grid-area: name;
+  /* The full measure, so the two rules can run out to the plate's edges with
+     the name held between them. */
+  justify-self: stretch;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--service-name-rule-gap);
+  margin-block: var(--service-name-space);
+  padding-inline: var(--row-inset);
+  min-width: 0;
+}
+
+/*
+  A rule of brass to either side of the name, drawn the way the letters are:
+  the same fill, the same dark edge beneath it. Pseudo-elements rather than
+  markup, and the clip is put back to the border box because these are not
+  letters and clipping a fill to nothing shows nothing.
+*/
+.service-name::before,
+.service-name::after {
+  content: "";
+  height: var(--service-name-rule-height);
+  border-radius: calc(var(--service-name-rule-height) / 2);
+  background: var(--service-name-rule-fill);
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  box-shadow: var(--service-name-rule-shadow);
+  translate: 0 var(--service-name-rule-shift);
+}
+
+.service-name-label {
+  min-width: 0;
   /* Centred under the strip it labels, and set on the row rather than on the
      text, because the letters carry a clipped fill and centring that by
      `text-align` leaves the fill measured against the full row. */
-  justify-self: center;
-  max-width: 100%;
   /* Equal above and below, so the name stands centred between the axis it
      follows and whatever comes after it. */
-  margin-block: var(--service-name-space);
-  display: var(--service-name-display);
-  flex: var(--service-name-flex);
   /* A design may run the plate the full height of the row, so it stands level
      with whatever else labels it. The word inside stays centred either way. */
-  align-self: var(--service-name-self);
-  place-items: center;
   min-width: 0;
   /* One line, cut where it runs out. A plate of this kind is engraved once and
      is the size it is; a name too long for it is read as far as it goes. */
@@ -2321,6 +2375,7 @@
   -webkit-text-stroke: var(--service-name-stroke) var(--service-name-stroke-colour);
   text-shadow: var(--service-name-glow);
 }
+
 
 /* Side by side in most designs. One stacks them, because two small plates
    above each other is how the machine it copies labels a pair of inputs. */

@@ -192,7 +192,7 @@ function service(
       <span class="strip-axis-from"></span>
       <span class="strip-axis-to">Today</span>
     </div>
-    <span class="service-name">${escape(entry.name)}</span>
+    <span class="service-name"><span class="service-name-label">${escape(entry.name)}</span></span>
     <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
         ${protocols(entry)}
