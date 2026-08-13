@@ -15,17 +15,19 @@ const TIMEOUT_MS = 180_000;
  * How a document obtains the face it sets its text in.
  *
  * `bundled` means the files ship with it, which is what every tool and every
- * page does. `linked` means it asks another service, which only the status page
- * does and only because an installation may name a face of its own.
+ * page does. `readers-own` means it fetches nothing and takes whatever the
+ * reader's machine supplies, which only the status-page shell does, because a
+ * design brings its own faces and an installation may name one of its own.
  */
-type FaceSource = "bundled" | "linked";
+type FaceSource = "bundled" | "readers-own";
 
 /**
  * Every document Velvet publishes, and the face its ordinary text is set in.
  *
  * Velvet's typography is Datatype for text and Workbench for headings, with
  * code and labels the exceptions. The status page is outside that: its faces
- * belong to whoever installs it, and Inter is only the default.
+ * come from whichever design is configured, so the shell beneath names none of
+ * its own.
  */
 const SURFACES: readonly {
   document: string;
@@ -39,7 +41,7 @@ const SURFACES: readonly {
    */
   site?: true;
 }[] = [
-  { document: "index.html", face: "Inter", source: "linked" },
+  { document: "index.html", face: "-apple-system", source: "readers-own" },
   { document: "onboarding.html", face: "Datatype", source: "bundled" },
   { document: "configurator.html", face: "Datatype", source: "bundled" },
   { document: "website.html", face: "Datatype", source: "bundled", site: true },
@@ -80,9 +82,10 @@ test("draws one card and names no face a document is without", async () => {
   try {
     for (const surface of SURFACES) {
       const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-      // Nothing here may be timed by somebody else's server, which is why the
-      // status page's own webfont request is refused with everything else and
-      // the check below reads the link it carries instead.
+      // Nothing here may be timed by somebody else's server. No document
+      // fetches a face from one today; the check below reads any stylesheet
+      // link a document carries, so one added later is seen rather than
+      // silently refused and counted as missing.
       await refuseOffsiteRequests(page);
       await page.goto(`${base}/${surface.document}`, { waitUntil: "load" });
       const measured = await page.evaluate(() => {

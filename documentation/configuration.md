@@ -179,7 +179,7 @@ statusPage:
 | `defaultRange` | no | `30d` | Initial range: `24h`, `7d`, `30d`, `90d`, or `1yr`. A visitor's saved choice wins later. |
 | `navigation` | no | `[]` | Up to 16 links with `title` and `href`. **None of the four designs draws them.** A published page carries the installation's name and its readings and nothing else, so links written here reach the page's data and are shown nowhere. |
 | `theme` | no | Velvet Default | Theme name plus optional semantic visual overrides. |
-| `fonts.sans` | no | `Inter` | CSS font-family for normal interface text. |
+| `fonts.sans` | no | the reader's own sans-serif | CSS font-family for normal interface text. Left unset, the page uses whatever sans-serif the reader's machine supplies, because the page itself fetches no typeface. A name given here has to be a face your visitors already have. |
 | `fonts.mono` | no | `Fira Code` | CSS font-family for times, values, and labels. Velvet ships this one, so leaving it unset needs no external request. |
 | `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
 | `seo` | no | generated | Optional title, description, and social-image overrides. |

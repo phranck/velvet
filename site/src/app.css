@@ -37,7 +37,12 @@
   --text-muted: var(--text-secondary);
   --text-faint: var(--text-tertiary);
 
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Only faces a reader already has. This shell fetches no typeface at all: a
+     design brings its own and names them itself, and an installation may name
+     one through `fontSans`, which `config.ts` writes over this. Naming a face
+     here that nothing fetches sets the page in the next one along whilst the
+     stylesheet reads as though the named one were in use. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   /* `--font-mono` is not named here. It comes from velvet-typefaces.css, which
      this file imports, so every surface sets its monospace in one face. */
 }
@@ -96,15 +101,14 @@ body {
   min-height: 100vh;
   color: var(--text);
   font-size: 18px;
-  /* The status page's face, and only the status page's. `--font-sans` holds
-     Inter by default and `applyTheme` writes an installation's own choice into
-     it, which is why the token stays here rather than moving somewhere the
-     Configurator can no longer reach for the preview it draws.
+  /* The status page's face, and only the status page's. The token stays here
+     rather than moving somewhere the Configurator can no longer reach for the
+     preview it draws, and `config.ts` writes an installation's own choice into
+     it.
 
      The onboarding, the Configurator, and the site all import this file for its
-     palette and each states its own face after it, because none of the three
-     loads Inter. Before they did, all three named a face they never fetched,
-     and a reader of this rule could not tell which surface meant it. */
+     palette and each states its own face after it, because this shell fetches
+     none. */
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
