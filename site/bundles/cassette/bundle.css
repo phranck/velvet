@@ -220,7 +220,10 @@
     face has the same margin the whole way round.
   */
   --card-padding-top: 48px;
-  --card-padding-bottom: 38px;
+  /* Fifteen less than the plate carried before the name moved under the strip.
+     With the name down here the foot held 111px between the last day and the
+     plate's lower edge, which read as a gap rather than as a margin. */
+  --card-padding-bottom: 23px;
   --card-gap: 10px;
   --space-hair: 5px;
   --space-tight: 9px;
@@ -833,8 +836,12 @@
   --footer-fill: transparent;
   --footer-align: center;
   --footer-text-align: center;
-  /* One column: the name stays inside the summary and no rail is drawn. */
-  --service-areas: "summary" "strip" "axis" "details";
+  /* One column, and the name on a row of its own beneath the strip.
+     It stood inside the summary until the readout beside it grew to take
+     whatever the row had: the reserve it left was 168px at every window width,
+     so a name longer than that was cut whether the page was 375 or 1440 wide.
+     Down here it has the full measure and the readout has the summary. */
+  --service-areas: "summary" "strip" "axis" "name" "details";
   --service-columns: 1fr;
   --control-font: var(--font-meta);
   --control-weight: var(--meta-weight);
@@ -930,9 +937,12 @@
     2 * var(--service-display-edge-width) + var(--service-display-inset) - 0.33px +
       var(--service-display-inset) - 4.47px
   );
+  /* What still stands beside the readout, which is the key and the gaps
+     around it. The name left this row, so the 168px it reserved here go back
+     to the readout: at 375px that reserve was more than three times what the
+     readout itself was left with. */
   --service-display-reserve: calc(
-    2 * var(--space-row) + var(--disclosure-mark-width) +
-      var(--service-name-min)
+    2 * var(--space-row) + var(--disclosure-mark-width)
   );
   --service-display-padding: calc(var(--service-display-inset) - 5px)
     calc(var(--service-display-inset) - 4.47px)
@@ -1016,8 +1026,15 @@
      are drawn at. */
   --service-display-shadow: inset 0 3px 5px rgb(0 0 0 / 0.78),
     inset 0 -1px 0 rgb(0 0 0 / 0.55), 0 1px 0 rgb(232 220 196 / 0.09);
-  --service-name-display: grid;
-  --service-name-flex: 1 1 auto;
+  /* Its own row beneath the strip, so it takes the full measure and needs
+     neither a flex share nor a width reserved out of the readout's. `block`
+     rather than `grid`, because text-overflow only acts on a block container
+     and a grid one clips mid-letter instead of showing the cut. */
+  --service-name-display: block;
+  --service-name-flex: 0 1 auto;
+  /* The same above as below, so the name sits centred in the space it has
+     rather than pushed against one of its neighbours. */
+  --service-name-space: var(--space-hair);
   --service-name-trim: normal;
   --service-name-leading: 1.15;
   /*
@@ -2227,6 +2244,15 @@
   not depend on which was chosen.
 */
 .service-name {
+  grid-area: name;
+  /* Centred under the strip it labels, and set on the row rather than on the
+     text, because the letters carry a clipped fill and centring that by
+     `text-align` leaves the fill measured against the full row. */
+  justify-self: center;
+  max-width: 100%;
+  /* Equal above and below, so the name stands centred between the axis it
+     follows and whatever comes after it. */
+  margin-block: var(--service-name-space);
   display: var(--service-name-display);
   flex: var(--service-name-flex);
   /* A design may run the plate the full height of the row, so it stands level
@@ -2253,10 +2279,10 @@
     declaration block, nothing can undo one without the other.
   */
   background: var(--series-own, var(--service-name-fill));
-  /* Clipped to the letters where a design engraves the name rather than
-     printing it on something: the fill is then the metal and the letters are
-     the window onto it. Both spellings, because the unprefixed one is recent
-     and the prefixed one is what older engines answer to. */
+  /* `background-clip: text` shows the fill above only where there are letters,
+     so the name is made of brass rather than printed on it. Both spellings,
+     because the unprefixed one is recent and the prefixed one is what older
+     engines answer to. */
   -webkit-background-clip: var(--service-name-clip);
   background-clip: var(--service-name-clip);
   /* A design may set the plate into the face rather than on it, which is a
@@ -2402,6 +2428,10 @@
 .service-display-line {
   display: var(--service-display-line-display);
   align-items: baseline;
+  /* The state word and the uptime figure sit side by side where the panel is
+     wide enough and stack where it is not. Both are readings the panel exists
+     to show, so neither is dropped to keep the other on one line. */
+  flex-wrap: wrap;
   /*
     Whole cells, because everything on this line lands on the lattice behind
     it. The page's own row step is not a cell, so a reading standing after a
@@ -2448,12 +2478,23 @@
 
 .service-display-line + .service-display-line {
   color: var(--service-display-colour-quiet);
+  /* A block, so the cut above shows as a cut. The first line is a flex row
+     because it carries the state word and the figure side by side, and
+     `text-overflow` does not act on a flex container: this line held only text
+     and still lost its last characters without a mark, so a narrow panel read
+     `THE LA` rather than `THE LAST 30 D…`. */
+  display: block;
 }
 
 .service-uptime {
-  /* Claims whatever the name did not, so the figure and the chevron stay at
-     the trailing edge whether the name grows or is fixed. */
+  /* Claims whatever the state word did not, so the figure stays at the
+     trailing edge of the line. */
   margin-inline-start: auto;
+  /* Never shrinks, and the line above wraps instead. The two together want
+     350px; the panel offers 210 at 375px and 154 at 320. Held on one line, the
+     figure kept its full width and the state word beside it was squeezed to
+     nothing, so a narrow page read the uptime of a service whose state it
+     never said. */
   flex: none;
   color: var(--uptime-colour);
   font-family: var(--uptime-font);
@@ -2686,6 +2727,13 @@
 .strip-axis {
   grid-area: axis;
   margin: var(--space-hair) var(--row-inset) 0;
+  /* The dates label the strip above them and belong to it, so they are taken
+     out of the flow: the row below then holds the whole space between the last
+     day and the foot of the plate, and the name centres in that rather than in
+     whatever the dates leave. Measured before this, the name sat 34px under the
+     strip and 10px above the foot. */
+  height: 0;
+  overflow: visible;
 }
 
 /* ── Service details ──────────────────────────────────────────────────────── */
@@ -3236,6 +3284,20 @@
 
   .chart-legend {
     justify-content: flex-start;
+  }
+
+  /* The date beside a notice title takes a fixed width and the title takes what
+     is left, which at 375px was not enough for a word: `DATABASE ENGINE
+     UPGRADE` was clipped to `DATAB ENGIN UPGRA`, three lines cut mid-word.
+     Stacked here, the title has the row and the date follows it. */
+  .notice--incident {
+    grid-template-areas: "title" "meta" "summary";
+    grid-template-columns: 1fr;
+  }
+
+  .notice--maintenance {
+    grid-template-areas: "glyph title" "glyph meta" "glyph summary";
+    grid-template-columns: auto 1fr;
   }
 }@media (prefers-reduced-motion: reduce) {
   .toggle-all-glyph,

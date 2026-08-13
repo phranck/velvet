@@ -178,7 +178,6 @@ function service(
   const window = RANGES.find((option) => option.key === data.site.defaultRange);
   return `<article class="service" data-service-id="${escape(entry.id)}" data-open="false">
     <button class="service-summary" type="button" aria-expanded="false" aria-controls="details-${escape(entry.id)}" aria-label="${escape([entry.name, `${figure} uptime`, spoken].filter(Boolean).join(", "))}">
-      <span class="service-name">${escape(entry.name)}</span>
       <span class="service-display">
         <span class="service-display-line">
           <span class="service-display-main">${escape(STATE_WORD[entry.status] ?? "No data")}</span>
@@ -193,6 +192,7 @@ function service(
       <span class="strip-axis-from"></span>
       <span class="strip-axis-to">Today</span>
     </div>
+    <span class="service-name">${escape(entry.name)}</span>
     <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
         ${protocols(entry)}
