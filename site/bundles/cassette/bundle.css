@@ -1042,54 +1042,12 @@
      and the shadow under it. */
   --service-name-rule-height: 5px;
   --service-name-rule-gap: 16px;
-  --service-name-rule-fill:
-    /* The brushing the plate carries, laid over the metal so the moulding is
-       worked the same way the face around it is. A 256px tile across five
-       pixels of height shows one band of it, which is what a strip cut from a
-       brushed sheet looks like. */
-    url("./assets/plate.png"),
-    /* Wear along the length. Brass that has been handled is not evenly bright:
-       it is polished where fingers pass and dulled where they do not, in bands
-       that have nothing to do with its edges. The stops are uneven on purpose,
-       because anything regular reads as a pattern rather than as use. */
-    linear-gradient(
-      to right,
-      rgb(255 255 255 / 0.16) 0%,
-      rgb(0 0 0 / 0.10) 7%,
-      rgb(255 255 255 / 0.07) 19%,
-      rgb(0 0 0 / 0.14) 26%,
-      rgb(255 255 255 / 0.19) 41%,
-      rgb(0 0 0 / 0.06) 53%,
-      rgb(255 255 255 / 0.05) 62%,
-      rgb(0 0 0 / 0.16) 71%,
-      rgb(255 255 255 / 0.13) 84%,
-      rgb(0 0 0 / 0.09) 93%,
-      rgb(255 255 255 / 0.10) 100%
-    ),
-    /* The section: a lit crown, the body, a dark underside. The steps between
-       them are hard, the way a milled edge is and a gradient is not. */
-    linear-gradient(
-      to bottom,
-      #fffae6 0%,
-      #ffeeb4 18%,
-      #f0c95c 19%,
-      #e8bd44 46%,
-      #c9942a 47%,
-      #a2740f 74%,
-      #6b4d0a 75%,
-      #4a350a 100%
-    );
-  /* The tile at the size it was drawn, the wear and the section stretched to
-     the moulding. */
-  --service-name-rule-size: 256px 256px, 100% 100%, 100% 100%;
-  /* The brushing multiplies into the metal and the wear lightens and darkens
-     it; neither replaces the section beneath. */
-  --service-name-rule-blend: overlay, soft-light, normal;
+  /* The height the fill is drawn over, which is the height of a capital, so
+     the moulding is a strip of the same metal rather than the whole gradient
+     compressed. */
+  --service-name-rule-scale: 1em;
   /* The moulding stands off the plate: a dark line under it and a thread of
      light along its crown, which is what the letters get from their own glow. */
-  --service-name-rule-shadow:
-    0 1px 2px rgb(0 0 0 / 0.85),
-    0 2px 4px rgb(0 0 0 / 0.45);
   /* Down onto the middle of the capitals. The row centres on the line box,
      which carries an ascender and a descender this name never uses, so
      centred there the rules ran high of the letters. */
@@ -2333,12 +2291,17 @@
   content: "";
   height: var(--service-name-rule-height);
   border-radius: calc(var(--service-name-rule-height) / 2);
-  background-image: var(--service-name-rule-fill);
-  background-size: var(--service-name-rule-size);
-  background-blend-mode: var(--service-name-rule-blend);
+  /* The letters' own fill and the letters' own shadow, at the letters' own
+     scale: the gradient is laid out over the height of a capital and the
+     moulding shows the band of it that falls where the moulding sits. Given
+     the strip's own five pixels instead, all eight stops are squeezed into
+     them and the brass flattens to one tone. */
+  background-image: var(--service-name-fill);
+  background-size: 100% var(--service-name-rule-scale);
+  background-position: center;
   -webkit-background-clip: border-box;
   background-clip: border-box;
-  box-shadow: var(--service-name-rule-shadow);
+  box-shadow: var(--service-name-glow);
   translate: 0 var(--service-name-rule-shift);
 }
 
