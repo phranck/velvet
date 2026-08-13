@@ -350,6 +350,15 @@ export function createUptimeStrip(
   let hovered: number | null = null;
   let width = 0;
   let ratio = 1;
+  /*
+    The frame a redraw is waiting on, or 0 whilst none is.
+
+    A pointer delivers several moves per frame and only the last of them is ever
+    seen, so a redraw is booked for the next frame and further moves in the same
+    one join it. Without this the canvas was repainted once per event and the
+    lit day fell behind the pointer by however many events the frame carried.
+  */
+  let frame = 0;
 
   /** Draws the whole strip once. */
   function paint(): void {
@@ -547,6 +556,32 @@ export function createUptimeStrip(
     });
   }
 
+  /**
+   * Books a redraw for the next frame, or joins the one already booked.
+   *
+   * Everything that follows the pointer goes through this. A change the reader
+   * asked for directly, such as a new range, redraws at once instead, because
+   * that is not a frame's worth of pointer movement.
+   */
+  function scheduleDraw(): void {
+    if (frame !== 0) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      paint();
+      placeTooltip();
+    });
+  }
+
+  /** Redraws now, dropping any frame that was waiting to do the same. */
+  function drawNow(): void {
+    if (frame !== 0) {
+      cancelAnimationFrame(frame);
+      frame = 0;
+    }
+    paint();
+    placeTooltip();
+  }
+
   function onPointerMove(event: PointerEvent): void {
     const box = host.getBoundingClientRect();
     const next = segmentAt(
@@ -557,15 +592,13 @@ export function createUptimeStrip(
     );
     if (next === hovered) return;
     hovered = next;
-    paint();
-    placeTooltip();
+    scheduleDraw();
   }
 
   function onPointerLeave(): void {
     if (hovered === null) return;
     hovered = null;
-    paint();
-    placeTooltip();
+    scheduleDraw();
   }
 
   host.addEventListener("pointermove", onPointerMove);
@@ -575,8 +608,7 @@ export function createUptimeStrip(
     const next = entry?.contentRect.width ?? 0;
     if (next === width) return;
     width = next;
-    paint();
-    placeTooltip();
+    drawNow();
   });
   observer.observe(host);
   width = host.getBoundingClientRect().width;
@@ -597,10 +629,13 @@ export function createUptimeStrip(
         item.textContent = tooltipFor(day);
         hiddenList.append(item);
       }
-      paint();
-      placeTooltip();
+      drawNow();
     },
     destroy() {
+      // Before the listeners go, so a redraw booked by the last event cannot
+      // run against a canvas nobody is showing any more.
+      if (frame !== 0) cancelAnimationFrame(frame);
+      frame = 0;
       observer.disconnect();
       host.removeEventListener("pointermove", onPointerMove);
       host.removeEventListener("pointerleave", onPointerLeave);
