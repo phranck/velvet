@@ -23,7 +23,7 @@ import type {
   StatusDocument,
 } from "@velvet/contracts";
 
-import { BUNDLE_DATA_VERSION, type BundleData } from "../../src/lib/bundles/data.js";
+import { THEME_DATA_VERSION, type ThemeData } from "../../src/lib/themes/data.js";
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
@@ -344,8 +344,8 @@ const incidentsDocument: IncidentsDocument = {
  * The name is the one `site/demo/velvet.yml` uses, so this fixture and the
  * screenshot workflow describe the same fictional installation.
  */
-export const velvetUnderground: BundleData = {
-  dataVersion: BUNDLE_DATA_VERSION,
+export const velvetUnderground: ThemeData = {
+  dataVersion: THEME_DATA_VERSION,
   generatedAt: GENERATED_AT,
   site: {
     name: "Velvet Underground Inc.",

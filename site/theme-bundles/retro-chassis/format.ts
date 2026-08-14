@@ -45,7 +45,7 @@ export function formatUpdated(moment: string): string {
  * What a service's own state is called on the readout.
  *
  * A word rather than a colour, because the readout is the only place this
- * design says what a service is doing and a lamp beside it would be a second
+ * theme says what a service is doing and a lamp beside it would be a second
  * thing to read.
  */
 export const STATE_WORD: Record<string, string> = {
@@ -59,8 +59,8 @@ export const STATE_WORD: Record<string, string> = {
 /**
  * Escapes text for markup.
  *
- * The bundle carries its own rather than importing one, because a service name
- * comes from an operator's configuration and a design that borrowed this from
+ * The theme carries its own rather than importing one, because a service name
+ * comes from an operator's configuration and a theme that borrowed this from
  * somewhere else would stop being self-contained over four replacements.
  *
  * @param value - Anything that came from the data.

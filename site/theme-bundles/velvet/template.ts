@@ -2,7 +2,7 @@
  * The markup Velvet puts on the page, built from the data it was given.
  *
  * This is the page Velvet publishes today, so it is the baseline the other
- * designs are compared against rather than a design of its own. Everything it
+ * themes are compared against rather than a theme of its own. Everything it
  * shows, it shows because the shipping product shows it.
  *
  * A string rather than a tree, because the same function runs in the build,
@@ -12,7 +12,7 @@
 
 import { overallStatus, uptimeForRange, visibleEvents } from "@velvet/foundation/status";
 
-import type { BundleData } from "../../src/lib/bundles/data.js";
+import type { ThemeData } from "../../src/lib/themes/data.js";
 import { escape, formatEventTime, formatUpdated, RANGES } from "./format.js";
 
 /** What each overall state says, and the glyph standing above it. */
@@ -44,7 +44,7 @@ function icon(name: string, className: string): string {
 }
 
 /** The one line naming the state, with the mark above it and the time below. */
-function hero(data: BundleData, state: string): string {
+function hero(data: ThemeData, state: string): string {
   const announced = HEADLINE[state] ?? HEADLINE.unknown!;
   return `<div class="status-band status-band--hero">
     <div class="status-hero">
@@ -57,7 +57,7 @@ function hero(data: BundleData, state: string): string {
 
 /** One maintenance window or incident, as the page announces it. */
 function notice(
-  event: ReturnType<typeof visibleEvents<BundleData["incidents"]["events"][number]>>[number],
+  event: ReturnType<typeof visibleEvents<ThemeData["incidents"]["events"][number]>>[number],
 ): string {
   const started = new Date(event.startsAt);
   const glyph =
@@ -81,7 +81,7 @@ function notice(
  * contradicts itself, so the region says whether it holds anything and the
  * stylesheet answers.
  */
-function notices(data: BundleData): string {
+function notices(data: ThemeData): string {
   const visible = visibleEvents(data.incidents.events);
   const maintenance = visible.filter((event) => event.kind === "maintenance");
   const incidents = visible.filter((event) => event.kind === "incident");
@@ -95,7 +95,7 @@ function notices(data: BundleData): string {
 }
 
 /** The range controls, with the travelling mark the script places. */
-function rangeBar(data: BundleData): string {
+function rangeBar(data: ThemeData): string {
   const buttons = RANGES.map(
     (option) =>
       `<button class="range-button" type="button" data-range="${option.key}" aria-pressed="${String(
@@ -115,7 +115,7 @@ function rangeBar(data: BundleData): string {
 }
 
 /** The two protocol badges, where there is anything to tell apart. */
-function protocols(service: BundleData["status"]["services"][number]): string {
+function protocols(service: ThemeData["status"]["services"][number]): string {
   const only =
     service.checks.length === 1 && service.checks[0]?.protocol === "ipv4";
   if (only) return "";
@@ -131,7 +131,7 @@ function protocols(service: BundleData["status"]["services"][number]): string {
 }
 
 /** What each protocol last answered, behind the control that opens the row. */
-function readings(service: BundleData["status"]["services"][number]): string {
+function readings(service: ThemeData["status"]["services"][number]): string {
   return service.checks
     .map((check, index) => {
       const separator =
@@ -163,8 +163,8 @@ function readings(service: BundleData["status"]["services"][number]): string {
  * The script rewrites it whenever the range changes the figure.
  */
 function service(
-  data: BundleData,
-  entry: BundleData["status"]["services"][number],
+  data: ThemeData,
+  entry: ThemeData["status"]["services"][number],
 ): string {
   const figure = uptimeForRange(
     entry,
@@ -207,7 +207,7 @@ function service(
 }
 
 /** Every service, in one card or in one card each. */
-function services(data: BundleData, layout: string): string {
+function services(data: ThemeData, layout: string): string {
   const rows = data.status.services.map((entry) => service(data, entry));
   const body =
     layout === "cards"
@@ -217,7 +217,7 @@ function services(data: BundleData, layout: string): string {
 }
 
 /** The credit, the release and the serial number, on one row. */
-function footer(data: BundleData): string {
+function footer(data: ThemeData): string {
   const serial =
     data.site.serial === null
       ? "—"
@@ -240,9 +240,9 @@ function footer(data: BundleData): string {
  * The whole page.
  *
  * @param data - The status data the host validated and handed over.
- * @returns The markup, with one root element carrying the design's own class.
+ * @returns The markup, with one root element carrying the theme's own class.
  */
-export function template(data: BundleData): string {
+export function template(data: ThemeData): string {
   const state = overallStatus(data.status.services);
   const layout = data.site.layout === "cards" ? "cards" : "grouped";
   // Nothing is wrong, so nothing is being reported: a page announcing that

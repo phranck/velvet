@@ -18,10 +18,10 @@ import type {
 } from "@velvet/contracts";
 
 import {
-  BUNDLE_DATA_VERSION,
-  type BundleData,
-  type BundleSite,
-} from "../../src/lib/bundles/data.js";
+  THEME_DATA_VERSION,
+  type ThemeData,
+  type ThemeSite,
+} from "../../src/lib/themes/data.js";
 
 const DAY_MS = 86_400_000;
 const SECONDS_PER_DAY = 86_400;
@@ -49,11 +49,11 @@ export interface FixtureSpec {
   services: ServiceSpec[];
   events?: IncidentsDocument["events"];
   /** Anything about the installation that differs from the defaults below. */
-  site?: Partial<BundleSite>;
+  site?: Partial<ThemeSite>;
 }
 
 /** The installation every fixture starts from, before its own overrides. */
-const DEFAULT_SITE: BundleSite = {
+const DEFAULT_SITE: ThemeSite = {
   name: "Velvet Underground Inc.",
   navigation: [
     { title: "Website", href: "#" },
@@ -191,9 +191,9 @@ export function buildResponseTimes(spec: FixtureSpec): ResponseTimesDocument {
 }
 
 /** Assembles a whole fixture in the shape a bundle is handed. */
-export function buildFixture(spec: FixtureSpec): BundleData {
+export function buildFixture(spec: FixtureSpec): ThemeData {
   return {
-    dataVersion: BUNDLE_DATA_VERSION,
+    dataVersion: THEME_DATA_VERSION,
     generatedAt: spec.generatedAt,
     site: { ...DEFAULT_SITE, ...spec.site },
     status: buildStatus(spec),

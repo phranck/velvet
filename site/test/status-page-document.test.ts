@@ -5,7 +5,7 @@ import { test } from "bun:test";
 
 test("keeps the title a page falls back to, without build instructions", async () => {
   const html = await readFile(
-    resolve(import.meta.dirname, "../status-design.html"),
+    resolve(import.meta.dirname, "../status-theme.html"),
     "utf8",
   );
 

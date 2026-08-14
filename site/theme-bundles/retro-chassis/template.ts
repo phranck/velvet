@@ -5,7 +5,7 @@
  * between two walnut cheeks, carrying a recessed name plate lit from behind,
  * two protocol lamps, a two-line readout and a lamp meter for its days. There
  * is not one picture anywhere on it, which is why nothing here emits an icon:
- * where another design draws a chevron this one presses a key, and where
+ * where another theme draws a chevron this one presses a key, and where
  * another shows a glyph above the headline this one stands a striped sun
  * behind it.
  *
@@ -21,7 +21,7 @@
 
 import { overallStatus, uptimeForRange, visibleEvents } from "@velvet/foundation/status";
 
-import type { BundleData } from "../../src/lib/bundles/data.js";
+import type { ThemeData } from "../../src/lib/themes/data.js";
 import { escape, formatEventTime, formatUpdated, RANGES, STATE_WORD } from "./format.js";
 
 /** What each overall state says at the top of the page. */
@@ -124,12 +124,12 @@ function keyPlate(word: string): string {
  * The one line naming the state, with the striped sun standing behind it.
  *
  * The mark is emitted without a glyph inside it, because the shape is what this
- * design shows there and a picture would be a second thing saying the same.
+ * theme shows there and a picture would be a second thing saying the same.
  *
  * The page's name is written across the sun's middle band, which is where a
  * poster of this period prints it, so the range bar below shows no label.
  */
-function hero(data: BundleData, state: string): string {
+function hero(data: ThemeData, state: string): string {
   return `<div class="status-band status-band--hero">
     <div class="status-hero">
       <span class="status-hero-mark" aria-hidden="true"></span>
@@ -141,7 +141,7 @@ function hero(data: BundleData, state: string): string {
 }
 
 /** One maintenance window or incident, as the page announces it. */
-function notice(event: BundleData["incidents"]["events"][number]): string {
+function notice(event: ThemeData["incidents"]["events"][number]): string {
   const started = new Date(event.startsAt);
   const meta =
     event.kind === "maintenance"
@@ -155,7 +155,7 @@ function notice(event: BundleData["incidents"]["events"][number]): string {
 }
 
 /** Everything being reported, maintenance first and incidents under a heading. */
-function notices(data: BundleData): string {
+function notices(data: ThemeData): string {
   const visible = visibleEvents(data.incidents.events);
   const maintenance = visible.filter((event) => event.kind === "maintenance");
   const incidents = visible.filter((event) => event.kind === "incident");
@@ -185,7 +185,7 @@ function notices(data: BundleData): string {
  * @param data - The installation, for the range each page opens in.
  * @returns The device's markup.
  */
-function rangeBar(data: BundleData): string {
+function rangeBar(data: ThemeData): string {
   const keys = RANGES.map(
     (option) =>
       `<button class="range-button" type="button" data-range="${option.key}" aria-pressed="${String(
@@ -212,11 +212,11 @@ function rangeBar(data: BundleData): string {
 /**
  * Both protocol lamps, always.
  *
- * A design that treats them as labels hides whatever was not measured. This one
+ * A theme that treats them as labels hides whatever was not measured. This one
  * draws them as two lamps and leaves the unmeasured one dark, so the pair is
  * emitted whatever the service has.
  */
-function protocols(service: BundleData["status"]["services"][number]): string {
+function protocols(service: ThemeData["status"]["services"][number]): string {
   const badges = (["ipv4", "ipv6"] as const)
     .map((protocol) => {
       const check = service.checks.find((entry) => entry.protocol === protocol);
@@ -243,8 +243,8 @@ function protocols(service: BundleData["status"]["services"][number]): string {
  * it rather than drawing an overlay.
  */
 function service(
-  data: BundleData,
-  entry: BundleData["status"]["services"][number],
+  data: ThemeData,
+  entry: ThemeData["status"]["services"][number],
 ): string {
   const figure = uptimeForRange(
     entry,
@@ -293,7 +293,7 @@ function service(
 }
 
 /** Every service in a component of its own, which is what a rack is. */
-function services(data: BundleData): string {
+function services(data: ThemeData): string {
   const ornament = `<span class="card-ornament" aria-hidden="true"></span>`;
   const rows = data.status.services
     .map(
@@ -305,7 +305,7 @@ function services(data: BundleData): string {
 }
 
 /** The credit, the release and the serial, on one row under the rack. */
-function footer(data: BundleData): string {
+function footer(data: ThemeData): string {
   const serial =
     data.site.serial === null ? "—" : String(data.site.serial).padStart(5, "0");
   return `<div class="status-band status-band--footer">
@@ -326,9 +326,9 @@ function footer(data: BundleData): string {
  * The whole page.
  *
  * @param data - The status data the host validated and handed over.
- * @returns The markup, with one root element carrying the design's own class.
+ * @returns The markup, with one root element carrying the theme's own class.
  */
-export function template(data: BundleData): string {
+export function template(data: ThemeData): string {
   const state = overallStatus(data.status.services);
   const reporting =
     state !== "operational" && visibleEvents(data.incidents.events).length > 0;

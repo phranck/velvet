@@ -4,10 +4,10 @@
  * It is handed the element the template's markup was put into, and the same data
  * the template rendered from. It fetches nothing: everything a range change
  * needs is already in the object it was given, which is the point of the host
- * loading the data rather than the design.
+ * loading the data rather than the theme.
  *
  * Whatever it returns is called when the page goes away, so a preview frame can
- * swap one design for another without leaving listeners behind.
+ * swap one theme for another without leaving listeners behind.
  *
  * Two kinds of value are settled in two different places, on purpose. A colour
  * is in the stylesheet, because the rest of the page is painted in the same
@@ -39,7 +39,7 @@ import {
   type UptimeStripStyle,
 } from "@velvet/foundation/uptime-strip";
 
-import type { BundleData } from "../../src/lib/bundles/data.js";
+import type { ThemeData } from "../../src/lib/themes/data.js";
 import { rangeNamed, STATE_WORD } from "./format.js";
 
 /**
@@ -72,7 +72,7 @@ const STRIP_GEOMETRY = {
  * The plot: the lit scale of a receiver. The trace runs from edge to edge with
  * no value axis, and a printed scale of ticks hangs below it.
  *
- * The two lengths are all this design states about that scale. How far apart
+ * The two lengths are all this theme states about that scale. How far apart
  * the marks stand is the plugin's, because it follows from how long the window
  * is: an hour apart over a day, a day apart over a month, a week apart over a
  * year.
@@ -107,7 +107,7 @@ interface Row {
   summary: HTMLButtonElement;
   uptime: HTMLElement;
   axisFrom: HTMLElement;
-  /** The left end of the chart's range, which the design prints itself. */
+  /** The left end of the chart's range, which the theme prints itself. */
   chartFrom: HTMLElement;
   displayMain: HTMLElement;
   displaySecond: HTMLElement;
@@ -125,7 +125,7 @@ interface Row {
  * @param data - The status data the host handed over.
  * @returns The function that undoes everything this attached.
  */
-export function enhance(root: HTMLElement, data: BundleData): () => void {
+export function enhance(root: HTMLElement, data: ThemeData): () => void {
   const page = root.querySelector<HTMLElement>(".retro-chassis-page") ?? root;
   const undo: Array<() => void> = [];
   const rows: Row[] = [];
@@ -136,8 +136,8 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
    *
    * Read on every paint rather than once, because a stylesheet arrives when it
    * arrives: a palette read before it applied is a strip drawn in nothing at
-   * all, and reading it again is what makes the drawing follow the design
-   * whenever the design turns up.
+   * all, and reading it again is what makes the drawing follow the theme
+   * whenever the theme turns up.
    */
   const stripStyle = (): UptimeStripStyle => {
     const palette = getComputedStyle(page);

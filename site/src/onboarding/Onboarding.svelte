@@ -34,10 +34,10 @@
     type SetupProgressStage,
   } from "./state.js";
   import SquircleStep from "./SquircleStep.svelte";
-  import { OFFERED_THEMES, themeById } from "../lib/themes.js";
-  import { pictureFor } from "../lib/theme-pictures.js";
+  import { OFFERED_THEMES, themeById } from "../lib/themes/catalogue.js";
+  import { pictureFor } from "../lib/themes/pictures.js";
 
-  const STEPS = ["Basics", "Services", "Design", "Review", "Publish"] as const;
+  const STEPS = ["Basics", "Services", "Theme", "Review", "Publish"] as const;
   /** Publishing is its own step, and the last one. */
   const INSTALL_STEP = STEPS.length - 1;
   const REVIEW_STEP = INSTALL_STEP - 1;
@@ -208,7 +208,7 @@
   const progressDetail = $derived<Partial<Record<SetupProgressStage, string>>>({
     "creating-repository": `${draft.repositoryOwner.trim()}/${draft.repositoryName.trim()}`,
   });
-  const selectedDesign = $derived(themeById(draft.designId));
+  const selectedDesign = $derived(themeById(draft.themeId));
   const previousStepLabel = $derived(step > 0 ? STEPS[step - 1] : "");
   const nextStepLabel = $derived(
     step < STEPS.length - 1 ? STEPS[step + 1] : "",
@@ -565,7 +565,7 @@
   <main>
     <section class="intro">
       <p>
-        Tell Velvet what to watch, choose a design, and publish through your
+        Tell Velvet what to watch, choose a theme, and publish through your
         GitHub account.
       </p>
     </section>
@@ -798,32 +798,32 @@
         <RequiredField.Legend />
       </StepCard.Body>
 
-      <StepCard.Body active={step === 2} labelledBy="design-title">
+      <StepCard.Body active={step === 2} labelledBy="theme-title">
         <div class="velvet-section-heading">
           <div class="velvet-section-title">
             <span>03</span>
             <span class="separator" data-step-title-separator aria-hidden="true">//</span>
-            <h2 id="design-title">Choose a design</h2>
+            <h2 id="theme-title">Choose a theme</h2>
           </div>
-          <p>A design brings its own colours, typefaces and layout with it. Your page is published in the one you choose here, and naming another design in the configuration publishes it in that one instead.</p>
+          <p>A theme brings its own colours, typefaces and layout with it. Your page is published in the one you choose here, and naming another theme in the configuration publishes it in that one instead.</p>
         </div>
         <ThemeCard.Root
-          legend="Designs"
-          description="Select one of the four designs Velvet ships. Each picture is a page published in that design."
+          legend="Themes"
+          description="Select one of the four themes Velvet ships. Each picture is a page published in that theme."
         >
-          {#each OFFERED_THEMES as design (design.id)}
+          {#each OFFERED_THEMES as theme (theme.id)}
             <ThemeCard.Option
-              name={design.name}
-              era={design.era}
-              value={design.id}
-              screenshot={pictureFor(design)}
-              selected={draft.designId === design.id}
-              radioName="design"
-              onSelect={(value) => (draft.designId = value)}
+              name={theme.name}
+              era={theme.era}
+              value={theme.id}
+              screenshot={pictureFor(theme)}
+              selected={draft.themeId === theme.id}
+              radioName="theme"
+              onSelect={(value) => (draft.themeId = value)}
             />
           {/each}
         </ThemeCard.Root>
-        {#if errors.designId}<small class="field-error">{errors.designId}</small>{/if}
+        {#if errors.themeId}<small class="field-error">{errors.themeId}</small>{/if}
       </StepCard.Body>
 
       <StepCard.Body active={step === 3} labelledBy="publish-title">
@@ -852,8 +852,8 @@
             icon="ph-stack"
           />
           <ReviewList.Item
-            label="Design"
-            value={selectedDesign?.name ?? "Choose a design"}
+            label="Theme"
+            value={selectedDesign?.name ?? "Choose a theme"}
             icon="ph-palette"
           />
           {#if customDomain}

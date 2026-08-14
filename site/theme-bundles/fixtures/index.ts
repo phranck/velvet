@@ -11,7 +11,7 @@
  * are the eight installations it has to survive.
  */
 
-import type { BundleData } from "../../src/lib/bundles/data.js";
+import type { ThemeData } from "../../src/lib/themes/data.js";
 import {
   allWell,
   everythingUnknown,
@@ -31,7 +31,7 @@ export interface Fixture {
   name: string;
   /** What this case is for. */
   what: string;
-  data: BundleData;
+  data: ThemeData;
 }
 
 export const FIXTURES: readonly Fixture[] = [

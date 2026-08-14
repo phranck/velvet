@@ -20,9 +20,9 @@
     "test/**/*.ts",
     "theme-bundles/**/*.ts",
     "gallery/**/*.ts",
-    "scripts/bundles.ts",
-    "scripts/design-screenshots.ts",
-    "scripts/verify-bundles.ts",
+    "scripts/themes.ts",
+    "scripts/theme-screenshots.ts",
+    "scripts/verify-themes.ts",
     "scripts/conformance.ts",
     "scripts/verify-conformance.ts"
   ],

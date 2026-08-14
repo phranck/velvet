@@ -47,7 +47,7 @@ test("publishes the page in the chosen theme", () => {
   draft.repositoryOwner = "velvet-user";
   draft.repositoryName = "status";
   draft.statusPageName = "My Status";
-  draft.designId = "retro-chassis";
+  draft.themeId = "retro-chassis";
   draft.services = [
     {
       ...createServiceDraft("website"),
@@ -76,7 +76,7 @@ test("refuses a theme no shipped bundle answers to", () => {
   draft.repositoryOwner = "velvet-user";
   draft.repositoryName = "status";
   draft.statusPageName = "My Status";
-  draft.designId = "no-such-design";
+  draft.themeId = "no-such-theme";
   draft.services = [
     {
       ...createServiceDraft("website"),
@@ -90,8 +90,8 @@ test("refuses a theme no shipped bundle answers to", () => {
   assert.equal(result.success, false);
   if (result.success) return;
   assert.equal(
-    result.errors.designId,
-    "Choose one of the designs Velvet ships.",
+    result.errors.themeId,
+    "Choose one of the themes Velvet ships.",
   );
 });
 

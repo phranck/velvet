@@ -1,9 +1,9 @@
 /**
- * Runs the conformance suite over every bundle and reports what it found.
+ * Runs the conformance suite over every theme and reports what it found.
  *
- * Run with `bun run --cwd site bundles:conform`, optionally narrowed:
+ * Run with `bun run --cwd site themes:conform`, optionally narrowed:
  *
- *   bun scripts/verify-conformance.ts --bundle retro-chassis
+ *   bun scripts/verify-conformance.ts --theme retro-chassis
  *   bun scripts/verify-conformance.ts --fixture twenty-services
  *
  * It drives Chromium through Playwright, as the rendered gate it replaces did.
@@ -27,16 +27,16 @@ function valuesFor(flag: string): string[] | undefined {
 const browser = await chromium.launch();
 try {
   const findings = await runConformance(browser, {
-    bundles: valuesFor("--bundle"),
+    themes: valuesFor("--theme"),
     fixtures: valuesFor("--fixture"),
   });
 
   if (findings.length === 0) {
-    console.log("Every bundle conforms against every fixture.");
+    console.log("Every theme conforms against every fixture.");
   } else {
     for (const finding of findings) {
       console.log(
-        `  FAIL  ${finding.bundle} · ${finding.fixture} · ${finding.check}: ${finding.detail}`,
+        `  FAIL  ${finding.theme} · ${finding.fixture} · ${finding.check}: ${finding.detail}`,
       );
     }
     console.log(`\n${findings.length} failure(s).`);

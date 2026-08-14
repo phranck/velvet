@@ -21,30 +21,30 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import type { BundleManifest } from "../src/lib/bundles/manifest.js";
-import { readBundles } from "./bundles.js";
+import type { ThemeManifest } from "../src/lib/themes/manifest.js";
+import { readThemes } from "./themes.js";
 
 /** Where the catalogue is written. */
 const OUTPUT = resolve(
   import.meta.dirname,
-  "../src/lib/theme-catalogue.generated.json",
+  "../src/lib/themes/catalogue.generated.json",
 );
 
 /** Where the screenshot run records which picture belongs to which theme. */
 const PICTURES = resolve(
   import.meta.dirname,
-  "../src/assets/designs/manifest.json",
+  "../src/assets/themes/manifest.json",
 );
 
 /** One theme, as everything on the browser's side of the seam reads it. */
-export interface CatalogueEntry extends BundleManifest {
-  /** The picture's file name inside `src/assets/designs/`. */
+export interface CatalogueEntry extends ThemeManifest {
+  /** The picture's file name inside `src/assets/themes/`. */
   picture: string;
 }
 
 /** As much of the picture manifest as this reads. */
 interface PictureManifest {
-  designs: Record<string, { file: string }>;
+  themes: Record<string, { file: string }>;
 }
 
 /**
@@ -56,7 +56,7 @@ interface PictureManifest {
  */
 export async function buildThemeCatalogue(): Promise<CatalogueEntry[]> {
   const pictures = JSON.parse(await readFile(PICTURES, "utf8")) as PictureManifest;
-  const themes = await readBundles();
+  const themes = await readThemes();
   const entries: CatalogueEntry[] = [];
   for (const theme of themes) {
     if (!theme.manifest) {
@@ -64,10 +64,10 @@ export async function buildThemeCatalogue(): Promise<CatalogueEntry[]> {
         `${theme.directory} does not describe itself: ${theme.manifestErrors.join("; ")}`,
       );
     }
-    const picture = pictures.designs[theme.directory]?.file;
+    const picture = pictures.themes[theme.directory]?.file;
     if (!picture) {
       throw new Error(
-        `${theme.directory} has no picture in src/assets/designs/manifest.json`,
+        `${theme.directory} has no picture in src/assets/themes/manifest.json`,
       );
     }
     entries.push({ ...theme.manifest, picture });

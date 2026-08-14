@@ -4,10 +4,10 @@
  * It is handed the element the template's markup was put into, and the same data
  * the template rendered from. It fetches nothing: everything a range change
  * needs is already in the object it was given, which is the point of the host
- * loading the data rather than the design.
+ * loading the data rather than the theme.
  *
  * Whatever it returns is called when the page goes away, so a preview frame can
- * swap one design for another without leaving listeners behind.
+ * swap one theme for another without leaving listeners behind.
  *
  * Two kinds of value are settled in two different places, on purpose. A colour
  * is in the stylesheet, because the rest of the page is painted in the same
@@ -40,7 +40,7 @@ import {
   type UptimeStripStyle,
 } from "@velvet/foundation/uptime-strip";
 
-import type { BundleData } from "../../src/lib/bundles/data.js";
+import type { ThemeData } from "../../src/lib/themes/data.js";
 
 /**
  * The strip's geometry: square segments with a capsule at either end of the
@@ -83,7 +83,7 @@ function colourOf(style: CSSStyleDeclaration, name: string): string {
 }
 
 /**
- * Writes the chart's legend, which is this design's markup rather than the
+ * Writes the chart's legend, which is this theme's markup rather than the
  * plugin's.
  *
  * A key in the series' own colour, the protocol, and its latest reading, on one
@@ -122,7 +122,7 @@ interface Row {
   summary: HTMLButtonElement;
   uptime: HTMLElement;
   axisFrom: HTMLElement;
-  /** The left end of the chart's range, which the design prints itself. */
+  /** The left end of the chart's range, which the theme prints itself. */
   chartFrom: HTMLElement;
   strip: UptimeStrip;
   chart: ChartView;
@@ -137,7 +137,7 @@ interface Row {
  * @param data - The status data the host handed over.
  * @returns The function that undoes everything this attached.
  */
-export function enhance(root: HTMLElement, data: BundleData): () => void {
+export function enhance(root: HTMLElement, data: ThemeData): () => void {
   const page = root.querySelector<HTMLElement>(".ncc-1701-d-page") ?? root;
   const undo: Array<() => void> = [];
   const rows: Row[] = [];
@@ -148,8 +148,8 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
    *
    * Read on every paint rather than once, because a stylesheet arrives when it
    * arrives: a palette read before it applied is a strip drawn in nothing at
-   * all, and reading it again is what makes the drawing follow the design
-   * whenever the design turns up.
+   * all, and reading it again is what makes the drawing follow the theme
+   * whenever the theme turns up.
    */
   const stripStyle = (): UptimeStripStyle => {
     const palette = getComputedStyle(page);
@@ -219,7 +219,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
           tooltipClassName: "uptime-tooltip chart-reading",
           legend: (entries) => drawLegend(chartLegend, entries),
           // The reading lives on the document rather than inside the service,
-          // so it inherits nothing from it: a design that colours a series by
+          // so it inherits nothing from it: a theme that colours a series by
           // service has to hand those colours over.
           seriesColours: () => {
             const inherited = getComputedStyle(chartPlot);
