@@ -7,12 +7,12 @@
  * with its readings beside it, which is why the name stands in a rail of its own
  * rather than inside the button.
  *
- * Three things this design carries that no other does. The headline is the
+ * Three things this theme carries that no other does. The headline is the
  * interrupted upper arm of the limb around the notices, so the hero emits a
  * filled block between the column's head and the words. The foot of the
  * readings closes that limb the other way up and carries the release and the
  * serial as two segments cut out of it, which is why the footer states neither.
- * No design carries a bar at the top any more, and this one named the
+ * No theme carries a bar at the top any more, and this one named the
  * installation nowhere even when it did.
  *
  * A string rather than a tree, because the same function runs in the build,
@@ -22,7 +22,7 @@
 
 import { overallStatus, uptimeForRange, visibleEvents } from "@velvet/foundation/status";
 
-import type { BundleData } from "../../src/lib/bundles/data.js";
+import type { ThemeData } from "../../src/lib/themes/data.js";
 import { escape, formatUpdated, panelDate, RANGES } from "./format.js";
 
 /** What each overall state says at the top of the page. */
@@ -33,7 +33,7 @@ const HEADLINE: Record<string, string> = {
   outage: "Major service outage",
 };
 
-/** A Phosphor glyph, which this design draws only on the two disclosures. */
+/** A Phosphor glyph, which this theme draws only on the two disclosures. */
 function icon(name: string, className: string): string {
   return `<i class="${className} ph-duotone ${name}" aria-hidden="true"></i>`;
 }
@@ -44,7 +44,7 @@ function icon(name: string, className: string): string {
  * The bar is a filled block between the column's head and the words. It says
  * nothing, so it is hidden from anything that reads the page aloud.
  */
-function hero(data: BundleData, state: string): string {
+function hero(data: ThemeData, state: string): string {
   return `<div class="status-band status-band--hero">
     <div class="status-hero">
       <span class="status-hero-bar" aria-hidden="true"></span>
@@ -56,7 +56,7 @@ function hero(data: BundleData, state: string): string {
 
 /** One row of the table of events: the date, the claim, and the message. */
 function notice(
-  event: BundleData["incidents"]["events"][number],
+  event: ThemeData["incidents"]["events"][number],
 ): string {
   return `<div class="notice notice--${escape(event.kind)}">
     <span class="notice-date">${escape(panelDate(new Date(event.startsAt)))}</span>
@@ -66,7 +66,7 @@ function notice(
 }
 
 /** Everything being reported, as one table with one set of column widths. */
-function notices(data: BundleData): string {
+function notices(data: ThemeData): string {
   const visible = visibleEvents(data.incidents.events);
   const maintenance = visible.filter((event) => event.kind === "maintenance");
   const incidents = visible.filter((event) => event.kind === "incident");
@@ -82,10 +82,10 @@ function notices(data: BundleData): string {
 /**
  * The range controls, inside the arm of the elbow.
  *
- * The installation is named nowhere on this design, so the label the other
- * designs put at the leading edge of this bar is not emitted at all.
+ * The installation is named nowhere on this theme, so the label the other
+ * themes put at the leading edge of this bar is not emitted at all.
  */
-function rangeBar(data: BundleData): string {
+function rangeBar(data: ThemeData): string {
   const buttons = RANGES.map(
     (option) =>
       `<button class="range-button" type="button" data-range="${option.key}" aria-pressed="${String(
@@ -104,7 +104,7 @@ function rangeBar(data: BundleData): string {
 }
 
 /** The two protocol badges, where there is anything to tell apart. */
-function protocols(service: BundleData["status"]["services"][number]): string {
+function protocols(service: ThemeData["status"]["services"][number]): string {
   const only =
     service.checks.length === 1 && service.checks[0]?.protocol === "ipv4";
   if (only) return "";
@@ -120,7 +120,7 @@ function protocols(service: BundleData["status"]["services"][number]): string {
 }
 
 /** What each protocol last answered, behind the control that opens the row. */
-function readings(service: BundleData["status"]["services"][number]): string {
+function readings(service: ThemeData["status"]["services"][number]): string {
   return service.checks
     .map((check, index) => {
       const separator =
@@ -152,8 +152,8 @@ function readings(service: BundleData["status"]["services"][number]): string {
  * than adding to them and the button's contents are no longer the name.
  */
 function service(
-  data: BundleData,
-  entry: BundleData["status"]["services"][number],
+  data: ThemeData,
+  entry: ThemeData["status"]["services"][number],
 ): string {
   const figure = uptimeForRange(
     entry,
@@ -200,7 +200,7 @@ function service(
  * which is why it is not hidden from a reader who hears the page. Everything
  * else it draws is decoration.
  */
-function services(data: BundleData): string {
+function services(data: ThemeData): string {
   const rows = data.status.services.map((entry) => service(data, entry)).join("");
   const serial =
     data.site.serial === null ? "—" : String(data.site.serial).padStart(5, "0");
@@ -234,11 +234,11 @@ function footer(): string {
  * The whole page.
  *
  * @param data - The status data the host validated and handed over.
- * @returns The markup, with one root element carrying the design's own class.
+ * @returns The markup, with one root element carrying the theme's own class.
  */
-export function template(data: BundleData): string {
+export function template(data: ThemeData): string {
   const state = overallStatus(data.status.services);
-  // Nothing is wrong, so nothing is being reported. This design draws a limb
+  // Nothing is wrong, so nothing is being reported. This theme draws a limb
   // around the notices, and a limb around an empty region is a shape with
   // nothing in it.
   const reporting =

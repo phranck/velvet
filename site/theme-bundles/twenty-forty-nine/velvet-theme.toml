@@ -20,5 +20,5 @@ readings = "overlay"
 
 [entries]
 template = "template.ts"
-styles = "bundle.css"
+styles = "theme.css"
 script = "script.ts"

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { test } from "bun:test";
 
-import { BUNDLES } from "../scripts/bundle-faces.js";
+import { THEME_FACES } from "../scripts/theme-faces.js";
 
 /**
  * Holds the notices file and the faces the designs actually carry together.
@@ -32,7 +32,7 @@ function creditedToADesign(): string[] {
 
 test("credits every face a design carries", () => {
   const carried = new Set(
-    Object.values(BUNDLES).flatMap((faces) => faces.map((face) => face.family)),
+    Object.values(THEME_FACES).flatMap((faces) => faces.map((face) => face.family)),
   );
   for (const family of carried) {
     assert.ok(
@@ -44,12 +44,12 @@ test("credits every face a design carries", () => {
 
 test("credits no face to a design that does not carry it", () => {
   const carried = new Set(
-    Object.values(BUNDLES).flatMap((faces) => faces.map((face) => face.family)),
+    Object.values(THEME_FACES).flatMap((faces) => faces.map((face) => face.family)),
   );
   for (const family of creditedToADesign()) {
     assert.ok(
       carried.has(family),
-      `THIRD_PARTY_NOTICES.md says ${family} is bundled with a design, but no design names it. Either add it to site/scripts/bundle-faces.ts or remove the notice.`,
+      `THIRD_PARTY_NOTICES.md says ${family} is bundled with a design, but no design names it. Either add it to site/scripts/theme-faces.ts or remove the notice.`,
     );
   }
 });
@@ -62,7 +62,7 @@ test("declares every bundled face as a dependency", async () => {
     ...Object.keys(manifest.dependencies ?? {}),
     ...Object.keys(manifest.devDependencies ?? {}),
   ]);
-  for (const face of Object.values(BUNDLES).flat()) {
+  for (const face of Object.values(THEME_FACES).flat()) {
     assert.ok(
       declared.has(`@fontsource/${face.package}`) ||
         declared.has(`@fontsource-variable/${face.package}`),
@@ -75,7 +75,7 @@ test("declares no @fontsource package that nothing uses", async () => {
   const manifest = JSON.parse(
     await readFile(resolve(import.meta.dirname, "../package.json"), "utf8"),
   ) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
-  const bundled = new Set(Object.values(BUNDLES).flat().map((face) => face.package));
+  const bundled = new Set(Object.values(THEME_FACES).flat().map((face) => face.package));
   // The Velvet surfaces set their own text in faces no design carries, and they
   // import those packages by name from a stylesheet rather than through this
   // table. Named here so the check covers the designs without claiming the
@@ -98,7 +98,7 @@ test("declares no @fontsource package that nothing uses", async () => {
     const packageName = name.replace(/^@fontsource(-variable)?\//, "");
     assert.ok(
       bundled.has(packageName) || surfaceFaces.has(packageName),
-      `${name} is declared but no design carries it and no surface names it. Remove it, or add it to site/scripts/bundle-faces.ts.`,
+      `${name} is declared but no design carries it and no surface names it. Remove it, or add it to site/scripts/theme-faces.ts.`,
     );
   }
 });

@@ -15,14 +15,14 @@ import { themeCatalogueText } from "../scripts/write-theme-catalogue.js";
  * tell, because the themes describe themselves in TOML and no browser reads
  * TOML.
  *
- * It also holds the pairing the file `src/assets/designs/manifest.json` carries,
+ * It also holds the pairing the file `src/assets/themes/manifest.json` carries,
  * because a theme without a picture cannot be offered and a picture without a
  * theme is a file nobody deletes.
  */
 
 const CATALOGUE = resolve(
   import.meta.dirname,
-  "../src/lib/theme-catalogue.generated.json",
+  "../src/lib/themes/catalogue.generated.json",
 );
 
 test("the committed catalogue matches the themes on disk", async () => {
@@ -46,15 +46,15 @@ test("every theme is offered with a name, a sentence and a picture", async () =>
   }>;
   const pictures = JSON.parse(
     await readFile(
-      resolve(import.meta.dirname, "../src/assets/designs/manifest.json"),
+      resolve(import.meta.dirname, "../src/assets/themes/manifest.json"),
       "utf8",
     ),
-  ) as { fixture: string; designs: Record<string, { file: string }> };
+  ) as { fixture: string; themes: Record<string, { file: string }> };
 
   assert.equal(themes.length > 0, true);
   assert.deepEqual(
     themes.map(({ id }) => id).sort(),
-    Object.keys(pictures.designs).sort(),
+    Object.keys(pictures.themes).sort(),
   );
   for (const theme of themes) {
     assert.ok(theme.name, `${theme.id} has no name`);

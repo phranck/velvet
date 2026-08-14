@@ -12,11 +12,11 @@
   // around it here. `docs/screenshot.png` keeps its window for the README,
   // which is read on a page that has none.
   import screenshotUrl from "./assets/screenshot-screen.png";
-  // The designs a page can be published in, read from the manifests that ship
+  // The themes a page can be published in, read from the manifests that ship
   // with Velvet, so this page cannot offer one that does not exist or miss one
   // that does.
-  import { OFFERED_THEMES } from "../lib/themes.js";
-  import { pictureFor } from "../lib/theme-pictures.js";
+  import { OFFERED_THEMES } from "../lib/themes/catalogue.js";
+  import { pictureFor } from "../lib/themes/pictures.js";
   import * as SquircleButton from "../components/squircle-button";
   import {
     SQUIRCLE_CONTENT_INSET,
@@ -41,7 +41,7 @@
    * left edge.
    *
    * Two boxes, therefore, because the two pictures genuinely differ. The
-   * screenshot is a capture at four by three; a design tile is nearer square,
+   * screenshot is a capture at four by three; a theme tile is nearer square,
    * so that a status page in half a row still shows several services rather
    * than a headline and one row of days.
    *
@@ -62,11 +62,11 @@
 
   /**
    * The screenshot is cut at the inner edge of the double frame around it, and
-   * a design tile at its own edge.
+   * a theme tile at its own edge.
    *
-   * The two frames are different frames, because the design uses them for
+   * The two frames are different frames, because the theme uses them for
    * different things. The screenshot carries Velvet's double outline, a thin
-   * line and a thick one with a gap between, which is the one place the design
+   * line and a thick one with a gap between, which is the one place the theme
    * spends it. A tile carries a single hairline, drawn as a box the colour of
    * the line holding a box the size of the picture, so the cut it needs is the
    * shape at its own edge rather than a share of the way in.
@@ -143,10 +143,10 @@
         "Availability, response times, incidents, and maintenance, kept on a dedicated branch rather than in a database, for as far back as you ask for.",
     },
     {
-      topic: "Designs",
+      topic: "Themes",
       title: "A page somebody designed",
       description:
-        "Curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, and selectable history ranges.",
+        "Curated themes, each shipped whole with the typefaces it uses, plus service icons, SEO output, and selectable history ranges.",
     },
     {
       topic: "Domain",
@@ -405,7 +405,7 @@
         <div class="velvet-section-heading">
           <div class="velvet-section-title">
             <span class="marker" aria-hidden="true">//</span>
-            <h2 id="themes-title">Different designs to start from</h2>
+            <h2 id="themes-title">Different themes to start from</h2>
           </div>
           <p>
             Four of them are finished and tested today, and you pick one while
@@ -421,10 +421,10 @@
           </p>
         </div>
         <ul class="themes">
-          {#each OFFERED_THEMES as design (design.id)}
+          {#each OFFERED_THEMES as theme (theme.id)}
             <li>
               <figure>
-                <!-- The design's own construction: a shape in the colour of the
+                <!-- The theme's own construction: a shape in the colour of the
                      line, holding a shape the size of the picture one pixel
                      inside it. One hairline, following the curve, and nothing
                      to keep in step with a second. -->
@@ -433,8 +433,8 @@
                   <span class="shot-wall">
                   <span class="shot-picture">
                     <img
-                      src={pictureFor(design)}
-                      alt={`A Velvet status page in the ${design.name} design`}
+                      src={pictureFor(theme)}
+                      alt={`A Velvet status page in the ${theme.name} theme`}
                       loading="lazy"
                       decoding="async"
                     />
@@ -457,7 +457,7 @@
                   lighter one would get the same file back.
                 -->
                 <figcaption>
-                  {design.name} <span class="era">{design.era}</span>
+                  {theme.name} <span class="era">{theme.era}</span>
                 </figcaption>
               </figure>
             </li>
@@ -504,7 +504,7 @@
         <h2 id="start-title">Ready in a couple of minutes</h2>
         <p>
           The browser setup asks for a repository, your services, an optional
-          domain and one of our curated designs. After you approve it on GitHub
+          domain and one of our curated themes. After you approve it on GitHub
           it does the rest.
         </p>
         <SquircleButton.Root
@@ -926,7 +926,7 @@
     cut is dark and the far one catches it. Both stops are mixed rather than
     stepped, so the band turns rather than banding.
 
-    Drawn as a shape holding a shape, the way the design draws its tiles, so the
+    Drawn as a shape holding a shape, the way the theme draws its tiles, so the
     band follows the curve. A border cannot: it is painted outside the padding
     box and the clip cuts it away along every corner.
   */
@@ -1070,7 +1070,7 @@
     object-fit: cover;
     object-position: top center;
   }
-  /* A step above the page's other labels. This one names a whole design rather
+  /* A step above the page's other labels. This one names a whole theme rather
      than annotating something beside it, and it is the only writing under a
      picture that fills half the row. */
   .themes figcaption {
@@ -1194,7 +1194,7 @@
   @media (max-width: 720px) {
     .capabilities,
     .pipeline,
-    /* A status page shown a third of a phone wide says nothing about a design,
+    /* A status page shown a third of a phone wide says nothing about a theme,
        so the previews take the full column here rather than half of it. */
     .themes {
       grid-template-columns: minmax(0, 1fr);

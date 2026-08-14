@@ -44,8 +44,8 @@ export function formatUpdated(moment: string): string {
 /**
  * Escapes text for markup.
  *
- * The bundle carries its own rather than importing one, because a service name
- * comes from an operator's configuration and a design that borrowed this from
+ * The theme carries its own rather than importing one, because a service name
+ * comes from an operator's configuration and a theme that borrowed this from
  * somewhere else would stop being self-contained over four replacements.
  *
  * @param value - Anything that came from the data.

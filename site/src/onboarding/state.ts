@@ -13,7 +13,7 @@ import {
   type ServiceDraft,
 } from "../components/service-editor/model.js";
 import { validateServiceDrafts } from "../components/service-editor/validation.js";
-import { OFFERED_THEMES, themeById } from "../lib/themes.js";
+import { OFFERED_THEMES, themeById } from "../lib/themes/catalogue.js";
 
 export {
   createHeaderDraft,
@@ -39,13 +39,13 @@ export interface OnboardingDraft {
   description: string;
   customDomain: string;
   /**
-   * The design the page is published in, named by its bundle directory.
+   * The theme the page is published in, named by its bundle directory.
    *
-   * These are the same four designs the start page shows, read from one list so
+   * These are the same four themes the start page shows, read from one list so
    * that the page offering them and the setup choosing between them cannot
    * disagree about which exist.
    */
-  designId: string;
+  themeId: string;
   services: ServiceDraft[];
   /**
    * Whether this installation may be named as a reference on velvet.li.
@@ -144,7 +144,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     statusPageName: "Status",
     description: "",
     customDomain: "",
-    designId: OFFERED_THEMES[0].id,
+    themeId: OFFERED_THEMES[0].id,
     services: [createServiceDraft()],
     listInGallery: false,
     privateRepository: false,
@@ -155,8 +155,8 @@ export function buildSetupRequest(
   draft: OnboardingDraft,
 ): OnboardingValidationResult {
   const errors: Record<string, string> = {};
-  const design = themeById(draft.designId);
-  if (!design) errors.designId = "Choose one of the designs Velvet ships.";
+  const theme = themeById(draft.themeId);
+  if (!theme) errors.themeId = "Choose one of the themes Velvet ships.";
   const customDomain = draft.customDomain.trim()
     ? normalizeCustomDomain(draft.customDomain)
     : null;
@@ -172,7 +172,7 @@ export function buildSetupRequest(
   }
   if (
     Object.keys(errors).length > 0 ||
-    !design ||
+    !theme ||
     !serviceValidation.success
   ) {
     return { success: false, errors };
@@ -186,7 +186,7 @@ export function buildSetupRequest(
     },
     statusPage: {
       name: draft.statusPageName.trim(),
-      theme: design.id,
+      theme: theme.id,
       ...(customDomain ? { customDomain } : {}),
       // Omitted entirely when blank. The contract caps the description at 300
       // characters and rejects an empty string, so writing one would fail the

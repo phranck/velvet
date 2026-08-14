@@ -570,7 +570,7 @@ test("social card and SEO consume validated Velvet documents", async () => {
 
 test("removes Atom feed generation from the status-page build", async () => {
   const action = await readFile(resolve(repositoryRoot, "action.yml"), "utf8");
-  const html = await readFile(resolve(siteRoot, "status-design.html"), "utf8");
+  const html = await readFile(resolve(siteRoot, "status-theme.html"), "utf8");
 
   assert.doesNotMatch(action, /generate-feed|incidents\.atom/);
   assert.doesNotMatch(html, /application\/atom\+xml|incidents\.atom/);

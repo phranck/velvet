@@ -1,7 +1,7 @@
 /*
-  The faces this design carries: Inter, Fira Code, Plaster.
+  The faces this theme carries: Inter, Fira Code, Plaster.
 
-  Written by site/scripts/bundle-fonts.ts together with the files it
+  Written by site/scripts/theme-fonts.ts together with the files it
   names, so a rule cannot point at a face nobody copied. Every one of
   them is published under the SIL Open Font License 1.1, and the licence
   travels beside the files in assets/fonts/.

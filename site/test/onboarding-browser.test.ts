@@ -211,7 +211,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     // checked here, the contract rejected it on Publish instead, which put the
     // message two steps away from the field that caused it.
     await page.getByLabel("URL to monitor").fill("example.com");
-    await page.getByRole("button", { name: "Design", exact: true }).click();
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
     assert.equal(
       await page
         .locator("[data-squircle-step][aria-current='step'] .label")
@@ -264,7 +264,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
       () => (document.querySelector(".steps button")?.getBoundingClientRect().width ?? 0) > 80,
     );
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole("button", { name: "Design", exact: true }).click();
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -275,8 +275,8 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         fullPage: true,
       });
     }
-    const designRadios = page.locator('input[name="design"]');
-    assert.equal(await designRadios.count(), 4);
+    const themeRadios = page.locator('input[name="theme"]');
+    assert.equal(await themeRadios.count(), 4);
     // Square, and cut to a squircle rather than to a radius, which is the
     // shape the steps above it carry. The path is derived from the option's
     // measured width, so it lands on the frame after the step opens.
@@ -292,15 +292,15 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
           check();
         }),
       );
-    await designRadios.first().focus();
+    await themeRadios.first().focus();
     await page.keyboard.press("ArrowRight");
-    assert.equal(await designRadios.nth(1).isChecked(), true);
+    assert.equal(await themeRadios.nth(1).isChecked(), true);
     await page.getByRole("button", { name: "Review", exact: true }).click();
     const reviewItems = page.locator("[data-review-item]");
     assert.equal(await reviewItems.count(), 5);
     assert.deepEqual(
       await reviewItems.locator("dt").allTextContents(),
-      ["Repository", "Status page", "Service", "Design", "Custom domain"],
+      ["Repository", "Status page", "Service", "Theme", "Custom domain"],
     );
     assert.equal(await reviewItems.getByText("status.example.com").count(), 1);
     assert.deepEqual(
@@ -322,7 +322,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
     const secondService = page.locator("[data-service-editor-item]").nth(1);
     await secondService.getByLabel("Service name").fill("API");
     await secondService.getByLabel("URL to monitor").fill("https://api.example.com");
-    await page.getByRole("button", { name: "Design", exact: true }).click();
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
     await page.getByRole("button", { name: "Review", exact: true }).click();
     assert.deepEqual(
       await page.locator("[data-review-item]").nth(2).evaluate((item) => ({
@@ -836,7 +836,7 @@ test("completes onboarding with keyboard, narrow viewport, and reduced motion", 
         description: "",
         listInGallery: false,
         privateRepository: false,
-        designId: "velvet",
+        themeId: "velvet",
         services: [
           {
             id: "conflict-service",

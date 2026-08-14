@@ -310,7 +310,7 @@ test("names every browser-driven test so the runner can leave it out", async () 
     if (file.endsWith("module-graph.test.ts")) continue;
     // Reached rather than imported directly, because a test may open its
     // browser through a helper beside it, or through a script it runs as a
-    // process of its own, which `bundle-conformance-browser` does.
+    // process of its own, which `theme-conformance-browser` does.
     const reached = new Set(await modulesReachedFrom(file));
     for (const [, script] of (await readFile(file, "utf8")).matchAll(
       /"(scripts\/[A-Za-z0-9._-]+\.ts)"/gu,

@@ -1,20 +1,20 @@
 /**
- * The conformance suite: one set of questions asked of every bundle, about what
+ * The conformance suite: one set of questions asked of every theme, about what
  * it rendered rather than about how it was built.
  *
  * This is what replaces the property contract. Two gates used to check that 418
  * named custom properties existed and resolved, which says nothing about
- * whether the page is right: a design can declare every property in the set and
+ * whether the page is right: a theme can declare every property in the set and
  * still print last week's uptime beside a service nobody can reach with a
  * keyboard.
  *
- * What it asserts, against every fixture, for every bundle:
+ * What it asserts, against every fixture, for every theme:
  *
  *   - Every service's name appears, and beside it its uptime figure for the
  *     chosen range. The figure is compared against what the shared arithmetic
- *     computes from the same fixture, so a bundle that does its own arithmetic
+ *     computes from the same fixture, so a theme that does its own arithmetic
  *     and gets it wrong fails here. That is what makes the redundancy between
- *     bundles safe.
+ *     themes safe.
  *   - Every visible incident appears with its title.
  *   - The version, the serial number and the line naming where the page is
  *     configured all appear.
@@ -23,11 +23,11 @@
  *     screen reader announces.
  *   - Nothing overflows the viewport at 320px.
  *   - Text meets its contrast: 4.5:1 for body, 3:1 for large text.
- *   - No request leaves the bundle's own origin.
- *   - The focus ring is the design's own and never the browser's default.
+ *   - No request leaves the theme's own origin.
+ *   - The focus ring is the theme's own and never the browser's default.
  *
- * The bundle is served over a real HTTP origin rather than pushed into a blank
- * document, because a design's own assets have to resolve the way they will
+ * The theme is served over a real HTTP origin rather than pushed into a blank
+ * document, because a theme's own assets have to resolve the way they will
  * when it is published, and because "no request leaves this origin" is only a
  * question worth asking of a page that has one.
  */
@@ -37,20 +37,20 @@ import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
 import type { Browser, Page } from "playwright";
 
-import type { BundleData } from "../src/lib/bundles/data.js";
+import type { ThemeData } from "../src/lib/themes/data.js";
 import { uptimeForRange, visibleIncidentEvents } from "../src/lib/data.js";
 import { FIXTURES, type Fixture } from "../theme-bundles/fixtures/index.js";
-import { readBundles, type ReadBundle } from "./bundles.js";
+import { readThemes, type ReadTheme } from "./themes.js";
 
-/** One thing a bundle got wrong, named the way a person can act on it. */
+/** One thing a theme got wrong, named the way a person can act on it. */
 export interface Finding {
-  bundle: string;
+  theme: string;
   fixture: string;
   check: string;
   detail: string;
 }
 
-/** Content types for everything a bundle can serve. */
+/** Content types for everything a theme can serve. */
 const CONTENT_TYPES: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -65,16 +65,16 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 /**
- * The document a bundle is rendered into.
+ * The document a theme is rendered into.
  *
  * The host owns everything outside the root element: the document language, the
- * viewport, and the element the markup goes into. A bundle owns what is inside
+ * viewport, and the element the markup goes into. A theme owns what is inside
  * it, which is why the page below carries no styling of its own beyond removing
  * the default margin the user agent puts on the body.
  */
 function hostDocument(markup: string, title: string, data: unknown): string {
   // The data rides in the document rather than being fetched, because the
-  // bundle is forbidden from fetching and the host has it already. The escape
+  // theme is forbidden from fetching and the host has it already. The escape
   // is the one that matters: a service name containing `</script>` would
   // otherwise end the element early.
   const payload = JSON.stringify(data).replaceAll("<", "\\u003c");
@@ -84,7 +84,7 @@ function hostDocument(markup: string, title: string, data: unknown): string {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title}</title>
-    <link rel="stylesheet" href="/bundle.css" />
+    <link rel="stylesheet" href="/theme.css" />
     <style>
       body { margin: 0; }
     </style>
@@ -92,35 +92,35 @@ function hostDocument(markup: string, title: string, data: unknown): string {
   <body>
     <div id="velvet-root">${markup}</div>
     <script type="application/json" id="velvet-data">${payload}</script>
-    <script type="module" src="/bundle.js"></script>
+    <script type="module" src="/theme.js"></script>
   </body>
 </html>`;
 }
 
-/** A bundle, built and served, ready to be rendered against any fixture. */
+/** A theme, built and served, ready to be rendered against any fixture. */
 interface ServedBundle {
   origin: string;
   close: () => Promise<void>;
 }
 
 /**
- * Builds a bundle's script and serves the whole directory over HTTP.
+ * Builds a theme's script and serves the whole directory over HTTP.
  *
  * The script is bundled rather than served as TypeScript because a browser
  * cannot load TypeScript, and the point of the exercise is what a browser did.
- * Everything the bundle references resolves against this origin, so a reference
- * that left the bundle shows up as a request to somewhere else.
+ * Everything the theme references resolves against this origin, so a reference
+ * that left the theme shows up as a request to somewhere else.
  */
 async function serveBundle(
-  bundle: ReadBundle,
+  theme: ReadTheme,
   render: (fixture: string) => string,
 ): Promise<ServedBundle> {
-  const manifest = bundle.manifest!;
+  const manifest = theme.manifest!;
   const workspace = await mkdtemp(join(tmpdir(), "velvet-conformance-"));
   const entry = join(workspace, "entry.ts");
   await writeFile(
     entry,
-    `import script from ${JSON.stringify(join(bundle.path, manifest.entries.script))};\n` +
+    `import script from ${JSON.stringify(join(theme.path, manifest.entries.script))};\n` +
       `const root = document.querySelector("#velvet-root");\n` +
       `const data = JSON.parse(document.querySelector("#velvet-data").textContent);\n` +
       `script(root, data);\n`,
@@ -133,7 +133,7 @@ async function serveBundle(
   if (!built.success) {
     await rm(workspace, { recursive: true, force: true });
     throw new Error(
-      `${bundle.directory}: the script does not build: ${built.logs.join("\n")}`,
+      `${theme.directory}: the script does not build: ${built.logs.join("\n")}`,
     );
   }
   const script = await built.outputs[0]!.text();
@@ -143,14 +143,14 @@ async function serveBundle(
     async fetch(request) {
       const url = new URL(request.url);
       const path = decodeURIComponent(url.pathname);
-      if (path === "/bundle.js") {
+      if (path === "/theme.js") {
         return new Response(script, {
           headers: { "content-type": CONTENT_TYPES[".js"]! },
         });
       }
-      if (path === "/bundle.css") {
+      if (path === "/theme.css") {
         return new Response(
-          await readFile(join(bundle.path, manifest.entries.styles)),
+          await readFile(join(theme.path, manifest.entries.styles)),
           { headers: { "content-type": CONTENT_TYPES[".css"]! } },
         );
       }
@@ -160,11 +160,11 @@ async function serveBundle(
           headers: { "content-type": "text/html; charset=utf-8" },
         });
       }
-      // Anything else is one of the bundle's own files, addressed the way its
+      // Anything else is one of the theme's own files, addressed the way its
       // stylesheet addresses it.
       if (path.includes("..")) return new Response("no", { status: 400 });
       try {
-        const file = Bun.file(join(bundle.path, path.replace(/^\//, "")));
+        const file = Bun.file(join(theme.path, path.replace(/^\//, "")));
         if (!(await file.exists())) return new Response("not found", { status: 404 });
         return new Response(file, {
           headers: {
@@ -190,7 +190,7 @@ async function serveBundle(
  * Everything the suite reads off a rendered page in one pass.
  *
  * Gathered in a single `evaluate` because each crossing into the page costs a
- * round trip and there are eight bundles times eight fixtures of them.
+ * round trip and there are eight themes times eight fixtures of them.
  */
 async function inspect(page: Page) {
   return page.evaluate(() => {
@@ -398,7 +398,7 @@ function over(
 }
 
 /** The figures the shared arithmetic computes from a fixture. */
-function reference(data: BundleData): {
+function reference(data: ThemeData): {
   uptimes: Map<string, string>;
   incidents: string[];
 } {
@@ -423,16 +423,16 @@ function reference(data: BundleData): {
   };
 }
 
-/** Runs every check against one bundle rendered from one fixture. */
+/** Runs every check against one theme rendered from one fixture. */
 async function conformOne(
   page: Page,
-  bundle: ReadBundle,
+  theme: ReadTheme,
   fixture: Fixture,
   origin: string,
 ): Promise<Finding[]> {
   const findings: Finding[] = [];
   const note = (check: string, detail: string): void => {
-    findings.push({ bundle: bundle.directory, fixture: fixture.name, check, detail });
+    findings.push({ theme: theme.directory, fixture: fixture.name, check, detail });
   };
 
   const offsite: string[] = [];
@@ -539,8 +539,8 @@ async function conformOne(
       return {
         index: Number(index),
         // `outline-style: auto` is how a user agent draws its own ring, and no
-        // author stylesheet in any of these designs asks for `auto`. It is
-        // therefore the one reliable sign that a design left the ring to the
+        // author stylesheet in any of these themes asks for `auto`. It is
+        // therefore the one reliable sign that a theme left the ring to the
         // browser rather than drawing one.
         userAgentRing: style.outlineStyle === "auto",
         appearance: [
@@ -580,7 +580,7 @@ async function conformOne(
     if (userAgentRings.has(element.index)) {
       note(
         "focus",
-        `a ${element.tag} named "${element.name}" is focused with the browser's own ring rather than one the design drew`,
+        `a ${element.tag} named "${element.name}" is focused with the browser's own ring rather than one the theme drew`,
       );
     }
   }
@@ -606,7 +606,7 @@ async function conformOne(
 
   // ── Where the page went ───────────────────────────────────────────────────
   for (const url of [...new Set(offsite)]) {
-    note("offsite", `requested ${url}, which is outside the bundle's origin`);
+    note("offsite", `requested ${url}, which is outside the theme's origin`);
   }
   for (const error of errors.slice(0, 2)) {
     note("runtime", error);
@@ -619,64 +619,64 @@ async function conformOne(
 
 /** What a run is narrowed to, where it is narrowed at all. */
 export interface ConformanceOptions {
-  /** Only these bundles, by directory name. */
-  bundles?: string[];
+  /** Only these themes, by directory name. */
+  themes?: string[];
   /** Only these fixtures, by name. */
   fixtures?: string[];
 }
 
 /**
- * Runs the suite over every bundle and every fixture.
+ * Runs the suite over every theme and every fixture.
  *
  * @param browser - An already-launched browser, so a caller running several
  *   suites pays for one.
  * @param options - What to narrow the run to.
- * @returns Everything wrong, which is empty where every bundle conforms.
+ * @returns Everything wrong, which is empty where every theme conforms.
  */
 export async function runConformance(
   browser: Browser,
   options: ConformanceOptions = {},
 ): Promise<Finding[]> {
-  const all = await readBundles();
-  const bundles = all.filter(
-    (bundle) => !options.bundles || options.bundles.includes(bundle.directory),
+  const all = await readThemes();
+  const themes = all.filter(
+    (theme) => !options.themes || options.themes.includes(theme.directory),
   );
   const fixtures = FIXTURES.filter(
     (fixture) => !options.fixtures || options.fixtures.includes(fixture.name),
   );
   const findings: Finding[] = [];
 
-  for (const bundle of bundles) {
-    if (!bundle.manifest) {
+  for (const theme of themes) {
+    if (!theme.manifest) {
       findings.push({
-        bundle: bundle.directory,
+        theme: theme.directory,
         fixture: "—",
         check: "manifest",
-        detail: bundle.manifestErrors.join("; "),
+        detail: theme.manifestErrors.join("; "),
       });
       continue;
     }
-    const templatePath = join(bundle.path, bundle.manifest.entries.template);
+    const templatePath = join(theme.path, theme.manifest.entries.template);
     const module = (await import(templatePath)) as Record<string, unknown>;
     const template = (module.default ?? module.template) as
-      | ((data: BundleData) => string)
+      | ((data: ThemeData) => string)
       | undefined;
     if (typeof template !== "function") {
       findings.push({
-        bundle: bundle.directory,
+        theme: theme.directory,
         fixture: "—",
         check: "template",
-        detail: `${bundle.manifest.entries.template} exports no template function`,
+        detail: `${theme.manifest.entries.template} exports no template function`,
       });
       continue;
     }
 
-    const served = await serveBundle(bundle, (name) => {
+    const served = await serveBundle(theme, (name) => {
       const fixture = fixtures.find((candidate) => candidate.name === name);
       if (!fixture) return hostDocument("<p>no such fixture</p>", "unknown", {});
       return hostDocument(
         template(fixture.data),
-        `${bundle.manifest!.name} — ${fixture.name}`,
+        `${theme.manifest!.name} — ${fixture.name}`,
         fixture.data,
       );
     });
@@ -684,7 +684,7 @@ export async function runConformance(
     const page = await browser.newPage();
     try {
       for (const fixture of fixtures) {
-        findings.push(...(await conformOne(page, bundle, fixture, served.origin)));
+        findings.push(...(await conformOne(page, theme, fixture, served.origin)));
       }
     } finally {
       await page.close();

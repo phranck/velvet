@@ -29,7 +29,7 @@ import { chromium } from "playwright";
 import { build } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 
-import { bundleStatusPage, designNamedIn } from "../vite.bundle-page.js";
+import { themeStatusPage, themeNamedIn } from "../vite.theme-page.js";
 import { phosphorWoff2Only } from "../vite.static-tool.js";
 import {
   FIXED_NOW,
@@ -135,7 +135,7 @@ async function main() {
 
   // 3. The build itself, driven exactly as `vite.config.ts` drives it, with the
   //    demo configuration in place of the one in `public/`.
-  const design = designNamedIn(configPath);
+  const design = themeNamedIn(configPath);
   assert.ok(design, "demo/velvet.yml must name the theme its page is published in");
   await build({
     root: SITE,
@@ -145,7 +145,7 @@ async function main() {
     plugins: [
       phosphorWoff2Only,
       svelte(),
-      bundleStatusPage({ root: SITE, configPath, dataPath, design }),
+      themeStatusPage({ root: SITE, configPath, dataPath, design }),
     ],
     build: { outDir: DIST, emptyOutDir: true },
   });

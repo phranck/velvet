@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 
-import { bundleStatusPage, designNamedIn } from "./vite.bundle-page.js";
+import { themeStatusPage, themeNamedIn } from "./vite.theme-page.js";
 import { phosphorWoff2Only } from "./vite.static-tool.js";
 
 const root = import.meta.dirname;
@@ -18,8 +18,8 @@ const dataPath = process.env.VELVET_DATA
  * all: a theme is a whole page rather than a set of values injected into one,
  * so there is nothing to build until one is named.
  */
-const design = designNamedIn(configPath);
-if (design === undefined) {
+const theme = themeNamedIn(configPath);
+if (theme === undefined) {
   throw new Error(
     "velvet: no theme is named in config.json, and a page is published in a theme. " +
       "Set statusPage.theme in velvet.yml and generate the configuration again.",
@@ -46,7 +46,7 @@ export default defineConfig({
   plugins: [
     phosphorWoff2Only,
     svelte(),
-    bundleStatusPage({ root, configPath, dataPath, design }),
+    themeStatusPage({ root, configPath, dataPath, theme }),
   ],
   build: {
     outDir: "dist",

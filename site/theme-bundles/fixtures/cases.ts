@@ -11,7 +11,7 @@
  */
 
 import { buildFixture, type FixtureSpec, type ServiceSpec } from "./build.js";
-import type { BundleData } from "../../src/lib/bundles/data.js";
+import type { ThemeData } from "../../src/lib/themes/data.js";
 
 /** The moment every fixture is rendered as though it were now. */
 export const FIXTURE_NOW = "2026-03-22T14:35:00.000Z";
@@ -63,7 +63,7 @@ function spec(partial: Omit<FixtureSpec, "generatedAt">): FixtureSpec {
  * The five services and their response times are the ordinary installation's,
  * so the two read as the same fictional company on a better day.
  */
-export const allWell: BundleData = buildFixture(
+export const allWell: ThemeData = buildFixture(
   spec({
     monitoringDays: 300,
     services: [
@@ -96,7 +96,7 @@ export const allWell: BundleData = buildFixture(
  * there is one partial day of data, and every range longer than it has nothing
  * to average.
  */
-export const firstDay: BundleData = buildFixture(
+export const firstDay: ThemeData = buildFixture(
   spec({
     monitoringDays: 1,
     services: [
@@ -118,7 +118,7 @@ export const firstDay: BundleData = buildFixture(
  * so the figures below are seconds of a full day: 1800 and 600 are degraded,
  * 43200 and 60000 are outages.
  */
-export const everyDayState: BundleData = buildFixture(
+export const everyDayState: ThemeData = buildFixture(
   spec({
     monitoringDays: 30,
     services: [
@@ -150,7 +150,7 @@ export const everyDayState: BundleData = buildFixture(
  * Nothing has answered, no response time exists, and every figure a design
  * would print is absent. A design that shows a reassuring green here is wrong.
  */
-export const everythingUnknown: BundleData = buildFixture(
+export const everythingUnknown: ThemeData = buildFixture(
   spec({
     monitoringDays: 30,
     services: [
@@ -161,7 +161,7 @@ export const everythingUnknown: BundleData = buildFixture(
 );
 
 /** One service, which is what most installations start as. */
-export const oneService: BundleData = buildFixture(
+export const oneService: ThemeData = buildFixture(
   spec({
     monitoringDays: 90,
     services: [
@@ -183,7 +183,7 @@ export const oneService: BundleData = buildFixture(
  * height of the readout, a fixed viewport height, or a legend that assumed it
  * could name every service.
  */
-export const twentyServices: BundleData = buildFixture(
+export const twentyServices: ThemeData = buildFixture(
   spec({
     monitoringDays: 120,
     services: TWENTY.map((name, index): ServiceSpec => ({
@@ -203,7 +203,7 @@ export const twentyServices: BundleData = buildFixture(
  * Every design that sets a service name on one line, in a column of a fixed
  * width, or beside a figure it expects to keep its place, fails here.
  */
-export const longNames: BundleData = buildFixture(
+export const longNames: ThemeData = buildFixture(
   spec({
     monitoringDays: 60,
     services: [
@@ -237,7 +237,7 @@ export const longNames: BundleData = buildFixture(
  * characters. A design that lets one summary push the services off the page has
  * chosen the wrong thing to be flexible.
  */
-export const longSummary: BundleData = buildFixture(
+export const longSummary: ThemeData = buildFixture(
   spec({
     monitoringDays: 45,
     services: [
@@ -273,7 +273,7 @@ export const longSummary: BundleData = buildFixture(
  * one is IPv4: a single badge, a single series in the chart, and a legend with
  * one entry.
  */
-export const ipv6Only: BundleData = buildFixture(
+export const ipv6Only: ThemeData = buildFixture(
   spec({
     monitoringDays: 75,
     services: [

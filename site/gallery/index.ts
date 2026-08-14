@@ -12,7 +12,7 @@
  */
 
 import { FIXTURES } from "../theme-bundles/fixtures/index.js";
-import { INSTALLED_DESIGNS } from "../src/lib/bundles/installed.js";
+import { INSTALLED_THEMES } from "../src/lib/themes/installed.js";
 
 /** One part of this page, or a failure naming which one is missing. */
 function part<Element extends HTMLElement>(selector: string): Element {
@@ -65,7 +65,7 @@ function panel(
   return block;
 }
 
-const frames = INSTALLED_DESIGNS.map((design) => {
+const frames = INSTALLED_THEMES.map((design) => {
   const block = panel(
     design.manifest.id,
     design.manifest.name,
@@ -81,7 +81,7 @@ function show(fixtureName: string): void {
   const fixture = FIXTURES.find((candidate) => candidate.name === fixtureName);
   summary.textContent = fixture?.what ?? "";
   for (const block of frames) {
-    const address = `./design.html?design=${encodeURIComponent(block.dataset.design ?? "")}&fixture=${encodeURIComponent(fixtureName)}`;
+    const address = `./theme.html?design=${encodeURIComponent(block.dataset.design ?? "")}&fixture=${encodeURIComponent(fixtureName)}`;
     const frame = block.querySelector("iframe");
     const link = block.querySelector("a");
     if (frame) frame.src = address;
