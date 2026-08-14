@@ -2075,11 +2075,11 @@
   vector-effect: non-scaling-stroke;
 }
 
-/* The wash under the curve. The plugin draws it whenever the theme asks for a
+/* The wash under the curve. The chart draws it whenever the theme asks for a
    fill, and this is what decides whether it is shown, so turning it off costs
-   no redraw. */
+   no redraw. The build writes this property from the `chartWash` feature. */
 .chart-area {
-  display: var(--chart-area-display, block);
+  display: var(--chart-area-display);
   pointer-events: none;
 }
 

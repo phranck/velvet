@@ -1,14 +1,14 @@
 /**
- * The gallery: every installed design, each in a frame of its own.
+ * The gallery: every installed theme, each in a frame of its own.
  *
- * This page carries no design and shares nothing with the ones it shows. A
- * frame is a document, so a design's stylesheet, its script and its typefaces
- * stay inside it, and two designs on one screen cannot reach each other or the
+ * This page carries no theme and shares nothing with the ones it shows. A
+ * frame is a document, so a theme's stylesheet, its script and its typefaces
+ * stay inside it, and two themes on one screen cannot reach each other or the
  * page holding them.
  *
  * The one control is which installation to render. The fixtures are the cases
- * the conformance suite runs against, so a design that looks wrong here is a
- * design that will look wrong on somebody's page.
+ * the conformance suite runs against, so a theme that looks wrong here is a
+ * theme that will look wrong on somebody's page.
  */
 
 import { FIXTURES } from "../theme-bundles/fixtures/index.js";
@@ -23,7 +23,7 @@ function part<Element extends HTMLElement>(selector: string): Element {
 
 const picker = part<HTMLSelectElement>("#fixture");
 const summary = part("#fixture-what");
-const host = part("#designs");
+const host = part("#themes");
 
 for (const fixture of FIXTURES) {
   const option = document.createElement("option");
@@ -32,7 +32,7 @@ for (const fixture of FIXTURES) {
   picker.append(option);
 }
 
-/** The frame for one design, and the head above it naming what it is. */
+/** The frame for one theme, and the head above it naming what it is. */
 function panel(
   id: string,
   name: string,
@@ -40,37 +40,37 @@ function panel(
   description: string,
 ): HTMLElement {
   const block = document.createElement("section");
-  block.className = "design";
+  block.className = "theme";
 
   const head = document.createElement("div");
-  head.className = "design-head";
+  head.className = "theme-head";
   const title = document.createElement("span");
-  title.className = "design-name";
+  title.className = "theme-name";
   title.textContent = name;
   const when = document.createElement("span");
-  when.className = "design-era";
+  when.className = "theme-era";
   when.textContent = era ?? "";
   const open = document.createElement("a");
-  open.className = "design-open";
+  open.className = "theme-open";
   open.textContent = "open on its own";
   const line = document.createElement("span");
-  line.className = "design-what";
+  line.className = "theme-what";
   line.textContent = description;
   head.append(title, when, open, line);
 
   const frame = document.createElement("iframe");
   frame.title = name;
   block.append(head, frame);
-  block.dataset.design = id;
+  block.dataset.theme = id;
   return block;
 }
 
-const frames = INSTALLED_THEMES.map((design) => {
+const frames = INSTALLED_THEMES.map((theme) => {
   const block = panel(
-    design.manifest.id,
-    design.manifest.name,
-    design.manifest.era,
-    design.manifest.description,
+    theme.manifest.id,
+    theme.manifest.name,
+    theme.manifest.era,
+    theme.manifest.description,
   );
   host.append(block);
   return block;
@@ -81,7 +81,7 @@ function show(fixtureName: string): void {
   const fixture = FIXTURES.find((candidate) => candidate.name === fixtureName);
   summary.textContent = fixture?.what ?? "";
   for (const block of frames) {
-    const address = `./theme.html?design=${encodeURIComponent(block.dataset.design ?? "")}&fixture=${encodeURIComponent(fixtureName)}`;
+    const address = `./theme.html?theme=${encodeURIComponent(block.dataset.theme ?? "")}&fixture=${encodeURIComponent(fixtureName)}`;
     const frame = block.querySelector("iframe");
     const link = block.querySelector("a");
     if (frame) frame.src = address;

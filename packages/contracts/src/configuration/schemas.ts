@@ -138,6 +138,16 @@ const StatusPageSchema = Type.Object(
       description:
         "The theme the page is published in, named by its directory under site/theme-bundles. Required, because a page is published in a theme and there is nothing to publish without one. A name no installed theme answers to stops the build rather than falling back to another theme.",
     }),
+    themeSettings: Type.Optional(
+      Type.Record(
+        Type.String({ pattern: "^[a-z][a-zA-Z0-9]*$" }),
+        Type.Union([Type.String({ maxLength: 128 }), Type.Number(), Type.Boolean()]),
+        {
+          description:
+            "What has been set on the named theme, keyed by the feature it belongs to. Which keys a theme offers and what each may take is in its own velvet-theme.toml, so the build checks these against that file rather than the schema, which does not know which theme was named.",
+        },
+      ),
+    ),
     layout: Type.Optional(
       Type.Union([Type.Literal("grouped"), Type.Literal("cards")]),
     ),

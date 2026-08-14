@@ -85,28 +85,52 @@ A feature is one thing an operator can set. It says what it takes, because that 
 [features.accent]
 type = "colour"
 label = "Accent"
+property = "--accent"
 default = "#6366f1"
 
 [features.chartWash]
 type = "switch"
 label = "Wash under the response curve"
+property = "--chart-area-display"
 default = true
+on = "block"
+off = "none"
 
 [features.corners]
 type = "choice"
 label = "Corners"
+property = "--corner-style"
 default = "rounded"
 choices = ["rounded", "square"]
 
 [features.gridLines]
 type = "number"
 label = "Grid lines"
+property = "--chart-grid-lines"
 default = 3
 minimum = 1
 maximum = 6
+unit = ""
 ```
 
 **The same feature carries the same key in every theme that offers it**, in lower camel case, so an operator who set an accent on one theme finds it again on the next. A feature a theme does not offer is simply absent from its file, and a theme that offers none has no `[features]` table at all.
+
+### How a set value reaches the page
+
+`statusPage.themeSettings` in `velvet.yml` carries what an operator set, keyed by the feature:
+
+```yaml
+statusPage:
+  theme: velvet
+  themeSettings:
+    chartWash: false
+```
+
+The build writes every feature the theme declares into the document as the custom property that feature names, whether or not anybody set it. A yes-or-no feature is written as the value its manifest gives for that side, because what reaches CSS is a value rather than a boolean, and a number is written with its unit.
+
+**A theme reads its feature's property without a fallback.** `display: var(--chart-area-display)` rather than `var(--chart-area-display, block)`, because a fallback in the stylesheet would be a second answer to what the manifest already states, and the two would drift. Everything that renders a theme writes the same block from the same manifest: the build, the gallery, the preview frame and the conformance suite.
+
+**What cannot be set is refused before anything is published.** `checkThemeSettings` in `@velvet/contracts` holds the values against the named theme's feature table, and the build stops on an unknown key or a value outside what the feature takes. It cannot be a schema rule, because which keys exist follows from the theme's name and that is only known once the configuration has been read. The check takes the feature table as an argument rather than reading it, so the contract needs no TOML parser and the same check runs in the build and in a browser.
 
 ### The catalogue
 

@@ -74,6 +74,26 @@
           "description": "The theme the page is published in, named by its directory under site/theme-bundles. Required, because a page is published in a theme and there is nothing to publish without one. A name no installed theme answers to stops the build rather than falling back to another theme.",
           "type": "string"
         },
+        "themeSettings": {
+          "description": "What has been set on the named theme, keyed by the feature it belongs to. Which keys a theme offers and what each may take is in its own velvet-theme.toml, so the build checks these against that file rather than the schema, which does not know which theme was named.",
+          "type": "object",
+          "patternProperties": {
+            "^[a-z][a-zA-Z0-9]*$": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          }
+        },
         "layout": {
           "anyOf": [
             {

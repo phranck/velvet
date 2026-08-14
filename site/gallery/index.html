@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Velvet designs</title>
+    <title>Velvet themes</title>
     <style>
-      /* This page is scaffolding rather than a design under review, so it
+      /* This page is scaffolding rather than a theme under review, so it
          carries its own values and loads no bundle. Everything it shows is
-         inside a frame, and nothing of a design reaches out here. */
+         inside a frame, and nothing of a theme reaches out here. */
       :root {
         color-scheme: dark;
       }
@@ -69,19 +69,19 @@
         color: #8b8b9c;
       }
 
-      .designs {
+      .themes {
         display: grid;
         gap: 28px;
       }
 
-      .design {
+      .theme {
         border: 1px solid #26262f;
         border-radius: 14px;
         overflow: hidden;
         background: #14141a;
       }
 
-      .design-head {
+      .theme-head {
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
@@ -90,23 +90,23 @@
         border-bottom: 1px solid #26262f;
       }
 
-      .design-name {
+      .theme-name {
         font-size: 16px;
         font-weight: 600;
       }
 
-      .design-era {
+      .theme-era {
         color: #8b8b9c;
         font-variant-numeric: tabular-nums;
       }
 
-      .design-open {
+      .theme-open {
         margin-left: auto;
         color: #9b9bab;
         font-size: 13px;
       }
 
-      .design-what {
+      .theme-what {
         flex: 1 0 100%;
         color: #9b9bab;
         font-size: 13px;
@@ -123,12 +123,12 @@
   </head>
   <body>
     <main>
-      <h1>Velvet designs</h1>
+      <h1>Velvet themes</h1>
       <p class="lede">
-        Every design a status page can be published in, each one loaded in a
+        Every theme a status page can be published in, each one loaded in a
         frame of its own from its own bundle. Nothing is shared between two of
-        them: a frame carries one design's markup, one design's stylesheet and
-        one design's script, which is the whole claim the bundle format makes.
+        them: a frame carries one theme's markup, one theme's stylesheet and
+        one theme's script, which is the whole claim the bundle format makes.
       </p>
 
       <div class="controls">
@@ -137,7 +137,7 @@
         <span class="what" id="fixture-what"></span>
       </div>
 
-      <div class="designs" id="designs"></div>
+      <div class="themes" id="themes"></div>
     </main>
     <script type="module" src="./index.ts"></script>
   </body>

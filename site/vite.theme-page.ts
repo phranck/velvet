@@ -18,9 +18,12 @@ import { readFile, rename, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createServer, type Plugin } from "vite";
 
+import { checkThemeSettings } from "@velvet/contracts";
+
 import { themeDataFor, layoutFor, selectTheme } from "./src/lib/themes/host.js";
 import type { ThemeData } from "./src/lib/themes/data.js";
 import type { ThemeManifest } from "./src/lib/themes/manifest.js";
+import { themeSettingsStyle } from "./src/lib/themes/settings.js";
 import { THEMES } from "./src/lib/themes/catalogue.js";
 import type { FetchImplementation } from "./src/lib/fetch.js";
 
@@ -232,6 +235,7 @@ export function themeStatusPage(options: BundlePageOptions): Plugin {
       });
 
       let markup: string;
+      let settings: Record<string, string | number | boolean>;
       let data: ThemeData;
       try {
         const { loadConfig } = (await server.ssrLoadModule(
@@ -264,6 +268,16 @@ export function themeStatusPage(options: BundlePageOptions): Plugin {
                   responseTimes: snapshot.responseTimes,
                 }));
 
+        settings = config.themeSettings ?? {};
+        const problems = checkThemeSettings(settings, manifest.features);
+        if (problems.length > 0) {
+          throw new Error(
+            `velvet: the theme "${manifest.id}" cannot take these settings:\n${problems
+              .map((problem) => `  statusPage.themeSettings.${problem.key} ${problem.message}`)
+              .join("\n")}`,
+          );
+        }
+
         data = themeDataFor(config, documents);
         // An installation may have configured a layout the theme does not
         // support. The theme wins, because a layout it cannot draw is not a
@@ -285,12 +299,15 @@ export function themeStatusPage(options: BundlePageOptions): Plugin {
       if (!mount.test(html)) {
         throw new Error("No empty #app to render the theme into.");
       }
+      const block = themeSettingsStyle(manifest.features, settings);
       await writeFile(
         builtPath,
-        html.replace(
-          mount,
-          `$1${markup}$2\n    <script type="application/json" id="${THEME_DATA_ELEMENT_ID}">${embeddable(data)}</script>`,
-        ),
+        html
+          .replace(
+            mount,
+            `$1${markup}$2\n    <script type="application/json" id="${THEME_DATA_ELEMENT_ID}">${embeddable(data)}</script>`,
+          )
+          .replace("</head>", block === "" ? "</head>" : `  ${block}\n  </head>`),
       );
       // The entry is named for what it is whilst the build runs, and named for
       // what a visitor asks for once it has finished.

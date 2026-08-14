@@ -22,3 +22,10 @@ export type {
   NormalizedService,
   NormalizedVelvetConfiguration,
 } from "./types.js";
+export { checkThemeSettings } from "./theme-settings.js";
+export type {
+  ThemeFeatureShape,
+  ThemeFeatureType,
+  ThemeSettingProblem,
+  ThemeSettingValue,
+} from "./theme-settings.js";

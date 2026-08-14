@@ -22,3 +22,15 @@ readings = "overlay"
 template = "template.ts"
 styles = "theme.css"
 script = "script.ts"
+
+# The wash under the response curve. A theme reads its features through the
+# property named here, and the build writes that property whether or not
+# anybody set it, so there is one answer rather than a value here and a
+# fallback in the stylesheet.
+[features.chartWash]
+type = "switch"
+label = "Wash under the response curve"
+property = "--chart-area-display"
+default = true
+on = "block"
+off = "none"

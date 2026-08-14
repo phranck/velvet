@@ -20,6 +20,13 @@ export interface ThemePreviewOptions {
   markup: string;
   /** The theme's whole stylesheet, as text. */
   css: string;
+  /**
+   * What the theme is drawn with, as the build would write it.
+   *
+   * Absent draws the theme with what its manifest states, which is what a
+   * preview of an installation that has set nothing shows.
+   */
+  settings?: string;
 }
 
 /**
@@ -57,6 +64,7 @@ export function themePreviewDocument(options: ThemePreviewOptions): string {
 <title>${escape(options.title)}</title>
 <style>body { margin: 0; }</style>
 <style>${options.css.replaceAll("</", "<\\/")}</style>
+${options.settings ?? ""}
 </head>
 <body>
 <div id="velvet-root">${options.markup}</div>

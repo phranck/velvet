@@ -18,7 +18,17 @@
       "cards"
     ],
     "readings": "overlay",
-    "features": [],
+    "features": [
+      {
+        "key": "chartWash",
+        "type": "switch",
+        "label": "Wash under the response curve",
+        "property": "--chart-area-display",
+        "default": true,
+        "on": "block",
+        "off": "none"
+      }
+    ],
     "picture": "velvet.png"
   },
   {
