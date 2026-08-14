@@ -2,6 +2,7 @@ export {
   NotifyRequestSchema,
   SetupErrorCodeSchema,
   SetupEventSchema,
+  SetupInstallationsSchema,
   SetupProgressStageSchema,
   SetupPublicErrorSchema,
   RepositoryVisibilitySchema,
@@ -10,15 +11,18 @@ export {
   SetupStatusSchema,
 } from "./schemas.js";
 export type {
+  ManageableInstallation,
   NotifyRequest,
   SetupErrorCode,
   SetupEvent,
+  SetupInstallations,
   SetupProgressStage,
   SetupPublicError,
   SetupSession,
   SetupStatus,
 } from "./schemas.js";
 export {
+  MAX_MANAGEABLE_INSTALLATIONS,
   MAX_SETUP_LOGO_BASE64_BYTES,
   MAX_SETUP_LOGO_BYTES,
   MAX_SETUP_REQUEST_BYTES,
@@ -34,6 +38,7 @@ export type {
 export {
   validateNotifyRequest,
   validateSetupEvent,
+  validateSetupInstallations,
   validateSetupRequest,
   validateSetupSession,
   validateSetupStatus,

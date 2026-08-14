@@ -8,17 +8,22 @@ import {
   deploymentFingerprint,
   writeDeploymentFingerprint,
 } from "../scripts/deployment-fingerprint.js";
+import { HOSTED_APPS } from "../src/static.js";
 
 /** A repository holding only the directories the fingerprint reads. */
 async function fixture(
   files: Record<string, string>,
 ): Promise<{ root: string; cleanup: () => Promise<void> }> {
   const root = await mkdtemp(join(tmpdir(), "velvet-fingerprint-"));
+  // Every directory the fingerprint reads has to exist, including one bundle
+  // per hosted application. Taken from the same list the fingerprint reads, so
+  // adding an application does not leave this fixture short of a directory the
+  // real repository has.
   for (const directory of [
     "apps/setup-service/src",
     "packages/contracts/src",
     "packages/template-files/src",
-    "onboarding",
+    ...HOSTED_APPS,
   ]) {
     await mkdir(join(root, directory), { recursive: true });
   }

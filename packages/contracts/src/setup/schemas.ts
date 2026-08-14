@@ -1,6 +1,8 @@
 import { Type, type Static } from "@sinclair/typebox";
 
 import { VelvetConfigurationSchema } from "../configuration/schemas.js";
+import { SEMANTIC_VERSION_PATTERN } from "../updates/schemas.js";
+import { MAX_MANAGEABLE_INSTALLATIONS } from "./limits.js";
 
 const HttpsUrlSchema = Type.String({
   minLength: 9,
@@ -207,6 +209,65 @@ export const SetupSessionSchema = Type.Object(
   { additionalProperties: false },
 );
 
+/**
+ * One repository the signed-in user may manage Velvet in.
+ *
+ * The identifiers travel together because every later request names both. An
+ * installation grants access and a repository is what it grants access to, so
+ * neither one on its own addresses anything.
+ */
+const ManageableInstallationSchema = Type.Object(
+  {
+    installationId: Type.Integer({ minimum: 1 }),
+    repositoryId: Type.Integer({ minimum: 1 }),
+    /** GitHub's own bound on an account name. */
+    owner: Type.String({ minLength: 1, maxLength: 39 }),
+    /** GitHub's own bound on a repository name. */
+    name: Type.String({ minLength: 1, maxLength: 100 }),
+    htmlUrl: HttpsUrlSchema,
+    /**
+     * The Velvet release recorded in the repository's `velvet.lock.json`.
+     *
+     * Null where no readable lock is there, which is how a repository the
+     * user granted access to but never set Velvet up in is told apart from
+     * one that carries an installation.
+     */
+    installedVersion: Type.Union([
+      Type.String({
+        minLength: 5,
+        maxLength: 128,
+        pattern: SEMANTIC_VERSION_PATTERN,
+      }),
+      Type.Null(),
+    ]),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * What the signed-in user may manage, as the configurator opens.
+ *
+ * This answers the first question the configurator has: whether there is
+ * anything to configure at all. An empty list sends somebody to setup instead,
+ * and a list of several is what the choice in the sidebar is made from.
+ */
+export const SetupInstallationsSchema = Type.Object(
+  {
+    repositories: Type.Array(ManageableInstallationSchema, {
+      maxItems: MAX_MANAGEABLE_INSTALLATIONS,
+    }),
+    /**
+     * Whether the search stopped at its own limit with more left to find.
+     *
+     * True means the list is a prefix rather than the whole answer, and
+     * whoever shows it has to say so, because an installation missing from it
+     * looks exactly like one that does not exist.
+     */
+    truncated: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+
 const SetupProgressEventSchema = Type.Object(
   { type: Type.Literal("progress"), stage: SetupProgressStageSchema },
   { additionalProperties: false },
@@ -286,6 +347,8 @@ export const SetupStatusSchema = Type.Object(
 export type NotifyRequest = Static<typeof NotifyRequestSchema>;
 export type SetupErrorCode = Static<typeof SetupErrorCodeSchema>;
 export type SetupEvent = Static<typeof SetupEventSchema>;
+export type SetupInstallations = Static<typeof SetupInstallationsSchema>;
+export type ManageableInstallation = Static<typeof ManageableInstallationSchema>;
 export type SetupProgressStage = Static<typeof SetupProgressStageSchema>;
 export type SetupPublicError = Static<typeof SetupPublicErrorSchema>;
 export type SetupSession = Static<typeof SetupSessionSchema>;

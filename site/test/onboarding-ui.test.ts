@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { afterAll, beforeAll, test } from "bun:test";
+import type { UserConfig } from "vite";
 
 import {
   createSvelteRenderer,
@@ -523,19 +524,40 @@ test("uses visible onboarding input borders and compact text buttons", async () 
   assert.match(serviceList, /data-service-editor-actions/);
 });
 
-test("standalone onboarding uses its own build entry", async () => {
-  const html = await readFile(
-    resolve(import.meta.dirname, "../onboarding.html"),
-    "utf8",
-  );
-  const viteConfig = await readFile(
-    resolve(import.meta.dirname, "../vite.onboarding.ts"),
-    "utf8",
-  );
+test("each hosted application has its own entry, mount point, and output", async () => {
+  // Both applications are built by one function, so what is worth asserting is
+  // that each one is handed the right names rather than how that function is
+  // written. Read from the configuration itself: a match against its source
+  // would pass on a file that renamed a variable and broke the build.
+  for (const app of [
+    { name: "onboarding", title: "Set up Velvet", outDir: "onboarding" },
+    { name: "configurator", title: "Configure Velvet", outDir: "config" },
+  ]) {
+    const html = await readFile(
+      resolve(import.meta.dirname, `../${app.name}.html`),
+      "utf8",
+    );
+    const { default: config } = (await import(
+      `../vite.${app.name}.js`
+    )) as { default: UserConfig };
 
-  assert.match(html, /<title>Set up Velvet<\/title>/);
-  assert.match(html, /src="\/src\/onboarding\/main\.ts"/);
-  assert.match(viteConfig, /outDir:\s*onboardingOutDir/);
+    assert.match(html, new RegExp(`<title>${app.title}</title>`), app.name);
+    assert.match(
+      html,
+      new RegExp(`src="/src/${app.name}/main\\.ts"`),
+      app.name,
+    );
+    assert.equal(
+      config.build?.rollupOptions?.input,
+      `${app.name}.html`,
+      app.name,
+    );
+    assert.equal(
+      config.build?.outDir,
+      resolve(import.meta.dirname, "../..", app.outDir),
+      `${app.name} is built where the service serves it from`,
+    );
+  }
 });
 
 test("offers concrete recovery targets without exposing backend details", async () => {

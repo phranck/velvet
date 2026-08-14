@@ -41,3 +41,14 @@ export const MAX_SETUP_LOGO_BYTES = Math.floor(
 export const MAX_SETUP_LOGO_BASE64_BYTES = Math.ceil(
   (MAX_SETUP_LOGO_BYTES * 4) / 3,
 );
+
+/**
+ * The most installations one listing reports.
+ *
+ * Reading a repository's lock file is one request each, and the listing is
+ * interactive, so it stops here and says that it did rather than spending the
+ * user's rate limit on a large account. The service holds itself to this
+ * number and the contract holds the answer to it, so a listing that grew past
+ * what the browser is willing to read cannot arrive unnoticed.
+ */
+export const MAX_MANAGEABLE_INSTALLATIONS = 60;

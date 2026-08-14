@@ -4,7 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "bun:test";
 
-import { createStaticAssetProvider, HOSTED_APPS } from "../src/static.js";
+import {
+  CONFIGURATOR_APP,
+  createStaticAssetProvider,
+  HOSTED_APPS,
+  hostedAssetPath,
+} from "../src/static.js";
 
 /** Lays out a public root the way the build script produces it. */
 async function publicRoot(): Promise<string> {
@@ -20,6 +25,45 @@ async function publicRoot(): Promise<string> {
       "export {};",
     );
   }
+  await mkdir(join(directory, CONFIGURATOR_APP, "themes", "velvet", "assets", "fonts"), {
+    recursive: true,
+  });
+  await writeFile(
+    join(directory, CONFIGURATOR_APP, "themes", "velvet", "theme.css"),
+    ":root { color: red }",
+  );
+  await writeFile(
+    join(
+      directory,
+      CONFIGURATOR_APP,
+      "themes",
+      "velvet",
+      "assets",
+      "fonts",
+      "face-ABC123.woff2",
+    ),
+    "not really a font",
+  );
+  // Laid out so every refusal below is a refusal rather than a missing file.
+  // A path that resolves to nothing answers null whatever the allowlist says,
+  // which would leave the form itself untested.
+  await mkdir(join(directory, CONFIGURATOR_APP, "themes", "velvet", "a", "b", "c", "d"), {
+    recursive: true,
+  });
+  await writeFile(
+    join(directory, CONFIGURATOR_APP, "themes", "velvet", "a", "b", "c", "d", "deep.css"),
+    ".deep {}",
+  );
+  await writeFile(
+    join(directory, CONFIGURATOR_APP, "themes", "velvet", "velvet-theme.toml"),
+    "name = 'velvet'",
+  );
+  await writeFile(join(directory, CONFIGURATOR_APP, "secret.txt"), "secret");
+  await mkdir(join(directory, "onboarding", "themes", "velvet"), { recursive: true });
+  await writeFile(
+    join(directory, "onboarding", "themes", "velvet", "theme.css"),
+    ":root { color: blue }",
+  );
   await writeFile(join(directory, "secret.txt"), "secret");
   return directory;
 }
@@ -92,5 +136,82 @@ test("refuses anything outside a hosted application", async () => {
     }
   } finally {
     await rm(directory, { recursive: true });
+  }
+});
+
+test("serves a theme's own files, including from below a subdirectory", async () => {
+  const directory = await publicRoot();
+  try {
+    const asset = createStaticAssetProvider(directory);
+
+    const stylesheet = await asset(`${CONFIGURATOR_APP}/themes/velvet/theme.css`);
+    assert.equal(
+      stylesheet?.headers.get("Content-Type"),
+      "text/css; charset=utf-8",
+    );
+
+    // The flat asset form the applications use does not reach this, which is
+    // the whole reason a third form exists.
+    const face = await asset(
+      `${CONFIGURATOR_APP}/themes/velvet/assets/fonts/face-ABC123.woff2`,
+    );
+    assert.equal(face?.headers.get("Content-Type"), "font/woff2");
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("refuses theme paths that climb, overreach, or belong to another application", async () => {
+  const directory = await publicRoot();
+  try {
+    const asset = createStaticAssetProvider(directory);
+
+    for (const path of [
+      // Themes hang below the configurator and nowhere else.
+      "onboarding/themes/velvet/theme.css",
+      // A theme name is a segment, so it can be neither of these.
+      `${CONFIGURATOR_APP}/themes/../secret.txt`,
+      `${CONFIGURATOR_APP}/themes/./velvet/theme.css`,
+      // The theme directory itself is not a file.
+      `${CONFIGURATOR_APP}/themes/velvet`,
+      // Deeper than a theme is ever laid out.
+      `${CONFIGURATOR_APP}/themes/velvet/a/b/c/d/deep.css`,
+      // An extension nothing serves.
+      `${CONFIGURATOR_APP}/themes/velvet/velvet-theme.toml`,
+    ]) {
+      assert.equal(await asset(path), null, path);
+    }
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("derives the served file from the request path, or refuses it", () => {
+  assert.equal(hostedAssetPath("/onboarding/"), "onboarding/index.html");
+  assert.equal(
+    hostedAssetPath(`/${CONFIGURATOR_APP}/`),
+    `${CONFIGURATOR_APP}/index.html`,
+  );
+  assert.equal(
+    hostedAssetPath("/onboarding/assets/app-ABC123.js"),
+    "onboarding/assets/app-ABC123.js",
+  );
+  assert.equal(
+    hostedAssetPath(`/${CONFIGURATOR_APP}/themes/velvet/assets/fonts/face.woff2`),
+    `${CONFIGURATOR_APP}/themes/velvet/assets/fonts/face.woff2`,
+  );
+
+  for (const pathname of [
+    "/",
+    "/secret.txt",
+    "/admin/",
+    "/onboarding",
+    "onboarding/index.html",
+    "/onboarding/../secret.txt",
+    "/onboarding/assets/nested/app.js",
+    `/${CONFIGURATOR_APP}/themes/`,
+    `/${"a".repeat(300)}/`,
+  ]) {
+    assert.equal(hostedAssetPath(pathname), null, pathname);
   }
 });

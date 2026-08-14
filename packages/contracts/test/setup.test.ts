@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "bun:test";
 
 import {
+  MAX_MANAGEABLE_INSTALLATIONS,
   serializeVelvetConfiguration,
   validateSetupEvent,
+  validateSetupInstallations,
   validateSetupRequest,
   validateSetupSession,
   validateSetupStatus,
@@ -222,5 +224,62 @@ test("pins safe public session, progress, status, and error envelopes", () => {
       repositoryUrl: "https://github.com/example/status",
     }).success,
     false,
+  );
+});
+
+test("admits an installation listing and refuses what the browser cannot use", () => {
+  const entry = {
+    installationId: 7,
+    repositoryId: 9,
+    owner: "example",
+    name: "status",
+    htmlUrl: "https://github.com/example/status",
+    installedVersion: "1.9.0",
+  };
+
+  assert.equal(
+    validateSetupInstallations({ repositories: [entry], truncated: false })
+      .success,
+    true,
+  );
+  assert.equal(
+    validateSetupInstallations({
+      repositories: [{ ...entry, installedVersion: null }],
+      truncated: true,
+    }).success,
+    true,
+    "a repository without a readable lock is listed, holding null",
+  );
+  assert.equal(
+    validateSetupInstallations({
+      repositories: [{ ...entry, defaultBranch: "main" }],
+      truncated: false,
+    }).success,
+    false,
+    "how the service reaches a repository is not the browser's business",
+  );
+  assert.equal(
+    validateSetupInstallations({
+      repositories: [{ ...entry, installedVersion: "latest" }],
+      truncated: false,
+    }).success,
+    false,
+    "a version is a semantic version or it is nothing",
+  );
+  assert.equal(
+    validateSetupInstallations({
+      repositories: Array.from(
+        { length: MAX_MANAGEABLE_INSTALLATIONS + 1 },
+        () => entry,
+      ),
+      truncated: true,
+    }).success,
+    false,
+    "a listing longer than the service will build is not a listing",
+  );
+  assert.equal(
+    validateSetupInstallations({ repositories: [entry] }).success,
+    false,
+    "whether the list is complete is never left unsaid",
   );
 });

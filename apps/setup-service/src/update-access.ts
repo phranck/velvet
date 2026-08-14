@@ -1,4 +1,7 @@
-import { parseVelvetVersionLock } from "@velvet/contracts";
+import {
+  MAX_MANAGEABLE_INSTALLATIONS,
+  parseVelvetVersionLock,
+} from "@velvet/contracts";
 
 import { createGitHubRequest } from "./github-api.js";
 import { GitHubApiError } from "./github-api.js";
@@ -17,8 +20,15 @@ const ACCESS_USER_AGENT = "velvet-update-service";
  */
 const MAX_REPOSITORIES_PER_INSTALLATION = 100;
 
-/** Lock reads performed across all installations for one listing. */
-const MAX_LOCK_READS = 60;
+/**
+ * Lock reads performed across all installations for one listing.
+ *
+ * The same number as the longest listing the contract permits, because one
+ * read produces one entry. Taking it from there rather than stating it again
+ * is what stops a listing this service is willing to build from being one the
+ * browser refuses to read.
+ */
+const MAX_LOCK_READS = MAX_MANAGEABLE_INSTALLATIONS;
 
 /** Lock reads in flight at once, high enough to be quick and low enough to be polite. */
 const LOCK_READ_CONCURRENCY = 8;

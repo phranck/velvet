@@ -3,7 +3,7 @@ dist/
 velvet-dist/
 site/public/CNAME
 # The website is uploaded by the Pages workflow rather than committed, unlike
-# onboarding/, which the setup service serves from the tree.
+# onboarding/ and config/, which the setup service serves from the tree.
 site/dist-website/
 *.tsbuildinfo
 .DS_Store

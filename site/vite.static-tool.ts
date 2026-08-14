@@ -342,3 +342,42 @@ export function staticPage(options: {
     },
   });
 }
+
+/**
+ * Builds one of the browser applications the setup service hosts.
+ *
+ * These differ from {@link staticPage} in that nothing is prerendered. An
+ * application decides what it shows from the session it finds and the account
+ * it is signed in as, so rendering it at build time would only produce a
+ * document that is wrong for everybody.
+ *
+ * @param name - The entry document's name, without the extension. Also the
+ *   mount point the document carries and what the plugin names itself after.
+ * @param outDir - Where the built copy goes, relative to the site directory.
+ *   The result is committed, because the service serves it from the tree.
+ * @returns The configuration, ready for `vite build --config`.
+ */
+export function hostedApp(options: {
+  name: string;
+  outDir: string;
+}): UserConfig {
+  const entry = `${options.name}.html`;
+  return defineConfig({
+    base: "./",
+    publicDir: false,
+    plugins: [phosphorWoff2Only, svelte(), renameHtmlEntry(entry)],
+    build: {
+      outDir: resolve(import.meta.dirname, options.outDir),
+      emptyOutDir: true,
+      // Every asset is a file, none is inlined. Vite embeds anything under
+      // 4kB as a data URL, which caught Workbench at 3372 bytes and Doto at
+      // 3956, and the service answers with `font-src 'self'`. A face embedded
+      // that way is refused by the policy and the surface silently renders in
+      // the stand-in, which is exactly the failure a named face is supposed to
+      // prevent. As files they are also cached for a year rather than
+      // re-parsed with the stylesheet on every visit.
+      assetsInlineLimit: 0,
+      rollupOptions: { input: entry },
+    },
+  });
+}

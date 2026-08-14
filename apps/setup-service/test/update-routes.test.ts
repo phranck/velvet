@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 
+import { validateSetupInstallations } from "@velvet/contracts";
+
 import type { GitHubSetupClient } from "../src/github.js";
 import type { AuditLogInput } from "../src/observability.js";
 import type { SetupServerSession } from "../src/session.js";
@@ -138,10 +140,25 @@ test("lists what the signed-in user can manage", async () => {
   const response = await routes.handle("GET", "/api/installations");
 
   assert.equal(response!.status, 200);
-  assert.deepEqual(await response!.json(), {
-    repositories: [repository],
+  const body = await response!.json();
+  assert.deepEqual(body, {
+    repositories: [
+      {
+        installationId: 7,
+        repositoryId: 9,
+        owner: "example",
+        name: "status",
+        htmlUrl: "https://github.com/example/status",
+        installedVersion: "1.9.0",
+      },
+    ],
     truncated: false,
   });
+  assert.equal(
+    validateSetupInstallations(body).success,
+    true,
+    "the listing is what the configurator is willing to read",
+  );
 });
 
 test("reports an installation's own version beside the available release", async () => {
