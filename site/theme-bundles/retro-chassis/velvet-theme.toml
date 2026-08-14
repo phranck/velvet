@@ -1,0 +1,24 @@
+# A rack of separate components, each service a brushed faceplate bolted between two walnut cheeks.
+
+name = "Retro Chassis"
+description = "A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, with a lit name plate, two protocol lamps, a two-line readout and a lamp meter for its days."
+era = "1979"
+version = "1.0.0"
+
+# Where it stands in the list an operator chooses from, lowest first.
+order = 2
+
+# A withdrawn theme keeps every installation already published in it and is
+# offered to nobody new.
+state = "offered"
+
+# The shape of the status data this theme understands.
+dataVersion = 1
+
+layouts = ["cards"]
+readings = "panel"
+
+[entries]
+template = "template.ts"
+styles = "bundle.css"
+script = "script.ts"

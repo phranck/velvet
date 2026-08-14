@@ -171,22 +171,24 @@ test("refuses a bundle that opens a connection of its own", () => {
 });
 
 test("refuses a manifest that names a file the bundle does not contain", () => {
-  const parsed = parseBundleManifest({
-    id: "ghost",
-    name: "Ghost",
-    description: "Names a stylesheet nobody wrote.",
-    version: "1.0.0",
-    dataVersion: 1,
-    entries: {
-      template: "template.ts",
-      styles: "bundle.css",
-      script: "script.ts",
+  const parsed = parseBundleManifest(
+    {
+      name: "Ghost",
+      description: "Names a stylesheet nobody wrote.",
+      version: "1.0.0",
+      order: 1,
+      state: "offered",
+      dataVersion: 1,
+      entries: {
+        template: "template.ts",
+        styles: "bundle.css",
+        script: "script.ts",
+      },
+      layouts: ["grouped"],
+      readings: "panel",
     },
-    layouts: ["grouped"],
-    readings: "panel",
-    preview: "assets/preview.svg",
-    plugins: [],
-  });
+    "ghost",
+  );
   assert.equal(parsed.ok, true);
   if (!parsed.ok) return;
 
@@ -194,49 +196,13 @@ test("refuses a manifest that names a file the bundle does not contain", () => {
     manifest: parsed.manifest,
     directory: "ghost",
     files: [
-      { path: "bundle.json", text: "{}" },
+      { path: "velvet-theme.toml", text: "" },
       { path: "template.ts", text: "" },
       { path: "script.ts", text: "" },
-      { path: "assets/preview.svg", text: "" },
     ],
   });
   assert.equal(violations.length, 1);
   assert.match(violations[0]!.detail, /bundle\.css/);
-});
-
-test("refuses a manifest whose id does not match its directory", () => {
-  const parsed = parseBundleManifest({
-    id: "proof",
-    name: "Proof",
-    description: "A design.",
-    version: "1.0.0",
-    dataVersion: 1,
-    entries: {
-      template: "template.ts",
-      styles: "bundle.css",
-      script: "script.ts",
-    },
-    layouts: ["grouped"],
-    readings: "panel",
-    preview: "assets/preview.svg",
-    plugins: [],
-  });
-  assert.equal(parsed.ok, true);
-  if (!parsed.ok) return;
-
-  const violations = checkBundle({
-    manifest: parsed.manifest,
-    directory: "somewhere-else",
-    files: [
-      { path: "bundle.json", text: "{}" },
-      { path: "template.ts", text: "" },
-      { path: "bundle.css", text: "" },
-      { path: "script.ts", text: "" },
-      { path: "assets/preview.svg", text: "" },
-    ],
-  });
-  assert.equal(violations.length, 1);
-  assert.match(violations[0]!.detail, /does not match the directory/);
 });
 
 test("every bundle in the repository passes all four rules", async () => {

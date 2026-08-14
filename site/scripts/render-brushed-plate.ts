@@ -31,7 +31,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const siteRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const output = join(siteRoot, "bundles/retro-chassis/assets/plate.png");
+const output = join(siteRoot, "theme-bundles/retro-chassis/assets/plate.png");
 
 /** How large the tile is. Square, and a power of two, so it scales cleanly. */
 const SIZE = 256;

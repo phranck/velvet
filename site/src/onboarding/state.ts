@@ -13,7 +13,7 @@ import {
   type ServiceDraft,
 } from "../components/service-editor/model.js";
 import { validateServiceDrafts } from "../components/service-editor/validation.js";
-import { DESIGNS, designById } from "../lib/designs.js";
+import { OFFERED_THEMES, themeById } from "../lib/themes.js";
 
 export {
   createHeaderDraft,
@@ -144,7 +144,7 @@ export function createOnboardingDraft(): OnboardingDraft {
     statusPageName: "Status",
     description: "",
     customDomain: "",
-    designId: DESIGNS[0].id,
+    designId: OFFERED_THEMES[0].id,
     services: [createServiceDraft()],
     listInGallery: false,
     privateRepository: false,
@@ -155,7 +155,7 @@ export function buildSetupRequest(
   draft: OnboardingDraft,
 ): OnboardingValidationResult {
   const errors: Record<string, string> = {};
-  const design = designById(draft.designId);
+  const design = themeById(draft.designId);
   if (!design) errors.designId = "Choose one of the designs Velvet ships.";
   const customDomain = draft.customDomain.trim()
     ? normalizeCustomDomain(draft.customDomain)

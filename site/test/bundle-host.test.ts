@@ -9,7 +9,7 @@ import {
 import { BUNDLE_DATA_VERSION } from "../src/lib/bundles/data.js";
 import { parseBundleManifest, type BundleManifest } from "../src/lib/bundles/manifest.js";
 import type { VelvetConfig } from "../src/lib/config.js";
-import { velvetUnderground } from "../bundles/fixtures/index.js";
+import { velvetUnderground } from "../theme-bundles/fixtures/index.js";
 
 /**
  * The two decisions the host makes before anything is rendered: which design,
@@ -17,22 +17,24 @@ import { velvetUnderground } from "../bundles/fixtures/index.js";
  */
 
 function manifest(overrides: Partial<BundleManifest> = {}): BundleManifest {
-  const parsed = parseBundleManifest({
-    id: "proof",
-    name: "Proof",
-    description: "A design.",
-    version: "1.0.0",
-    dataVersion: BUNDLE_DATA_VERSION,
-    entries: {
-      template: "template.ts",
-      styles: "bundle.css",
-      script: "script.ts",
+  const parsed = parseBundleManifest(
+    {
+      name: "Proof",
+      description: "A design.",
+      version: "1.0.0",
+      order: 1,
+      state: "offered",
+      dataVersion: BUNDLE_DATA_VERSION,
+      entries: {
+        template: "template.ts",
+        styles: "bundle.css",
+        script: "script.ts",
+      },
+      layouts: ["grouped"],
+      readings: "panel",
     },
-    layouts: ["grouped"],
-    readings: "panel",
-    preview: "assets/preview.svg",
-    plugins: [],
-  });
+    "proof",
+  );
   if (!parsed.ok) throw new Error(parsed.errors.join("; "));
   return { ...parsed.manifest, ...overrides };
 }

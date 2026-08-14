@@ -26,7 +26,7 @@
  * question, not this one.
  */
 
-import type { BundleManifest } from "./manifest.js";
+import { MANIFEST_FILE, type BundleManifest } from "./manifest.js";
 
 /** The rules, named the way a failure reports them. */
 export type BundleRule =
@@ -319,7 +319,7 @@ export function checkNoFetching(file: BundleFile): BundleViolation[] {
 export interface BundleContents {
   /** The parsed manifest. */
   manifest: BundleManifest;
-  /** The directory name the bundle lives in. */
+  /** The directory name the bundle lives in, which is its identifier. */
   directory: string;
   /** Every file in the bundle, manifest included. */
   files: BundleFile[];
@@ -333,34 +333,28 @@ export interface BundleContents {
  * @returns Every violation, in file order.
  */
 export function checkBundle(contents: BundleContents): BundleViolation[] {
-  const { manifest, directory, files } = contents;
+  const { manifest, files } = contents;
   const violations: BundleViolation[] = [];
   const present = new Set(files.map((file) => file.path));
 
-  if (manifest.id !== directory) {
-    violations.push({
-      rule: "manifest",
-      file: "bundle.json",
-      detail: `id "${manifest.id}" does not match the directory "${directory}"`,
-    });
-  }
+  // The identifier is the directory rather than a field, so the two cannot
+  // disagree and there is nothing here to check about it.
   for (const named of [
     manifest.entries.template,
     manifest.entries.styles,
     manifest.entries.script,
-    manifest.preview,
   ]) {
     if (named !== "" && !present.has(named)) {
       violations.push({
         rule: "manifest",
-        file: "bundle.json",
+        file: MANIFEST_FILE,
         detail: `names ${named}, which the bundle does not contain`,
       });
     }
   }
 
   for (const file of files) {
-    if (file.path === "bundle.json") continue;
+    if (file.path === MANIFEST_FILE) continue;
     violations.push(
       ...checkSelfContained(file),
       ...checkFonts(file),

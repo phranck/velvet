@@ -12,15 +12,13 @@ import { join, relative, resolve, sep } from "node:path";
 
 import type { BundleFile } from "../src/lib/bundles/isolation.js";
 import {
+  MANIFEST_FILE,
   parseBundleManifest,
   type BundleManifest,
 } from "../src/lib/bundles/manifest.js";
 
 /** Where the bundles live, as an absolute path. */
-export const BUNDLES_ROOT = resolve(import.meta.dirname, "../bundles");
-
-/** The file a bundle is recognised by. */
-export const MANIFEST_FILE = "bundle.json";
+export const BUNDLES_ROOT = resolve(import.meta.dirname, "../theme-bundles");
 
 /**
  * Directories under the bundles root that are not bundles.
@@ -41,6 +39,7 @@ const TEXT_FILES = new Set([
   ".html",
   ".txt",
   ".md",
+  ".toml",
 ]);
 
 /** A bundle, read but not yet checked. */
@@ -101,17 +100,20 @@ export async function readBundle(path: string): Promise<ReadBundle> {
   }
   let raw: unknown;
   try {
-    raw = JSON.parse(manifestFile.text);
+    // Read here rather than in the parser, which also runs in a browser: TOML
+    // is Bun's to read, and everything on the browser's side of the seam takes
+    // the generated catalogue instead.
+    raw = Bun.TOML.parse(manifestFile.text);
   } catch (error) {
     return {
       directory,
       path,
       manifest: null,
-      manifestErrors: [`${MANIFEST_FILE} is not valid JSON: ${String(error)}`],
+      manifestErrors: [`${MANIFEST_FILE} is not valid TOML: ${String(error)}`],
       files,
     };
   }
-  const result = parseBundleManifest(raw);
+  const result = parseBundleManifest(raw, directory);
   return result.ok
     ? { directory, path, manifest: result.manifest, manifestErrors: [], files }
     : { directory, path, manifest: null, manifestErrors: result.errors, files };

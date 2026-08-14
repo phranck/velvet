@@ -11,7 +11,7 @@
  * design that will look wrong on somebody's page.
  */
 
-import { FIXTURES } from "../bundles/fixtures/index.js";
+import { FIXTURES } from "../theme-bundles/fixtures/index.js";
 import { INSTALLED_DESIGNS } from "../src/lib/bundles/installed.js";
 
 /** One part of this page, or a failure naming which one is missing. */

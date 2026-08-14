@@ -1,0 +1,88 @@
+[
+  {
+    "id": "velvet",
+    "name": "Velvet",
+    "description": "The page Velvet publishes today: a dark indigo readout, one card per group of services, and a strip of days under each of them.",
+    "era": "today",
+    "version": "1.0.0",
+    "order": 1,
+    "state": "offered",
+    "dataVersion": 1,
+    "entries": {
+      "template": "template.ts",
+      "styles": "bundle.css",
+      "script": "script.ts"
+    },
+    "layouts": [
+      "grouped",
+      "cards"
+    ],
+    "readings": "overlay",
+    "features": [],
+    "picture": "velvet.png"
+  },
+  {
+    "id": "retro-chassis",
+    "name": "Retro Chassis",
+    "description": "A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, with a lit name plate, two protocol lamps, a two-line readout and a lamp meter for its days.",
+    "era": "1979",
+    "version": "1.0.0",
+    "order": 2,
+    "state": "offered",
+    "dataVersion": 1,
+    "entries": {
+      "template": "template.ts",
+      "styles": "bundle.css",
+      "script": "script.ts"
+    },
+    "layouts": [
+      "cards"
+    ],
+    "readings": "panel",
+    "features": [],
+    "picture": "retro-chassis.png"
+  },
+  {
+    "id": "twenty-forty-nine",
+    "name": "Twenty Forty-Nine",
+    "description": "A filthy pane of glass with a dim blue readout: corner brackets, edge scales, dotted grids, and a vignette to black.",
+    "era": "2049",
+    "version": "1.0.0",
+    "order": 3,
+    "state": "offered",
+    "dataVersion": 1,
+    "entries": {
+      "template": "template.ts",
+      "styles": "bundle.css",
+      "script": "script.ts"
+    },
+    "layouts": [
+      "grouped",
+      "cards"
+    ],
+    "readings": "overlay",
+    "features": [],
+    "picture": "twenty-forty-nine.png"
+  },
+  {
+    "id": "ncc-1701-d",
+    "name": "NCC-1701-D",
+    "description": "A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards.",
+    "era": "2364",
+    "version": "1.0.0",
+    "order": 4,
+    "state": "offered",
+    "dataVersion": 1,
+    "entries": {
+      "template": "template.ts",
+      "styles": "bundle.css",
+      "script": "script.ts"
+    },
+    "layouts": [
+      "grouped"
+    ],
+    "readings": "overlay",
+    "features": [],
+    "picture": "ncc-1701-d.png"
+  }
+]

@@ -145,7 +145,7 @@ export function bundleStatusPage(options: BundlePageOptions): Plugin {
         throw new Error(`velvet: ${selection.reason}`);
       }
       manifest = selection.manifest;
-      bundlePath = `/bundles/${manifest.id}`;
+      bundlePath = `/theme-bundles/${manifest.id}`;
 
       // The component page is not built at all when a design is chosen, so
       // nothing of it is published beside a design that does not use it.

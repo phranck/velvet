@@ -34,7 +34,8 @@
     type SetupProgressStage,
   } from "./state.js";
   import SquircleStep from "./SquircleStep.svelte";
-  import { DESIGNS, designById } from "../lib/designs.js";
+  import { OFFERED_THEMES, themeById } from "../lib/themes.js";
+  import { pictureFor } from "../lib/theme-pictures.js";
 
   const STEPS = ["Basics", "Services", "Design", "Review", "Publish"] as const;
   /** Publishing is its own step, and the last one. */
@@ -207,7 +208,7 @@
   const progressDetail = $derived<Partial<Record<SetupProgressStage, string>>>({
     "creating-repository": `${draft.repositoryOwner.trim()}/${draft.repositoryName.trim()}`,
   });
-  const selectedDesign = $derived(designById(draft.designId));
+  const selectedDesign = $derived(themeById(draft.designId));
   const previousStepLabel = $derived(step > 0 ? STEPS[step - 1] : "");
   const nextStepLabel = $derived(
     step < STEPS.length - 1 ? STEPS[step + 1] : "",
@@ -810,12 +811,12 @@
           legend="Designs"
           description="Select one of the four designs Velvet ships. Each picture is a page published in that design."
         >
-          {#each DESIGNS as design (design.id)}
+          {#each OFFERED_THEMES as design (design.id)}
             <ThemeCard.Option
               name={design.name}
               era={design.era}
               value={design.id}
-              screenshot={design.picture}
+              screenshot={pictureFor(design)}
               selected={draft.designId === design.id}
               radioName="design"
               onSelect={(value) => (draft.designId = value)}

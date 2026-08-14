@@ -16,7 +16,8 @@
  */
 
 import type { BundleData, BundleScript } from "./data.js";
-import { parseBundleManifest, type BundleManifest } from "./manifest.js";
+import type { BundleManifest } from "./manifest.js";
+import { THEMES } from "../themes.js";
 
 /** A design, with the pieces a preview or a gallery needs. */
 export interface InstalledDesign {
@@ -35,16 +36,11 @@ export interface InstalledDesign {
   script: BundleScript;
 }
 
-const manifestFiles = import.meta.glob("/bundles/*/bundle.json", {
-  eager: true,
-  import: "default",
-}) as Record<string, unknown>;
-
-const moduleFiles = import.meta.glob("/bundles/*/**/*.ts", {
+const moduleFiles = import.meta.glob("/theme-bundles/*/**/*.ts", {
   eager: true,
 }) as Record<string, Record<string, unknown>>;
 
-const styleFiles = import.meta.glob("/bundles/*/**/*.css", {
+const styleFiles = import.meta.glob("/theme-bundles/*/**/*.css", {
   eager: true,
   query: "?inline",
   import: "default",
@@ -53,13 +49,11 @@ const styleFiles = import.meta.glob("/bundles/*/**/*.css", {
 /** Reads the designs once, because the globs cannot change whilst a page runs. */
 function collect(): InstalledDesign[] {
   const designs: InstalledDesign[] = [];
-  for (const [path, raw] of Object.entries(manifestFiles)) {
-    const parsed = parseBundleManifest(raw);
-    if (!parsed.ok) continue;
-    const directory = path.slice(0, path.lastIndexOf("/"));
-    const templateModule = moduleFiles[`${directory}/${parsed.manifest.entries.template}`];
-    const scriptModule = moduleFiles[`${directory}/${parsed.manifest.entries.script}`];
-    const css = styleFiles[`${directory}/${parsed.manifest.entries.styles}`];
+  for (const manifest of THEMES) {
+    const directory = `/theme-bundles/${manifest.id}`;
+    const templateModule = moduleFiles[`${directory}/${manifest.entries.template}`];
+    const scriptModule = moduleFiles[`${directory}/${manifest.entries.script}`];
+    const css = styleFiles[`${directory}/${manifest.entries.styles}`];
     const template = (templateModule?.default ?? templateModule?.template) as
       | ((data: BundleData) => string)
       | undefined;
@@ -73,7 +67,7 @@ function collect(): InstalledDesign[] {
     ) {
       continue;
     }
-    designs.push({ manifest: parsed.manifest, template, css, script });
+    designs.push({ manifest, template, css, script });
   }
   return designs.sort((left, right) =>
     left.manifest.id.localeCompare(right.manifest.id),

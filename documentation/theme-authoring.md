@@ -10,18 +10,21 @@ Two rules for reading it. Every claim names the file it comes from, and every fi
 
 ## 1. What a design is
 
-A directory under `site/bundles/`, named for the design, carrying everything it needs:
+A directory under `site/theme-bundles/`, named for the design, carrying everything it needs:
 
 ```
-site/bundles/<id>/
-  bundle.json     the manifest, which is all the host reads before loading anything
-  template.ts     builds the markup from the data, as a string
-  bundle.css      the whole appearance
-  script.ts       behaviour, attached to markup that already exists
-  assets/         typefaces, pictures, anything the design references
+site/theme-bundles/<id>/
+  velvet-theme.toml   how the theme describes itself, which is all the host
+                      reads before loading anything
+  template.ts         builds the markup from the data, as a string
+  bundle.css          the whole appearance
+  script.ts           behaviour, attached to markup that already exists
+  assets/             typefaces, pictures, anything the design references
 ```
 
 The three entry names are conventions rather than rules: the manifest says which file is which, so a design may call them whatever it likes. What is not negotiable is that everything the bundle references lives inside the directory and is addressed relative to it.
+
+**The directory is the list.** There is no file naming which themes exist, because a list kept beside the directories drifts from them. Adding a theme is adding a directory with a `velvet-theme.toml` in it, and that is the whole of it. Where it stands in the list an operator chooses from is `order` in its own file, and a theme is retired by setting `state` rather than by deleting the directory somebody's page is still built from.
 
 **A design owns its own markup.** Two designs share the status data and nothing else. Where one wants a coloured segment beside every row and another wants nothing there, the first emits the segment and the second does not emit anything: neither has to declare a value that hides the other's element.
 
@@ -50,28 +53,66 @@ The count was not the problem. Seven design decisions of one session could not b
 
 ---
 
-## 2. The manifest
+## 2. How a theme describes itself
 
-`bundle.json`, parsed by `parseBundleManifest` in `site/src/lib/bundles/manifest.ts`:
+`velvet-theme.toml`, parsed by `parseBundleManifest` in `site/src/lib/bundles/manifest.ts`. There is no `id`: the directory is the theme's name, so the file does not repeat it and the two cannot disagree.
 
 | Field | What it is |
 | --- | --- |
-| `id` | Lowercase words joined by hyphens, and identical to the directory name |
 | `name` | What an operator sees |
-| `description` | One line telling this design from the others |
-| `era` | Optional; the period the design belongs to |
-| `version` | The bundle's own version, as `major.minor.patch` |
-| `dataVersion` | The version of the status data the design understands |
+| `description` | One line telling this theme from the others |
+| `era` | Optional; the period the theme belongs to |
+| `version` | The theme's own version, as `major.minor.patch` |
+| `order` | Where it stands in the list an operator chooses from, lowest first |
+| `state` | `offered`, or `withdrawn` to retire it without deleting it |
+| `dataVersion` | The version of the status data the theme understands |
 | `entries.template` | The module exporting the markup function |
 | `entries.styles` | The stylesheet |
 | `entries.script` | The module exporting the behaviour |
 | `layouts` | `grouped`, `cards`, or both; at least one |
 | `readings` | `panel` or `overlay` |
-| `preview` | A picture of the design, inside the bundle |
+| `features` | Optional; what can be set on this theme |
 
-`layouts` and `readings` are fields because both used to be read out of a computed style: a toolbar read `--layout-cards` to decide which layout buttons to offer, and the page read `--service-display-display` to decide where a reading was shown. **Nothing about a design is discovered by inspecting its stylesheet.**
+`layouts` and `readings` are fields because both used to be read out of a computed style: a toolbar read `--layout-cards` to decide which layout buttons to offer, and the page read `--service-display-display` to decide where a reading was shown. **Nothing about a theme is discovered by inspecting its stylesheet.**
 
-A manifest is reported on in full rather than at the first fault, because a design with two mistakes should not have to be fixed twice.
+A manifest is reported on in full rather than at the first fault, because a theme with two mistakes should not have to be fixed twice. It also refuses a key the format does not define, which is the one mistake that is otherwise silent: a misspelled key is not read, the field it meant keeps its default, and the page renders almost right.
+
+### The features
+
+A feature is one thing an operator can set. It says what it takes, because that is what draws its control and what refuses a value the theme would not accept:
+
+```toml
+[features.accent]
+type = "colour"
+label = "Accent"
+default = "#6366f1"
+
+[features.chartWash]
+type = "switch"
+label = "Wash under the response curve"
+default = true
+
+[features.corners]
+type = "choice"
+label = "Corners"
+default = "rounded"
+choices = ["rounded", "square"]
+
+[features.gridLines]
+type = "number"
+label = "Grid lines"
+default = 3
+minimum = 1
+maximum = 6
+```
+
+**The same feature carries the same key in every theme that offers it**, in lower camel case, so an operator who set an accent on one theme finds it again on the next. A feature a theme does not offer is simply absent from its file, and a theme that offers none has no `[features]` table at all.
+
+### The catalogue
+
+TOML is read by Bun and by nothing else here. Vite does not import it and a browser does not parse it, so a build step writes every theme's description into `site/src/lib/theme-catalogue.generated.json`, and everything on the browser's side of that seam reads the catalogue: the start page, the setup, and the configurator. `site/src/lib/themes.ts` is that catalogue as data, and `theme-pictures.ts` resolves each theme's picture, which is the one part a bundler has to do.
+
+It is written by `bun run --cwd site generated:build` and committed. `site/test/theme-catalogue.test.ts` regenerates it and compares, so a theme that changed whilst the catalogue did not turns a gate red rather than shipping a stale name.
 
 ---
 
@@ -146,7 +187,7 @@ It serves each bundle over a real HTTP origin, renders its template from a fixtu
 - No request leaves the bundle's own origin.
 - The focus ring is the design's own: the focused element must look different from the resting one, and `outline-style` must not be `auto`, which is how a browser draws its own.
 
-**The fixtures** live in `site/bundles/fixtures/` and are used by the gallery, the suite and the screenshot workflow alike. Eight cases: the ordinary installation (`velvet-underground`, five services with three hundred days behind them), and seven that break designs rather than flatter them, namely the first day of an installation with no history, everything unknown, one service, twenty services, very long service names, an incident summary of two thousand characters, and a service reachable over IPv6 only.
+**The fixtures** live in `site/theme-bundles/fixtures/` and are used by the gallery, the suite and the screenshot workflow alike. Eight cases: the ordinary installation (`velvet-underground`, five services with three hundred days behind them), and seven that break designs rather than flatter them, namely the first day of an installation with no history, everything unknown, one service, twenty services, very long service names, an incident summary of two thousand characters, and a service reachable over IPv6 only.
 
 Every fixture is checked against the product's own validators rather than the raw schemas, because the validators catch what a schema cannot: duplicate identifiers, timestamps outside the document's own window, and durations that contradict each other. `site/test/bundle-fixtures.test.ts` is that gate, and it needs no browser.
 
