@@ -16,7 +16,7 @@
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "test": "bun run test:headless && bun run --filter @velvet/site test:browser",
-    "test:headless": "bun run test:version && bun run test:toolchain && bun run test:ci && bun run test:lockfile && bun run test:workspace-gates && bun run test:deployment && bun run test:template-workflows && bun run test:template-readme && bun run test:theme-registry && bun run test:man-pages && bun run --filter @velvet/contracts test && bun run --filter @velvet/bundle-plugins test && bun run --filter @velvet/template-files test && bun run --filter @velvet/monitor test && bun run --filter @velvet/github-incidents test && bun run --filter @velvet/monitor-action test && bun run --filter @velvet/setup-service test && bun run --filter @velvet/site test:units && bun run --filter @velvet/site test:builds",
+    "test:headless": "bun run test:version && bun run test:toolchain && bun run test:ci && bun run test:lockfile && bun run test:workspace-gates && bun run test:deployment && bun run test:template-workflows && bun run test:template-readme && bun run test:man-pages && bun run --filter @velvet/contracts test && bun run --filter @velvet/bundle-plugins test && bun run --filter @velvet/template-files test && bun run --filter @velvet/monitor test && bun run --filter @velvet/github-incidents test && bun run --filter @velvet/monitor-action test && bun run --filter @velvet/setup-service test && bun run --filter @velvet/site test:units && bun run --filter @velvet/site test:builds",
     "test:version": "bun test tests/version.test.mjs",
     "test:toolchain": "bun test tests/bun-toolchain.test.mjs",
     "version:sync": "bun run scripts/sync-version.mjs",
@@ -27,7 +27,6 @@
     "test:deployment": "bun test tests/setup-service-deployment.test.mjs",
     "test:template-workflows": "bun test tests/template-workflows.test.mjs",
     "test:template-readme": "bun test tests/template-readme.test.mjs",
-    "test:theme-registry": "bun test tests/theme-registry-build.test.mjs tests/theme-registry-workflow.test.mjs",
     "test:man-pages": "bun test tests/man-pages.test.mjs",
     "pretypecheck": "bun run --filter @velvet/contracts build && bun run --filter @velvet/monitor build && bun run --filter @velvet/github-incidents build",
     "typecheck": "bun run --filter @velvet/contracts typecheck && bun run --filter @velvet/bundle-plugins typecheck && bun run --filter @velvet/template-files typecheck && bun run --filter @velvet/setup-service typecheck && bun run --filter @velvet/monitor typecheck && bun run --filter @velvet/github-incidents typecheck && bun run --filter @velvet/monitor-action typecheck && bun run --filter @velvet/site typecheck"

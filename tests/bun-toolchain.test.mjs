@@ -53,7 +53,6 @@ test("runs local and distributed automation through the pinned Bun toolchain", a
     "action.yml",
     "actions/monitor/action.yml",
     ".github/workflows/screenshot.yml",
-    ".github/workflows/theme-registry.yml",
   ];
 
   for (const file of files) {
