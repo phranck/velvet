@@ -167,12 +167,20 @@ test("runs setup service gates from the root workspace", async () => {
     ),
   );
 
-  // The service hosts the onboarding, so it must be built before the service's
-  // own build copies it into the image it ships.
-  assert.equal(
-    setupPackage.scripts.prebuild,
-    "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run --filter @velvet/site onboarding:build",
-  );
+  // The service serves the browser applications from its own image, so each
+  // one is built before the service build copies it in. Asserted per
+  // application rather than as one string, because the whole string has to be
+  // rewritten to add the next one and a rewritten assertion asserts whatever
+  // it was rewritten to.
+  const prebuild = setupPackage.scripts.prebuild;
+  assert.match(prebuild, /^bun run --filter @velvet\/contracts build &&/);
+  for (const app of ["onboarding", "configurator"]) {
+    assert.match(
+      prebuild,
+      new RegExp(`bun run --filter @velvet/site ${app}:build`),
+      `${app} is built before the service that serves it`,
+    );
+  }
   for (const gate of ["build", "test", "typecheck"]) {
     assert.match(
       packageDocument.scripts[scriptCarrying(gate)],

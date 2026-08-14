@@ -47,11 +47,15 @@ import {
 import { createUpdateServices } from "./update-service.js";
 import { UPDATE_ROUTES, type UpdateRoutes } from "./update-routes.js";
 import type { ManagedUpdateReleaseProvider } from "./update-orchestrator-types.js";
+import {
+  HOSTED_APPS,
+  hostedAssetPath,
+  type StaticAssetProvider,
+} from "./static.js";
 
 const SESSION_MAX_AGE_SECONDS = 30 * 60;
 
 type ProvisionFunction = typeof provisionVelvet;
-type StaticAssetProvider = (path: string) => Promise<Response | null>;
 
 interface SetupHandlerOptions {
   config: SetupServiceConfig;
@@ -633,13 +637,18 @@ export function createSetupHandler(
       if (request.method === "GET" && route === "/") {
         return finish(redirectResponse(`${options.config.publicOrigin}/onboarding/`));
       }
-      if (request.method === "GET" && route === "/onboarding") {
+      // A hosted application answers at its directory, so the bare name is
+      // sent there rather than answering 404 at a path that plainly exists.
+      if (
+        request.method === "GET" &&
+        HOSTED_APPS.some((app) => route === `/${app}`)
+      ) {
         return finish(
           redirectResponse(`${options.config.publicOrigin}${route}/`),
         );
       }
       if (request.method === "GET" && options.staticAsset) {
-        const assetPath = allowlistedAssetPath(route);
+        const assetPath = hostedAssetPath(route);
         if (assetPath) {
           const asset = await options.staticAsset(assetPath);
           if (asset) return finish(asset);
@@ -946,22 +955,6 @@ function bearerToken(header: string | null): string | null {
   if (!header) return null;
   const match = header.match(/^Bearer ([A-Za-z0-9._~+/=-]{16,4096})$/u);
   return match ? match[1]! : null;
-}
-
-/**
- * Maps a request path onto a hosted application's file, or refuses it.
- *
- * Only a document root and hashed asset names resolve, so no request can
- * address anything else the service happens to have on disk.
- *
- * @returns The path below the public root, or `null` when nothing matches.
- */
-function allowlistedAssetPath(pathname: string): string | null {
-  const match = pathname.match(
-    /^\/(onboarding)\/(assets\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/u,
-  );
-  if (!match) return null;
-  return `${match[1]}/${match[2] ?? "index.html"}`;
 }
 
 function redirectResponse(location: string, headers?: HeadersInit): Response {

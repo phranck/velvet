@@ -12,9 +12,50 @@ export type StaticAssetProvider = (
  * already exists there, rather than inventing a way to carry credentials to
  * somewhere else.
  */
-export const HOSTED_APPS = ["onboarding"] as const;
+/**
+ * The configurator's delivered name, which is also its address.
+ *
+ * `config` rather than `configurator` because this name is both at once: it is
+ * the directory the build writes to and the path somebody types. The address
+ * was decided; the source directory says what is in it.
+ */
+export const CONFIGURATOR_APP = "config";
+
+export const HOSTED_APPS = ["onboarding", CONFIGURATOR_APP] as const;
 
 export type HostedApp = (typeof HOSTED_APPS)[number];
+
+/**
+ * One path segment, which can never be `.` or `..`.
+ *
+ * Both begin with a dot and this begins with a letter or a digit, so no path
+ * built from these segments can climb out of where it started. The resolved
+ * path is checked against its root as well, because one guard for a traversal
+ * is one more than nothing and one fewer than enough.
+ */
+const PATH_SEGMENT = "[A-Za-z0-9][A-Za-z0-9._-]*";
+
+/**
+ * Theme files, which are the one thing served from below a subdirectory.
+ *
+ * A theme carries its stylesheet and script at its root and its faces under
+ * `assets/fonts/`, so the flat asset form the applications use does not reach
+ * them. The depth is bounded rather than open: four segments covers what a
+ * theme is laid out as, and an unbounded path is an invitation to find out
+ * what else is on the disk.
+ */
+const THEME_ASSET = new RegExp(
+  `^${CONFIGURATOR_APP}/themes/${PATH_SEGMENT}(?:/${PATH_SEGMENT}){1,4}$`,
+  "u",
+);
+
+/**
+ * How long a path may be before it is refused unread.
+ *
+ * Generous for anything the build produces, and short enough that no caller
+ * decides how much work a match costs.
+ */
+const MAX_ASSET_PATH_LENGTH = 256;
 
 const CONTENT_TYPES: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -68,9 +109,29 @@ export function createStaticAssetProvider(
 }
 
 function allowlistedPath(path: string): boolean {
+  if (path.length > MAX_ASSET_PATH_LENGTH) return false;
+  if (THEME_ASSET.test(path)) return true;
   return HOSTED_APPS.some(
     (app) =>
       path === `${app}/index.html` ||
-      new RegExp(`^${app}/assets/[A-Za-z0-9][A-Za-z0-9._-]*$`, "u").test(path),
+      new RegExp(`^${app}/assets/${PATH_SEGMENT}$`, "u").test(path),
   );
+}
+
+/**
+ * Maps a request path onto the file that answers it, or refuses it.
+ *
+ * The handler asks this rather than matching paths itself, so what a request
+ * may address is described in one place. A directory path answers with that
+ * application's document, which is what makes `/config/` load the
+ * configurator.
+ *
+ * @param pathname - The request path, leading slash and all.
+ * @returns The path below the public root, or `null` when nothing matches.
+ */
+export function hostedAssetPath(pathname: string): string | null {
+  if (!pathname.startsWith("/")) return null;
+  const path = pathname.slice(1);
+  const candidate = path.endsWith("/") ? `${path}index.html` : path;
+  return allowlistedPath(candidate) ? candidate : null;
 }

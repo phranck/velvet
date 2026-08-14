@@ -1,0 +1,47 @@
+@import "../lib/velvet-tokens.css";
+/*
+  The tools' own faces, which is what --config-font and its neighbours name.
+  This file imports velvet-typefaces.css itself, so naming it here brings both
+  sets. Naming only the shared one would set this surface in the stand-ins
+  whilst the stylesheet read as though Datatype and Workbench were in use.
+*/
+@import "../lib/velvet-retro-typefaces.css";
+
+/*
+  The configurator's own surface, which no other Velvet page shares.
+
+  Dark throughout with nothing to switch to, and every colour taken from the
+  --config-* namespace in velvet-tokens.css. Nothing below names a colour of
+  its own.
+*/
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+html {
+  background-color: var(--config-base);
+}
+
+body {
+  color: var(--config-text);
+  font-family: var(--config-font);
+  font-size: var(--config-text-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+}
+
+#configurator {
+  min-height: 100vh;
+}

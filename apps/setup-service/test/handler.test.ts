@@ -14,6 +14,7 @@ import type { AuditLogInput } from "../src/observability.js";
 import { createRateLimiter } from "../src/rate-limit.js";
 import { createSessionStore } from "../src/session.js";
 import { SetupServiceError } from "../src/setup-error.js";
+import { HOSTED_APPS } from "../src/static.js";
 
 const origin = "https://setup.velvet.dev";
 const website = "https://velvet.dev";
@@ -829,7 +830,7 @@ test("serves both hosted applications and nothing else", async () => {
     },
   });
 
-  for (const app of ["onboarding"]) {
+  for (const app of HOSTED_APPS) {
     assert.equal((await handler(new Request(`${origin}/${app}/`))).status, 200);
     assert.equal(
       (await handler(new Request(`${origin}/${app}/assets/app.js`))).status,
@@ -846,10 +847,11 @@ test("serves both hosted applications and nothing else", async () => {
     assert.equal(bare.headers.get("Location"), `${origin}/${app}/`);
   }
 
-  assert.deepEqual(served, [
-    "onboarding/index.html",
-    "onboarding/assets/app.js",
-  ]);
+  assert.deepEqual(
+    served,
+    HOSTED_APPS.flatMap((app) => [`${app}/index.html`, `${app}/assets/app.js`]),
+    "every hosted application is reachable, not just the first one added",
+  );
   const missing = await handler(new Request(`${origin}/api/unknown`));
   assert.equal(missing.status, 404);
   assert.equal((await missing.json()).error.code, "NOT_FOUND");

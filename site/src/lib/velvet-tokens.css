@@ -206,4 +206,33 @@
   --setup-text-body: var(--velvet-text-body);
   --setup-text-copy: var(--velvet-text-copy);
   --setup-text-intro: var(--velvet-text-intro);
+
+  /* The configurator namespace. It sits apart from --setup-* because the two
+     surfaces are read differently: the onboarding is a page somebody walks
+     through once and the configurator is a tool somebody works in, so it is
+     dark throughout with no light mode to switch to, and it points with one
+     colour rather than drawing with several.
+
+     The values are the brand's, taken from above rather than restated, so a
+     change to the accent or the text tone reaches this surface too. What the
+     configurator states itself is arrangement, not colour. */
+  --config-accent: var(--velvet-accent);
+  --config-on-accent: var(--velvet-on-accent);
+  --config-accent-tint: var(--velvet-accent-tint);
+  --config-base: var(--velvet-base);
+  --config-panel: var(--velvet-surface-card);
+  --config-panel-raised: var(--velvet-surface-raised);
+  --config-rule: var(--velvet-rule);
+  --config-text: var(--velvet-text);
+  --config-muted: var(--velvet-text-muted);
+  --config-dim: var(--velvet-text-dim);
+  --config-outage: var(--velvet-outage);
+  --config-font: var(--velvet-font);
+  --config-font-heading: var(--velvet-font-heading);
+  --config-font-label: var(--velvet-font-label);
+  --config-text-small: var(--velvet-text-small);
+  --config-text-body: var(--velvet-text-body);
+  --config-text-copy: var(--velvet-text-copy);
+  --config-text-label: var(--velvet-text-label);
+  --config-tracking-label: var(--velvet-tracking-label);
 }
