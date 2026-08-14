@@ -87,7 +87,6 @@ const CHART_GEOMETRY = {
   gridLines: 5,
   lineWidth: 2,
   pointRadius: 3,
-  tooltipWidth: 140,
   fill: 0.32,
   tickMinor: 9,
   tickMajor: 13,
@@ -108,6 +107,8 @@ interface Row {
   summary: HTMLButtonElement;
   uptime: HTMLElement;
   axisFrom: HTMLElement;
+  /** The left end of the chart's range, which the design prints itself. */
+  chartFrom: HTMLElement;
   displayMain: HTMLElement;
   displaySecond: HTMLElement;
   status: string;
@@ -160,7 +161,8 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
     const uptime = element.querySelector<HTMLElement>(".service-uptime");
     const axisFrom = element.querySelector<HTMLElement>(".strip-axis-from");
     const stripHost = element.querySelector<HTMLElement>(".uptime-strip-host");
-    const chartHost = element.querySelector<HTMLElement>(".chart-host");
+    const chartPlot = element.querySelector<HTMLElement>(".chart-plot");
+    const chartFrom = element.querySelector<HTMLElement>(".chart-axis-from");
     const details = element.querySelector<HTMLElement>(".service-details-wrap");
     const displayMain = element.querySelector<HTMLElement>(".service-display-main");
     const lines = element.querySelectorAll<HTMLElement>(".service-display-line");
@@ -171,7 +173,8 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
       !uptime ||
       !axisFrom ||
       !stripHost ||
-      !chartHost ||
+      !chartPlot ||
+      !chartFrom ||
       !details ||
       !displayMain ||
       !displaySecond
@@ -190,6 +193,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
       summary,
       uptime,
       axisFrom,
+      chartFrom,
       displayMain,
       displaySecond,
       status: entry.status,
@@ -200,19 +204,22 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         report: (reading) => readOut(row, reading),
       }),
       chart: createChartView(
-        chartHost,
+        chartPlot,
         entry.id,
         entry.name,
         data.generatedAt,
         data.status.monitoringStartedAt,
         {
-        style: CHART_GEOMETRY,
-        // Nothing floats over this page: the scale is read where the pointer
-        // stands on it, and the panel above already says what the service is
-        // doing.
-        tooltip: false,
-        report: (reading) => readOut(row, reading),
-      }),
+          style: CHART_GEOMETRY,
+          // Nothing floats over this page: the scale is read where the pointer
+          // stands on it, and the panel above already says what the service is
+          // doing.
+          tooltip: false,
+          report: (reading) => readOut(row, reading),
+          // No legend: the trace's colours are the two protocol windows above
+          // it, and a key repeating them labels something already labelled.
+        },
+      ),
       chartBuilt: false,
       panel: disclosure(details, false),
     };
@@ -369,6 +376,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         range,
       );
       row.axisFrom.textContent = from;
+      row.chartFrom.textContent = from;
       // The display names the window it is reporting on, so a range change
       // rewrites what it says at rest.
       readOut(row, null);

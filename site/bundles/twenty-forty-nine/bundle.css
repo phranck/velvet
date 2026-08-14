@@ -137,8 +137,6 @@
   --detail-edge-width: var(--rule-width);
   --detail-edge-colour: var(--surface-rule);
   --detail-fill: var(--surface-sunken);
-  --chart-rule-width: var(--rule-width);
-  --chart-rule-colour: var(--surface-rule);
   --detail-space-after: 0px;
   --detail-padding: var(--card-padding);
   --card-radius-base: 10px;
@@ -308,42 +306,6 @@
      can read half of it at a glance. No gloss, because this is emitted light
      rather than a reflective surface. */
   --bar-hover-height: 36px;
-
-  /* ── Chart ────────────────────────────────────────────────────────────── */
-  /* Five dotted rules and hairline traces, with the crosshair dotted as well.
-     Every line on these screens is either dotted or one pixel wide. */
-  --chart-plot-inset: 0px;
-  --chart-plot-edge-width: 0px;
-  --chart-plot-edge-colour: transparent;
-  --chart-plot-fill: transparent;
-  --chart-axis-value-display: block;
-  --chart-crosshair-colour: var(--text-3);
-  --chart-hover-point-display: block;
-  --chart-tick-colour: transparent;
-  --chart-tick-major-colour: transparent;
-  --chart-needle-width: 0px;
-  --chart-needle-fill: transparent;
-  --chart-needle-edge: transparent;
-  --chart-head-margin: var(--space-block);
-  --chart-head-space: var(--space-tight);
-  --chart-axis-space: 20px;
-  --chart-grid-colour: var(--surface-rule);
-  --chart-grid-alpha: 100%;
-  --chart-axis-text-size: var(--text-size-chart-caption);
-  --chart-axis-colour: var(--surface-rule);
-  --chart-axis-text-colour: var(--text-3);
-  --chart-axis-text-alpha: 100%;
-  --chart-axis-alpha: 100%;
-  --chart-scale-display: none;
-  --chart-scale-colour: var(--text-3);
-  --chart-scale-alpha: 100%;
-  --chart-grid-dash: 1 5;
-  --chart-line-width: 1.5px;
-  --chart-line-cap: butt;
-  --chart-ipv4-dash: none;
-  --chart-ipv6-dash: 4 3;
-  --chart-crosshair-dash: 1 4;
-  --chart-key-width: 20px;
 
   /* ── Backdrop ─────────────────────────────────────────────────────────── */
   /*
@@ -2012,22 +1974,24 @@
 }
 
 /* ── Response chart ───────────────────────────────────────────────────────── */
+/*
+  The shell is this design's own markup: a caption, a legend, the plot, and the
+  two ends of the range under it. The plugin draws inside the plot and nowhere
+  else.
+
+  Five dotted rules and hairline traces, with the crosshair dotted as well.
+  Every line on these screens is either dotted or one pixel wide.
+*/
 .response-chart {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: var(--space-tight) var(--space-row);
-  /* Its own space above rather than the general block step, because a design
-     that draws no rule between the readings and the chart wants them closer
-     than two stacked blocks would be. */
-  margin-top: var(--chart-head-margin);
-  /* Its own value rather than the general tight step, because where a rule is
-     drawn above it, a caption sitting directly under that rule needs more air
-     than two stacked rows do. */
-  padding-top: var(--chart-head-space);
-  /* Its own rule rather than the page's, because a design may separate the
-     chart from the readings above it by space alone. */
-  border-top: var(--chart-rule-width) var(--rule-style) var(--chart-rule-colour);
+  /* Its own space above rather than the general block step, because a caption
+     sitting directly under a rule needs more air than two stacked rows do. */
+  margin-top: var(--space-block);
+  padding-top: var(--space-tight);
+  border-top: var(--rule-width) var(--rule-style) var(--surface-rule);
 }
 
 .chart-caption {
@@ -2049,7 +2013,7 @@
 
 .chart-legend-item {
   display: inline-grid;
-  grid-template-columns: var(--chart-key-width) auto auto;
+  grid-template-columns: 20px auto auto;
   align-items: center;
   gap: var(--space-hair);
   color: var(--text-2);
@@ -2062,31 +2026,19 @@
   font-weight: var(--meta-weight);
 }
 
+/* A length of the line its series is drawn in, so the key is the drawing
+   rather than a swatch beside it. */
 .chart-line-key {
   height: 0;
-  border-top: var(--chart-line-width) solid var(--series-colour);
-}
-
-.chart-plot,
-.chart-empty {
-  grid-column: 1 / -1;
+  border-top: 1.5px solid var(--series-colour);
 }
 
 /*
-  The face the readings are drawn on.
-
-  Most designs leave it bare and the page shows through. A design may instead
-  give it a surface, a frame and room around the drawing, which is how one of
-  them turns the plot into the lit scale of a receiver: the ticks are the
-  surface, and the trace runs across them.
+  The face the readings are drawn on. The glass shows through it, so it carries
+  nothing but its place across the grid.
 */
 .chart-plot {
-  display: block;
-  padding: var(--chart-plot-inset);
-  border: var(--chart-plot-edge-width) var(--rule-style)
-    var(--chart-plot-edge-colour);
-  border-radius: var(--control-radius);
-  background: var(--chart-plot-fill);
+  grid-column: 1 / -1;
 }
 
 .chart-svg {
@@ -2106,12 +2058,12 @@
   grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
-  /* Its own distance from the drawing, with the grid's row gap taken back off
-     so the token states the whole of it. */
-  margin-block-start: calc(var(--chart-axis-space) - var(--space-tight));
-  color: var(--chart-axis-text-colour);
+  /* 20px from the drawing, with the grid's row gap taken back off so this one
+     value states the whole distance. */
+  margin-block-start: calc(20px - var(--space-tight));
+  color: var(--text-3);
   font-family: var(--font-meta);
-  font-size: var(--chart-axis-text-size);
+  font-size: var(--text-size-chart-caption);
 }
 
 .chart-empty {
@@ -2133,63 +2085,41 @@
 }
 
 /*
-  The grid and the two axes, which a design may draw in the series' own colour
-  rather than in the page's rule colour. Where the theme lists no colour per
-  service, `--series-own` is not defined at all and the fallback stands.
-
-  Both carry their own strength, because an axis that reads as firmly as its
-  grid stops being an axis.
+  The grid and the two axes, drawn in the series' own colour where the theme
+  lists one per service and in the page's rule colour otherwise. Where no colour
+  per service is listed, `--series-own` is not defined at all and the fallback
+  stands.
 */
 .chart-grid line {
-  stroke: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-grid-colour)) var(--chart-grid-alpha),
-    transparent
-  );
+  stroke: var(--series-own, var(--surface-rule));
   stroke-width: var(--rule-width);
-  stroke-dasharray: var(--chart-grid-dash);
+  stroke-dasharray: 1 5;
   vector-effect: non-scaling-stroke;
 }
 
 .chart-axis-line {
-  stroke: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-axis-colour)) var(--chart-axis-alpha),
-    transparent
-  );
+  stroke: var(--series-own, var(--surface-rule));
   stroke-width: var(--rule-width);
   vector-effect: non-scaling-stroke;
 }
 
-/* The reading each grid line stands for. Off in most designs, where the two
-   ends of the range are the only scale the chart shows. */
+/* The reading each grid line stands for. The two ends of the range under the
+   plot are the only scale this design shows, so the figures inside it are not. */
 .chart-scale text {
-  display: var(--chart-scale-display);
-  /* The same source the axes take, so a scale reads as belonging to the lines
-     it labels rather than to the page. */
-  fill: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-scale-colour)) var(--chart-scale-alpha),
-    transparent
-  );
-  font-family: var(--font-meta);
-  font-size: var(--text-size-chart-caption);
+  display: none;
 }
 
 .chart-line {
   fill: none;
   stroke: var(--series-colour);
-  stroke-linecap: var(--chart-line-cap);
+  stroke-linecap: butt;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
-.chart-line[data-protocol="ipv4"] {
-  stroke-dasharray: var(--chart-ipv4-dash);
-}
-
+/* The second series is broken, so the two are told apart without colour. */
 .chart-line[data-protocol="ipv6"] {
-  stroke-dasharray: var(--chart-ipv6-dash);
+  stroke-dasharray: 4 3;
 }
 
 .chart-area {
@@ -2203,97 +2133,27 @@
 .chart-hover-point {
   fill: var(--detail-fill);
   stroke: var(--series-colour);
-  stroke-width: var(--chart-line-width);
+  stroke-width: 1.5px;
   vector-effect: non-scaling-stroke;
 }
 
-/* The ring on the trace under the pointer. A design that reads its chart with
-   a pointer of its own draws none. */
-.chart-hover-point {
-  display: var(--chart-hover-point-display);
-}
-
 /*
-  The ticks of a printed scale, hanging below the plot. Two lengths, so the
-  eye finds the long ones first, and both are zero in a design that prints no
-  scale.
-*/
-.chart-tick {
-  stroke: var(--chart-tick-colour);
-  stroke-width: var(--rule-width);
-  vector-effect: non-scaling-stroke;
-}
-
-.chart-tick--major {
-  stroke: var(--chart-tick-major-colour);
-}
-
-/*
-  The pointer.
-
-  A receiver reads through a strip of plexiglass with a line down the middle
-  of it, and that is what this is: a translucent band the width the theme
-  states, centred on the reading, with the crosshair drawn over it. A design
-  that wants none sets the width to zero.
+  The strip the pointer rides on, which this design does not draw: the dotted
+  crosshair alone says where the reading is taken.
 */
 .chart-needle {
-  transform-box: fill-box;
-  transform: translateX(-50%);
-  width: var(--chart-needle-width);
-  fill: var(--chart-needle-fill);
-  stroke: var(--chart-needle-edge);
-  stroke-width: var(--rule-width);
-  vector-effect: non-scaling-stroke;
-  pointer-events: none;
+  display: none;
 }
 
 .twenty-forty-nine-page linearGradient stop {
   stop-color: var(--series-colour);
 }
 
-/* The value axis, which a design drawing edge to edge does not want. */
-.chart-axis-line--value {
-  display: var(--chart-axis-value-display);
-}
-
 .chart-crosshair {
-  stroke: var(--chart-crosshair-colour);
+  stroke: var(--text-3);
   stroke-width: var(--rule-width);
-  stroke-dasharray: var(--chart-crosshair-dash);
+  stroke-dasharray: 1 4;
   vector-effect: non-scaling-stroke;
-}
-
-.chart-tooltip rect {
-  fill: var(--surface-popover);
-  stroke: var(--popover-edge);
-  stroke-width: var(--rule-width);
-}
-
-.chart-tooltip text {
-  fill: var(--popover-text);
-  font-family: var(--font-meta);
-  font-size: var(--text-size-chart-label);
-}
-
-.chart-tooltip .chart-tooltip-time {
-  fill: var(--popover-text-muted);
-  font-size: var(--text-size-chart-caption);
-}
-
-.chart-tooltip circle {
-  fill: var(--series-colour);
-}
-
-/* The two ends of the range, in the same source the axes and the scale take,
-   so everything naming the plot reads as one set of marks. */
-.chart-axis text {
-  fill: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-axis-text-colour)) var(--chart-axis-text-alpha),
-    transparent
-  );
-  font-family: var(--font-meta);
-  font-size: var(--text-size-chart-label);
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */

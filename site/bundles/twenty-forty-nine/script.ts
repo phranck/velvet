@@ -19,6 +19,7 @@
 import { disclosure } from "@velvet/bundle-plugins/disclosure";
 import {
   createChartView,
+  type ChartLegendEntry,
   type ChartView,
 } from "@velvet/bundle-plugins/response-chart";
 import {
@@ -71,7 +72,6 @@ const CHART_GEOMETRY = {
   gridLines: 5,
   lineWidth: 1.5,
   pointRadius: 3,
-  tooltipWidth: 150,
   fill: 0.12,
   tickMinor: 0,
   tickMajor: 0,
@@ -80,6 +80,36 @@ const CHART_GEOMETRY = {
 /** One state colour, as the stylesheet resolved it. */
 function colourOf(style: CSSStyleDeclaration, name: string): string {
   return style.getPropertyValue(name).trim();
+}
+
+/**
+ * Writes the chart's legend, which is this design's markup rather than the
+ * plugin's.
+ *
+ * A key in the series' own colour, the protocol, and its latest reading, on one
+ * row per protocol that answered. The plugin says which those are and what they
+ * read; the shape is here.
+ *
+ * @param host - The list the rows go into. Emptied first.
+ * @param entries - One per protocol, in the order the data carries them.
+ */
+function drawLegend(host: HTMLElement, entries: ChartLegendEntry[]): void {
+  host.textContent = "";
+  for (const entry of entries) {
+    const item = document.createElement("span");
+    item.className = "chart-legend-item";
+    item.setAttribute("role", "listitem");
+    item.dataset.protocol = entry.protocol;
+    const key = document.createElement("span");
+    key.className = "chart-line-key";
+    key.setAttribute("aria-hidden", "true");
+    const name = document.createElement("span");
+    name.textContent = entry.label;
+    const reading = document.createElement("strong");
+    reading.textContent = entry.value;
+    item.append(key, name, reading);
+    host.append(item);
+  }
 }
 
 /** What one service row owns, so a range change can reach into it. */
@@ -92,6 +122,8 @@ interface Row {
   summary: HTMLButtonElement;
   uptime: HTMLElement;
   axisFrom: HTMLElement;
+  /** The left end of the chart's range, which the design prints itself. */
+  chartFrom: HTMLElement;
   strip: UptimeStrip;
   chart: ChartView;
   chartBuilt: boolean;
@@ -141,9 +173,21 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
     const uptime = element.querySelector<HTMLElement>(".service-uptime");
     const axisFrom = element.querySelector<HTMLElement>(".strip-axis-from");
     const stripHost = element.querySelector<HTMLElement>(".uptime-strip-host");
-    const chartHost = element.querySelector<HTMLElement>(".chart-host");
+    const chartPlot = element.querySelector<HTMLElement>(".chart-plot");
+    const chartLegend = element.querySelector<HTMLElement>(".chart-legend");
+    const chartFrom = element.querySelector<HTMLElement>(".chart-axis-from");
     const details = element.querySelector<HTMLElement>(".service-details-wrap");
-    if (!entry || !summary || !uptime || !axisFrom || !stripHost || !chartHost || !details) {
+    if (
+      !entry ||
+      !summary ||
+      !uptime ||
+      !axisFrom ||
+      !stripHost ||
+      !chartPlot ||
+      !chartLegend ||
+      !chartFrom ||
+      !details
+    ) {
       continue;
     }
 
@@ -163,16 +207,19 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         heightProperty: "--strip-surface-height",
         tooltipClassName: "uptime-tooltip",
       }),
+      chartFrom,
       chart: createChartView(
-        chartHost,
+        chartPlot,
         entry.id,
         entry.name,
         data.generatedAt,
         data.status.monitoringStartedAt,
         {
-        style: CHART_GEOMETRY,
-        tooltipClassName: "uptime-tooltip chart-reading",
-      }),
+          style: CHART_GEOMETRY,
+          tooltipClassName: "uptime-tooltip chart-reading",
+          legend: (entries) => drawLegend(chartLegend, entries),
+        },
+      ),
       chartBuilt: false,
       panel: disclosure(details, false),
     };
@@ -310,6 +357,7 @@ export function enhance(root: HTMLElement, data: BundleData): () => void {
         range,
       );
       row.axisFrom.textContent = from;
+      row.chartFrom.textContent = from;
       if (row.chartBuilt) {
         row.chart.update(
           data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id),

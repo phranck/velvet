@@ -5,7 +5,7 @@
  * other, and a design that wanted only the arithmetic would be a design about
  * to draw the curve differently from the product.
  *
- * Version 2.
+ * Version 3.
  */
 
 export * from "./arithmetic.js";

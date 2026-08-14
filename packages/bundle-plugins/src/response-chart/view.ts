@@ -2,8 +2,8 @@
  * The response-time chart: the drawing that goes with the arithmetic beside it.
  *
  * `site/src/components/service/ResponseTimeChart.svelte` states `WIDTH`,
- * `HEIGHT`, the four plot edges, the point radius and the tooltip width as
- * module constants, so no design can reach them. Here they are a style object a
+ * `HEIGHT`, the four plot edges and the point radius as module constants, so no
+ * design can reach them. Here they are a style object a
  * design passes, and the proportion of the plot becomes a design decision
  * rather than a constant.
  *
@@ -11,7 +11,13 @@
  * which is the same function the product uses, so no design can show a smoother
  * or uglier line than the real page would.
  *
- * Version 2.
+ * The element it is handed is the plot, and everything around the plot belongs
+ * to the design: the caption, the legend and the two ends of the range are its
+ * markup, styled directly rather than through properties this plugin reads.
+ * What the design cannot work out for itself is handed to it, so the legend
+ * arrives as entries and is drawn in whatever shape that design wants.
+ *
+ * Version 3.
  */
 
 import {
@@ -27,10 +33,9 @@ import {
 } from "./arithmetic.js";
 import type { RangeKey, ResponseSeries } from "../data.js";
 import { createOverlay } from "../overlay/index.js";
-import { rangeLabel } from "../status.js";
 
 /** The version a manifest names to use this plugin. */
-export const VERSION = 2;
+export const VERSION = 3;
 
 /** Everything the chart needs in order to lay itself out. */
 export interface ResponseChartStyle {
@@ -46,8 +51,6 @@ export interface ResponseChartStyle {
   lineWidth: number;
   /** The radius of a plotted point. */
   pointRadius: number;
-  /** How wide the hover reading is. */
-  tooltipWidth: number;
   /** The opacity of the area under the curve; zero draws none. */
   fill: number;
   /**
@@ -70,7 +73,6 @@ export const DEFAULT_RESPONSE_CHART_STYLE: ResponseChartStyle = {
   gridLines: 3,
   lineWidth: 2,
   pointRadius: 3,
-  tooltipWidth: 136,
   fill: 0,
   tickMinor: 0,
   tickMajor: 0,
@@ -80,6 +82,23 @@ export const DEFAULT_RESPONSE_CHART_STYLE: ResponseChartStyle = {
 export interface SeriesColours {
   ipv4: string;
   ipv6: string;
+}
+
+/**
+ * One line of the legend, as the design is told about it.
+ *
+ * There is one entry per protocol that answered inside the chosen range, in the
+ * order the data carries them, and none at all where nothing answered. Which
+ * shape they are drawn in is the design's: a key beside a name, a lamp, or a
+ * row of figures with no key at all.
+ */
+export interface ChartLegendEntry {
+  /** Which series this stands for, and what a design keys its colour off. */
+  protocol: "ipv4" | "ipv6";
+  /** How the protocol is named, as `IPv4` or `IPv6`. */
+  label: string;
+  /** The most recent reading in the range, with its unit. */
+  value: string;
 }
 
 /** How a design configures one chart. */
@@ -123,6 +142,15 @@ export interface ResponseChartOptions {
    * the chart shows its own overlay above the plot instead.
    */
   report?: (lines: string[] | null) => void;
+  /**
+   * Where the legend goes, once per drawing.
+   *
+   * The entries follow from the range and from which protocols answered inside
+   * it, which is arithmetic rather than appearance, so they are worked out here.
+   * Drawing them is the design's, and a design that names its series elsewhere,
+   * or not at all, leaves this out.
+   */
+  legend?: (entries: ChartLegendEntry[]) => void;
 }
 
 type Series = ResponseSeries;
@@ -223,16 +251,20 @@ export interface ChartView {
 }
 
 /**
- * Builds a chart inside the given host element.
+ * Draws a chart into the plot the design provides.
  *
- * @param host - The element the chart is drawn into. It is emptied first.
+ * @param host - The plot. It is emptied first, and it becomes the graphic: it
+ *   carries the accessible name, it takes focus, and it is where the pointer is
+ *   followed. Nothing is drawn outside it.
  * @param serviceId - Used to make the gradient and label identifiers unique,
  *   since several charts share one document.
  * @param serviceName - Named in the accessible description.
  * @param generatedAt - The moment the data was generated, which is the right
  *   edge of every range window.
- * @param options - The layout, the series colours, the reporter, and the class
- *   the hover reading carries.
+ * @param monitoringStartedAt - When the installation began measuring, which is
+ *   the left edge of a range longer than the installation is old.
+ * @param options - The layout, the series colours, the two reporters, and the
+ *   class the hover reading carries.
  * @returns A handle for updating the chart.
  */
 export function createChartView(
@@ -244,6 +276,7 @@ export function createChartView(
   options: ResponseChartOptions = {},
 ): ChartView {
   const report = options.report;
+  const reportLegend = options.legend;
 
   /** The layout as it stands now, which a function-valued option can change. */
   function currentStyle(): ResponseChartStyle {
@@ -261,36 +294,15 @@ export function createChartView(
     return given ?? { ipv4: "", ipv6: "" };
   }
 
-  host.textContent = "";
-  host.classList.add("response-chart");
-
-  const caption = document.createElement("p");
-  caption.className = "chart-caption";
-  caption.textContent = "Response time";
-  const legend = document.createElement("div");
-  legend.className = "chart-legend";
-  legend.setAttribute("role", "list");
-  legend.setAttribute("aria-label", "Response time series");
-  const plotHost = document.createElement("div");
-  plotHost.className = "chart-plot";
-  plotHost.setAttribute("tabindex", "0");
-  plotHost.setAttribute("role", "img");
   /*
-    The two ends of the range, under the drawing rather than inside it.
-
-    A design may give the plot a surface of its own, and a label drawn inside
-    the drawing stands on that surface rather than under it. Out here it sits
-    on whatever the card is made of, which is where a scale of this kind is
-    read from.
+    The element handed over is the plot itself, and the plugin draws nothing
+    outside it. A caption, a legend and the two ends of the range are the
+    design's own markup, so a design that wants none of them writes none rather
+    than declaring a value that hides one.
   */
-  const axisRow = document.createElement("div");
-  axisRow.className = "chart-axis-row";
-  axisRow.setAttribute("aria-hidden", "true");
-  const axisFrom = document.createElement("span");
-  const axisTo = document.createElement("span");
-  axisTo.textContent = "Now";
-  axisRow.append(axisFrom, axisTo);
-  host.append(caption, legend, plotHost, axisRow);
+  host.textContent = "";
+  host.setAttribute("tabindex", "0");
+  host.setAttribute("role", "img");
 
   let series: Series = [];
   let range: RangeKey = "month";
@@ -356,8 +368,8 @@ export function createChartView(
    * @returns The drawing's box, or the container's whilst nothing is drawn.
    */
   function plotBox(): DOMRect {
-    const drawing = plotHost.querySelector("svg");
-    return (drawing ?? plotHost).getBoundingClientRect();
+    const drawing = host.querySelector("svg");
+    return (drawing ?? host).getBoundingClientRect();
   }
 
   /**
@@ -470,40 +482,29 @@ export function createChartView(
     seriesColours = currentSeriesColours();
     const withSamples = filtered.filter(({ samples }) => samples.length > 0);
 
-    legend.textContent = "";
-    for (const entry of withSamples) {
-      const item = document.createElement("span");
-      item.className = "chart-legend-item";
-      item.setAttribute("role", "listitem");
-      item.dataset.protocol = entry.protocol;
-      const key = document.createElement("span");
-      key.className = "chart-line-key";
-      key.setAttribute("aria-hidden", "true");
-      const name = document.createElement("span");
-      name.textContent = protocolLabel(entry.protocol);
-      const value = document.createElement("strong");
-      value.textContent = formatMilliseconds(
-        entry.samples.at(-1)?.responseTimeMs,
-      );
-      item.append(key, name, value);
-      legend.append(item);
-    }
+    reportLegend?.(
+      withSamples.map((entry) => ({
+        protocol: entry.protocol,
+        label: protocolLabel(entry.protocol),
+        value: formatMilliseconds(entry.samples.at(-1)?.responseTimeMs),
+      })),
+    );
 
-    plotHost.textContent = "";
+    host.textContent = "";
     if (withSamples.length === 0) {
       const empty = document.createElement("p");
       empty.className = "chart-empty";
       empty.setAttribute("role", "status");
       empty.textContent = "No response history for this range.";
-      plotHost.append(empty);
-      plotHost.removeAttribute("tabindex");
+      host.append(empty);
+      host.removeAttribute("tabindex");
       // Nothing drawn, so the pointer has nowhere to stand and nothing may be
       // left hanging over the page.
       geometry = null;
       tooltip?.hide();
       return;
     }
-    plotHost.setAttribute("tabindex", "0");
+    host.setAttribute("tabindex", "0");
 
     const plotTop = tokens.insetBlock;
     /*
@@ -557,9 +558,9 @@ export function createChartView(
     /*
       The drawing carries no name of its own, and no `title`.
 
-      Its host is the graphic: `plotHost` takes `role="img"` and an `aria-label`
-      naming the service and reading out every series, which is more than a
-      title could say. A second name inside it made one graphic announce itself
+      The plot is the graphic: it takes `role="img"` and an `aria-label` naming
+      the service and reading out every series, which is more than a title
+      could say. A second name inside it made one graphic announce itself
       twice, and an SVG `title` is also what a browser shows as a tooltip, so
       Safari put one over the plot for as long as the pointer was on it.
     */
@@ -731,8 +732,6 @@ export function createChartView(
       pointRadius: tokens.pointRadius,
     };
 
-    axisFrom.textContent = rangeLabel(range, monitoringStartedAt);
-
     const description = withSamples
       .map((entry) => {
         const measured = entry.samples.filter(
@@ -743,11 +742,11 @@ export function createChartView(
         return `${protocolLabel(entry.protocol)}: current ${formatMilliseconds(entry.samples.at(-1)?.responseTimeMs)}, minimum ${formatMilliseconds(Math.min(...times))}, maximum ${formatMilliseconds(Math.max(...times))}, ${missing === 0 ? "no unavailable samples" : `${missing} unavailable ${missing === 1 ? "sample" : "samples"}`}.`;
       })
       .join(" ");
-    plotHost.setAttribute(
+    host.setAttribute(
       "aria-label",
       `Response time chart for ${serviceName}. ${description} Unavailable samples create gaps in the chart.`,
     );
-    plotHost.append(root);
+    host.append(root);
 
     // The pointer goes on last, now that the drawing is back in the document:
     // the overlay measures the plot in order to place the reading, and an
@@ -851,11 +850,11 @@ export function createChartView(
     schedulePointer();
   }
 
-  plotHost.addEventListener("pointermove", onPointerMove);
-  plotHost.addEventListener("pointerleave", clearHover);
-  plotHost.addEventListener("blur", clearHover);
-  plotHost.addEventListener("keydown", onKeyDown);
-  plotHost.addEventListener("focus", onFocus);
+  host.addEventListener("pointermove", onPointerMove);
+  host.addEventListener("pointerleave", clearHover);
+  host.addEventListener("blur", clearHover);
+  host.addEventListener("keydown", onKeyDown);
+  host.addEventListener("focus", onFocus);
 
   return {
     update(nextSeries, nextRange) {
@@ -870,11 +869,11 @@ export function createChartView(
       // run against a plot that has been emptied.
       if (frame !== 0) cancelAnimationFrame(frame);
       frame = 0;
-      plotHost.removeEventListener("pointermove", onPointerMove);
-      plotHost.removeEventListener("pointerleave", clearHover);
-      plotHost.removeEventListener("blur", clearHover);
-      plotHost.removeEventListener("keydown", onKeyDown);
-      plotHost.removeEventListener("focus", onFocus);
+      host.removeEventListener("pointermove", onPointerMove);
+      host.removeEventListener("pointerleave", clearHover);
+      host.removeEventListener("blur", clearHover);
+      host.removeEventListener("keydown", onKeyDown);
+      host.removeEventListener("focus", onFocus);
       tooltip?.destroy();
       host.textContent = "";
     },

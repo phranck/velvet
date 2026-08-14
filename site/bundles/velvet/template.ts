@@ -192,7 +192,15 @@ function service(
     <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
         <div class="protocol-readings" role="list" aria-label="Protocol status">${readings(entry)}</div>
-        <div class="chart-host"></div>
+        <div class="response-chart">
+          <p class="chart-caption">Response time</p>
+          <div class="chart-legend" role="list" aria-label="Response time series"></div>
+          <div class="chart-plot"></div>
+          <div class="chart-axis-row" aria-hidden="true">
+            <span class="chart-axis-from"></span>
+            <span class="chart-axis-to">Now</span>
+          </div>
+        </div>
       </div>
     </div>
   </article>`;
