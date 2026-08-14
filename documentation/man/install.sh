@@ -28,7 +28,7 @@ done
 # whilst macOS reads a fixed list and needs to be told. Asking man itself is
 # the only answer that holds on both.
 if man -w velvet >/dev/null 2>&1; then
-  echo "velvet: try 'man velvet', 'man velvet-config', or 'man velvet.yml'."
+  echo "velvet: try 'man velvet' or 'man velvet.yml'."
   exit 0
 fi
 

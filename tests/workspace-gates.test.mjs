@@ -167,11 +167,11 @@ test("runs setup service gates from the root workspace", async () => {
     ),
   );
 
-  // The service hosts both browser applications, so both must be built before
-  // its own build copies them into the image it ships.
+  // The service hosts the onboarding, so it must be built before the service's
+  // own build copies it into the image it ships.
   assert.equal(
     setupPackage.scripts.prebuild,
-    "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run --filter @velvet/site onboarding:build && bun run --filter @velvet/site configurator:build",
+    "bun run --filter @velvet/contracts build && bun run --filter @velvet/template-files build && bun run --filter @velvet/site onboarding:build",
   );
   for (const gate of ["build", "test", "typecheck"]) {
     assert.match(

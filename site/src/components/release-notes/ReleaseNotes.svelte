@@ -10,10 +10,10 @@
   let {
     source,
     /**
-     * Which heading arrangement the surrounding page needs. The default is what
-     * the Configurator's overlay has always shown, because that panel supplies
-     * the only level-one heading and a note may not add depth beneath it. A
-     * page rendering a whole document asks for `outline` instead.
+     * Which heading arrangement the surrounding page needs. The default suits a
+     * panel that supplies the only level-one heading itself, where a note may
+     * not add depth beneath it. A page rendering a whole document asks for
+     * `outline` instead.
      */
     headings = "flattened",
     /**
@@ -128,8 +128,7 @@
      block and a table run full width and keep the padding edge, which is why
      the inset is applied here rather than to the container.
 
-     Nothing when the surface defines no card geometry, which is the case in
-     the Configurator's overlay. */
+     Nothing when the surface defines no card geometry. */
   h2,
   h3,
   p,
@@ -146,11 +145,10 @@
   }
 
   /* Relative to the text they introduce, not to a size of their own. These
-     notes are rendered on two surfaces which set different body sizes, and a
+     notes are rendered on surfaces which set different body sizes, and a
      heading fixed in pixels beside text sized elsewhere ends up smaller than
-     its own paragraphs, which is what it did in the Configurator's overlay.
-     A page rendering a whole document states its scale through the two
-     properties and takes these only where it does not. */
+     its own paragraphs. A page rendering a whole document states its scale
+     through the two properties and takes these only where it does not. */
   h2 {
     font-size: var(--notes-heading-size, 1.35em);
     font-weight: 650;
@@ -274,13 +272,10 @@
   }
 
 
-  /* The colour is inherited on purpose, because these notes are shown on the
-     Configurator's own surfaces as well as on the website and an accent chosen
-     here would clash with one of them. The underline is what makes a link a
-     link, and it was missing: the offset below was set whilst the global rule
-     in app.css turned the decoration off, so nothing distinguished a link from
-     the sentence around it. Measured on the changelog page, the link and its
-     paragraph both computed to rgb(232, 234, 237) with no decoration at all. */
+  /* The colour is inherited on purpose, because these notes are shown on more
+     than one surface and an accent chosen here would clash with one of them.
+     The underline is what makes a link a link, and it is stated because the
+     global rule in app.css turns the decoration off. */
   a {
     color: inherit;
     text-decoration: underline;

@@ -59,7 +59,7 @@ export function setAutomaticSecurityUpdates(
  * named as a reference on the Velvet website.
  *
  * The onboarding tells whoever sets Velvet up that they can change this answer
- * later in their configurator, so this is what makes that true.
+ * later, so this is what makes that true.
  *
  * @param source - The repository's current `velvet.yml`, verbatim.
  * @param listed - What the answer should become.

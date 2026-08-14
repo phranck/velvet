@@ -9,7 +9,6 @@ export default defineConfig(
     "**/dist/**",
     "**/node_modules/**",
     "apps/setup-service/src/*.generated.ts",
-    "configurator/assets/**",
     "onboarding/assets/**",
     "site/dist-website/**",
     "site/.svelte-kit/**",

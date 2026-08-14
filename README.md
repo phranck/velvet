@@ -107,36 +107,19 @@ The monitor owns exactly these generated files on `velvet-data`:
 
 Every successful run commits a complete validated snapshot. The default branch, `velvet.yml`, workflows, and all other user-controlled files remain separate. Rerun the failed workflow after correcting configuration, permissions, secrets, or a temporary GitHub failure. There is no need to assemble or repair a partial snapshot manually.
 
-## Configurator
-
-The Configurator edits the same `velvet.yml` format and previews the real status page. It runs in two places.
-
-[setup.velvet.li/configurator](https://setup.velvet.li/configurator/) is the hosted one. Signed in with GitHub, it finds the installations you administer, shows which Velvet version each one runs, and installs a new one for you. You never open the repository, approve a pull request, or merge anything.
-
-The local one edits a file on your computer and never talks to a network:
-
-```bash
-./config start
-./config stop
-./config version
-./config help
-```
-
-It is available at `http://127.0.0.1:2342` while running. Because it knows no installation, it says so rather than reporting a version it cannot check.
-
 ## Updates
 
 Velvet installs new versions for you. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. Your `velvet.yml`, the whole `velvet-data` branch, your incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `NOTICE` are never part of one.
 
 That promise is checked twice. The service proves it from GitHub's own view of the change before merging, and a workflow in your repository proves it again against the merge GitHub actually built. An update that touched anything else would fail its check and never reach your default branch.
 
-Security releases that need no migration can install themselves, which is on by default and can be turned off in the Configurator. Everything else waits for you.
+Security releases that need no migration can install themselves, which is on by default and can be turned off through `automaticSecurityUpdates` in `velvet.yml`. Everything else waits for you.
 
 ## Documentation
 
 [documentation/](documentation/) holds the reference material: every configuration option, the contracts between the layers, how the setup service is run, and how a release is cut.
 
-The same material is available offline as man pages. `velvet(7)` covers the architecture, `velvet-config(1)` the local Configurator, and `velvet.yml(5)` every configuration option. They install into your own home directory and need no administrator rights:
+The same material is available offline as man pages. `velvet(7)` covers the architecture and `velvet.yml(5)` every configuration option. They install into your own home directory and need no administrator rights:
 
 ```bash
 velvet=$(mktemp -d)

@@ -5,7 +5,7 @@ import { test } from "bun:test";
 
 const repositoryRoot = new URL("../", import.meta.url);
 
-const MAN_PAGES = ["velvet.7", "velvet-config.1", "velvet.yml.5"];
+const MAN_PAGES = ["velvet.7", "velvet.yml.5"];
 
 async function read(relativePath) {
   return readFile(new URL(relativePath, repositoryRoot), "utf8");
@@ -55,18 +55,6 @@ function documentedFieldNames(markdown) {
   return names;
 }
 
-/**
- * Reads the subcommands the local Configurator accepts.
- *
- * @param {string} source Contents of the `config` command.
- * @returns {string[]} Every command name in its `COMMANDS` set.
- */
-function acceptedCommands(source) {
-  const declaration = /const COMMANDS = new Set\(\[([^\]]*)\]\)/u.exec(source);
-  assert.notEqual(declaration, null, "config no longer declares a COMMANDS set");
-  return [...declaration[1].matchAll(/"([^"]+)"/gu)].map(([, name]) => name);
-}
-
 test("renders every man page without a roff diagnostic", () => {
   for (const page of MAN_PAGES) {
     const linted = Bun.spawnSync(["mandoc", "-T", "lint", manPagePath(page)]);
@@ -82,20 +70,6 @@ test("renders every man page without a roff diagnostic", () => {
       `mandoc reported problems in ${page}`,
     );
     assert.equal(linted.exitCode, 0, `mandoc rejected ${page}`);
-  }
-});
-
-test("documents every command the local Configurator accepts", async () => {
-  const commands = acceptedCommands(await read("config"));
-  const page = await read("documentation/man/velvet-config.1");
-
-  assert.equal(commands.length > 0, true);
-  for (const command of commands) {
-    assert.match(
-      page,
-      new RegExp(`^\\.B ${command}$`, "mu"),
-      `velvet-config.1 does not document the ${command} command`,
-    );
   }
 });
 

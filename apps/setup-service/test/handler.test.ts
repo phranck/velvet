@@ -218,7 +218,7 @@ test("creates only a signed session cookie and applies security headers", async 
   assert.equal(directive("script-src"), "script-src 'self'");
   assert.equal(
     directive("connect-src"),
-    "connect-src 'self' https://phranck.github.io",
+    "connect-src 'self'",
   );
   // Nothing else was widened along with it.
   assert.match(policy, /object-src 'none'/);
@@ -244,12 +244,9 @@ test("grants no third-party origin any script or connection", async () => {
   // environment says. A tracker would need a grant in both directives, which is
   // why both are asserted rather than one.
   assert.equal(directive("script-src"), "script-src 'self'");
-  // The one origin that is granted, and the reason it is: the Configurator
-  // reads the community theme registry Velvet publishes on GitHub Pages.
-  assert.equal(
-    directive("connect-src"),
-    "connect-src 'self' https://phranck.github.io",
-  );
+  // Nothing this service hosts talks to another origin, so the policy grants
+  // none.
+  assert.equal(directive("connect-src"), "connect-src 'self'");
 });
 
 test("uses one-time OAuth state and rotates the authenticated session", async () => {
@@ -832,7 +829,7 @@ test("serves both hosted applications and nothing else", async () => {
     },
   });
 
-  for (const app of ["onboarding", "configurator"]) {
+  for (const app of ["onboarding"]) {
     assert.equal((await handler(new Request(`${origin}/${app}/`))).status, 200);
     assert.equal(
       (await handler(new Request(`${origin}/${app}/assets/app.js`))).status,
@@ -852,8 +849,6 @@ test("serves both hosted applications and nothing else", async () => {
   assert.deepEqual(served, [
     "onboarding/index.html",
     "onboarding/assets/app.js",
-    "configurator/index.html",
-    "configurator/assets/app.js",
   ]);
   const missing = await handler(new Request(`${origin}/api/unknown`));
   assert.equal(missing.status, 404);
@@ -1214,14 +1209,10 @@ test("the largest logo the browser offers still fits inside a setup request", ()
   );
 });
 
-test("returns a sign-in to the tool that started it", async () => {
-  // The callback used to send everybody to the onboarding, whichever tool had
-  // asked, and the onboarding then resumed at its last step with an empty
-  // draft and complained about entries nobody had made. Which tool asked is
-  // decided here and kept on the session, never carried through the browser,
-  // because a redirect target taken from a request is one somebody else chose.
+test("returns a sign-in to the onboarding whatever the request asks for", async () => {
+  // The destination is fixed here rather than read from the request, because a
+  // redirect target taken from a request is one somebody else chose.
   for (const [asked, expected] of [
-    ["configurator", "/configurator/"],
     ["onboarding", "/onboarding/"],
     [undefined, "/onboarding/"],
     ["https://example.invalid/", "/onboarding/"],

@@ -15,7 +15,7 @@ test("renders the block structure Velvet release notes actually use", () => {
       "## What is new",
       "",
       "- A native monitor checks every endpoint",
-      "- Updates arrive through the Configurator",
+      "- Updates arrive as a pull request",
       "",
       "1. First",
       "2. Second",
@@ -218,9 +218,9 @@ test("bounds a hostile document instead of rendering it", () => {
 });
 
 test("sizes headings against the text they introduce, not against a fixed scale", async () => {
-  // These notes are rendered on two surfaces which set different body sizes.
-  // A heading fixed in pixels beside text sized elsewhere ends up smaller than
-  // its own paragraphs, which is what happened in the Configurator's overlay.
+  // These notes are rendered on surfaces which set different body sizes. A
+  // heading fixed in pixels beside text sized elsewhere ends up smaller than
+  // its own paragraphs.
   const source = await readFile(
     resolve(import.meta.dirname, "../src/components/release-notes/ReleaseNotes.svelte"),
     "utf8",

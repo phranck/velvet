@@ -13,11 +13,9 @@ statusPage:
   layout: cards
   defaultRange: 90d
   theme:
-    # Sunny Spring, one of the four themes an installation can pick, copied from
-    # the registry in site/src/configurator/theme-registry.ts. Its yellow-green
-    # sets the picture apart from the indigo the website and the onboarding are
-    # lit with, and it shows a real choice rather than a palette invented for
-    # the screenshot.
+    # Sunny Spring. Its yellow-green sets the picture apart from the indigo the
+    # website and the onboarding are lit with, and it shows a real choice rather
+    # than a palette invented for the screenshot.
     name: Sunny Spring
     palette:
       canvas: "#101713"

@@ -4,8 +4,8 @@
  *
  * Loaded by velvet.li and by browser onboarding, which is what makes the two
  * one surface rather than two that happen to agree. Separate from
- * velvet-tokens.css because the Configurator shares the values but not these
- * rules: it draws its own frame and reaches for the faces directly.
+ * velvet-tokens.css so that a surface drawing its own frame can share the
+ * values without taking these rules with them.
  */
 @import "./velvet-retro-typefaces.css";
 

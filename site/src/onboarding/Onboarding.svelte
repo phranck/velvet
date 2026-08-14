@@ -881,7 +881,7 @@
             >references overview</a>. Only the page itself is shown, never the
             repository behind it, so a private repository makes no difference.
             You can change this setting at any time in your status page's
-            configurator.
+            <code>velvet.yml</code>.
           </ConsentCheckbox>
         </div>
         <div class="visibility-choice">

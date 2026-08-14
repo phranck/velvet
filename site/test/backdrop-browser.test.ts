@@ -24,11 +24,10 @@ import { createViteTestCache } from "./vite-test-cache.js";
 
 const BROWSER_TIMEOUT_MS = 180_000;
 
-/** The pages that stand on a backdrop, and the one that draws its own surface. */
+/** The pages that stand on a backdrop. */
 const SURFACES = [
   { path: "/index.html", name: "the status page", layered: true },
   { path: "/onboarding.html", name: "the onboarding", layered: true },
-  { path: "/configurator.html", name: "the Configurator", layered: false },
 ] as const;
 
 test(

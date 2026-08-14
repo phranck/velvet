@@ -78,7 +78,7 @@ const DEFAULT_PALETTE = /** @type {Readonly<ThemePalette>} */ (
 
 /**
  * Convert legacy or partial theme input into the editable, reference-preserving
- * theme configuration used by the configurator and YAML document.
+ * theme configuration the YAML document carries.
  *
  * @param {ThemeInput | VelvetThemeConfiguration} input
  * @returns {VelvetThemeConfiguration}

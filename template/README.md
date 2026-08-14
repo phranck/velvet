@@ -6,5 +6,5 @@ GitHub-native monitoring and the public status page for {{statusPageName}}, live
 
 Nothing here needs an external monitoring provider or an API key. Monitoring and deployment run through GitHub Actions with this repository's own `GITHUB_TOKEN`.
 
-The [Configurator](https://setup.velvet.li/configurator/) is where this page is changed. It writes a new [`velvet.yml`](velvet.yml) for you to commit here, and signed in with GitHub it shows which Velvet version this installation runs and installs a newer one.
+This page is changed by editing [`velvet.yml`](velvet.yml) in this repository. Every setting it accepts is documented in [the configuration reference](https://github.com/phranck/velvet/blob/main/documentation/configuration.md).
 

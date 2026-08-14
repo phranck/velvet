@@ -98,8 +98,8 @@ export interface ValidateReleasePublicationInput {
  *   allowed, which validation restricts to migration-free security releases.
  * @property source - Immutable template revision and the file contents read
  *   from it.
- * @property releaseNotes - Markdown shown in the Configurator, never rendered
- *   as raw HTML.
+ * @property releaseNotes - Markdown shown to an installation being offered the
+ *   release, never rendered as raw HTML.
  * @property previousManifest - Immediately preceding release, omitted for a
  *   first publication.
  */

@@ -29,8 +29,7 @@
     <h1>Changelog</h1>
     <p class="lede">
       Every published Velvet release, newest first. This is the same document
-      the repository carries, and the Configurator shows the notes for a release
-      before installing it.
+      the repository carries.
     </p>
 
     {#each releases as release (release.id)}

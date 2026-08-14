@@ -6,8 +6,8 @@
  * design it was published in, so declaring these there would emit five woff2
  * files into every status page build that nothing on it ever asks for.
  *
- * This file imports that one, so the website, the onboarding and the
- * Configurator each name a single stylesheet and get both sets.
+ * This file imports that one, so the website and the onboarding each name a
+ * single stylesheet and get both sets.
  *
  * Every face is declared `font-display: block`, for the reason stated in the
  * file this imports: the text is held back until its face arrives and drawn

@@ -118,9 +118,9 @@ test("binds the published output to velvet.li and publishes nothing into the tre
     "the website entry is not renamed to index.html",
   );
 
-  // Unlike onboarding/ and configurator/, which the setup service serves out of
-  // the repository, this build is uploaded by the workflow. Committing it would
-  // put a fourth bundle under the CI artefact check for no reason.
+  // Unlike onboarding/, which the setup service serves out of the repository,
+  // this build is uploaded by the workflow. Committing it would put another
+  // bundle under the CI artefact check for no reason.
   const ignored = await readFile(
     resolve(import.meta.dirname, "../../.gitignore"),
     "utf8",

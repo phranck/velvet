@@ -33,17 +33,11 @@ const SURFACES: readonly {
   document: string;
   face: string;
   source: FaceSource;
-  /**
-   * Whether this document is part of velvet.li and so draws the site's card.
-   *
-   * The Configurator has cards of its own, which are panels in a tool rather
-   * than surfaces on a page and are not held to the same shape.
-   */
+  /** Whether this document is part of velvet.li and so draws the site's card. */
   site?: true;
 }[] = [
   { document: "index.html", face: "-apple-system", source: "readers-own" },
   { document: "onboarding.html", face: "Datatype", source: "bundled" },
-  { document: "configurator.html", face: "Datatype", source: "bundled" },
   { document: "website.html", face: "Datatype", source: "bundled", site: true },
   { document: "documentation.html", face: "Datatype", source: "bundled", site: true },
   { document: "changelog.html", face: "Datatype", source: "bundled", site: true },
@@ -94,10 +88,10 @@ test("draws one card and names no face a document is without", async () => {
         const elements = [
           document.body,
           ...document.querySelectorAll("h1, h2, h3, h4, h5, h6, code, pre, .mono"),
-          // The Configurator's preview is left out. It draws a status page and
-          // names that page's faces on purpose, including one an installation
-          // may pick, so it is the one place where naming a face this document
-          // does not carry is the right thing to do.
+          // A preview workspace is left out. It draws a status page and names
+          // that page's faces on purpose, including one an installation may
+          // pick, so it is the one place where naming a face this document does
+          // not carry is the right thing to do.
         ].filter((element) => !element.closest(".preview-workspace"));
         return {
           // The first family named is the one an element asks for. The rest of

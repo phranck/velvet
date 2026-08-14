@@ -1,6 +1,6 @@
 # Velvet configuration reference
 
-`velvet.yml` describes your whole installation. Velvet is GitHub-native, so this one file is all there is: the monitor, the browser setup, the Configurator, the build Action, and the status page all read it.
+`velvet.yml` describes your whole installation. Velvet is GitHub-native, so this one file is all there is: the monitor, the browser setup, the build Action, and the status page all read it.
 
 Velvet checks the whole file before it does anything. If something is wrong, it stops before checking an endpoint, touching an Issue, or publishing data. A field Velvet does not know is an error rather than something it ignores.
 
@@ -186,8 +186,6 @@ statusPage:
 
 Every page carries the Powered by Velvet credit, and there is no setting that changes it. A status page is Velvet's work as much as yours, so whether the product says its own name is not something an installation decides. A configuration naming `showPoweredBy` is refused, because a field that is accepted and ignored is one the next reader believes.
 
-Below that credit, every page also names where it is configured. That line is not a setting either. It is your own way back to the Configurator weeks after you set the page up, and it is worded so a visitor reads past it.
-
 Setting `customDomain` puts a `CNAME` file into every build. That is all it does. Your domain still has to point at GitHub, which means adding a DNS record at whoever you bought the domain from. GitHub's [custom-domain documentation](https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages) explains which record.
 
 Keep the GitHub Pages address working until your own domain answers and its certificate is live. Removing it earlier takes your page offline in between.
@@ -200,7 +198,7 @@ Velvet cannot do this for you, because it belongs to your GitHub account and you
 
 ## Themes
 
-The browser setup asks which design your page is published in and writes that as `design`, so a page it creates carries no theme at all. The Configurator offers the four system themes and lets you change every field below afterwards.
+The browser setup asks which design your page is published in and writes that as `design`, so a page it creates carries no theme at all. Every field below is set by editing this file.
 
 If you write a `theme` block yourself, it has to have a `name`.
 
@@ -276,7 +274,7 @@ The response-time chart draws a smooth curve through the measurements, and the c
 
 ### Service icons
 
-`statusPage.icons` gives a service its icon, by mapping the service's id to a [Phosphor](https://phosphoricons.com) class name. The browser setup and the Configurator let you pick from the supported icons rather than typing a class.
+`statusPage.icons` gives a service its icon, by mapping the service's id to a [Phosphor](https://phosphoricons.com) class name. The browser setup lets you pick from the supported icons rather than typing a class.
 
 A service with no icon named here gets `ph-circle`.
 
@@ -368,7 +366,7 @@ gallery:
   listed: true
 ```
 
-Off unless you say otherwise. With it on, your status page is named at [velvet.li/references](https://velvet.li/references/), and the browser setup asks you this during the first step so nothing is listed without being asked. The Configurator changes the answer at any time, and withdrawing takes effect within the hour.
+Off unless you say otherwise. With it on, your status page is named at [velvet.li/references](https://velvet.li/references/), and the browser setup asks you this during the first step so nothing is listed without being asked. Changing the answer here takes effect within the hour.
 
 Velvet discloses your page name and its address, and nothing else. Whether the repository behind it is public or private makes no difference.
 

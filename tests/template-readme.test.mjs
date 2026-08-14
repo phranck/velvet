@@ -24,11 +24,12 @@ const KNOWN_PLACEHOLDERS = ["{{statusPageName}}", "{{statusPageUrl}}"];
 
 test("tells an operator where their page is configured", async () => {
   // A published status page is the only thing most operators still have weeks
-  // later, and the way back to the Configurator is otherwise something they
-  // have to already know. #375.
+  // later, so the README names the file that decides what it shows and where
+  // the settings it takes are written down.
   const readme = await readFile(README, "utf8");
 
-  assert.match(readme, /https:\/\/setup\.velvet\.li\/configurator\//u);
+  assert.match(readme, /`velvet\.yml`/u);
+  assert.match(readme, /documentation\/configuration\.md/u);
 });
 
 test("uses only the placeholders the setup service fills", async () => {

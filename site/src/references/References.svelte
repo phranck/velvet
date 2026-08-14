@@ -221,9 +221,9 @@
 
   <p class="consent-note">
     Appearing here is a choice, taken during setup and changeable at any time in
-    the Configurator. Velvet discloses the page name and its address. Everything
-    else on a card your browser reads from the status page itself, which
-    publishes it to anybody.
+    the installation's own <code>velvet.yml</code>. Velvet discloses the page
+    name and its address. Everything else on a card your browser reads from the
+    status page itself, which publishes it to anybody.
   </p>
 </main>
 

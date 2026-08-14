@@ -55,10 +55,9 @@ export type ReleaseNotesBlock =
  * How the levels a document writes are turned into the levels it renders at.
  *
  * `flattened` puts everything into two levels, which suits a short document
- * shown inside something that already has a heading of its own, such as the
- * Configurator's release-note overlay. `outline` keeps the document's own
- * structure and only refuses level 1, which is what a reference page needs to
- * stay navigable.
+ * shown inside something that already has a heading of its own, such as an
+ * overlay. `outline` keeps the document's own structure and only refuses level
+ * 1, which is what a reference page needs to stay navigable.
  */
 export type ReleaseNotesHeadings = "flattened" | "outline";
 

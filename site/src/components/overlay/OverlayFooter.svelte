@@ -9,8 +9,7 @@
 <style>
   footer {
     flex: 0 0 auto;
-    /* Paired actions share the width, matching the Configurator's file
-       actions rather than sitting flush right. */
+    /* Paired actions share the width rather than sitting flush right. */
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;

@@ -2,7 +2,7 @@
  * Showing a design without letting it into the document showing it.
  *
  * A bundle styles its own root and nothing above it, but a preview puts two
- * designs on one screen, and the Configurator's own surface is a third. The
+ * designs on one screen, and the surface showing them is a third. The
  * frame is what makes "one document carries one design" true by construction
  * rather than by convention: the design is rendered into a document of its own,
  * with its own stylesheet, and nothing it declares can reach the page around it.

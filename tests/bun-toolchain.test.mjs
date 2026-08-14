@@ -54,7 +54,6 @@ test("runs local and distributed automation through the pinned Bun toolchain", a
     "actions/monitor/action.yml",
     ".github/workflows/screenshot.yml",
     ".github/workflows/theme-registry.yml",
-    "config",
   ];
 
   for (const file of files) {
@@ -73,10 +72,6 @@ test("runs local and distributed automation through the pinned Bun toolchain", a
   assert.match(screenshotWorkflow, /uses: actions\/cache@v\d+/);
   assert.match(screenshotWorkflow, /~\/\.bun\/install\/cache/);
   assert.match(screenshotWorkflow, /hashFiles\('bun\.lock'\)/);
-
-  const configurator = await read("config");
-  assert.match(configurator, /^#!\/usr\/bin\/env bun$/m);
-  assert.match(configurator, /Run bun run configurator:build first\./);
 });
 
 test("passes the working directory to Bun subcommands", async () => {

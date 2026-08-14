@@ -21,7 +21,7 @@ const VERSION_LOCK_PATH = "velvet.lock.json";
  * A release inherits the floor its predecessor declared rather than raising it
  * to the predecessor's own version. Raising it every time would mean each
  * release accepts only the one before it, so an installation that missed a
- * single release could never be updated again through the Configurator.
+ * single release could never be updated again.
  *
  * The floor rises only where a release changes a schema an installation already
  * holds. The migration is carried by the release that introduces it, so an

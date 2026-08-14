@@ -56,23 +56,6 @@ async function fixture(path: string): Promise<string> {
   );
 }
 
-test("builds the standalone configurator at the repository root", async () => {
-  const outDir = await buildDirectory();
-  await bun([
-    "run", "--bun", "vite", "build",
-    "--config", "vite.configurator.ts",
-    "--outDir", outDir,
-    "--emptyOutDir",
-  ]);
-
-  const html = await readFile(resolve(outDir, "index.html"), "utf8");
-  assert.match(html, /<title>Velvet Configurator<\/title>/);
-  assert.match(html, /Velvet Configurator/);
-  assert.match(html, /<script[^>]+src="\.\/assets\/[^"]+\.js"/);
-  assert.match(html, /<link[^>]+href="\.\/assets\/[^"]+\.css"/);
-  assert.doesNotMatch(html, /(?:src|href)="\/assets\//);
-}, BUILD_TIMEOUT_MS);
-
 test("builds the standalone onboarding at the repository root", async () => {
   const outDir = await buildDirectory();
   await bun([
@@ -284,14 +267,6 @@ test("pins the deterministic screenshot browser to UTC", async () => {
 
   assert.match(screenshot, /clock\.setFixedTime/);
   assert.match(screenshot, /timezoneId:\s*"UTC"/);
-
-  const themeScreenshots = await readFile(
-    resolve(siteRoot, "scripts/system-theme-screenshots.mjs"),
-    "utf8",
-  );
-  assert.match(themeScreenshots, /clock\.setFixedTime/);
-  assert.match(themeScreenshots, /timezoneId:\s*"UTC"/);
-  assert.match(themeScreenshots, /EMBEDDED_THEME_REGISTRY/);
 });
 
 test("a configuration Velvet does not define is refused, not translated", async () => {
@@ -856,11 +831,11 @@ test("publishes the configuration reference whole, tables and all", async () => 
   assert.match(html, /<span class="line-number[^"]*"[^>]*>1<\/span>/);
 
   // The warning, above the reference rather than inside it. A reference read
-  // without it reads as an invitation to edit the file it describes, which is
-  // the one way an installation breaks so that nobody can repair it for its
-  // owner. Its position is asserted as well as its presence, because a notice
-  // below the document it warns about is one nobody reaches.
-  const warning = html.indexOf("Editing this file by hand is not the supported path");
+  // without it reads as a promise that any edit is safe, and a configuration
+  // edited carelessly is the one way an installation breaks so that nobody can
+  // repair it for its owner. Its position is asserted as well as its presence,
+  // because a notice below the document it warns about is one nobody reaches.
+  const warning = html.indexOf("An edit here decides whether your page publishes");
   assert.notEqual(warning, -1, "the page carries no warning");
   // Against the first card rather than against a topic's name, because every
   // name appears in the sidebar before the warning as well, and comparing with
@@ -870,8 +845,10 @@ test("publishes the configuration reference whole, tables and all", async () => 
     true,
     "the warning sits after the reference it warns about",
   );
-  assert.match(html, /the only supported way to change it/);
-  assert.match(html, /not something Velvet can repair or answer for/);
+  // Whitespace-tolerant, because the rendered markup keeps the template's own
+  // line breaks and a reflow of that paragraph is not a change to the warning.
+  assert.match(html, /Nothing checks an edit before you commit\s+it/);
+  assert.match(html, /not something Velvet\s+can repair or answer for/);
 
   // Counted against the source rather than sampled, because a renderer that
   // drops a block silently is exactly what a spot check misses. The tables
@@ -993,7 +970,6 @@ test("packages the man pages so an archive unpacks straight into a manpath", asy
   // in rather than by its name. A flat archive installs and then resolves
   // nothing.
   for (const [section, page] of [
-    ["man1", "velvet-config.1"],
     ["man5", "velvet.yml.5"],
     ["man7", "velvet.7"],
   ]) {

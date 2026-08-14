@@ -40,8 +40,8 @@ const HEADING_DATE = /^(.*?)\s*\((\d{4}-\d{2}-\d{2})\)$/u;
  *
  * The document's own level-one heading, and anything written before the first
  * release, are dropped because the page supplies its own title. Each entry
- * keeps its notes as Markdown so they can be rendered by the same component the
- * Configurator uses, which never puts embedded markup into the document.
+ * keeps its notes as Markdown so they can be rendered by a component that never
+ * puts embedded markup into the document.
  *
  * A release is a level-two heading, which is the same cut the configuration
  * reference makes for its topics, so both read it from

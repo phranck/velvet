@@ -95,9 +95,9 @@ test("the website states it in the module its header reads", async () => {
 });
 
 test("the release notes are titled with it", async () => {
-  // These are what the Configurator shows somebody an update is offered to, and
-  // they are compiled into the artefact verbatim. A stale title offers Velvet
-  // 1.0.2 to a repository that is about to receive 1.1.0.
+  // These are compiled into the artefact verbatim and are what an installation
+  // is told it is being offered. A stale title offers Velvet 1.0.2 to a
+  // repository that is about to receive 1.1.0.
   const notes = await read("apps/setup-service/scripts/release-notes.md");
   const title = notes.match(/^# Velvet (\d+\.\d+\.\d+)/mu)?.[1];
 

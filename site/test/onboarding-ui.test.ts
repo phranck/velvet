@@ -163,13 +163,9 @@ test("uses the local Datatype family for onboarding typography", async () => {
   );
 });
 
-test("uses the shared theme and icon components in onboarding and configurator", async () => {
+test("uses the shared theme and icon components in onboarding", async () => {
   const onboarding = await readFile(
     resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
-    "utf8",
-  );
-  const configurator = await readFile(
-    resolve(import.meta.dirname, "../src/configurator/Configurator.svelte"),
     "utf8",
   );
   const serviceEditor = await readFile(
@@ -207,13 +203,6 @@ test("uses the shared theme and icon components in onboarding and configurator",
     ),
     "utf8",
   );
-  const toolBrand = await readFile(
-    resolve(
-      import.meta.dirname,
-      "../src/components/VelvetToolBrand.svelte",
-    ),
-    "utf8",
-  ).catch(() => "");
   const themeCardRoot = await readFile(
     resolve(
       import.meta.dirname,
@@ -226,10 +215,6 @@ test("uses the shared theme and icon components in onboarding and configurator",
   assert.match(onboarding, /import \* as ServiceEditor from "\.\.\/components\/service-editor"/);
   assert.match(
     onboarding,
-    /<ServiceEditor\.List[\s\S]*<ServiceEditor\.Item[\s\S]*<ServiceEditor\.Root/,
-  );
-  assert.match(
-    configurator,
     /<ServiceEditor\.List[\s\S]*<ServiceEditor\.Item[\s\S]*<ServiceEditor\.Root/,
   );
   assert.doesNotMatch(onboarding, /<article class="service-editor"/);
@@ -288,29 +273,11 @@ test("uses the shared theme and icon components in onboarding and configurator",
     /\.service-icon-option:hover > \.service-icon-option-icon,\s*\.service-icon-option:focus-visible > \.service-icon-option-icon\s*\{[^}]*transform:\s*scale\(1\.1\)/s,
   );
   assert.match(
-    configurator,
-    /import VelvetToolBrand from "\.\.\/components\/VelvetToolBrand\.svelte"/,
-  );
-  assert.match(
     onboarding,
     /import SiteHeader from "\.\.\/components\/SiteHeader\.svelte"/,
   );
-  assert.match(
-    configurator,
-    /<div class="configurator-brand">\s*<VelvetToolBrand subtitle="CONFIGURATOR" \/>\s*<\/div>/,
-  );
   assert.match(onboarding, /<SiteHeader navigation=\{false\} \/>/);
-  assert.match(toolBrand, /import RainbowScale from "\.\/RainbowScale\.svelte"/);
-  assert.match(toolBrand, /import VelvetWordmark from "\.\/VelvetWordmark\.svelte"/);
-  assert.match(toolBrand, /data-velvet-tool-brand/);
-  assert.match(toolBrand, /data-velvet-tool-palette/);
-  assert.match(toolBrand, /data-velvet-tool-subtitle/);
-  assert.match(toolBrand, /subtitle\.toUpperCase\(\)\.split\(""\)/);
-  assert.match(configurator, /--picker-selection-scale:\s*1\.14/);
-  assert.match(configurator, /import \* as ThemeCard from "\.\.\/components\/theme-card"/);
-  assert.match(configurator, /import ServiceIconPicker from "\.\.\/components\/service-icon-picker\/ServiceIconPicker\.svelte"/);
   assert.doesNotMatch(onboarding, /import RainbowScale|import VelvetWordmark/);
-  assert.doesNotMatch(configurator, /import RainbowScale|import VelvetWordmark/);
   assert.match(
     onboarding,
     /--theme-card-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/,
@@ -676,15 +643,14 @@ test("asks before deleting a repository, and renders the question as a modal", a
     onboarding,
     /velvet-button--primary[\s\S]{0,200}data-replace-repository/,
   );
-  // And it is the only place either tool offers the danger variant.
+  // And it is the only place the onboarding offers the danger variant.
   assert.equal(onboarding.match(/velvet-button--danger/g)?.length, 1);
 });
 
 test("resumes at the last step only when there is a draft to publish", async () => {
-  // Coming back from GitHub used to jump to the publish step whatever the
-  // visitor had entered. Somebody who signed in from the Configurator was sent
-  // here with nothing entered, landed in the last step, and was told to check
-  // entries they had never made. #406.
+  // Coming back from GitHub lands on the publish step only when a draft was
+  // restored with it. A visitor who arrives with nothing entered starts at the
+  // first step rather than being asked to check entries they never made.
   const source = await readFile(
     resolve(import.meta.dirname, "../src/onboarding/Onboarding.svelte"),
     "utf8",

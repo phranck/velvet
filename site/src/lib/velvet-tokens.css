@@ -2,15 +2,12 @@
  * The values Velvet's own tools look alike by.
  *
  * Declared once here and referenced from each tool's own namespace, rather than
- * written out in each. Before this the accent existed three times, as
- * --setup-accent in the onboarding, --setup-accent on the website, and
- * --tool-accent in the configurator, so changing the brand meant finding three
- * places, two of which are not named alike.
+ * written out in each, so changing the brand is one edit rather than a search
+ * through namespaces that are not named alike.
  *
  * The namespaces themselves stay. --setup-* and --tool-* name the same
- * concepts, but the configurator and the onboarding are different surfaces and
- * forcing one vocabulary on both would cost more than it saves. What matters is
- * that a value exists once.
+ * concepts, but they belong to different surfaces and forcing one vocabulary on
+ * both would cost more than it saves. What matters is that a value exists once.
  *
  * A status page is not covered by this. Its palette lives in app.css and is
  * overridden per installation, because those colours belong to whoever installs
@@ -18,7 +15,7 @@
  */
 
 :root {
-  /* Shared by the onboarding, the configurator, and the website. */
+  /* Shared by the onboarding and the website. */
   --velvet-accent: #e07a3f;
   /* What is written on top of the accent. Near-black rather than the page's
      own base, because the accent is bright enough to carry dark text and a

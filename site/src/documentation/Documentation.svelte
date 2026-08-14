@@ -51,24 +51,24 @@
 
     <!--
       Above the reference and set apart from it. A reference read without this
-      reads as an invitation to edit the file it describes, which is not the
-      path Velvet supports and is the one way an installation breaks in a manner
-      nobody can repair for its owner.
+      reads as a promise that any edit is safe, and a configuration edited
+      carelessly is the one way an installation breaks in a manner nobody can
+      repair for its owner.
     -->
     <aside class="warning" aria-labelledby="warning-title">
-      <h2 id="warning-title">Editing this file by hand is not the supported path</h2>
+      <h2 id="warning-title">An edit here decides whether your page publishes</h2>
       <p>
-        Velvet writes and updates <code>velvet.yml</code> through the
-        Configurator, which validates every change before it reaches your
-        repository. That is the only supported way to change it.
+        <code>velvet.yml</code> is edited in your own repository, and what it
+        says is what your page becomes. Nothing checks an edit before you commit
+        it.
       </p>
       <p>
         What follows describes what the file contains, so that an installation
-        can be read and understood. Change it by hand
+        can be read and understood. Change it
         <strong>only if you know exactly what you are doing</strong>. A
-        configuration edited by hand can stop a status
-        page from building or publishing, and an installation broken that way is
-        not something Velvet can repair or answer for.
+        configuration edited carelessly can stop a status page from building or
+        publishing, and an installation broken that way is not something Velvet
+        can repair or answer for.
       </p>
     </aside>
 

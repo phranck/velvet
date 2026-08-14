@@ -3,8 +3,8 @@
 /**
  * Every design installed beside this build, gathered at build time.
  *
- * The Configurator and the gallery both have to show a design without a server
- * to ask, so the bundles are pulled into the build rather than fetched. The
+ * The gallery has to show a design without a server to ask, so the bundles are
+ * pulled into the build rather than fetched. The
  * globs are static because a bundler cannot follow a name it only learns at run
  * time; which file of a bundle is its template and which is its stylesheet is
  * still decided by the manifest, and the globs merely make every candidate
@@ -28,9 +28,9 @@ export interface InstalledDesign {
   /**
    * Attaches the design's behaviour to markup that already exists.
    *
-   * The Configurator's preview never calls it, because choosing how a page
-   * should look is not using the page. The gallery does, because a design is
-   * not reviewable without its ranges, its disclosures and its readings.
+   * A preview never calls it, because choosing how a page should look is not
+   * using the page. The gallery does, because a design is not reviewable
+   * without its ranges, its disclosures and its readings.
    */
   script: BundleScript;
 }

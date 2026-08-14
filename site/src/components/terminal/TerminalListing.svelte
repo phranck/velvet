@@ -30,7 +30,7 @@
   const RULE = "===========================================================";
   const GREETING = "GREETINGS PROFESSOR FALKEN";
   const SUBJECT = "** Velvet man pages **";
-  const MAN_PAGES = "velvet(7) velvet-config(1) velvet.yml(5)";
+  const MAN_PAGES = "velvet(7) velvet.yml(5)";
   const COPIED = "* COPIED *";
 </script>
 

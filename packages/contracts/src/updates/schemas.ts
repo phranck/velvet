@@ -141,7 +141,7 @@ export const VelvetReleaseManifestSchema = Type.Object(
     $schema: "https://json-schema.org/draft/2020-12/schema",
     additionalProperties: false,
     description:
-      "Immutable update metadata consumed by the Velvet managed-update service and Configurator.",
+      "Immutable update metadata consumed by the Velvet managed-update service.",
   },
 );
 

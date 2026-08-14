@@ -72,22 +72,6 @@ to compare against and can never update it.
 The setup service is used only whilst installing and whilst updating. A
 published status page keeps monitoring and publishing whilst the service is
 unavailable.
-.SH CONFIGURATOR
-The Configurator edits
-.I velvet.yml
-and previews the real status page. It runs in two places.
-.PP
-The hosted one at
-.UR https://setup.velvet.li/configurator/
-setup.velvet.li/configurator
-.UE
-signs in with GitHub, finds the installations you administer, shows which
-release each one runs, and installs a new one for you.
-.PP
-The local one is described in
-.BR velvet-config (1).
-It edits a file on your computer and talks to no network at all, so it reports
-no installed version rather than one it cannot check.
 .SH UPDATES
 Velvet installs new releases for you. An update replaces only the workflow and
 Issue-template files Velvet owns, plus its own version record. Your
@@ -153,7 +137,6 @@ The Velvet status, response-time, and Pages workflows.
 The generated maintenance Issue Form. Its service choices are rewritten
 whenever the configured services change.
 .SH SEE ALSO
-.BR velvet-config (1),
 .BR velvet.yml (5)
 .PP
 The complete documentation is at

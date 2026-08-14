@@ -19,7 +19,7 @@ The tool reads the files from `template/` in this repository, records the commit
 
 Add `--automatic` only for a migration-free security release, which is the sole category eligible for unattended installation.
 
-`createEmbeddedReleaseProvider` validates the artefact when it is constructed, so a broken or tampered artefact fails immediately instead of part-way through a repository mutation. Until the Configurator update endpoint exists, no runtime path reaches the provider, so the bundler legitimately omits the artefact from `dist/`.
+`createEmbeddedReleaseProvider` validates the artefact when it is constructed, so a broken or tampered artefact fails immediately instead of part-way through a repository mutation. Until an update endpoint exists, no runtime path reaches the provider, so the bundler legitimately omits the artefact from `dist/`.
 
 ## Update failures
 
@@ -115,7 +115,7 @@ The two limits protect a quota that is not Velvet's alone. Pushover allows an ac
 
 `WEBSITE_ORIGIN` exists because the references list is served here and rendered by a page hosted elsewhere. `/api/references` answers a browser on that origin with `Access-Control-Allow-Origin` and a relaxed resource policy, and every other route keeps refusing every origin but this one. Leaving it unset is what an instance without a website of its own wants: the route still answers, and no page on another host can read it.
 
-The service collects nothing about the people who use it. It serves the documents it was built with, unchanged, and its Content Security Policy grants one third-party origin: GitHub Pages, in `connect-src`, because the Configurator reads the community theme registry Velvet publishes there.
+The service collects nothing about the people who use it. It serves the documents it was built with, unchanged, and its Content Security Policy grants no third-party origin at all.
 
 A sweep costs no GitHub request whilst the release the service carries is not a security release marked for automatic installation, which is the ordinary state. The interval therefore only decides how quickly one that is marked reaches installations, not how much work the service does the rest of the time.
 
@@ -153,7 +153,7 @@ Each build therefore stamps itself with a fingerprint of the sources it was made
 
 It deliberately does not deploy. This service holds live onboarding sessions, so a failed deploy in the middle of somebody's installation is worse than a stale one, and the release stays under a person's hand. What the workflow removes is not knowing. A red run means the deployed service is older than `main`; deploy it with the command above and the next run passes on its own. An unreachable service is reported as unknown rather than as drift, because a network failure says nothing about what is deployed and a check that cries wolf gets ignored.
 
-The fingerprint covers `apps/setup-service/src`, `packages/contracts/src`, `packages/template-files/src`, and the committed `onboarding/` and `configurator/` bundles, because the service embeds those at build time. It is a hash of paths and contents, so it discloses nothing about the sources themselves. The value lives in `src/deployment-fingerprint.generated.ts`, which the build writes rather than the repository carrying it, and which is excluded from the hash it reports. Were it counted, writing it would invalidate the very value it had just recorded.
+The fingerprint covers `apps/setup-service/src`, `packages/contracts/src`, `packages/template-files/src`, and the committed `onboarding/` bundle, because the service embeds those at build time. It is a hash of paths and contents, so it discloses nothing about the sources themselves. The value lives in `src/deployment-fingerprint.generated.ts`, which the build writes rather than the repository carrying it, and which is excluded from the hash it reports. Were it counted, writing it would invalidate the very value it had just recorded.
 
 ## Repository creation
 

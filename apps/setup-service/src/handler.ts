@@ -255,15 +255,10 @@ export function createSetupHandler(
           });
         }
         const authorization = createPkceAuthorization(randomToken);
-        // Matched against the two tools rather than used as an address. A
-        // redirect target taken from a request is a redirect somebody else
-        // chose, so an unknown value falls back to the onboarding.
-        const asked = url.searchParams.get("return");
-        activeSession.oauth = {
-          state: authorization.state,
-          codeVerifier: authorization.codeVerifier,
-          returnTo: asked === "configurator" ? "configurator" : "onboarding",
-        };
+          activeSession.oauth = {
+            state: authorization.state,
+            codeVerifier: authorization.codeVerifier,
+          };
         const location = createGitHubAuthorizationUrl({
           clientId: options.config.github.clientId,
           state: authorization.state,
@@ -296,7 +291,6 @@ export function createSetupHandler(
           return reject(authenticationFailed(), "oauth-callback");
         }
         const codeVerifier = session.oauth.codeVerifier;
-        const returnTo = session.oauth.returnTo ?? "onboarding";
         delete session.oauth;
         let userToken: string | undefined;
         try {
@@ -306,7 +300,7 @@ export function createSetupHandler(
           authenticatedSession.githubUserToken = userToken;
           authenticatedSession.user = viewer;
           return finish(
-            redirectResponse(`${options.config.publicOrigin}/${returnTo}/?github=connected`, {
+            redirectResponse(`${options.config.publicOrigin}/onboarding/?github=connected`, {
               "Set-Cookie": createSessionCookie(
                 options.sessions.cookieValue(authenticatedSession.id),
                 options.config.secureCookies,
@@ -639,10 +633,7 @@ export function createSetupHandler(
       if (request.method === "GET" && route === "/") {
         return finish(redirectResponse(`${options.config.publicOrigin}/onboarding/`));
       }
-      if (
-        request.method === "GET" &&
-        (route === "/onboarding" || route === "/configurator")
-      ) {
+      if (request.method === "GET" && route === "/onboarding") {
         return finish(
           redirectResponse(`${options.config.publicOrigin}${route}/`),
         );
@@ -967,7 +958,7 @@ function bearerToken(header: string | null): string | null {
  */
 function allowlistedAssetPath(pathname: string): string | null {
   const match = pathname.match(
-    /^\/(onboarding|configurator)\/(assets\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/u,
+    /^\/(onboarding)\/(assets\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/u,
   );
   if (!match) return null;
   return `${match[1]}/${match[2] ?? "index.html"}`;
@@ -989,18 +980,13 @@ function secureResponse(
   headers.set("X-Request-Id", requestId);
   headers.set(
     "Content-Security-Policy",
-    // Two further deliberate grants beyond the default.
-    //
-    // `connect-src` names GitHub Pages because the Configurator reads the
-    // community theme registry Velvet publishes there, and validates it before
-    // using it.
-    //
-    // `style-src-attr` allows style attributes, which is how a themed preview
-    // carries per-element custom properties. Stylesheets and `<style>`
-    // elements stay restricted to this origin through `style-src`, so this
-    // grants declarations on elements the application already renders and
-    // nothing that could introduce a stylesheet.
-    `default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self' https://phranck.github.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
+    // One deliberate grant beyond the default. `style-src-attr` allows style
+    // attributes, which is how a themed preview carries per-element custom
+    // properties. Stylesheets and `<style>` elements stay restricted to this
+    // origin through `style-src`, so this grants declarations on elements the
+    // application already renders and nothing that could introduce a
+    // stylesheet.
+    `default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   /*

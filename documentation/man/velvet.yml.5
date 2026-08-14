@@ -4,10 +4,10 @@ velvet.yml \- configuration format for a Velvet installation
 .SH DESCRIPTION
 .I velvet.yml
 sits at the root of a Velvet installation and is the single configuration the
-monitor, the browser setup, the Configurator, the build Action, and the status
-page all read. The complete file is validated before Velvet checks an endpoint,
-changes an Issue, or publishes generated data, and unknown fields are rejected
-rather than ignored.
+monitor, the browser setup, the build Action, and the status page all read. The
+complete file is validated before Velvet checks an endpoint, changes an Issue,
+or publishes generated data, and unknown fields are rejected rather than
+ignored.
 .PP
 A minimal file needs a display name and a URL:
 .PP
@@ -313,8 +313,8 @@ GitHub Pages domain until the custom domain resolves and its certificate is
 active.
 .SS Service icons
 .B icons
-maps the stable service identifier to a Phosphor class. Browser setup and the
-Configurator offer the supported set visually, and an unlisted service uses
+maps the stable service identifier to a Phosphor class. Browser setup offers
+the supported set visually, and an unlisted service uses
 .BR ph-circle .
 .PP
 .RS 4
@@ -561,9 +561,8 @@ gallery:
 With
 .B listed
 on, the status page is named at velvet.li/references. The browser setup asks
-during its first step, so nothing is listed without being asked, and the
-Configurator changes the answer at any time. Withdrawing takes effect within the
-hour.
+during its first step, so nothing is listed without being asked, and changing
+the answer here takes effect within the hour.
 .PP
 Velvet discloses the page name and its address, and nothing else. Whether the
 repository behind it is public or private makes no difference.
@@ -615,11 +614,10 @@ The machine-managed record of the installed release. Never edited by hand.
 .TP
 .I .github/ISSUE_TEMPLATE/maintenance.yml
 The generated maintenance Issue Form. Its choices and embedded identifiers have
-to match the configured services, which browser setup and the Configurator
-handle during installation.
+to match the configured services, which browser setup handles during
+installation.
 .SH SEE ALSO
-.BR velvet (7),
-.BR velvet-config (1)
+.BR velvet (7)
 .PP
 The complete configuration reference is at
 .UR https://velvet.li

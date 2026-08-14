@@ -43,9 +43,8 @@ html {
      with the curve. What runs full width inside a card, a code block or a
      table, keeps the padding edge and does not take the extra inset. */
   /* What a document rendered on this site reads at. The component that draws
-     one states the Configurator panel's sizes as its fallback, because that
-     panel is small; every page here reads at the site's own scale, so it is
-     set once here rather than by each page. */
+     one carries small fallback sizes for a panel, whilst every page here reads
+     at the site's own scale, so it is set once here rather than by each page. */
   --notes-heading-size: var(--velvet-text-heading);
   --notes-subheading-size: var(--velvet-text-copy);
 

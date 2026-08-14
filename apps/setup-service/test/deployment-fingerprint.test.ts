@@ -19,7 +19,6 @@ async function fixture(
     "packages/contracts/src",
     "packages/template-files/src",
     "onboarding",
-    "configurator",
   ]) {
     await mkdir(join(root, directory), { recursive: true });
   }

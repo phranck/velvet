@@ -132,9 +132,9 @@ test("imports the setup service with fixed single-container scaling", async () =
   const service = document.services.find((entry) => entry.hostname === "setup");
 
   // The project is named for the site it serves rather than for the first
-  // thing it does, since the same service also serves the Configurator,
-  // answers the update check, hands out serials, and publishes security.txt.
-  // The service inside it keeps the name `setup`, which is its hostname.
+  // thing it does, since the same service also answers the update check, hands
+  // out serials, and publishes security.txt. The service inside it keeps the
+  // name `setup`, which is its hostname.
   assert.equal(document.project.name, "velvet.li");
   assert.equal(service.type, "bun@1.3");
   assert.equal(service.minContainers, 1);

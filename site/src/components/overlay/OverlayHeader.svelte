@@ -68,9 +68,9 @@
     background: var(--tool-line);
   }
 
-  /* The Configurator suppresses native focus rings globally and shows focus
-     in its own accent instead, so this must match rather than fall back to
-     currentColor, which reads as the browser default. */
+  /* A surface hosting this overlay may suppress native focus rings and show
+     focus in its own accent instead, so this names that accent rather than
+     falling back to currentColor, which reads as the browser default. */
   .close:focus-visible {
     outline: 2px solid var(--tool-accent);
     outline-offset: 2px;

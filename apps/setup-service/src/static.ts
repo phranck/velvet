@@ -7,12 +7,12 @@ export type StaticAssetProvider = (
 /**
  * The browser applications the service hosts, each under its own path.
  *
- * Both are built from the same sources as the copies committed to this
- * repository. Serving them from the service origin is what lets them use the
- * session that already exists there, rather than inventing a way to carry
- * credentials to somewhere else.
+ * Each is built from the same sources as the copy committed to this repository.
+ * Serving them from the service origin is what lets them use the session that
+ * already exists there, rather than inventing a way to carry credentials to
+ * somewhere else.
  */
-export const HOSTED_APPS = ["onboarding", "configurator"] as const;
+export const HOSTED_APPS = ["onboarding"] as const;
 
 export type HostedApp = (typeof HOSTED_APPS)[number];
 

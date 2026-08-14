@@ -267,7 +267,7 @@ Three things follow from a design being a whole page rather than values injected
 
 **A first run has no data.** A design never fetches, so a page built before the first check has run cannot fill itself in later. It is given empty documents, and every design answers that with the state it shows when nothing is known, which is the truth about an installation that has not measured anything yet.
 
-**The Configurator previews a design in a frame of its own.** `site/src/components/DesignPreview.svelte` renders it into a document of its own with the design's stylesheet inlined, so nothing a design declares can reach the tool around it. The frame runs no script: choosing how a page should look is not using the page.
+**A design is previewed in a frame of its own.** `site/src/lib/bundles/preview.ts` renders one into a document of its own with the design's stylesheet inlined, so nothing a design declares can reach the tool around it. The frame runs no script: choosing how a page should look is not using the page.
 
 ---
 

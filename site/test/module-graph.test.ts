@@ -32,9 +32,8 @@ async function collectTests(): Promise<string[]> {
  * whole statement and neither Bun nor the bundler ever loads what it names.
  * Counting one is not a harmless overestimate: it reports a component as
  * reaching an application it cannot affect, which is the opposite of what the
- * table below is for. `theme-registry.ts` names `ConfiguratorTheme` that way,
- * and that alone put the configurator's configuration model, and with it the
- * service editor, in the website's graph.
+ * table below is for. One type-only import of a configuration model was enough
+ * to put that model, and with it the service editor, in the website's graph.
  */
 const IMPORT_PATTERN =
   /(?:^|[\s;}])(?:import|export)\s+(?!type\s)(?:[^'"]*?\sfrom\s)?["'](\.[^"']*)["']/gu;
@@ -136,7 +135,6 @@ async function modulesReachedFrom(entry: string): Promise<Set<string>> {
 const APPLICATIONS = {
   "status page": "main.ts",
   onboarding: "onboarding/main.ts",
-  configurator: "configurator/main.ts",
   website: "website/main.ts",
   documentation: "documentation/main.ts",
   changelog: "changelog/main.ts",
@@ -160,7 +158,6 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "VelvetWordmark.svelte": [
     "attributions",
     "changelog",
-    "configurator",
     "documentation",
     "onboarding",
     "references",
@@ -170,17 +167,11 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "RainbowScale.svelte": [
     "attributions",
     "changelog",
-    "configurator",
     "documentation",
     "onboarding",
     "references",
     "website",
   ],
-  // A design is previewed in a frame of its own, and only the Configurator has
-  // a reason to show one. The published status page renders its design into its
-  // own document rather than into a frame.
-  "DesignPreview.svelte": ["configurator"],
-  "VelvetToolBrand.svelte": ["configurator"],
   // Velvet's own bar. Onboarding takes it without the four pages, so the two
   // surfaces carry one mark, one version and one scale rather than each
   // drawing its own.
@@ -192,16 +183,12 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "references",
     "website",
   ],
-  // The Iconsax icons the site draws. The Configurator reaches it through the
-  // release-note overlay, which draws the copy and external-link marks, and
-  // nothing else of its own.
   // The Iconsax icons. The references page dropped out of this list when the
   // site's bar gave up its icons: that bar was the only thing reaching it
   // there, whilst the other three pages reach it through the release notes.
   "Icon.svelte": [
     "attributions",
     "changelog",
-    "configurator",
     "documentation",
     "website",
   ],
@@ -213,15 +200,13 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "references",
     "website",
   ],
-  // A coloured, numbered block of code. The Configurator reaches it through
-  // the release-note overlay, which renders whatever a release note contains.
+  // A coloured, numbered block of code.
   "CodeBlock.svelte": [
     "attributions",
     "changelog",
-    "configurator",
     "documentation",
   ],
-  "ConsentCheckbox.svelte": ["configurator", "onboarding"],
+  "ConsentCheckbox.svelte": ["onboarding"],
   // The surface everything on velvet.li sits on. One component rather than one
   // per page, which is what the four pages had. The start page is not in this
   // list because its cards are step cards, which carry a wizard's body and
@@ -244,34 +229,30 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   // steps, the theme cards and the icon picker draw the outline themselves and
   // read its insets from `lib/squircle`, so the geometry is stated once even
   // where the markup is not.
-  "squircle-frame": ["configurator", "references", "status page"],
+  "squircle-frame": ["references", "status page"],
   "squircle-card": ["website"],
   // The key the start page asks with, in the same shape.
   "squircle-button": ["website"],
   // The machine the install commands are read off, and the tube inside it.
   "terminal": ["website"],
   "crt-squircle": ["website"],
-  "required-field": ["configurator", "onboarding"],
-  "service-editor": ["configurator", "onboarding"],
-  "service-icon-picker": ["configurator", "onboarding"],
-  "theme-card": ["configurator", "onboarding"],
-  "Incidents.svelte": ["configurator", "status page"],
-  "ServiceRow.svelte": ["configurator", "status page"],
-  "StatusHero.svelte": ["configurator", "status page"],
-  // Shown for the whole of an installation's first day and never again. The
-  // Configurator reaches it through the preview, which draws a status page.
-  "FirstRunNotice.svelte": ["configurator", "status page"],
-  "StatusPage.svelte": ["configurator", "status page"],
-  "UptimeBar.svelte": ["configurator", "status page"],
-  service: ["configurator", "status page"],
+  "required-field": ["onboarding"],
+  "service-editor": ["onboarding"],
+  "service-icon-picker": ["onboarding"],
+  "theme-card": ["onboarding"],
+  "Incidents.svelte": ["status page"],
+  "ServiceRow.svelte": ["status page"],
+  "StatusHero.svelte": ["status page"],
+  // Shown for the whole of an installation's first day and never again.
+  "FirstRunNotice.svelte": ["status page"],
+  "StatusPage.svelte": ["status page"],
+  "UptimeBar.svelte": ["status page"],
+  service: ["status page"],
   "review-list": ["onboarding"],
-  overlay: ["configurator"],
-  // A rendered Markdown document. The Configurator shows a release's notes in
-  // its overlay, and three of the pages render a whole file of the repository
-  // through it. The references page does not, because what it shows comes from
-  // the setup service rather than from a document.
-  "release-notes": ["attributions", "changelog", "configurator", "documentation"],
-  update: ["configurator"],
+  // A rendered Markdown document. Three of the pages render a whole file of the
+  // repository through it. The references page does not, because what it shows
+  // comes from the setup service rather than from a document.
+  "release-notes": ["attributions", "changelog", "documentation"],
 };
 
 /** The directory or file under `components/` a path belongs to, if any. */
@@ -338,9 +319,8 @@ test("names every browser-driven test so the runner can leave it out", async () 
     // mention that is not a use.
     if (file.endsWith("module-graph.test.ts")) continue;
     // Reached rather than imported directly, because a test may open its
-    // browser through a helper beside it, which `configurator-update-browser`
-    // does, or through a script it runs as a process of its own, which
-    // `bundle-conformance-browser` does.
+    // browser through a helper beside it, or through a script it runs as a
+    // process of its own, which `bundle-conformance-browser` does.
     const reached = new Set(await modulesReachedFrom(file));
     for (const [, script] of (await readFile(file, "utf8")).matchAll(
       /"(scripts\/[A-Za-z0-9._-]+\.ts)"/gu,

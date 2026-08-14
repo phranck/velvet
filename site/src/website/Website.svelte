@@ -474,10 +474,9 @@
         <div class="manual-text">
           <h2 id="manual-title">Read it in your terminal</h2>
           <p>
-            There are man pages for the architecture, velvet(7), for the
-            Configurator, velvet-config(1), and for every option there is,
-            velvet.yml(5). They install into your home directory and ask for no
-            administrator rights.
+            There are man pages for the architecture, velvet(7), and for every
+            option there is, velvet.yml(5). They install into your home
+            directory and ask for no administrator rights.
           </p>
           <p>
             In time Velvet will be workable from a terminal alone. A command
