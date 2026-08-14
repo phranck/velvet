@@ -40,7 +40,7 @@ Then open `http://localhost:5173/gallery/`.
 | `twenty-forty-nine` | 2049 | A filthy pane of glass with a dim blue readout: corner brackets, edge scales, dotted grids, a vignette to black |
 | `ncc-1701-d` | 2364 | A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards |
 
-**Redundancy between designs is intended rather than tolerated.** A design that borrows nothing still works on its own, and that is the point. Where code is genuinely worth sharing it is offered as a plugin, and a plugin is optional. What must stay true regardless of how a design is built is that the figures on the page are right and that the page can be used with a keyboard. Neither is enforced by making every design run through the same code; both are enforced by the conformance suite, against what a design actually rendered from a known fixture.
+**Redundancy between designs is intended rather than tolerated.** A design that borrows nothing still works on its own, and that is the point. Where code is genuinely worth sharing it lives in the foundation, and using it is optional. What must stay true regardless of how a design is built is that the figures on the page are right and that the page can be used with a keyboard. Neither is enforced by making every design run through the same code; both are enforced by the conformance suite, against what a design actually rendered from a known fixture.
 
 ### Why it is arranged this way
 
@@ -68,7 +68,6 @@ The count was not the problem. Seven design decisions of one session could not b
 | `layouts` | `grouped`, `cards`, or both; at least one |
 | `readings` | `panel` or `overlay` |
 | `preview` | A picture of the design, inside the bundle |
-| `plugins` | The plugins the design uses, each with the major version it expects |
 
 `layouts` and `readings` are fields because both used to be read out of a computed style: a toolbar read `--layout-cards` to decide which layout buttons to offer, and the page read `--service-display-display` to decide where a reading was shown. **Nothing about a design is discovered by inspecting its stylesheet.**
 
@@ -96,7 +95,7 @@ bun run --cwd site bundles:verify
 
 `site/src/lib/bundles/isolation.ts` holds the rules and `site/test/bundle-isolation.test.ts` holds their tests, including the near misses each rule must *not* report.
 
-1. **Self-contained.** Every `url()`, `import` and `src` resolves inside the bundle. Nothing points at another bundle, at the site, or at a remote host. Two things are allowed through: a type-only import, because TypeScript erases the statement and nothing is ever loaded, and a plugin the manifest declares, imported as `@velvet/bundle-plugins/<name>`.
+1. **Self-contained.** Every `url()`, `import` and `src` resolves inside the bundle. Nothing points at another bundle, at the site, or at a remote host. Two things are allowed through: a type-only import, because TypeScript erases the statement and nothing is ever loaded, and the foundation, imported as `@velvet/foundation/<part>`. A design declares neither; it imports what it needs and the build writes that code into it.
 2. **Fonts ship with the bundle.** A published status page must not wait on a third party in order to report on its own availability, and a German operator should not be made to send their visitors to a font host without having chosen to. A `@font-face` whose `src` leaves the bundle fails the same rule.
 3. **Styles stay inside the bundle's own root.** No selectors on `html`, `body`, `:root` or `*`, and no `!important`. The check reads the first compound of every selector rather than searching for words, so `.status-body` is not mistaken for `body`.
 4. **Data is given, not fetched.** No `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon` or `importScripts`. The host loads the data, validates it, and hands the design a typed object.
@@ -162,13 +161,13 @@ It is worth recording, because every one of them had passed the property gates.
 
 ---
 
-## 6. Plugins: what is worth sharing, offered rather than imposed
+## 6. The foundation: what is worth sharing, offered rather than imposed
 
-Some things are worth sharing, and those live in `packages/bundle-plugins` as `@velvet/bundle-plugins`. **A design that uses none of them is complete.**
+Some things are worth sharing, and those live in `packages/foundation` as `@velvet/foundation`. **A design that uses none of them is complete.**
 
-A plugin owns behaviour, never markup. It draws into an element the design gives it, or answers a question the design asks. It never assumes what the page around it looks like, never selects an element it was not handed, and never declares a style outside the element it was given. Everything it draws is described by options the design passes, so two designs using the same plugin need not look alike.
+A part of the foundation owns behaviour, never markup. It draws into an element the design gives it, or answers a question the design asks. It never assumes what the page around it looks like, never selects an element it was not handed, and never declares a style outside the element it was given. Everything it draws is described by options the design passes, so two designs using the same part need not look alike.
 
-| Plugin | What it carries | Why it is worth sharing |
+| Part | What it carries | Why it is worth sharing |
 | --- | --- | --- |
 | `status` | The arithmetic behind every figure | 99.97 per cent over thirty days is the same number in every design. Two rules in it are the ones a second implementation gets wrong, and both turn a page into a lie: a day before monitoring began is not a perfect day, and a day nothing was measured on is not an operational one |
 | `uptime-strip` | A month of days on a canvas, and the rule that decides a day's colour | 695ms of rasterisation as elements against 315ms as a canvas, over six expand-all cycles at 90 days with four services |
@@ -176,17 +175,13 @@ A plugin owns behaviour, never markup. It draws into an element the design gives
 | `disclosure` | A panel that animates its own height | Two frames longer than 32ms out of roughly 250, measured in WebKit expanding and collapsing six services, which is what the same page produces with no animation at all |
 | `overlay` | A floating reading on the document's own layer | `position: fixed` escapes `overflow` but not `clip-path`, so the only thing that works is not being a descendant |
 
-**Versioning.** Each plugin exports `VERSION`, a whole number, and a design names it in its manifest:
+**A design declares nothing about what it uses.** It imports the part it wants, the build writes that code into it, and the manifest says nothing on the subject. The isolation gate allows any specifier under `@velvet/foundation/` and refuses every other import that leaves the bundle, which is one rule rather than a list to keep in step with the code.
 
-```json
-"plugins": [{ "name": "disclosure", "version": 1 }]
-```
-
-The isolation gate refuses a design naming a plugin that does not exist, one at a version the package no longer offers, and an import of a plugin the manifest did not declare. The number rises when a change would make a design that used the previous version render something else: an option removed or renamed, a default changed, or a drawing rule reversed. Adding an option whose default preserves what already happened does not raise it.
+There is no version number on any of this. An installation is pinned to a release of Velvet, so a change here reaches a published page when its operator takes an update and not before, and a design is built against the ground it ships with.
 
 Nothing here obliges a design to use any of it. A design that draws its own strip is allowed, and the conformance suite is what catches it if the drawing lies.
 
-### Passing a plugin its appearance
+### Passing the foundation its appearance
 
 A style option may be a value or a function returning one. **Prefer the function wherever the values come from the design's own custom properties**, because a stylesheet arrives when it arrives: a palette read once, before the stylesheet applied, is a strip drawn in nothing at all. That is not hypothetical, it is what the gallery showed on its first run.
 
@@ -202,7 +197,7 @@ Almost everything is boxes, and CSS positions those. Two things are not.
 
 `site/src/components/UptimeBar.svelte` draws it on a canvas rather than one element per day. The comment at line 277 records why with figures: over six expand-all cycles at 90 days with four services, 695ms of rasterisation as elements against 315ms as a canvas.
 
-The plugin is that component with the appearance taken from the design rather than from a shared token set. It is otherwise faithful, including the order in which a day's colour is decided: **a day nothing was measured on takes the no-data colour whatever its recorded status says**, because such a day can still be recorded as operational and reading the status first would paint an empty day as a working one.
+The strip in the foundation is that component with the appearance taken from the design rather than from a shared token set. It is otherwise faithful, including the order in which a day's colour is decided: **a day nothing was measured on takes the no-data colour whatever its recorded status says**, because such a day can still be recorded as operational and reading the status first would paint an empty day as a working one.
 
 **The narrow radius applies at `quarter` only, not at `year`**, following `UptimeBar.svelte:54`. That reads like an oversight and is not: a year is 53 weekly buckets whilst a quarter is 90 single days, so a year's bars are about twice as wide.
 
@@ -215,13 +210,13 @@ The plugin is that component with the appearance taken from the design rather th
 
 ### The response chart is arithmetic
 
-**The design is handed the plot, and everything around it is the design's own markup.** The caption, the legend and the two ends of the range are written in the template and styled directly, the way the strip's dates already were. The plugin is given the plot element, draws the SVG into it and nothing outside it, and hands back what a design cannot work out for itself: the legend arrives as one entry per protocol that answered, carrying the protocol, its name and its latest reading, and the range's left end is the same `rangeLabel` the strip is labelled with.
+**The design is handed the plot, and everything around it is the design's own markup.** The caption, the legend and the two ends of the range are written in the template and styled directly, the way the strip's dates already were. The chart is given the plot element, draws the SVG into it and nothing outside it, and hands back what a design cannot work out for itself: the legend arrives as one entry per protocol that answered, carrying the protocol, its name and its latest reading, and the range's left end is the same `rangeLabel` the strip is labelled with.
 
 A design that wants no legend therefore writes none. `retro-chassis` does exactly that, because the trace's colours are the two protocol windows above it and a key repeating them labels something already labelled.
 
-This is what the rule at the head of section 6 asks of every plugin, and until then the chart was the one that broke it. It built the caption, the legend, the plot frame and the axis row itself, which left every design steering that structure from a distance: 42 custom properties across the four of them, against one for the strip, and most of them declared to switch off something another design wanted.
+This is what the rule at the head of section 6 asks of every part, and until then the chart was the one that broke it. It built the caption, the legend, the plot frame and the axis row itself, which left every design steering that structure from a distance: 42 custom properties across the four of them, against one for the strip, and most of them declared to switch off something another design wanted.
 
-`ResponseTimeChart.svelte` states its plot box as module constants: `WIDTH` at line 36, `HEIGHT` at 37, the plot edges from 38, `MAX_POINTS` at 42. In the plugin they are a style object a design passes, and the proportion of the plot becomes a design decision rather than a constant.
+`ResponseTimeChart.svelte` states its plot box as module constants: `WIDTH` at line 36, `HEIGHT` at 37, the plot edges from 38, `MAX_POINTS` at 42. In the foundation they are a style object a design passes, and the proportion of the plot becomes a design decision rather than a constant.
 
 The curve is drawn by `monotonePath` from `site/src/lib/response-chart.ts`, imported rather than reimplemented.
 
@@ -243,7 +238,7 @@ This is not full comparability, and it should not be mistaken for it. Each servi
 
 ## 8. Overlays are never clipped
 
-Both hover overlays are appended to the document and positioned against their anchor. The `overlay` plugin is the only place that logic lives.
+Both hover overlays are appended to the document and positioned against their anchor. The `overlay` part is the only place that logic lives.
 
 This is not a preference. A card may carry a `clip-path`, the disclosure wrapper carries `overflow: hidden`, and **`position: fixed` escapes the second but not the first**: a `clip-path` clips every descendant however it is positioned.
 
@@ -297,7 +292,7 @@ Everything here was found by building. Each is a case where a design would have 
 
 **A negative-`z` layer is painted over the background of the element it belongs to.** A page element with a background of its own and a backdrop layer behind it needs `isolation: isolate`, or the layer covers the colour it was meant to sit on.
 
-**A stylesheet arrives when it arrives.** A palette read once, at the moment a script runs, may be read before the stylesheet applied, and a drawing given empty colours draws in nothing at all. Pass a function and let the plugin re-read it.
+**A stylesheet arrives when it arrives.** A palette read once, at the moment a script runs, may be read before the stylesheet applied, and a drawing given empty colours draws in nothing at all. Pass a function and let the drawing re-read it.
 
 **A figure a design asks for is not always a figure that can be seen.** A grid at 18 per cent of the panel's own colour measured 1.32:1 against it, which is below what an eye separates: the grid was drawn, and nobody could find it. Anything meant to be read has to clear 3:1, and anything meant to recede has to be checked the other way round, because a fill at 1.14:1 is a shadow rather than a bar. Measure both directions and report the figure.
 

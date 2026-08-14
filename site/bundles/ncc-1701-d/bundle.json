@@ -14,27 +14,5 @@
     "grouped"
   ],
   "readings": "overlay",
-  "preview": "assets/preview.svg",
-  "plugins": [
-    {
-      "name": "status",
-      "version": 1
-    },
-    {
-      "name": "uptime-strip",
-      "version": 1
-    },
-    {
-      "name": "response-chart",
-      "version": 3
-    },
-    {
-      "name": "disclosure",
-      "version": 1
-    },
-    {
-      "name": "preferences",
-      "version": 1
-    }
-  ]
+  "preview": "assets/preview.svg"
 }

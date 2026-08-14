@@ -13,11 +13,9 @@
  *
  * The element it is handed is the plot, and everything around the plot belongs
  * to the design: the caption, the legend and the two ends of the range are its
- * markup, styled directly rather than through properties this plugin reads.
+ * markup, styled directly rather than through properties this chart reads.
  * What the design cannot work out for itself is handed to it, so the legend
  * arrives as entries and is drawn in whatever shape that design wants.
- *
- * Version 3.
  */
 
 import {
@@ -34,8 +32,6 @@ import {
 import type { RangeKey, ResponseSeries } from "../data.js";
 import { createOverlay } from "../overlay/index.js";
 
-/** The version a manifest names to use this plugin. */
-export const VERSION = 3;
 
 /** Everything the chart needs in order to lay itself out. */
 export interface ResponseChartStyle {
@@ -295,7 +291,7 @@ export function createChartView(
   }
 
   /*
-    The element handed over is the plot itself, and the plugin draws nothing
+    The element handed over is the plot itself, and this draws nothing
     outside it. A caption, a legend and the two ends of the range are the
     design's own markup, so a design that wants none of them writes none rather
     than declaring a value that hides one.
@@ -351,7 +347,7 @@ export function createChartView(
     height: number;
     pointRadius: number;
   } | null = null;
-  // On the document's own layer, for the reasons the overlay plugin records.
+  // On the document's own layer, for the reasons the overlay records.
   const tooltip =
     options.tooltip === false
       ? null

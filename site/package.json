@@ -44,7 +44,7 @@
     "@fontsource/plaster": "^5.3.0",
     "@fontsource/space-mono": "^5.3.0",
     "@fontsource/workbench": "^5.3.0",
-    "@velvet/bundle-plugins": "workspace:*",
+    "@velvet/foundation": "workspace:*",
     "@velvet/contracts": "workspace:*"
   },
   "devDependencies": {

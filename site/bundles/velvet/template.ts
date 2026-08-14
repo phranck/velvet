@@ -10,7 +10,7 @@
  * says is decided here; the script only reacts to what a visitor does.
  */
 
-import { overallStatus, uptimeForRange, visibleEvents } from "@velvet/bundle-plugins/status";
+import { overallStatus, uptimeForRange, visibleEvents } from "@velvet/foundation/status";
 
 import type { BundleData } from "../../src/lib/bundles/data.js";
 import { escape, formatEventTime, formatUpdated, RANGES } from "./format.js";

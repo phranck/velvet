@@ -1,11 +1,11 @@
 /**
- * The shapes the plugins take, defined here because they belong to the drawing
+ * The shapes the foundation speaks in, defined here because they belong to the drawing
  * rather than to the monitor.
  *
- * A plugin never reads a contract document. It is handed what a design decided
+ * Nothing here reads a contract document. It is handed what a design decided
  * to show it, and these are the shapes that decision arrives in. They are
  * structurally what `site/src/lib/types.ts` re-exports, so nothing has to be
- * converted between the page and the plugins it uses.
+ * converted between the page and the parts it uses.
  */
 
 /** The five ranges a status page offers. */

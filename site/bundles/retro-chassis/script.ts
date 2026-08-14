@@ -16,28 +16,28 @@
  * with two homes.
  */
 
-import { disclosure } from "@velvet/bundle-plugins/disclosure";
+import { disclosure } from "@velvet/foundation/disclosure";
 import {
   createChartView,
   type ChartView,
-} from "@velvet/bundle-plugins/response-chart";
+} from "@velvet/foundation/response-chart";
 import {
   readOpen,
   readRange,
   writeOpen,
   writeRange,
-} from "@velvet/bundle-plugins/preferences";
+} from "@velvet/foundation/preferences";
 import {
   barsForRange,
   rangeLabel,
   uptimeForRange,
   type RangeKey,
-} from "@velvet/bundle-plugins/status";
+} from "@velvet/foundation/status";
 import {
   createUptimeStrip,
   type UptimeStrip,
   type UptimeStripStyle,
-} from "@velvet/bundle-plugins/uptime-strip";
+} from "@velvet/foundation/uptime-strip";
 
 import type { BundleData } from "../../src/lib/bundles/data.js";
 import { rangeNamed, STATE_WORD } from "./format.js";

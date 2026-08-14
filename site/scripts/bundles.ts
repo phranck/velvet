@@ -25,10 +25,10 @@ export const MANIFEST_FILE = "bundle.json";
 /**
  * Directories under the bundles root that are not bundles.
  *
- * Fixtures and plugins live beside the designs because everything about a
- * design should be in one place, and neither of them carries a manifest.
+ * The fixtures live beside the designs because everything a design is rendered
+ * from should be in one place, and they carry no manifest.
  */
-const NOT_BUNDLES = new Set(["fixtures", "plugins"]);
+const NOT_BUNDLES = new Set(["fixtures"]);
 
 /** Extensions whose contents the gates read as text. */
 const TEXT_FILES = new Set([

@@ -19,8 +19,6 @@
 
 import type { RangeKey } from "../data.js";
 
-/** The version a manifest names to use this plugin. */
-export const VERSION = 1;
 
 /** Where the chosen window is kept. */
 const RANGE_KEY = "velvet:range";

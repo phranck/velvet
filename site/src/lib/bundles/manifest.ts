@@ -33,11 +33,6 @@ export interface BundleEntries {
   script: string;
 }
 
-/** A plugin a bundle uses, named with the major version it was written against. */
-export interface BundlePluginUse {
-  name: string;
-  version: number;
-}
 
 export interface BundleManifest {
   /** Matches the directory name, so a bundle cannot be renamed by half. */
@@ -60,8 +55,6 @@ export interface BundleManifest {
   readings: BundleReadings;
   /** A picture of the design, relative to the bundle directory. */
   preview: string;
-  /** The plugins the design uses, each with the major version it expects. */
-  plugins: BundlePluginUse[];
 }
 
 /** Either a parsed manifest or everything that is wrong with it. */
@@ -178,37 +171,6 @@ export function parseBundleManifest(raw: unknown): ManifestResult {
 
   const preview = pathField(record, "preview", errors);
 
-  const pluginsRaw = record.plugins ?? [];
-  const plugins: BundlePluginUse[] = [];
-  if (!Array.isArray(pluginsRaw)) {
-    errors.push("plugins must be a list, or absent where a bundle uses none");
-  } else {
-    for (const entry of pluginsRaw) {
-      if (typeof entry !== "object" || entry === null) {
-        errors.push("every plugin must name itself and the version it expects");
-        continue;
-      }
-      const pluginRecord = entry as Record<string, unknown>;
-      const pluginName = pluginRecord.name;
-      const pluginVersion = pluginRecord.version;
-      if (typeof pluginName !== "string" || !IDENTIFIER.test(pluginName)) {
-        errors.push(
-          `a plugin name must be lowercase words joined by hyphens, not ${JSON.stringify(pluginName)}`,
-        );
-        continue;
-      }
-      if (typeof pluginVersion !== "number" || !Number.isInteger(pluginVersion)) {
-        errors.push(`plugin ${pluginName} must name an integer version`);
-        continue;
-      }
-      if (plugins.some((used) => used.name === pluginName)) {
-        errors.push(`plugins names ${pluginName} twice`);
-        continue;
-      }
-      plugins.push({ name: pluginName, version: pluginVersion });
-    }
-  }
-
   const era = record.era;
   if (era !== undefined && (typeof era !== "string" || era.trim() === "")) {
     errors.push("era, where it is given, must be a non-empty string");
@@ -229,7 +191,6 @@ export function parseBundleManifest(raw: unknown): ManifestResult {
       layouts,
       readings: readingsRaw as BundleReadings,
       preview,
-      plugins,
     },
   };
 }
