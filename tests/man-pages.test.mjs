@@ -79,9 +79,11 @@ test("documents every field the configuration reference names", async () => {
 
   // A floor under the extraction itself. Were the reference's tables reshaped
   // so their headings no longer read `Field` or `Group`, this test would
-  // otherwise pass whilst comparing an empty set against the page.
+  // otherwise pass whilst comparing an empty set against the page. The
+  // reference names 31 fields, which is what a page is configured with now that
+  // its appearance is the theme's rather than a colour list written by hand.
   assert.equal(
-    documented.size > 50,
+    documented.size > 25,
     true,
     `only ${documented.size} field names were read from the configuration reference`,
   );

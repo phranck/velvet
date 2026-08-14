@@ -6,7 +6,7 @@ Velvet checks the whole file before it does anything. If something is wrong, it 
 
 ## Minimal configuration
 
-An ordinary website needs a name and a URL, and nothing else. Velvet sends a `GET` request over IPv4 and treats a final HTTP `200` as healthy.
+An ordinary website needs a name, a theme and a URL, and nothing else. Velvet sends a `GET` request over IPv4 and treats a final HTTP `200` as healthy.
 
 ```yaml
 schemaVersion: 1
@@ -15,6 +15,7 @@ repository:
   name: your-status-repo
 statusPage:
   name: Example Status
+  theme: velvet
 services:
   - name: Website
     url: https://example.com
@@ -155,12 +156,14 @@ If a check follows a redirect to another origin, Velvet drops your headers befor
 ```yaml
 statusPage:
   name: Example Status
+  theme: retro-chassis
+  themeSettings:
+    chartWash: false
   customDomain: status.example.com
   logoUrl: https://example.com/logo.svg
   logoHeight: 72
   layout: grouped
   defaultRange: 30d
-  design: retro-chassis
   navigation:
     - title: Website
       href: https://example.com
@@ -174,13 +177,11 @@ statusPage:
 | `customDomain` | no | GitHub Pages URL | Hostname only, without scheme, path, port, credentials, or wildcard. |
 | `logoUrl` | no | none | The logo shown instead of the page name. Either an absolute HTTP(S) address, or a file in this repository written as `./logo.svg`. The browser setup uploads one for you and writes it here. |
 | `logoHeight` | no | `72` | Display height from `16` through `256` px. |
-| `design` | no | the page Velvet ships | The design the page is published in, named by its bundle. A design carries its own appearance, so `theme` and `fonts` do not apply to one. A name no installed design answers to stops the build rather than publishing a different design under your domain. |
+| `theme` | yes | none | The theme your page is published in, named by its directory: `velvet`, `retro-chassis`, `twenty-forty-nine` or `ncc-1701-d`. A page is published in a theme, so there is no default and a configuration naming none is refused. A name no installed theme answers to stops the build rather than publishing a different theme under your domain. |
+| `themeSettings` | no | what the theme states | What you have set on that theme, keyed by the setting it belongs to. Which settings a theme has is the theme's own answer, so an unknown one stops the build and says what that theme offers. |
 | `layout` | no | `grouped` | `grouped` for one shared service card or `cards` for one card per service. |
 | `defaultRange` | no | `30d` | Initial range: `30d`, `90d`, or `all`. `all` reaches back to the day your installation began measuring, so it grows with it. A visitor's saved choice wins later. |
-| `navigation` | no | `[]` | Up to 16 links with `title` and `href`. **None of the four designs draws them.** A published page carries the installation's name and its readings and nothing else, so links written here reach the page's data and are shown nowhere. |
-| `theme` | no | Velvet Default | Theme name plus optional semantic visual overrides. |
-| `fonts.sans` | no | the reader's own sans-serif | CSS font-family for normal interface text. Left unset, the page uses whatever sans-serif the reader's machine supplies, because the page itself fetches no typeface. A name given here has to be a face your visitors already have. |
-| `fonts.mono` | no | `Fira Code` | CSS font-family for times, values, and labels. Velvet ships this one, so leaving it unset needs no external request. |
+| `navigation` | no | `[]` | Up to 16 links with `title` and `href`. **None of the four themes draws them.** A published page carries the installation's name and its readings and nothing else, so links written here reach the page's data and are shown nowhere. |
 | `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
 | `seo` | no | generated | Optional title, description, and social-image overrides. |
 
@@ -198,79 +199,36 @@ Velvet cannot do this for you, because it belongs to your GitHub account and you
 
 ## Themes
 
-The browser setup asks which design your page is published in and writes that as `design`, so a page it creates carries no theme at all. Every field below is set by editing this file.
+Your page is published in a theme, and the theme is the whole of what it looks like. It brings its own colours, its own typefaces and its own shapes, and it ships them with your page, so a published page asks nobody else for a font.
 
-If you write a `theme` block yourself, it has to have a `name`.
+Velvet ships four:
+
+| Theme | Era | What it is |
+| --- | --- | --- |
+| `velvet` | today | A dark indigo readout, one card per group of services, and a strip of days under each of them |
+| `retro-chassis` | 1979 | A rack of separate components: each service is a brushed faceplate bolted between two walnut cheeks, with a lit name plate, two protocol lamps, a two-line readout and a lamp meter for its days |
+| `twenty-forty-nine` | 2049 | A filthy pane of glass with a dim blue readout: corner brackets, edge scales, dotted grids and a vignette to black |
+| `ncc-1701-d` | 2364 | A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards |
+
+The browser setup asks which one your page is published in and writes it as `theme`. You can change it later by editing this file, and the next build publishes in the new one.
+
+### What can be set on a theme
+
+A theme says for itself what can be set on it, and different themes offer different things. What you set goes under `themeSettings`, keyed by the name of the setting:
 
 ```yaml
 statusPage:
   name: Example Status
-  theme:
-    name: Example Theme
-    palette:
-      canvas: "#0a0b0f"
-      foreground: "#e8eaed"
-      accent: "#6366f1"
-      alternate: "#38bdf8"
-      warning: "#d29922"
-      danger: "#f85149"
-      textPrimary: "#e8eaed"
-      textSecondary: "#8b8c90"
-      textTertiary: "#515256"
-    grid:
-      operational: accent
-      degraded: warning
-      outage: danger
-      noData: auto
-    chart:
-      line: accent
-      lineStyle: solid
-      fill: true
-      background: canvas
-      backgroundOpacity: 0.2
-    background:
-      start: auto
-      end: canvas
-      blobs:
-        enabled: true
-        count: 3
-        colors: [accent, alternate]
-    card:
-      background: auto
-      border: auto
-      separator: auto
-      borderEnabled: true
-      shadowEnabled: true
-      radius: 14
-      padding: 16
-      maxWidth: 760
-    headline:
-      start: textPrimary
-      end: textSecondary
-    service:
-      icon: accent
-    text:
-      primary: textPrimary
-      secondary: textSecondary
-      tertiary: textTertiary
+  theme: velvet
+  themeSettings:
+    chartWash: false
 ```
 
-Each value in `palette` is a six-digit hexadecimal colour.
+`velvet` offers `chartWash`, which is the wash under the response curve. Setting it to `false` draws the curve as a line over nothing.
 
-Every other colour field takes one of three things: `auto`, so Velvet picks; the name of a palette entry, so it follows that colour; or a six-digit hexadecimal colour of its own.
+A setting the named theme does not have stops the build and says what that theme does offer, and so does a value it cannot take. Nothing is silently ignored, because a setting that is accepted and does nothing is one you would go on believing in.
 
-| Group | Fields and accepted values |
-| --- | --- |
-| `palette` | `canvas`, `foreground`, `accent`, `alternate`, `warning`, `danger`, `textPrimary`, `textSecondary`, `textTertiary` |
-| `grid` | `operational`, `degraded`, `outage`, `noData` |
-| `chart` | `line`; `lineStyle` as `solid`, `dashed`, or `dotted`; `fill`; `background`; `backgroundOpacity` from `0` through `1` |
-| `background` | `start`, `end`; `blobs.enabled`; `blobs.count` from `1` through `5`; exactly two `blobs.colors` |
-| `card` | `background`, `border`, `separator`; `borderEnabled`; `shadowEnabled`; `radius` and `padding` from `0` through `32`; `maxWidth` as `640`, `760`, `920`, or `1080` |
-| `headline` | `start`, `end` |
-| `service` | `icon` |
-| `text` | `primary`, `secondary`, `tertiary` |
-
-The response-time chart draws a smooth curve through the measurements, and the curve never rises above the highest one or falls below the lowest. Where a measurement is missing, the line breaks rather than being drawn across the gap.
+**There is no palette to write here, and no typeface to name.** Both belong to the theme, which is what lets one ship whole rather than being assembled from a colour list somebody wrote by hand.
 
 ### Service icons
 
@@ -281,6 +239,7 @@ A service with no icon named here gets `ph-circle`.
 ```yaml
 statusPage:
   name: Example Status
+  theme: velvet
   icons:
     website: ph-globe
     api: ph-brackets-curly
@@ -292,6 +251,7 @@ statusPage:
 ```yaml
 statusPage:
   name: Example Status
+  theme: velvet
   seo:
     title: Example System Status
     description: Current availability for Example.
