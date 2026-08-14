@@ -1,0 +1,24 @@
+# A filthy pane of glass with a dim blue readout.
+
+name = "Twenty Forty-Nine"
+description = "A filthy pane of glass with a dim blue readout: corner brackets, edge scales, dotted grids, and a vignette to black."
+era = "2049"
+version = "1.0.0"
+
+# Where it stands in the list an operator chooses from, lowest first.
+order = 3
+
+# A withdrawn theme keeps every installation already published in it and is
+# offered to nobody new.
+state = "offered"
+
+# The shape of the status data this theme understands.
+dataVersion = 1
+
+layouts = ["grouped", "cards"]
+readings = "overlay"
+
+[entries]
+template = "template.ts"
+styles = "bundle.css"
+script = "script.ts"

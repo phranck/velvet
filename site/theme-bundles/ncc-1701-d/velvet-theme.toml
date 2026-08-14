@@ -1,0 +1,24 @@
+# A divided column of coloured segments, with two limbs enclosing what they report.
+
+name = "NCC-1701-D"
+description = "A divided column of coloured segments carrying the service names, two limbs enclosing the notices and the readings, and a table of events rather than a stack of cards."
+era = "2364"
+version = "1.0.0"
+
+# Where it stands in the list an operator chooses from, lowest first.
+order = 4
+
+# A withdrawn theme keeps every installation already published in it and is
+# offered to nobody new.
+state = "offered"
+
+# The shape of the status data this theme understands.
+dataVersion = 1
+
+layouts = ["grouped"]
+readings = "overlay"
+
+[entries]
+template = "template.ts"
+styles = "bundle.css"
+script = "script.ts"

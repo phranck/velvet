@@ -3,7 +3,7 @@ import {
   type SetupLogo,
 } from "@velvet/contracts";
 
-import { DESIGNS } from "../lib/designs.js";
+import { OFFERED_THEMES } from "../lib/themes.js";
 import type {
   AssertionValueType,
   OnboardingDraft,
@@ -126,7 +126,7 @@ function parseDraft(value: unknown): OnboardingDraft {
     // A session stored before the question existed keeps what those
     // installations received, which was a public repository.
     privateRepository: value.privateRepository ?? false,
-    designId: value.designId ?? DESIGNS[0].id,
+    designId: value.designId ?? OFFERED_THEMES[0].id,
     services: value.services.map(parseService),
     // Setup leaves the page for GitHub and returns to a fresh load, so a logo
     // that did not survive this is a logo the request never carries.

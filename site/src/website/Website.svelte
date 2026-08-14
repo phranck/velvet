@@ -15,7 +15,8 @@
   // The designs a page can be published in, read from the manifests that ship
   // with Velvet, so this page cannot offer one that does not exist or miss one
   // that does.
-  import { DESIGNS } from "../lib/designs.js";
+  import { OFFERED_THEMES } from "../lib/themes.js";
+  import { pictureFor } from "../lib/theme-pictures.js";
   import * as SquircleButton from "../components/squircle-button";
   import {
     SQUIRCLE_CONTENT_INSET,
@@ -420,7 +421,7 @@
           </p>
         </div>
         <ul class="themes">
-          {#each DESIGNS as design (design.id)}
+          {#each OFFERED_THEMES as design (design.id)}
             <li>
               <figure>
                 <!-- The design's own construction: a shape in the colour of the
@@ -432,7 +433,7 @@
                   <span class="shot-wall">
                   <span class="shot-picture">
                     <img
-                      src={design.picture}
+                      src={pictureFor(design)}
                       alt={`A Velvet status page in the ${design.name} design`}
                       loading="lazy"
                       decoding="async"
