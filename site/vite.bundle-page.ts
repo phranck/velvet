@@ -96,10 +96,10 @@ export const BUNDLE_DATA_ELEMENT_ID = "velvet-bundle-data";
 export function designNamedIn(configPath: string): string | undefined {
   try {
     const raw = JSON.parse(readFileSync(configPath, "utf8")) as {
-      design?: unknown;
+      theme?: unknown;
     };
-    return typeof raw.design === "string" && raw.design.trim() !== ""
-      ? raw.design.trim()
+    return typeof raw.theme === "string" && raw.theme.trim() !== ""
+      ? raw.theme.trim()
       : undefined;
   } catch {
     return undefined;
@@ -153,6 +153,7 @@ function emptyDocuments(generatedAt: string) {
  */
 export function bundleStatusPage(options: BundlePageOptions): Plugin {
   let outDir = "";
+  let writesFiles = true;
   let manifest: BundleManifest | null = null;
   let bundlePath = "";
 
@@ -183,6 +184,7 @@ export function bundleStatusPage(options: BundlePageOptions): Plugin {
 
     configResolved(config) {
       outDir = resolve(config.root, config.build.outDir);
+      writesFiles = config.build.write !== false;
     },
 
     resolveId(id) {
@@ -212,6 +214,10 @@ export function bundleStatusPage(options: BundlePageOptions): Plugin {
 
     async closeBundle() {
       if (!manifest) return;
+      // A build that writes nothing has no document to render into. Vite is
+      // driven that way by tools that only want the module graph, and there is
+      // nothing for this hook to do for them.
+      if (writesFiles === false) return;
 
       const callerNodeEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = "production";

@@ -21,150 +21,6 @@ const IdentifierSchema = Type.String({
 
 const ShortTextSchema = Type.String({ minLength: 1, maxLength: 128 });
 const UrlSchema = Type.String({ minLength: 1, maxLength: 2_048 });
-const HexColorSchema = Type.String({ pattern: "^#[0-9a-fA-F]{6}$" });
-const PaletteKeySchema = Type.Union([
-  Type.Literal("canvas"),
-  Type.Literal("foreground"),
-  Type.Literal("accent"),
-  Type.Literal("alternate"),
-  Type.Literal("warning"),
-  Type.Literal("danger"),
-  Type.Literal("textPrimary"),
-  Type.Literal("textSecondary"),
-  Type.Literal("textTertiary"),
-]);
-const ColorSourceSchema = Type.Union([
-  Type.Literal("auto"),
-  PaletteKeySchema,
-  HexColorSchema,
-]);
-
-const ThemePaletteSchema = Type.Object(
-  {
-    canvas: Type.Optional(HexColorSchema),
-    foreground: Type.Optional(HexColorSchema),
-    accent: Type.Optional(HexColorSchema),
-    alternate: Type.Optional(HexColorSchema),
-    warning: Type.Optional(HexColorSchema),
-    danger: Type.Optional(HexColorSchema),
-    textPrimary: Type.Optional(HexColorSchema),
-    textSecondary: Type.Optional(HexColorSchema),
-    textTertiary: Type.Optional(HexColorSchema),
-  },
-  { additionalProperties: false },
-);
-
-const ThemeSchema = Type.Object(
-  {
-    name: ShortTextSchema,
-    palette: Type.Optional(ThemePaletteSchema),
-    grid: Type.Optional(
-      Type.Object(
-        {
-          operational: Type.Optional(ColorSourceSchema),
-          degraded: Type.Optional(ColorSourceSchema),
-          outage: Type.Optional(ColorSourceSchema),
-          noData: Type.Optional(ColorSourceSchema),
-        },
-        { additionalProperties: false },
-      ),
-    ),
-    chart: Type.Optional(
-      Type.Object(
-        {
-          line: Type.Optional(ColorSourceSchema),
-          lineStyle: Type.Optional(
-            Type.Union([
-              Type.Literal("solid"),
-              Type.Literal("dashed"),
-              Type.Literal("dotted"),
-            ]),
-          ),
-          fill: Type.Optional(Type.Boolean()),
-          background: Type.Optional(ColorSourceSchema),
-          backgroundOpacity: Type.Optional(
-            Type.Number({ minimum: 0, maximum: 1 }),
-          ),
-        },
-        { additionalProperties: false },
-      ),
-    ),
-    background: Type.Optional(
-      Type.Object(
-        {
-          start: Type.Optional(ColorSourceSchema),
-          end: Type.Optional(ColorSourceSchema),
-          blobs: Type.Optional(
-            Type.Object(
-              {
-                enabled: Type.Optional(Type.Boolean()),
-                count: Type.Optional(Type.Integer({ minimum: 1, maximum: 5 })),
-                colors: Type.Optional(
-                  Type.Tuple([ColorSourceSchema, ColorSourceSchema]),
-                ),
-              },
-              { additionalProperties: false },
-            ),
-          ),
-        },
-        { additionalProperties: false },
-      ),
-    ),
-    card: Type.Optional(
-      Type.Object(
-        {
-          background: Type.Optional(ColorSourceSchema),
-          border: Type.Optional(ColorSourceSchema),
-          separator: Type.Optional(ColorSourceSchema),
-          borderEnabled: Type.Optional(Type.Boolean()),
-          shadowEnabled: Type.Optional(Type.Boolean()),
-          radius: Type.Optional(Type.Integer({ minimum: 0, maximum: 32 })),
-          padding: Type.Optional(Type.Integer({ minimum: 0, maximum: 32 })),
-          maxWidth: Type.Optional(
-            Type.Union([
-              Type.Literal(640),
-              Type.Literal(760),
-              Type.Literal(920),
-              Type.Literal(1080),
-            ]),
-          ),
-        },
-        { additionalProperties: false },
-      ),
-    ),
-    headline: Type.Optional(
-      Type.Object(
-        {
-          start: Type.Optional(ColorSourceSchema),
-          end: Type.Optional(ColorSourceSchema),
-        },
-        { additionalProperties: false },
-      ),
-    ),
-    service: Type.Optional(
-      Type.Object(
-        { icon: Type.Optional(ColorSourceSchema) },
-        { additionalProperties: false },
-      ),
-    ),
-    text: Type.Optional(
-      Type.Object(
-        {
-          primary: Type.Optional(ColorSourceSchema),
-          secondary: Type.Optional(ColorSourceSchema),
-          tertiary: Type.Optional(ColorSourceSchema),
-        },
-        { additionalProperties: false },
-      ),
-    ),
-  },
-  {
-    additionalProperties: false,
-    description:
-      "Presentation theme. Setup writes a complete system theme; hand-written files may override selected roles.",
-  },
-);
-
 const SecretHeaderSchema = Type.Object(
   {
     name: Type.String({
@@ -275,15 +131,13 @@ const StatusPageSchema = Type.Object(
     ),
     logoUrl: Type.Optional(UrlSchema),
     logoHeight: Type.Optional(Type.Integer({ minimum: 16, maximum: 256 })),
-    design: Type.Optional(
-      Type.String({
-        minLength: 1,
-        maxLength: 64,
-        pattern: "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
-        description:
-          "The design the page is published in, named by its bundle directory. Absent publishes the page Velvet ships. A name no installed design answers to stops the build rather than falling back to another design.",
-      }),
-    ),
+    theme: Type.String({
+      minLength: 1,
+      maxLength: 64,
+      pattern: "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+      description:
+        "The theme the page is published in, named by its directory under site/theme-bundles. Required, because a page is published in a theme and there is nothing to publish without one. A name no installed theme answers to stops the build rather than falling back to another theme.",
+    }),
     layout: Type.Optional(
       Type.Union([Type.Literal("grouped"), Type.Literal("cards")]),
     ),
@@ -301,16 +155,6 @@ const StatusPageSchema = Type.Object(
           { additionalProperties: false },
         ),
         { maxItems: 16 },
-      ),
-    ),
-    theme: Type.Optional(ThemeSchema),
-    fonts: Type.Optional(
-      Type.Object(
-        {
-          sans: Type.Optional(ShortTextSchema),
-          mono: Type.Optional(ShortTextSchema),
-        },
-        { additionalProperties: false },
       ),
     ),
     icons: Type.Optional(Type.Record(IdentifierSchema, ShortTextSchema)),
@@ -408,4 +252,3 @@ export const VelvetConfigurationSchema = Type.Object(
 export type VelvetConfigurationInput = Static<
   typeof VelvetConfigurationSchema
 >;
-export type VelvetThemeInput = Static<typeof ThemeSchema>;

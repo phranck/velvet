@@ -12,30 +12,7 @@ statusPage:
   name: Velvet Underground Inc.
   layout: cards
   defaultRange: 90d
-  theme:
-    # Sunny Spring. Its yellow-green sets the picture apart from the indigo the
-    # website and the onboarding are lit with, and it shows a real choice rather
-    # than a palette invented for the screenshot.
-    name: Sunny Spring
-    palette:
-      canvas: "#101713"
-      foreground: "#f2f8e9"
-      accent: "#78c850"
-      alternate: "#f2cf4a"
-      warning: "#e9a53b"
-      danger: "#ef6868"
-      textPrimary: "#f2f8e9"
-      textSecondary: "#939a8f"
-      textTertiary: "#585f57"
-    grid:
-      operational: accent
-      degraded: warning
-      outage: danger
-      noData: auto
-    chart:
-      line: accent
-      lineStyle: solid
-      fill: true
+  theme: velvet
   icons:
     website: ph-globe
     api: ph-brackets-curly

@@ -41,7 +41,7 @@ const templateCommit = "a".repeat(40);
 const configuration = (automaticSecurityUpdates = true) => `
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 updates: { automaticSecurityUpdates: ${automaticSecurityUpdates} }

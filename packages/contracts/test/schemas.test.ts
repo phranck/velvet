@@ -112,23 +112,21 @@ test("published update schemas match their TypeScript schema sources", () => {
 const EVERY_STATUS_PAGE_FIELD: Record<string, unknown> = {
   name: "Example Status",
   customDomain: "status.example.com",
-  design: "retro-chassis",
+  theme: "retro-chassis",
   layout: "cards",
   defaultRange: "90d",
   logoHeight: 96,
   logoUrl: "./logo.svg",
   navigation: [{ title: "Home", href: "https://example.com" }],
   icons: { website: "ph-globe" },
-  theme: { name: "Custom" },
-  fonts: { sans: "Inter", mono: "Fira Code" },
   seo: { description: "Live service status." },
 };
 
 /**
  * The normalizer builds the status page field by field, so a field the schema
  * accepts and it does not copy is dropped between what somebody writes and what
- * gets published. `design` was dropped that way, and an installation naming one
- * published the page Velvet ships instead.
+ * gets published. The theme was dropped that way once, and an installation
+ * naming one published somebody else's page instead.
  */
 test("the normalizer carries every status-page field the schema declares", () => {
   const declared = Object.keys(

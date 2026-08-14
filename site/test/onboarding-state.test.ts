@@ -42,7 +42,7 @@ test("builds a canonical minimal website check with contract defaults", () => {
   assert.deepEqual(result.request.configuration.services[0].checks[0].jsonAssertions, []);
 });
 
-test("publishes the page in the chosen design and writes no theme", () => {
+test("publishes the page in the chosen theme", () => {
   const draft = createOnboardingDraft();
   draft.repositoryOwner = "velvet-user";
   draft.repositoryName = "status";
@@ -60,13 +60,18 @@ test("publishes the page in the chosen design and writes no theme", () => {
 
   assert.equal(result.success, true);
   if (!result.success) return;
-  assert.equal(result.request.configuration.statusPage.design, "retro-chassis");
-  // A design brings its own appearance, so a theme written beside it would
-  // describe something the published page does not read.
-  assert.equal("theme" in result.request.configuration.statusPage, false);
+  assert.equal(result.request.configuration.statusPage.theme, "retro-chassis");
+  // A theme brings its own appearance, so there is nothing beside it to write:
+  // the whole of what a page looks like is the theme it names.
+  assert.deepEqual(
+    Object.keys(result.request.configuration.statusPage).filter((field) =>
+      ["fonts", "palette", "colors"].includes(field),
+    ),
+    [],
+  );
 });
 
-test("refuses a design no shipped bundle answers to", () => {
+test("refuses a theme no shipped bundle answers to", () => {
   const draft = createOnboardingDraft();
   draft.repositoryOwner = "velvet-user";
   draft.repositoryName = "status";

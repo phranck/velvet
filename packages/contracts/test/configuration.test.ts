@@ -54,6 +54,7 @@ repository:
   name: status
 statusPage:
   name: Example Status
+  theme: velvet
 services:
   - name: Website
     url: https://example.com
@@ -66,6 +67,7 @@ services:
     repository: { owner: "example", name: "status" },
     statusPage: {
       name: "Example Status",
+      theme: "velvet",
       layout: "grouped",
       defaultRange: "30d",
       logoHeight: 72,
@@ -103,26 +105,26 @@ services:
   });
 });
 
-test("carries the named design through to the configuration that gets written", () => {
+test("carries the named theme through to the configuration that gets written", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status, design: retro-chassis }
+statusPage: { name: Example Status, theme: retro-chassis }
 services:
   - { name: Website, url: https://example.com }
 `);
 
   assert.equal(result.success, true);
   if (!result.success) return;
-  const statusPage = result.data.statusPage as { design?: string };
-  assert.equal(statusPage.design, "retro-chassis");
+  const statusPage = result.data.statusPage as { theme: string };
+  assert.equal(statusPage.theme, "retro-chassis");
 });
 
 test("does not put an installation forward as a reference unless asked", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 `);
@@ -136,7 +138,7 @@ test("records the owner agreeing to be named as a reference", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 gallery: { listed: true }
@@ -151,7 +153,7 @@ test("rejects a gallery block that answers nothing", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 gallery: {}
@@ -164,7 +166,7 @@ test("lets users opt out of automatic security updates", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 updates: { automaticSecurityUpdates: false }
@@ -185,6 +187,7 @@ repository:
   name: status
 statusPage:
   name: Example Status
+  theme: velvet
 services:
   - id: api
     name: API
@@ -224,7 +227,7 @@ test("accepts at most 365 days of retained history", () => {
   const accepted = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 history: { retentionDays: 365 }
@@ -235,7 +238,7 @@ history: { retentionDays: 365 }
   const rejected = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 history: { retentionDays: 366 }
@@ -252,7 +255,7 @@ test("rejects duplicate derived service identifiers", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: API EU, url: https://eu.example.com }
   - { name: API (EU), url: https://other.example.com }
@@ -269,7 +272,7 @@ test("rejects a service that mixes the minimal and named-check forms", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: Website
     url: https://example.com
@@ -289,7 +292,7 @@ test("rejects non-HTTP URLs and URLs containing credentials", () => {
     const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: ${url} }
 `);
@@ -305,7 +308,7 @@ test("rejects unsupported methods and status codes with stable errors", () => {
   const methodResult = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: Website
     checks:
@@ -320,7 +323,7 @@ services:
   const statusResult = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: Website
     checks:
@@ -339,7 +342,7 @@ test("rejects unsafe JSON pointers", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: API
     checks:
@@ -360,7 +363,7 @@ test("rejects JSON assertions on a bodyless HEAD check", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: API
     checks:
@@ -383,7 +386,7 @@ test("rejects interpolation and never echoes the supplied value", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: API
     checks:
@@ -412,7 +415,7 @@ test("rejects request headers that can override transport framing or routing", (
     const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: API
     checks:
@@ -444,7 +447,7 @@ test("rejects a header secret naming a runner-provided variable", () => {
     const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: API
     checks:
@@ -466,7 +469,7 @@ test("accepts a header secret named as the installation's own", () => {
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - name: API
     checks:
@@ -483,7 +486,7 @@ test("rejects environment-variable interpolation in configuration strings", () =
   const result = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: API, url: "https://api.example.com/\${HEALTH_TOKEN}" }
 `);
@@ -499,7 +502,7 @@ test("rejects unknown fields and incompatible schema versions", () => {
   const unknownResult = parse(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com, provider: remote }
 `);
@@ -512,7 +515,7 @@ services:
   const versionResult = parse(`
 schemaVersion: 2
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 `);
@@ -533,6 +536,7 @@ repository:
   name: status
 statusPage:
   name: Example Status
+  theme: velvet
   showPoweredBy: false
 services:
   - name: Website

@@ -1,7 +1,4 @@
-import type {
-  VelvetConfigurationInput,
-  VelvetThemeInput,
-} from "./schemas.js";
+import type { VelvetConfigurationInput } from "./schemas.js";
 
 export type ConfigurationValidationErrorCode =
   | "DUPLICATE_CONFIGURATION_CHECK_ID"
@@ -72,10 +69,8 @@ export interface NormalizedVelvetConfiguration {
     icons: Record<string, string>;
     customDomain?: string;
     logoUrl?: string;
-    /** The design the page is published in, named by its bundle directory. */
-    design?: string;
-    theme?: VelvetThemeInput;
-    fonts?: { sans?: string; mono?: string };
+    /** The theme the page is published in, named by its directory. */
+    theme: string;
     seo?: VelvetConfigurationInput["statusPage"]["seo"];
   };
   services: NormalizedService[];

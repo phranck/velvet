@@ -4,7 +4,6 @@ export {
 } from "./schemas.js";
 export type {
   VelvetConfigurationInput,
-  VelvetThemeInput,
 } from "./schemas.js";
 export {
   configurationIdentifierFromName,

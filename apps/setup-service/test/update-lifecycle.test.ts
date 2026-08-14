@@ -99,7 +99,7 @@ const configuration = ((): NormalizedVelvetConfiguration => {
     configuration: {
       schemaVersion: 1,
       repository: { owner: "example", name: "status" },
-      statusPage: { name: "Example Status" },
+      statusPage: { name: "Example Status", theme: "velvet" },
       services: [
         {
           // A service sets either a url or explicit checks, never both. The

@@ -17,6 +17,7 @@ function configuration(listed: boolean | null): string {
     "  name: status",
     "statusPage:",
     "  name: Example",
+    "  theme: velvet",
     ...(listed === null ? [] : ["gallery:", `  listed: ${listed}`]),
     "services:",
     "  - name: Website",

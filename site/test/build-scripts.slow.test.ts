@@ -306,6 +306,7 @@ test("generated runtime config accepts native Velvet configuration", async () =>
       "  name: status",
       "statusPage:",
       "  name: Example Status",
+      "  theme: velvet",
       "services:",
       "  - name: Website",
       "    url: https://example.com",
@@ -331,7 +332,7 @@ test("generated runtime config accepts native Velvet configuration", async () =>
   );
 });
 
-test("generated runtime config preserves native appearance and custom domain", async () => {
+test("generated runtime config preserves the theme, the layout and a custom domain", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-native-page-"));
   const input = resolve(directory, "velvet.yml");
   const output = resolve(directory, "public/config.json");
@@ -344,6 +345,7 @@ test("generated runtime config preserves native appearance and custom domain", a
       "  name: status",
       "statusPage:",
       "  name: Example Status",
+      "  theme: velvet",
       "  customDomain: status.example.com",
       "  logoUrl: https://example.com/logo.svg",
       "  logoHeight: 64",
@@ -352,28 +354,6 @@ test("generated runtime config preserves native appearance and custom domain", a
       "  navigation:",
       "    - title: History",
       "      href: /history",
-      "  theme:",
-      "    name: Native Theme",
-      "    palette:",
-      "      canvas: '#101010'",
-      "      foreground: '#f0f0f0'",
-      "      accent: '#16a34a'",
-      "      alternate: '#38bdf8'",
-      "      warning: '#d29922'",
-      "      danger: '#f85149'",
-      "    grid:",
-      "      operational: accent",
-      "      degraded: warning",
-      "      outage: danger",
-      "    chart:",
-      "      line: alternate",
-      "      lineStyle: dotted",
-      "      fill: true",
-      "      background: canvas",
-      "      backgroundOpacity: 0.2",
-      "  fonts:",
-      "    sans: Example Sans",
-      "    mono: Example Mono",
       "  icons:",
       "    website: ph-globe",
       "  seo:",
@@ -401,16 +381,7 @@ test("generated runtime config preserves native appearance and custom domain", a
   assert.equal(config.layout, "cards");
   assert.equal(config.defaultRange, "quarter");
   assert.deepEqual(config.navbar, [{ title: "History", href: "/history" }]);
-  assert.equal(config.theme.name, "Native Theme");
-  assert.equal(config.theme.palette.accent, "#16a34a");
-  assert.equal(config.theme.grid.operational, "#16a34a");
-  assert.equal(config.theme.protocol.ipv4, "#38bdf8");
-  assert.equal(config.theme.chart.ipv4LineStyle, "dotted");
-  assert.equal(config.theme.chart.fill, true);
-  assert.equal(config.theme.chart.background, "#101010");
-  assert.equal(config.theme.chart.backgroundOpacity, 0.2);
-  assert.equal(config.theme.fontSans, "Example Sans");
-  assert.equal(config.theme.fontMono, "Example Mono");
+  assert.equal(config.theme, "velvet");
   assert.deepEqual(config.icons, { website: "ph-globe" });
   // Velvet offers no analytics, so a generated page's configuration carries no
   // trace of any. Asserted rather than assumed, because the fields it used to
@@ -438,6 +409,7 @@ test("invalid native configuration stops before writing runtime config", async (
       "  name: status",
       "statusPage:",
       "  name: Example Status",
+      "  theme: velvet",
       "services:",
       "  - name: Website",
       "",
@@ -462,84 +434,6 @@ test("invalid native configuration stops before writing runtime config", async (
     readFile(output, "utf8"),
     (error: NodeJS.ErrnoException) => error.code === "ENOENT",
   );
-});
-
-test("generated runtime config resolves the semantic Velvet theme", async () => {
-  const directory = await mkdtemp(resolve(tmpdir(), "velvet-config-theme-"));
-  const input = resolve(directory, "velvet.yml");
-  const output = resolve(directory, "config.json");
-  // The parts of a theme no other test reaches: the backdrop blobs, the card
-  // geometry, and the headline gradient, each of which names palette entries
-  // rather than colours and has to come out resolved.
-  await writeFile(
-    input,
-    [
-      "schemaVersion: 1",
-      "repository:",
-      "  owner: example",
-      "  name: status",
-      "statusPage:",
-      "  name: Example Status",
-      "  fonts:",
-      "    sans: Example Sans",
-      "  theme:",
-      "    name: Cloudy Autumn",
-      "    palette:",
-      "      canvas: '#090909'",
-      "      foreground: '#f5f5f5'",
-      "      accent: '#123456'",
-      "      alternate: '#fedcba'",
-      "      warning: '#d29922'",
-      "      danger: '#f85149'",
-      "    grid:",
-      "      operational: '#abcdef'",
-      "    chart:",
-      "      line: accent",
-      "      lineStyle: dotted",
-      "      fill: true",
-      "    background:",
-      "      blobs:",
-      "        count: 4",
-      "        colors:",
-      "          - '#111111'",
-      "          - '#222222'",
-      "    card:",
-      "      borderEnabled: false",
-      "      radius: 20",
-      "      padding: 18",
-      "    headline:",
-      "      start: foreground",
-      "      end: alternate",
-      "services:",
-      "  - name: Website",
-      "    url: https://example.com",
-      "",
-    ].join("\n"),
-  );
-
-  await bun([
-    resolve(siteRoot, "scripts/generate-config.mjs"),
-    input,
-    output,
-  ]);
-
-  const config = JSON.parse(await readFile(output, "utf8"));
-  assert.equal(config.theme.name, "Cloudy Autumn");
-  assert.equal(config.theme.accent, "#123456");
-  assert.equal(config.theme.grid.operational, "#abcdef");
-  assert.equal(config.theme.protocol.ipv4, "#123456");
-  assert.equal(config.theme.chart.ipv4LineStyle, "dotted");
-  assert.equal(config.theme.chart.fill, true);
-  assert.equal(config.theme.background.blobs.count, 4);
-  assert.deepEqual(config.theme.background.blobs.colors, ["#111111", "#222222"]);
-  assert.equal(config.theme.card.borderEnabled, false);
-  assert.equal(config.theme.card.radius, 20);
-  assert.equal(config.theme.card.padding, 18);
-  assert.deepEqual(config.theme.headline, {
-    start: "#f5f5f5",
-    end: "#fedcba",
-  });
-  assert.equal(config.theme.fontSans, "Example Sans");
 });
 
 test("social card uses the semantic Velvet theme", async () => {
@@ -676,7 +570,7 @@ test("social card and SEO consume validated Velvet documents", async () => {
 
 test("removes Atom feed generation from the status-page build", async () => {
   const action = await readFile(resolve(repositoryRoot, "action.yml"), "utf8");
-  const html = await readFile(resolve(siteRoot, "index.html"), "utf8");
+  const html = await readFile(resolve(siteRoot, "status-design.html"), "utf8");
 
   assert.doesNotMatch(action, /generate-feed|incidents\.atom/);
   assert.doesNotMatch(html, /application\/atom\+xml|incidents\.atom/);
@@ -698,6 +592,7 @@ test("carries the installation serial from the lock into the generated config", 
       "  name: status",
       "statusPage:",
       "  name: Example Status",
+      "  theme: velvet",
       "services:",
       "  - name: Website",
       "    url: https://example.com",

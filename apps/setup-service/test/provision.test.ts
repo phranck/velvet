@@ -17,7 +17,7 @@ const normalizedRequest = (() => {
     configuration: {
       schemaVersion: 1,
       repository: { owner: "example", name: "status" },
-      statusPage: { name: "Example Status" },
+      statusPage: { name: "Example Status", theme: "velvet" },
       services: [{ name: "Website", url: "https://example.com" }],
     },
   });
@@ -32,6 +32,7 @@ const customDomainRequest = (() => {
       repository: { owner: "example", name: "status" },
       statusPage: {
         name: "Example Status",
+        theme: "velvet",
         customDomain: "STATUS.Example.COM",
       },
       services: [{ name: "Website", url: "https://example.com" }],
@@ -1015,7 +1016,7 @@ test("starts over when the previous attempt created nothing", async () => {
     configuration: {
       schemaVersion: 1,
       repository: { owner: "example", name: "status" },
-      statusPage: { name: "A Different Status" },
+      statusPage: { name: "A Different Status", theme: "velvet" },
       services: [{ name: "Website", url: "https://example.com" }],
     },
   });
@@ -1049,7 +1050,7 @@ test("refuses a different setup once a repository exists", async () => {
     configuration: {
       schemaVersion: 1,
       repository: { owner: "example", name: "status" },
-      statusPage: { name: "A Different Status" },
+      statusPage: { name: "A Different Status", theme: "velvet" },
       services: [{ name: "Website", url: "https://example.com" }],
     },
   });

@@ -15,6 +15,7 @@ repository:
   name: status
 statusPage:
   name: Example Status # shown in the header
+  theme: velvet
 services:
   - name: Website
     url: https://example.com

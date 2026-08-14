@@ -186,7 +186,7 @@ export function buildSetupRequest(
     },
     statusPage: {
       name: draft.statusPageName.trim(),
-      design: design.id,
+      theme: design.id,
       ...(customDomain ? { customDomain } : {}),
       // Omitted entirely when blank. The contract caps the description at 300
       // characters and rejects an empty string, so writing one would fail the

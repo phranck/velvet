@@ -52,7 +52,7 @@ async function buildDesignPage(design: string): Promise<{
       name: "Example",
       dataBaseUrl: "./",
       defaultRange: "month",
-      design,
+      theme: design,
       serial: 42,
     }),
   );

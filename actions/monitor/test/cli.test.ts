@@ -48,7 +48,7 @@ test("reapplies the same observations once after a safe data conflict", async ()
       join(workspace, "velvet.yml"),
       "schemaVersion: 1\n" +
         "repository: { owner: example, name: status }\n" +
-        "statusPage: { name: Example Status }\n" +
+        "statusPage: { name: Example Status, theme: velvet }\n" +
         "services:\n" +
         "  - { name: Website, url: https://example.com }\n",
       "utf8",
@@ -181,6 +181,7 @@ test("a refused configuration names the path the validator rejected", async () =
         "  name: status",
         "statusPage:",
         "  name: Example",
+        "  theme: velvet",
         "services:",
         "  - name: Website",
         "    url: https://example.com/",

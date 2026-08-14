@@ -69,7 +69,7 @@ function configuration(extra = ""): string {
   return `
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
 incidents: { failureThreshold: 1, recoveryThreshold: 1 }
@@ -398,7 +398,7 @@ test("drops retained history for services removed from configuration", async () 
       configurationSource: `
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
   - { name: API, url: https://api.example.com }
