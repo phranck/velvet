@@ -3,8 +3,6 @@ import { dirname, join } from "node:path";
 
 import { parseVelvetConfiguration } from "@velvet/contracts";
 
-import { resolveTheme } from "../src/lib/theme.js";
-
 /**
  * Generates Velvet's runtime `config.json` from `velvet.yml`.
  *
@@ -52,25 +50,6 @@ const configuration = parsed.data;
 const owner = configuration.repository.owner;
 const repo = configuration.repository.name;
 
-const nativeTheme = (theme) => {
-  if (!theme) return {};
-  const { chart, ...rest } = theme;
-  return {
-    ...rest,
-    ...(chart
-      ? {
-          protocol: { ipv4: chart.line },
-          chart: {
-            ipv4LineStyle: chart.lineStyle,
-            fill: chart.fill,
-            background: chart.background,
-            backgroundOpacity: chart.backgroundOpacity,
-          },
-        }
-      : {}),
-  };
-};
-
 const sw = {
   cname: configuration.statusPage.customDomain,
   name: configuration.statusPage.name,
@@ -78,17 +57,13 @@ const sw = {
   navbar: configuration.statusPage.navigation,
 };
 const velvet = {
-  design: configuration.statusPage.design,
+  theme: configuration.statusPage.theme,
   layout: configuration.statusPage.layout,
   defaultRange: configuration.statusPage.defaultRange,
   logoHeight: configuration.statusPage.logoHeight,
-  theme: nativeTheme(configuration.statusPage.theme),
-  fontSans: configuration.statusPage.fonts?.sans,
-  fontMono: configuration.statusPage.fonts?.mono,
   icons: configuration.statusPage.icons,
   seo: configuration.statusPage.seo,
 };
-const themeInput = velvet.theme && typeof velvet.theme === "object" ? velvet.theme : {};
 /**
  * Where a published page reads its data from.
  *
@@ -149,24 +124,11 @@ const config = {
     ? sw.navbar.map((n) => ({ title: n.title, href: subst(n.href) }))
     : [{ title: "Status", href: "/" }],
   layout: velvet.layout === "cards" ? "cards" : "grouped",
-  // Absent for an installation that names no design, which publishes the page
-  // Velvet ships. A name is carried through untouched: whether a design answers
-  // to it is the build's question, and it stops rather than guessing.
-  ...(typeof velvet.design === "string" && velvet.design.trim()
-    ? { design: velvet.design.trim() }
-    : {}),
+  // Carried through untouched: whether a theme answers to the name is the
+  // build's question, and it stops rather than guessing.
+  theme: velvet.theme,
   defaultRange: normalizeRange(velvet.defaultRange),
   logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 72,
-  theme: {
-    ...resolveTheme({
-      ...themeInput,
-      accent: themeInput.accent ?? velvet.accent,
-      accentDeg: velvet.accentDeg,
-      accentDown: velvet.accentDown,
-    }),
-    ...(velvet.fontSans ? { fontSans: velvet.fontSans } : {}),
-    ...(velvet.fontMono ? { fontMono: velvet.fontMono } : {}),
-  },
   icons: velvet.icons ?? {},
   ...(Object.keys(seo).length ? { seo } : {}),
   ...(serial === null ? {} : { serial }),

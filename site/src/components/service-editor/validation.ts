@@ -92,7 +92,9 @@ export function validateServiceDrafts(
   const validation = validateVelvetConfiguration({
     schemaVersion: 1,
     repository: { owner: "velvet-user", name: "status" },
-    statusPage: { name: "Status" },
+    // A theme the contract accepts, because this validates the services and
+    // the rest of the configuration is somebody else's question.
+    statusPage: { name: "Status", theme: "velvet" },
     services,
   });
   if (!validation.success) {

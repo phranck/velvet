@@ -8,6 +8,9 @@ repository:
 
 statusPage:
   name: Example Status
+  # The theme your page is published in. Velvet ships four: velvet,
+  # retro-chassis, twenty-forty-nine and ncc-1701-d.
+  theme: velvet
 
 services:
   - name: Website

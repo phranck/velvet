@@ -21,7 +21,7 @@ const templateCommit = "a".repeat(40);
 const configurationResult = parseVelvetConfiguration(`
 schemaVersion: 1
 repository: { owner: example, name: status }
-statusPage: { name: Example Status }
+statusPage: { name: Example Status, theme: velvet }
 services:
   - { name: Website, url: https://example.com }
   - name: Public API

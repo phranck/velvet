@@ -4,18 +4,13 @@ repository:
   name: status.example.com
 statusPage:
   name: Example
+  theme: velvet
   customDomain: status.example.com
   logoUrl: https://example.com/logo.png
   logoHeight: 64
   layout: cards
   defaultRange: 90d
   navigation: []
-  theme:
-    name: Example
-    palette:
-      accent: "#16a34a"
-      warning: "#d29922"
-      danger: "#f85149"
   icons:
     backend: ph-gear-six
     dashboard: ph-gauge

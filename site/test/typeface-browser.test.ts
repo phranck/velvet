@@ -8,26 +8,23 @@ import { createServer } from "vite";
 import { refuseOffsiteRequests } from "./offline.js";
 import { createViteTestCache } from "./vite-test-cache.js";
 
-/** Eight documents, one browser, and a dependency-optimisation pass. */
+/** Six documents, one browser, and a dependency-optimisation pass. */
 const TIMEOUT_MS = 180_000;
 
 /**
  * How a document obtains the face it sets its text in.
  *
- * `bundled` means the files ship with it, which is what every tool and every
- * page does. `readers-own` means it fetches nothing and takes whatever the
- * reader's machine supplies, which only the status-page shell does, because a
- * design brings its own faces and an installation may name one of its own.
+ * `bundled` means the files ship with it, which is what every one of these
+ * documents does.
  */
-type FaceSource = "bundled" | "readers-own";
+type FaceSource = "bundled";
 
 /**
- * Every document Velvet publishes, and the face its ordinary text is set in.
+ * Every document the tools publish, and the face its ordinary text is set in.
  *
  * Velvet's typography is Datatype for text and Workbench for headings, with
- * code and labels the exceptions. The status page is outside that: its faces
- * come from whichever design is configured, so the shell beneath names none of
- * its own.
+ * code and labels the exceptions. A published status page is outside this
+ * entirely: its faces are the theme's, which ships them itself.
  */
 const SURFACES: readonly {
   document: string;
@@ -36,7 +33,6 @@ const SURFACES: readonly {
   /** Whether this document is part of velvet.li and so draws the site's card. */
   site?: true;
 }[] = [
-  { document: "index.html", face: "-apple-system", source: "readers-own" },
   { document: "onboarding.html", face: "Datatype", source: "bundled" },
   { document: "website.html", face: "Datatype", source: "bundled", site: true },
   { document: "documentation.html", face: "Datatype", source: "bundled", site: true },

@@ -12,10 +12,10 @@ import { createViteTestCache } from "./vite-test-cache.js";
  * Reads back that each surface paints its backdrop into a layer of its own.
  *
  * A background belongs to the paint of the element carrying it, so a backdrop
- * on the body is redrawn by everything that redraws the page. On the status
- * page that is measurable and severe: traced on a published page, eight
- * expand-all cycles cost 5809ms of rasterisation with the gradients on the
- * body and 485ms with them on a layer, against 12ms of layout either way.
+ * on the body is redrawn by everything that redraws the page. Measured on a
+ * status page with the gradients on the body, eight expand-all cycles cost
+ * 5809ms of rasterisation, against 485ms with them on a layer and 12ms of
+ * layout either way.
  *
  * Read as computed style rather than as source, because what matters is which
  * element ends up carrying the gradients once every stylesheet has had its say,
@@ -26,7 +26,6 @@ const BROWSER_TIMEOUT_MS = 180_000;
 
 /** The pages that stand on a backdrop. */
 const SURFACES = [
-  { path: "/index.html", name: "the status page", layered: true },
   { path: "/onboarding.html", name: "the onboarding", layered: true },
 ] as const;
 

@@ -1,6 +1,7 @@
 {
   "owner": "phranck",
   "repo": "status.musiccloud.io",
+  "theme": "velvet",
   "dataBranch": "main",
   "name": "MusicCloud",
   "logoUrl": "https://musiccloud.io/og/musiccloud.jpg",
@@ -18,18 +19,5 @@
       "href": "https://github.com/phranck/status.musiccloud.io"
     }
   ],
-  "theme": {
-    "accent": "#6366f1",
-    "grid": {
-      "operational": "#6366f1",
-      "degraded": "#d29922",
-      "outage": "#f85149",
-      "noData": "#1c2029"
-    },
-    "protocol": {
-      "ipv4": "#7c7ef3",
-      "ipv6": "#38bdf8"
-    }
-  },
   "icons": {}
 }

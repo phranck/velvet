@@ -40,7 +40,7 @@ const setupBody = JSON.stringify({
   configuration: {
     schemaVersion: 1,
     repository: { owner: "example", name: "status" },
-    statusPage: { name: "Example Status" },
+    statusPage: { name: "Example Status", theme: "velvet" },
     services: [{ name: "Website", url: "https://example.com" }],
   },
 });
@@ -1196,7 +1196,7 @@ test("the largest logo the browser offers still fits inside a setup request", ()
     configuration: {
       schemaVersion: 1,
       repository: { owner: "example", name: "status" },
-      statusPage: { name: "Example Status" },
+      statusPage: { name: "Example Status", theme: "velvet" },
       services: [{ name: "Website", url: "https://example.com" }],
     },
     repositoryVisibility: "public",

@@ -1,25 +1,36 @@
 /**
  * Regenerate the README screenshot from a demo status page.
  *
- * This drives the REAL Velvet pipeline end to end, so it doubles as a smoke test:
- *   1. run `generate-config.mjs` on `demo/velvet.yml` (the same step the
- *      template's velvet.yml runs) → `dist/config.json`,
- *   2. serve the built `dist/`,
- *   3. render it in headless Chromium with contract-valid demo data
- *      (`demo/fixtures.mjs`) fed in via request mocks and the clock frozen so the
- *      result is byte-stable,
+ * This drives the real Velvet pipeline end to end, so it doubles as a smoke
+ * test:
+ *   1. run `generate-config.mjs` on `demo/velvet.yml`, which is the step an
+ *      installation's own `velvet.yml` runs,
+ *   2. build the page from that configuration and the contract-valid demo
+ *      documents in `demo/fixtures.mjs`, which is what the Action does,
+ *   3. serve the build and render it in headless Chromium with the clock frozen
+ *      so the result is byte-stable,
  *   4. frame the page on a gradient (rounded corners + shadow),
  *   5. write `docs/screenshot.png`.
  *
- * Requires a prior `vite build` (the CI workflow builds first). Run: `bun run screenshot`.
+ * The page fetches nothing: it is published in a theme, and a theme is rendered
+ * at build time from documents the build was given. What used to be checked by
+ * intercepting three requests is therefore checked by reading the page.
+ *
+ * Run: `bun run screenshot`.
  */
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:http";
-import { readFile, writeFile, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
+import { build } from "vite";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+
+import { bundleStatusPage, designNamedIn } from "../vite.bundle-page.js";
+import { phosphorWoff2Only } from "../vite.static-tool.js";
 import {
   FIXED_NOW,
   demoIncidents,
@@ -101,14 +112,42 @@ async function serveDist() {
   return { base: `http://localhost:${server.address().port}`, close: () => server.close() };
 }
 
-/** A 200 JSON route fulfilment. */
-const json = (data) => ({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
-
 async function main() {
-  // 1. Real config pipeline (also the smoke test): demo velvet.yml → dist/config.json.
-  execFileSync(process.execPath, ["scripts/generate-config.mjs", "demo/velvet.yml", "dist/config.json"], {
+  // 1. The real configuration pipeline, which is also the first smoke test:
+  //    the demo velvet.yml through the same generator an installation runs.
+  const workspace = await mkdtemp(join(tmpdir(), "velvet-screenshot-"));
+  const configPath = join(workspace, "config.json");
+  const dataPath = join(workspace, "data");
+  execFileSync(process.execPath, ["scripts/generate-config.mjs", "demo/velvet.yml", configPath], {
     cwd: SITE,
     stdio: "inherit",
+  });
+
+  // 2. The documents the Action checks out, written where the build reads them.
+  await mkdir(dataPath, { recursive: true });
+  for (const [name, document] of [
+    ["status.json", demoStatus],
+    ["response-times.json", demoResponseTimes],
+    ["incidents.json", demoIncidents],
+  ]) {
+    await writeFile(join(dataPath, name), JSON.stringify(document));
+  }
+
+  // 3. The build itself, driven exactly as `vite.config.ts` drives it, with the
+  //    demo configuration in place of the one in `public/`.
+  const design = designNamedIn(configPath);
+  assert.ok(design, "demo/velvet.yml must name the theme its page is published in");
+  await build({
+    root: SITE,
+    configFile: false,
+    logLevel: "silent",
+    base: "./",
+    plugins: [
+      phosphorWoff2Only,
+      svelte(),
+      bundleStatusPage({ root: SITE, configPath, dataPath, design }),
+    ],
+    build: { outDir: DIST, emptyOutDir: true },
   });
 
   const site = await serveDist();
@@ -123,88 +162,29 @@ async function main() {
     const page = await ctx.newPage();
     await page.clock.setFixedTime(new Date(FIXED_NOW));
 
-    const requestedDataUrls = [];
+    const offsiteRequests = [];
     page.on("request", (request) => {
       const url = request.url();
-      if (url.includes("raw.githubusercontent.com") || url.includes("api.github.com")) {
-        requestedDataUrls.push(url);
-      }
-    });
-    const documents = {
-      "status.json": demoStatus,
-      "response-times.json": demoResponseTimes,
-      "incidents.json": demoIncidents,
-    };
-    await page.route("**/velvet-data/v1/*.json", (route) => {
-      const fileName = new URL(route.request().url()).pathname.split("/").at(-1);
-      return route.fulfill(json(documents[fileName]));
+      if (!url.startsWith(site.base)) offsiteRequests.push(url);
     });
 
     await page.goto(site.base, { waitUntil: "load" });
-    await page.waitForSelector(".card");
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(500); // let the icon font + bars settle
 
-    assert.deepEqual(requestedDataUrls.sort(), [
-      "https://raw.githubusercontent.com/velvet-underground/status/velvet-data/velvet-data/v1/incidents.json",
-      "https://raw.githubusercontent.com/velvet-underground/status/velvet-data/velvet-data/v1/response-times.json",
-      "https://raw.githubusercontent.com/velvet-underground/status/velvet-data/velvet-data/v1/status.json",
-    ]);
+    // A published page asks nobody for anything: its data was rendered into it
+    // and its faces ship beside it.
+    assert.deepEqual(offsiteRequests, []);
 
-    const firstSummary = page.locator("button.summary").first();
-    const firstDetailsId = await firstSummary.getAttribute("aria-controls");
-    assert.equal(await firstSummary.getAttribute("aria-expanded"), "false");
-    assert.ok(firstDetailsId, "service summary should reference its detail region");
-    assert.equal(await page.locator(`#${firstDetailsId}`).count(), 1);
-
-    await firstSummary.focus();
-    await page.keyboard.press("Enter");
-    assert.equal(await firstSummary.getAttribute("aria-expanded"), "true");
-    await page.keyboard.press("Space");
-    assert.equal(await firstSummary.getAttribute("aria-expanded"), "false");
-    await page.keyboard.press("Enter");
-    assert.equal(await firstSummary.getAttribute("aria-expanded"), "true");
-    await page.evaluate(() =>
-      Promise.all(
-        document
-          .getAnimations()
-          .filter((animation) => animation.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY)
-          .map((animation) => animation.finished),
-      ),
-    );
-    await firstSummary.evaluate((summary) => summary.blur());
-
-    const desktopProtocols = await page.locator(".protocol-grid").first().locator(".protocol-status").evaluateAll(
-      (elements) =>
-        elements.map((element) => {
-          const rect = element.getBoundingClientRect();
-          return { x: rect.x, y: rect.y };
-        }),
-    );
-    assert.equal(desktopProtocols.length, 1);
-    assert.equal(await page.locator('.detail a[href^="http"]').count(), 0);
-    assert.doesNotMatch(await page.locator(".detail").first().innerText(), /https?:\/\//);
-
-    const firstChart = page.locator(".response-chart").first();
-    assert.ok(await firstChart.locator('.series-line[data-protocol="ipv4"]').count());
-    assert.equal(
-      await firstChart.locator('[data-protocol="ipv4"][data-line-style="solid"]').count() > 0,
-      true,
-    );
-    assert.equal(await firstChart.locator('.series-line[data-protocol="ipv6"]').count(), 0);
-    assert.deepEqual(await firstChart.locator(".legend-item strong").allInnerTexts(), ["88 ms"]);
-    const chartLink = firstChart.locator(".plot-link");
-    await chartLink.focus();
-    assert.equal(await chartLink.evaluate((link) => link === document.activeElement), true);
-    await chartLink.evaluate((link) => link.blur());
-    const desktopChartWidth = await firstChart.locator("svg").evaluate((chart) => chart.getBoundingClientRect().width);
-    assert.ok(desktopChartWidth > 500);
-
-    // Focusing the summary and the chart link scrolled them into view, which
-    // left the page a little under sixty pixels down and cropped the header out
-    // of the picture. Back to the top before the shutter.
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(150);
+    // Every service the demo configuration names is on the page, with the
+    // installation's own name above them.
+    // Read as the source rather than as rendered: a theme may set its headings
+    // in capitals, and what is asserted here is what the page says.
+    const text = await page.evaluate(() => document.body.textContent ?? "");
+    assert.match(text, /Velvet Underground Inc\./);
+    for (const service of demoStatus.services) {
+      assert.match(text, new RegExp(service.name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")));
+    }
 
     const shot = await page.screenshot({ type: "png" });
 
@@ -219,46 +199,20 @@ async function main() {
     console.log(
       `velvet: wrote ${SCREEN_OUT} (${(screenShot.length / 1024).toFixed(0)} KB)`,
     );
-    await page.setViewportSize({ width: PAGE_W, height: PAGE_H });
 
-    await page
-      .locator(".name")
-      .first()
-      .evaluate((name) => (name.textContent = "WebsiteWithAnUninterruptedServiceNameThatMustWrap"));
+    // Nothing may reach past the edge of a phone, which is what a status page
+    // is most often opened on.
     await page.setViewportSize({ width: 390, height: PAGE_H });
+    await page.waitForTimeout(150);
     const narrowLayout = await page.evaluate(() => ({
       viewportWidth: window.innerWidth,
       documentWidth: document.documentElement.scrollWidth,
-      overflowElements: [...document.querySelectorAll("body *")]
-        .map((element) => {
-          const rect = element.getBoundingClientRect();
-          return {
-            element: `${element.tagName.toLowerCase()}.${element.className}`,
-            left: rect.left,
-            right: rect.right,
-            width: rect.width,
-          };
-        })
-        .filter(({ left, right }) => left < 0 || right > window.innerWidth),
     }));
     assert.ok(
       narrowLayout.documentWidth <= narrowLayout.viewportWidth,
       `narrow layout should not create horizontal scrolling: ${JSON.stringify(narrowLayout)}`,
     );
-    const narrowProtocols = await page.locator(".protocol-grid").first().locator(".protocol-status").evaluateAll(
-      (elements) =>
-        elements.map((element) => {
-          const rect = element.getBoundingClientRect();
-          return { x: rect.x, y: rect.y };
-        }),
-    );
-    assert.equal(narrowProtocols.length, 1);
-    assert.equal(
-      await page.locator(".protocol-grid").first().locator(".protocol-separator").count(),
-      0,
-    );
-    const narrowChartWidth = await firstChart.locator("svg").evaluate((chart) => chart.getBoundingClientRect().width);
-    assert.ok(narrowChartWidth <= narrowLayout.viewportWidth);
+    await page.setViewportSize({ width: PAGE_W, height: PAGE_H });
 
     // 2. Frame the page in a macOS-style window (traffic lights + Finder-like toolbar)
     //    sitting on a gradient with rounded OUTER corners and a soft shadow.

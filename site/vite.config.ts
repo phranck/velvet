@@ -4,7 +4,6 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 import { bundleStatusPage, designNamedIn } from "./vite.bundle-page.js";
 import { phosphorWoff2Only } from "./vite.static-tool.js";
-import { prerenderStatusPage } from "./vite.status-prerender.js";
 
 const root = import.meta.dirname;
 const configPath = resolve(root, "public/config.json");
@@ -13,16 +12,22 @@ const dataPath = process.env.VELVET_DATA
   : undefined;
 
 /**
- * The design this installation named, where it named one.
+ * The theme this installation named.
  *
- * Read here rather than inside a plugin because it decides which page is built
- * at all: a design is a whole page rather than a set of values injected into
- * one, so the component and the design are alternatives rather than layers.
+ * Read here rather than inside a plugin because it decides what is built at
+ * all: a theme is a whole page rather than a set of values injected into one,
+ * so there is nothing to build until one is named.
  */
 const design = designNamedIn(configPath);
+if (design === undefined) {
+  throw new Error(
+    "velvet: no theme is named in config.json, and a page is published in a theme. " +
+      "Set statusPage.theme in velvet.yml and generate the configuration again.",
+  );
+}
 
 /**
- * Vite config for the Velvet status front-end.
+ * Vite config for the status page an installation publishes.
  *
  * Relative asset URLs work for custom domains, user sites, and repository
  * subpaths without requiring consumer-specific build configuration.
@@ -31,23 +36,17 @@ const design = designNamedIn(configPath);
  * tools. This page is published into somebody else's repository, so every
  * kilobyte and every format it carries is served from their Pages site.
  *
- * The page is rendered at build time and hydrated in the browser. `VELVET_DATA`
- * names the checked-out data directory, which `action.yml` already passes to
- * this build; without it the page ships as it did before and assembles itself.
- *
- * An installation that names a design in `velvet.yml` gets that bundle instead:
- * its template rendered at build time, its stylesheet and script shipped, and
- * none of the component page built at all. The two prerenders are alternatives,
- * so exactly one of them runs.
+ * The page is rendered at build time: the named theme's template is called with
+ * the installation's data, and its stylesheet, script and assets are shipped
+ * beside the markup. `VELVET_DATA` names the checked-out data directory, which
+ * `action.yml` already passes to this build.
  */
 export default defineConfig({
   base: "./",
   plugins: [
     phosphorWoff2Only,
     svelte(),
-    ...(design === undefined
-      ? [prerenderStatusPage({ root, configPath, dataPath })]
-      : [bundleStatusPage({ root, configPath, dataPath, design })]),
+    bundleStatusPage({ root, configPath, dataPath, design }),
   ],
   build: {
     outDir: "dist",

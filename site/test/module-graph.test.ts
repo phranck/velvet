@@ -133,7 +133,6 @@ async function modulesReachedFrom(entry: string): Promise<Set<string>> {
  * document. A component reaching one of them says nothing about the others.
  */
 const APPLICATIONS = {
-  "status page": "main.ts",
   onboarding: "onboarding/main.ts",
   website: "website/main.ts",
   documentation: "documentation/main.ts",
@@ -161,7 +160,6 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "documentation",
     "onboarding",
     "references",
-    "status page",
     "website",
   ],
   "RainbowScale.svelte": [
@@ -224,12 +222,12 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "references",
     "website",
   ],
-  // Velvet's own shape: the double outline the gallery frames a card with, and
-  // the tick a status page says "all systems operational" with. The onboarding
+  // Velvet's own shape: the double outline the gallery frames a card with. The
+  // onboarding
   // steps, the theme cards and the icon picker draw the outline themselves and
   // read its insets from `lib/squircle`, so the geometry is stated once even
   // where the markup is not.
-  "squircle-frame": ["references", "status page"],
+  "squircle-frame": ["references"],
   "squircle-card": ["website"],
   // The key the start page asks with, in the same shape.
   "squircle-button": ["website"],
@@ -240,14 +238,6 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
   "service-editor": ["onboarding"],
   "service-icon-picker": ["onboarding"],
   "theme-card": ["onboarding"],
-  "Incidents.svelte": ["status page"],
-  "ServiceRow.svelte": ["status page"],
-  "StatusHero.svelte": ["status page"],
-  // Shown for the whole of an installation's first day and never again.
-  "FirstRunNotice.svelte": ["status page"],
-  "StatusPage.svelte": ["status page"],
-  "UptimeBar.svelte": ["status page"],
-  service: ["status page"],
   "review-list": ["onboarding"],
   // A rendered Markdown document. Three of the pages render a whole file of the
   // repository through it. The references page does not, because what it shows
