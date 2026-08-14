@@ -18,7 +18,7 @@
     "src/**/*.d.ts",
     "src/**/*.svelte",
     "test/**/*.ts",
-    "bundles/**/*.ts",
+    "theme-bundles/**/*.ts",
     "gallery/**/*.ts",
     "scripts/bundles.ts",
     "scripts/design-screenshots.ts",

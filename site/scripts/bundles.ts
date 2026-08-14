@@ -17,7 +17,7 @@ import {
 } from "../src/lib/bundles/manifest.js";
 
 /** Where the bundles live, as an absolute path. */
-export const BUNDLES_ROOT = resolve(import.meta.dirname, "../bundles");
+export const BUNDLES_ROOT = resolve(import.meta.dirname, "../theme-bundles");
 
 /** The file a bundle is recognised by. */
 export const MANIFEST_FILE = "bundle.json";

@@ -10,10 +10,10 @@ Two rules for reading it. Every claim names the file it comes from, and every fi
 
 ## 1. What a design is
 
-A directory under `site/bundles/`, named for the design, carrying everything it needs:
+A directory under `site/theme-bundles/`, named for the design, carrying everything it needs:
 
 ```
-site/bundles/<id>/
+site/theme-bundles/<id>/
   bundle.json     the manifest, which is all the host reads before loading anything
   template.ts     builds the markup from the data, as a string
   bundle.css      the whole appearance
@@ -146,7 +146,7 @@ It serves each bundle over a real HTTP origin, renders its template from a fixtu
 - No request leaves the bundle's own origin.
 - The focus ring is the design's own: the focused element must look different from the resting one, and `outline-style` must not be `auto`, which is how a browser draws its own.
 
-**The fixtures** live in `site/bundles/fixtures/` and are used by the gallery, the suite and the screenshot workflow alike. Eight cases: the ordinary installation (`velvet-underground`, five services with three hundred days behind them), and seven that break designs rather than flatter them, namely the first day of an installation with no history, everything unknown, one service, twenty services, very long service names, an incident summary of two thousand characters, and a service reachable over IPv6 only.
+**The fixtures** live in `site/theme-bundles/fixtures/` and are used by the gallery, the suite and the screenshot workflow alike. Eight cases: the ordinary installation (`velvet-underground`, five services with three hundred days behind them), and seven that break designs rather than flatter them, namely the first day of an installation with no history, everything unknown, one service, twenty services, very long service names, an incident summary of two thousand characters, and a service reachable over IPv6 only.
 
 Every fixture is checked against the product's own validators rather than the raw schemas, because the validators catch what a schema cannot: duplicate identifiers, timestamps outside the document's own window, and durations that contradict each other. `site/test/bundle-fixtures.test.ts` is that gate, and it needs no browser.
 

@@ -17,10 +17,10 @@
  * pages reporting trouble.
  */
 
-import retroChassisManifest from "../../bundles/retro-chassis/bundle.json";
-import ncc1701dManifest from "../../bundles/ncc-1701-d/bundle.json";
-import twentyFortyNineManifest from "../../bundles/twenty-forty-nine/bundle.json";
-import velvetManifest from "../../bundles/velvet/bundle.json";
+import retroChassisManifest from "../../theme-bundles/retro-chassis/bundle.json";
+import ncc1701dManifest from "../../theme-bundles/ncc-1701-d/bundle.json";
+import twentyFortyNineManifest from "../../theme-bundles/twenty-forty-nine/bundle.json";
+import velvetManifest from "../../theme-bundles/velvet/bundle.json";
 
 import retroChassis from "../assets/designs/retro-chassis.png";
 import ncc1701d from "../assets/designs/ncc-1701-d.png";

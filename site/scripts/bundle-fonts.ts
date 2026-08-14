@@ -57,12 +57,12 @@ const WEIGHT_CLASSES = new Set([
  * The rules are written here rather than by hand, because a `@font-face` names
  * a file that has to exist: the two are one decision and belong in one place.
  *
- * @param bundle - The directory under `site/bundles/`.
+ * @param bundle - The directory under `site/theme-bundles/`.
  * @param faces - The faces that design carries.
  * @returns How many font files were written.
  */
 async function copyFaces(bundle: string, faces: Face[]): Promise<number> {
-  const target = join(siteRoot, "bundles", bundle, "assets", "fonts");
+  const target = join(siteRoot, "theme-bundles", bundle, "assets", "fonts");
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
 
@@ -102,7 +102,7 @@ async function copyFaces(bundle: string, faces: Face[]): Promise<number> {
 
   const names = faces.map((face) => face.family).join(", ");
   await writeFile(
-    join(siteRoot, "bundles", bundle, "assets", "fonts.css"),
+    join(siteRoot, "theme-bundles", bundle, "assets", "fonts.css"),
     `/*\n  The faces this design carries: ${names}.\n\n` +
       `  Written by site/scripts/bundle-fonts.ts together with the files it\n` +
       `  names, so a rule cannot point at a face nobody copied. Every one of\n` +
@@ -142,7 +142,7 @@ async function phosphorIcons(): Promise<Map<string, string[]>> {
  * does not define fails this script rather than shipping, because left to the
  * browser it renders as an empty box.
  *
- * @param bundle - The directory under `site/bundles/`.
+ * @param bundle - The directory under `site/theme-bundles/`.
  * @param defined - Every icon Phosphor duotone offers.
  * @returns How many icons the design uses.
  */
@@ -150,7 +150,7 @@ async function copyIcons(
   bundle: string,
   defined: Map<string, string[]>,
 ): Promise<number> {
-  const directory = join(siteRoot, "bundles", bundle);
+  const directory = join(siteRoot, "theme-bundles", bundle);
   const referenced = new Set<string>();
   for (const entry of await readdir(directory)) {
     if (!/\.(ts|css)$/u.test(entry)) continue;

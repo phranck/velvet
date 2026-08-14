@@ -9,7 +9,7 @@ import {
 import { BUNDLE_DATA_VERSION } from "../src/lib/bundles/data.js";
 import { parseBundleManifest, type BundleManifest } from "../src/lib/bundles/manifest.js";
 import type { VelvetConfig } from "../src/lib/config.js";
-import { velvetUnderground } from "../bundles/fixtures/index.js";
+import { velvetUnderground } from "../theme-bundles/fixtures/index.js";
 
 /**
  * The two decisions the host makes before anything is rendered: which design,

@@ -7,7 +7,7 @@ import {
   validateStatusDocument,
 } from "@velvet/contracts";
 
-import { FIXTURES } from "../bundles/fixtures/index.js";
+import { FIXTURES } from "../theme-bundles/fixtures/index.js";
 
 /**
  * The fixtures are checked against the product's own validators rather than the

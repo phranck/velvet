@@ -35,16 +35,16 @@ export interface InstalledDesign {
   script: BundleScript;
 }
 
-const manifestFiles = import.meta.glob("/bundles/*/bundle.json", {
+const manifestFiles = import.meta.glob("/theme-bundles/*/bundle.json", {
   eager: true,
   import: "default",
 }) as Record<string, unknown>;
 
-const moduleFiles = import.meta.glob("/bundles/*/**/*.ts", {
+const moduleFiles = import.meta.glob("/theme-bundles/*/**/*.ts", {
   eager: true,
 }) as Record<string, Record<string, unknown>>;
 
-const styleFiles = import.meta.glob("/bundles/*/**/*.css", {
+const styleFiles = import.meta.glob("/theme-bundles/*/**/*.css", {
   eager: true,
   query: "?inline",
   import: "default",

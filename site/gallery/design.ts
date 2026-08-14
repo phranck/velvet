@@ -12,7 +12,7 @@
  * it, so what the gallery shows is what an installation would get.
  */
 
-import { FIXTURES, fixtureNamed } from "../bundles/fixtures/index.js";
+import { FIXTURES, fixtureNamed } from "../theme-bundles/fixtures/index.js";
 import { installedDesign } from "../src/lib/bundles/installed.js";
 
 const parameters = new URLSearchParams(window.location.search);
@@ -38,7 +38,7 @@ if (!design) {
   */
   const stylesheet = document.createElement("link");
   stylesheet.rel = "stylesheet";
-  stylesheet.href = `/bundles/${design.manifest.id}/${design.manifest.entries.styles}`;
+  stylesheet.href = `/theme-bundles/${design.manifest.id}/${design.manifest.entries.styles}`;
   const applied = new Promise<void>((resolve) => {
     stylesheet.addEventListener("load", () => resolve());
     stylesheet.addEventListener("error", () => resolve());

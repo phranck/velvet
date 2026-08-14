@@ -39,7 +39,7 @@ import type { Browser, Page } from "playwright";
 
 import type { BundleData } from "../src/lib/bundles/data.js";
 import { uptimeForRange, visibleIncidentEvents } from "../src/lib/data.js";
-import { FIXTURES, type Fixture } from "../bundles/fixtures/index.js";
+import { FIXTURES, type Fixture } from "../theme-bundles/fixtures/index.js";
 import { readBundles, type ReadBundle } from "./bundles.js";
 
 /** One thing a bundle got wrong, named the way a person can act on it. */
