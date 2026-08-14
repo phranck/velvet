@@ -279,7 +279,14 @@ function service(
     <span class="service-name"><span class="service-name-label">${escape(entry.name)}</span></span>
     <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
-        <div class="chart-host"></div>
+        <div class="response-chart">
+          <p class="chart-caption">Response time</p>
+          <div class="chart-plot"></div>
+          <div class="chart-axis-row" aria-hidden="true">
+            <span class="chart-axis-from"></span>
+            <span class="chart-axis-to">Now</span>
+          </div>
+        </div>
       </div>
     </div>
   </article>`;

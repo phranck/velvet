@@ -169,14 +169,6 @@
   --detail-edge-width: 0px;
   --detail-edge-colour: var(--surface-rule);
   --detail-fill: transparent;
-  /* Nothing above the plot: the window's own edge is what separates it from
-     the plate, and a rule drawn there is a second separator for one thing. */
-  --chart-rule-width: 0px;
-  /* The scale reads itself: the trace's colours are the two protocol windows
-     above it, and a key repeating them is a caption for something already
-     labelled. */
-  --chart-legend-display: none;
-  --chart-rule-colour: var(--surface-rule);
   /* The opened panel is not a card, so it adds nothing of its own: everything
      inside the case stands the same distance from it, which is the card's
      padding plus the inset every row shares. */
@@ -251,123 +243,6 @@
   /* Four stacked lamps per day, which is how a deck without a display showed
      a level, over the oxide brown of the tape itself. */
   --bar-hover-height: 36px;
-
-  /* ── Chart ────────────────────────────────────────────────────────────── */
-  /*
-    The dial.
-
-    A receiver of this period reads through a lit window with a scale printed
-    on the glass: fine ticks along the bottom, longer ones where the figures
-    stand, and a lamp behind it warming the whole face. The trace runs across
-    that scale the way the tuning needle does.
-  */
-  /*
-    The scale is a window in the same plate as the panel above it, cut with a
-    larger corner because it is a larger window: the panel's 5px reads as a
-    square hole at 856 by 200, where this reads as milled. No rim, because a
-    hole in a plate has none.
-  */
-  --chart-plot-inset: 0px;
-  --chart-plot-edge-width: 0px;
-  --chart-plot-edge-colour: transparent;
-  --chart-plot-radius: 9px;
-  /*
-    The four walls of the cut, over everything in the window.
-
-    The light stands above and a little to the left, which is the same light
-    the case is drawn by. So the wall under the top edge is in shadow and
-    throws furthest, the wall behind the leading edge throws a shorter one
-    across, the trailing one less again, and the wall at the foot is the one
-    the light reaches: a hairline of bare metal along the bottom of the cut.
-
-    The panel above states one shadow for all of this, which is enough at 623
-    by 53 and not at 856 by 200: a single throw from the top edge leaves the
-    other three sides flat, and a flat side reads as a printed rectangle rather
-    than as a hole.
-
-    One throw per wall and no more. Blurred throws add where they meet, so a
-    fifth one darkening the foot stood under the hairline that lights it and
-    the two corners at the top carried the sum of two. The fill below already
-    darkens towards the bottom, which is the third thing that was adding.
-  */
-  --chart-plot-shadow: inset 0 4px 6px rgb(0 0 0 / 0.45),
-    inset 3px 0 5px rgb(0 0 0 / 0.22), inset -3px 0 5px rgb(0 0 0 / 0.18),
-    inset 0 -1px 0 rgb(232 220 196 / 0.12);
-  /* The lip the cut leaves in the plate at its lower edge, outside the window
-     rather than in it. It sits on the plot itself, because the window clips
-     its own contents and an outset shadow drawn by a child is cut away with
-     them. */
-  --chart-plot-lip: 0 1px 0 rgb(232 220 196 / 0.09);
-  --chart-plot-fill: radial-gradient(
-      ellipse 80% 130% at 50% 100%,
-      rgb(232 163 61 / 0.22),
-      transparent 70%
-    ),
-    linear-gradient(to bottom, #241f18, #16130f);
-  /* No value axis: the trace runs from edge to edge and the scale below it is
-     what the reading is measured against. */
-  --chart-axis-value-display: none;
-  /* The needle: a strip of plexiglass with a red line down the middle of it,
-     which is how a receiver of this period reads its own scale. */
-  --chart-crosshair-colour: #e2453a;
-  --chart-hover-point-display: none;
-  --chart-needle-width: 7px;
-  --chart-needle-fill: rgb(232 220 196 / 0.10);
-  --chart-needle-edge: rgb(232 220 196 / 0.22);
-  /* The printed scale, standing on the foot of the plot with the range's two
-     ends below it. A mark is a length of time rather than a distance across
-     the drawing, so how far apart they stand follows from the window and only
-     their two lengths are stated here. */
-  --chart-tick-colour: rgb(232 220 196 / 0.45);
-  --chart-tick-major-colour: rgb(232 220 196 / 0.8);
-  /* How far the scale stands clear of the foot of the window, in the drawing's
-     own units. The two lengths in `script.ts` carry the same five units back
-     down again, so a mark reaches below the line it is lifted to and only its
-     head is where the lift puts it. */
-  --chart-tick-lift: -1px;
-  --chart-head-margin: 0px;
-  /* Air above the caption, so it stands with the window it names rather than
-     under the line of dates it follows. Measured: 25px over it and 9px under
-     it, against 16 and 9 with none. */
-  --chart-head-space: var(--space-tight);
-  /* The gap between the drawing and the two ends of the range under it. */
-  --chart-axis-space: 5px;
-  /* Room over the highest reading for its own figure plus ten pixels of air
-     to the top of the box. */
-  --chart-grid-colour: var(--surface-rule);
-  --chart-grid-alpha: 100%;
-  --chart-axis-colour: var(--surface-rule);
-  --chart-axis-alpha: 100%;
-  /*
-    The caption stands over the middle of the window rather than at its leading
-    edge, because the plot spans both of the chart's columns and this design
-    draws no legend beside it.
-
-    Indented by a whole step of its own tracking, which moves the letters by
-    half of one. Tracking is added after the last letter as well as between
-    them, so a centred line sits half a step left of the box it is centred in;
-    an indent takes that much off the width the line is then centred in, so it
-    shifts the line by half of what it states. Measured at 1.68px of tracking:
-    the letters centre on 828.50 against the window's own 828.50, where an
-    indent of half a step left them at 828.08.
-  */
-  --chart-caption-column: 1 / -1;
-  --chart-caption-align: center;
-  --chart-caption-indent: var(--label-tracking);
-  /* The figures print on the glass beside the ticks, the way a scale of this
-     period carries its own readings. */
-  --chart-scale-display: block;
-  --chart-scale-colour: var(--text-3);
-  --chart-scale-alpha: 100%;
-  --chart-grid-dash: 3 4;
-  --chart-line-width: 2px;
-  --chart-line-cap: butt;
-  --chart-ipv4-dash: none;
-  /* Both traces unbroken, each washed down to the scale below it. */
-  --chart-ipv6-dash: none;
-  /* The needle's line is unbroken, the way a printed pointer is. */
-  --chart-crosshair-dash: none;
-  --chart-key-width: 16px;
 
   /* ── Backdrop ─────────────────────────────────────────────────────────── */
   /* The scan lines of a monitor, over a warm grey the colour of a painted
@@ -3098,23 +2973,6 @@
   overflow: hidden;
 }
 
-/*
-  Whatever a design labels its plot with, standing at the leading edge of the
-  caption over it.
-
-  Laid over the panel rather than given a column beside the chart, because the
-  caption is centred on the window and a column of its own would take that
-  centring away from it. Its box is as deep as the caption's line and it
-  centres what it holds in that, so the two read on one line however tall
-  either happens to be.
-*/
-.service-details > .service-protocols {
-  position: absolute;
-  inset-block-start: var(--chart-head-space);
-  inset-inline-start: 0;
-  min-height: calc(var(--text-size-caption) * var(--text-leading-body));
-}
-
 .service-details {
   /* Its own edge rather than the page's, because a design may want the panel
      to be a filled field with no outline at all. */
@@ -3161,117 +3019,109 @@
 }
 
 /* ── Response chart ───────────────────────────────────────────────────────── */
+/*
+  The dial.
+
+  A receiver of this period reads through a lit window with a scale printed on
+  the glass: fine ticks along the bottom, longer ones where the figures stand,
+  and a lamp behind it warming the whole face. The trace runs across that scale
+  the way the tuning needle does.
+
+  The shell is this design's own markup, and it draws no legend: the trace's
+  colours are the two protocol windows above it, so a key repeating them labels
+  something already labelled. Its caption and the two ends of the range are all
+  that stand around the window.
+*/
 .response-chart {
   display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: var(--space-tight) var(--space-row);
-  /* Its own space above rather than the general block step, because a design
-     that draws no rule between the readings and the chart wants them closer
-     than two stacked blocks would be. */
-  margin-top: var(--chart-head-margin);
-  padding-top: var(--chart-head-space);
-  /* Its own rule rather than the page's, because a design may separate the
-     chart from the readings above it by space alone. */
-  border-top: var(--chart-rule-width) var(--rule-style) var(--chart-rule-colour);
+  gap: var(--space-tight);
+  /* Air above the caption, so it stands with the window it names rather than
+     under the line of dates it follows. Measured: 25px over it and 9px under
+     it, against 16 and 9 with none. Nothing is drawn above it, because the
+     window's own edge is what separates it from the plate and a rule there is
+     a second separator for one thing. */
+  padding-top: var(--space-tight);
 }
 
+/*
+  The caption stands over the middle of the window rather than at its leading
+  edge, because the plot spans the whole chart and this design draws no legend
+  beside it.
+
+  Indented by a whole step of its own tracking, which moves the letters by half
+  of one. Tracking is added after the last letter as well as between them, so a
+  centred line sits half a step left of the box it is centred in; an indent
+  takes that much off the width the line is then centred in, so it shifts the
+  line by half of what it states. Measured at 1.68px of tracking: the letters
+  centre on 828.50 against the window's own 828.50, where an indent of half a
+  step left them at 828.08.
+*/
 .chart-caption {
-  /* Over the whole chart or only over its first column, which is what decides
-     whether the caption names the plot or labels the row the legend shares. */
-  grid-column: var(--chart-caption-column);
   margin: 0;
   color: var(--text-2);
   font-family: var(--font-display);
   font-size: var(--text-size-caption);
   font-weight: var(--display-weight);
   letter-spacing: var(--label-tracking);
-  text-align: var(--chart-caption-align);
-  text-indent: var(--chart-caption-indent);
+  text-align: center;
+  text-indent: var(--label-tracking);
   text-transform: var(--label-transform);
 }
 
-.chart-legend {
-  display: var(--chart-legend-display, flex);
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-hair) var(--space-row);
-}
-
-.chart-legend-item {
-  display: inline-grid;
-  grid-template-columns: var(--chart-key-width) auto auto;
-  align-items: center;
-  gap: var(--space-hair);
-  color: var(--text-2);
-  font-family: var(--font-meta);
-  font-size: var(--text-size-badge);
-}
-
-.chart-legend-item strong {
-  color: var(--text-1);
-  font-weight: var(--meta-weight);
-}
-
-.chart-line-key {
-  height: 0;
-  border-top: var(--chart-line-width) solid var(--series-colour);
-}
-
-.chart-plot,
-.chart-empty {
-  grid-column: 1 / -1;
-}
-
 /*
-  The face the readings are drawn on.
+  The window the readings are drawn in.
 
-  Most designs leave it bare and the page shows through. A design may instead
-  give it a surface, a frame and room around the drawing, which is how one of
-  them turns the plot into the lit scale of a receiver: the ticks are the
-  surface, and the trace runs across them.
-*/
-.chart-plot {
-  display: block;
-  padding: var(--chart-plot-inset);
-  border: var(--chart-plot-edge-width) var(--rule-style)
-    var(--chart-plot-edge-colour);
-  border-radius: var(--chart-plot-radius, var(--control-radius));
-  background: var(--chart-plot-fill);
-  /* Anything a design draws outside the window rather than in it, such as the
-     lip a cut leaves in the surface around it. It belongs here rather than on
-     the layer below, because the window clips its own contents and an outset
-     shadow drawn by a child is cut away with them. */
-  box-shadow: var(--chart-plot-lip, none);
-}
+  It is a window in the same plate as the panel above it, cut with a larger
+  corner because it is a larger window: the panel's 5px reads as a square hole
+  at 856 by 200, where this reads as milled. No rim, because a hole in a plate
+  has none.
 
-/*
-  Everything the window holds is cut off at its own edge: the trace, the ticks
-  and the strip the pointer rides on all end where the plate begins, rather than
-  running out over it.
-*/
-.chart-plot {
-  overflow: hidden;
-}
-
-/*
-  The cut, over everything inside the window.
-
-  An inset shadow on the plot itself falls under its contents, which puts the
-  plexiglass strip and the trace in front of the plate's own edge. They run
-  behind it, so the shadow is drawn as a layer of its own above them and takes
-  no pointer, or it would swallow the hover the strip follows.
+  Everything it holds is cut off at its own edge: the trace, the ticks and the
+  strip the pointer rides on all end where the plate begins, rather than running
+  out over it. The lip the cut leaves in the plate at its lower edge sits on
+  this element rather than on a child, because the window clips its own contents
+  and an outset shadow drawn by a child is cut away with them.
 */
 .chart-plot {
   position: relative;
+  overflow: hidden;
+  border-radius: 9px;
+  background: radial-gradient(
+      ellipse 80% 130% at 50% 100%,
+      rgb(232 163 61 / 0.22),
+      transparent 70%
+    ),
+    linear-gradient(to bottom, #241f18, #16130f);
+  box-shadow: 0 1px 0 rgb(232 220 196 / 0.09);
 }
 
+/*
+  The four walls of the cut, over everything in the window.
+
+  The light stands above and a little to the left, which is the same light the
+  case is drawn by. So the wall under the top edge is in shadow and throws
+  furthest, the wall behind the leading edge throws a shorter one across, the
+  trailing one less again, and the wall at the foot is the one the light
+  reaches: a hairline of bare metal along the bottom of the cut.
+
+  One throw per wall and no more. Blurred throws add where they meet, so a fifth
+  one darkening the foot stood under the hairline that lights it and the two
+  corners at the top carried the sum of two. The fill below already darkens
+  towards the bottom, which is the third thing that was adding.
+
+  Drawn as a layer of its own above the contents rather than as an inset shadow
+  on the plot, because an inset shadow falls under them and would put the
+  plexiglass strip and the trace in front of the plate's own edge. It takes no
+  pointer, or it would swallow the hover the strip follows.
+*/
 .chart-plot::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: var(--chart-plot-shadow, none);
+  box-shadow: inset 0 4px 6px rgb(0 0 0 / 0.45),
+    inset 3px 0 5px rgb(0 0 0 / 0.22), inset -3px 0 5px rgb(0 0 0 / 0.18),
+    inset 0 -1px 0 rgb(232 220 196 / 0.12);
   pointer-events: none;
 }
 
@@ -3283,16 +3133,14 @@
 }
 
 /*
-  The two ends of the range, read under the drawing rather than inside it.
-
-  Out here they stand on the card rather than on whatever surface the plot is
-  given, and they keep one size instead of scaling with the drawing.
+  The two ends of the range, read under the window rather than inside it. They
+  take the same printed legend the strip's dates do, which `.strip-axis` states
+  beside this.
 */
 .chart-axis-row {
-  grid-column: 1 / -1;
-  /* Its own distance from the drawing, with the grid's row gap taken back off
-     so the token states the whole of it. */
-  margin-block-start: calc(var(--chart-axis-space) - var(--space-tight));
+  /* 5px from the drawing, with the grid's row gap taken back off so this one
+     value states the whole distance. */
+  margin-block-start: calc(5px - var(--space-tight));
 }
 
 .chart-empty {
@@ -3313,64 +3161,41 @@
   --series-colour: var(--series-next, var(--protocol-ipv6));
 }
 
-/*
-  The grid and the two axes, which a design may draw in the series' own colour
-  rather than in the page's rule colour. Where the theme lists no colour per
-  service, `--series-own` is not defined at all and the fallback stands.
-
-  Both carry their own strength, because an axis that reads as firmly as its
-  grid stops being an axis.
-*/
+/* The grid behind the trace, and the time axis it stands on. */
 .chart-grid line {
-  stroke: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-grid-colour)) var(--chart-grid-alpha),
-    transparent
-  );
+  stroke: var(--surface-rule);
   stroke-width: var(--rule-width);
-  stroke-dasharray: var(--chart-grid-dash);
+  stroke-dasharray: 3 4;
   vector-effect: non-scaling-stroke;
 }
 
 .chart-axis-line {
-  stroke: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-axis-colour)) var(--chart-axis-alpha),
-    transparent
-  );
+  stroke: var(--surface-rule);
   stroke-width: var(--rule-width);
   vector-effect: non-scaling-stroke;
 }
 
-/* The reading each grid line stands for. Off in most designs, where the two
-   ends of the range are the only scale the chart shows. */
+/* No value axis: the trace runs from edge to edge and the scale below it is
+   what the reading is measured against. */
+.chart-axis-line--value {
+  display: none;
+}
+
+/* The figures print on the glass beside the ticks, the way a scale of this
+   period carries its own readings. */
 .chart-scale text {
-  display: var(--chart-scale-display);
-  /* The same source the axes take, so a scale reads as belonging to the lines
-     it labels rather than to the page. */
-  fill: color-mix(
-    in srgb,
-    var(--series-own, var(--chart-scale-colour)) var(--chart-scale-alpha),
-    transparent
-  );
+  fill: var(--text-3);
   font-family: var(--font-meta);
   font-size: var(--text-size-chart-caption);
 }
 
+/* Both traces unbroken, each washed down to the scale below it. */
 .chart-line {
   fill: none;
   stroke: var(--series-colour);
-  stroke-linecap: var(--chart-line-cap);
+  stroke-linecap: butt;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-}
-
-.chart-line[data-protocol="ipv4"] {
-  stroke-dasharray: var(--chart-ipv4-dash);
-}
-
-.chart-line[data-protocol="ipv6"] {
-  stroke-dasharray: var(--chart-ipv6-dash);
 }
 
 .chart-area {
@@ -3378,27 +3203,21 @@
 }
 
 /* A reading with no neighbour to join, drawn as a ring so it reads as one
-   measurement rather than as a dot of the trace. It is filled with the panel it
-   sits on, not the page's sunken surface, which a design may set apart. */
+   measurement rather than as a dot of the trace. */
 .chart-point,
 .chart-hover-point {
   fill: var(--detail-fill);
   stroke: var(--series-colour);
-  stroke-width: var(--chart-line-width);
+  stroke-width: 2px;
   vector-effect: non-scaling-stroke;
 }
 
-/* The ring on the trace under the pointer. A design that reads its chart with
-   a pointer of its own draws none. */
+/* The ring on the trace under the pointer, which this design draws none of:
+   it reads its scale with a pointer of its own. */
 .chart-hover-point {
-  display: var(--chart-hover-point-display);
+  display: none;
 }
 
-/*
-  The ticks of a printed scale, hanging below the plot. Two lengths, so the
-  eye finds the long ones first, and both are zero in a design that prints no
-  scale.
-*/
 /*
   The scale stands clear of the foot of the window rather than on it.
 
@@ -3412,33 +3231,36 @@
   a card gives the plot here.
 */
 .chart-ticks {
-  transform: translateY(var(--chart-tick-lift, 0));
+  transform: translateY(-1px);
 }
 
+/*
+  The printed scale, standing on the foot of the plot with the range's two ends
+  below it. Two lengths, so the eye finds the long ones first, and how far apart
+  the marks stand follows from the window rather than from this.
+*/
 .chart-tick {
-  stroke: var(--chart-tick-colour);
+  stroke: rgb(232 220 196 / 0.45);
   stroke-width: var(--rule-width);
   vector-effect: non-scaling-stroke;
 }
 
 .chart-tick--major {
-  stroke: var(--chart-tick-major-colour);
+  stroke: rgb(232 220 196 / 0.8);
 }
 
 /*
-  The pointer.
-
-  A receiver reads through a strip of plexiglass with a line down the middle
-  of it, and that is what this is: a translucent band the width the theme
-  states, centred on the reading, with the crosshair drawn over it. A design
-  that wants none sets the width to zero.
+  The needle: a strip of plexiglass with a red line down the middle of it, which
+  is how a receiver of this period reads its own scale. It is centred on the
+  reading by a transform against its own box, since only this design knows the
+  width to halve.
 */
 .chart-needle {
   transform-box: fill-box;
   transform: translateX(-50%);
-  width: var(--chart-needle-width);
-  fill: var(--chart-needle-fill);
-  stroke: var(--chart-needle-edge);
+  width: 7px;
+  fill: rgb(232 220 196 / 0.1);
+  stroke: rgb(232 220 196 / 0.22);
   stroke-width: var(--rule-width);
   vector-effect: non-scaling-stroke;
   pointer-events: none;
@@ -3448,37 +3270,11 @@
   stop-color: var(--series-colour);
 }
 
-/* The value axis, which a design drawing edge to edge does not want. */
-.chart-axis-line--value {
-  display: var(--chart-axis-value-display);
-}
-
+/* The needle's line is unbroken, the way a printed pointer is. */
 .chart-crosshair {
-  stroke: var(--chart-crosshair-colour);
+  stroke: #e2453a;
   stroke-width: var(--rule-width);
-  stroke-dasharray: var(--chart-crosshair-dash);
   vector-effect: non-scaling-stroke;
-}
-
-.chart-tooltip rect {
-  fill: var(--surface-popover);
-  stroke: var(--popover-edge);
-  stroke-width: var(--rule-width);
-}
-
-.chart-tooltip text {
-  fill: var(--popover-text);
-  font-family: var(--font-meta);
-  font-size: var(--text-size-chart-label);
-}
-
-.chart-tooltip .chart-tooltip-time {
-  fill: var(--popover-text-muted);
-  font-size: var(--text-size-chart-caption);
-}
-
-.chart-tooltip circle {
-  fill: var(--series-colour);
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */

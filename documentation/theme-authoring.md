@@ -215,7 +215,13 @@ The plugin is that component with the appearance taken from the design rather th
 
 ### The response chart is arithmetic
 
-`ResponseTimeChart.svelte` states its plot box as module constants: `WIDTH` at line 36, `HEIGHT` at 37, the plot edges from 38, `MAX_POINTS` at 42, `TOOLTIP_WIDTH` at 43. In the plugin they are a style object a design passes, and the proportion of the plot becomes a design decision rather than a constant.
+**The design is handed the plot, and everything around it is the design's own markup.** The caption, the legend and the two ends of the range are written in the template and styled directly, the way the strip's dates already were. The plugin is given the plot element, draws the SVG into it and nothing outside it, and hands back what a design cannot work out for itself: the legend arrives as one entry per protocol that answered, carrying the protocol, its name and its latest reading, and the range's left end is the same `rangeLabel` the strip is labelled with.
+
+A design that wants no legend therefore writes none. `retro-chassis` does exactly that, because the trace's colours are the two protocol windows above it and a key repeating them labels something already labelled.
+
+This is what the rule at the head of section 6 asks of every plugin, and until then the chart was the one that broke it. It built the caption, the legend, the plot frame and the axis row itself, which left every design steering that structure from a distance: 42 custom properties across the four of them, against one for the strip, and most of them declared to switch off something another design wanted.
+
+`ResponseTimeChart.svelte` states its plot box as module constants: `WIDTH` at line 36, `HEIGHT` at 37, the plot edges from 38, `MAX_POINTS` at 42. In the plugin they are a style object a design passes, and the proportion of the plot becomes a design decision rather than a constant.
 
 The curve is drawn by `monotonePath` from `site/src/lib/response-chart.ts`, imported rather than reimplemented.
 

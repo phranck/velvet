@@ -48,7 +48,7 @@ export type PluginName = (typeof PLUGIN_NAMES)[number];
 export const PLUGIN_VERSIONS: Record<PluginName, number> = {
   status: 1,
   "uptime-strip": 1,
-  "response-chart": 2,
+  "response-chart": 3,
   disclosure: 1,
   overlay: 1,
   preferences: 1,
