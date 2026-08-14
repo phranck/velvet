@@ -7,6 +7,11 @@ import {
 } from "@velvet/contracts";
 
 import {
+  browserNavigate,
+  MAX_RESPONSE_BYTES,
+  readJsonResponse as readBoundedJsonResponse,
+} from "../lib/service-response.js";
+import {
   SetupClientError,
   type SetupClient,
   type SetupFailure,
@@ -21,7 +26,6 @@ const BACKGROUND_PROGRESS_STAGES = new Set<SetupProgressStage>([
   "deploying-page",
   "waiting-for-deployment",
 ]);
-const MAX_RESPONSE_BYTES = 256 * 1_024;
 const MAX_STATUS_CHECKS = 125;
 const STATUS_POLL_INTERVAL_MS = 2_000;
 
@@ -287,22 +291,8 @@ function singlePositiveIdentifier(
   return Number.isSafeInteger(value);
 }
 
-async function readJsonResponse(response: Response): Promise<unknown> {
-  if (!response.body) throw new Error("SETUP_FAILED");
-  const declaredLength = Number(response.headers.get("Content-Length"));
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
-    throw new Error("SETUP_FAILED");
-  }
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes.byteLength > MAX_RESPONSE_BYTES) throw new Error("SETUP_FAILED");
-  try {
-    return JSON.parse(new TextDecoder().decode(bytes));
-  } catch {
-    throw new Error("SETUP_FAILED");
-  }
-}
+/** Every refusal from this client reads as one failure to the step above. */
+const setupFailed = (): Error => new Error("SETUP_FAILED");
 
-function browserNavigate(url: string): void {
-  if (!globalThis.location) throw new Error("SETUP_FAILED");
-  globalThis.location.assign(url);
-}
+const readJsonResponse = (response: Response): Promise<unknown> =>
+  readBoundedJsonResponse(response, setupFailed);
