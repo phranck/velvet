@@ -1,6 +1,7 @@
 import {
   SEMANTIC_VERSION_PATTERN,
   parseVelvetConfiguration,
+  validateSetupInstallations,
 } from "@velvet/contracts";
 
 import { jsonResponse, readBoundedJson } from "./http.js";
@@ -176,7 +177,19 @@ export function createUpdateRoutes(
         if (input.route === INSTALLATIONS_ROUTE) {
           if (method !== "GET") return null;
           const listed = await access.list(input.session.githubUserToken);
-          return jsonResponse(listed);
+          const body = {
+            repositories: listed.repositories.map(publicInstallation),
+            truncated: listed.truncated,
+          };
+          // Held against the contract before it leaves, because the
+          // configurator refuses a listing that does not match it and would
+          // otherwise report that as its own failure.
+          if (!validateSetupInstallations(body).success) {
+            throw new ManagedUpdateError("UPDATE_FAILED", {
+              errorId: errorId(),
+            });
+          }
+          return jsonResponse(body);
         }
 
         if (input.route === UPDATES_ROUTE && method === "GET") {
@@ -319,6 +332,26 @@ function publicRepository(
     owner: repository.owner,
     name: repository.name,
     htmlUrl: repository.htmlUrl,
+  };
+}
+
+/**
+ * One entry of the installation listing, in the shape the contract states.
+ *
+ * Built from {@link publicRepository} rather than beside it, so the fields a
+ * repository shows the browser are decided once. What this adds is the
+ * installed version, which the listing carries per entry whilst the update
+ * route reports it on its own.
+ *
+ * `defaultBranch` is deliberately not here. It is how the service reads and
+ * writes a repository's files, and nothing in the browser addresses a branch.
+ */
+function publicInstallation(
+  repository: ManageableRepository,
+): Record<string, unknown> {
+  return {
+    ...publicRepository(repository),
+    installedVersion: repository.installedVersion,
   };
 }
 
