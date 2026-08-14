@@ -53,6 +53,13 @@ export interface VelvetConfig {
    * domain without anybody being able to tell.
    */
   theme: string;
+  /**
+   * What has been set on that theme, keyed by the feature it belongs to.
+   *
+   * Absent where nothing was set. The build writes each of these into the page
+   * as the custom property its feature names, so nothing reads them at runtime.
+   */
+  themeSettings?: Record<string, string | number | boolean>;
   /** Card layout: one grouped card (default) or one card per service. */
   layout: VelvetLayout;
   /** Range pre-selected on first visit, before the visitor picks one themselves. */

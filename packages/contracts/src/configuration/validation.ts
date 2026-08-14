@@ -577,6 +577,9 @@ function normalizeConfiguration(
             }
           : {}),
         theme: statusPage.theme,
+        ...(statusPage.themeSettings
+          ? { themeSettings: { ...statusPage.themeSettings } }
+          : {}),
         ...(statusPage.seo ? { seo: { ...statusPage.seo } } : {}),
       },
       services: services.data,

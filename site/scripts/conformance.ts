@@ -41,6 +41,7 @@ import type { ThemeData } from "../src/lib/themes/data.js";
 import { uptimeForRange, visibleIncidentEvents } from "../src/lib/data.js";
 import { FIXTURES, type Fixture } from "../theme-bundles/fixtures/index.js";
 import { readThemes, type ReadTheme } from "./themes.js";
+import { themeSettingsStyle } from "../src/lib/themes/settings.js";
 
 /** One thing a theme got wrong, named the way a person can act on it. */
 export interface Finding {
@@ -72,7 +73,12 @@ const CONTENT_TYPES: Record<string, string> = {
  * it, which is why the page below carries no styling of its own beyond removing
  * the default margin the user agent puts on the body.
  */
-function hostDocument(markup: string, title: string, data: unknown): string {
+function hostDocument(
+  markup: string,
+  title: string,
+  data: unknown,
+  settings: string,
+): string {
   // The data rides in the document rather than being fetched, because the
   // theme is forbidden from fetching and the host has it already. The escape
   // is the one that matters: a service name containing `</script>` would
@@ -88,6 +94,7 @@ function hostDocument(markup: string, title: string, data: unknown): string {
     <style>
       body { margin: 0; }
     </style>
+    ${settings}
   </head>
   <body>
     <div id="velvet-root">${markup}</div>
@@ -671,13 +678,19 @@ export async function runConformance(
       continue;
     }
 
+    // What the build writes for an installation that has set nothing, so a
+    // theme is checked drawn the way a published page draws it.
+    const settings = themeSettingsStyle(theme.manifest.features);
     const served = await serveBundle(theme, (name) => {
       const fixture = fixtures.find((candidate) => candidate.name === name);
-      if (!fixture) return hostDocument("<p>no such fixture</p>", "unknown", {});
+      if (!fixture) {
+        return hostDocument("<p>no such fixture</p>", "unknown", {}, settings);
+      }
       return hostDocument(
         template(fixture.data),
         `${theme.manifest!.name} — ${fixture.name}`,
         fixture.data,
+        settings,
       );
     });
 

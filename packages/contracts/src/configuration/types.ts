@@ -71,6 +71,13 @@ export interface NormalizedVelvetConfiguration {
     logoUrl?: string;
     /** The theme the page is published in, named by its directory. */
     theme: string;
+    /**
+     * What has been set on that theme, keyed by the feature it belongs to.
+     *
+     * Absent where nothing was set. What the keys mean is the theme's own
+     * answer, so `checkThemeSettings` holds these against its feature table.
+     */
+    themeSettings?: Record<string, string | number | boolean>;
     seo?: VelvetConfigurationInput["statusPage"]["seo"];
   };
   services: NormalizedService[];

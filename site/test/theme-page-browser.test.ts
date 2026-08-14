@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { test } from "bun:test";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { chromium } from "playwright";
@@ -27,7 +28,10 @@ const siteRoot = resolve(import.meta.dirname, "..");
 const fixtures = resolve(siteRoot, "../packages/contracts/fixtures/valid");
 
 /** Builds the page the way a published installation receives it. */
-async function buildThemePage(theme: string): Promise<{
+async function buildThemePage(
+  theme: string,
+  themeSettings?: Record<string, string | number | boolean>,
+): Promise<{
   outDir: string;
   status: StatusDocument;
   cleanup: () => Promise<void>;
@@ -53,6 +57,7 @@ async function buildThemePage(theme: string): Promise<{
       dataBaseUrl: "./",
       defaultRange: "month",
       theme,
+      ...(themeSettings ? { themeSettings } : {}),
       serial: 42,
     }),
   );
@@ -119,11 +124,14 @@ test(
         );
       }
 
-      // A bundle carries its own appearance, so the injected `:root` block that
-      // themed the component page is gone and the theme's own stylesheet is
-      // linked instead.
-      assert.doesNotMatch(published, /<style>\s*:root \{/s);
+      // A theme carries its own appearance: the page links its stylesheet, and
+      // the only properties written into the document are the ones its own
+      // manifest declares as settings.
       assert.match(published, /<link rel="stylesheet"[^>]*href="[^"]*\.css"/);
+      const declared = [
+        ...(published.match(/--[a-z-]+(?=:)/gu) ?? []),
+      ].filter((property) => published.includes(`<style>:root { ${property}`));
+      assert.deepEqual(declared, ["--chart-area-display"]);
 
       const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
       await refuseOffsiteRequests(page);
@@ -166,6 +174,60 @@ test(
       await server.stop(true);
       await built.cleanup();
     }
+  },
+  BROWSER_TIMEOUT_MS,
+);
+
+test(
+  "publishes what was set on the theme, and what was not",
+  async () => {
+    const off = await buildThemePage("velvet", { chartWash: false });
+    const browser = await chromium.launch();
+    try {
+      // Written whether or not anybody set it, so a theme reads one answer
+      // rather than a value in the document and a fallback in its stylesheet.
+      const html = await readFile(join(off.outDir, "index.html"), "utf8");
+      assert.match(html, /--chart-area-display: none;/);
+
+      const page = await browser.newPage();
+      await refuseOffsiteRequests(page);
+      await page.goto(pathToFileURL(join(off.outDir, "index.html")).href);
+      // In force on the page rather than merely present in the document, which
+      // is what the theme's own `var()` reads.
+      const inForce = await page.evaluate(() =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--chart-area-display")
+          .trim(),
+      );
+      assert.equal(inForce, "none");
+      await page.close();
+    } finally {
+      await browser.close();
+      await off.cleanup();
+    }
+
+    const on = await buildThemePage("velvet");
+    try {
+      const html = await readFile(join(on.outDir, "index.html"), "utf8");
+      assert.match(html, /--chart-area-display: block;/);
+    } finally {
+      await on.cleanup();
+    }
+  },
+  BROWSER_TIMEOUT_MS,
+);
+
+test(
+  "stops the build rather than publishing a setting the theme cannot take",
+  async () => {
+    await assert.rejects(
+      buildThemePage("velvet", { chartWash: "sometimes" }),
+      /must be true or false/,
+    );
+    await assert.rejects(
+      buildThemePage("velvet", { chartWish: true }),
+      /no setting called "chartWish"/,
+    );
   },
   BROWSER_TIMEOUT_MS,
 );

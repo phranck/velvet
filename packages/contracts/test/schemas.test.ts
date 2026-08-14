@@ -113,6 +113,7 @@ const EVERY_STATUS_PAGE_FIELD: Record<string, unknown> = {
   name: "Example Status",
   customDomain: "status.example.com",
   theme: "retro-chassis",
+  themeSettings: { chartWash: false },
   layout: "cards",
   defaultRange: "90d",
   logoHeight: 96,

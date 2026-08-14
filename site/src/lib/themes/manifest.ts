@@ -67,14 +67,27 @@ export type ThemeFeature =
       key: string;
       type: "colour";
       label: string;
+      /** The custom property the value is written to. */
+      property: string;
       /** A six-digit hex colour, which is what a colour control hands back. */
       default: string;
     }
-  | { key: string; type: "switch"; label: string; default: boolean }
+  | {
+      key: string;
+      type: "switch";
+      label: string;
+      property: string;
+      default: boolean;
+      /** What the property is set to when it is on. */
+      on: string;
+      /** What the property is set to when it is off. */
+      off: string;
+    }
   | {
       key: string;
       type: "choice";
       label: string;
+      property: string;
       default: string;
       /** Every value this may take, in the order they are offered. */
       choices: string[];
@@ -83,9 +96,12 @@ export type ThemeFeature =
       key: string;
       type: "number";
       label: string;
+      property: string;
       default: number;
       minimum: number;
       maximum: number;
+      /** What the number is measured in, such as `px`. Empty for a count. */
+      unit: string;
     };
 
 /** Everything a theme says about itself. */
@@ -134,6 +150,8 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
 const HEX_COLOUR = /^#[0-9a-f]{6}$/i;
 /** A feature key, which reads the way a property does rather than a directory. */
 const FEATURE_KEY = /^[a-z][a-zA-Z0-9]*$/;
+/** A custom property, which is what a set value is written to. */
+const CUSTOM_PROPERTY = /^--[a-z][a-z0-9-]*$/;
 
 /** Everything a manifest may say at the top level. */
 const MANIFEST_KEYS = new Set([
@@ -155,10 +173,10 @@ const ENTRY_KEYS = new Set(["template", "styles", "script"]);
 
 /** Everything a feature may say, whatever its type. */
 const FEATURE_KEYS_BY_TYPE: Record<FeatureType, Set<string>> = {
-  colour: new Set(["type", "label", "default"]),
-  switch: new Set(["type", "label", "default"]),
-  choice: new Set(["type", "label", "default", "choices"]),
-  number: new Set(["type", "label", "default", "minimum", "maximum"]),
+  colour: new Set(["type", "label", "property", "default"]),
+  switch: new Set(["type", "label", "property", "default", "on", "off"]),
+  choice: new Set(["type", "label", "property", "default", "choices"]),
+  number: new Set(["type", "label", "property", "default", "minimum", "maximum", "unit"]),
 };
 
 /**
@@ -274,6 +292,13 @@ function readFeature(
   if (featureLabel === "") {
     errors.push(`${label} must carry the label its control is drawn with`);
   }
+  const property = record.property;
+  if (typeof property !== "string" || !CUSTOM_PROPERTY.test(property)) {
+    errors.push(
+      `${label}.property must name the custom property the value is written to, such as "--accent"`,
+    );
+    return undefined;
+  }
 
   const fallback = record.default;
   if (type === "colour") {
@@ -281,14 +306,22 @@ function readFeature(
       errors.push(`${label}.default must be a colour such as "#6366f1"`);
       return undefined;
     }
-    return { key, type, label: featureLabel, default: fallback };
+    return { key, type, label: featureLabel, property, default: fallback };
   }
   if (type === "switch") {
     if (typeof fallback !== "boolean") {
       errors.push(`${label}.default must be true or false`);
       return undefined;
     }
-    return { key, type, label: featureLabel, default: fallback };
+    const on = record.on;
+    const off = record.off;
+    if (typeof on !== "string" || on === "" || typeof off !== "string" || off === "") {
+      errors.push(
+        `${label} must state what its property reads when it is on and when it is off`,
+      );
+      return undefined;
+    }
+    return { key, type, label: featureLabel, property, default: fallback, on, off };
   }
   if (type === "choice") {
     const choices = record.choices;
@@ -305,7 +338,14 @@ function readFeature(
       errors.push(`${label}.default must be one of ${offered.join(", ")}`);
       return undefined;
     }
-    return { key, type, label: featureLabel, default: fallback, choices: offered };
+    return {
+      key,
+      type,
+      label: featureLabel,
+      property,
+      default: fallback,
+      choices: offered,
+    };
   }
   const minimum = record.minimum;
   const maximum = record.maximum;
@@ -327,7 +367,21 @@ function readFeature(
     );
     return undefined;
   }
-  return { key, type, label: featureLabel, default: fallback, minimum, maximum };
+  const unit = record.unit ?? "";
+  if (typeof unit !== "string") {
+    errors.push(`${label}.unit must be what the number is measured in, such as "px"`);
+    return undefined;
+  }
+  return {
+    key,
+    type,
+    label: featureLabel,
+    property,
+    default: fallback,
+    minimum,
+    maximum,
+    unit,
+  };
 }
 
 /**

@@ -58,6 +58,7 @@ const sw = {
 };
 const velvet = {
   theme: configuration.statusPage.theme,
+  themeSettings: configuration.statusPage.themeSettings,
   layout: configuration.statusPage.layout,
   defaultRange: configuration.statusPage.defaultRange,
   logoHeight: configuration.statusPage.logoHeight,
@@ -127,6 +128,11 @@ const config = {
   // Carried through untouched: whether a theme answers to the name is the
   // build's question, and it stops rather than guessing.
   theme: velvet.theme,
+  // Only where something was set. Which keys a theme offers is its own answer,
+  // so the build holds these against its feature table and stops on a fault.
+  ...(velvet.themeSettings && Object.keys(velvet.themeSettings).length > 0
+    ? { themeSettings: velvet.themeSettings }
+    : {}),
   defaultRange: normalizeRange(velvet.defaultRange),
   logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 72,
   icons: velvet.icons ?? {},

@@ -104,7 +104,7 @@ test("refuses a key the format does not define, wherever it stands", () => {
 
   const strayFeature = valid();
   strayFeature.features = {
-    accent: { type: "colour", label: "Accent", default: "#6366f1", step: 2 },
+    accent: { type: "colour", label: "Accent", property: "--proof", default: "#6366f1", step: 2 },
   };
   const result = parseThemeManifest(strayFeature, "proof");
   assert.equal(result.ok, false);
@@ -133,17 +133,31 @@ test("refuses a data version the host does not serve", () => {
 test("keeps all four kinds of feature, in the order they are declared", () => {
   const manifest = valid();
   manifest.features = {
-    accent: { type: "colour", label: "Accent", default: "#6366F1" },
-    chartWash: { type: "switch", label: "Wash under the curve", default: true },
+    accent: {
+      type: "colour",
+      label: "Accent",
+      property: "--accent",
+      default: "#6366F1",
+    },
+    chartWash: {
+      type: "switch",
+      label: "Wash under the curve",
+      property: "--chart-area-display",
+      default: true,
+      on: "block",
+      off: "none",
+    },
     corners: {
       type: "choice",
       label: "Corners",
+      property: "--corner-style",
       default: "rounded",
       choices: ["rounded", "square"],
     },
     gridLines: {
       type: "number",
       label: "Grid lines",
+      property: "--chart-grid-lines",
       default: 3,
       minimum: 1,
       maximum: 6,
@@ -160,15 +174,18 @@ test("keeps all four kinds of feature, in the order they are declared", () => {
     key: "accent",
     type: "colour",
     label: "Accent",
+    property: "--accent",
     default: "#6366F1",
   });
   assert.deepEqual(result.manifest.features[3], {
     key: "gridLines",
     type: "number",
     label: "Grid lines",
+    property: "--chart-grid-lines",
     default: 3,
     minimum: 1,
     maximum: 6,
+    unit: "",
   });
 });
 
@@ -176,12 +193,12 @@ test("refuses a feature whose value could not be drawn or checked", () => {
   const cases: Array<[string, Record<string, unknown>, RegExp]> = [
     [
       "a colour that is not one",
-      { accent: { type: "colour", label: "Accent", default: "indigo" } },
+      { accent: { type: "colour", label: "Accent", property: "--proof", default: "indigo" } },
       /must be a colour/,
     ],
     [
       "a switch with a colour for a default",
-      { wash: { type: "switch", label: "Wash", default: "#ffffff" } },
+      { wash: { type: "switch", label: "Wash", property: "--proof", default: "#ffffff", on: "block", off: "none" } },
       /must be true or false/,
     ],
     [
@@ -190,6 +207,7 @@ test("refuses a feature whose value could not be drawn or checked", () => {
         corners: {
           type: "choice",
           label: "Corners",
+          property: "--proof",
           default: "bevelled",
           choices: ["rounded", "square"],
         },
@@ -202,6 +220,7 @@ test("refuses a feature whose value could not be drawn or checked", () => {
         gridLines: {
           type: "number",
           label: "Grid lines",
+          property: "--proof",
           default: 9,
           minimum: 1,
           maximum: 6,
@@ -215,6 +234,7 @@ test("refuses a feature whose value could not be drawn or checked", () => {
         gridLines: {
           type: "number",
           label: "Grid lines",
+          property: "--proof",
           default: 3,
           minimum: 6,
           maximum: 1,
@@ -229,7 +249,7 @@ test("refuses a feature whose value could not be drawn or checked", () => {
     ],
     [
       "a key that reads like a directory rather than a property",
-      { "chart-wash": { type: "switch", label: "Wash", default: true } },
+      { "chart-wash": { type: "switch", label: "Wash", property: "--proof", default: true, on: "block", off: "none" } },
       /lower camel case/,
     ],
   ];
@@ -241,4 +261,46 @@ test("refuses a feature whose value could not be drawn or checked", () => {
     if (result.ok) continue;
     assert.match(result.errors.join("\n"), expected, what);
   }
+});
+
+test("refuses a feature that names no property to write", () => {
+  const manifest = valid();
+  manifest.features = {
+    accent: { type: "colour", label: "Accent", default: "#6366f1" },
+  };
+  const result = parseThemeManifest(manifest, "proof");
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.match(result.errors.join("\n"), /must name the custom property/);
+});
+
+test("refuses a switch that does not say what its property reads", () => {
+  const manifest = valid();
+  manifest.features = {
+    wash: { type: "switch", label: "Wash", property: "--wash", default: true },
+  };
+  const result = parseThemeManifest(manifest, "proof");
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.match(result.errors.join("\n"), /when it is on and when it is off/);
+});
+
+test("keeps the unit a number is measured in", () => {
+  const manifest = valid();
+  manifest.features = {
+    plotHeight: {
+      type: "number",
+      label: "Plot height",
+      property: "--chart-height",
+      default: 148,
+      minimum: 80,
+      maximum: 320,
+      unit: "px",
+    },
+  };
+  const result = parseThemeManifest(manifest, "proof");
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  const feature = result.manifest.features[0];
+  assert.equal(feature?.type === "number" && feature.unit, "px");
 });
