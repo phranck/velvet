@@ -3543,22 +3543,6 @@
   text-transform: none;
 }
 
-.configured {
-  margin: 0;
-  color: var(--text-3);
-  font-family: var(--font-meta);
-  font-size: var(--text-size-chart-label);
-}
-
-.configured a {
-  color: inherit;
-  text-decoration: underline;
-}
-
-.configured a:hover {
-  color: var(--accent);
-}
-
 /* A design that carries the two figures elsewhere sets the display to none, so
    the page states each of them once. */
 .stamp {
@@ -3599,10 +3583,6 @@
      with. One design uses the width of the cheeks its cards are held between,
      so the three lines below the rack begin where the metal does. */
   margin-inline-start: var(--stamp-inset-inline);
-}
-
-.status-footer-row .configured {
-  grid-column: 2;
 }
 
 .stamp--serial {
@@ -3779,7 +3759,6 @@
   }
 
   .retro-chassis-page .stamp--build,
-  .retro-chassis-page .status-footer-row .configured,
   .retro-chassis-page .stamp--serial {
     grid-column: 1;
     justify-self: center;

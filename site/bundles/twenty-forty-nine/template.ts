@@ -228,7 +228,6 @@ function footer(data: BundleData): string {
       </div>
       <div class="status-footer-row">
         <p class="stamp stamp--build">v${escape(data.site.version)}</p>
-        <p class="configured">Configured by its operator at <a href="${escape(data.site.configuredAt.href)}" rel="noopener noreferrer" target="_blank">${escape(data.site.configuredAt.label)}</a></p>
         <p class="stamp stamp--serial">Serial #${escape(serial)}</p>
       </div>
     </footer>

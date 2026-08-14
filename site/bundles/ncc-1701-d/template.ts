@@ -206,20 +206,17 @@ function services(data: BundleData): string {
 }
 
 /**
- * The credit and the line saying where the page was configured.
+ * The credit alone.
  *
  * The release and the serial are in the arm above, so the footer states
  * neither: the page states each figure once.
  */
-function footer(data: BundleData): string {
+function footer(): string {
   return `<div class="status-band status-band--footer">
     <footer class="status-footer">
       <div class="powered">
         <span class="powered-label">powered by</span>
         <span class="velvet-wordmark">Velvet</span>
-      </div>
-      <div class="status-footer-row">
-        <p class="configured">Configured by its operator at <a href="${escape(data.site.configuredAt.href)}" rel="noopener noreferrer" target="_blank">${escape(data.site.configuredAt.label)}</a></p>
       </div>
     </footer>
   </div>`;
@@ -248,7 +245,7 @@ export function template(data: BundleData): string {
         ${services(data)}
       </div>
     </div>
-    ${footer(data)}
+    ${footer()}
   </main>`;
 }
 

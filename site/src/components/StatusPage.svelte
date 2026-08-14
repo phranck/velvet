@@ -61,19 +61,6 @@
    * without guessing.
    */
   const CHECK_INTERVAL_MINUTES = 5;
-  /** Where an operator changes this installation, the hosted Configurator. */
-  const CONFIGURATOR_URL = "https://setup.velvet.li/configurator/";
-  /**
-   * The same address as a reader says it, without the scheme or the trailing
-   * slash.
-   *
-   * Derived rather than written a second time, so the link and its label cannot
-   * come to name different places.
-   */
-  const CONFIGURATOR_LABEL = CONFIGURATOR_URL.replace(
-    /^https:\/\/|\/$/gu,
-    "",
-  );
   const services = $derived(statusDocument.services);
   /**
    * Whether the page has any history at all to show.
@@ -245,24 +232,6 @@
     />
   </div>
 
-  <!--
-    Where this page is changed, stated rather than offered.
-
-    The page is public and nearly everybody reading it is one of the operator's
-    own users, whilst only one of them can open the Configurator. Naming the
-    operator in the third person lets a visitor read past the line whilst the
-    operator recognises the address they came looking for.
-
-    It stands apart from the credit above: that one is Velvet naming itself,
-    whilst this is the operator's own way back to their configuration.
-  -->
-  <p class="configured">
-    Configured by its operator at <a
-      href={CONFIGURATOR_URL}
-      target="_blank"
-      rel="noopener noreferrer">{CONFIGURATOR_LABEL}</a
-    >
-  </p>
 </main>
 
 <style>
@@ -443,28 +412,6 @@
   }
   .powered :global(.velvet-wordmark) {
     color: color-mix(in srgb, var(--accent), #fff 35%);
-  }
-  /*
-    The line naming where this page is configured. It reads as quietly as the
-    two stamps do, because it answers one reader in a hundred whilst what the
-    rest came for is the services above it.
-
-    Its bottom margin clears those stamps, which are fixed in the window's
-    corners and would otherwise sit on top of this line at the end of a page.
-  */
-  .configured {
-    margin: 6px auto 28px;
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    text-align: center;
-  }
-  .configured a {
-    color: inherit;
-    text-decoration: underline;
-  }
-  .configured a:hover {
-    color: var(--accent-bright);
   }
   @media (prefers-reduced-motion: reduce) {
     .toggle-all i {

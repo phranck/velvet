@@ -36,18 +36,6 @@ import {
 } from "./data.js";
 import type { BundleManifest } from "./manifest.js";
 
-/** Where an operator changes this installation, the hosted Configurator. */
-const CONFIGURATOR_URL = "https://setup.velvet.li/configurator/";
-
-/**
- * The same address as a reader says it, without the scheme or trailing slash.
- *
- * Derived rather than written a second time, so the link and its label cannot
- * come to name different places. `StatusPage.svelte` does the same, for the
- * same reason.
- */
-const CONFIGURATOR_LABEL = CONFIGURATOR_URL.replace(/^https:\/\/|\/$/gu, "");
-
 /** Either the design an installation asked for, or why it cannot be served. */
 export type BundleSelection =
   | { ok: true; manifest: BundleManifest }
@@ -128,7 +116,6 @@ export function bundleDataFor(
       serial: config.serial ?? null,
       version,
       icons: { ...config.icons },
-      configuredAt: { label: CONFIGURATOR_LABEL, href: CONFIGURATOR_URL },
     },
     status: documents.status,
     incidents: documents.incidents,

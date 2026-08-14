@@ -106,11 +106,6 @@ test("hands the design the installation as its operator configured it", () => {
   assert.equal(data.site.serial, 42);
   assert.equal(data.site.version, "9.9.9");
   assert.deepEqual(data.site.icons, { website: "globe" });
-  assert.equal(data.site.configuredAt.label, "setup.velvet.li/configurator");
-  assert.equal(
-    data.site.configuredAt.href,
-    "https://setup.velvet.li/configurator/",
-  );
   // The documents go across unchanged, because a design reads exactly what the
   // monitor wrote.
   assert.equal(data.status, velvetUnderground.status);

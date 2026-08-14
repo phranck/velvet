@@ -65,10 +65,6 @@ const DEFAULT_SITE: BundleSite = {
   serial: 42,
   version: "1.5.4",
   icons: {},
-  configuredAt: {
-    label: "setup.velvet.li/configurator",
-    href: "https://setup.velvet.li/configurator/",
-  },
 };
 
 /** Midnight UTC of the day a moment falls on. */

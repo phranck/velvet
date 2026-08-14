@@ -81,8 +81,6 @@ export interface BundleSite {
   version: string;
   /** Per-service icon keys the operator chose, by service identifier. */
   icons: Readonly<Record<string, string>>;
-  /** Where the page says it was configured, as a label and the link behind it. */
-  configuredAt: { label: string; href: string };
 }
 
 /**

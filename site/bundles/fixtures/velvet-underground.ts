@@ -365,10 +365,6 @@ export const velvetUnderground: BundleData = {
       mail: "envelope",
       database: "database",
     },
-    configuredAt: {
-      label: "setup.velvet.li/configurator",
-      href: "https://setup.velvet.li/configurator/",
-    },
   },
   status: statusDocument,
   incidents: incidentsDocument,

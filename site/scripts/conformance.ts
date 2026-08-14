@@ -488,12 +488,6 @@ async function conformOne(
   if (serial !== null && !seen.text.includes(String(serial).padStart(5, "0"))) {
     note("stamp", `the serial number ${serial} does not appear`);
   }
-  if (!seen.text.includes(fixture.data.site.configuredAt.label)) {
-    note(
-      "stamp",
-      `the line naming where the page is configured (${fixture.data.site.configuredAt.label}) does not appear`,
-    );
-  }
 
   // ── One heading ───────────────────────────────────────────────────────────
   if (seen.headings !== 1) {

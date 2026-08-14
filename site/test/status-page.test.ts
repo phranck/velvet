@@ -108,7 +108,7 @@ async function renderStatusPage(
     url: "https://example.github.io/status/",
     dataBranch: "main",
     dataBaseUrl: "https://example.invalid/velvet-data/v1",
-    name: "Velvet Configurator",
+    name: "Velvet Status",
     logoHeight: 72,
     navbar: [
       { title: "Status", href: "/" },
@@ -150,7 +150,7 @@ test("renders the complete status page from production components", async () => 
   const html = await renderStatusPage("grouped");
 
   assert.match(html, /data-layout="grouped"/);
-  assert.match(html, /Velvet Configurator/);
+  assert.match(html, /Velvet Status/);
   assert.match(html, /All systems operational/);
   assert.equal(html.match(/<section class="card(?:\s|")/g)?.length, 1);
   assert.match(html, /IPv4/);
@@ -302,32 +302,13 @@ test("places the Velvet credit directly after the service cards", async () => {
   assert.doesNotMatch(page, /incidents\.atom/);
 });
 
-test("names the Configurator on every page, beside Velvet's own mark", async () => {
-  // The page is public and nearly everybody reading it is one of the operator's
-  // users, so the line says who configures the page rather than inviting anybody
-  // to press it. It stands apart from the credit: that one is Velvet naming
-  // itself, whilst this is the operator's own way back in. #375.
+test("names no service of Velvet's own on a published page", async () => {
+  // A published page is served from the operator's own domain and carries
+  // nothing that would send a visitor to an address Velvet controls, beyond the
+  // credit naming the project itself.
   const html = await renderStatusPage("grouped");
 
-  assert.match(html, /Configured by its operator at/);
-  assert.match(
-    html,
-    /href="https:\/\/setup\.velvet\.li\/configurator\/"[^>]*>setup\.velvet\.li\/configurator</,
-  );
-  // Both appear, and in this order, because the credit closes what Velvet built
-  // and the line beneath it addresses the one reader who can act on it.
-  assert.match(html, /powered by[\s\S]*Configured by its operator at/);
-});
-
-test("writes the Configurator address once and reads its label from it", async () => {
-  // Two spellings of one address drift apart the first time either moves, so the
-  // label the reader sees is derived from the address the link points at. #375.
-  const page = await readFile(
-    resolve(import.meta.dirname, "../src/components/StatusPage.svelte"),
-    "utf8",
-  );
-
-  assert.equal(page.match(/setup\.velvet\.li/gu)?.length, 1);
+  assert.doesNotMatch(html, /setup\.velvet\.li/);
 });
 
 test("toggles without starting a view transition, and states its timing once", async () => {
