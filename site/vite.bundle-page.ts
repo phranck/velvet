@@ -1,32 +1,16 @@
 /**
- * Publishing a page in the design an installation named.
+ * Publishing a page in the theme an installation named.
  *
- * The build Velvet ships renders `App.svelte` on the server and writes the
- * result into the document together with a `<style>` block holding a `:root`
- * declaration, whose values come from the installation's configured colours
- * merged with the shared geometry. A design is therefore a set of values
- * injected into one page.
+ * The build selects a theme by name, renders that theme's template with the
+ * installation's data, and ships that theme's stylesheet, script and assets. A
+ * theme carries its own appearance, so nothing is injected into the page.
  *
- * With bundles it is the other way round: the build selects a bundle by name,
- * renders that bundle's template with the installation's data, and ships that
- * bundle's stylesheet, script and assets. The `:root` injection goes, because a
- * bundle carries its own appearance.
- *
- * **The page is still prerendered, and deliberately.** The comment at the
- * Svelte prerender records why it matters: a prerendered page is in its own
- * colours at first paint instead of arriving in a fallback palette and
- * repainting. Prerendering a bundle costs less than prerendering the component
- * did — a template is a pure function returning a string, so the build needs no
- * DOM and no component runtime to call it — and the stylesheet reaches the
- * document as a real `<link>` the browser has already fetched by the time the
- * markup is parsed.
- *
- * **A design that cannot be served stops the build.** The reasoning is in
- * `site/src/lib/bundles/host.ts`: an operator who names a design and silently
- * gets another can never tell, and the page under their own domain is then
- * somebody else's. A stopped build leaves the last published page exactly as it
- * was, which is the safer failure for a page people open when something is
- * already broken.
+ * **The page is prerendered, and deliberately.** A prerendered page is in its
+ * own colours at first paint instead of arriving in a fallback palette and
+ * repainting. It costs little: a template is a pure function returning a
+ * string, so the build needs no DOM and no component runtime to call it, and
+ * the stylesheet reaches the browser as a link in the document rather than as
+ * something a script fetches.
  */
 
 import { readFileSync } from "node:fs";
@@ -37,8 +21,56 @@ import { createServer, type Plugin } from "vite";
 import { bundleDataFor, layoutFor, selectBundle } from "./src/lib/bundles/host.js";
 import type { BundleData } from "./src/lib/bundles/data.js";
 import type { BundleManifest } from "./src/lib/bundles/manifest.js";
-import { readBundles } from "./scripts/bundles.js";
-import { embeddable, fileAt, fileByUrl } from "./vite.status-prerender.js";
+import { THEMES } from "./src/lib/themes.js";
+import type { FetchImplementation } from "./src/lib/fetch.js";
+
+/**
+ * Answers a fetch from one file on disk, whatever is asked for.
+ *
+ * The loaders the page uses at runtime take a fetch, so the build drives those
+ * same loaders rather than parsing and normalising the documents a second time.
+ * A second implementation is a second set of defaults to keep in step.
+ *
+ * @param path - The file to answer with.
+ * @returns A fetch returning that file, or a 404 when it is not there.
+ */
+export function fileAt(path: string): FetchImplementation {
+  return async () => {
+    try {
+      return new Response(await readFile(path, "utf8"), { status: 200 });
+    } catch {
+      return new Response(null, { status: 404 });
+    }
+  };
+}
+
+/** Answers a fetch from whichever file the requested URL names. */
+export const fileByUrl: FetchImplementation = async (input) => {
+  try {
+    return new Response(await readFile(String(input), "utf8"), { status: 200 });
+  } catch {
+    return new Response(null, { status: 404 });
+  }
+};
+
+/**
+ * Escapes a JSON payload for embedding inside a script element.
+ *
+ * A document sequence inside the payload would otherwise end the element early,
+ * and the rest of it would be parsed as markup. The data comes from a
+ * repository's own configuration and incident text, so it is not Velvet's to
+ * trust.
+ *
+ * @param value - The state to embed.
+ * @returns JSON that cannot terminate the element that carries it.
+ */
+export function embeddable(value: unknown): string {
+  return JSON.stringify(value)
+    .replaceAll("<", "\\u003c")
+    .replaceAll(">", "\\u003e")
+    .replaceAll(" ", "\\u2028")
+    .replaceAll(" ", "\\u2029");
+}
 
 /** The document the design is rendered into, before the design fills it. */
 export const DESIGN_ENTRY_HTML = "status-design.html";
@@ -128,19 +160,12 @@ export function bundleStatusPage(options: BundlePageOptions): Plugin {
     name: "velvet-bundle-status-page",
     enforce: "pre",
 
-    async config() {
-      const bundles = await readBundles();
-      for (const bundle of bundles) {
-        if (bundle.manifest === null && bundle.directory === options.design) {
-          throw new Error(
-            `velvet: the design "${options.design}" has a manifest this release cannot read: ${bundle.manifestErrors.join("; ")}`,
-          );
-        }
-      }
-      const selection = selectBundle(
-        options.design,
-        bundles.flatMap((bundle) => (bundle.manifest ? [bundle.manifest] : [])),
-      );
+    config() {
+      // From the catalogue rather than from the themes on disk, because TOML is
+      // Bun's to read and this config is also loaded by tools that run under
+      // Node. The catalogue is written from those same files and a gate holds
+      // the two together, so there is nothing to gain by parsing them twice.
+      const selection = selectBundle(options.design, THEMES);
       if (!selection.ok) {
         throw new Error(`velvet: ${selection.reason}`);
       }

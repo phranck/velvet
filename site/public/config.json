@@ -1,6 +1,7 @@
 {
   "owner": "phranck",
   "repo": "status.musiccloud.io",
+  "design": "velvet",
   "dataBranch": "main",
   "name": "MusicCloud",
   "logoUrl": "https://musiccloud.io/og/musiccloud.jpg",
