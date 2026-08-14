@@ -251,7 +251,7 @@ test("the disclosure animates one height and reads its duration from a token", a
   const source = await readFile(
     resolve(
       import.meta.dirname,
-      "../../packages/bundle-plugins/src/disclosure/index.ts",
+      "../../packages/foundation/src/disclosure/index.ts",
     ),
     "utf8",
   );

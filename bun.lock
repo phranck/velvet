@@ -15,7 +15,7 @@
     },
     "actions/monitor": {
       "name": "@velvet/monitor-action",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/github-incidents": "1.0.0",
@@ -29,7 +29,7 @@
     },
     "apps/setup-service": {
       "name": "@velvet/setup-service",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/template-files": "1.0.0",
@@ -40,17 +40,9 @@
         "typescript": "^5.7.0",
       },
     },
-    "packages/bundle-plugins": {
-      "name": "@velvet/bundle-plugins",
-      "version": "1.5.4",
-      "devDependencies": {
-        "@types/bun": "^1.3.14",
-        "typescript": "^5.7.0",
-      },
-    },
     "packages/contracts": {
       "name": "@velvet/contracts",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "@sinclair/typebox": "^0.34.52",
         "js-yaml": "^4.1.0",
@@ -62,9 +54,17 @@
         "typescript": "^5.7.0",
       },
     },
+    "packages/foundation": {
+      "name": "@velvet/foundation",
+      "version": "1.5.4",
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "typescript": "^5.7.0",
+      },
+    },
     "packages/github-incidents": {
       "name": "@velvet/github-incidents",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
         "@velvet/monitor": "1.0.0",
@@ -79,7 +79,7 @@
     },
     "packages/monitor": {
       "name": "@velvet/monitor",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "@velvet/contracts": "1.0.0",
       },
@@ -91,7 +91,7 @@
     },
     "packages/template-files": {
       "name": "@velvet/template-files",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "@velvet/contracts": "workspace:*",
         "js-yaml": "^4.1.0",
@@ -113,8 +113,8 @@
         "@fontsource/plaster": "^5.3.0",
         "@fontsource/space-mono": "^5.3.0",
         "@fontsource/workbench": "^5.3.0",
-        "@velvet/bundle-plugins": "workspace:*",
         "@velvet/contracts": "workspace:*",
+        "@velvet/foundation": "workspace:*",
       },
       "devDependencies": {
         "@fontsource/antonio": "^5.3.0",
@@ -389,9 +389,9 @@
 
     "@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@8.65.0", "", { "dependencies": { "@typescript-eslint/types": "8.65.0", "eslint-visitor-keys": "^5.0.0" } }, "sha512-8C71BQkGjiMmXtop7pHVJu1l2NNShFdkCyD6a2ezzs5vU/L3LRtb69EtcteFwz0mYMPzIgOw0n6OV4VBUWZd7A=="],
 
-    "@velvet/bundle-plugins": ["@velvet/bundle-plugins@workspace:packages/bundle-plugins"],
-
     "@velvet/contracts": ["@velvet/contracts@workspace:packages/contracts"],
+
+    "@velvet/foundation": ["@velvet/foundation@workspace:packages/foundation"],
 
     "@velvet/github-incidents": ["@velvet/github-incidents@workspace:packages/github-incidents"],
 

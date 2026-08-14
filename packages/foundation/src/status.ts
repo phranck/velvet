@@ -7,7 +7,7 @@
  * rather than distinctive.
  *
  * This is the same arithmetic `site/src/lib/data.ts` runs, offered here so a
- * design need not carry a second copy of it. Like every plugin it is optional:
+ * design need not carry a second copy of it. Like everything here it is optional:
  * a design may do its own, and the conformance suite compares what it printed
  * against what this computes from the same fixture, so a design that gets it
  * wrong is caught rather than published.
@@ -20,8 +20,6 @@
  *   - A day nothing was measured on carries `hasData: false` whatever status it
  *     records, because such a day is recorded as operational and reading the
  *     status first paints an empty day as a working one.
- *
- * Version 1.
  */
 
 import type {
@@ -33,8 +31,6 @@ import type {
 
 export type { RangeKey, ServiceStatus } from "./data.js";
 
-/** The version a manifest names to use this plugin. */
-export const VERSION = 1;
 
 /** How much of a day has to be lost before it reads as an outage. */
 const DOWN_SEGMENT_THRESHOLD = 0.3;

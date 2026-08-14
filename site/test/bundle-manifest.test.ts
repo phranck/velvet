@@ -33,7 +33,6 @@ function valid(): Record<string, unknown> {
     layouts: ["grouped"],
     readings: "panel",
     preview: "assets/preview.svg",
-    plugins: [],
   };
 }
 
@@ -45,7 +44,6 @@ test("accepts a complete manifest and keeps every field", () => {
   assert.deepEqual(result.manifest.layouts, ["grouped"]);
   assert.equal(result.manifest.readings, "panel");
   assert.equal(result.manifest.entries.styles, "bundle.css");
-  assert.deepEqual(result.manifest.plugins, []);
 });
 
 test("reports every fault at once rather than the first", () => {
@@ -88,25 +86,4 @@ test("refuses a data version the host does not serve", () => {
   assert.equal(result.ok, false);
   assert.equal(servesDataVersion(BUNDLE_DATA_VERSION + 1), false);
   assert.equal(servesDataVersion(BUNDLE_DATA_VERSION), true);
-});
-
-test("takes plugins as a name and the major version expected of it", () => {
-  const manifest = valid();
-  manifest.plugins = [{ name: "uptime-strip", version: 1 }];
-  const result = parseBundleManifest(manifest);
-  assert.equal(result.ok, true);
-  if (!result.ok) return;
-  assert.deepEqual(result.manifest.plugins, [
-    { name: "uptime-strip", version: 1 },
-  ]);
-});
-
-test("refuses the same plugin twice, which would make the version ambiguous", () => {
-  const manifest = valid();
-  manifest.plugins = [
-    { name: "uptime-strip", version: 1 },
-    { name: "uptime-strip", version: 2 },
-  ];
-  const result = parseBundleManifest(manifest);
-  assert.equal(result.ok, false);
 });

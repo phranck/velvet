@@ -10,22 +10,18 @@
  *
  * It also carries the rule that decides a day's colour, which is the one place
  * where a plausible-looking mistake shows a green day where nothing was
- * measured. That rule is why this is offered as a plugin rather than left for
+ * measured. That rule is why this is shared rather than left for
  * every design to write again.
  *
  * What it does **not** carry is an appearance. Where this drawing used to read
  * a shared token set out of the stylesheet, it now takes a style object from
- * the design that uses it, so two designs using this plugin need not look
+ * the design that uses it, so two designs using this strip need not look
  * alike. Everything with a default below is what the product draws today.
- *
- * Version 1.
  */
 
 import type { DayStatus, RangeKey } from "../data.js";
 import { createOverlay } from "../overlay/index.js";
 
-/** The version a manifest names to use this plugin. */
-export const VERSION = 1;
 
 /*
  * Built once rather than per call. `toLocaleDateString(value, options)`
@@ -345,7 +341,7 @@ export function createUptimeStrip(
   const canvas = document.createElement("canvas");
   canvas.setAttribute("aria-hidden", "true");
   // On the document's own layer rather than inside the strip, so no card can
-  // clip it. See the overlay plugin for the measurements that forced this.
+  // clip it. See the overlay for the measurements that forced this.
   const tooltip = createOverlay(options.tooltipClassName ?? "uptime-tooltip");
   const hiddenList = document.createElement("ul");
   hiddenList.className = `${className}-readings`;

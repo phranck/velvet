@@ -8,8 +8,8 @@
  *
  *   1. **Self-contained.** Every `url()`, `import` and `src` resolves inside the
  *      bundle. Nothing points at another bundle, at the site, or at a remote
- *      host. Plugins are the one exception, and only the ones the manifest
- *      names.
+ *      host. The foundation is the one exception: a theme imports what it needs
+ *      from it and the build writes that code into the theme.
  *   2. **Fonts ship with the bundle.** A published status page must not wait on
  *      a third party in order to report on its own availability, and a German
  *      operator should not be made to send their visitors to a font host
@@ -25,8 +25,6 @@
  * before anything is built. What a browser resolved is the conformance suite's
  * question, not this one.
  */
-
-import { pluginProblem } from "@velvet/bundle-plugins";
 
 import type { BundleManifest } from "./manifest.js";
 
@@ -53,8 +51,14 @@ export interface BundleFile {
   text: string;
 }
 
-/** The specifier prefix a bundle imports a plugin through. */
-export const PLUGIN_SPECIFIER_PREFIX = "@velvet/bundle-plugins/";
+/**
+ * The specifier prefix a bundle imports the foundation through.
+ *
+ * Anything under it is allowed and nothing else is. A theme does not declare
+ * which parts it uses, because it imports them and the build bundles them in,
+ * so there is no list to check a specifier against.
+ */
+export const FOUNDATION_SPECIFIER_PREFIX = "@velvet/foundation/";
 
 /** Hosts a design must not fetch a typeface from, named because all six did. */
 const FONT_HOSTS = [
@@ -174,14 +178,9 @@ function markupSources(source: string): string[] {
  * Rule 1, for one file.
  *
  * @param file - The file to read.
- * @param plugins - The plugin names the manifest declared, which are the only
- *   specifiers allowed to point outside the bundle.
  * @returns Everything the file reaches for that it may not.
  */
-export function checkSelfContained(
-  file: BundleFile,
-  plugins: readonly string[] = [],
-): BundleViolation[] {
+export function checkSelfContained(file: BundleFile): BundleViolation[] {
   const violations: BundleViolation[] = [];
   const isStyle = file.path.endsWith(".css");
   const text = isStyle
@@ -193,22 +192,14 @@ export function checkSelfContained(
     : [...scriptSpecifiers(text), ...markupSources(text)];
 
   for (const reference of references) {
-    if (!isStyle && reference.startsWith(PLUGIN_SPECIFIER_PREFIX)) {
-      const name = reference.slice(PLUGIN_SPECIFIER_PREFIX.length);
-      if (!plugins.includes(name)) {
-        violations.push({
-          rule: "self-contained",
-          file: file.path,
-          detail: `imports the plugin "${name}", which the manifest does not declare`,
-        });
-      }
+    if (!isStyle && reference.startsWith(FOUNDATION_SPECIFIER_PREFIX)) {
       continue;
     }
     if (!isStyle && !reference.startsWith(".") && !/^[a-z][a-z0-9+.-]*:/i.test(reference)) {
       violations.push({
         rule: "self-contained",
         file: file.path,
-        detail: `imports "${reference}", which is neither inside the bundle nor a declared plugin`,
+        detail: `imports "${reference}", which is neither inside the bundle nor part of the foundation`,
       });
       continue;
     }
@@ -345,7 +336,6 @@ export function checkBundle(contents: BundleContents): BundleViolation[] {
   const { manifest, directory, files } = contents;
   const violations: BundleViolation[] = [];
   const present = new Set(files.map((file) => file.path));
-  const plugins = manifest.plugins.map((plugin) => plugin.name);
 
   if (manifest.id !== directory) {
     violations.push({
@@ -353,12 +343,6 @@ export function checkBundle(contents: BundleContents): BundleViolation[] {
       file: "bundle.json",
       detail: `id "${manifest.id}" does not match the directory "${directory}"`,
     });
-  }
-  for (const plugin of manifest.plugins) {
-    const problem = pluginProblem(plugin.name, plugin.version);
-    if (problem) {
-      violations.push({ rule: "manifest", file: "bundle.json", detail: problem });
-    }
   }
   for (const named of [
     manifest.entries.template,
@@ -378,7 +362,7 @@ export function checkBundle(contents: BundleContents): BundleViolation[] {
   for (const file of files) {
     if (file.path === "bundle.json") continue;
     violations.push(
-      ...checkSelfContained(file, plugins),
+      ...checkSelfContained(file),
       ...checkFonts(file),
       ...checkStyleScope(file),
       ...checkNoFetching(file),

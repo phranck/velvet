@@ -16,12 +16,8 @@
  * tooltip stood 12px above the card's top edge and 18px to the left of it under
  * one of the designs, both inside a `clip-path`, and the chart tooltip had a
  * clipping ancestor in every one of them.
- *
- * Version 1.
  */
 
-/** The version a manifest names to use this plugin. */
-export const VERSION = 1;
 
 /** How an overlay is placed relative to what it describes. */
 export interface OverlayAnchor {
