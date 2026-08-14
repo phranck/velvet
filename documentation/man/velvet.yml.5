@@ -273,28 +273,22 @@ Optional, empty by default. Up to 16 links, each with
 and
 .BR href .
 .TP
-.B design
-Optional, defaulting to the page Velvet ships. The design the page is published
-in, named by its bundle. A design carries its own appearance, so
 .B theme
-and
-.B fonts
-do not apply to one. A name no installed design answers to stops the build
-rather than publishing a different design under your domain.
+Required. The theme the page is published in, named by its directory:
+.BR velvet ,
+.BR retro-chassis ,
+.BR twenty-forty-nine ,
+or
+.BR ncc-1701-d .
+A page is published in a theme, so there is no default and a configuration
+naming none is refused. A name no installed theme answers to stops the build
+rather than publishing a different theme under your domain.
 .TP
-.B theme
-Optional, defaulting to Velvet Default. A theme name plus optional semantic
-visual overrides. Ignored where
-.B design
-names a bundle.
-.TP
-.B fonts
-Optional. Holds
-.B sans
-for interface text, defaulting to Inter, and
-.B mono
-for times, values, and labels, defaulting to Fira Code, which Velvet ships.
-Both take a CSS font-family.
+.B themeSettings
+Optional, defaulting to what the theme itself states. What has been set on that
+theme, keyed by the setting it belongs to. Which settings a theme has is the
+theme's own answer, so an unknown one stops the build and names what that theme
+offers.
 .TP
 .B icons
 Optional, chosen automatically. A map from stable service identifier to a
@@ -351,140 +345,55 @@ and
 .I sitemap.xml
 from the page configuration and the latest validated status.
 .SH THEMES
-A theme block requires
-.BR name .
-Every palette value is a six-digit hexadecimal colour, and every semantic
-colour field accepts
-.BR auto ,
-a palette key, or its own six-digit hexadecimal value.
+A page is published in a theme, and the theme is the whole of what it looks
+like. It brings its own colours, its own typefaces and its own shapes, and it
+ships them with the page, so a published page asks nobody else for a font.
+.PP
+Velvet ships four:
+.TP
+.B velvet
+A dark indigo readout, one card per group of services, and a strip of days
+under each of them.
+.TP
+.B retro-chassis
+A rack of separate components, each service a brushed faceplate bolted between
+two walnut cheeks, with a lit name plate, two protocol lamps, a two-line
+readout and a lamp meter for its days.
+.TP
+.B twenty-forty-nine
+A filthy pane of glass with a dim blue readout: corner brackets, edge scales,
+dotted grids and a vignette to black.
+.TP
+.B ncc-1701-d
+A divided column of coloured segments carrying the service names, two limbs
+enclosing the notices and the readings, and a table of events rather than a
+stack of cards.
+.PP
+A theme says for itself what can be set on it, and different themes offer
+different things. What is set goes under
+.BR themeSettings ,
+keyed by the name of the setting.
 .PP
 .RS 4
 .nf
-theme:
-  name: Example Theme
-  palette:
-    canvas: "#0a0b0f"
-    foreground: "#e8eaed"
-    accent: "#6366f1"
-    alternate: "#38bdf8"
-    warning: "#d29922"
-    danger: "#f85149"
-    textPrimary: "#e8eaed"
-    textSecondary: "#8b8c90"
-    textTertiary: "#515256"
-  grid:
-    operational: accent
-    degraded: warning
-    outage: danger
-    noData: auto
-  chart:
-    line: accent
-    lineStyle: solid
-    fill: true
-    background: canvas
-    backgroundOpacity: 0.2
-  background:
-    start: auto
-    end: canvas
-    blobs:
-      enabled: true
-      count: 3
-      colors: [accent, alternate]
-  card:
-    background: auto
-    border: auto
-    separator: auto
-    borderEnabled: true
-    shadowEnabled: true
-    radius: 14
-    padding: 16
-    maxWidth: 760
-  headline:
-    start: textPrimary
-    end: textSecondary
-  service:
-    icon: accent
-  text:
-    primary: textPrimary
-    secondary: textSecondary
-    tertiary: textTertiary
+statusPage:
+  name: Example Status
+  theme: velvet
+  themeSettings:
+    chartWash: false
 .fi
 .RE
-.TP
-.B palette
-.BR canvas ,
-.BR foreground ,
-.BR accent ,
-.BR alternate ,
-.BR warning ,
-.BR danger ,
-.BR textPrimary ,
-.BR textSecondary ,
-and
-.BR textTertiary .
-.TP
-.B grid
-.BR operational ,
-.BR degraded ,
-.BR outage ,
-and
-.BR noData .
-.TP
-.B chart
-.BR line ;
-.B lineStyle
-as
-.BR solid ,
-.BR dashed ,
-or
-.BR dotted ;
-.BR fill ;
-.BR background ;
-and
-.B backgroundOpacity
-from 0 through 1.
-.TP
-.B background
-.B start
-and
-.BR end ;
-.BR blobs.enabled ;
-.B blobs.count
-from 1 through 5; and exactly two
-.BR blobs.colors .
-.TP
-.B card
-.BR background ,
-.BR border ,
-and
-.BR separator ;
-.BR borderEnabled ;
-.BR shadowEnabled ;
-.B radius
-and
-.B padding
-from 0 through 32; and
-.B maxWidth
-as 640, 760, 920, or 1080.
-.TP
-.B headline
-.B start
-and
-.BR end .
-.TP
-.B service
-.BR icon .
-.TP
-.B text
-.BR primary ,
-.BR secondary ,
-and
-.BR tertiary .
 .PP
-The response-time chart draws a smooth curve through the measurements, and the
-curve never rises above the highest one or falls below the lowest. Where a
-measurement is missing, the line breaks rather than being drawn across the
-gap.
+.B velvet
+offers
+.BR chartWash ,
+the wash under the response curve. A setting the named theme does not have
+stops the build and names what that theme does offer, and so does a value it
+cannot take. Nothing is silently ignored.
+.PP
+There is no palette to write and no typeface to name. Both belong to the theme,
+which is what lets one ship whole rather than being assembled from a colour
+list somebody wrote by hand.
 .SH INCIDENTS AND MAINTENANCE
 .RS 4
 .nf

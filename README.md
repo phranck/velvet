@@ -14,7 +14,7 @@
 
 <br>
 
-Velvet monitors websites and HTTP endpoints from GitHub Actions, records incidents and planned maintenance in GitHub Issues, and publishes a themeable status page through GitHub Pages. A public website needs only a name and URL.
+Velvet monitors websites and HTTP endpoints from GitHub Actions, records incidents and planned maintenance in GitHub Issues, and publishes a status page through GitHub Pages. A public website needs only a name and URL.
 
 ## What Velvet provides
 
@@ -23,7 +23,7 @@ Velvet monitors websites and HTTP endpoints from GitHub Actions, records inciden
 - Automatic incident creation after confirmed failures and automatic recovery.
 - Planned maintenance that remains visible as a neutral history event.
 - Availability, response-time, incident, and maintenance data, kept for as far back as the installation asks for.
-- Curated designs, each shipped whole with the typefaces it uses, plus service icons, SEO output, custom domains, and selectable history ranges.
+- Four themes, each shipped whole with the typefaces it uses, and each saying for itself what can be set on it. Plus service icons, SEO output, custom domains, and selectable history ranges.
 - No analytics of any kind. A published status page loads no third-party script, the browser setup reports to nobody, and there is no setting that would change either.
 - A static GitHub Pages site that keeps working independently of the optional browser setup service.
 
@@ -41,7 +41,7 @@ Invalid configuration, an unavailable configured secret, unsafe request setup, i
 
 ## Get started
 
-Open [setup.velvet.li](https://setup.velvet.li/onboarding/). The onboarding asks for the repository and page name, services, an optional custom domain, and one of the four system themes. After GitHub approval it creates the repository, enables Pages, starts monitoring, and waits for the first deployment.
+Open [setup.velvet.li](https://setup.velvet.li/onboarding/). The onboarding asks for the repository and page name, services, an optional custom domain, and the theme your page is published in. After GitHub approval it creates the repository, enables Pages, starts monitoring, and waits for the first deployment.
 
 This is the only supported way to install Velvet. It is also the only one that writes `velvet.lock.json`, the machine-managed record of which release an installation runs. Without that record Velvet has no version to compare against and can never update the installation, so a repository created by copying the template directly is one nobody can maintain for you.
 
