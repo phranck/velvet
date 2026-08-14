@@ -271,24 +271,56 @@
   --chart-key-width: 16px;
 
   /* ── Backdrop ─────────────────────────────────────────────────────────── */
-  /* The three washes `app.css` calls `--cloudy-blobs`, over the vertical fall
-     from `--background-start` to `--background-end`. */
+  /*
+    The three washes `app.css` calls `--cloudy-blobs`, over the vertical fall
+    from `--background-start` to `--background-end`.
+
+    Stated as parts rather than as one value, because each is a different
+    decision: the colour the washes carry, whether they are drawn at all, and
+    the two ends of the fall behind them.
+
+    The washes take the accent, so a scheme moves them by moving one colour. It
+    resolves here because a scheme overrides `--accent` on this same element,
+    and a custom property holding `var()` resolves where it is declared.
+  */
+  --backdrop-bubble-colour: var(--accent);
+  /* Zero draws none. It multiplies each wash's own share, so turning them off
+     costs no second value and the three keep their different strengths. */
+  --backdrop-bubble-alpha: 1;
+  --backdrop-gradient-start: #0e1018;
+  --backdrop-gradient-end: #0a0b0f;
   --backdrop-layer: radial-gradient(
       52% 41% at 12% 0%,
-      rgb(99 102 241 / 0.13),
+      color-mix(
+        in srgb,
+        var(--backdrop-bubble-colour) calc(13% * var(--backdrop-bubble-alpha)),
+        transparent
+      ),
       transparent 70%
     ),
     radial-gradient(
       46% 36% at 88% 4%,
-      rgb(129 132 244 / 0.1),
+      color-mix(
+        in srgb,
+        var(--backdrop-bubble-colour) calc(10% * var(--backdrop-bubble-alpha)),
+        transparent
+      ),
       transparent 70%
     ),
     radial-gradient(
       58% 45% at 50% 100%,
-      rgb(99 102 241 / 0.08),
+      color-mix(
+        in srgb,
+        var(--backdrop-bubble-colour) calc(8% * var(--backdrop-bubble-alpha)),
+        transparent
+      ),
       transparent 70%
     ),
-    linear-gradient(180deg, #0e1018 0%, #0a0b0f 100%);
+    linear-gradient(
+      180deg,
+      var(--backdrop-gradient-start) 0%,
+      var(--backdrop-gradient-end) 100%
+    );
   --backdrop-texture: none;
   --backdrop-texture-size: auto;
   --backdrop-texture-opacity: 0;
@@ -419,6 +451,85 @@
   --control-active-edge: transparent;
   --control-active-text: #8286f4;
   --control-active-glow: none;
+}
+
+/**
+ * The two schemes beside the one above.
+ *
+ * A scheme is the colour the design leads with, and everything that colour
+ * decides: the accent, the wordmark, a working service, the two protocols, the
+ * chosen range, and the cast the surfaces carry. Nothing else moves. The type
+ * keeps its three greys, the geometry keeps its figures, and the page is the
+ * same page in another light.
+ *
+ * Only what a scheme actually changes is stated. Velvet is what the root
+ * declares, so it needs no block of its own, and a page without the attribute
+ * is a Velvet page.
+ *
+ * The surfaces are the design's own, turned towards the scheme by a few points
+ * of hue and no more. A dark surface takes colour quickly, and a page whose
+ * background reads as brown or as bottle green is a different design rather
+ * than the same one in another colour.
+ */
+
+/* Autumn. The amber of a low sun, with the second protocol a step towards
+   yellow so the two curves stay apart where they cross. */
+.velvet-page[data-scheme="autumn"] {
+  --surface-base: #0d0a07;
+  --surface-sunken: #100c09;
+  --surface-card: #13100c;
+  --surface-rule: #2a2119;
+  --surface-popover: #1f1912;
+
+  --brand-primary: #ffb87a;
+  --accent: #ef8b3f;
+  --accent-quiet: rgb(239 139 63 / 0.16);
+
+  --state-operational: #ef8b3f;
+  --state-no-data: #2a2119;
+  --state-ghost-edge: #6b5a48;
+
+  --protocol-ipv4: #f2954d;
+  --protocol-ipv6: #e8c257;
+
+  --control-active-fill: rgb(239 139 63 / 0.16);
+  --control-active-text: #f5a463;
+
+  /* The fall behind the washes, warmed to the same degree they are. */
+  --backdrop-gradient-start: #14100b;
+  --backdrop-gradient-end: #0d0a07;
+}
+
+/* Spring. New green, with the second protocol carried round to teal for the
+   same reason. */
+.velvet-page[data-scheme="spring"] {
+  --surface-base: #070b08;
+  --surface-sunken: #0a0e0b;
+  --surface-card: #0c110e;
+  --surface-rule: #1b271f;
+  --surface-popover: #141d18;
+
+  --brand-primary: #86e79a;
+  --accent: #3fb95c;
+  --accent-quiet: rgb(63 185 92 / 0.16);
+
+  --state-operational: #3fb95c;
+  --state-no-data: #1b271f;
+  --state-ghost-edge: #55705e;
+
+  /* Held apart in lightness as well as in hue, because two curves crossing on
+     one plot are told apart by both. At an even lightness the pair measured
+     1.02 against each other, where Velvet's own two stand at 1.60; these are
+     1.53. */
+  --protocol-ipv4: #4cc46a;
+  --protocol-ipv6: #7ee8d8;
+
+  --control-active-fill: rgb(63 185 92 / 0.16);
+  --control-active-text: #5ccb78;
+
+  /* The fall behind the washes, cooled to the same degree they are. */
+  --backdrop-gradient-start: #0a1009;
+  --backdrop-gradient-end: #070b08;
 }
 
 /**
@@ -2041,7 +2152,11 @@
   stroke-dasharray: var(--chart-ipv6-dash);
 }
 
+/* The wash under the curve. The plugin draws it whenever the design asks for a
+   fill, and this is what decides whether it is shown, so turning it off costs
+   no redraw. */
 .chart-area {
+  display: var(--chart-area-display, block);
   pointer-events: none;
 }
 
