@@ -1,50 +1,1573 @@
-function jQ(J){let Q=/^\s*([\d.]+)(ms|s)\s*$/u.exec(J);if(!Q)return null;let Z=Number(Q[1]);if(!Number.isFinite(Z))return null;return Q[2]==="s"?Z*1000:Z}function KQ(){return typeof window<"u"&&typeof window.matchMedia==="function"&&window.matchMedia("(prefers-reduced-motion: reduce)").matches}function _J(J,Q){let Z=getComputedStyle(J).getPropertyValue("--velvet-disclosure-duration"),j=jQ(Z)??400,$=Q,z=null,Y=null;function q(){return J.firstElementChild}function V(){J.style.removeProperty("height"),z=null,Y=null}function F(O){z?.cancel(),Y?.cancel(),V(),J.hidden=!O,J.inert=!O}function M(O){let D=J.hidden?0:J.getBoundingClientRect().height,W=q(),H=Y&&W?Number(getComputedStyle(W).opacity):O?0:1;if(z?.cancel(),Y?.cancel(),V(),J.inert=!O,KQ()||typeof J.animate!=="function"){F(O);return}J.hidden=!1;let E=O?J.getBoundingClientRect().height:0;if(E===D){F(O);return}if(z=J.animate([{height:`${D}px`},{height:`${E}px`}],{duration:j,easing:"ease-in-out"}),W)Y=W.animate([{opacity:`${H}`},{opacity:O?"1":"0"}],{duration:j,easing:"ease-in-out"});z.finished.then(()=>{J.hidden=!O,V()},()=>{})}return F(Q),{update(O){if(O===$)return;$=O,M(O)},destroy(){z?.cancel()}}}var YQ={month:2592000000,quarter:7776000000},PJ=[{every:3600000,majorEvery:6},{every:21600000,majorEvery:4},{every:86400000,majorEvery:5},{every:172800000,majorEvery:5},{every:604800000,majorEvery:4},{every:2592000000,majorEvery:3},{every:31536000000,majorEvery:5}];function HJ(J){if(J.length===0)return"";if(J.length===1)return`M${$J(J[0])}`;let Q=J.slice(0,-1).map(($,z)=>{let Y=J[z+1],q=Y.x-$.x;return{width:q,slope:q>0?(Y.y-$.y)/q:0}});if(Q.some(({width:$})=>$<=0))return J.map(($,z)=>`${z===0?"M":"L"}${$J($)}`).join(" ");let Z=J.map(($,z)=>{if(z===0)return Q[0].slope;if(z===J.length-1)return Q.at(-1).slope;let Y=Q[z-1],q=Q[z];if(Y.slope*q.slope<=0)return 0;let V=2*q.width+Y.width,F=q.width+2*Y.width;return(V+F)/(V/Y.slope+F/q.slope)});for(let $=0;$<Q.length;$+=1){let z=Q[$].slope;if(z===0){Z[$]=0,Z[$+1]=0;continue}let Y=Z[$]/z,q=Z[$+1]/z,V=Math.hypot(Y,q);if(V>3){let F=3/V;Z[$]=F*Y*z,Z[$+1]=F*q*z}}let j=[`M${$J(J[0])}`];for(let $=0;$<Q.length;$+=1){let z=J[$],Y=J[$+1],q=Q[$].width/3,V={x:z.x+q,y:z.y+Z[$]*q},F={x:Y.x-q,y:Y.y-Z[$+1]*q};j.push(`C${$J(V)} ${$J(F)} ${$J(Y)}`)}return j.join(" ")}function $J(J){return`${J.x.toFixed(2)} ${J.y.toFixed(2)}`}function YJ(J,Q,Z){let j=Date.parse(Q);if(J==="all")return{start:Date.parse(Z),end:j};return{start:j-YQ[J],end:j}}function LJ(J){let Q=J.end-J.start;if(Q<=0)return[];let Z=PJ.find(({every:$})=>Q/$<=60)??PJ.at(-1),j=[];for(let $=0;;$+=1){let z=J.end-$*Z.every;if(z<J.start)break;j.push({at:z,major:$%Z.majorEvery===0})}return j.reverse()}var qQ=[1,1.5,2,2.5,3,4,5,6,8,10],NJ=10;function RJ(J,Q){let Z=Math.max(J,0)/Math.max(1,Q);if(Z<=NJ)return NJ;let j=10**Math.floor(Math.log10(Z));for(let $ of qQ){let z=$*j;if(z>=Z)return z}return 10*j}function EJ(J,Q,Z,j){let{start:$,end:z}=YJ(Q,Z,j);return J.map((Y)=>({...Y,samples:Y.samples.filter(({timestamp:q})=>{let V=Date.parse(q);return V>=$&&V<=z})}))}function IJ(J){let Q=new Set;for(let Z of J)for(let j of Z.samples)if(j.responseTimeMs!==null)Q.add(j.timestamp);return[...Q].sort((Z,j)=>Date.parse(Z)-Date.parse(j))}function TJ(J,Q){let Z=null,j=Number.POSITIVE_INFINITY;for(let $ of J){let z=Math.abs(Date.parse($)-Q);if(z<j)Z=$,j=z}return Z}function SJ(J,Q){let Z=[];for(let j of J){let $=j.samples.find((z)=>z.timestamp===Q);if($?.responseTimeMs!==null&&$?.responseTimeMs!==void 0)Z.push({protocol:j.protocol,responseTimeMs:$.responseTimeMs})}return Z}function AJ(J,Q){if(J.length<=Q)return J;if(Q<=0)return[];if(Q===1)return[J.at(-1)];let Z=new Set([0,J.length-1]),j=null,$=null;if(J.forEach((q,V)=>{if(q.responseTimeMs===null){if(V===0||J[V-1]?.responseTimeMs!==null)Z.add(V);return}if(j===null||q.responseTimeMs<J[j].responseTimeMs)j=V;if($===null||q.responseTimeMs>J[$].responseTimeMs)$=V}),j!==null)Z.add(j);if($!==null)Z.add($);let z=J.map((q,V)=>V).filter((q)=>!Z.has(q)),Y=Math.max(0,Q-Z.size);for(let q=0;q<Y;q+=1){let V=Y===1?Math.floor(z.length/2):Math.round(q*(z.length-1)/(Y-1));Z.add(z[V])}return[...Z].sort((q,V)=>q-V).map((q)=>J[q])}function qJ(J){let Q=document.createElement("div");Q.className=J,Q.setAttribute("role","status"),Q.hidden=!0,Q.style.position="fixed",Q.style.zIndex="60",Q.style.pointerEvents="none",Q.style.width="max-content",document.body.append(Q);let Z=null;function j(){if(!Z)return;let Y=Z();if(!Y){$();return}let q=Q.getBoundingClientRect(),V=Y.side!=="below",F=Y.rect.top-q.height-9,M=window.innerHeight-Y.rect.bottom-q.height-9,D=(V?F>=8||M<8:!(M>=8||F<8))?Y.rect.top-q.height-9:Y.rect.bottom+9,W=Y.rect.left+Y.rect.width/2-q.width/2,H=Math.min(Math.max(W,8),window.innerWidth-q.width-8);Q.style.top=`${Math.max(8,Math.min(D,window.innerHeight-q.height-8))}px`,Q.style.left=`${Math.max(8,H)}px`}function $(){if(Q.hidden)return;Q.hidden=!0,Z=null}let z=()=>{if(!Q.hidden)j()};return window.addEventListener("scroll",z,{passive:!0,capture:!0}),window.addEventListener("resize",z,{passive:!0}),{show(Y,q){if(Z=q,typeof Y==="string")Q.textContent=Y;else Q.textContent="",Q.append(Y);Q.hidden=!1,j()},hide:$,destroy(){window.removeEventListener("scroll",z,{capture:!0}),window.removeEventListener("resize",z),Q.remove()}}}var GQ={height:148,insetInline:12,insetBlock:12,gridLines:3,lineWidth:2,pointRadius:3,fill:0,tickMinor:0,tickMajor:0},UQ="http://www.w3.org/2000/svg",XJ=640,VQ=96,kJ=new Intl.DateTimeFormat("en-GB",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});function zJ(J){return J===null||J===void 0?"unavailable":`${Math.round(J)} ms`}function GJ(J){return J==="ipv4"?"IPv4":"IPv6"}function XQ(J){let Q=[],Z=[];for(let j of J)if(j.responseTimeMs===null){if(Z.length>0)Q.push(Z);Z=[]}else Z.push(j);if(Z.length>0)Q.push(Z);return Q}function T(J,Q={}){let Z=document.createElementNS(UQ,J);for(let[j,$]of Object.entries(Q))Z.setAttribute(j,String($));return Z}function bJ(J,Q,Z,j,$,z={}){let{report:Y,legend:q}=z;function V(){let B=typeof z.style==="function"?z.style():z.style;return{...GQ,...B}}function F(){return(typeof z.seriesColours==="function"?z.seriesColours():z.seriesColours)??{ipv4:"",ipv6:""}}J.textContent="",J.setAttribute("tabindex","0"),J.setAttribute("role","img");let M=[],O="month",D=null,W=[],H=[],E=YJ(O,j,$),_=0,m={ipv4:"",ipv6:""},k=null,K=z.tooltip===!1?null:qJ(z.tooltipClassName??"chart-reading");function X(){return(J.querySelector("svg")??J).getBoundingClientRect()}function G(){W=EJ(M,O,j,$),H=IJ(W),E=YJ(O,j,$)}function U(){if(_!==0)return;_=requestAnimationFrame(()=>{_=0,p()})}function P(){if(_!==0)cancelAnimationFrame(_),_=0;QJ()}function jJ(B,N,I){if(Y){Y([kJ.format(new Date(N)),I.map((S)=>`${GJ(S.protocol)} ${zJ(S.responseTimeMs)}`).join("   ")]);return}let R=document.createElement("span");R.className="chart-reading-body";let f=document.createElement("span");f.className="chart-reading-time",f.textContent=kJ.format(new Date(N)),R.append(f);for(let S of I){let w=document.createElement("span");w.className="chart-reading-row",w.dataset.protocol=S.protocol;let i=m[S.protocol];if(i)w.style.setProperty("--series-colour",i);let c=document.createElement("span");c.className="chart-reading-key";let r=document.createElement("span");r.textContent=GJ(S.protocol);let s=document.createElement("strong");s.textContent=zJ(S.responseTimeMs),w.append(c,r,s),R.append(w)}K?.show(R,()=>{if(D!==N)return null;let S=X();if(S.width===0)return null;let w=S.width/XJ;return{rect:new DOMRect(S.left+B*w,S.top,1,S.height),side:"above"}})}function QJ(){let B=V();m=F();let N=W.filter(({samples:C})=>C.length>0);if(q?.(N.map((C)=>({protocol:C.protocol,label:GJ(C.protocol),value:zJ(C.samples.at(-1)?.responseTimeMs)}))),J.textContent="",N.length===0){let C=document.createElement("p");C.className="chart-empty",C.setAttribute("role","status"),C.textContent="No response history for this range.",J.append(C),J.removeAttribute("tabindex"),k=null,K?.hide();return}J.setAttribute("tabindex","0");let{insetBlock:I,height:R,insetInline:f}=B,S=XJ-B.insetInline,w=1;for(let C of W)for(let A of C.samples)if(A.responseTimeMs!==null&&A.responseTimeMs>w)w=A.responseTimeMs;let i=Math.max(1,B.gridLines-1),r=RJ(w,i)*i,s=(C)=>f+(C-E.start)/(E.end-E.start)*(S-f),a=(C)=>s(Date.parse(C)),t=(C)=>R-C/r*(R-I),g=T("svg",{class:"chart-svg",viewBox:`0 0 ${XJ} ${B.height}`,"aria-hidden":"true"});if(B.fill>0){let C=T("defs");for(let A of["ipv4","ipv6"]){let u=T("linearGradient",{id:`chart-${Q}-${A}`,x1:0,y1:0,x2:0,y2:1});u.dataset.protocol=A,u.append(T("stop",{offset:0,"stop-opacity":B.fill}),T("stop",{offset:1,"stop-opacity":0})),C.append(u)}g.append(C)}let x=T("g",{class:"chart-grid","aria-hidden":"true"});for(let C=0;C<B.gridLines;C+=1){let A=B.gridLines===1?(I+R)/2:I+C*(R-I)/(B.gridLines-1);x.append(T("line",{x1:f,y1:A,x2:S,y2:A}))}g.append(x);let d=T("g",{class:"chart-scale","aria-hidden":"true"});for(let C=0;C<B.gridLines-1;C+=1){let A=I+C*(R-I)/(B.gridLines-1),u=r*(1-C/(B.gridLines-1)),y=T("text",{x:f+4,y:A-4});y.textContent=`${Math.round(u)} ms`,d.append(y)}g.append(d);for(let C of N){let A=AJ(C.samples,VQ);for(let u of XQ(A)){let y=u.map((n)=>({x:a(n.timestamp),y:t(n.responseTimeMs)}));if(y.length===1){let n=T("circle",{class:"chart-point",cx:y[0].x,cy:y[0].y,r:B.pointRadius});n.dataset.protocol=C.protocol,g.append(n);continue}let ZJ=HJ(y);if(B.fill>0){let n=T("path",{class:"chart-area",d:`${ZJ} L${y.at(-1).x.toFixed(2)} ${R} L${y[0].x.toFixed(2)} ${R} Z`,fill:`url(#chart-${Q}-${C.protocol})`});n.dataset.protocol=C.protocol,g.append(n)}let DJ=T("path",{class:"chart-line",d:ZJ,"stroke-width":B.lineWidth});DJ.dataset.protocol=C.protocol,g.append(DJ)}}if(B.tickMajor>0||B.tickMinor>0){let C=T("g",{class:"chart-ticks","aria-hidden":"true"});for(let A of LJ(E)){let u=s(A.at);C.append(T("line",{class:A.major?"chart-tick chart-tick--major":"chart-tick",x1:u,y1:R-(A.major?B.tickMajor:B.tickMinor),x2:u,y2:R}))}g.append(C)}let e=T("g",{class:"chart-axis","aria-hidden":"true"});e.append(T("line",{class:"chart-axis-line chart-axis-line--value",x1:f,y1:I,x2:f,y2:R}),T("line",{class:"chart-axis-line chart-axis-line--time",x1:f,y1:R,x2:S,y2:R})),g.append(e);let o=T("g",{class:"chart-hover","aria-hidden":"true"});g.append(o),k={hover:o,xFor:a,yFor:t,height:B.height,pointRadius:B.pointRadius};let MJ=N.map((C)=>{let A=C.samples.filter((ZJ)=>ZJ.responseTimeMs!==null),u=A.map((ZJ)=>ZJ.responseTimeMs),y=C.samples.length-A.length;return`${GJ(C.protocol)}: current ${zJ(C.samples.at(-1)?.responseTimeMs)}, minimum ${zJ(Math.min(...u))}, maximum ${zJ(Math.max(...u))}, ${y===0?"no unavailable samples":`${y} unavailable ${y===1?"sample":"samples"}`}.`}).join(" ");J.setAttribute("aria-label",`Response time chart for ${Z}. ${MJ} Unavailable samples create gaps in the chart.`),J.append(g),p()}function p(){if(!k)return;k.hover.textContent="";let B=D?SJ(W,D):[];if(!D||B.length===0){K?.hide(),Y?.(null);return}let N=k.xFor(D);k.hover.append(T("rect",{class:"chart-needle",x:N,y:0,height:k.height}),T("line",{class:"chart-crosshair",x1:N,y1:0,x2:N,y2:k.height}));for(let I of B){let R=T("circle",{class:"chart-hover-point",cx:N,cy:k.yFor(I.responseTimeMs),r:k.pointRadius+1});R.dataset.protocol=I.protocol,k.hover.append(R)}jJ(N,D,B)}function h(B){let N=X();if(N.width===0)return;let I=Math.min(1,Math.max(0,(B.clientX-N.left)/N.width)),R=TJ(H,E.start+I*(E.end-E.start));if(R===D)return;D=R,U()}function v(){if(D===null)return;D=null,U()}function l(B){if(B.key!=="ArrowLeft"&&B.key!=="ArrowRight")return;if(B.preventDefault(),H.length===0)return;let N=D?H.indexOf(D):H.length-1,I=Math.min(H.length-1,Math.max(0,N+(B.key==="ArrowLeft"?-1:1)));D=H[I]??null,U()}function b(){D=H.at(-1)??null,U()}return J.addEventListener("pointermove",h),J.addEventListener("pointerleave",v),J.addEventListener("blur",v),J.addEventListener("keydown",l),J.addEventListener("focus",b),{update(B,N){M=B,O=N,D=null,G(),P()},destroy(){if(_!==0)cancelAnimationFrame(_);_=0,J.removeEventListener("pointermove",h),J.removeEventListener("pointerleave",v),J.removeEventListener("blur",v),J.removeEventListener("keydown",l),J.removeEventListener("focus",b),K?.destroy(),J.textContent=""}}}function fJ(J){return`velvet:open:${J}`}var BQ=["month","quarter","all"];function UJ(){try{return globalThis.localStorage??null}catch{return null}}function wJ(J){try{let Q=UJ()?.getItem("velvet:range");return BQ.includes(Q)?Q:J}catch{return J}}function xJ(J){try{UJ()?.setItem("velvet:range",J)}catch{}}function uJ(J,Q=!1){try{let Z=UJ()?.getItem(fJ(J));if(Z===null||Z===void 0)return Q;return Z==="1"}catch{return Q}}function yJ(J,Q){try{UJ()?.setItem(fJ(J),Q?"1":"0")}catch{}}var WQ={month:{days:30,bucketDays:1},quarter:{days:90,bucketDays:1}};function CQ(J,Q){let Z=Date.parse(`${J.slice(0,10)}T00:00:00.000Z`),j=Date.parse(`${Q.slice(0,10)}T00:00:00.000Z`);return Math.max(1,Math.round((j-Z)/86400000)+1)}function OQ(J){if(J<=90)return 1;if(J<=630)return 7;return 30}function gJ(J,Q,Z){if(J!=="all")return WQ[J];let j=CQ(Z,Q);return{days:j,bucketDays:OQ(j)}}var FQ=new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"});function hJ(J,Q){if(J==="month")return"30 days ago";if(J==="quarter")return"90 days ago";return FQ.format(new Date(Q))}function MQ(J,Q){if(J<=0)return"operational";if(J/Q>=0.3)return"outage";return"degraded"}var vJ={operational:0,unknown:1,degraded:2,outage:3};function cJ(J){return J.reduce((Q,Z)=>vJ[Z]>vJ[Q]?Z:Q,"operational")}function mJ(J,Q){let Z=new Date(`${J.slice(0,10)}T00:00:00.000Z`);return Array.from({length:Q},(j,$)=>{let z=new Date(Z);return z.setUTCDate(Z.getUTCDate()-(Q-$-1)),z.toISOString().slice(0,10)})}function DQ(J,Q,Z,j){return J.filter(($)=>$.kind==="maintenance"&&$.endsAt!==null&&$.affectedServiceIds.includes(Q)&&Date.parse($.startsAt)<j&&Date.parse($.endsAt)>Z).sort(($,z)=>$.startsAt.localeCompare(z.startsAt)).map(($)=>({id:$.id,title:$.title,startsAt:$.startsAt,endsAt:$.endsAt}))}function pJ(J,Q,Z,j,$=[]){let z=gJ(Q,Z,j),Y=new Map(J.dailyAvailability.map((W)=>[W.date,W])),q=j.slice(0,10),V=mJ(Z,z.days).map((W)=>{let H=Y.get(W),E=W>=q&&H!==void 0,_=Date.parse(`${W}T00:00:00.000Z`);return{date:W,status:H===void 0?"operational":MQ(H.unavailableSeconds,H.monitoredSeconds),minutesDown:H===void 0?0:Math.round(H.unavailableSeconds/60),hasData:E,maintenance:DQ($,J.id,_,_+86400000)}});if(z.bucketDays===1)return V.map((W)=>({...W,spanDays:1}));let F=[],M=V.length%z.bucketDays,O=0,D=M===0?z.bucketDays:M;while(O<V.length){let W=V.slice(O,O+D),H=W.filter(({hasData:_})=>_),E=[...new Map(W.flatMap((_)=>_.maintenance).map((_)=>[_.id,_])).values()];F.push({date:W[W.length-1].date,status:cJ(H.map(({status:_})=>_)),minutesDown:W.reduce((_,{minutesDown:m})=>_+m,0),hasData:H.length>0,spanDays:W.length,maintenance:E}),O+=D,D=z.bucketDays}return F}function lJ(J){if(J.length===0)return"unknown";return cJ(J.map(({status:Q})=>Q))}function BJ(J){return J.filter((Q)=>Q.kind==="incident"&&Q.state==="open"||Q.kind==="maintenance"&&Q.state!=="completed").sort((Q,Z)=>Q.startsAt.localeCompare(Z.startsAt))}function VJ(J,Q,Z,j){let $=new Set(mJ(Z,gJ(Q,Z,j).days)),z=j.slice(0,10),Y=J.dailyAvailability.filter(({date:M})=>$.has(M)&&M>=z),q=Y.reduce((M,O)=>M+O.monitoredSeconds,0);if(q===0)return"No data";let V=Y.reduce((M,O)=>M+O.unavailableSeconds,0);return`${Math.max(0,100-V/q*100).toFixed(2)}%`}var dJ=new Intl.DateTimeFormat("en-GB",{month:"short",day:"numeric"}),_Q=new Intl.DateTimeFormat("en-GB",{month:"short",day:"numeric",year:"numeric"}),iJ=new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short"}),PQ={height:32,hoverHeight:38,gap:2,radius:2,narrowRadius:999,gloss:!0,relief:"raised",align:"center",pieces:1,pieceGap:2,trackRadius:0,operational:"#3fa06a",degraded:"#d1971f",outage:"#cf4a3a",noData:"#3a3a44",maintenance:"#4a7fd1",maintenanceEdge:"#89b3f0",ghostEdge:"#5a5a68"};function NQ(J,Q){if(J.maintenance.length>0&&J.status==="operational")return Q.maintenance;if(!J.hasData&&J.maintenance.length===0)return Q.noData;if(J.status==="operational")return Q.operational;if(J.status==="unknown")return Q.noData;if(J.status==="degraded")return Q.degraded;return Q.outage}function OJ(J){if(!J.hasData)return"no data";if(J.status==="operational")return"operational";if(J.status==="unknown")return"status unknown";if(J.status==="degraded")return`degraded · ${J.minutesDown} min down`;return`outage · ${J.minutesDown} min`}function rJ(J){return J.maintenance.map((Q)=>`Maintenance: ${Q.title}
-${iJ.format(new Date(Q.startsAt))} – ${iJ.format(new Date(Q.endsAt))}`).join(`
-`)}function WJ(J){let Q=new Date(`${J.date}T00:00:00Z`);if(J.spanDays>1){let Z=new Date(Q.getTime()-(J.spanDays-1)*86400000);return[`${dJ.format(Z)} – ${dJ.format(Q)}`,OJ(J),rJ(J)].filter(Boolean).join(`
-`)}return[_Q.format(Q),OJ(J),rJ(J)].filter(Boolean).join(`
-`)}function HQ(J){let Q={};for(let j of J){let z=(j.maintenance.length>0?"under maintenance":OJ(j)).split(" · ")[0];Q[z]=(Q[z]??0)+1}let Z=Object.entries(Q).sort((j,$)=>$[1]-j[1]).map(([j,$])=>`${$} ${j}`);return Z.length===0?"Availability history: nothing recorded yet.":`Availability history: ${Z.join(", ")}.`}function CJ(J,Q,Z,j){let $=Math.max(0,Z-Q),z=Q>1?Math.min(j,$/(Q-1)):0,Y=(Z-z*(Q-1))/Q;return{x:J*(Y+z),width:Y}}function LQ(J,Q,Z,j){if(Q===0||Z<=0)return null;let $=(Z-j*(Q-1))/Q,z=Math.floor(J/($+j));return z>=0&&z<Q?z:null}function sJ(J,Q={}){let Z=Q.className??"uptime-strip",j=Q.heightProperty??"--uptime-strip-height",$=Q.report;function z(){let G=typeof Q.style==="function"?Q.style():Q.style;return{...PQ,...G}}J.textContent="",J.classList.add(Z),J.setAttribute("role","img");let Y=document.createElement("canvas");Y.setAttribute("aria-hidden","true");let q=qJ(Q.tooltipClassName??"uptime-tooltip"),V=document.createElement("ul");V.className=`${Z}-readings`,V.style.cssText="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap",J.append(Y,V);let F=[],M=null,O=0,D=1,W=0;function H(){let G=Y.getContext("2d");if(!G||O<=0)return;let U=z(),P=U.hoverHeight+2;J.style.setProperty(j,`${P}px`),Y.width=Math.round(O*D),Y.height=Math.round(P*D),Y.style.width="100%",Y.style.height=`${P}px`,G.setTransform(D,0,0,D,0,0),G.clearRect(0,0,O,P);let QJ=CJ(0,F.length,O,U.gap).width<U.radius*4?U.narrowRadius:U.radius,p=G.createLinearGradient(0,(P-U.height)/2,0,(P+U.height)/2);p.addColorStop(0,"rgba(255, 255, 255, 0.22)"),p.addColorStop(0.42,"rgba(255, 255, 255, 0.05)"),p.addColorStop(1,"rgba(0, 0, 0, 0.12)");let h=Math.max(1,Math.min(8,Math.round(U.pieces)));F.forEach((v,l)=>{let b=CJ(l,F.length,O,U.gap),B=l===M,N=U.hover==="lighten",I=B&&!N?U.hoverHeight:U.height,R=U.align==="bottom"?P-I-1:U.align==="top"?1:(P-I)/2,f=!v.hasData&&v.maintenance.length===0,S=NQ(v,U),w=B&&N&&!f?`color-mix(in srgb, #ffffff ${Math.round((U.hoverLighten??0.28)*100)}%, ${S})`:S,i=f?U.ghostEdge:v.maintenance.length>0?U.maintenanceEdge:null,c=(I-U.pieceGap*(h-1))/h;if(c<=0)return;let r=Math.min(QJ,b.width/2,c/2),s=Math.min(U.trackRadius,b.width,c/2),a=l===0?s:r,t=l===F.length-1?s:r,g=(d)=>{if(U.relief!=="sunken"||h<2)return w;let e=U.reliefSpread??0.16,o=(d/(h-1)-0.5)*e*100;return`color-mix(in srgb, ${o>=0?"#ffffff":"#000000"} ${Math.abs(o).toFixed(1)}%, ${w})`},x=U.relief==="sunken"?G.createLinearGradient(0,0,0,c):null;if(x)x.addColorStop(0,"rgba(0, 0, 0, 0.64)"),x.addColorStop(0.36,"rgba(0, 0, 0, 0.12)"),x.addColorStop(0.84,"rgba(0, 0, 0, 0)"),x.addColorStop(1,"rgba(255, 255, 255, 0.2)");for(let d=0;d<h;d+=1){let e=R+d*(c+U.pieceGap);if(x)G.save();if(x)G.translate(0,e);let o=x?0:e;if(G.beginPath(),G.roundRect(b.x,o,b.width,c,[a,t,t,a]),G.fillStyle=g(d),G.fill(),!f&&U.gloss)G.fillStyle=x??p,G.fill();if(!i){if(x)G.restore();continue}if(G.beginPath(),G.roundRect(b.x+0.5,o+0.5,Math.max(b.width-1,0),Math.max(c-1,0),[Math.max(a-0.5,0),Math.max(t-0.5,0),Math.max(t-0.5,0),Math.max(a-0.5,0)]),G.strokeStyle=i,G.lineWidth=1,G.stroke(),x)G.restore()}})}function E(){if(M===null||!F[M]){q.hide(),$?.(null);return}let G=M;if($){$(WJ(F[G]).split(`
-`));return}q.show(WJ(F[G]),()=>{if(M!==G)return null;let U=J.getBoundingClientRect(),P=CJ(G,F.length,U.width,z().gap);return{rect:new DOMRect(U.left+P.x,U.top,P.width,U.height),side:"above"}})}function _(){if(W!==0)return;W=requestAnimationFrame(()=>{W=0,H(),E()})}function m(){if(W!==0)cancelAnimationFrame(W),W=0;H(),E()}function k(G){let U=J.getBoundingClientRect(),P=LQ(G.clientX-U.left,F.length,U.width,z().gap);if(P===M)return;M=P,_()}function K(){if(M===null)return;M=null,_()}J.addEventListener("pointermove",k),J.addEventListener("pointerleave",K);let X=new ResizeObserver(([G])=>{let U=G?.contentRect.width??0;if(U===O)return;O=U,m()});return X.observe(J),O=J.getBoundingClientRect().width,D=window.devicePixelRatio||1,{update(G){F=G,M=null,J.setAttribute("aria-label",HQ(F)),V.textContent="";for(let U of F.filter((P)=>P.maintenance.length>0)){let P=document.createElement("li");P.textContent=WJ(U),V.append(P)}m()},destroy(){if(W!==0)cancelAnimationFrame(W);W=0,X.disconnect(),J.removeEventListener("pointermove",k),J.removeEventListener("pointerleave",K),q.destroy()}}}var RQ={height:32,hoverHeight:38,gap:2,radius:2,narrowRadius:999,trackRadius:2,gloss:!0,align:"center",pieces:1,pieceGap:0},EQ={height:148,insetInline:12,insetBlock:12,gridLines:3,lineWidth:2,pointRadius:3,fill:0.28,tickMinor:0,tickMajor:0};function JJ(J,Q){return J.getPropertyValue(Q).trim()}function IQ(J,Q){J.textContent="";for(let Z of Q){let j=document.createElement("span");j.className="chart-legend-item",j.setAttribute("role","listitem"),j.dataset.protocol=Z.protocol;let $=document.createElement("span");$.className="chart-line-key",$.setAttribute("aria-hidden","true");let z=document.createElement("span");z.textContent=Z.label;let Y=document.createElement("strong");Y.textContent=Z.value,j.append($,z,Y),J.append(j)}}function TQ(J,Q){let Z=J.querySelector(".velvet-page")??J,j=[],$=[],z=wJ(Q.site.defaultRange),Y=()=>{let K=getComputedStyle(Z);return{...RQ,operational:JJ(K,"--state-operational"),degraded:JJ(K,"--state-degraded"),outage:JJ(K,"--state-outage"),noData:JJ(K,"--state-no-data"),maintenance:JJ(K,"--state-maintenance"),maintenanceEdge:JJ(K,"--state-maintenance-edge"),ghostEdge:JJ(K,"--state-ghost-edge")}};for(let K of Z.querySelectorAll(".service")){let X=K.dataset.serviceId??"",G=Q.status.services.find((N)=>N.id===X),U=K.querySelector(".service-summary"),P=K.querySelector(".service-uptime"),jJ=K.querySelector(".strip-axis-from"),QJ=K.querySelector(".uptime-strip-host"),p=K.querySelector(".chart-plot"),h=K.querySelector(".chart-legend"),v=K.querySelector(".chart-axis-from"),l=K.querySelector(".service-details-wrap");if(!G||!U||!P||!jJ||!QJ||!p||!h||!v||!l)continue;let b={id:X,name:G.name,spoken:G.checks.map((N)=>N.protocol==="ipv6"?"IPv6":"IPv4").join(" and "),open:!1,root:K,summary:U,uptime:P,axisFrom:jJ,strip:sJ(QJ,{style:Y,heightProperty:"--strip-surface-height",tooltipClassName:"uptime-tooltip"}),chartFrom:v,chart:bJ(p,G.id,G.name,Q.generatedAt,Q.status.monitoringStartedAt,{style:EQ,tooltipClassName:"uptime-tooltip chart-reading",legend:(N)=>IQ(h,N)}),chartBuilt:!1,panel:_J(l,!1)};$.push(b);let B=()=>{O(b,!b.open),D()};U.addEventListener("click",B),j.push(()=>{U.removeEventListener("click",B),b.strip.destroy(),b.chart.destroy(),b.panel.destroy()})}let q=Z.querySelector(".ranges"),V=Z.querySelector(".range-mark"),F=[...Z.querySelectorAll(".range-button")];for(let K of F){let X=()=>H(K.dataset.range??"month");K.addEventListener("click",X),j.push(()=>K.removeEventListener("click",X))}let M=Z.querySelector(".toggle-all");if(M){let K=()=>{let X=!$.every((G)=>G.open);for(let G of $)O(G,X);D()};M.addEventListener("click",K),j.push(()=>M.removeEventListener("click",K))}function O(K,X){if(K.open===X)return;if(K.open=X,K.root.dataset.open=String(X),K.summary.setAttribute("aria-expanded",String(X)),yJ(K.id,X),X&&!K.chartBuilt)K.chart.update(Q.responseTimes.series.filter(({serviceId:G})=>G===K.id),z),K.chartBuilt=!0;K.panel.update(X)}function D(){if(!M)return;let K=$.length>0&&$.every((X)=>X.open);M.classList.toggle("is-expanded",K),M.setAttribute("aria-label",K?"Collapse all":"Expand all"),M.title=K?"Collapse all":"Expand all"}function W(K){let X=F.find((G)=>G.dataset.range===z);if(!V||!q||!X)return;if(q.getBoundingClientRect().width===0)return;if(V.style.transition=K?"":"none",V.style.width=`${X.offsetWidth}px`,V.style.transform=`translateX(${X.offsetLeft}px)`,!K)V.offsetWidth,V.style.transition=""}function H(K){z=K,xJ(K);for(let X of F)X.setAttribute("aria-pressed",String(X.dataset.range===K));W(!0),E()}function E(){let K=hJ(z,Q.status.monitoringStartedAt);for(let X of $){let G=Q.status.services.find(({id:P})=>P===X.id);if(!G)continue;let U=VJ(G,z,Q.status.generatedAt,Q.status.monitoringStartedAt);if(X.uptime.textContent=`${U} uptime`,X.summary.setAttribute("aria-label",[X.name,`${U} uptime`,X.spoken].filter(Boolean).join(", ")),X.strip.update(pJ(G,z,Q.status.generatedAt,Q.status.monitoringStartedAt,Q.incidents.events),z),X.axisFrom.textContent=K,X.chartFrom.textContent=K,X.chartBuilt)X.chart.update(Q.responseTimes.series.filter(({serviceId:P})=>P===X.id),z)}}let _=Z.querySelector(".powered");function m(){let K=_?.querySelector(".velvet-wordmark"),X=_?.querySelector(".powered-label");if(!K||!X)return;X.style.removeProperty("--powered-label-tracking");let G=X.getBoundingClientRect().width,U=K.getBoundingClientRect().width,P=(X.textContent??"").length-1;if(P<=0||G<=0||U<=G)return;X.style.setProperty("--powered-label-tracking",`${(U-G)/P}px`)}let k=new ResizeObserver(()=>{W(!1),m()});if(q)k.observe(q);if(_)k.observe(_);j.push(()=>k.disconnect());for(let K of F)K.setAttribute("aria-pressed",String(K.dataset.range===z));for(let K of $)O(K,uJ(K.id));return D(),E(),W(!1),document.fonts?.ready.then(()=>{W(!1),m()}),()=>{for(let K of j)K()}}var oJ=TQ;var nJ=[{key:"month",label:"30d",description:"The last 30 days"},{key:"quarter",label:"90d",description:"The last 90 days"},{key:"all",label:"All",description:"Everything measured"}];var aJ=new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short"});function FJ(J){return aJ.format(J)}function tJ(J){return aJ.format(new Date(J))}function L(J){return J.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;")}var eJ={operational:{text:"All systems operational",icon:"ph-check-circle"},unknown:{text:"System status unavailable",icon:"ph-question"},degraded:{text:"Some systems degraded",icon:"ph-warning"},outage:{text:"Major service outage",icon:"ph-x-circle"}},SQ={globe:"ph-globe",brackets:"ph-brackets-curly",cloud:"ph-cloud",envelope:"ph-envelope-simple",database:"ph-database"};function KJ(J,Q){return`<i class="${Q} ph-duotone ${J}" aria-hidden="true"></i>`}function AQ(J,Q){let Z=eJ[Q]??eJ.unknown;return`<div class="status-band status-band--hero">
+// ../packages/foundation/src/disclosure/index.ts
+var DURATION_PROPERTY = "--velvet-disclosure-duration";
+var FALLBACK_DURATION_MS = 400;
+function millisecondsFrom(value) {
+  const match = /^\s*([\d.]+)(ms|s)\s*$/u.exec(value);
+  if (!match)
+    return null;
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount))
+    return null;
+  return match[2] === "s" ? amount * 1000 : amount;
+}
+function prefersReducedMotion() {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+function disclosure(node, open) {
+  const declared = getComputedStyle(node).getPropertyValue(DURATION_PROPERTY);
+  const duration = millisecondsFrom(declared) ?? FALLBACK_DURATION_MS;
+  let shown = open;
+  let animation = null;
+  let fade = null;
+  function contents() {
+    return node.firstElementChild;
+  }
+  function settle() {
+    node.style.removeProperty("height");
+    animation = null;
+    fade = null;
+  }
+  function snap(next) {
+    animation?.cancel();
+    fade?.cancel();
+    settle();
+    node.hidden = !next;
+    node.inert = !next;
+  }
+  function present(next) {
+    const current = node.hidden ? 0 : node.getBoundingClientRect().height;
+    const inner = contents();
+    const showing = fade && inner ? Number(getComputedStyle(inner).opacity) : next ? 0 : 1;
+    animation?.cancel();
+    fade?.cancel();
+    settle();
+    node.inert = !next;
+    if (prefersReducedMotion() || typeof node.animate !== "function") {
+      snap(next);
+      return;
+    }
+    node.hidden = false;
+    const target = next ? node.getBoundingClientRect().height : 0;
+    if (target === current) {
+      snap(next);
+      return;
+    }
+    animation = node.animate([{ height: `${current}px` }, { height: `${target}px` }], { duration, easing: "ease-in-out" });
+    if (inner) {
+      fade = inner.animate([{ opacity: `${showing}` }, { opacity: next ? "1" : "0" }], { duration, easing: "ease-in-out" });
+    }
+    animation.finished.then(() => {
+      node.hidden = !next;
+      settle();
+    }, () => {});
+  }
+  snap(open);
+  return {
+    update(next) {
+      if (next === shown)
+        return;
+      shown = next;
+      present(next);
+    },
+    destroy() {
+      animation?.cancel();
+    }
+  };
+}
+
+// ../packages/foundation/src/response-chart/arithmetic.ts
+var HOUR_MS = 3600000;
+var DAY_MS = 86400000;
+var FIXED_RANGE_MS = {
+  month: 30 * DAY_MS,
+  quarter: 90 * DAY_MS
+};
+var SCALE_UNITS = [
+  { every: HOUR_MS, majorEvery: 6 },
+  { every: 6 * HOUR_MS, majorEvery: 4 },
+  { every: DAY_MS, majorEvery: 5 },
+  { every: 2 * DAY_MS, majorEvery: 5 },
+  { every: 7 * DAY_MS, majorEvery: 4 },
+  { every: 30 * DAY_MS, majorEvery: 3 },
+  { every: 365 * DAY_MS, majorEvery: 5 }
+];
+var MOST_TICKS = 60;
+function monotonePath(points) {
+  if (points.length === 0)
+    return "";
+  if (points.length === 1)
+    return `M${pointText(points[0])}`;
+  const intervals = points.slice(0, -1).map((point, index) => {
+    const next = points[index + 1];
+    const width = next.x - point.x;
+    return {
+      width,
+      slope: width > 0 ? (next.y - point.y) / width : 0
+    };
+  });
+  if (intervals.some(({ width }) => width <= 0)) {
+    return points.map((point, index) => `${index === 0 ? "M" : "L"}${pointText(point)}`).join(" ");
+  }
+  const tangents = points.map((_, index) => {
+    if (index === 0)
+      return intervals[0].slope;
+    if (index === points.length - 1)
+      return intervals.at(-1).slope;
+    const previous = intervals[index - 1];
+    const next = intervals[index];
+    if (previous.slope * next.slope <= 0)
+      return 0;
+    const previousWeight = 2 * next.width + previous.width;
+    const nextWeight = next.width + 2 * previous.width;
+    return (previousWeight + nextWeight) / (previousWeight / previous.slope + nextWeight / next.slope);
+  });
+  for (let index = 0;index < intervals.length; index += 1) {
+    const slope = intervals[index].slope;
+    if (slope === 0) {
+      tangents[index] = 0;
+      tangents[index + 1] = 0;
+      continue;
+    }
+    const startRatio = tangents[index] / slope;
+    const endRatio = tangents[index + 1] / slope;
+    const magnitude = Math.hypot(startRatio, endRatio);
+    if (magnitude > 3) {
+      const scale = 3 / magnitude;
+      tangents[index] = scale * startRatio * slope;
+      tangents[index + 1] = scale * endRatio * slope;
+    }
+  }
+  const commands = [`M${pointText(points[0])}`];
+  for (let index = 0;index < intervals.length; index += 1) {
+    const start = points[index];
+    const end = points[index + 1];
+    const third = intervals[index].width / 3;
+    const firstControl = {
+      x: start.x + third,
+      y: start.y + tangents[index] * third
+    };
+    const secondControl = {
+      x: end.x - third,
+      y: end.y - tangents[index + 1] * third
+    };
+    commands.push(`C${pointText(firstControl)} ${pointText(secondControl)} ${pointText(end)}`);
+  }
+  return commands.join(" ");
+}
+function pointText(point) {
+  return `${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+}
+function responseRangeWindow(range, generatedAt, monitoringStartedAt) {
+  const end = Date.parse(generatedAt);
+  if (range === "all") {
+    return { start: Date.parse(monitoringStartedAt), end };
+  }
+  return { start: end - FIXED_RANGE_MS[range], end };
+}
+function responseScaleTicks(window2) {
+  const span = window2.end - window2.start;
+  if (span <= 0)
+    return [];
+  const unit = SCALE_UNITS.find(({ every }) => span / every <= MOST_TICKS) ?? SCALE_UNITS.at(-1);
+  const ticks = [];
+  for (let step = 0;; step += 1) {
+    const at = window2.end - step * unit.every;
+    if (at < window2.start)
+      break;
+    ticks.push({ at, major: step % unit.majorEvery === 0 });
+  }
+  return ticks.reverse();
+}
+var AXIS_MANTISSAS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+var SMALLEST_AXIS_STEP = 10;
+function responseAxisStep(highest, steps) {
+  const wanted = Math.max(highest, 0) / Math.max(1, steps);
+  if (wanted <= SMALLEST_AXIS_STEP)
+    return SMALLEST_AXIS_STEP;
+  const power = 10 ** Math.floor(Math.log10(wanted));
+  for (const mantissa of AXIS_MANTISSAS) {
+    const candidate = mantissa * power;
+    if (candidate >= wanted)
+      return candidate;
+  }
+  return 10 * power;
+}
+function filterResponseSeries(series, range, generatedAt, monitoringStartedAt) {
+  const { start, end } = responseRangeWindow(range, generatedAt, monitoringStartedAt);
+  return series.map((entry) => ({
+    ...entry,
+    samples: entry.samples.filter(({ timestamp }) => {
+      const sampleTime = Date.parse(timestamp);
+      return sampleTime >= start && sampleTime <= end;
+    })
+  }));
+}
+function availableResponseTimestamps(series) {
+  const timestamps = new Set;
+  for (const entry of series) {
+    for (const sample of entry.samples) {
+      if (sample.responseTimeMs !== null)
+        timestamps.add(sample.timestamp);
+    }
+  }
+  return [...timestamps].sort((left, right) => Date.parse(left) - Date.parse(right));
+}
+function nearestResponseTimestamp(timestamps, targetTime) {
+  let nearest = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const timestamp of timestamps) {
+    const distance = Math.abs(Date.parse(timestamp) - targetTime);
+    if (distance < nearestDistance) {
+      nearest = timestamp;
+      nearestDistance = distance;
+    }
+  }
+  return nearest;
+}
+function responseValuesAtTimestamp(series, timestamp) {
+  const values = [];
+  for (const entry of series) {
+    const sample = entry.samples.find((candidate) => candidate.timestamp === timestamp);
+    if (sample?.responseTimeMs !== null && sample?.responseTimeMs !== undefined) {
+      values.push({
+        protocol: entry.protocol,
+        responseTimeMs: sample.responseTimeMs
+      });
+    }
+  }
+  return values;
+}
+function downsampleResponseSamples(samples, maxPoints) {
+  if (samples.length <= maxPoints)
+    return samples;
+  if (maxPoints <= 0)
+    return [];
+  if (maxPoints === 1)
+    return [samples.at(-1)];
+  const required = new Set([0, samples.length - 1]);
+  let minimumIndex = null;
+  let maximumIndex = null;
+  samples.forEach((sample, index) => {
+    if (sample.responseTimeMs === null) {
+      if (index === 0 || samples[index - 1]?.responseTimeMs !== null) {
+        required.add(index);
+      }
+      return;
+    }
+    if (minimumIndex === null || sample.responseTimeMs < samples[minimumIndex].responseTimeMs) {
+      minimumIndex = index;
+    }
+    if (maximumIndex === null || sample.responseTimeMs > samples[maximumIndex].responseTimeMs) {
+      maximumIndex = index;
+    }
+  });
+  if (minimumIndex !== null)
+    required.add(minimumIndex);
+  if (maximumIndex !== null)
+    required.add(maximumIndex);
+  const candidates = samples.map((_, index) => index).filter((index) => !required.has(index));
+  const availableSlots = Math.max(0, maxPoints - required.size);
+  for (let slot = 0;slot < availableSlots; slot += 1) {
+    const candidateIndex = availableSlots === 1 ? Math.floor(candidates.length / 2) : Math.round(slot * (candidates.length - 1) / (availableSlots - 1));
+    required.add(candidates[candidateIndex]);
+  }
+  return [...required].sort((left, right) => left - right).map((index) => samples[index]);
+}
+
+// ../packages/foundation/src/overlay/index.ts
+var WINDOW_MARGIN = 8;
+var ANCHOR_GAP = 9;
+function createOverlay(className) {
+  const element = document.createElement("div");
+  element.className = className;
+  element.setAttribute("role", "status");
+  element.hidden = true;
+  element.style.position = "fixed";
+  element.style.zIndex = "60";
+  element.style.pointerEvents = "none";
+  element.style.width = "max-content";
+  document.body.append(element);
+  let currentAnchor = null;
+  function place() {
+    if (!currentAnchor)
+      return;
+    const anchor = currentAnchor();
+    if (!anchor) {
+      hide();
+      return;
+    }
+    const box = element.getBoundingClientRect();
+    const wantsAbove = anchor.side !== "below";
+    const roomAbove = anchor.rect.top - box.height - ANCHOR_GAP;
+    const roomBelow = window.innerHeight - anchor.rect.bottom - box.height - ANCHOR_GAP;
+    const above = wantsAbove ? roomAbove >= WINDOW_MARGIN || roomBelow < WINDOW_MARGIN : !(roomBelow >= WINDOW_MARGIN || roomAbove < WINDOW_MARGIN);
+    const top = above ? anchor.rect.top - box.height - ANCHOR_GAP : anchor.rect.bottom + ANCHOR_GAP;
+    const centred = anchor.rect.left + anchor.rect.width / 2 - box.width / 2;
+    const left = Math.min(Math.max(centred, WINDOW_MARGIN), window.innerWidth - box.width - WINDOW_MARGIN);
+    element.style.top = `${Math.max(WINDOW_MARGIN, Math.min(top, window.innerHeight - box.height - WINDOW_MARGIN))}px`;
+    element.style.left = `${Math.max(WINDOW_MARGIN, left)}px`;
+  }
+  function hide() {
+    if (element.hidden)
+      return;
+    element.hidden = true;
+    currentAnchor = null;
+  }
+  const reposition = () => {
+    if (!element.hidden)
+      place();
+  };
+  window.addEventListener("scroll", reposition, { passive: true, capture: true });
+  window.addEventListener("resize", reposition, { passive: true });
+  return {
+    show(content, anchor) {
+      currentAnchor = anchor;
+      if (typeof content === "string") {
+        element.textContent = content;
+      } else {
+        element.textContent = "";
+        element.append(content);
+      }
+      element.hidden = false;
+      place();
+    },
+    hide,
+    destroy() {
+      window.removeEventListener("scroll", reposition, { capture: true });
+      window.removeEventListener("resize", reposition);
+      element.remove();
+    }
+  };
+}
+
+// ../packages/foundation/src/response-chart/view.ts
+var DEFAULT_RESPONSE_CHART_STYLE = {
+  height: 148,
+  insetInline: 12,
+  insetBlock: 12,
+  gridLines: 3,
+  lineWidth: 2,
+  pointRadius: 3,
+  fill: 0,
+  tickMinor: 0,
+  tickMajor: 0
+};
+var SVG_NS = "http://www.w3.org/2000/svg";
+var VIEW_WIDTH = 640;
+var MAX_POINTS = 96;
+var HOVER_TIME = new Intl.DateTimeFormat("en-GB", {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit"
+});
+function formatMilliseconds(value) {
+  return value === null || value === undefined ? "unavailable" : `${Math.round(value)} ms`;
+}
+function protocolLabel(protocol) {
+  return protocol === "ipv4" ? "IPv4" : "IPv6";
+}
+function measuredRuns(samples) {
+  const runs = [];
+  let current = [];
+  for (const sample of samples) {
+    if (sample.responseTimeMs === null) {
+      if (current.length > 0)
+        runs.push(current);
+      current = [];
+    } else {
+      current.push(sample);
+    }
+  }
+  if (current.length > 0)
+    runs.push(current);
+  return runs;
+}
+function svg(name, attributes = {}) {
+  const element = document.createElementNS(SVG_NS, name);
+  for (const [key, value] of Object.entries(attributes)) {
+    element.setAttribute(key, String(value));
+  }
+  return element;
+}
+function createChartView(host, serviceId, serviceName, generatedAt, monitoringStartedAt, options = {}) {
+  const report = options.report;
+  const reportLegend = options.legend;
+  function currentStyle() {
+    const given = typeof options.style === "function" ? options.style() : options.style;
+    return { ...DEFAULT_RESPONSE_CHART_STYLE, ...given };
+  }
+  function currentSeriesColours() {
+    const given = typeof options.seriesColours === "function" ? options.seriesColours() : options.seriesColours;
+    return given ?? { ipv4: "", ipv6: "" };
+  }
+  host.textContent = "";
+  host.setAttribute("tabindex", "0");
+  host.setAttribute("role", "img");
+  let series = [];
+  let range = "month";
+  let activeTimestamp = null;
+  let filtered = [];
+  let timestamps = [];
+  let rangeWindow = responseRangeWindow(range, generatedAt, monitoringStartedAt);
+  let frame = 0;
+  let seriesColours = { ipv4: "", ipv6: "" };
+  let geometry = null;
+  const tooltip = options.tooltip === false ? null : createOverlay(options.tooltipClassName ?? "chart-reading");
+  function plotBox() {
+    const drawing = host.querySelector("svg");
+    return (drawing ?? host).getBoundingClientRect();
+  }
+  function deriveState() {
+    filtered = filterResponseSeries(series, range, generatedAt, monitoringStartedAt);
+    timestamps = availableResponseTimestamps(filtered);
+    rangeWindow = responseRangeWindow(range, generatedAt, monitoringStartedAt);
+  }
+  function schedulePointer() {
+    if (frame !== 0)
+      return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      placeHover();
+    });
+  }
+  function redrawNow() {
+    if (frame !== 0) {
+      cancelAnimationFrame(frame);
+      frame = 0;
+    }
+    render();
+  }
+  function showReading(plotX, timestamp, values) {
+    if (report) {
+      report([
+        HOVER_TIME.format(new Date(timestamp)),
+        values.map((value) => `${protocolLabel(value.protocol)} ${formatMilliseconds(value.responseTimeMs)}`).join("   ")
+      ]);
+      return;
+    }
+    const body = document.createElement("span");
+    body.className = "chart-reading-body";
+    const when = document.createElement("span");
+    when.className = "chart-reading-time";
+    when.textContent = HOVER_TIME.format(new Date(timestamp));
+    body.append(when);
+    for (const value of values) {
+      const row = document.createElement("span");
+      row.className = "chart-reading-row";
+      row.dataset.protocol = value.protocol;
+      const colour = seriesColours[value.protocol];
+      if (colour)
+        row.style.setProperty("--series-colour", colour);
+      const key = document.createElement("span");
+      key.className = "chart-reading-key";
+      const label = document.createElement("span");
+      label.textContent = protocolLabel(value.protocol);
+      const reading = document.createElement("strong");
+      reading.textContent = formatMilliseconds(value.responseTimeMs);
+      row.append(key, label, reading);
+      body.append(row);
+    }
+    tooltip?.show(body, () => {
+      if (activeTimestamp !== timestamp)
+        return null;
+      const box = plotBox();
+      if (box.width === 0)
+        return null;
+      const scale = box.width / VIEW_WIDTH;
+      return {
+        rect: new DOMRect(box.left + plotX * scale, box.top, 1, box.height),
+        side: "above"
+      };
+    });
+  }
+  function render() {
+    const tokens = currentStyle();
+    seriesColours = currentSeriesColours();
+    const withSamples = filtered.filter(({ samples }) => samples.length > 0);
+    reportLegend?.(withSamples.map((entry) => ({
+      protocol: entry.protocol,
+      label: protocolLabel(entry.protocol),
+      value: formatMilliseconds(entry.samples.at(-1)?.responseTimeMs)
+    })));
+    host.textContent = "";
+    if (withSamples.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "chart-empty";
+      empty.setAttribute("role", "status");
+      empty.textContent = "No response history for this range.";
+      host.append(empty);
+      host.removeAttribute("tabindex");
+      geometry = null;
+      tooltip?.hide();
+      return;
+    }
+    host.setAttribute("tabindex", "0");
+    const plotTop = tokens.insetBlock;
+    const plotBottom = tokens.height;
+    const plotLeft = tokens.insetInline;
+    const plotRight = VIEW_WIDTH - tokens.insetInline;
+    let highest = 1;
+    for (const entry of filtered) {
+      for (const sample of entry.samples) {
+        if (sample.responseTimeMs !== null && sample.responseTimeMs > highest) {
+          highest = sample.responseTimeMs;
+        }
+      }
+    }
+    const steps = Math.max(1, tokens.gridLines - 1);
+    const step = responseAxisStep(highest, steps);
+    const maximum = step * steps;
+    const xForTime = (time) => plotLeft + (time - rangeWindow.start) / (rangeWindow.end - rangeWindow.start) * (plotRight - plotLeft);
+    const xFor = (timestamp) => xForTime(Date.parse(timestamp));
+    const yFor = (value) => plotBottom - value / maximum * (plotBottom - plotTop);
+    const root = svg("svg", {
+      class: "chart-svg",
+      viewBox: `0 0 ${VIEW_WIDTH} ${tokens.height}`,
+      "aria-hidden": "true"
+    });
+    if (tokens.fill > 0) {
+      const defs = svg("defs");
+      for (const protocol of ["ipv4", "ipv6"]) {
+        const gradient = svg("linearGradient", {
+          id: `chart-${serviceId}-${protocol}`,
+          x1: 0,
+          y1: 0,
+          x2: 0,
+          y2: 1
+        });
+        gradient.dataset.protocol = protocol;
+        gradient.append(svg("stop", { offset: 0, "stop-opacity": tokens.fill }), svg("stop", { offset: 1, "stop-opacity": 0 }));
+        defs.append(gradient);
+      }
+      root.append(defs);
+    }
+    const grid = svg("g", { class: "chart-grid", "aria-hidden": "true" });
+    for (let index = 0;index < tokens.gridLines; index += 1) {
+      const y = tokens.gridLines === 1 ? (plotTop + plotBottom) / 2 : plotTop + index * (plotBottom - plotTop) / (tokens.gridLines - 1);
+      grid.append(svg("line", { x1: plotLeft, y1: y, x2: plotRight, y2: y }));
+    }
+    root.append(grid);
+    const scale = svg("g", { class: "chart-scale", "aria-hidden": "true" });
+    for (let index = 0;index < tokens.gridLines - 1; index += 1) {
+      const y = plotTop + index * (plotBottom - plotTop) / (tokens.gridLines - 1);
+      const value = maximum * (1 - index / (tokens.gridLines - 1));
+      const label = svg("text", { x: plotLeft + 4, y: y - 4 });
+      label.textContent = `${Math.round(value)} ms`;
+      scale.append(label);
+    }
+    root.append(scale);
+    for (const entry of withSamples) {
+      const reduced = downsampleResponseSamples(entry.samples, MAX_POINTS);
+      for (const run of measuredRuns(reduced)) {
+        const points = run.map((sample) => ({
+          x: xFor(sample.timestamp),
+          y: yFor(sample.responseTimeMs)
+        }));
+        if (points.length === 1) {
+          const point = svg("circle", {
+            class: "chart-point",
+            cx: points[0].x,
+            cy: points[0].y,
+            r: tokens.pointRadius
+          });
+          point.dataset.protocol = entry.protocol;
+          root.append(point);
+          continue;
+        }
+        const path = monotonePath(points);
+        if (tokens.fill > 0) {
+          const area = svg("path", {
+            class: "chart-area",
+            d: `${path} L${points.at(-1).x.toFixed(2)} ${plotBottom} L${points[0].x.toFixed(2)} ${plotBottom} Z`,
+            fill: `url(#chart-${serviceId}-${entry.protocol})`
+          });
+          area.dataset.protocol = entry.protocol;
+          root.append(area);
+        }
+        const line = svg("path", {
+          class: "chart-line",
+          d: path,
+          "stroke-width": tokens.lineWidth
+        });
+        line.dataset.protocol = entry.protocol;
+        root.append(line);
+      }
+    }
+    if (tokens.tickMajor > 0 || tokens.tickMinor > 0) {
+      const ticks = svg("g", { class: "chart-ticks", "aria-hidden": "true" });
+      for (const tick of responseScaleTicks(rangeWindow)) {
+        const x = xForTime(tick.at);
+        ticks.append(svg("line", {
+          class: tick.major ? "chart-tick chart-tick--major" : "chart-tick",
+          x1: x,
+          y1: plotBottom - (tick.major ? tokens.tickMajor : tokens.tickMinor),
+          x2: x,
+          y2: plotBottom
+        }));
+      }
+      root.append(ticks);
+    }
+    const axes = svg("g", { class: "chart-axis", "aria-hidden": "true" });
+    axes.append(svg("line", {
+      class: "chart-axis-line chart-axis-line--value",
+      x1: plotLeft,
+      y1: plotTop,
+      x2: plotLeft,
+      y2: plotBottom
+    }), svg("line", {
+      class: "chart-axis-line chart-axis-line--time",
+      x1: plotLeft,
+      y1: plotBottom,
+      x2: plotRight,
+      y2: plotBottom
+    }));
+    root.append(axes);
+    const hover = svg("g", { class: "chart-hover", "aria-hidden": "true" });
+    root.append(hover);
+    geometry = {
+      hover,
+      xFor,
+      yFor,
+      height: tokens.height,
+      pointRadius: tokens.pointRadius
+    };
+    const description = withSamples.map((entry) => {
+      const measured = entry.samples.filter((sample) => sample.responseTimeMs !== null);
+      const times = measured.map((sample) => sample.responseTimeMs);
+      const missing = entry.samples.length - measured.length;
+      return `${protocolLabel(entry.protocol)}: current ${formatMilliseconds(entry.samples.at(-1)?.responseTimeMs)}, minimum ${formatMilliseconds(Math.min(...times))}, maximum ${formatMilliseconds(Math.max(...times))}, ${missing === 0 ? "no unavailable samples" : `${missing} unavailable ${missing === 1 ? "sample" : "samples"}`}.`;
+    }).join(" ");
+    host.setAttribute("aria-label", `Response time chart for ${serviceName}. ${description} Unavailable samples create gaps in the chart.`);
+    host.append(root);
+    placeHover();
+  }
+  function placeHover() {
+    if (!geometry)
+      return;
+    geometry.hover.textContent = "";
+    const values = activeTimestamp ? responseValuesAtTimestamp(filtered, activeTimestamp) : [];
+    if (!activeTimestamp || values.length === 0) {
+      tooltip?.hide();
+      report?.(null);
+      return;
+    }
+    const x = geometry.xFor(activeTimestamp);
+    geometry.hover.append(svg("rect", { class: "chart-needle", x, y: 0, height: geometry.height }), svg("line", {
+      class: "chart-crosshair",
+      x1: x,
+      y1: 0,
+      x2: x,
+      y2: geometry.height
+    }));
+    for (const value of values) {
+      const dot = svg("circle", {
+        class: "chart-hover-point",
+        cx: x,
+        cy: geometry.yFor(value.responseTimeMs),
+        r: geometry.pointRadius + 1
+      });
+      dot.dataset.protocol = value.protocol;
+      geometry.hover.append(dot);
+    }
+    showReading(x, activeTimestamp, values);
+  }
+  function onPointerMove(event) {
+    const box = plotBox();
+    if (box.width === 0)
+      return;
+    const ratio = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
+    const next = nearestResponseTimestamp(timestamps, rangeWindow.start + ratio * (rangeWindow.end - rangeWindow.start));
+    if (next === activeTimestamp)
+      return;
+    activeTimestamp = next;
+    schedulePointer();
+  }
+  function clearHover() {
+    if (activeTimestamp === null)
+      return;
+    activeTimestamp = null;
+    schedulePointer();
+  }
+  function onKeyDown(event) {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+      return;
+    event.preventDefault();
+    if (timestamps.length === 0)
+      return;
+    const current = activeTimestamp ? timestamps.indexOf(activeTimestamp) : timestamps.length - 1;
+    const next = Math.min(timestamps.length - 1, Math.max(0, current + (event.key === "ArrowLeft" ? -1 : 1)));
+    activeTimestamp = timestamps[next] ?? null;
+    schedulePointer();
+  }
+  function onFocus() {
+    activeTimestamp = timestamps.at(-1) ?? null;
+    schedulePointer();
+  }
+  host.addEventListener("pointermove", onPointerMove);
+  host.addEventListener("pointerleave", clearHover);
+  host.addEventListener("blur", clearHover);
+  host.addEventListener("keydown", onKeyDown);
+  host.addEventListener("focus", onFocus);
+  return {
+    update(nextSeries, nextRange) {
+      series = nextSeries;
+      range = nextRange;
+      activeTimestamp = null;
+      deriveState();
+      redrawNow();
+    },
+    destroy() {
+      if (frame !== 0)
+        cancelAnimationFrame(frame);
+      frame = 0;
+      host.removeEventListener("pointermove", onPointerMove);
+      host.removeEventListener("pointerleave", clearHover);
+      host.removeEventListener("blur", clearHover);
+      host.removeEventListener("keydown", onKeyDown);
+      host.removeEventListener("focus", onFocus);
+      tooltip?.destroy();
+      host.textContent = "";
+    }
+  };
+}
+
+// ../packages/foundation/src/preferences/index.ts
+var RANGE_KEY = "velvet:range";
+function openKey(serviceId) {
+  return `velvet:open:${serviceId}`;
+}
+var RANGES = ["month", "quarter", "all"];
+function storage() {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+function readRange(fallback) {
+  try {
+    const stored = storage()?.getItem(RANGE_KEY);
+    return RANGES.includes(stored) ? stored : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeRange(range) {
+  try {
+    storage()?.setItem(RANGE_KEY, range);
+  } catch {}
+}
+function readOpen(serviceId, fallback = false) {
+  try {
+    const stored = storage()?.getItem(openKey(serviceId));
+    if (stored === null || stored === undefined)
+      return fallback;
+    return stored === "1";
+  } catch {
+    return fallback;
+  }
+}
+function writeOpen(serviceId, open) {
+  try {
+    storage()?.setItem(openKey(serviceId), open ? "1" : "0");
+  } catch {}
+}
+
+// ../packages/foundation/src/status.ts
+var DOWN_SEGMENT_THRESHOLD = 0.3;
+var DAY_MS2 = 24 * 60 * 60 * 1000;
+var FIXED_SPECS = {
+  month: { days: 30, bucketDays: 1 },
+  quarter: { days: 90, bucketDays: 1 }
+};
+function daysCovered(fromIso, toIso) {
+  const from = Date.parse(`${fromIso.slice(0, 10)}T00:00:00.000Z`);
+  const to = Date.parse(`${toIso.slice(0, 10)}T00:00:00.000Z`);
+  return Math.max(1, Math.round((to - from) / DAY_MS2) + 1);
+}
+function bucketForSpan(days) {
+  if (days <= 90)
+    return 1;
+  if (days <= 90 * 7)
+    return 7;
+  return 30;
+}
+function rangeSpec(range, generatedAt, monitoringStartedAt) {
+  if (range !== "all")
+    return FIXED_SPECS[range];
+  const days = daysCovered(monitoringStartedAt, generatedAt);
+  return { days, bucketDays: bucketForSpan(days) };
+}
+var SINCE_DATE = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC"
+});
+function rangeLabel(range, monitoringStartedAt) {
+  if (range === "month")
+    return "30 days ago";
+  if (range === "quarter")
+    return "90 days ago";
+  return SINCE_DATE.format(new Date(monitoringStartedAt));
+}
+function statusForAvailability(unavailableSeconds, monitoredSeconds) {
+  if (unavailableSeconds <= 0)
+    return "operational";
+  if (unavailableSeconds / monitoredSeconds >= DOWN_SEGMENT_THRESHOLD) {
+    return "outage";
+  }
+  return "degraded";
+}
+var statusRank = {
+  operational: 0,
+  unknown: 1,
+  degraded: 2,
+  outage: 3
+};
+function worstStatus(statuses) {
+  return statuses.reduce((worst, status) => statusRank[status] > statusRank[worst] ? status : worst, "operational");
+}
+function rangeDates(generatedAt, days) {
+  const end = new Date(`${generatedAt.slice(0, 10)}T00:00:00.000Z`);
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(end);
+    date.setUTCDate(end.getUTCDate() - (days - index - 1));
+    return date.toISOString().slice(0, 10);
+  });
+}
+function maintenanceForPeriod(events, serviceId, startsAt, endsAt) {
+  return events.filter((event) => event.kind === "maintenance" && event.endsAt !== null && event.affectedServiceIds.includes(serviceId) && Date.parse(event.startsAt) < endsAt && Date.parse(event.endsAt) > startsAt).sort((left, right) => left.startsAt.localeCompare(right.startsAt)).map((event) => ({
+    id: event.id,
+    title: event.title,
+    startsAt: event.startsAt,
+    endsAt: event.endsAt
+  }));
+}
+function barsForRange(service, range, generatedAt, monitoringStartedAt, events = []) {
+  const spec = rangeSpec(range, generatedAt, monitoringStartedAt);
+  const availability = new Map(service.dailyAvailability.map((day) => [day.date, day]));
+  const monitoringStartDate = monitoringStartedAt.slice(0, 10);
+  const days = rangeDates(generatedAt, spec.days).map((date) => {
+    const day = availability.get(date);
+    const hasData = date >= monitoringStartDate && day !== undefined;
+    const dayStartsAt = Date.parse(`${date}T00:00:00.000Z`);
+    return {
+      date,
+      status: day === undefined ? "operational" : statusForAvailability(day.unavailableSeconds, day.monitoredSeconds),
+      minutesDown: day === undefined ? 0 : Math.round(day.unavailableSeconds / 60),
+      hasData,
+      maintenance: maintenanceForPeriod(events, service.id, dayStartsAt, dayStartsAt + DAY_MS2)
+    };
+  });
+  if (spec.bucketDays === 1) {
+    return days.map((day) => ({ ...day, spanDays: 1 }));
+  }
+  const bars = [];
+  const remainder = days.length % spec.bucketDays;
+  let cursor = 0;
+  let size = remainder === 0 ? spec.bucketDays : remainder;
+  while (cursor < days.length) {
+    const bucket = days.slice(cursor, cursor + size);
+    const monitoredDays = bucket.filter(({ hasData }) => hasData);
+    const maintenance = [
+      ...new Map(bucket.flatMap((day) => day.maintenance).map((event) => [event.id, event])).values()
+    ];
+    bars.push({
+      date: bucket[bucket.length - 1].date,
+      status: worstStatus(monitoredDays.map(({ status }) => status)),
+      minutesDown: bucket.reduce((total, { minutesDown }) => total + minutesDown, 0),
+      hasData: monitoredDays.length > 0,
+      spanDays: bucket.length,
+      maintenance
+    });
+    cursor += size;
+    size = spec.bucketDays;
+  }
+  return bars;
+}
+function overallStatus(services) {
+  if (services.length === 0)
+    return "unknown";
+  return worstStatus(services.map(({ status }) => status));
+}
+function visibleEvents(events) {
+  return events.filter((event) => event.kind === "incident" && event.state === "open" || event.kind === "maintenance" && event.state !== "completed").sort((left, right) => left.startsAt.localeCompare(right.startsAt));
+}
+function uptimeForRange(service, range, generatedAt, monitoringStartedAt) {
+  const dates = new Set(rangeDates(generatedAt, rangeSpec(range, generatedAt, monitoringStartedAt).days));
+  const monitoringStartDate = monitoringStartedAt.slice(0, 10);
+  const availability = service.dailyAvailability.filter(({ date }) => dates.has(date) && date >= monitoringStartDate);
+  const monitoredSeconds = availability.reduce((total, day) => total + day.monitoredSeconds, 0);
+  if (monitoredSeconds === 0)
+    return "No data";
+  const unavailableSeconds = availability.reduce((total, day) => total + day.unavailableSeconds, 0);
+  const percentage = Math.max(0, 100 - unavailableSeconds / monitoredSeconds * 100);
+  return `${percentage.toFixed(2)}%`;
+}
+
+// ../packages/foundation/src/uptime-strip/index.ts
+var SHORT_DATE = new Intl.DateTimeFormat("en-GB", {
+  month: "short",
+  day: "numeric"
+});
+var FULL_DATE = new Intl.DateTimeFormat("en-GB", {
+  month: "short",
+  day: "numeric",
+  year: "numeric"
+});
+var MAINTENANCE_TIME = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeStyle: "short"
+});
+var DEFAULT_UPTIME_STRIP_STYLE = {
+  height: 32,
+  hoverHeight: 38,
+  gap: 2,
+  radius: 2,
+  narrowRadius: 999,
+  gloss: true,
+  relief: "raised",
+  align: "center",
+  pieces: 1,
+  pieceGap: 2,
+  trackRadius: 0,
+  operational: "#3fa06a",
+  degraded: "#d1971f",
+  outage: "#cf4a3a",
+  noData: "#3a3a44",
+  maintenance: "#4a7fd1",
+  maintenanceEdge: "#89b3f0",
+  ghostEdge: "#5a5a68"
+};
+function statusColour(day, style) {
+  if (day.maintenance.length > 0 && day.status === "operational") {
+    return style.maintenance;
+  }
+  if (!day.hasData && day.maintenance.length === 0)
+    return style.noData;
+  if (day.status === "operational")
+    return style.operational;
+  if (day.status === "unknown")
+    return style.noData;
+  if (day.status === "degraded")
+    return style.degraded;
+  return style.outage;
+}
+function label(day) {
+  if (!day.hasData)
+    return "no data";
+  if (day.status === "operational")
+    return "operational";
+  if (day.status === "unknown")
+    return "status unknown";
+  if (day.status === "degraded")
+    return `degraded · ${day.minutesDown} min down`;
+  return `outage · ${day.minutesDown} min`;
+}
+function maintenanceLabel(day) {
+  return day.maintenance.map((event) => `Maintenance: ${event.title}
+${MAINTENANCE_TIME.format(new Date(event.startsAt))} – ${MAINTENANCE_TIME.format(new Date(event.endsAt))}`).join(`
+`);
+}
+function tooltipFor(day) {
+  const end = new Date(`${day.date}T00:00:00Z`);
+  if (day.spanDays > 1) {
+    const start = new Date(end.getTime() - (day.spanDays - 1) * 86400000);
+    return [
+      `${SHORT_DATE.format(start)} – ${SHORT_DATE.format(end)}`,
+      label(day),
+      maintenanceLabel(day)
+    ].filter(Boolean).join(`
+`);
+  }
+  return [FULL_DATE.format(end), label(day), maintenanceLabel(day)].filter(Boolean).join(`
+`);
+}
+function summarise(days) {
+  const counted = {};
+  for (const day of days) {
+    const name = day.maintenance.length > 0 ? "under maintenance" : label(day);
+    const key = name.split(" · ")[0];
+    counted[key] = (counted[key] ?? 0) + 1;
+  }
+  const parts = Object.entries(counted).sort((left, right) => right[1] - left[1]).map(([name, count]) => `${count} ${name}`);
+  return parts.length === 0 ? "Availability history: nothing recorded yet." : `Availability history: ${parts.join(", ")}.`;
+}
+function slot(index, total, width, gap) {
+  const spare = Math.max(0, width - total);
+  const fitted = total > 1 ? Math.min(gap, spare / (total - 1)) : 0;
+  const each = (width - fitted * (total - 1)) / total;
+  return { x: index * (each + fitted), width: each };
+}
+function segmentAt(offsetX, total, width, gap) {
+  if (total === 0 || width <= 0)
+    return null;
+  const each = (width - gap * (total - 1)) / total;
+  const index = Math.floor(offsetX / (each + gap));
+  return index >= 0 && index < total ? index : null;
+}
+function createUptimeStrip(host, options = {}) {
+  const className = options.className ?? "uptime-strip";
+  const heightProperty = options.heightProperty ?? "--uptime-strip-height";
+  const report = options.report;
+  function currentStyle() {
+    const given = typeof options.style === "function" ? options.style() : options.style;
+    return { ...DEFAULT_UPTIME_STRIP_STYLE, ...given };
+  }
+  host.textContent = "";
+  host.classList.add(className);
+  host.setAttribute("role", "img");
+  const canvas = document.createElement("canvas");
+  canvas.setAttribute("aria-hidden", "true");
+  const tooltip = createOverlay(options.tooltipClassName ?? "uptime-tooltip");
+  const hiddenList = document.createElement("ul");
+  hiddenList.className = `${className}-readings`;
+  hiddenList.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap";
+  host.append(canvas, hiddenList);
+  let days = [];
+  let hovered = null;
+  let width = 0;
+  let ratio = 1;
+  let frame = 0;
+  function paint() {
+    const context = canvas.getContext("2d");
+    if (!context || width <= 0)
+      return;
+    const style = currentStyle();
+    const surfaceHeight = style.hoverHeight + 2;
+    host.style.setProperty(heightProperty, `${surfaceHeight}px`);
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(surfaceHeight * ratio);
+    canvas.style.width = "100%";
+    canvas.style.height = `${surfaceHeight}px`;
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, surfaceHeight);
+    const segment = slot(0, days.length, width, style.gap).width;
+    const radius = segment < style.radius * 4 ? style.narrowRadius : style.radius;
+    const gloss = context.createLinearGradient(0, (surfaceHeight - style.height) / 2, 0, (surfaceHeight + style.height) / 2);
+    gloss.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+    gloss.addColorStop(0.42, "rgba(255, 255, 255, 0.05)");
+    gloss.addColorStop(1, "rgba(0, 0, 0, 0.12)");
+    const pieces = Math.max(1, Math.min(8, Math.round(style.pieces)));
+    days.forEach((day, index) => {
+      const place = slot(index, days.length, width, style.gap);
+      const lifted = index === hovered;
+      const lightens = style.hover === "lighten";
+      const drawnHeight = lifted && !lightens ? style.hoverHeight : style.height;
+      const y = style.align === "bottom" ? surfaceHeight - drawnHeight - 1 : style.align === "top" ? 1 : (surfaceHeight - drawnHeight) / 2;
+      const empty = !day.hasData && day.maintenance.length === 0;
+      const base = statusColour(day, style);
+      const colour = lifted && lightens && !empty ? `color-mix(in srgb, #ffffff ${Math.round((style.hoverLighten ?? 0.28) * 100)}%, ${base})` : base;
+      const edge = empty ? style.ghostEdge : day.maintenance.length > 0 ? style.maintenanceEdge : null;
+      const pieceHeight = (drawnHeight - style.pieceGap * (pieces - 1)) / pieces;
+      if (pieceHeight <= 0)
+        return;
+      const fitted = Math.min(radius, place.width / 2, pieceHeight / 2);
+      const cap = Math.min(style.trackRadius, place.width, pieceHeight / 2);
+      const first = index === 0 ? cap : fitted;
+      const last = index === days.length - 1 ? cap : fitted;
+      const ramp = (piece) => {
+        if (style.relief !== "sunken" || pieces < 2)
+          return colour;
+        const spread = style.reliefSpread ?? 0.16;
+        const step = (piece / (pieces - 1) - 0.5) * spread * 100;
+        const towards = step >= 0 ? "#ffffff" : "#000000";
+        return `color-mix(in srgb, ${towards} ${Math.abs(step).toFixed(1)}%, ${colour})`;
+      };
+      const recess = style.relief === "sunken" ? context.createLinearGradient(0, 0, 0, pieceHeight) : null;
+      if (recess) {
+        recess.addColorStop(0, "rgba(0, 0, 0, 0.64)");
+        recess.addColorStop(0.36, "rgba(0, 0, 0, 0.12)");
+        recess.addColorStop(0.84, "rgba(0, 0, 0, 0)");
+        recess.addColorStop(1, "rgba(255, 255, 255, 0.2)");
+      }
+      for (let piece = 0;piece < pieces; piece += 1) {
+        const pieceY = y + piece * (pieceHeight + style.pieceGap);
+        if (recess)
+          context.save();
+        if (recess)
+          context.translate(0, pieceY);
+        const top = recess ? 0 : pieceY;
+        context.beginPath();
+        context.roundRect(place.x, top, place.width, pieceHeight, [
+          first,
+          last,
+          last,
+          first
+        ]);
+        context.fillStyle = ramp(piece);
+        context.fill();
+        if (!empty && style.gloss) {
+          context.fillStyle = recess ?? gloss;
+          context.fill();
+        }
+        if (!edge) {
+          if (recess)
+            context.restore();
+          continue;
+        }
+        context.beginPath();
+        context.roundRect(place.x + 0.5, top + 0.5, Math.max(place.width - 1, 0), Math.max(pieceHeight - 1, 0), [
+          Math.max(first - 0.5, 0),
+          Math.max(last - 0.5, 0),
+          Math.max(last - 0.5, 0),
+          Math.max(first - 0.5, 0)
+        ]);
+        context.strokeStyle = edge;
+        context.lineWidth = 1;
+        context.stroke();
+        if (recess)
+          context.restore();
+      }
+    });
+  }
+  function placeTooltip() {
+    if (hovered === null || !days[hovered]) {
+      tooltip.hide();
+      report?.(null);
+      return;
+    }
+    const index = hovered;
+    if (report) {
+      report(tooltipFor(days[index]).split(`
+`));
+      return;
+    }
+    tooltip.show(tooltipFor(days[index]), () => {
+      if (hovered !== index)
+        return null;
+      const box = host.getBoundingClientRect();
+      const place = slot(index, days.length, box.width, currentStyle().gap);
+      return {
+        rect: new DOMRect(box.left + place.x, box.top, place.width, box.height),
+        side: "above"
+      };
+    });
+  }
+  function scheduleDraw() {
+    if (frame !== 0)
+      return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      paint();
+      placeTooltip();
+    });
+  }
+  function drawNow() {
+    if (frame !== 0) {
+      cancelAnimationFrame(frame);
+      frame = 0;
+    }
+    paint();
+    placeTooltip();
+  }
+  function onPointerMove(event) {
+    const box = host.getBoundingClientRect();
+    const next = segmentAt(event.clientX - box.left, days.length, box.width, currentStyle().gap);
+    if (next === hovered)
+      return;
+    hovered = next;
+    scheduleDraw();
+  }
+  function onPointerLeave() {
+    if (hovered === null)
+      return;
+    hovered = null;
+    scheduleDraw();
+  }
+  host.addEventListener("pointermove", onPointerMove);
+  host.addEventListener("pointerleave", onPointerLeave);
+  const observer = new ResizeObserver(([entry]) => {
+    const next = entry?.contentRect.width ?? 0;
+    if (next === width)
+      return;
+    width = next;
+    drawNow();
+  });
+  observer.observe(host);
+  width = host.getBoundingClientRect().width;
+  ratio = window.devicePixelRatio || 1;
+  return {
+    update(nextDays) {
+      days = nextDays;
+      hovered = null;
+      host.setAttribute("aria-label", summarise(days));
+      hiddenList.textContent = "";
+      for (const day of days.filter((entry) => entry.maintenance.length > 0)) {
+        const item = document.createElement("li");
+        item.textContent = tooltipFor(day);
+        hiddenList.append(item);
+      }
+      drawNow();
+    },
+    destroy() {
+      if (frame !== 0)
+        cancelAnimationFrame(frame);
+      frame = 0;
+      observer.disconnect();
+      host.removeEventListener("pointermove", onPointerMove);
+      host.removeEventListener("pointerleave", onPointerLeave);
+      tooltip.destroy();
+    }
+  };
+}
+
+// theme-bundles/velvet/script.ts
+var STRIP_GEOMETRY = {
+  height: 32,
+  hoverHeight: 38,
+  gap: 2,
+  radius: 2,
+  narrowRadius: 999,
+  trackRadius: 2,
+  gloss: true,
+  align: "center",
+  pieces: 1,
+  pieceGap: 0
+};
+var CHART_GEOMETRY = {
+  height: 148,
+  insetInline: 12,
+  insetBlock: 12,
+  gridLines: 3,
+  lineWidth: 2,
+  pointRadius: 3,
+  fill: 0.28,
+  tickMinor: 0,
+  tickMajor: 0
+};
+function colourOf(style, name) {
+  return style.getPropertyValue(name).trim();
+}
+function drawLegend(host, entries) {
+  host.textContent = "";
+  for (const entry of entries) {
+    const item = document.createElement("span");
+    item.className = "chart-legend-item";
+    item.setAttribute("role", "listitem");
+    item.dataset.protocol = entry.protocol;
+    const key = document.createElement("span");
+    key.className = "chart-line-key";
+    key.setAttribute("aria-hidden", "true");
+    const name = document.createElement("span");
+    name.textContent = entry.label;
+    const reading = document.createElement("strong");
+    reading.textContent = entry.value;
+    item.append(key, name, reading);
+    host.append(item);
+  }
+}
+function enhance(root, data) {
+  const page = root.querySelector(".velvet-page") ?? root;
+  const undo = [];
+  const rows = [];
+  let range = readRange(data.site.defaultRange);
+  const stripStyle = () => {
+    const palette = getComputedStyle(page);
+    return {
+      ...STRIP_GEOMETRY,
+      operational: colourOf(palette, "--state-operational"),
+      degraded: colourOf(palette, "--state-degraded"),
+      outage: colourOf(palette, "--state-outage"),
+      noData: colourOf(palette, "--state-no-data"),
+      maintenance: colourOf(palette, "--state-maintenance"),
+      maintenanceEdge: colourOf(palette, "--state-maintenance-edge"),
+      ghostEdge: colourOf(palette, "--state-ghost-edge")
+    };
+  };
+  for (const element of page.querySelectorAll(".service")) {
+    const id = element.dataset.serviceId ?? "";
+    const entry = data.status.services.find((candidate) => candidate.id === id);
+    const summary = element.querySelector(".service-summary");
+    const uptime = element.querySelector(".service-uptime");
+    const axisFrom = element.querySelector(".strip-axis-from");
+    const stripHost = element.querySelector(".uptime-strip-host");
+    const chartPlot = element.querySelector(".chart-plot");
+    const chartLegend = element.querySelector(".chart-legend");
+    const chartFrom = element.querySelector(".chart-axis-from");
+    const details = element.querySelector(".service-details-wrap");
+    if (!entry || !summary || !uptime || !axisFrom || !stripHost || !chartPlot || !chartLegend || !chartFrom || !details) {
+      continue;
+    }
+    const row = {
+      id,
+      name: entry.name,
+      spoken: entry.checks.map((check) => check.protocol === "ipv6" ? "IPv6" : "IPv4").join(" and "),
+      open: false,
+      root: element,
+      summary,
+      uptime,
+      axisFrom,
+      strip: createUptimeStrip(stripHost, {
+        style: stripStyle,
+        heightProperty: "--strip-surface-height",
+        tooltipClassName: "uptime-tooltip"
+      }),
+      chartFrom,
+      chart: createChartView(chartPlot, entry.id, entry.name, data.generatedAt, data.status.monitoringStartedAt, {
+        style: CHART_GEOMETRY,
+        tooltipClassName: "uptime-tooltip chart-reading",
+        legend: (entries) => drawLegend(chartLegend, entries)
+      }),
+      chartBuilt: false,
+      panel: disclosure(details, false)
+    };
+    rows.push(row);
+    const onClick = () => {
+      setOpen(row, !row.open);
+      reflectToggleAll();
+    };
+    summary.addEventListener("click", onClick);
+    undo.push(() => {
+      summary.removeEventListener("click", onClick);
+      row.strip.destroy();
+      row.chart.destroy();
+      row.panel.destroy();
+    });
+  }
+  const track = page.querySelector(".ranges");
+  const mark = page.querySelector(".range-mark");
+  const buttons = [...page.querySelectorAll(".range-button")];
+  for (const button of buttons) {
+    const onClick = () => selectRange(button.dataset.range ?? "month");
+    button.addEventListener("click", onClick);
+    undo.push(() => button.removeEventListener("click", onClick));
+  }
+  const toggleAll = page.querySelector(".toggle-all");
+  if (toggleAll) {
+    const onClick = () => {
+      const opening = !rows.every((row) => row.open);
+      for (const row of rows)
+        setOpen(row, opening);
+      reflectToggleAll();
+    };
+    toggleAll.addEventListener("click", onClick);
+    undo.push(() => toggleAll.removeEventListener("click", onClick));
+  }
+  function setOpen(row, open) {
+    if (row.open === open)
+      return;
+    row.open = open;
+    row.root.dataset.open = String(open);
+    row.summary.setAttribute("aria-expanded", String(open));
+    writeOpen(row.id, open);
+    if (open && !row.chartBuilt) {
+      row.chart.update(data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id), range);
+      row.chartBuilt = true;
+    }
+    row.panel.update(open);
+  }
+  function reflectToggleAll() {
+    if (!toggleAll)
+      return;
+    const allOpen = rows.length > 0 && rows.every((row) => row.open);
+    toggleAll.classList.toggle("is-expanded", allOpen);
+    toggleAll.setAttribute("aria-label", allOpen ? "Collapse all" : "Expand all");
+    toggleAll.title = allOpen ? "Collapse all" : "Expand all";
+  }
+  function placeMark(animate) {
+    const button = buttons.find((candidate) => candidate.dataset.range === range);
+    if (!mark || !track || !button)
+      return;
+    if (track.getBoundingClientRect().width === 0)
+      return;
+    mark.style.transition = animate ? "" : "none";
+    mark.style.width = `${button.offsetWidth}px`;
+    mark.style.transform = `translateX(${button.offsetLeft}px)`;
+    if (!animate) {
+      mark.offsetWidth;
+      mark.style.transition = "";
+    }
+  }
+  function selectRange(next) {
+    range = next;
+    writeRange(next);
+    for (const button of buttons) {
+      button.setAttribute("aria-pressed", String(button.dataset.range === next));
+    }
+    placeMark(true);
+    refresh();
+  }
+  function refresh() {
+    const from = rangeLabel(range, data.status.monitoringStartedAt);
+    for (const row of rows) {
+      const entry = data.status.services.find(({ id }) => id === row.id);
+      if (!entry)
+        continue;
+      const figure = uptimeForRange(entry, range, data.status.generatedAt, data.status.monitoringStartedAt);
+      row.uptime.textContent = `${figure} uptime`;
+      row.summary.setAttribute("aria-label", [row.name, `${figure} uptime`, row.spoken].filter(Boolean).join(", "));
+      row.strip.update(barsForRange(entry, range, data.status.generatedAt, data.status.monitoringStartedAt, data.incidents.events), range);
+      row.axisFrom.textContent = from;
+      row.chartFrom.textContent = from;
+      if (row.chartBuilt) {
+        row.chart.update(data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id), range);
+      }
+    }
+  }
+  const powered = page.querySelector(".powered");
+  function fitPoweredLabel() {
+    const wordmark = powered?.querySelector(".velvet-wordmark");
+    const label2 = powered?.querySelector(".powered-label");
+    if (!wordmark || !label2)
+      return;
+    label2.style.removeProperty("--powered-label-tracking");
+    const natural = label2.getBoundingClientRect().width;
+    const target = wordmark.getBoundingClientRect().width;
+    const gaps = (label2.textContent ?? "").length - 1;
+    if (gaps <= 0 || natural <= 0 || target <= natural)
+      return;
+    label2.style.setProperty("--powered-label-tracking", `${(target - natural) / gaps}px`);
+  }
+  const watch = new ResizeObserver(() => {
+    placeMark(false);
+    fitPoweredLabel();
+  });
+  if (track)
+    watch.observe(track);
+  if (powered)
+    watch.observe(powered);
+  undo.push(() => watch.disconnect());
+  for (const button of buttons) {
+    button.setAttribute("aria-pressed", String(button.dataset.range === range));
+  }
+  for (const row of rows)
+    setOpen(row, readOpen(row.id));
+  reflectToggleAll();
+  refresh();
+  placeMark(false);
+  document.fonts?.ready.then(() => {
+    placeMark(false);
+    fitPoweredLabel();
+  });
+  return () => {
+    for (const step of undo)
+      step();
+  };
+}
+var script_default = enhance;
+
+// theme-bundles/velvet/format.ts
+var RANGES2 = [
+  { key: "month", label: "30d", description: "The last 30 days" },
+  { key: "quarter", label: "90d", description: "The last 90 days" },
+  { key: "all", label: "All", description: "Everything measured" }
+];
+var EVENT_TIME = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeStyle: "short"
+});
+function formatEventTime(moment) {
+  return EVENT_TIME.format(moment);
+}
+function formatUpdated(moment) {
+  return EVENT_TIME.format(new Date(moment));
+}
+function escape(value) {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+}
+
+// theme-bundles/velvet/template.ts
+var HEADLINE = {
+  operational: { text: "All systems operational", icon: "ph-check-circle" },
+  unknown: { text: "System status unavailable", icon: "ph-question" },
+  degraded: { text: "Some systems degraded", icon: "ph-warning" },
+  outage: { text: "Major service outage", icon: "ph-x-circle" }
+};
+var ICONS = {
+  globe: "ph-globe",
+  brackets: "ph-brackets-curly",
+  cloud: "ph-cloud",
+  envelope: "ph-envelope-simple",
+  database: "ph-database"
+};
+function icon(name, className) {
+  return `<i class="${className} ph-duotone ${name}" aria-hidden="true"></i>`;
+}
+function hero(data, state) {
+  const announced = HEADLINE[state] ?? HEADLINE.unknown;
+  return `<div class="status-band status-band--hero">
     <div class="status-hero">
-      <span class="status-hero-mark" aria-hidden="true">${KJ(Z.icon,"status-hero-glyph")}</span>
-      <h1 class="status-hero-title">${L(Z.text)}</h1>
-      <p class="status-hero-updated">Last updated ${L(tJ(J.generatedAt))}</p>
+      <span class="status-hero-mark" aria-hidden="true">${icon(announced.icon, "status-hero-glyph")}</span>
+      <h1 class="status-hero-title">${escape(announced.text)}</h1>
+      <p class="status-hero-updated">Last updated ${escape(formatUpdated(data.generatedAt))}</p>
     </div>
-  </div>`}function JQ(J){let Q=new Date(J.startsAt),Z=J.kind==="maintenance"?KJ("ph-wrench","notice-glyph"):"",j=J.kind==="maintenance"?`${L(J.state)} · ${L(FJ(Q))}`:`Started ${L(FJ(Q))}`;return`<div class="notice notice--${L(J.kind)}">
-    ${Z}
-    <span class="notice-title">${L(J.title)}</span>
-    <span class="notice-summary">${L(J.summary)}</span>
-    <span class="notice-meta">${j}</span>
-  </div>`}function kQ(J){let Q=BJ(J.incidents.events),Z=Q.filter((z)=>z.kind==="maintenance"),j=Q.filter((z)=>z.kind==="incident"),$=j.length>0?'<h2 class="notices-heading">Active incidents</h2>':"";return`<section class="notices">${Z.map(JQ).join("")}${$}${j.map(JQ).join("")}</section>`}function bQ(J){let Q=nJ.map((Z)=>`<button class="range-button" type="button" data-range="${Z.key}" aria-pressed="${String(Z.key===J.site.defaultRange)}" aria-label="${L(Z.description)}">${Z.label}</button>`).join("");return`<div class="range-bar">
-    <span class="group-name">${L(J.site.name.toUpperCase())}</span>
+  </div>`;
+}
+function notice(event) {
+  const started = new Date(event.startsAt);
+  const glyph = event.kind === "maintenance" ? icon("ph-wrench", "notice-glyph") : "";
+  const meta = event.kind === "maintenance" ? `${escape(event.state)} · ${escape(formatEventTime(started))}` : `Started ${escape(formatEventTime(started))}`;
+  return `<div class="notice notice--${escape(event.kind)}">
+    ${glyph}
+    <span class="notice-title">${escape(event.title)}</span>
+    <span class="notice-summary">${escape(event.summary)}</span>
+    <span class="notice-meta">${meta}</span>
+  </div>`;
+}
+function notices(data) {
+  const visible = visibleEvents(data.incidents.events);
+  const maintenance = visible.filter((event) => event.kind === "maintenance");
+  const incidents = visible.filter((event) => event.kind === "incident");
+  const heading = incidents.length > 0 ? `<h2 class="notices-heading">Active incidents</h2>` : "";
+  return `<section class="notices">${maintenance.map(notice).join("")}${heading}${incidents.map(notice).join("")}</section>`;
+}
+function rangeBar(data) {
+  const buttons = RANGES2.map((option) => `<button class="range-button" type="button" data-range="${option.key}" aria-pressed="${String(option.key === data.site.defaultRange)}" aria-label="${escape(option.description)}">${option.label}</button>`).join("");
+  return `<div class="range-bar">
+    <span class="group-name">${escape(data.site.name.toUpperCase())}</span>
     <div class="ranges">
       <span class="range-mark" aria-hidden="true"></span>
-      ${Q}
+      ${buttons}
     </div>
     <button class="toggle-all" type="button" aria-label="Expand all" title="Expand all">
-      ${KJ("ph-caret-circle-double-down","toggle-all-glyph")}
+      ${icon("ph-caret-circle-double-down", "toggle-all-glyph")}
     </button>
-  </div>`}function fQ(J){if(J.checks.length===1&&J.checks[0]?.protocol==="ipv4")return"";return`<span class="service-protocols" aria-label="Protocol reachability">${J.checks.map((j)=>`<span class="protocol-badge" data-protocol="${L(j.protocol)}" data-present="true" data-status="${L(j.status)}">${j.protocol==="ipv6"?"IPv6":"IPv4"}</span>`).join("")}</span>`}function wQ(J){return J.checks.map((Q,Z)=>{let j=Z>0?'<span class="protocol-separator" aria-hidden="true">|</span>':"",$=Q.protocol==="ipv6"?"IPv6":"IPv4",z=Q.responseTimeMs===null?"unavailable":`${Math.round(Q.responseTimeMs)} ms`;return`${j}<div class="protocol-reading" role="listitem" data-protocol="${L(Q.protocol)}" data-status="${L(Q.status)}">
-        <span class="protocol-name">${$}</span>
+  </div>`;
+}
+function protocols(service) {
+  const only = service.checks.length === 1 && service.checks[0]?.protocol === "ipv4";
+  if (only)
+    return "";
+  const badges = service.checks.map((check) => `<span class="protocol-badge" data-protocol="${escape(check.protocol)}" data-present="true" data-status="${escape(check.status)}">${check.protocol === "ipv6" ? "IPv6" : "IPv4"}</span>`).join("");
+  return `<span class="service-protocols" aria-label="Protocol reachability">${badges}</span>`;
+}
+function readings(service) {
+  return service.checks.map((check, index) => {
+    const separator = index > 0 ? `<span class="protocol-separator" aria-hidden="true">|</span>` : "";
+    const name = check.protocol === "ipv6" ? "IPv6" : "IPv4";
+    const latency = check.responseTimeMs === null ? "unavailable" : `${Math.round(check.responseTimeMs)} ms`;
+    return `${separator}<div class="protocol-reading" role="listitem" data-protocol="${escape(check.protocol)}" data-status="${escape(check.status)}">
+        <span class="protocol-name">${name}</span>
         <span class="protocol-value">
-          <strong class="protocol-state">${L(Q.status==="operational"?"up":Q.status)}</strong>
-          <span class="protocol-latency">${L(z)}</span>
+          <strong class="protocol-state">${escape(check.status === "operational" ? "up" : check.status)}</strong>
+          <span class="protocol-latency">${escape(latency)}</span>
         </span>
-      </div>`}).join("")}function xQ(J,Q){let Z=VJ(Q,J.site.defaultRange,J.status.generatedAt,J.status.monitoringStartedAt),j=Q.checks.map((z)=>z.protocol==="ipv6"?"IPv6":"IPv4").join(" and "),$=SQ[J.site.icons[Q.id]??""]??"ph-circle";return`<article class="service" data-service-id="${L(Q.id)}" data-open="false">
-    <button class="service-summary" type="button" aria-expanded="false" aria-controls="details-${L(Q.id)}" aria-label="${L([Q.name,`${Z} uptime`,j].filter(Boolean).join(", "))}">
-      ${KJ($,"service-icon")}
-      <span class="service-name">${L(Q.name)}</span>
-      ${fQ(Q)}
-      <span class="service-uptime">${L(Z)} uptime</span>
-      ${KJ("ph-caret-circle-down","service-chevron")}
+      </div>`;
+  }).join("");
+}
+function service(data, entry) {
+  const figure = uptimeForRange(entry, data.site.defaultRange, data.status.generatedAt, data.status.monitoringStartedAt);
+  const spoken = entry.checks.map((check) => check.protocol === "ipv6" ? "IPv6" : "IPv4").join(" and ");
+  const glyph = ICONS[data.site.icons[entry.id] ?? ""] ?? "ph-circle";
+  return `<article class="service" data-service-id="${escape(entry.id)}" data-open="false">
+    <button class="service-summary" type="button" aria-expanded="false" aria-controls="details-${escape(entry.id)}" aria-label="${escape([entry.name, `${figure} uptime`, spoken].filter(Boolean).join(", "))}">
+      ${icon(glyph, "service-icon")}
+      <span class="service-name">${escape(entry.name)}</span>
+      ${protocols(entry)}
+      <span class="service-uptime">${escape(figure)} uptime</span>
+      ${icon("ph-caret-circle-down", "service-chevron")}
     </button>
     <div class="uptime-strip-host"></div>
     <div class="strip-axis">
       <span class="strip-axis-from"></span>
       <span class="strip-axis-to">Today</span>
     </div>
-    <div class="service-details-wrap" id="details-${L(Q.id)}">
+    <div class="service-details-wrap" id="details-${escape(entry.id)}">
       <div class="service-details">
-        <div class="protocol-readings" role="list" aria-label="Protocol status">${wQ(Q)}</div>
+        <div class="protocol-readings" role="list" aria-label="Protocol status">${readings(entry)}</div>
         <div class="response-chart">
           <p class="chart-caption">Response time</p>
           <div class="chart-legend" role="list" aria-label="Response time series"></div>
@@ -56,25 +1579,64 @@ ${iJ.format(new Date(Q.startsAt))} – ${iJ.format(new Date(Q.endsAt))}`).join(`
         </div>
       </div>
     </div>
-  </article>`}function uQ(J,Q){let Z=J.status.services.map(($)=>xQ(J,$));return`<div class="service-list">${Q==="cards"?Z.map(($)=>`<section class="service-card">${$}</section>`).join(""):`<section class="service-card">${Z.join("")}</section>`}</div>`}function yQ(J){let Q=J.site.serial===null?"—":String(J.site.serial).padStart(5,"0");return`<div class="status-band status-band--footer">
+  </article>`;
+}
+function services(data, layout) {
+  const rows = data.status.services.map((entry) => service(data, entry));
+  const body = layout === "cards" ? rows.map((row) => `<section class="service-card">${row}</section>`).join("") : `<section class="service-card">${rows.join("")}</section>`;
+  return `<div class="service-list">${body}</div>`;
+}
+function footer(data) {
+  const serial = data.site.serial === null ? "—" : String(data.site.serial).padStart(5, "0");
+  return `<div class="status-band status-band--footer">
     <footer class="status-footer">
       <div class="powered">
         <span class="powered-label">powered by</span>
         <span class="velvet-wordmark">Velvet</span>
       </div>
       <div class="status-footer-row">
-        <p class="stamp stamp--build">v${L(J.site.version)}</p>
-        <p class="stamp stamp--serial">Serial #${L(Q)}</p>
+        <p class="stamp stamp--build">v${escape(data.site.version)}</p>
+        <p class="stamp stamp--serial">Serial #${escape(serial)}</p>
       </div>
     </footer>
-  </div>`}function vQ(J){let Q=lJ(J.status.services),Z=J.site.layout==="cards"?"cards":"grouped",j=Q!=="operational"&&BJ(J.incidents.events).length>0;return`<main class="velvet-page" data-layout="${Z}" data-status="${L(Q)}" data-notices="${j?"some":"none"}">
-    ${AQ(J,Q)}
+  </div>`;
+}
+function template(data) {
+  const state = overallStatus(data.status.services);
+  const layout = data.site.layout === "cards" ? "cards" : "grouped";
+  const reporting = state !== "operational" && visibleEvents(data.incidents.events).length > 0;
+  return `<main class="velvet-page" data-layout="${layout}" data-status="${escape(state)}" data-notices="${reporting ? "some" : "none"}">
+    ${hero(data, state)}
     <div class="status-band status-band--body">
       <div class="status-body">
-        ${kQ(J)}
-        ${bQ(J)}
-        ${uQ(J,Z)}
+        ${notices(data)}
+        ${rangeBar(data)}
+        ${services(data, layout)}
       </div>
     </div>
-    ${yQ(J)}
-  </main>`}var QQ=vQ;var ZQ=document.querySelector("#velvet-root"),$Q=JSON.parse(document.querySelector("#velvet-data").textContent),gQ=JSON.parse(document.querySelector("#velvet-settings").textContent);ZQ.append(document.createRange().createContextualFragment(QQ($Q)));function zQ(J){for(let[Q,Z]of Object.entries(J))document.documentElement.style.setProperty(Q,Z)}zQ(gQ);oJ(ZQ,$Q);window.addEventListener("message",(J)=>{if(J.origin!==window.location.origin)return;let Q=J.data;if(!Q||Q.type!=="velvet:settings")return;zQ(Q.declarations)});window.parent.postMessage({type:"velvet:ready"},window.location.origin);
+    ${footer(data)}
+  </main>`;
+}
+var template_default = template;
+
+// ../config/themes/velvet/entry.generated.ts
+var root = document.querySelector("#velvet-root");
+var data = JSON.parse(document.querySelector("#velvet-data").textContent);
+var declared = JSON.parse(document.querySelector("#velvet-settings").textContent);
+root.append(document.createRange().createContextualFragment(template_default(data)));
+function apply(declarations) {
+  for (const [property, value] of Object.entries(declarations)) {
+    document.documentElement.style.setProperty(property, value);
+  }
+}
+apply(declared);
+script_default(root, data);
+window.addEventListener("message", (event) => {
+  if (event.origin !== window.location.origin)
+    return;
+  const message = event.data;
+  if (!message || message.type !== "velvet:settings")
+    return;
+  apply(message.declarations);
+});
+window.parent.postMessage({ type: "velvet:ready" }, window.location.origin);

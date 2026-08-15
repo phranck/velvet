@@ -189,7 +189,13 @@ for (const theme of themes) {
     ],
     target: "browser",
     format: "esm",
-    minify: true,
+    // Not minified. The minifier hands out its short names in an order that
+    // differs between a Mac and a Linux runner, so the same sources produced
+    // two bundles that differ only in whether a function is called GQ or UQ,
+    // and what is committed could never match a rebuild. Nothing here is sent
+    // over a network a reader waits on: the monitor loads it from the same
+    // origin as the page it sits in.
+    minify: false,
   });
   await rm(join(destination, "entry.generated.ts"), { force: true });
   if (!built.success) {
