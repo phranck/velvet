@@ -107,12 +107,12 @@ test(
         assert.equal(await item.count(), 1);
         assert.match(await item.innerText(), /velvet-user\/status/u);
         assert.equal(
-          await item.getAttribute("aria-pressed"),
+          await item.getAttribute("aria-checked"),
           "true",
           "offering a choice of one asks somebody to confirm what was never in question",
         );
         assert.match(
-          await page.locator(".chooser__account").innerText(),
+          await page.locator(".panel__text--small").first().innerText(),
           /velvet-user/u,
         );
       },
@@ -158,19 +158,19 @@ test(
         await items.first().waitFor();
 
         assert.equal(await items.count(), 2);
-        assert.equal(await items.nth(0).getAttribute("aria-pressed"), "true");
-        assert.equal(await items.nth(1).getAttribute("aria-pressed"), "false");
+        assert.equal(await items.nth(0).getAttribute("aria-checked"), "true");
+        assert.equal(await items.nth(1).getAttribute("aria-checked"), "false");
 
         await items.nth(1).click();
-        assert.equal(await items.nth(0).getAttribute("aria-pressed"), "false");
-        assert.equal(await items.nth(1).getAttribute("aria-pressed"), "true");
+        assert.equal(await items.nth(0).getAttribute("aria-checked"), "false");
+        assert.equal(await items.nth(1).getAttribute("aria-checked"), "true");
         assert.match(
-          await page.locator(".chooser__chosen").innerText(),
+          await page.locator(".panel__chosen").innerText(),
           /velvet-user\/second/u,
         );
 
         assert.equal(
-          await page.locator(".chooser__truncated").count(),
+          await page.locator(".panel__text--dim").count(),
           1,
           "an installation missing from a list looks exactly like one that does not exist",
         );
@@ -194,11 +194,11 @@ test(
 
         assert.equal(await action.getAttribute("href"), "/onboarding/");
         assert.match(
-          await page.locator(".notice").innerText(),
+          await page.locator(".panel").innerText(),
           /None of the repositories you granted access to carries a Velvet installation/u,
           "the reason is on the page rather than left to be guessed at",
         );
-        assert.equal(await page.locator(".chooser").count(), 0);
+        assert.equal(await page.locator(".chooser__item").count(), 0);
       },
     );
   },
@@ -209,12 +209,120 @@ test(
   "says what to do when the service answers something it cannot read",
   async () => {
     await withConfigurator({ repositories: "all of them" }, async (page) => {
-      const notice = page.locator(".notice--failed");
+      const notice = page.locator(".panel__heading--failed");
       await notice.waitFor();
 
       assert.match(await notice.innerText(), /could not start/u);
-      assert.equal(await page.locator(".chooser").count(), 0);
+      assert.equal(await page.locator(".chooser__item").count(), 0);
     });
+  },
+  CONFIGURATOR_TIMEOUT_MS,
+);
+
+
+test(
+  "derives every rounding from the two values that are stated",
+  async () => {
+    await withConfigurator(
+      {
+        repositories: [
+          installation(),
+          installation({ repositoryId: 10, name: "second" }),
+        ],
+        truncated: false,
+      },
+      async (page) => {
+        await page.locator(".chooser__item").first().waitFor();
+
+        const geometry = await page.evaluate(() => {
+          const pixels = (element: Element, property: string): number =>
+            Number.parseFloat(
+              getComputedStyle(element).getPropertyValue(property),
+            );
+          const panel = document.querySelector(".panel")!;
+          const item = document.querySelector(".chooser__item")!;
+          const heading = document.querySelector(".panel__heading")!;
+          return {
+            outer: pixels(panel, "border-top-left-radius"),
+            inset: pixels(panel, "padding-left"),
+            inner: pixels(item, "border-top-left-radius"),
+            textInset: pixels(heading, "padding-left"),
+            corners: [
+              "border-top-left-radius",
+              "border-top-right-radius",
+              "border-bottom-left-radius",
+              "border-bottom-right-radius",
+            ].map((corner) => pixels(item, corner)),
+          };
+        });
+
+        // The relation rather than the numbers, so this survives the design
+        // moving and still catches a derivation that came back empty.
+        assert.equal(
+          geometry.inner,
+          Math.max(geometry.outer - geometry.inset, 0),
+          "a nested radius is the outer radius less the distance to it",
+        );
+        assert.equal(
+          geometry.textInset,
+          geometry.outer / 2,
+          "text stands in by half the radius, because a line flush against a curve reads as colliding with it",
+        );
+        assert.ok(geometry.outer > 0, "nothing on this surface is square");
+        assert.deepEqual(
+          geometry.corners,
+          [geometry.inner, geometry.inner, geometry.inner, geometry.inner],
+          "all four corners hold the same distance from the outer curve",
+        );
+      },
+    );
+  },
+  CONFIGURATOR_TIMEOUT_MS,
+);
+
+test(
+  "marks the chosen item by more than colour, and hover does not undo it",
+  async () => {
+    await withConfigurator(
+      {
+        repositories: [
+          installation(),
+          installation({ repositoryId: 10, name: "second" }),
+        ],
+        truncated: false,
+      },
+      async (page) => {
+        const items = page.locator(".chooser__item");
+        await items.first().waitFor();
+
+        const surfaceOf = (index: number) =>
+          items.nth(index).evaluate((element) => ({
+            border: getComputedStyle(element).borderTopColor,
+            background: getComputedStyle(element).backgroundColor,
+          }));
+
+        const chosen = await surfaceOf(0);
+        const other = await surfaceOf(1);
+        assert.notEqual(
+          chosen.border,
+          other.border,
+          "the chosen item carries the accent on its edge",
+        );
+        assert.notEqual(
+          chosen.background,
+          other.background,
+          "and the accent behind it, because colour alone asks a reader to compare two greys",
+        );
+
+        await items.nth(0).hover();
+        const hovered = await surfaceOf(0);
+        assert.equal(
+          hovered.background,
+          chosen.background,
+          "hovering the chosen item must not take its surface away",
+        );
+      },
+    );
   },
   CONFIGURATOR_TIMEOUT_MS,
 );

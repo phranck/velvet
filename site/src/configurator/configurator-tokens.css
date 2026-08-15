@@ -1,0 +1,120 @@
+/**
+ * Every value the configurator is drawn from.
+ *
+ * Its own file rather than a namespace inside velvet-tokens.css, because this
+ * surface answers to nothing that file describes. velvet.li and the onboarding
+ * are pages somebody reads once; this is a tool somebody works in, so it is
+ * dark throughout with no light mode to switch to, its greys are neutral where
+ * theirs run warm, and it points with one colour rather than drawing with
+ * several.
+ *
+ * Nothing in the configurator names a colour, a size, or a radius directly.
+ * Every rule reads a name from here.
+ */
+
+:root {
+  /*
+   * The greys, from the page upwards.
+   *
+   * Neutral with a slight blue cast, so the surface does not read as flat, and
+   * nowhere near the brown the Velvet greys carry. GitHub's dark theme set the
+   * level of brightness to aim at rather than the values: its page is #0d1117
+   * and Velvet's own base is #0d0c0b, and this is neither.
+   */
+  --configurator-base: #101318;
+  --configurator-raised: #181c23;
+  --configurator-sunken: #0a0c10;
+
+  --configurator-text: #f2f5f8;
+  --configurator-text-muted: #9aa3b0;
+
+  /*
+   * A line that groups, against an edge that bounds.
+   *
+   * The distinction is what decides the two values. WCAG 2.1 asks 3:1 under
+   * 1.4.11 for anything that bounds a control, and the edge carries 3.12:1 on
+   * a raised surface, which is the least that clears it. The divider bounds
+   * nothing, so it sits at 1.31:1 on the page and reads as a seam rather than
+   * as a border somebody might try to click.
+   */
+  --configurator-divider: #262b33;
+  --configurator-edge: #616a77;
+
+  /*
+   * The one colour this surface points with.
+   *
+   * The oranger of the two rather than the yellower, because a yellow is read
+   * as a warning before it is read as an accent. The lit one is exactly the
+   * step a state needs above it, and is what hover and active take.
+   */
+  --configurator-accent: #ffb020;
+  --configurator-accent-lit: #ffc247;
+  --configurator-accent-ink: #101318;
+  /*
+   * The accent behind something rather than in front of it.
+   *
+   * Mixed from the accent rather than written as a second value, so changing
+   * the accent moves both. What carries it is whatever is current: colour on
+   * its own asks a reader to compare two greys.
+   */
+  --configurator-accent-surface: color-mix(
+    in srgb,
+    var(--configurator-accent) 10%,
+    transparent
+  );
+
+  /*
+   * The geometry, of which two values are chosen and the rest is arithmetic.
+   *
+   * A nested radius is the outer radius less the distance to the outer edge,
+   * clamped at zero. That is what holds the gap between two curves constant
+   * around the whole corner: an inner element given the outer radius pinches
+   * at the corner, and one given a radius picked by eye pinches differently at
+   * each of the four.
+   *
+   * All four sit on the same element deliberately. A custom property whose
+   * value contains var() is resolved where it is declared, and descendants
+   * inherit the result rather than the expression, so a derivation declared
+   * anywhere other than beside the values it reads comes back empty and
+   * nothing warns.
+   */
+  --configurator-radius: 20px;
+  --configurator-inset: 12px;
+  --configurator-radius-inner: max(
+    calc(var(--configurator-radius) - var(--configurator-inset)),
+    0px
+  );
+  /*
+   * How far a line of text stands in from a rounded edge.
+   *
+   * Half the radius, because type flush against a curve reads as colliding
+   * with it. What runs the full width of a surface takes none of this: a code
+   * block, a table, an image, and a divider each have an edge of their own.
+   */
+  --configurator-text-inset: calc(var(--configurator-radius) / 2);
+
+  /*
+   * The faces, which are the tools' own rather than this surface's alone.
+   *
+   * Declared in velvet-retro-typefaces.css, which configurator.css imports.
+   * Named here so no rule reaches past this file for one.
+   */
+  --configurator-font: "Datatype", "Datatype Fallback", monospace;
+  --configurator-font-heading: "Workbench", "Workbench Fallback", monospace;
+  --configurator-font-label: "Space Mono", monospace;
+
+  /* The scale a surface somebody works in is read at, not the reading scale a
+     page takes. A form spends room on every label and hint, and the same size
+     that suits a page makes a tool a good deal longer to get down. */
+  --configurator-text-small: 0.8125rem;
+  --configurator-text-body: 0.9375rem;
+  --configurator-text-heading: 1.25rem;
+  /* An uppercase label with tracking on it, which is the one thing set in the
+     label face and the one thing that never sets a sentence. */
+  --configurator-text-label: 0.75rem;
+  --configurator-tracking-label: 0.1em;
+
+  /* How long a control takes to answer. Short enough to read as the control
+     responding rather than as the page animating. */
+  --configurator-transition: 120ms;
+}

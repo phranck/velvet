@@ -549,8 +549,8 @@ test("each hosted application has its own entry, mount point, and output", async
     );
     assert.equal(
       config.build?.rollupOptions?.input,
-      `${app.name}.html`,
-      app.name,
+      resolve(import.meta.dirname, "..", `${app.name}.html`),
+      `${app.name} builds its own entry document, named absolutely so the build does not depend on where it was started`,
     );
     assert.equal(
       config.build?.outDir,

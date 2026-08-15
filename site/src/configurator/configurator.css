@@ -1,18 +1,17 @@
-@import "../lib/velvet-tokens.css";
+@import "./configurator-tokens.css";
 /*
-  The tools' own faces, which is what --config-font and its neighbours name.
-  This file imports velvet-typefaces.css itself, so naming it here brings both
-  sets. Naming only the shared one would set this surface in the stand-ins
+  The tools' own faces, which is what --configurator-font and its neighbours
+  name. This file imports velvet-typefaces.css itself, so naming it here brings
+  both sets. Naming only the shared one would set this surface in the stand-ins
   whilst the stylesheet read as though Datatype and Workbench were in use.
 */
 @import "../lib/velvet-retro-typefaces.css";
 
 /*
-  The configurator's own surface, which no other Velvet page shares.
+  The page the configurator stands on.
 
-  Dark throughout with nothing to switch to, and every colour taken from the
-  --config-* namespace in velvet-tokens.css. Nothing below names a colour of
-  its own.
+  There is no light mode and no switch to one, so no rule here asks what the
+  reader prefers.
 */
 
 * {
@@ -27,13 +26,13 @@ body {
 }
 
 html {
-  background-color: var(--config-base);
+  background-color: var(--configurator-base);
 }
 
 body {
-  color: var(--config-text);
-  font-family: var(--config-font);
-  font-size: var(--config-text-body);
+  color: var(--configurator-text);
+  font-family: var(--configurator-font);
+  font-size: var(--configurator-text-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

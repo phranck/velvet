@@ -377,7 +377,10 @@ export function hostedApp(options: {
       // prevent. As files they are also cached for a year rather than
       // re-parsed with the stylesheet on every visit.
       assetsInlineLimit: 0,
-      rollupOptions: { input: entry },
+      // Absolute, because Rollup resolves a relative entry against the working
+      // directory rather than against the Vite root. Named relatively, the
+      // build only works when it is started from inside `site/`.
+      rollupOptions: { input: resolve(import.meta.dirname, entry) },
     },
   });
 }
