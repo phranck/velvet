@@ -1061,7 +1061,12 @@ test("refuses a different setup once a repository exists", async () => {
     provisionVelvet({
       session,
       request: renamed.data,
-      github: successfulGitHub().client,
+      github: successfulGitHub({
+        // Still there, which is the only state this refusal is for.
+        async findRepository() {
+          return takenRepository;
+        },
+      }).client,
       onEvent: () => {},
       sleep: async () => {},
     }),
@@ -1071,6 +1076,45 @@ test("refuses a different setup once a repository exists", async () => {
       // Named, so somebody knows which repository is in the way.
       error.message.includes("example/status"),
   );
+});
+
+test("lets a different setup through once the recorded repository is gone", async () => {
+  // Deleting the repository and starting again is how a failed setup is
+  // retried, and the session's record of it outlives the repository itself.
+  // Refusing on that record alone guards nothing and leaves nowhere to go.
+  const session = authenticatedSession();
+
+  await provisionVelvet({
+    session,
+    request: normalizedRequest,
+    github: successfulGitHub().client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+  assert.ok(session.provisioning?.repository, "the first setup recorded one");
+
+  const renamed = validateSetupRequest({
+    configuration: {
+      schemaVersion: 1,
+      repository: { owner: "example", name: "status" },
+      statusPage: { name: "A Different Status", theme: "velvet" },
+      services: [{ name: "Website", url: "https://example.com" }],
+    },
+  });
+  assert.equal(renamed.success, true);
+  if (!renamed.success) return;
+
+  // `findRepository` answers null throughout, which is what GitHub says about
+  // a repository that has been deleted.
+  const result = await provisionVelvet({
+    session,
+    request: renamed.data,
+    github: successfulGitHub().client,
+    onEvent: () => {},
+    sleep: async () => {},
+  });
+
+  assert.equal(result.type, "success");
 });
 
 test("gives the repository a README about the installation in it", async () => {
