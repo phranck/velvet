@@ -24,15 +24,6 @@ import { fixtureNamed } from "../theme-bundles/fixtures/index.js";
 import { themeSettingDeclarations } from "../src/lib/themes/settings.js";
 import { readThemes, THEMES_ROOT } from "./themes.js";
 
-/*
- * A theme renders times in whatever zone the machine is set to, and what this
- * writes is committed and checked against a rebuild. Left alone, a document
- * built in Berlin and one built on a runner in UTC differ by an hour and the
- * check can never pass. The frame renders again in the browser, in the reader's
- * own zone, so this decides the first paint and nothing more.
- */
-process.env.TZ = "UTC";
-
 /**
  * The fixture the monitor shows.
  *
@@ -47,21 +38,35 @@ const OUTPUT_ROOT = resolve(import.meta.dirname, "../../config/themes");
 /**
  * The script each preview document runs.
  *
- * It renders once with what the manifest states, then listens for settings
- * from the configurator and writes them onto the root element. Written as
- * properties rather than as a stylesheet, because the service's policy allows
- * a style attribute and refuses an inline stylesheet, and because a property
- * set this way replaces the previous value rather than stacking on it.
+ * It draws the page, applies what the manifest states, and then listens for
+ * settings from the configurator and writes them onto the root element.
+ * Written as properties rather than as a stylesheet, because the service's
+ * policy allows a style attribute and refuses an inline stylesheet, and
+ * because a property set this way replaces the previous value rather than
+ * stacking on it.
+ *
+ * The markup is drawn here rather than written into the document, for the same
+ * reason the gallery draws it here: a theme formats its dates through the
+ * platform's own locale data, and that data differs between a Mac and a Linux
+ * runner. A document carrying markup would therefore be committed as one thing
+ * and rebuilt as another, and it would show the reader a page in the zone of
+ * whichever machine built it rather than in their own.
  *
  * The origin is checked on every message. The frame is same-origin with its
  * embedder, so anything from elsewhere is not the configurator.
  */
-function hostScript(themeScriptPath: string): string {
+function hostScript(themeScriptPath: string, themeTemplatePath: string): string {
   return `import script from ${JSON.stringify(themeScriptPath)};
+import template from ${JSON.stringify(themeTemplatePath)};
 
 const root = document.querySelector("#velvet-root");
 const data = JSON.parse(document.querySelector("#velvet-data").textContent);
 const declared = JSON.parse(document.querySelector("#velvet-settings").textContent);
+
+// Parsed rather than assembled, because a theme's template returns a string.
+// Nothing untrusted is parsed: it comes from a theme in this repository, and
+// every value it takes from the data goes through that theme's own escaping.
+root.append(document.createRange().createContextualFragment(template(data)));
 
 /** Writes one block of declarations onto the document root. */
 function apply(declarations) {
@@ -92,11 +97,10 @@ window.parent.postMessage({ type: "velvet:ready" }, window.location.origin);
  * The same shape the conformance suite renders into, so what the monitor shows
  * and what the suite checks are the same page. The host owns everything
  * outside the root element and styles none of it beyond removing the body
- * margin.
+ * margin. The root arrives empty and the script fills it.
  */
 function previewDocument(
   title: string,
-  markup: string,
   data: unknown,
   declarations: Record<string, string>,
 ): string {
@@ -116,7 +120,7 @@ function previewDocument(
     <link rel="stylesheet" href="./host.css" />
   </head>
   <body>
-    <div id="velvet-root">${markup}</div>
+    <div id="velvet-root"></div>
     <script type="application/json" id="velvet-data">${payload}</script>
     <script type="application/json" id="velvet-settings">${settings}</script>
     <script type="module" src="./theme.js"></script>
@@ -157,16 +161,17 @@ for (const theme of themes) {
   const destination = join(OUTPUT_ROOT, theme.directory);
   await mkdir(destination, { recursive: true });
 
-  const templatePath = join(theme.path, manifest.entries.template);
-  const module = (await import(templatePath)) as Record<string, unknown>;
-  const template = (module.default ?? module.template) as
-    | ((data: unknown) => string)
-    | undefined;
-  if (typeof template !== "function") {
-    throw new Error(
-      `${theme.directory}: ${manifest.entries.template} exports no template function.`,
-    );
-  }
+  // The layout this theme can actually draw. A layout a theme does not claim
+  // is not a layout, and the fixture names one for every theme at once.
+  const data = {
+    ...fixture.data,
+    site: {
+      ...fixture.data.site,
+      layout: manifest.layouts.includes(fixture.data.site.layout)
+        ? fixture.data.site.layout
+        : manifest.layouts[0]!,
+    },
+  };
 
   const built = await Bun.build({
     entrypoints: [
@@ -174,7 +179,10 @@ for (const theme of themes) {
         const entry = join(destination, "entry.generated.ts");
         await writeFile(
           entry,
-          hostScript(join(theme.path, manifest.entries.script)),
+          hostScript(
+            join(theme.path, manifest.entries.script),
+            join(theme.path, manifest.entries.template),
+          ),
         );
         return entry;
       })(),
@@ -207,8 +215,7 @@ for (const theme of themes) {
     join(destination, "preview.html"),
     previewDocument(
       `${manifest.name} preview`,
-      template(fixture.data),
-      fixture.data,
+      data,
       declarations,
     ),
   );
