@@ -95,13 +95,29 @@ async function withConfigurator(
   }
 }
 
+/**
+ * The installations on offer, told apart from the themes beside them.
+ *
+ * The sidebar carries two radio groups drawn from the same component, so a
+ * plain class matches both. The label is what says which one this is, and it is
+ * the same string somebody using a screen reader hears.
+ *
+ * @param page - The page under test.
+ * @returns The items of the installation chooser.
+ */
+function installationItems(page: Page) {
+  return page.locator(
+    '[role="radiogroup"][aria-label="Velvet installations you may configure"] .chooser__item',
+  );
+}
+
 test(
   "offers the signed-in account's installations and chooses a single one",
   async () => {
     await withConfigurator(
       { repositories: [installation()], truncated: false },
       async (page) => {
-        const item = page.locator(".chooser__item");
+        const item = installationItems(page);
         await item.waitFor();
 
         assert.equal(await item.count(), 1);
@@ -112,7 +128,7 @@ test(
           "offering a choice of one asks somebody to confirm what was never in question",
         );
         assert.match(
-          await page.locator(".panel__text--small").first().innerText(),
+          await page.locator(".sidebar__foot").innerText(),
           /velvet-user/u,
         );
       },
@@ -133,7 +149,7 @@ test(
           if (pathname.startsWith("/api/")) asked.push(pathname);
         });
         await page.reload();
-        await page.locator(".chooser__item").waitFor();
+        await installationItems(page).waitFor();
 
         assert.deepEqual(asked, ["/api/session", "/api/installations"]);
       },
@@ -154,7 +170,7 @@ test(
         truncated: true,
       },
       async (page) => {
-        const items = page.locator(".chooser__item");
+        const items = installationItems(page);
         await items.first().waitFor();
 
         assert.equal(await items.count(), 2);
@@ -165,12 +181,12 @@ test(
         assert.equal(await items.nth(0).getAttribute("aria-checked"), "false");
         assert.equal(await items.nth(1).getAttribute("aria-checked"), "true");
         assert.match(
-          await page.locator(".panel__chosen").innerText(),
+          await page.locator(".sidebar__foot").innerText(),
           /velvet-user\/second/u,
         );
 
         assert.equal(
-          await page.locator(".panel__text--dim").count(),
+          await page.locator(".note").count(),
           1,
           "an installation missing from a list looks exactly like one that does not exist",
         );
@@ -194,7 +210,7 @@ test(
 
         assert.equal(await action.getAttribute("href"), "/onboarding/");
         assert.match(
-          await page.locator(".panel").innerText(),
+          await page.locator(".failure").innerText(),
           /None of the repositories you granted access to carries a Velvet installation/u,
           "the reason is on the page rather than left to be guessed at",
         );
@@ -209,7 +225,7 @@ test(
   "says what to do when the service answers something it cannot read",
   async () => {
     await withConfigurator({ repositories: "all of them" }, async (page) => {
-      const notice = page.locator(".panel__heading--failed");
+      const notice = page.locator(".failure__heading");
       await notice.waitFor();
 
       assert.match(await notice.innerText(), /could not start/u);
@@ -232,21 +248,26 @@ test(
         truncated: false,
       },
       async (page) => {
-        await page.locator(".chooser__item").first().waitFor();
+        await installationItems(page).first().waitFor();
 
         const geometry = await page.evaluate(() => {
           const pixels = (element: Element, property: string): number =>
             Number.parseFloat(
               getComputedStyle(element).getPropertyValue(property),
             );
-          const panel = document.querySelector(".panel")!;
+          // A section is a surface standing on the sidebar, the chooser inside
+          // it is nested, and a placeholder is prose in a rounded surface. The
+          // section is taken from the item so the two are genuinely one inside
+          // the other rather than two that happen to read the same tokens.
           const item = document.querySelector(".chooser__item")!;
-          const heading = document.querySelector(".panel__heading")!;
+          const section = item.closest(".section")!;
+          const content = section.querySelector(".section__content")!;
+          const prose = document.querySelector(".section__content p")!;
           return {
-            outer: pixels(panel, "border-top-left-radius"),
-            inset: pixels(panel, "padding-left"),
+            outer: pixels(section, "border-top-left-radius"),
+            inset: pixels(content, "padding-left"),
             inner: pixels(item, "border-top-left-radius"),
-            textInset: pixels(heading, "padding-left"),
+            textInset: pixels(prose, "padding-left"),
             corners: [
               "border-top-left-radius",
               "border-top-right-radius",

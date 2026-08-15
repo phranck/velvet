@@ -6,9 +6,9 @@
  * three things to keep true and the one that drifts is always the one somebody
  * was relying on.
  *
- * Every design is proved against every case here. That is what makes a bundle's
- * independence safe: a design may build its page however it likes, and these
- * are the eight installations it has to survive.
+ * Every theme is proved against every case here. That is what makes a theme's
+ * independence safe: a theme may build its page however it likes, and these are
+ * the ten installations it has to survive.
  */
 
 import type { ThemeData } from "../../src/lib/themes/data.js";
