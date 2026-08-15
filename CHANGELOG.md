@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.0.0 (2026-08-13)
+## Version 1.0.0 (2026-08-15)
 
 Velvet watches your websites and tells the people who rely on them whether everything is working.
 
