@@ -59,16 +59,19 @@ const built = (async () => {
 })();
 
 /**
- * Serves the built application and answers the two routes it opens with.
+ * Serves the built application and answers the routes it opens with.
  *
  * @param listing - What `/api/installations` replies with.
  * @param visit - What to assert once the page has settled.
  * @param session - What `/api/session` replies with.
+ * @param configuration - What `/api/configuration` replies with, which decides
+ *   the theme the configurator opens on.
  */
 async function withConfigurator(
   listing: unknown,
   visit: (page: Page) => Promise<void>,
   session: unknown = SIGNED_IN,
+  configuration: unknown = { theme: null, themeSettings: {} },
 ): Promise<void> {
   const root = await built;
   const server = Bun.serve({
@@ -77,6 +80,11 @@ async function withConfigurator(
       const url = new URL(request.url);
       if (url.pathname === "/api/session") return Response.json(session);
       if (url.pathname === "/api/installations") return Response.json(listing);
+      // What the chosen installation is published in, which the configurator
+      // asks for as soon as it has one.
+      if (url.pathname === "/api/configuration") {
+        return Response.json(configuration);
+      }
       const path = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
       const file = Bun.file(resolve(root, path));
       return (await file.exists())
@@ -150,8 +158,17 @@ test(
         });
         await page.reload();
         await installationItems(page).waitFor();
+        // The third asks what the chosen installation is published in, which
+        // it can only do once it has one.
+        await page.waitForFunction(() =>
+          document.querySelector(".current__name") !== null,
+        );
 
-        assert.deepEqual(asked, ["/api/session", "/api/installations"]);
+        assert.deepEqual(asked, [
+          "/api/session",
+          "/api/installations",
+          "/api/configuration",
+        ]);
       },
     );
   },

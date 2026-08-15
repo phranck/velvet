@@ -1,0 +1,317 @@
+<script lang="ts">
+  import { RadioGroup, Slider, Switch } from "bits-ui";
+
+  import type { ThemeFeature } from "../lib/themes/manifest.js";
+  import type { ThemeSettings } from "../lib/themes/settings.js";
+
+  interface Props {
+    /** What the chosen theme lets an operator set, in its own order. */
+    features: readonly ThemeFeature[];
+    /** What is set right now, which is where each control starts. */
+    settings: ThemeSettings;
+    /** Called with one feature's new value. */
+    onChange: (key: string, value: string | number | boolean) => void;
+  }
+
+  const { features, settings, onChange }: Props = $props();
+
+  /**
+   * What one feature stands at, which is what it was set to or its default.
+   *
+   * The type is checked rather than assumed. A stored value comes from a
+   * configuration somebody may have edited by hand, and a number where a
+   * colour belongs would otherwise reach a control that cannot show it.
+   *
+   * @param feature - The feature being drawn.
+   * @returns Its current value, of the type the feature is.
+   */
+  function valueOf(feature: ThemeFeature): string | number | boolean {
+    const given = settings[feature.key];
+    if (feature.type === "switch") {
+      return typeof given === "boolean" ? given : feature.default;
+    }
+    if (feature.type === "number") {
+      return typeof given === "number" ? given : feature.default;
+    }
+    if (feature.type === "choice") {
+      return typeof given === "string" && feature.choices.includes(given)
+        ? given
+        : feature.default;
+    }
+    return typeof given === "string" ? given : feature.default;
+  }
+
+  /**
+   * The step a slider moves in, which follows from what it spans.
+   *
+   * A range of a hundred or less moves a unit at a time, because that is what
+   * the numbers in it mean. A wider one moves in hundredths of itself, so a
+   * thumb crossing a slider takes the same number of presses whatever it
+   * measures.
+   *
+   * @param minimum - The lowest value.
+   * @param maximum - The highest.
+   * @returns How far one press or one notch moves it.
+   */
+  function stepFor(minimum: number, maximum: number): number {
+    const span = maximum - minimum;
+    return span <= 100 ? 1 : Math.round(span / 100);
+  }
+</script>
+
+{#if features.length === 0}
+  <p class="placeholder">This theme takes no settings.</p>
+{:else}
+  <div class="settings">
+    {#each features as feature (feature.key)}
+      <!--
+        The label is the control's own name rather than a heading beside it,
+        which is what makes clicking the words work and what a screen reader
+        reads out when the control takes focus.
+      -->
+      <div class="field" class:field--inline={feature.type === "switch"}>
+        {#if feature.type === "switch"}
+          <label class="field__label" for="feature-{feature.key}">
+            {feature.label}
+          </label>
+          <Switch.Root
+            id="feature-{feature.key}"
+            class="switch"
+            checked={valueOf(feature) === true}
+            onCheckedChange={(checked) => onChange(feature.key, checked)}
+          >
+            <Switch.Thumb class="switch__thumb" />
+          </Switch.Root>
+        {:else if feature.type === "colour"}
+          <label class="field__label" for="feature-{feature.key}">
+            {feature.label}
+          </label>
+          <!--
+            The browser's own colour control. bits-ui draws none, and a picker
+            written here would be a second answer to a thing every platform
+            already answers, including for somebody who picks colours by name
+            or by eyedropper.
+          -->
+          <span class="colour">
+            <input
+              id="feature-{feature.key}"
+              type="color"
+              class="colour__well"
+              value={String(valueOf(feature))}
+              oninput={(event) =>
+                onChange(feature.key, event.currentTarget.value)}
+            />
+            <span class="colour__value">{valueOf(feature)}</span>
+          </span>
+        {:else if feature.type === "choice"}
+          <span class="field__label" id="feature-{feature.key}">
+            {feature.label}
+          </span>
+          <RadioGroup.Root
+            class="chooser"
+            value={String(valueOf(feature))}
+            onValueChange={(value) => onChange(feature.key, value)}
+            aria-labelledby="feature-{feature.key}"
+          >
+            {#each feature.choices as choice (choice)}
+              <RadioGroup.Item class="chooser__item" value={choice}>
+                <span class="chooser__name">{choice}</span>
+              </RadioGroup.Item>
+            {/each}
+          </RadioGroup.Root>
+        {:else}
+          <label class="field__label" for="feature-{feature.key}">
+            {feature.label}
+            <!--
+              The reading belongs to the label rather than standing beside it
+              as a second thing to announce, because `aria-label` on the
+              control would replace what the control says rather than add to
+              it.
+            -->
+            <span class="field__reading">
+              {valueOf(feature)}{feature.unit}
+            </span>
+          </label>
+          <Slider.Root
+            id="feature-{feature.key}"
+            type="single"
+            class="slider"
+            value={Number(valueOf(feature))}
+            min={feature.minimum}
+            max={feature.maximum}
+            step={stepFor(feature.minimum, feature.maximum)}
+            onValueChange={(value) => onChange(feature.key, value)}
+          >
+            <span class="slider__track">
+              <Slider.Range class="slider__range" />
+            </span>
+            <Slider.Thumb index={0} class="slider__thumb" />
+          </Slider.Root>
+        {/if}
+      </div>
+    {/each}
+  </div>
+{/if}
+
+<style>
+  .settings {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  /* A switch stands beside what it is called rather than under it: there is
+     nothing to read across, and a row of its own for two words wastes the
+     height every other setting needs. */
+  .field--inline {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .field__label {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: var(--configurator-text-muted);
+    font-size: var(--configurator-text-small);
+    line-height: 1.3;
+  }
+
+  .field__reading {
+    color: var(--configurator-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .colour {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* The well is the swatch. A colour input draws its own frame and padding,
+     which is what the inset rule below removes so the colour reaches the
+     edge of what looks like a swatch. */
+  .colour__well {
+    width: 2.25rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 1px solid var(--configurator-edge);
+    border-radius: var(--configurator-radius-inner);
+    background: none;
+    cursor: pointer;
+  }
+
+  .colour__well::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+
+  .colour__well::-webkit-color-swatch {
+    border: none;
+    border-radius: calc(var(--configurator-radius-inner) - 2px);
+  }
+
+  .colour__well:focus-visible {
+    outline: 2px solid var(--configurator-accent-lit);
+    outline-offset: 2px;
+  }
+
+  .colour__value {
+    color: var(--configurator-text);
+    font-size: var(--configurator-text-small);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .placeholder {
+    margin: 0;
+    color: var(--configurator-text-muted);
+    font-size: var(--configurator-text-small);
+    line-height: 1.5;
+  }
+
+  /* Global, because bits-ui renders these elements rather than this template,
+     so Svelte's scoping attribute never reaches them. */
+  :global(.switch) {
+    display: inline-flex;
+    align-items: center;
+    width: 2.5rem;
+    height: 1.5rem;
+    padding: 2px;
+    border: 1px solid var(--configurator-edge);
+    border-radius: 999px;
+    background: var(--configurator-sunken);
+    cursor: pointer;
+    transition: background var(--configurator-transition);
+  }
+
+  :global(.switch[data-state="checked"]) {
+    border-color: var(--configurator-accent);
+    background: var(--configurator-accent-surface);
+  }
+
+  :global(.switch:focus-visible) {
+    outline: 2px solid var(--configurator-accent-lit);
+    outline-offset: 2px;
+  }
+
+  /* The thumb moves by transform rather than by a margin or a position, which
+     is the one property of the three a compositor animates. */
+  :global(.switch__thumb) {
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 999px;
+    background: var(--configurator-edge);
+    transition:
+      transform var(--configurator-transition),
+      background var(--configurator-transition);
+  }
+
+  :global(.switch[data-state="checked"] .switch__thumb) {
+    background: var(--configurator-accent);
+    transform: translateX(1rem);
+  }
+
+  :global(.slider) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 1.25rem;
+    touch-action: none;
+  }
+
+  .slider__track {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--configurator-sunken);
+    border: 1px solid var(--configurator-divider);
+  }
+
+  :global(.slider__range) {
+    position: absolute;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--configurator-accent);
+  }
+
+  :global(.slider__thumb) {
+    display: block;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 999px;
+    border: 1px solid var(--configurator-accent);
+    background: var(--configurator-accent);
+    cursor: grab;
+  }
+
+  :global(.slider__thumb:focus-visible) {
+    outline: 2px solid var(--configurator-accent-lit);
+    outline-offset: 2px;
+  }
+</style>
