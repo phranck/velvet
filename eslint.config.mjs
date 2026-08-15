@@ -12,9 +12,10 @@ export default defineConfig(
     "**/node_modules/**",
     "apps/setup-service/src/*.generated.ts",
     // The built browser applications the setup service serves from the tree.
-    // They are bundler output rather than sources, so every rule here reports
-    // on minified code nobody edits.
-    ...HOSTED_APPS.map((app) => `${app}/assets/**`),
+    // Everything below these two directories is written by a build, documents,
+    // hashed assets and the themes the configurator frames alike, so every
+    // rule here would report on minified code nobody edits.
+    ...HOSTED_APPS.map((app) => `${app}/**`),
     "site/dist-website/**",
     "site/.svelte-kit/**",
   ]),

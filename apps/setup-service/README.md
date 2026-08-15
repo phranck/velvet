@@ -6,6 +6,8 @@ The version lock records which release an installation starts on. Without it an 
 
 It also serves the configurator, at `/config`. That is a second browser application rather than a second service, and it lives on this origin so it uses the session already established here: the cookie carries a `__Host-` prefix, which binds it to one hostname, so a name of its own would mean a second sign-in. It reads which installations somebody may configure from `/api/installations`, the same route managed updates ask.
 
+The themes it shows are served alongside it, under `/config/themes/<theme>/`, one small site each with its own document, stylesheet, script and faces. The configurator frames that document rather than writing one itself, so a theme's stylesheet stays a linked file and the policy needs no grant for an inline one. Those files are cached but revalidated, because their names carry no content hash and a release changes what is behind them; the application's own assets are hashed and are kept for a year.
+
 Generated status pages do not call this service after setup. They keep running when it is unavailable or when the GitHub App is later uninstalled.
 
 Managed updates run here too. An update replaces the complete closed set of Velvet-owned files in one commit on `velvet/update/<version>`, opens a technical pull request, and merges only the expected head commit. Ownership is proven from GitHub's own view of the change rather than assumed: immediately before merging, Velvet reads the pull request's changed files and stops whilst the installation is untouched if any path falls outside that closed set. A change to `velvet.yml`, `README.md`, or any other user-owned file therefore cannot reach the default branch.

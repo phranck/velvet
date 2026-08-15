@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200" role="img" aria-label="Twenty Forty-Nine, a cyan readout behind dirty glass">
+  <rect width="320" height="200" fill="#05101c"/>
+  <rect x="112" y="18" width="96" height="7" rx="1" fill="#bdd2e0"/>
+  <rect x="152" y="42" width="16" height="16" rx="1" fill="#5fb2e0"/>
+  <rect x="92" y="68" width="136" height="11" rx="1" fill="#bdd2e0"/>
+  <rect x="122" y="86" width="76" height="5" rx="1" fill="#7796ab"/>
+  <rect x="20" y="106" width="280" height="64" fill="#091726"/>
+  <g stroke="#5fb2e0" stroke-width="1.5" fill="none">
+    <path d="M20 118 V106 H32"/>
+    <path d="M288 106 H300 V118"/>
+    <path d="M20 158 V170 H32"/>
+    <path d="M300 158 V170 H288"/>
+  </g>
+  <g fill="#5fb2e0" opacity="0.55">
+    <rect x="20" y="124" width="4" height="1"/>
+    <rect x="20" y="132" width="4" height="1"/>
+    <rect x="20" y="140" width="4" height="1"/>
+    <rect x="20" y="148" width="4" height="1"/>
+    <rect x="296" y="124" width="4" height="1"/>
+    <rect x="296" y="132" width="4" height="1"/>
+    <rect x="296" y="140" width="4" height="1"/>
+    <rect x="296" y="148" width="4" height="1"/>
+  </g>
+  <rect x="34" y="118" width="56" height="7" rx="1" fill="#bdd2e0"/>
+  <rect x="232" y="119" width="52" height="5" rx="1" fill="#7796ab"/>
+  <g fill="#5fb2e0">
+    <rect x="34" y="140" width="7" height="7"/><rect x="34" y="150" width="7" height="7"/>
+    <rect x="45" y="140" width="7" height="7"/><rect x="45" y="150" width="7" height="7"/>
+    <rect x="56" y="150" width="7" height="7"/>
+    <rect x="67" y="140" width="7" height="7"/><rect x="67" y="150" width="7" height="7"/>
+    <rect x="78" y="140" width="7" height="7"/><rect x="78" y="150" width="7" height="7"/>
+    <rect x="89" y="150" width="7" height="7"/>
+    <rect x="111" y="140" width="7" height="7"/><rect x="111" y="150" width="7" height="7"/>
+    <rect x="122" y="140" width="7" height="7"/><rect x="122" y="150" width="7" height="7"/>
+    <rect x="133" y="150" width="7" height="7"/>
+    <rect x="155" y="140" width="7" height="7"/><rect x="155" y="150" width="7" height="7"/>
+    <rect x="166" y="140" width="7" height="7"/><rect x="166" y="150" width="7" height="7"/>
+    <rect x="188" y="140" width="7" height="7"/><rect x="188" y="150" width="7" height="7"/>
+    <rect x="199" y="150" width="7" height="7"/>
+    <rect x="221" y="140" width="7" height="7"/><rect x="221" y="150" width="7" height="7"/>
+    <rect x="232" y="140" width="7" height="7"/><rect x="232" y="150" width="7" height="7"/>
+    <rect x="254" y="140" width="7" height="7"/><rect x="254" y="150" width="7" height="7"/>
+    <rect x="265" y="140" width="7" height="7"/><rect x="265" y="150" width="7" height="7"/>
+    <rect x="276" y="150" width="7" height="7"/>
+  </g>
+  <rect x="100" y="150" width="7" height="7" fill="#d8a13c"/>
+  <rect x="144" y="150" width="7" height="7" fill="#e0503c"/>
+  <rect x="210" y="150" width="7" height="7" fill="#123049"/>
+  <rect x="243" y="150" width="7" height="7" fill="#123049"/>
+  <rect x="130" y="184" width="60" height="5" rx="1" fill="#58748c"/>
+</svg>

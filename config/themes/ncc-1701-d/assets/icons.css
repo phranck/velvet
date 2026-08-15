@@ -1,0 +1,55 @@
+/*
+  The Phosphor duotone glyphs this theme shows, and nothing else.
+
+  Written by site/scripts/theme-fonts.ts, which reads the names out of
+  this theme's own files and cuts the face down to them. The complete
+  face carries about fifteen hundred icons; 2 are used here.
+
+  Phosphor Icons is published under the MIT licence.
+*/
+
+@font-face {
+  font-family: "Phosphor-Duotone";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("./phosphor-duotone-subset.woff2") format("woff2");
+}
+
+.ph-duotone {
+  display: inline-block;
+  font-family: "Phosphor-Duotone";
+  font-style: normal;
+  font-weight: 400;
+  font-variant: normal;
+  line-height: 1;
+  text-transform: none;
+}
+
+/*
+  The foreground layer is laid back over the background one, which is
+  what makes a duotone icon two-tone rather than two icons side by side.
+*/
+.ph-duotone::after {
+  margin-left: -1em;
+}
+
+.ph-duotone::before {
+  opacity: 0.2;
+}
+
+.ph-duotone.ph-caret-circle-double-down::before {
+  content: "\e116";
+}
+
+.ph-duotone.ph-caret-circle-double-down::after {
+  content: "\e117";
+}
+
+.ph-duotone.ph-caret-circle-down::before {
+  content: "\e11e";
+}
+
+.ph-duotone.ph-caret-circle-down::after {
+  content: "\e11f";
+}

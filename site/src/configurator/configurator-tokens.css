@@ -106,13 +106,25 @@
   /* The scale a surface somebody works in is read at, not the reading scale a
      page takes. A form spends room on every label and hint, and the same size
      that suits a page makes a tool a good deal longer to get down. */
-  --configurator-text-small: 0.8125rem;
-  --configurator-text-body: 0.9375rem;
-  --configurator-text-heading: 1.25rem;
+  --configurator-text-small: 0.875rem;
+  --configurator-text-body: 1rem;
+  --configurator-text-heading: 1.3125rem;
   /* An uppercase label with tracking on it, which is the one thing set in the
      label face and the one thing that never sets a sentence. */
-  --configurator-text-label: 0.75rem;
+  --configurator-text-label: 0.8125rem;
+  /* Below the label size: the one line under the mark that names this surface,
+     and nothing else. */
+  --configurator-text-label-small: 0.6875rem;
   --configurator-tracking-label: 0.1em;
+
+  /* A glyph standing beside text rather than in it: the grip on a section, the
+     chevron on its heading. Sized here rather than per rule, so the two move
+     together and neither ends up the larger of the pair by accident. */
+  --configurator-glyph: 1rem;
+  --configurator-glyph-small: 0.8rem;
+  /* A glyph standing on its own, with no text beside it to be sized against
+     and nothing but itself to be read as a control. */
+  --configurator-glyph-large: 1.5rem;
 
   /* How long a control takes to answer. Short enough to read as the control
      responding rather than as the page animating. */

@@ -651,7 +651,7 @@ export function createSetupHandler(
         const assetPath = hostedAssetPath(route);
         if (assetPath) {
           const asset = await options.staticAsset(assetPath);
-          if (asset) return finish(asset);
+          if (asset) return finish(notModified(request, asset) ?? asset);
         }
       }
 
@@ -957,6 +957,37 @@ function bearerToken(header: string | null): string | null {
   return match ? match[1]! : null;
 }
 
+/**
+ * Answers a conditional request for a file the caller already holds.
+ *
+ * Only files served with an entity tag take part, which is the theme files:
+ * they keep their names across a release that changes them, so a browser has
+ * no way of telling an old copy from a new one without asking. A hashed asset
+ * carries no tag and needs none, because its name changes with its contents.
+ *
+ * @param request - The request as it arrived, carrying `If-None-Match` or not.
+ * @param asset - What the provider answered with.
+ * @returns A 304 carrying the same tag, or null when the file is to be sent.
+ */
+function notModified(request: Request, asset: Response): Response | null {
+  const tag = asset.headers.get("ETag");
+  if (!tag) return null;
+  const offered = request.headers.get("If-None-Match");
+  if (!offered) return null;
+  const holds = offered
+    .split(",")
+    .map((candidate) => candidate.trim())
+    .includes(tag);
+  if (!holds) return null;
+  return new Response(null, {
+    status: 304,
+    headers: {
+      "Cache-Control": asset.headers.get("Cache-Control") ?? "no-cache",
+      ETag: tag,
+    },
+  });
+}
+
 function redirectResponse(location: string, headers?: HeadersInit): Response {
   return new Response(null, {
     status: 302,
@@ -973,13 +1004,18 @@ function secureResponse(
   headers.set("X-Request-Id", requestId);
   headers.set(
     "Content-Security-Policy",
-    // One deliberate grant beyond the default. `style-src-attr` allows style
+    // Two deliberate grants beyond the default. `style-src-attr` allows style
     // attributes, which is how a themed preview carries per-element custom
     // properties. Stylesheets and `<style>` elements stay restricted to this
     // origin through `style-src`, so this grants declarations on elements the
     // application already renders and nothing that could introduce a
     // stylesheet.
-    `default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
+    //
+    // `frame-src 'self'` is stated rather than left to fall through to
+    // `default-src`, because the configurator's monitor frames a theme served
+    // from this origin and a policy should say where a frame is intended. It
+    // grants nothing `default-src` did not already grant.
+    `default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`,
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   /*
