@@ -1,0 +1,4 @@
+/* The host owns what is outside the theme's root, and styles none of it. */
+body {
+  margin: 0;
+}
