@@ -802,7 +802,7 @@
     gap: 0.75rem;
     width: 100%;
     padding: 0.45rem 0.7rem;
-    border: 1px solid var(--configurator-edge);
+    border: 1px solid var(--configurator-edge-resting);
     border-radius: var(--configurator-radius-inner);
     background: var(--configurator-sunken);
     color: var(--configurator-text);

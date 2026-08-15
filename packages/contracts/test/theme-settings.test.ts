@@ -13,7 +13,14 @@ import { checkThemeSettings, type ThemeFeatureShape } from "../src/index.js";
 const FEATURES: ThemeFeatureShape[] = [
   { key: "accent", type: "colour" },
   { key: "chartWash", type: "switch" },
-  { key: "corners", type: "choice", choices: ["rounded", "square"] },
+  {
+    key: "corners",
+    type: "choice",
+    choices: [
+      { value: "rounded", label: "Rounded" },
+      { value: "square", label: "Square" },
+    ],
+  },
   { key: "gridLines", type: "number", minimum: 1, maximum: 6 },
 ];
 

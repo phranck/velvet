@@ -55,9 +55,19 @@ const OUTPUT_ROOT = resolve(import.meta.dirname, "../../config/themes");
  * The origin is checked on every message. The frame is same-origin with its
  * embedder, so anything from elsewhere is not the configurator.
  */
-function hostScript(themeScriptPath: string, themeTemplatePath: string): string {
+function hostScript(
+  themeScriptPath: string,
+  themeTemplatePath: string,
+  themeRoot: string,
+): string {
   return `import script from ${JSON.stringify(themeScriptPath)};
 import template from ${JSON.stringify(themeTemplatePath)};
+
+// What the theme's page is rooted at. Settings are written onto that element
+// rather than onto the document's, because the theme declares the same
+// properties there and an inherited value loses to a declaration on the
+// element itself.
+const THEME_ROOT = ${JSON.stringify(themeRoot)};
 
 const root = document.querySelector("#velvet-root");
 const data = JSON.parse(document.querySelector("#velvet-data").textContent);
@@ -68,15 +78,25 @@ const declared = JSON.parse(document.querySelector("#velvet-settings").textConte
 // every value it takes from the data goes through that theme's own escaping.
 root.append(document.createRange().createContextualFragment(template(data)));
 
-/** Writes one block of declarations onto the document root. */
+/*
+ * Writes one block of declarations onto both elements that need them.
+ *
+ * The theme's own root is what a theme reads, and its own declarations sit
+ * there. The document's root is what a style query can see, because a query
+ * reads the nearest ancestor container and never the element itself.
+ */
 function apply(declarations) {
-  for (const [property, value] of Object.entries(declarations)) {
-    document.documentElement.style.setProperty(property, value);
+  const targets = [document.documentElement, document.querySelector(THEME_ROOT)];
+  for (const target of targets) {
+    if (!target) continue;
+    for (const [property, value] of Object.entries(declarations)) {
+      target.style.setProperty(property, value);
+    }
   }
 }
 
-apply(declared);
 script(root, data);
+apply(declared);
 
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin) return;
@@ -182,6 +202,7 @@ for (const theme of themes) {
           hostScript(
             join(theme.path, manifest.entries.script),
             join(theme.path, manifest.entries.template),
+            manifest.root,
           ),
         );
         return entry;

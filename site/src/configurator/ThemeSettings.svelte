@@ -16,6 +16,25 @@
   const { features, settings, onChange }: Props = $props();
 
   /**
+   * The features in the order the theme states them, under what they belong to.
+   *
+   * The grouping is the theme's own, because only a theme knows what its
+   * settings have to do with each other. A group appears where its first
+   * feature does, so the theme decides the order of the groups as well by
+   * deciding the order of the features.
+   */
+  const grouped = $derived.by(() => {
+    const groups: { name: string | null; features: ThemeFeature[] }[] = [];
+    for (const feature of features) {
+      const name = feature.group ?? null;
+      const last = groups[groups.length - 1];
+      if (last && last.name === name) last.features.push(feature);
+      else groups.push({ name, features: [feature] });
+    }
+    return groups;
+  });
+
+  /**
    * What one feature stands at, which is what it was set to or its default.
    *
    * The type is checked rather than assumed. A stored value comes from a
@@ -34,7 +53,8 @@
       return typeof given === "number" ? given : feature.default;
     }
     if (feature.type === "choice") {
-      return typeof given === "string" && feature.choices.includes(given)
+      return typeof given === "string" &&
+        feature.choices.some((choice) => choice.value === given)
         ? given
         : feature.default;
     }
@@ -62,14 +82,23 @@
 {#if features.length === 0}
   <p class="placeholder">This theme takes no settings.</p>
 {:else}
-  <div class="settings">
-    {#each features as feature (feature.key)}
+  {#each grouped as group (group.name ?? group.features[0]!.key)}
+    <section class="group" aria-label={group.name ?? undefined}>
+      {#if group.name}
+        <h3 class="group__name">{group.name}</h3>
+      {/if}
+      <div class="settings">
+        {#each group.features as feature (feature.key)}
       <!--
         The label is the control's own name rather than a heading beside it,
         which is what makes clicking the words work and what a screen reader
         reads out when the control takes focus.
       -->
-      <div class="field" class:field--inline={feature.type === "switch"}>
+      <div
+        class="field"
+        class:field--inline={feature.type === "switch"}
+        class:field--narrow={feature.type === "colour"}
+      >
         {#if feature.type === "switch"}
           <label class="field__label" for="feature-{feature.key}">
             {feature.label}
@@ -107,15 +136,22 @@
           <span class="field__label" id="feature-{feature.key}">
             {feature.label}
           </span>
+          <!--
+            One track with the choices along it rather than a stack of rows.
+            Three named values are a small thing to decide, and a row each
+            spends the height of a whole section on it. The behaviour is the
+            radio group's still: arrow keys move between them and only the
+            chosen one takes focus from the tab order.
+          -->
           <RadioGroup.Root
-            class="chooser"
+            class="segmented"
             value={String(valueOf(feature))}
             onValueChange={(value) => onChange(feature.key, value)}
             aria-labelledby="feature-{feature.key}"
           >
-            {#each feature.choices as choice (choice)}
-              <RadioGroup.Item class="chooser__item" value={choice}>
-                <span class="chooser__name">{choice}</span>
+            {#each feature.choices as choice (choice.value)}
+              <RadioGroup.Item class="segmented__item" value={choice.value}>
+                {choice.label}
               </RadioGroup.Item>
             {/each}
           </RadioGroup.Root>
@@ -142,26 +178,69 @@
             step={stepFor(feature.minimum, feature.maximum)}
             onValueChange={(value) => onChange(feature.key, value)}
           >
-            <span class="slider__track">
-              <Slider.Range class="slider__range" />
-            </span>
-            <Slider.Thumb index={0} class="slider__thumb" />
+            {#snippet children({ tickItems })}
+              <span class="slider__track">
+                <Slider.Range class="slider__range" />
+                <!--
+                  One mark per step, so a range of six reads as six choices
+                  rather than as a distance. Drawn only where the steps are few
+                  enough to tell apart: a mark every pixel is a line.
+                -->
+                {#if tickItems.length <= 12}
+                  {#each tickItems as tick (tick.index)}
+                    <Slider.Tick index={tick.index} class="slider__tick" />
+                  {/each}
+                {/if}
+              </span>
+              <Slider.Thumb index={0} class="slider__thumb" />
+            {/snippet}
           </Slider.Root>
         {/if}
+          </div>
+        {/each}
       </div>
-    {/each}
-  </div>
+    </section>
+  {/each}
 {/if}
 
 <style>
+  /* Two columns, and each setting takes what its control needs rather than a
+     row of its own. A colour is a swatch and a reading, so two of them fit
+     across, and a pair like the two protocols then stands as a pair. Anything
+     wider takes the whole row, which is what a list of choices or a slider
+     needs to be read across. */
+  /* One group under the next, each set off by its name rather than by a rule
+     or a surface: these already sit inside a section of the sidebar, and a
+     second box inside it would read as a second section. */
+  .group + :global(.group) {
+    margin-top: 0.9rem;
+  }
+
+  .group__name {
+    margin: 0 0 0.5rem;
+    color: var(--configurator-text);
+    font-family: var(--configurator-font-label);
+    font-size: var(--configurator-text-label-small);
+    font-weight: 400;
+    letter-spacing: var(--configurator-tracking-label);
+    text-transform: uppercase;
+  }
+
   .settings {
     display: grid;
-    gap: 0.9rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem 0.75rem;
+    align-items: start;
   }
 
   .field {
     display: grid;
     gap: 0.35rem;
+    grid-column: 1 / -1;
+  }
+
+  .field--narrow {
+    grid-column: span 1;
   }
 
   /* A switch stands beside what it is called rather than under it: there is
@@ -199,7 +278,7 @@
     width: 2.25rem;
     height: 1.75rem;
     padding: 0;
-    border: 1px solid var(--configurator-edge);
+    border: 1px solid var(--configurator-edge-resting);
     border-radius: var(--configurator-radius-inner);
     background: none;
     cursor: pointer;
@@ -234,13 +313,60 @@
 
   /* Global, because bits-ui renders these elements rather than this template,
      so Svelte's scoping attribute never reaches them. */
+  :global(.segmented) {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--configurator-edge-resting);
+    border-radius: var(--configurator-radius-inner);
+    background: var(--configurator-sunken);
+  }
+
+  /* The segments carry the radius of the track less the padding around them,
+     so the chosen one sits inside the curve rather than against it. */
+  :global(.segmented__item) {
+    padding: 0.3rem 0.4rem;
+    border: none;
+    border-radius: max(calc(var(--configurator-radius-inner) - 2px), 0px);
+    background: none;
+    color: var(--configurator-text-muted);
+    font: inherit;
+    font-size: var(--configurator-text-small);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition:
+      background var(--configurator-transition),
+      color var(--configurator-transition);
+  }
+
+  :global(.segmented__item:hover) {
+    color: var(--configurator-text);
+  }
+
+  /* The chosen segment carries the accent and the accent behind it, because
+     colour alone asks a reader to compare two greys. */
+  :global(.segmented__item[data-state="checked"]) {
+    background: var(--configurator-accent-surface);
+    color: var(--configurator-accent);
+  }
+
+  :global(.segmented__item:focus-visible) {
+    outline: 2px solid var(--configurator-accent-lit);
+    outline-offset: -2px;
+  }
+
   :global(.switch) {
     display: inline-flex;
     align-items: center;
     width: 2.5rem;
     height: 1.5rem;
     padding: 2px;
-    border: 1px solid var(--configurator-edge);
+    border: 1px solid var(--configurator-edge-resting);
     border-radius: 999px;
     background: var(--configurator-sunken);
     cursor: pointer;
@@ -283,14 +409,18 @@
     touch-action: none;
   }
 
+  /* The track is drawn rather than outlined: at six pixels a rule around it is
+     two thirds of its height, and what was left inside read as a hole. It
+     carries the edge colour, because a slider is a control and WCAG 2.1 asks
+     3:1 under 1.4.11 for what bounds one, at the strength a filled bar wants
+     rather than the one a line does. */
   .slider__track {
     position: relative;
     display: block;
     width: 100%;
-    height: 4px;
+    height: 6px;
     border-radius: 999px;
-    background: var(--configurator-sunken);
-    border: 1px solid var(--configurator-divider);
+    background: var(--configurator-edge-quiet);
   }
 
   :global(.slider__range) {
@@ -298,6 +428,20 @@
     height: 100%;
     border-radius: 999px;
     background: var(--configurator-accent);
+  }
+
+  /* A mark is cut out of the track rather than laid on it, so it reads the same
+     where the range has passed it and where it has not: one dark colour tells
+     against the track and against the accent alike. */
+  :global(.slider__tick) {
+    position: absolute;
+    top: 50%;
+    width: 2px;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 999px;
+    background: var(--configurator-base);
+    transform: translateX(-50%);
   }
 
   :global(.slider__thumb) {

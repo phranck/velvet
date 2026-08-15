@@ -39,6 +39,37 @@
    */
   --configurator-divider: #262b33;
   --configurator-edge: #616a77;
+  /*
+   * The edge drawn as a surface rather than as a boundary.
+   *
+   * A bar several pixels tall in the edge colour reads brighter than the one
+   * pixel line the same colour makes, so what is filled with it takes less of
+   * it. Mixed from the edge rather than stated as a second value, so the two
+   * move together.
+   */
+  /*
+   * The edge a control rests at, which is deliberately below what WCAG asks.
+   *
+   * 1.4.11 wants 3:1 for what identifies a control, and the edge above is the
+   * least that clears it at 3.12:1 on a raised surface. This is that edge at
+   * nine tenths, which measures 2.78:1, and it is a decision rather than an
+   * oversight: a panel of a dozen controls each outlined at the minimum reads
+   * as a grid of boxes before it reads as a set of settings. Hover and focus
+   * take the full edge and the lit accent, so anything being used is bounded
+   * at least as clearly as the rule asks.
+   *
+   * phranck, 2026-08-15, having been shown the figures.
+   */
+  --configurator-edge-resting: color-mix(
+    in srgb,
+    var(--configurator-edge) 90%,
+    var(--configurator-raised)
+  );
+  --configurator-edge-quiet: color-mix(
+    in srgb,
+    var(--configurator-edge) 55%,
+    var(--configurator-raised)
+  );
 
   /*
    * The one colour this surface points with.

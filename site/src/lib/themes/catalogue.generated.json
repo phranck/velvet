@@ -8,6 +8,7 @@
     "order": 1,
     "state": "offered",
     "dataVersion": 1,
+    "root": ".velvet-page",
     "entries": {
       "template": "template.ts",
       "styles": "theme.css",
@@ -26,7 +27,136 @@
         "property": "--chart-area-display",
         "default": true,
         "on": "block",
-        "off": "none"
+        "off": "none",
+        "group": "Response chart"
+      },
+      {
+        "key": "ipv4Colour",
+        "type": "colour",
+        "label": "IPv4 colour",
+        "property": "--protocol-ipv4",
+        "default": "#7c7ef3",
+        "group": "Protocols",
+        "declared": true
+      },
+      {
+        "key": "ipv6Colour",
+        "type": "colour",
+        "label": "IPv6 colour",
+        "property": "--protocol-ipv6",
+        "default": "#38bdf8",
+        "group": "Protocols",
+        "declared": true
+      },
+      {
+        "key": "dayOperational",
+        "type": "colour",
+        "label": "Operational",
+        "property": "--state-operational",
+        "default": "#6366f1",
+        "group": "Day bars",
+        "declared": true
+      },
+      {
+        "key": "dayDegraded",
+        "type": "colour",
+        "label": "Degraded",
+        "property": "--state-degraded",
+        "default": "#d29922",
+        "group": "Day bars",
+        "declared": true
+      },
+      {
+        "key": "dayOutage",
+        "type": "colour",
+        "label": "Outage",
+        "property": "--state-outage",
+        "default": "#f85149",
+        "group": "Day bars",
+        "declared": true
+      },
+      {
+        "key": "backdropStart",
+        "type": "colour",
+        "label": "Backdrop, top",
+        "property": "--backdrop-gradient-start",
+        "default": "#0e1018",
+        "group": "Backdrop",
+        "declared": true
+      },
+      {
+        "key": "backdropEnd",
+        "type": "colour",
+        "label": "Backdrop, bottom",
+        "property": "--backdrop-gradient-end",
+        "default": "#0a0b0f",
+        "group": "Backdrop",
+        "declared": true
+      },
+      {
+        "key": "backdropBubbles",
+        "type": "switch",
+        "label": "Clouded backdrop",
+        "property": "--backdrop-bubble-alpha",
+        "default": true,
+        "on": "1",
+        "off": "0",
+        "group": "Backdrop"
+      },
+      {
+        "key": "backdropCount",
+        "type": "number",
+        "label": "Clouds",
+        "property": "--backdrop-bubble-count",
+        "default": 3,
+        "minimum": 1,
+        "maximum": 6,
+        "unit": "",
+        "group": "Backdrop"
+      },
+      {
+        "key": "contentWidth",
+        "type": "choice",
+        "label": "Content width",
+        "property": "--page-width",
+        "default": "860px",
+        "choices": [
+          {
+            "value": "680px",
+            "label": "Narrow"
+          },
+          {
+            "value": "860px",
+            "label": "Ordinary"
+          },
+          {
+            "value": "1080px",
+            "label": "Wide"
+          }
+        ],
+        "group": "Page"
+      },
+      {
+        "key": "palette",
+        "type": "choice",
+        "label": "Palette",
+        "property": "--velvet-scheme",
+        "default": "velvet",
+        "choices": [
+          {
+            "value": "velvet",
+            "label": "Velvet"
+          },
+          {
+            "value": "spring",
+            "label": "Lime Green"
+          },
+          {
+            "value": "autumn",
+            "label": "Autumn"
+          }
+        ],
+        "group": "Page"
       }
     ],
     "picture": "velvet.png"
@@ -40,6 +170,7 @@
     "order": 2,
     "state": "offered",
     "dataVersion": 1,
+    "root": ".retro-chassis-page",
     "entries": {
       "template": "template.ts",
       "styles": "theme.css",
@@ -61,6 +192,7 @@
     "order": 3,
     "state": "offered",
     "dataVersion": 1,
+    "root": ".twenty-forty-nine-page",
     "entries": {
       "template": "template.ts",
       "styles": "theme.css",
@@ -71,7 +203,58 @@
       "cards"
     ],
     "readings": "overlay",
-    "features": [],
+    "features": [
+      {
+        "key": "chartWash",
+        "type": "switch",
+        "label": "Wash under the response curve",
+        "property": "--chart-area-display",
+        "default": true,
+        "on": "block",
+        "off": "none",
+        "group": "Response chart"
+      },
+      {
+        "key": "ipv4Colour",
+        "type": "colour",
+        "label": "IPv4 colour",
+        "property": "--protocol-ipv4",
+        "default": "#5fb2e0",
+        "group": "Protocols",
+        "declared": true
+      },
+      {
+        "key": "ipv6Colour",
+        "type": "colour",
+        "label": "IPv6 colour",
+        "property": "--protocol-ipv6",
+        "default": "#c2913f",
+        "group": "Protocols",
+        "declared": true
+      },
+      {
+        "key": "contentWidth",
+        "type": "choice",
+        "label": "Content width",
+        "property": "--page-width",
+        "default": "1080px",
+        "choices": [
+          {
+            "value": "880px",
+            "label": "Narrow"
+          },
+          {
+            "value": "1080px",
+            "label": "Ordinary"
+          },
+          {
+            "value": "1320px",
+            "label": "Wide"
+          }
+        ],
+        "group": "Page"
+      }
+    ],
     "picture": "twenty-forty-nine.png"
   },
   {
@@ -83,6 +266,7 @@
     "order": 4,
     "state": "offered",
     "dataVersion": 1,
+    "root": ".ncc-1701-d-page",
     "entries": {
       "template": "template.ts",
       "styles": "theme.css",

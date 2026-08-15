@@ -54,6 +54,14 @@ export interface ThemeEntries {
   script: string;
 }
 
+/** One of the values a choice may take, and what it is called. */
+export interface ThemeChoice {
+  /** What the property is set to, which is CSS. */
+  value: string;
+  /** What somebody choosing it reads. */
+  label: string;
+}
+
 /**
  * One thing a theme lets an operator set, with everything needed to draw its
  * control and to refuse a value it would not accept.
@@ -67,6 +75,27 @@ export type ThemeFeature =
       key: string;
       type: "colour";
       label: string;
+      /**
+       * What this belongs with, which is what a chooser puts it under.
+       *
+       * The theme says it, because only the theme knows what its own settings
+       * have to do with each other. Absent where a feature belongs with
+       * nothing, and then it stands on its own.
+       */
+      group?: string;
+      /**
+       * Whether the theme states this property itself.
+       *
+       * It decides what happens when nobody has set the feature. A property
+       * the theme never states is written on every build, because the theme
+       * reads it without a fallback and an unwritten one leaves the page with
+       * nothing. A property the theme does state is written only where
+       * somebody set it, so whatever the theme decides for it otherwise still
+       * applies: its own value, or a palette's.
+       *
+       * The default in this manifest is what a control starts at either way.
+       */
+      declared?: boolean;
       /** The custom property the value is written to. */
       property: string;
       /** A six-digit hex colour, which is what a colour control hands back. */
@@ -76,6 +105,8 @@ export type ThemeFeature =
       key: string;
       type: "switch";
       label: string;
+      group?: string;
+      declared?: boolean;
       property: string;
       default: boolean;
       /** What the property is set to when it is on. */
@@ -87,15 +118,26 @@ export type ThemeFeature =
       key: string;
       type: "choice";
       label: string;
+      group?: string;
+      declared?: boolean;
       property: string;
       default: string;
-      /** Every value this may take, in the order they are offered. */
-      choices: string[];
+      /**
+       * Every value this may take, in the order they are offered.
+       *
+       * Each carries what it is called as well as what it is, because what it
+       * is is CSS: a list offering `640px`, `760px` and `1040px` is no answer
+       * to "narrow, ordinary, wide", and one offering `spring` is none to
+       * "Lime Green".
+       */
+      choices: ThemeChoice[];
     }
   | {
       key: string;
       type: "number";
       label: string;
+      group?: string;
+      declared?: boolean;
       property: string;
       default: number;
       minimum: number;
@@ -108,6 +150,17 @@ export type ThemeFeature =
 export interface ThemeManifest {
   /** The directory the theme lives in, which is what a configuration names. */
   id: string;
+  /**
+   * The element the theme's page is rooted at, as a CSS selector.
+   *
+   * What is set on a theme is written onto this element, and it has to be
+   * this one rather than the document's root: a theme declares its own
+   * properties here, and a value inherited from an ancestor loses to a
+   * declaration on the element itself however specific it is. Written after
+   * the theme's own stylesheet, so an operator's value wins over both the
+   * theme's own and whatever a palette sets.
+   */
+  root: string;
   /** The name an operator sees. */
   name: string;
   /** One line an operator reads to tell this theme from the others. */
@@ -162,6 +215,7 @@ const MANIFEST_KEYS = new Set([
   "order",
   "state",
   "dataVersion",
+  "root",
   "entries",
   "layouts",
   "readings",
@@ -172,11 +226,21 @@ const MANIFEST_KEYS = new Set([
 const ENTRY_KEYS = new Set(["template", "styles", "script"]);
 
 /** Everything a feature may say, whatever its type. */
+/** What every feature may carry, whatever its type. */
+const COMMON_FEATURE_KEYS = [
+  "type",
+  "label",
+  "group",
+  "declared",
+  "property",
+  "default",
+];
+
 const FEATURE_KEYS_BY_TYPE: Record<FeatureType, Set<string>> = {
-  colour: new Set(["type", "label", "property", "default"]),
-  switch: new Set(["type", "label", "property", "default", "on", "off"]),
-  choice: new Set(["type", "label", "property", "default", "choices"]),
-  number: new Set(["type", "label", "property", "default", "minimum", "maximum", "unit"]),
+  colour: new Set(COMMON_FEATURE_KEYS),
+  switch: new Set([...COMMON_FEATURE_KEYS, "on", "off"]),
+  choice: new Set([...COMMON_FEATURE_KEYS, "choices"]),
+  number: new Set([...COMMON_FEATURE_KEYS, "minimum", "maximum", "unit"]),
 };
 
 /**
@@ -289,6 +353,20 @@ function readFeature(
   }
   refuseUnknownKeys(record, FEATURE_KEYS_BY_TYPE[type], label, errors);
   const featureLabel = stringField(record, "label", errors);
+  // Absent is the ordinary case: a feature that belongs with nothing stands on
+  // its own. Present and empty is a mistake rather than an absence.
+  const grouping = record.group;
+  if (grouping !== undefined && (typeof grouping !== "string" || grouping === "")) {
+    errors.push(`${label}.group must say what this setting belongs with`);
+    return undefined;
+  }
+  const group = grouping === undefined ? {} : { group: grouping };
+  const stated = record.declared;
+  if (stated !== undefined && typeof stated !== "boolean") {
+    errors.push(`${label}.declared must say whether the theme states it itself`);
+    return undefined;
+  }
+  const declared = stated === undefined ? {} : { declared: stated };
   if (featureLabel === "") {
     errors.push(`${label} must carry the label its control is drawn with`);
   }
@@ -306,7 +384,7 @@ function readFeature(
       errors.push(`${label}.default must be a colour such as "#6366f1"`);
       return undefined;
     }
-    return { key, type, label: featureLabel, property, default: fallback };
+    return { key, type, label: featureLabel, property, default: fallback, ...group, ...declared };
   }
   if (type === "switch") {
     if (typeof fallback !== "boolean") {
@@ -321,21 +399,34 @@ function readFeature(
       );
       return undefined;
     }
-    return { key, type, label: featureLabel, property, default: fallback, on, off };
+    return { key, type, label: featureLabel, property, default: fallback, on, off, ...group, ...declared };
   }
   if (type === "choice") {
     const choices = record.choices;
-    if (
-      !Array.isArray(choices) ||
-      choices.length === 0 ||
-      choices.some((choice) => typeof choice !== "string" || choice === "")
-    ) {
+    if (!Array.isArray(choices) || choices.length === 0) {
       errors.push(`${label}.choices must list the values it may take`);
       return undefined;
     }
-    const offered = choices as string[];
-    if (typeof fallback !== "string" || !offered.includes(fallback)) {
-      errors.push(`${label}.default must be one of ${offered.join(", ")}`);
+    const offered: ThemeChoice[] = [];
+    for (const choice of choices) {
+      if (typeof choice !== "object" || choice === null) {
+        errors.push(`${label}.choices must each state a value and a label`);
+        return undefined;
+      }
+      const { value, label: name } = choice as Record<string, unknown>;
+      if (typeof value !== "string" || value === "") {
+        errors.push(`${label}.choices must each state the value they set`);
+        return undefined;
+      }
+      if (typeof name !== "string" || name === "") {
+        errors.push(`${label}.choices must each state what they are called`);
+        return undefined;
+      }
+      offered.push({ value, label: name });
+    }
+    const values = offered.map((choice) => choice.value);
+    if (typeof fallback !== "string" || !values.includes(fallback)) {
+      errors.push(`${label}.default must be one of ${values.join(", ")}`);
       return undefined;
     }
     return {
@@ -345,6 +436,8 @@ function readFeature(
       property,
       default: fallback,
       choices: offered,
+      ...group,
+      ...declared,
     };
   }
   const minimum = record.minimum;
@@ -381,6 +474,8 @@ function readFeature(
     minimum,
     maximum,
     unit,
+    ...group,
+    ...declared,
   };
 }
 
@@ -429,6 +524,14 @@ export function parseThemeManifest(raw: unknown, id: string): ManifestResult {
     errors.push(
       `dataVersion ${dataVersion} is not served; this host serves ${SUPPORTED_THEME_DATA_VERSIONS.join(", ")}`,
     );
+  }
+
+  // What the settings are written onto. A selector rather than a class name,
+  // because a theme may root its page at anything, and a bare name would have
+  // every reader guess what to put in front of it.
+  const root = stringField(record, "root", errors);
+  if (root !== "" && !root.startsWith(".") && !root.startsWith("#")) {
+    errors.push("root must be a class or id selector, such as .velvet-page");
   }
 
   const entriesRaw = record.entries;
@@ -503,6 +606,7 @@ export function parseThemeManifest(raw: unknown, id: string): ManifestResult {
       order: order as number,
       state: state as ThemeState,
       dataVersion: dataVersion as number,
+      root,
       entries,
       layouts,
       readings: readingsRaw as ThemeReadings,

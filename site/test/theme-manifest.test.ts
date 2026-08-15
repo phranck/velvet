@@ -30,6 +30,7 @@ function valid(): Record<string, unknown> {
     order: 1,
     state: "offered",
     dataVersion: THEME_DATA_VERSION,
+    root: ".proof-page",
     entries: {
       template: "template.ts",
       styles: "theme.css",
@@ -50,6 +51,7 @@ test("accepts a complete manifest and keeps every field", () => {
   assert.deepEqual(result.manifest.layouts, ["grouped"]);
   assert.equal(result.manifest.readings, "panel");
   assert.equal(result.manifest.entries.styles, "theme.css");
+  assert.equal(result.manifest.root, ".proof-page");
   assert.deepEqual(result.manifest.features, []);
 });
 
@@ -152,7 +154,10 @@ test("keeps all four kinds of feature, in the order they are declared", () => {
       label: "Corners",
       property: "--corner-style",
       default: "rounded",
-      choices: ["rounded", "square"],
+      choices: [
+        { value: "rounded", label: "Rounded" },
+        { value: "square", label: "Square" },
+      ],
     },
     gridLines: {
       type: "number",
@@ -209,7 +214,10 @@ test("refuses a feature whose value could not be drawn or checked", () => {
           label: "Corners",
           property: "--proof",
           default: "bevelled",
-          choices: ["rounded", "square"],
+          choices: [
+        { value: "rounded", label: "Rounded" },
+        { value: "square", label: "Square" },
+      ],
         },
       },
       /must be one of rounded, square/,

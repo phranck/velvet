@@ -23,7 +23,14 @@ export type ThemeFeatureType = "colour" | "switch" | "choice" | "number";
 export interface ThemeFeatureShape {
   key: string;
   type: ThemeFeatureType;
-  choices?: readonly string[];
+  /**
+   * What a choice may be set to, each with what it is called.
+   *
+   * The label is nothing to this check and everything to whoever offers the
+   * choice: the values are CSS, and a list of lengths is no answer to
+   * "narrow, ordinary, wide".
+   */
+  choices?: readonly { value: string; label: string }[];
   minimum?: number;
   maximum?: number;
 }
@@ -98,7 +105,7 @@ function checkOne(
     return typeof value === "boolean" ? null : "must be true or false";
   }
   if (feature.type === "choice") {
-    const choices = feature.choices ?? [];
+    const choices = (feature.choices ?? []).map((choice) => choice.value);
     return typeof value === "string" && choices.includes(value)
       ? null
       : `must be one of ${choices.join(", ")}`;

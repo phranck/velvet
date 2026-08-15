@@ -1628,17 +1628,23 @@ function template(data) {
 var template_default = template;
 
 // ../config/themes/twenty-forty-nine/entry.generated.ts
+var THEME_ROOT = ".twenty-forty-nine-page";
 var root = document.querySelector("#velvet-root");
 var data = JSON.parse(document.querySelector("#velvet-data").textContent);
 var declared = JSON.parse(document.querySelector("#velvet-settings").textContent);
 root.append(document.createRange().createContextualFragment(template_default(data)));
 function apply(declarations) {
-  for (const [property, value] of Object.entries(declarations)) {
-    document.documentElement.style.setProperty(property, value);
+  const targets = [document.documentElement, document.querySelector(THEME_ROOT)];
+  for (const target of targets) {
+    if (!target)
+      continue;
+    for (const [property, value] of Object.entries(declarations)) {
+      target.style.setProperty(property, value);
+    }
   }
 }
-apply(declared);
 script_default(root, data);
+apply(declared);
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin)
     return;

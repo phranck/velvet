@@ -757,7 +757,7 @@ export async function runConformance(
 
     // What the build writes for an installation that has set nothing, so a
     // theme is checked drawn the way a published page draws it.
-    const settings = themeSettingsStyle(theme.manifest.features);
+    const settings = themeSettingsStyle(theme.manifest.root, theme.manifest.features);
     const served = await serveBundle(theme, (name) => {
       const fixture = fixtures.find((candidate) => candidate.name === name);
       if (!fixture) {

@@ -204,7 +204,9 @@
   --card-texture-size: auto;
 
   /* ── Measure ──────────────────────────────────────────────────────────── */
-  --page-width: 760px;
+  /* `--page-width` is not declared here. It is a feature, so the build writes
+     it, and a value on this element would beat the one written onto the root
+     and leave the setting with nothing to do. */
   --page-inset: clamp(12px, 4vw, 22px);
   --row-inset: var(--card-text-inset);
   --card-padding: 16px;
@@ -245,16 +247,24 @@
     and a custom property holding `var()` resolves where it is declared.
   */
   --backdrop-bubble-colour: var(--accent);
-  /* Zero draws none. It multiplies each wash's own share, so turning them off
-     costs no second value and the three keep their different strengths. */
-  --backdrop-bubble-alpha: 1;
+  /* `--backdrop-bubble-alpha` is not declared here either, for the same
+     reason. Zero draws none: it multiplies each wash's own share, so turning
+     them off costs no second value and the three keep their strengths. */
   --backdrop-gradient-start: #0e1018;
   --backdrop-gradient-end: #0a0b0f;
-  --backdrop-layer: radial-gradient(
+  /* Six washes, of which the count decides how many are drawn. Each is
+     multiplied by whether the count has reached it, so one property adds and
+     removes them and each keeps its own share. */
+  --backdrop-layer:
+    radial-gradient(
       52% 41% at 12% 0%,
       color-mix(
         in srgb,
-        var(--backdrop-bubble-colour) calc(13% * var(--backdrop-bubble-alpha)),
+        var(--backdrop-bubble-colour)
+          calc(
+            13% * var(--backdrop-bubble-alpha) *
+              clamp(0, calc(var(--backdrop-bubble-count) - 0), 1)
+          ),
         transparent
       ),
       transparent 70%
@@ -263,7 +273,11 @@
       46% 36% at 88% 4%,
       color-mix(
         in srgb,
-        var(--backdrop-bubble-colour) calc(10% * var(--backdrop-bubble-alpha)),
+        var(--backdrop-bubble-colour)
+          calc(
+            10% * var(--backdrop-bubble-alpha) *
+              clamp(0, calc(var(--backdrop-bubble-count) - 1), 1)
+          ),
         transparent
       ),
       transparent 70%
@@ -272,7 +286,50 @@
       58% 45% at 50% 100%,
       color-mix(
         in srgb,
-        var(--backdrop-bubble-colour) calc(8% * var(--backdrop-bubble-alpha)),
+        var(--backdrop-bubble-colour)
+          calc(
+            8% * var(--backdrop-bubble-alpha) *
+              clamp(0, calc(var(--backdrop-bubble-count) - 2), 1)
+          ),
+        transparent
+      ),
+      transparent 70%
+    ),
+    radial-gradient(
+      44% 34% at 4% 62%,
+      color-mix(
+        in srgb,
+        var(--backdrop-bubble-colour)
+          calc(
+            9% * var(--backdrop-bubble-alpha) *
+              clamp(0, calc(var(--backdrop-bubble-count) - 3), 1)
+          ),
+        transparent
+      ),
+      transparent 70%
+    ),
+    radial-gradient(
+      40% 32% at 96% 74%,
+      color-mix(
+        in srgb,
+        var(--backdrop-bubble-colour)
+          calc(
+            7% * var(--backdrop-bubble-alpha) *
+              clamp(0, calc(var(--backdrop-bubble-count) - 4), 1)
+          ),
+        transparent
+      ),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 38% at 62% 34%,
+      color-mix(
+        in srgb,
+        var(--backdrop-bubble-colour)
+          calc(
+            6% * var(--backdrop-bubble-alpha) *
+              clamp(0, calc(var(--backdrop-bubble-count) - 5), 1)
+          ),
         transparent
       ),
       transparent 70%
@@ -435,62 +492,75 @@
 
 /* Autumn. The amber of a low sun, with the second protocol a step towards
    yellow so the two curves stay apart where they cross. */
-.velvet-page[data-scheme="autumn"] {
-  --surface-base: #0d0a07;
-  --surface-sunken: #100c09;
-  --surface-card: #13100c;
-  --surface-rule: #2a2119;
-  --surface-popover: #1f1912;
+@container style(--velvet-scheme: autumn) {
+  .velvet-page {
+    --surface-base: #0d0a07;
+    --surface-sunken: #100c09;
+    --surface-card: #13100c;
+    --surface-rule: #2a2119;
+    --surface-popover: #1f1912;
 
-  --brand-primary: #ffb87a;
-  --accent: #ef8b3f;
-  --accent-quiet: rgb(239 139 63 / 0.16);
+    --brand-primary: #ffb87a;
+    --accent: #ef8b3f;
+    --accent-quiet: rgb(239 139 63 / 0.16);
 
-  --state-operational: #ef8b3f;
-  --state-no-data: #2a2119;
-  --state-ghost-edge: #6b5a48;
+    --state-operational: #ef8b3f;
+    /* Held apart from the operational orange by hue rather than by lightness,
+       which is what a bar is told apart by: a gold that is not the sun, and a
+       brick that is not the flame. */
+    --state-degraded: #d9a520;
+    --state-outage: #c9452f;
+    --state-no-data: #2a2119;
+    --state-ghost-edge: #6b5a48;
 
-  --protocol-ipv4: #f2954d;
-  --protocol-ipv6: #e8c257;
+    --protocol-ipv4: #f2954d;
+    --protocol-ipv6: #e8c257;
 
-  --control-active-fill: rgb(239 139 63 / 0.16);
-  --control-active-text: #f5a463;
+    --control-active-fill: rgb(239 139 63 / 0.16);
+    --control-active-text: #f5a463;
 
-  /* The fall behind the washes, warmed to the same degree they are. */
-  --backdrop-gradient-start: #14100b;
-  --backdrop-gradient-end: #0d0a07;
+    /* The fall behind the washes, warmed to the same degree they are. */
+    --backdrop-gradient-start: #14100b;
+    --backdrop-gradient-end: #0d0a07;
+  }
 }
 
 /* Spring. New green, with the second protocol carried round to teal for the
    same reason. */
-.velvet-page[data-scheme="spring"] {
-  --surface-base: #070b08;
-  --surface-sunken: #0a0e0b;
-  --surface-card: #0c110e;
-  --surface-rule: #1b271f;
-  --surface-popover: #141d18;
+@container style(--velvet-scheme: spring) {
+  .velvet-page {
+    --surface-base: #070b08;
+    --surface-sunken: #0a0e0b;
+    --surface-card: #0c110e;
+    --surface-rule: #1b271f;
+    --surface-popover: #141d18;
 
-  --brand-primary: #86e79a;
-  --accent: #3fb95c;
-  --accent-quiet: rgb(63 185 92 / 0.16);
+    --brand-primary: #86e79a;
+    --accent: #3fb95c;
+    --accent-quiet: rgb(63 185 92 / 0.16);
 
-  --state-operational: #3fb95c;
-  --state-no-data: #1b271f;
-  --state-ghost-edge: #55705e;
+    --state-operational: #3fb95c;
+    /* The classic pair against a green, warmed a shade so neither reads as
+       borrowed from another palette. */
+    --state-degraded: #cfa41c;
+    --state-outage: #d2453c;
+    --state-no-data: #1b271f;
+    --state-ghost-edge: #55705e;
 
-  /* Held apart in lightness as well as in hue, because two curves crossing on
-     one plot are told apart by both. At an even lightness the pair measured
-     1.02 against each other, where Velvet's own two stand at 1.60; these are
-     1.53. */
-  --protocol-ipv4: #4cc46a;
-  --protocol-ipv6: #7ee8d8;
+    /* Held apart in lightness as well as in hue, because two curves crossing on
+       one plot are told apart by both. At an even lightness the pair measured
+       1.02 against each other, where Velvet's own two stand at 1.60; these are
+       1.53. */
+    --protocol-ipv4: #4cc46a;
+    --protocol-ipv6: #7ee8d8;
 
-  --control-active-fill: rgb(63 185 92 / 0.16);
-  --control-active-text: #5ccb78;
+    --control-active-fill: rgb(63 185 92 / 0.16);
+    --control-active-text: #5ccb78;
 
-  /* The fall behind the washes, cooled to the same degree they are. */
-  --backdrop-gradient-start: #0a1009;
-  --backdrop-gradient-end: #070b08;
+    /* The fall behind the washes, cooled to the same degree they are. */
+    --backdrop-gradient-start: #0a1009;
+    --backdrop-gradient-end: #070b08;
+  }
 }
 
 /**
