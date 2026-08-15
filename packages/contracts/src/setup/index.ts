@@ -2,6 +2,7 @@ export {
   NotifyRequestSchema,
   SetupErrorCodeSchema,
   SetupEventSchema,
+  InstallationConfigurationSchema,
   SetupInstallationsSchema,
   SetupProgressStageSchema,
   SetupPublicErrorSchema,
@@ -15,6 +16,7 @@ export type {
   NotifyRequest,
   SetupErrorCode,
   SetupEvent,
+  InstallationConfiguration,
   SetupInstallations,
   SetupProgressStage,
   SetupPublicError,
@@ -38,6 +40,7 @@ export type {
 export {
   validateNotifyRequest,
   validateSetupEvent,
+  validateInstallationConfiguration,
   validateSetupInstallations,
   validateSetupRequest,
   validateSetupSession,

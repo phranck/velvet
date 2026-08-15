@@ -268,6 +268,48 @@ export const SetupInstallationsSchema = Type.Object(
   { additionalProperties: false },
 );
 
+/**
+ * How one installation is published today, as the configurator opens it.
+ *
+ * The theme it is published in and whatever has been set on that theme, which
+ * is what decides where the configurator starts from. Read out of the
+ * operator's own `velvet.yml`, so it is what is live rather than what is being
+ * drafted.
+ *
+ * The settings are passed through as they stand rather than checked here.
+ * Which keys a theme offers, and what each may be set to, is in that theme's
+ * own `velvet-theme.toml`, and this contract does not know which theme was
+ * named until it reads it.
+ */
+export const InstallationConfigurationSchema = Type.Object(
+  {
+    /**
+     * The theme the page is published in, or null where nothing was readable.
+     *
+     * Null is not a failure. A repository the user granted access to but never
+     * set Velvet up in carries no configuration to read, and the configurator
+     * then starts from the first theme on offer rather than from an error.
+     */
+    theme: Type.Union([
+      Type.String({
+        minLength: 1,
+        maxLength: 64,
+        pattern: "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+      }),
+      Type.Null(),
+    ]),
+    themeSettings: Type.Record(
+      Type.String({ pattern: "^[a-z][a-zA-Z0-9]*$" }),
+      Type.Union([
+        Type.String({ maxLength: 128 }),
+        Type.Number(),
+        Type.Boolean(),
+      ]),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 const SetupProgressEventSchema = Type.Object(
   { type: Type.Literal("progress"), stage: SetupProgressStageSchema },
   { additionalProperties: false },
@@ -349,6 +391,9 @@ export type SetupErrorCode = Static<typeof SetupErrorCodeSchema>;
 export type SetupEvent = Static<typeof SetupEventSchema>;
 export type SetupInstallations = Static<typeof SetupInstallationsSchema>;
 export type ManageableInstallation = Static<typeof ManageableInstallationSchema>;
+export type InstallationConfiguration = Static<
+  typeof InstallationConfigurationSchema
+>;
 export type SetupProgressStage = Static<typeof SetupProgressStageSchema>;
 export type SetupPublicError = Static<typeof SetupPublicErrorSchema>;
 export type SetupSession = Static<typeof SetupSessionSchema>;

@@ -1,9 +1,11 @@
 import {
   SEMANTIC_VERSION_PATTERN,
   parseVelvetConfiguration,
+  validateInstallationConfiguration,
   validateSetupInstallations,
 } from "@velvet/contracts";
 
+import { GitHubApiError } from "./github-api.js";
 import { jsonResponse, readBoundedJson } from "./http.js";
 import type { AuditLogger } from "./observability.js";
 import type { SetupServerSession } from "./session.js";
@@ -31,7 +33,23 @@ import { isRecord, positiveInteger } from "./update-github-validation.js";
 
 const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
 
+/**
+ * Whether a failure is GitHub saying the file is not there.
+ *
+ * Told apart from every other failure on purpose. A repository without a
+ * `velvet.yml` is an answer, whilst a refusal, a rate limit or an outage is
+ * not, and answering all of them the same way would report an installation as
+ * unconfigured whenever GitHub was having a bad minute.
+ *
+ * @param cause - Whatever was thrown.
+ * @returns True only for a 404.
+ */
+function missingFile(cause: unknown): boolean {
+  return cause instanceof GitHubApiError && cause.status === 404;
+}
+
 const INSTALLATIONS_ROUTE = "/api/installations";
+const CONFIGURATION_ROUTE = "/api/configuration";
 const UPDATES_ROUTE = "/api/updates";
 const AUTOMATIC_ROUTE = "/api/updates/automatic";
 const GALLERY_ROUTE = "/api/updates/gallery";
@@ -39,6 +57,7 @@ const GALLERY_ROUTE = "/api/updates/gallery";
 /** Every route in this module, so the handler can tell them apart from setup. */
 export const UPDATE_ROUTES: readonly string[] = [
   INSTALLATIONS_ROUTE,
+  CONFIGURATION_ROUTE,
   UPDATES_ROUTE,
   AUTOMATIC_ROUTE,
   GALLERY_ROUTE,
@@ -168,6 +187,46 @@ export function createUpdateRoutes(
     );
   };
 
+  /**
+   * How one installation is published today.
+   *
+   * A repository with no `velvet.yml` answers with no theme rather than with a
+   * failure: somebody may have granted access to a repository they never set
+   * Velvet up in, and there is nothing wrong with that. A file that is there
+   * and does not parse is a different thing and is reported as such, the same
+   * way the update route reports it.
+   *
+   * @param repository - The repository, already authorised for this user.
+   * @param input - The request, for the token it carries.
+   * @returns The theme and what has been set on it.
+   */
+  const installationConfiguration = async (
+    repository: ManageableRepository,
+    input: UpdateRouteRequest,
+  ): Promise<{ theme: string | null; themeSettings: Record<string, unknown> }> => {
+    let source: string;
+    try {
+      const configuration = await access.readConfiguration(
+        input.session.githubUserToken,
+        repository,
+      );
+      source = configuration.source;
+    } catch (cause) {
+      if (missingFile(cause)) return { theme: null, themeSettings: {} };
+      throw cause;
+    }
+    const parsed = parseVelvetConfiguration(source);
+    if (!parsed.success) {
+      throw new ManagedUpdateError("UPDATE_INSTALLATION_INVALID", {
+        errorId: errorId(),
+      });
+    }
+    return {
+      theme: parsed.data.statusPage.theme,
+      themeSettings: parsed.data.statusPage.themeSettings ?? {},
+    };
+  };
+
   return {
     async handle(input) {
       if (!UPDATE_ROUTES.includes(input.route)) return null;
@@ -185,6 +244,25 @@ export function createUpdateRoutes(
           // configurator refuses a listing that does not match it and would
           // otherwise report that as its own failure.
           if (!validateSetupInstallations(body).success) {
+            throw new ManagedUpdateError("UPDATE_FAILED", {
+              errorId: errorId(),
+            });
+          }
+          return jsonResponse(body);
+        }
+
+        if (input.route === CONFIGURATION_ROUTE) {
+          if (method !== "GET") return null;
+          const repository = await target(
+            input,
+            numeric(input.url.searchParams.get("installation")),
+            numeric(input.url.searchParams.get("repository")),
+          );
+          const body = await installationConfiguration(repository, input);
+          // Held against the contract before it leaves, for the same reason
+          // the listing above is: the configurator refuses an answer it cannot
+          // read and would otherwise report that as its own failure.
+          if (!validateInstallationConfiguration(body).success) {
             throw new ManagedUpdateError("UPDATE_FAILED", {
               errorId: errorId(),
             });

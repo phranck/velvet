@@ -1,7 +1,10 @@
 <script lang="ts">
   import { tick } from "svelte";
 
-  import type { ManageableInstallation } from "@velvet/contracts";
+  import type {
+    InstallationConfiguration,
+    ManageableInstallation,
+  } from "@velvet/contracts";
 
   import RainbowScale from "../components/RainbowScale.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
@@ -55,6 +58,16 @@
   let chosenInstallation = $state("");
   let chosenTheme = $state(OFFERED_THEMES[0]?.id ?? "velvet");
 
+  /**
+   * What the chosen installation is published in today.
+   *
+   * Read from the operator's own configuration rather than assumed, so the
+   * configurator opens on the theme their page actually carries. Null whilst
+   * it is being read, and for a repository that carries no readable
+   * configuration at all.
+   */
+  let published = $state<InstallationConfiguration | null>(null);
+
   /** What the sidebar looked like when this browser last left it. */
   let sidebar = $state<SidebarPreferences>(defaultPreferences());
 
@@ -78,8 +91,13 @@
   const declarations = $derived.by(() => {
     const theme = themeById(chosenTheme);
     if (!theme) return {};
+    // What the page carries today, but only whilst the theme being shown is
+    // the one it carries. The same key means something else in another theme,
+    // or nothing at all.
+    const settings =
+      published && published.theme === chosenTheme ? published.themeSettings : {};
     return Object.fromEntries(
-      themeSettingDeclarations(theme.features).map((declaration) => {
+      themeSettingDeclarations(theme.features, settings).map((declaration) => {
         const [property, ...rest] = declaration.replace(/;$/, "").split(":");
         return [property!.trim(), rest.join(":").trim()];
       }),
@@ -208,6 +226,41 @@
       );
     });
   }
+
+  /**
+   * Reads what the chosen installation is published in, and opens on it.
+   *
+   * A theme the catalogue does not know is not chosen: a page may name a theme
+   * this Velvet no longer ships, and starting from something that cannot be
+   * drawn is worse than starting from the first one on offer.
+   *
+   * A failure here is not the configurator failing to start. The installation
+   * is known, the themes are known, and only the starting point is missing, so
+   * it opens on the first theme rather than on an error.
+   *
+   * @param installation - The installation to read.
+   */
+  async function openOn(installation: ManageableInstallation): Promise<void> {
+    published = null;
+    let configuration: InstallationConfiguration;
+    try {
+      configuration = await service.configurationOf(installation);
+    } catch {
+      return;
+    }
+    // Another installation may have been chosen whilst this was in flight, and
+    // the answer to a question nobody is asking any more is not an answer.
+    if (String(installation.repositoryId) !== chosenInstallation) return;
+    published = configuration;
+    if (configuration.theme && themeById(configuration.theme)) {
+      chosenTheme = configuration.theme;
+    }
+  }
+
+  $effect(() => {
+    const installation = chosen;
+    if (installation) void openOn(installation);
+  });
 
   /**
    * Asks the service who is signed in and what they may configure.

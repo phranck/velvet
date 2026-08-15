@@ -1,6 +1,8 @@
 import {
+  validateInstallationConfiguration,
   validateSetupInstallations,
   validateSetupSession,
+  type InstallationConfiguration,
   type ManageableInstallation,
 } from "@velvet/contracts";
 
@@ -67,6 +69,21 @@ export interface ConfiguratorClient {
    *   something that is not a listing.
    */
   open(): Promise<ConfiguratorOpening>;
+  /**
+   * Reads how one installation is published today.
+   *
+   * What is live rather than what is being drafted, so the configurator starts
+   * from the theme the page actually carries.
+   *
+   * @param installation - The installation and repository to read.
+   * @returns The theme and what is set on it, with no theme where the
+   *   repository carries no readable configuration.
+   * @throws {ConfiguratorError} When the service cannot be reached, or answers
+   *   something that is not a configuration.
+   */
+  configurationOf(
+    installation: ManageableInstallation,
+  ): Promise<InstallationConfiguration>;
 }
 
 /**
@@ -133,6 +150,23 @@ export function createConfiguratorClient(
         ),
         truncated: installations.data.truncated,
       };
+    },
+
+    async configurationOf(installation) {
+      const answer = await ask(
+        `/api/configuration?installation=${installation.installationId}&repository=${installation.repositoryId}`,
+      );
+      if (answer.status === 401) {
+        navigate("/api/auth/start");
+        // Unreachable in a browser, which has left by now.
+        return { theme: null, themeSettings: {} };
+      }
+      if (!answer.ok) throw unreadable();
+      const configuration = validateInstallationConfiguration(
+        await readJsonResponse(answer, unreadable),
+      );
+      if (!configuration.success) throw unreadable();
+      return configuration.data;
     },
   };
 }
