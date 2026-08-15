@@ -182,13 +182,19 @@ export function enhance(root: HTMLElement, data: ThemeData): () => void {
       continue;
     }
 
+    // What this visitor left this row in. Read here rather than restored
+    // afterwards, because a row built closed and then opened animates itself
+    // open, and a page that assembles itself on every visit is not a page
+    // somebody left open.
+    const restored = readOpen(id);
+
     const row: Row = {
       id,
       name: entry.name,
       spoken: entry.checks
         .map((check) => (check.protocol === "ipv6" ? "IPv6" : "IPv4"))
         .join(" and "),
-      open: false,
+      open: restored,
       root: element,
       summary,
       uptime,
@@ -221,9 +227,12 @@ export function enhance(root: HTMLElement, data: ThemeData): () => void {
         },
       ),
       chartBuilt: false,
-      panel: disclosure(details, false),
+      panel: disclosure(details, restored),
     };
     rows.push(row);
+    element.dataset.open = String(restored);
+    summary.setAttribute("aria-expanded", String(restored));
+    if (restored) buildChart(row);
 
     const onClick = (): void => {
       setOpen(row, !row.open);
@@ -286,19 +295,29 @@ export function enhance(root: HTMLElement, data: ThemeData): () => void {
    * to see, and the arithmetic behind one is a filter over roughly 1 200
    * samples followed by a downsample.
    */
+  /**
+   * Draws a row's response times, once, whenever it is first shown.
+   *
+   * A row that is closed has nothing to draw and a chart nobody sees costs
+   * the same as one somebody does, so this waits until the row is open. It is
+   * called both when a row is opened and when one is built already open.
+   */
+  function buildChart(row: Row): void {
+    if (row.chartBuilt) return;
+    row.chart.update(
+      data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id),
+      range,
+    );
+    row.chartBuilt = true;
+  }
+
   function setOpen(row: Row, open: boolean): void {
     if (row.open === open) return;
     row.open = open;
     row.root.dataset.open = String(open);
     row.summary.setAttribute("aria-expanded", String(open));
     writeOpen(row.id, open);
-    if (open && !row.chartBuilt) {
-      row.chart.update(
-        data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id),
-        range,
-      );
-      row.chartBuilt = true;
-    }
+    if (open) buildChart(row);
     row.panel.update(open);
   }
 
@@ -424,9 +443,6 @@ export function enhance(root: HTMLElement, data: ThemeData): () => void {
   for (const button of buttons) {
     button.setAttribute("aria-pressed", String(button.dataset.range === range));
   }
-  // Whatever this visitor left open, before the first draw, so a restored row
-  // is drawn open rather than opening itself once the page is already there.
-  for (const row of rows) setOpen(row, readOpen(row.id));
   reflectToggleAll();
   refresh();
   placeMark(false);

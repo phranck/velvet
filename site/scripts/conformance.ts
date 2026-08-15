@@ -625,6 +625,83 @@ async function conformOne(
 }
 
 /** What a run is narrowed to, where it is narrowed at all. */
+/**
+ * Whether a service somebody left open comes back open, and comes back still.
+ *
+ * On a page of its own, because it is the only check that reloads: everything
+ * else reads the page as it first arrived, and a reload underneath them would
+ * have them describe a page nobody visited.
+ *
+ * The animations are counted rather than looked for afterwards. One lasts less
+ * than half a second, so a page inspected once it has settled shows nothing
+ * either way, and the check would pass against the very fault it exists to
+ * catch.
+ *
+ * @param browser - The launched browser.
+ * @param theme - The theme being checked, for naming a finding.
+ * @param fixture - The case to restore a service in.
+ * @param origin - Where the theme is served.
+ * @returns Anything wrong, which is empty where a restored page stands still.
+ */
+async function conformRestored(
+  browser: Browser,
+  theme: ReadTheme,
+  fixture: Fixture,
+  origin: string,
+): Promise<Finding[]> {
+  const service = fixture.data.status.services[0];
+  if (!service) return [];
+  const page = await browser.newPage();
+  try {
+    await page.addInitScript(() => {
+      const original = Element.prototype.animate;
+      (globalThis as unknown as { heightAnimations: number }).heightAnimations = 0;
+      Element.prototype.animate = function (frames, options) {
+        const moved =
+          Array.isArray(frames) &&
+          frames.some((frame) => frame !== null && "height" in frame);
+        if (moved) {
+          (globalThis as unknown as { heightAnimations: number })
+            .heightAnimations += 1;
+        }
+        return original.call(this, frames, options);
+      };
+    });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${origin}/f/${fixture.name}/`, { waitUntil: "networkidle" });
+    await page.evaluate(
+      (id) => localStorage.setItem(`velvet:open:${id}`, "1"),
+      service.id,
+    );
+    await page.reload({ waitUntil: "networkidle" });
+
+    const restored = await page.evaluate(() => ({
+      open: document.querySelectorAll('[data-open="true"]').length,
+      animated:
+        (globalThis as unknown as { heightAnimations?: number })
+          .heightAnimations ?? 0,
+    }));
+    const findings: Finding[] = [];
+    const note = (detail: string): void => {
+      findings.push({
+        theme: theme.directory,
+        fixture: fixture.name,
+        check: "restored",
+        detail,
+      });
+    };
+    if (restored.open === 0) note("a service left open comes back closed");
+    if (restored.animated > 0) {
+      note(
+        `a service left open opens itself again on load, in ${restored.animated} height animation(s)`,
+      );
+    }
+    return findings;
+  } finally {
+    await page.close();
+  }
+}
+
 export interface ConformanceOptions {
   /** Only these themes, by directory name. */
   themes?: string[];
@@ -698,6 +775,17 @@ export async function runConformance(
     try {
       for (const fixture of fixtures) {
         findings.push(...(await conformOne(page, theme, fixture, served.origin)));
+      }
+      // Once per theme rather than once per fixture: this is about how a page
+      // comes back rather than about what is on it, and the ordinary
+      // installation is the case that has services to leave open at all.
+      const ordinary = fixtures.find(
+        (fixture) => fixture.name === "velvet-underground",
+      );
+      if (ordinary) {
+        findings.push(
+          ...(await conformRestored(browser, theme, ordinary, served.origin)),
+        );
       }
     } finally {
       await page.close();

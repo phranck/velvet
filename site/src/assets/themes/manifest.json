@@ -13,22 +13,22 @@
     "ncc-1701-d": {
       "file": "ncc-1701-d.png",
       "imageSha256": "1bf2edde5b737f63c51747ff6a3e5c8b104ac97e90d80bcd08da1ff531cb8829",
-      "themeSha256": "7096165a9d9b9d92454fb014dcc093adeb3825f20ac195df8f8cb26d4fec5773"
+      "themeSha256": "0a5680c99ba93074d7c0d6de8bcd41b7c7ab41fac21d6d2710e20a556ef8b3ed"
     },
     "retro-chassis": {
       "file": "retro-chassis.png",
       "imageSha256": "e4a20cfa72cb48926f8d8eeab943e3000b5d9b68ff06ce3bd8ac879c4f38baa7",
-      "themeSha256": "a7c2554d65d19e3f3e84646f07ecafc502ae4b303b44eb74cf5b2740b1300f5b"
+      "themeSha256": "6c03849d4383424e77893cb2eb47537cac54aded3ab9cc004adbf4cb47b4680c"
     },
     "twenty-forty-nine": {
       "file": "twenty-forty-nine.png",
       "imageSha256": "087df949bcdfae79dd2a57172d7a87b91a69d04c501551e5d94ebfb6bc7a7e3e",
-      "themeSha256": "63457103614593890c8e4dc30171e7a78aa6a94b0d7137f50184fdb5de908fde"
+      "themeSha256": "d61231e30f139c0da1d74f8495d80ca57f143954b01c0df93fec8106dee1cc29"
     },
     "velvet": {
       "file": "velvet.png",
       "imageSha256": "fca83df5607b5ce083d418345159bbdb6993f63138732af11ea61ab3f18c3fd1",
-      "themeSha256": "1f3a8d11d50dab5d8ca441fe7ecdf9ccfbabfa38ac596bff2f64b479be55e134"
+      "themeSha256": "d67a7212e40073a1e1bf0c23ede64d4205b72a3e2ba237c76e18af386cadaa5a"
     }
   }
 }

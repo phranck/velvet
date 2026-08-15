@@ -1309,11 +1309,12 @@ function enhance(root, data) {
     if (!entry || !summary || !uptime || !axisFrom || !stripHost || !chartPlot || !chartFrom || !details || !displayMain || !displaySecond) {
       continue;
     }
+    const restored = readOpen(id);
     const row = {
       id,
       name: entry.name,
       spoken: entry.checks.map((check) => check.protocol === "ipv6" ? "IPv6" : "IPv4").join(" and "),
-      open: false,
+      open: restored,
       root: element,
       summary,
       uptime,
@@ -1332,9 +1333,13 @@ function enhance(root, data) {
         report: (reading) => readOut(row, reading)
       }),
       chartBuilt: false,
-      panel: disclosure(details, false)
+      panel: disclosure(details, restored)
     };
     rows.push(row);
+    element.dataset.open = String(restored);
+    summary.setAttribute("aria-expanded", String(restored));
+    if (restored)
+      buildChart(row);
     const onClick = () => {
       setOpen(row, !row.open);
       reflectToggleAll();
@@ -1375,6 +1380,12 @@ function enhance(root, data) {
     row.displayMain.textContent = reading[0] ?? "";
     row.displaySecond.textContent = reading.slice(1).join("   ");
   }
+  function buildChart(row) {
+    if (row.chartBuilt)
+      return;
+    row.chart.update(data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id), range);
+    row.chartBuilt = true;
+  }
   function setOpen(row, open) {
     if (row.open === open)
       return;
@@ -1382,10 +1393,8 @@ function enhance(root, data) {
     row.root.dataset.open = String(open);
     row.summary.setAttribute("aria-expanded", String(open));
     writeOpen(row.id, open);
-    if (open && !row.chartBuilt) {
-      row.chart.update(data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id), range);
-      row.chartBuilt = true;
-    }
+    if (open)
+      buildChart(row);
     row.panel.update(open);
   }
   function reflectToggleAll() {
@@ -1463,8 +1472,6 @@ function enhance(root, data) {
   for (const button of buttons) {
     button.setAttribute("aria-pressed", String(button.dataset.range === range));
   }
-  for (const row of rows)
-    setOpen(row, readOpen(row.id));
   reflectToggleAll();
   refresh();
   placeMark(false);
