@@ -29,7 +29,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-import { readThemes } from "./themes.js";
+import { readThemes, themeFingerprint } from "./themes.js";
 
 const siteRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const directory = join(siteRoot, "src/assets/themes");
@@ -119,15 +119,13 @@ try {
 
     const file = `${id}.png`;
     await writeFile(join(directory, file), image);
-    // Every file of the theme, so a picture cannot survive a change to the
-    // theme it is a picture of.
-    const themeSha256 = sha256(
-      theme.files
-        .map((entry) => `${entry.path}:${sha256(entry.text)}`)
-        .sort()
-        .join("\n"),
-    );
-    manifest.themes[id] = { file, imageSha256: sha256(image), themeSha256 };
+    // What the theme came to when this was taken, so a gate can say later that
+    // the theme has moved on and the picture has not.
+    manifest.themes[id] = {
+      file,
+      imageSha256: sha256(image),
+      themeSha256: themeFingerprint(theme.files),
+    };
     console.log(`  ok    ${id}  ${image.byteLength} bytes`);
   }
 

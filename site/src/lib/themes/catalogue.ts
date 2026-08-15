@@ -5,13 +5,14 @@
  * writes all four into `theme-catalogue.generated.json`, because neither Vite
  * nor a browser reads TOML. This module is that catalogue.
  *
- * Two surfaces offer them: the start page shows what a page can look like, and
- * the setup asks which one to publish in. Both read this, so the two cannot come
- * to disagree about which themes exist, in which order, or under which name.
+ * Three surfaces offer them: the start page shows what a page can look like,
+ * the setup asks which one to publish in, and the configurator changes the one
+ * a page is published in. All three read this, so none of them can come to
+ * disagree about which themes exist, in which order, or under which name.
  *
  * Nothing here is Vite's. A theme's picture has to be resolved by a bundler and
- * lives in `theme-pictures.ts` for that reason, so this module can be read by a
- * test runner and by the build alike.
+ * lives in `pictures.ts` for that reason, so this module can be read by a test
+ * runner and by the build alike.
  */
 
 import catalogue from "./catalogue.generated.json";

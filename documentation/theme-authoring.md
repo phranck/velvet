@@ -134,7 +134,7 @@ The build writes every feature the theme declares into the document as the custo
 
 ### The catalogue
 
-TOML is read by Bun and by nothing else here. Vite does not import it and a browser does not parse it, so a build step writes every theme's description into `site/src/lib/themes/catalogue.generated.json`, and everything on the browser's side of that seam reads the catalogue: the start page, the setup, and the configurator. `site/src/lib/themes/catalogue.ts` is that catalogue as data, and `theme-pictures.ts` resolves each theme's picture, which is the one part a bundler has to do.
+TOML is read by Bun and by nothing else here. Vite does not import it and a browser does not parse it, so a build step writes every theme's description into `site/src/lib/themes/catalogue.generated.json`, and everything on the browser's side of that seam reads the catalogue: the start page, the setup, and the configurator. `site/src/lib/themes/catalogue.ts` is that catalogue as data, and `pictures.ts` resolves each theme's picture, which is the one part a bundler has to do.
 
 It is written by `bun run --cwd site generated:build` and committed. `site/test/theme-catalogue.test.ts` regenerates it and compares, so a theme that changed whilst the catalogue did not turns a gate red rather than shipping a stale name.
 
@@ -211,7 +211,7 @@ It serves each theme over a real HTTP origin, renders its template from a fixtur
 - No request leaves the theme's own origin.
 - The focus ring is the theme's own: the focused element must look different from the resting one, and `outline-style` must not be `auto`, which is how a browser draws its own.
 
-**The fixtures** live in `site/theme-bundles/fixtures/` and are used by the gallery, the suite and the screenshot workflow alike. Eight cases: the ordinary installation (`velvet-underground`, five services with three hundred days behind them), and seven that break themes rather than flatter them, namely the first day of an installation with no history, everything unknown, one service, twenty services, very long service names, an incident summary of two thousand characters, and a service reachable over IPv6 only.
+**The fixtures** live in `site/theme-bundles/fixtures/` and are used by the gallery, the suite and the screenshot workflow alike. Ten cases: the ordinary installation (`velvet-underground`, five services with three hundred days behind them), and nine that break themes rather than flatter them, namely a page where everything is well, the first day of an installation with no history, everything unknown, every state a day can take, one service, twenty services, very long service names, an incident summary of two thousand characters, and a service reachable over IPv6 only.
 
 Every fixture is checked against the product's own validators rather than the raw schemas, because the validators catch what a schema cannot: duplicate identifiers, timestamps outside the document's own window, and durations that contradict each other. `site/test/theme-fixtures.test.ts` is that gate, and it needs no browser.
 
@@ -411,14 +411,12 @@ Everything here was found by building. Each is a case where a theme would have s
 6. **Run both gates.** `themes:verify` first, because it fails in a second; then `themes:conform`. Expect failures on the first run; every theme had them.
 7. **Drive it in the gallery and read figures back.** All five ranges, all three overlays, every fixture, the disclosure, the chart's arrow keys, both layouts if the manifest claims both, and 320, 375 and 430 pixels wide.
 8. **Then look at it.** Measuring proves the geometry; only looking catches a shape that is technically correct and visually wrong. Both are required, and in that order.
-9. **Photograph it for the start page.** `bun run --cwd site themes:screenshots` renders every theme on the `all-well` fixture and writes the pictures the start page shows, then add it to `site/src/website/theme-gallery.ts` beside its picture.
+9. **Photograph it for the start page.** `bun run --cwd site themes:screenshots` renders every theme on the `all-well` fixture and writes the pictures the start page, the setup and the configurator all show. Nothing lists them by hand: the picture's name travels in the catalogue, and `site/test/theme-pictures.test.ts` fails when a theme has moved on and its picture has not.
 10. **Record whatever cost you a build in section 11**, with the figure that showed it.
 
 ---
 
 ## 13. What is not settled
-
-**The screenshot gate.** One screenshot per theme and per fixture, compared against the last accepted one. Described here and not built. The conformance suite catches what a page says and whether it can be used; it cannot catch a shape that moved.
 
 **Which faces a theme may carry.** Every face shipped today is under the SIL Open Font License, which allows redistribution inside a larger work provided the licence travels with the file. Two were asked for and refused: Okuda, the fan face cut from the LCARS lettering, is licensed for personal use only, and Tungsten is Hoefler & Co's and may not be copied, distributed or hosted without an agreement with them. Neither can travel to somebody else's installation. Antonio, under the SIL Open Font License, is what `ncc-1701-d` uses and what thelcars.com substitutes for the same reason.
 
