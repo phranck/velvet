@@ -211,7 +211,18 @@
       aria-expanded={open}
       onclick={onToggle}
     >
-      <span class="section__chevron" aria-hidden="true">{open ? "▾" : "▸"}</span>
+      <!--
+        One icon for both states, turned half a circle when the section is
+        closed. It points at the content whilst that content is there, so the
+        heading says which way the section stands without a second mark to
+        tell apart. What it means is on the button's own `aria-expanded`, so
+        this is decoration to a screen reader.
+      -->
+      <i
+        class="section__chevron ph-duotone ph-caret-circle-down"
+        class:section__chevron--closed={!open}
+        aria-hidden="true"
+      ></i>
       <span class="section__title">{title}</span>
     </button>
 
@@ -301,9 +312,24 @@
     cursor: pointer;
   }
 
+  /* The turn takes as long as the body it announces, so the two read as one
+     movement rather than as a mark that has already finished whilst the
+     section is still opening. */
   .section__chevron {
     color: var(--configurator-accent);
-    font-size: var(--configurator-glyph-small);
+    font-size: var(--configurator-glyph);
+    line-height: 1;
+    transition: transform 200ms ease;
+  }
+
+  .section__chevron--closed {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .section__chevron {
+      transition: none;
+    }
   }
 
   .section__title {

@@ -122,6 +122,9 @@
      together and neither ends up the larger of the pair by accident. */
   --configurator-glyph: 1rem;
   --configurator-glyph-small: 0.8rem;
+  /* A glyph standing on its own, with no text beside it to be sized against
+     and nothing but itself to be read as a control. */
+  --configurator-glyph-large: 1.5rem;
 
   /* How long a control takes to answer. Short enough to read as the control
      responding rather than as the page animating. */

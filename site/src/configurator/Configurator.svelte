@@ -170,34 +170,40 @@
   let panel = $state<HTMLElement | null>(null);
 
   /**
-   * How wide the sidebar is when it is out of the way.
+   * How wide the rail down the left-hand side is.
    *
-   * Not zero: the button that brings it back has to stay reachable, so what
-   * remains is the head with that button in it.
+   * The rail stands whether the sidebar is there or not, and the button that
+   * shows and hides it lives on the rail rather than on the sidebar. That is
+   * what lets the sidebar leave completely: a button riding on it would go
+   * with it.
    */
-  const COLLAPSED_WIDTH = 52;
+  const RAIL_WIDTH = 40;
 
   /**
-   * Opens or closes the sidebar, animating the one element that changes size.
+   * Opens or closes the sidebar by sliding it out of the way.
    *
-   * The width of a single element, handed to the browser's own timeline.
-   * Everything to the right of it is carried by ordinary layout, so the
-   * monitor follows without an animation of its own to keep in step.
+   * It keeps its width throughout and moves instead, so nothing inside it
+   * reflows: a sidebar that narrows would squeeze every label and every
+   * control on every frame of the way out. What moves is one margin on one
+   * element, handed to the browser's own timeline, and the monitor follows by
+   * ordinary layout rather than by an animation of its own to keep in step.
    */
   function toggleCollapsed(): void {
     const element = panel;
-    const from = element?.getBoundingClientRect().width;
+    const from = element
+      ? Number.parseFloat(globalThis.getComputedStyle(element).marginLeft)
+      : 0;
     sidebar.collapsed = !sidebar.collapsed;
     remember();
-    if (!element || from === undefined) return;
+    if (!element) return;
     const reduced = globalThis.matchMedia?.(
       "(prefers-reduced-motion: reduce)",
     ).matches;
     if (reduced) return;
-    const to = sidebar.collapsed ? COLLAPSED_WIDTH : sidebar.width;
+    const to = sidebar.collapsed ? -sidebar.width : 0;
     void tick().then(() => {
       element.animate(
-        [{ width: `${from}px` }, { width: `${to}px` }],
+        [{ marginLeft: `${from}px` }, { marginLeft: `${to}px` }],
         { duration: 220, easing: "ease", fill: "none" },
       );
     });
@@ -241,12 +247,37 @@
   <p class="placeholder">{what}</p>
 {/snippet}
 
-<div class="configurator">
+<div class="configurator" style="--rail-width: {RAIL_WIDTH}px">
+  <!--
+    The rail stands whether the sidebar does or not, which is what lets the
+    sidebar leave completely rather than stopping short so a button on it stays
+    reachable. One button in one place for both states, rather than one that
+    travels and a second that appears where it went.
+  -->
+  <div class="rail">
+    <!--
+      One icon for both states, turned half a circle when the sidebar is away,
+      so what somebody sees is the same mark pointing the other way rather than
+      two marks to tell apart. The label carries the meaning, because the icon
+      is decoration to a screen reader.
+    -->
+    <button
+      type="button"
+      class="rail__toggle"
+      class:rail__toggle--collapsed={sidebar.collapsed}
+      aria-expanded={!sidebar.collapsed}
+      aria-label={sidebar.collapsed ? "Show the sidebar" : "Hide the sidebar"}
+      onclick={toggleCollapsed}
+    >
+      <i class="ph-duotone ph-caret-circle-double-left" aria-hidden="true"></i>
+    </button>
+  </div>
+
   <aside
     bind:this={panel}
     class="sidebar"
     class:sidebar--collapsed={sidebar.collapsed}
-    style="--sidebar-width: {sidebar.width}px; --sidebar-collapsed-width: {COLLAPSED_WIDTH}px"
+    style="--sidebar-width: {sidebar.width}px"
     aria-label="Configuration"
   >
     <header class="sidebar__head">
@@ -275,102 +306,98 @@
           {/each}
         </span>
       </span>
-      <button
-        type="button"
-        class="sidebar__collapse"
-        aria-expanded={!sidebar.collapsed}
-        aria-label={sidebar.collapsed ? "Show the sidebar" : "Hide the sidebar"}
-        onclick={toggleCollapsed}
-      >
-        {sidebar.collapsed ? "»" : "«"}
-      </button>
     </header>
 
-    {#if !sidebar.collapsed}
-      <div class="sidebar__sections">
-        {#if opening.state === "loading"}
-          <p class="placeholder">Reading your installations…</p>
-        {:else if opening.state === "failed"}
-          <div class="failure">
-            <h1 class="failure__heading">The configurator could not start</h1>
-            <p class="failure__text">{failureMessage[opening.reason]}</p>
-            <button type="button" class="action" onclick={() => void open()}>
-              Try again
-            </button>
-          </div>
-        {:else if opening.installations.length === 0}
-          <div class="failure">
-            <h1 class="failure__heading">There is nothing to configure yet</h1>
-            <p class="failure__text">
-              Signed in as {opening.login}. None of the repositories you granted
-              access to carries a Velvet installation, so there is no page to
-              change the appearance of.
-            </p>
-            <a class="action" href="/onboarding/">Set Velvet up</a>
-          </div>
-        {:else}
-          <!--
-            The update notices stand at the top and are not part of what
-            somebody arranges. What they announce is the one thing that should
-            not be arranged out of the way, and they are absent entirely when
-            there is nothing to announce.
-          -->
+    <!--
+      Kept in the document whilst the sidebar is away rather than removed and
+      rebuilt, because it slides out with its width intact and there is
+      nothing to slide otherwise. `inert` is what keeps it out of the way for
+      everybody else: off to the left it is out of sight, and without this it
+      would still take focus from the keyboard and still be read aloud.
+    -->
+    <div class="sidebar__sections" inert={sidebar.collapsed}>
+      {#if opening.state === "loading"}
+        <p class="placeholder">Reading your installations…</p>
+      {:else if opening.state === "failed"}
+        <div class="failure">
+          <h1 class="failure__heading">The configurator could not start</h1>
+          <p class="failure__text">{failureMessage[opening.reason]}</p>
+          <button type="button" class="action" onclick={() => void open()}>
+            Try again
+          </button>
+        </div>
+      {:else if opening.installations.length === 0}
+        <div class="failure">
+          <h1 class="failure__heading">There is nothing to configure yet</h1>
+          <p class="failure__text">
+            Signed in as {opening.login}. None of the repositories you granted
+            access to carries a Velvet installation, so there is no page to
+            change the appearance of.
+          </p>
+          <a class="action" href="/onboarding/">Set Velvet up</a>
+        </div>
+      {:else}
+        <!--
+          The update notices stand at the top and are not part of what
+          somebody arranges. What they announce is the one thing that should
+          not be arranged out of the way, and they are absent entirely when
+          there is nothing to announce.
+        -->
+        <Section
+          key={PINNED_SECTION}
+          title={SECTION_TITLES[PINNED_SECTION]}
+          open={sidebar.open.includes(PINNED_SECTION)}
+          position={0}
+          count={1}
+          movable={false}
+          onToggle={() => toggleSection(PINNED_SECTION)}
+          onMove={() => {}}
+        >
+          {@render placeholder("Nothing to update.")}
+        </Section>
+
+        {#each sidebar.order as key, position (key)}
           <Section
-            key={PINNED_SECTION}
-            title={SECTION_TITLES[PINNED_SECTION]}
-            open={sidebar.open.includes(PINNED_SECTION)}
-            position={0}
-            count={1}
-            movable={false}
-            onToggle={() => toggleSection(PINNED_SECTION)}
-            onMove={() => {}}
+            {key}
+            title={SECTION_TITLES[key]}
+            open={sidebar.open.includes(key)}
+            {position}
+            count={sidebar.order.length}
+            onToggle={() => toggleSection(key)}
+            onMove={(by) => move(key, by)}
+            onDrop={(carried) => drop(key, carried)}
           >
-            {@render placeholder("Nothing to update.")}
+            {#if key === "installation"}
+              <InstallationChooser
+                installations={opening.installations}
+                truncated={opening.truncated}
+                value={chosenInstallation}
+                onChoose={(value) => (chosenInstallation = value)}
+              />
+            {:else if key === "theme"}
+              <ThemeChooser
+                value={chosenTheme}
+                onChoose={(value) => (chosenTheme = value)}
+              />
+            {:else if key === "global"}
+              {@render placeholder("Settings that apply to the whole page.")}
+            {:else if key === "services"}
+              {@render placeholder("Settings for each monitored service.")}
+            {:else}
+              {@render placeholder("What the chosen theme lets you change.")}
+            {/if}
           </Section>
+        {/each}
+      {/if}
+    </div>
 
-          {#each sidebar.order as key, position (key)}
-            <Section
-              {key}
-              title={SECTION_TITLES[key]}
-              open={sidebar.open.includes(key)}
-              {position}
-              count={sidebar.order.length}
-              onToggle={() => toggleSection(key)}
-              onMove={(by) => move(key, by)}
-              onDrop={(carried) => drop(key, carried)}
-            >
-              {#if key === "installation"}
-                <InstallationChooser
-                  installations={opening.installations}
-                  truncated={opening.truncated}
-                  value={chosenInstallation}
-                  onChoose={(value) => (chosenInstallation = value)}
-                />
-              {:else if key === "theme"}
-                <ThemeChooser
-                  value={chosenTheme}
-                  onChoose={(value) => (chosenTheme = value)}
-                />
-              {:else if key === "global"}
-                {@render placeholder("Settings that apply to the whole page.")}
-              {:else if key === "services"}
-                {@render placeholder("Settings for each monitored service.")}
-              {:else}
-                {@render placeholder("What the chosen theme lets you change.")}
-              {/if}
-            </Section>
-          {/each}
-        {/if}
-      </div>
-
-      <footer class="sidebar__foot">
-        {#if chosen}
-          Configuring {chosen.owner}/{chosen.name}
-        {:else if opening.state === "ready"}
-          Signed in as {opening.login}
-        {/if}
-      </footer>
-    {/if}
+    <footer class="sidebar__foot" inert={sidebar.collapsed}>
+      {#if chosen}
+        Configuring {chosen.owner}/{chosen.name}
+      {:else if opening.state === "ready"}
+        Signed in as {opening.login}
+      {/if}
+    </footer>
   </aside>
 
   {#if !sidebar.collapsed}
@@ -419,28 +446,74 @@
     overflow: hidden;
   }
 
-  /* Collapsed is a state rather than a width, so nothing has to agree about
-     what zero means. What is left is the head, because the button that brings
-     the sidebar back lives in it. */
+  /* Away is a position rather than a width. The panel keeps its size and moves
+     the whole of itself out to the left, so nothing inside it reflows on the
+     way and nothing of it is left showing: its right-hand edge comes to rest
+     against the rail's, and the rail is painted over what remains. */
   .sidebar--collapsed {
-    width: var(--sidebar-collapsed-width);
+    margin-left: calc(-1 * var(--sidebar-width));
   }
 
-  /* The mark sits in the middle of the sidebar rather than beside the button,
-     so it is centred on the panel it names. The button is taken out of the
-     flow for that reason: left in it, it would push the mark off centre by
-     half its own width. */
+  /* Above the sidebar, so the last stretch of the panel's travel is hidden
+     behind it rather than sliding past it in view. */
+  .rail {
+    display: flex;
+    justify-content: center;
+    /* Held at the top rather than stretched, or the button would be as tall as
+       the window and the icon would sit in the middle of a column-high
+       target. */
+    align-items: flex-start;
+    flex: 0 0 auto;
+    width: var(--rail-width);
+    padding-top: 1.1rem;
+    border-right: 1px solid var(--configurator-divider);
+    background: var(--configurator-base);
+    z-index: 1;
+  }
+
+  /* The icon alone, with no border and no surface behind it, aligned with the
+     top of the wordmark beside it through the padding the rail shares with the
+     head. */
+  .rail__toggle {
+    display: flex;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--configurator-text-muted);
+    font-size: var(--configurator-glyph-large);
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .rail__toggle:hover {
+    color: var(--configurator-text);
+  }
+
+  /* Half a circle, so one icon serves both states. The turn takes as long as
+     the panel's travel, so the two read as one movement. */
+  .rail__toggle > i {
+    transition: transform 220ms ease;
+  }
+
+  .rail__toggle--collapsed > i {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rail__toggle > i {
+      transition: none;
+    }
+  }
+
+
+  /* The mark sits in the middle of the panel it names. Nothing shares the row
+     with it, because the button that shows and hides the panel stands on the
+     rail instead. */
   .sidebar__head {
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1.1rem var(--configurator-inset);
-    border-bottom: 1px solid var(--configurator-divider);
-  }
-
-  .sidebar--collapsed .sidebar__head {
-    padding-inline: 0;
   }
 
   .sidebar__brand {
@@ -474,36 +547,7 @@
     letter-spacing: normal;
   }
 
-  .sidebar--collapsed .sidebar__brand {
-    display: none;
-  }
-
-  /* Collapsed there is nothing to centre against, so the button takes the
-     middle rather than sitting against an edge that is no longer there. */
-  .sidebar--collapsed .sidebar__collapse {
-    position: static;
-  }
-
-  .sidebar__collapse {
-    position: absolute;
-    right: var(--configurator-inset);
-    width: 2rem;
-    height: 2rem;
-    font-size: var(--configurator-glyph);
-    padding: 0;
-    border: 1px solid var(--configurator-divider);
-    border-radius: 0.4rem;
-    background: var(--configurator-raised);
-    color: var(--configurator-text-muted);
-    cursor: pointer;
-  }
-
-  .sidebar__collapse:hover {
-    border-color: var(--configurator-edge);
-    color: var(--configurator-text);
-  }
-
-  .sidebar__collapse:focus-visible,
+  .rail__toggle:focus-visible,
   .handle:focus-visible {
     outline: 2px solid var(--configurator-accent-lit);
     outline-offset: 2px;
