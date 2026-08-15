@@ -57,6 +57,19 @@ const THEME_ASSET = new RegExp(
  */
 const MAX_ASSET_PATH_LENGTH = 256;
 
+/**
+ * The assets whose names carry a content hash, which is what makes them keepable.
+ *
+ * The build puts the hash there, so a changed file arrives under a different
+ * name and a cached copy can never be the wrong one. Nothing else in the tree
+ * carries one: a theme's files keep the same names from one release to the
+ * next, and a document names the hashed assets and must never outlive them.
+ */
+const HASHED_ASSET = new RegExp(
+  `^(?:${HOSTED_APPS.join("|")})/assets/${PATH_SEGMENT}$`,
+  "u",
+);
+
 const CONTENT_TYPES: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -95,27 +108,48 @@ export function createStaticAssetProvider(
     const body = document && transformDocument
       ? transformDocument(await file.text())
       : file;
-    return new Response(body, {
-      headers: {
-        // A document names its own hashed assets, so it must never be cached
-        // whilst they may be replaced under it.
-        "Cache-Control": document
-          ? "no-store"
-          : "public, max-age=31536000, immutable",
-        "Content-Type": contentType,
-      },
-    });
+    const headers = new Headers({ "Content-Type": contentType });
+    if (HASHED_ASSET.test(path)) {
+      headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    } else if (document) {
+      // A document names its own hashed assets, so it must never be cached
+      // whilst they may be replaced under it.
+      headers.set("Cache-Control", "no-store");
+    } else {
+      // A theme's files. Worth keeping, because a theme carries its own faces
+      // and the monitor shows a different one whenever somebody tries another,
+      // but never worth using without asking, because the names stay the same
+      // across a release that changes what is behind them. The validator is
+      // the file itself, so a deployment that replaces it answers with the new
+      // one and a deployment that does not answers 304 with no body at all.
+      headers.set("Cache-Control", "no-cache");
+      headers.set("ETag", entityTag(file.size, file.lastModified));
+    }
+    return new Response(body, { headers });
   };
+}
+
+/**
+ * What identifies one version of a file, without reading it.
+ *
+ * Size and modification time together, which is the pair every static server
+ * uses for this. Weak, because it says two responses mean the same thing
+ * rather than that they are byte for byte identical, and that is all a browser
+ * needs to decide whether to reuse what it holds.
+ *
+ * @param size - The file's length in bytes.
+ * @param lastModified - Its modification time, in milliseconds.
+ * @returns The value for `ETag`, quoted and marked weak.
+ */
+function entityTag(size: number, lastModified: number): string {
+  return `W/"${size.toString(16)}-${Math.trunc(lastModified).toString(16)}"`;
 }
 
 function allowlistedPath(path: string): boolean {
   if (path.length > MAX_ASSET_PATH_LENGTH) return false;
   if (THEME_ASSET.test(path)) return true;
-  return HOSTED_APPS.some(
-    (app) =>
-      path === `${app}/index.html` ||
-      new RegExp(`^${app}/assets/${PATH_SEGMENT}$`, "u").test(path),
-  );
+  if (HASHED_ASSET.test(path)) return true;
+  return HOSTED_APPS.some((app) => path === `${app}/index.html`);
 }
 
 /**

@@ -857,6 +857,40 @@ test("serves both hosted applications and nothing else", async () => {
   assert.equal((await missing.json()).error.code, "NOT_FOUND");
 });
 
+test("answers a theme file the caller already holds without sending it again", async () => {
+  const tag = 'W/"2a-18f1c"';
+  const { sessions } = harness();
+  const handler = createSetupHandler({
+    config,
+    sessions,
+    github: githubClient(),
+    logger: () => {},
+    staticAsset: async () =>
+      new Response("theme", {
+        headers: { "Cache-Control": "no-cache", ETag: tag },
+      }),
+  });
+  const path = `${origin}/config/themes/velvet/theme.css`;
+
+  const first = await handler(new Request(path));
+  assert.equal(first.status, 200);
+  assert.equal(first.headers.get("ETag"), tag);
+
+  const again = await handler(
+    new Request(path, { headers: { "If-None-Match": tag } }),
+  );
+  assert.equal(again.status, 304);
+  assert.equal(again.headers.get("ETag"), tag);
+  assert.equal(await again.text(), "", "a 304 carries no body");
+
+  // A tag from an earlier deployment is not the one being served, so the file
+  // is sent rather than the caller being told to keep what it has.
+  const stale = await handler(
+    new Request(path, { headers: { "If-None-Match": 'W/"1-1"' } }),
+  );
+  assert.equal(stale.status, 200);
+});
+
 /** Records what the handler forwarded, so the boundary can be tested alone. */
 function recordingUpdateRoutes() {
   const seen: { route: string; method: string }[] = [];

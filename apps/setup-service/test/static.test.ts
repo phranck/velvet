@@ -161,6 +161,40 @@ test("serves a theme's own files, including from below a subdirectory", async ()
   }
 });
 
+test("keeps a theme's files, and has the browser ask before using them", async () => {
+  const directory = await publicRoot();
+  try {
+    const asset = createStaticAssetProvider(directory);
+    const path = `${CONFIGURATOR_APP}/themes/velvet/theme.css`;
+
+    const stylesheet = await asset(path);
+
+    // A theme keeps its file names across a release that changes what is
+    // behind them, so a year-long cache would hand out last year's theme with
+    // nothing to say it is stale.
+    assert.equal(stylesheet?.headers.get("Cache-Control"), "no-cache");
+    const tag = stylesheet?.headers.get("ETag");
+    assert.match(tag ?? "", /^W\/"[0-9a-f]+-[0-9a-f]+"$/u);
+    assert.equal(
+      (await asset(path))?.headers.get("ETag"),
+      tag,
+      "an unchanged file keeps its tag, or every request refetches it",
+    );
+
+    await writeFile(
+      join(directory, CONFIGURATOR_APP, "themes", "velvet", "theme.css"),
+      ":root { color: green } /* a release that changed the theme */",
+    );
+    assert.notEqual(
+      (await asset(path))?.headers.get("ETag"),
+      tag,
+      "a replaced file answers with a different tag",
+    );
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
 test("refuses theme paths that climb, overreach, or belong to another application", async () => {
   const directory = await publicRoot();
   try {

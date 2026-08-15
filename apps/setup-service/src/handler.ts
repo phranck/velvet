@@ -651,7 +651,7 @@ export function createSetupHandler(
         const assetPath = hostedAssetPath(route);
         if (assetPath) {
           const asset = await options.staticAsset(assetPath);
-          if (asset) return finish(asset);
+          if (asset) return finish(notModified(request, asset) ?? asset);
         }
       }
 
@@ -955,6 +955,37 @@ function bearerToken(header: string | null): string | null {
   if (!header) return null;
   const match = header.match(/^Bearer ([A-Za-z0-9._~+/=-]{16,4096})$/u);
   return match ? match[1]! : null;
+}
+
+/**
+ * Answers a conditional request for a file the caller already holds.
+ *
+ * Only files served with an entity tag take part, which is the theme files:
+ * they keep their names across a release that changes them, so a browser has
+ * no way of telling an old copy from a new one without asking. A hashed asset
+ * carries no tag and needs none, because its name changes with its contents.
+ *
+ * @param request - The request as it arrived, carrying `If-None-Match` or not.
+ * @param asset - What the provider answered with.
+ * @returns A 304 carrying the same tag, or null when the file is to be sent.
+ */
+function notModified(request: Request, asset: Response): Response | null {
+  const tag = asset.headers.get("ETag");
+  if (!tag) return null;
+  const offered = request.headers.get("If-None-Match");
+  if (!offered) return null;
+  const holds = offered
+    .split(",")
+    .map((candidate) => candidate.trim())
+    .includes(tag);
+  if (!holds) return null;
+  return new Response(null, {
+    status: 304,
+    headers: {
+      "Cache-Control": asset.headers.get("Cache-Control") ?? "no-cache",
+      ETag: tag,
+    },
+  });
 }
 
 function redirectResponse(location: string, headers?: HeadersInit): Response {
