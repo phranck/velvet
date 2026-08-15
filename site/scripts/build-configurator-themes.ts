@@ -24,6 +24,15 @@ import { fixtureNamed } from "../theme-bundles/fixtures/index.js";
 import { themeSettingDeclarations } from "../src/lib/themes/settings.js";
 import { readThemes, THEMES_ROOT } from "./themes.js";
 
+/*
+ * A theme renders times in whatever zone the machine is set to, and what this
+ * writes is committed and checked against a rebuild. Left alone, a document
+ * built in Berlin and one built on a runner in UTC differ by an hour and the
+ * check can never pass. The frame renders again in the browser, in the reader's
+ * own zone, so this decides the first paint and nothing more.
+ */
+process.env.TZ = "UTC";
+
 /**
  * The fixture the monitor shows.
  *
