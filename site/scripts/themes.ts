@@ -7,6 +7,7 @@
  * them: adding a theme is adding a directory, and that is the whole of it.
  */
 
+import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
 
@@ -117,6 +118,33 @@ export async function readTheme(path: string): Promise<ReadTheme> {
   return result.ok
     ? { directory, path, manifest: result.manifest, manifestErrors: [], files }
     : { directory, path, manifest: null, manifestErrors: result.errors, files };
+}
+
+/**
+ * What a theme's contents come to, as one string.
+ *
+ * The picture of a theme carries this beside it, and a gate compares the two.
+ * That is the whole reason it exists: a theme changed without its picture being
+ * taken again leaves a picture of something else on the start page, in the
+ * setup and in the configurator, and nothing about the picture itself says so.
+ *
+ * It covers every file a theme's appearance is written in, which is every file
+ * the reader takes as text: the stylesheet, the template, the script and the
+ * manifest. A binary replaced under its own name, such as a face shipped under
+ * the same version-free name, does not move it.
+ *
+ * @param files - Every file of one theme, as the reader returns them.
+ * @returns The fingerprint, as hexadecimal.
+ */
+export function themeFingerprint(files: readonly ThemeFile[]): string {
+  return createHash("sha256")
+    .update(
+      files
+        .map((file) => `${file.path}:${createHash("sha256").update(file.text).digest("hex")}`)
+        .sort()
+        .join("\n"),
+    )
+    .digest("hex");
 }
 
 /** Every theme directory, in name order. */
