@@ -103,11 +103,11 @@ export async function provisionVelvet(
    * configuration arrives, that state belongs to something else and cannot be
    * continued.
    *
-   * It only has to be defended where a repository exists, because that is the
-   * thing a second setup could damage. An attempt that created nothing leaves
-   * nothing to protect, and refusing there stranded anybody who corrected a
-   * name after a failure: the message asked them to sign out, and the
-   * onboarding offers no way to.
+   * It only has to be defended where that repository still exists, because
+   * that is the thing a second setup could damage. An attempt that created
+   * nothing, and one whose repository has been deleted since, both leave
+   * nothing to protect, and refusing in either case strands somebody who
+   * corrected a name after a failure or cleared a broken attempt away.
    */
   const existing =
     input.session.provisioning?.configurationHash === configurationHash
@@ -116,11 +116,20 @@ export async function provisionVelvet(
   if (input.session.provisioning && !existing) {
     const stranded = input.session.provisioning.repository;
     if (stranded) {
-      throw new SetupServiceError(
-        "SETUP_PARTIAL",
-        `This session already created ${stranded.owner}/${stranded.name}. Sign out before starting another setup.`,
-        { status: 409 },
+      // Asked of GitHub rather than read off the session, because the session
+      // outlives what it recorded.
+      const survives = await input.github.findRepository(
+        userToken,
+        stranded.owner,
+        stranded.name,
       );
+      if (survives) {
+        throw new SetupServiceError(
+          "SETUP_PARTIAL",
+          `This session already created ${stranded.owner}/${stranded.name}. Sign out before starting another setup.`,
+          { status: 409 },
+        );
+      }
     }
     delete input.session.provisioning;
   }
