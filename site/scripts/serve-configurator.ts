@@ -81,6 +81,22 @@ const listing =
       ? { repositories: installations(4), truncated: true }
       : { repositories: installations(Number(requested) || 1), truncated: false };
 
+/**
+ * What one invented installation is published in.
+ *
+ * Two answers rather than one, so switching between installations is worth
+ * doing whilst looking at the interface: the first carries the theme with a
+ * feature set on it, and the next carries another theme entirely.
+ *
+ * @param repositoryId - The repository being asked about.
+ * @returns The theme and what is set on it, in the shape the service answers.
+ */
+function publishedConfiguration(repositoryId: number): unknown {
+  return repositoryId % 2 === 0
+    ? { theme: "velvet", themeSettings: { chartWash: false } }
+    : { theme: "retro-chassis", themeSettings: {} };
+}
+
 const CONTENT_TYPES: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -112,6 +128,21 @@ function pretendService(): Plugin {
           response.end(
             JSON.stringify(path === "/api/session" ? SESSION : listing),
           );
+          return;
+        }
+
+        // What the invented installation is published in. Answered as a real
+        // one is, so the configurator opens on a theme rather than on the
+        // first one in the catalogue, and a second installation answers with
+        // a different theme so switching between them is worth doing.
+        if (path === "/api/configuration") {
+          const which = Number(
+            new URL(request.url ?? "/", "http://localhost").searchParams.get(
+              "repository",
+            ),
+          );
+          response.setHeader("Content-Type", "application/json; charset=utf-8");
+          response.end(JSON.stringify(publishedConfiguration(which)));
           return;
         }
 

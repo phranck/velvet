@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 
-import { validateSetupInstallations } from "@velvet/contracts";
+import {
+  validateInstallationConfiguration,
+  validateSetupInstallations,
+} from "@velvet/contracts";
 
+import { GitHubApiError } from "../src/github-api.js";
 import type { GitHubSetupClient } from "../src/github.js";
 import type { AuditLogInput } from "../src/observability.js";
 import type { SetupServerSession } from "../src/session.js";
@@ -159,6 +163,100 @@ test("lists what the signed-in user can manage", async () => {
     true,
     "the listing is what the configurator is willing to read",
   );
+});
+
+test("says which theme an installation is published in, and what is set on it", async () => {
+  const routes = harness({
+    configuration: `schemaVersion: 1
+repository:
+  owner: example
+  name: status
+statusPage:
+  name: Example Status
+  theme: velvet
+  themeSettings:
+    chartWash: false
+    accent: "#ff0000"
+    days: 90
+services:
+  - name: Website
+    url: https://example.com
+`,
+  });
+
+  const response = await routes.handle(
+    "GET",
+    "/api/configuration?installation=7&repository=9",
+  );
+
+  assert.equal(response!.status, 200);
+  const body = await response!.json();
+  assert.deepEqual(body, {
+    theme: "velvet",
+    themeSettings: { chartWash: false, accent: "#ff0000", days: 90 },
+  });
+  assert.equal(
+    validateInstallationConfiguration(body).success,
+    true,
+    "the answer is what the configurator is willing to read",
+  );
+});
+
+test("answers with no theme where the repository carries no configuration", async () => {
+  const routes = harness({
+    access: {
+      async readConfiguration() {
+        throw new GitHubApiError(new Response(null, { status: 404 }));
+      },
+    },
+  });
+
+  const response = await routes.handle(
+    "GET",
+    "/api/configuration?installation=7&repository=9",
+  );
+
+  // A repository somebody granted access to but never set Velvet up in is an
+  // answer rather than a failure, and the configurator starts from the first
+  // theme on offer instead of from an error.
+  assert.equal(response!.status, 200);
+  assert.deepEqual(await response!.json(), { theme: null, themeSettings: {} });
+});
+
+test("does not report GitHub being unavailable as an unconfigured installation", async () => {
+  const routes = harness({
+    access: {
+      async readConfiguration() {
+        throw new GitHubApiError(new Response(null, { status: 502 }));
+      },
+    },
+  });
+
+  const response = await routes.handle(
+    "GET",
+    "/api/configuration?installation=7&repository=9",
+  );
+
+  assert.equal(response!.status >= 500, true);
+  assert.notEqual((await response!.json()).error, undefined);
+});
+
+test("refuses to read a configuration for an installation that is not the user's", async () => {
+  const routes = harness({
+    access: {
+      async authorize() {
+        throw new UpdateAccessError();
+      },
+    },
+  });
+
+  const response = await routes.handle(
+    "GET",
+    "/api/configuration?installation=7&repository=9",
+  );
+
+  assert.equal(response!.status, 403);
+  assert.equal((await response!.json()).error.code, "UPDATE_ACCESS_DENIED");
 });
 
 test("reports an installation's own version beside the available release", async () => {

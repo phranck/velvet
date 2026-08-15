@@ -4,12 +4,14 @@ import { validateVelvetConfiguration } from "../configuration/validation.js";
 import {
   NotifyRequestSchema,
   SetupEventSchema,
+  InstallationConfigurationSchema,
   SetupInstallationsSchema,
   SetupRequestSchema,
   SetupSessionSchema,
   SetupStatusSchema,
   type NotifyRequest,
   type SetupEvent,
+  type InstallationConfiguration,
   type SetupInstallations,
   type SetupSession,
   type SetupStatus,
@@ -103,6 +105,11 @@ export const validateSetupInstallations = (
   value: unknown,
 ): SetupContractValidationResult<SetupInstallations> =>
   validatePublicContract(SetupInstallationsSchema, value);
+
+export const validateInstallationConfiguration = (
+  value: unknown,
+): SetupContractValidationResult<InstallationConfiguration> =>
+  validatePublicContract(InstallationConfigurationSchema, value);
 
 export const validateSetupSession = (
   value: unknown,

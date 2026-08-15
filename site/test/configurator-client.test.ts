@@ -145,3 +145,76 @@ test("tells a service that did not answer from one that answered badly", async (
       error instanceof ConfiguratorError && error.reason === "unreachable",
   );
 });
+
+/**
+ * Answers `/api/configuration` alone, recording what was asked for.
+ *
+ * @param answer - The body, or a Response where the status is the point.
+ */
+function configurationHarness(answer: unknown) {
+  const asked: string[] = [];
+  const wentTo: string[] = [];
+  const client = createConfiguratorClient(
+    async (url) => {
+      asked.push(String(url));
+      return answer instanceof Response ? answer.clone() : Response.json(answer);
+    },
+    (url) => wentTo.push(url),
+  );
+  return { asked, wentTo, client };
+}
+
+test("asks how one installation is published, naming both identifiers", async () => {
+  const { asked, client } = configurationHarness({
+    theme: "retro-chassis",
+    themeSettings: { chartWash: false },
+  });
+
+  const configuration = await client.configurationOf(INSTALLATION);
+
+  assert.deepEqual(asked, [
+    "/api/configuration?installation=7&repository=9",
+  ]);
+  assert.deepEqual(configuration, {
+    theme: "retro-chassis",
+    themeSettings: { chartWash: false },
+  });
+});
+
+test("reads an installation with no configuration as one without a theme", async () => {
+  const { client } = configurationHarness({ theme: null, themeSettings: {} });
+
+  assert.deepEqual(await client.configurationOf(INSTALLATION), {
+    theme: null,
+    themeSettings: {},
+  });
+});
+
+test("refuses a configuration it cannot read, rather than guessing at one", async () => {
+  for (const answer of [
+    { theme: "velvet" },
+    { theme: "Velvet", themeSettings: {} },
+    { theme: "velvet", themeSettings: { chartWash: null } },
+    { theme: "velvet", themeSettings: {}, extra: true },
+    new Response("not json", { status: 200 }),
+    new Response(null, { status: 500 }),
+  ]) {
+    const { client } = configurationHarness(answer);
+    await assert.rejects(
+      () => client.configurationOf(INSTALLATION),
+      (error: unknown) =>
+        error instanceof ConfiguratorError && error.reason === "unreadable",
+      JSON.stringify(answer instanceof Response ? answer.status : answer),
+    );
+  }
+});
+
+test("a session that expired sends the visitor to sign in again", async () => {
+  const { wentTo, client } = configurationHarness(
+    new Response(null, { status: 401 }),
+  );
+
+  await client.configurationOf(INSTALLATION);
+
+  assert.deepEqual(wentTo, ["/api/auth/start"]);
+});
