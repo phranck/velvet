@@ -29,13 +29,18 @@
   --configurator-text-muted: #9aa3b0;
 
   /*
-   * A line that groups, against an edge that bounds.
+   * One line for everything that is bounded, and it is a quiet one.
    *
-   * The distinction is what decides the two values. WCAG 2.1 asks 3:1 under
-   * 1.4.11 for anything that bounds a control, and the edge carries 3.12:1 on
-   * a raised surface, which is the least that clears it. The divider bounds
-   * nothing, so it sits at 1.31:1 on the page and reads as a seam rather than
-   * as a border somebody might try to click.
+   * WCAG 2.1 asks 3:1 under 1.4.11 for what identifies a control, and the edge
+   * below carries 3.12:1 on a raised surface, which is the least that clears
+   * it. The divider sits at 1.31:1 and does not, and it is nonetheless what a
+   * section, a card and every control in this panel are bounded in. That is a
+   * decision rather than an oversight: a dozen controls each outlined at the
+   * minimum read as a grid of boxes before they read as a set of settings, and
+   * hover and focus take the full edge and the lit accent, so anything being
+   * used is bounded at least as clearly as the rule asks.
+   *
+   * phranck, 2026-08-16, having been shown the figures.
    */
   --configurator-divider: #262b33;
   --configurator-edge: #616a77;
@@ -48,22 +53,18 @@
    * move together.
    */
   /*
-   * The edge a control rests at, which is deliberately below what WCAG asks.
+   * What a control is bounded in: the divider, lifted a quarter of the way
+   * towards the edge.
    *
-   * 1.4.11 wants 3:1 for what identifies a control, and the edge above is the
-   * least that clears it at 3.12:1 on a raised surface. This is that edge at
-   * nine tenths, which measures 2.78:1, and it is a decision rather than an
-   * oversight: a panel of a dozen controls each outlined at the minimum reads
-   * as a grid of boxes before it reads as a set of settings. Hover and focus
-   * take the full edge and the lit accent, so anything being used is bounded
-   * at least as clearly as the rule asks.
-   *
-   * phranck, 2026-08-15, having been shown the figures.
+   * 1.51:1 on a raised surface, against 1.20:1 for the divider alone and
+   * 3.12:1 for the edge. Below what 1.4.11 asks, for the reason the divider
+   * records above, and far enough above the divider that a control reads as a
+   * control rather than as a seam in the panel.
    */
-  --configurator-edge-resting: color-mix(
+  --configurator-control-edge: color-mix(
     in srgb,
-    var(--configurator-edge) 90%,
-    var(--configurator-raised)
+    var(--configurator-edge) 25%,
+    var(--configurator-divider)
   );
   --configurator-edge-quiet: color-mix(
     in srgb,

@@ -114,7 +114,9 @@
 
   /** The properties worth reading back, which is one per feature. */
   const watched = $derived(
-    (themeById(chosenTheme)?.features ?? []).map((feature) => feature.property),
+    (themeById(chosenTheme)?.features ?? []).flatMap((feature) =>
+      feature.type === "arrangement" ? feature.properties : [feature.property],
+    ),
   );
 
   /** Records one setting against the theme it belongs to. */
@@ -825,7 +827,7 @@
     gap: 0.75rem;
     width: 100%;
     padding: 0.45rem 0.7rem;
-    border: 1px solid var(--configurator-edge-resting);
+    border: 1px solid var(--configurator-control-edge);
     border-radius: var(--configurator-radius-inner);
     background: var(--configurator-sunken);
     color: var(--configurator-text);

@@ -220,7 +220,7 @@
     gap: 0.5rem;
     width: 100%;
     padding: 0.45rem 0.7rem;
-    border: 1px solid var(--configurator-edge-resting);
+    border: 1px solid var(--configurator-control-edge);
     border-radius: var(--configurator-radius-inner);
     background: var(--configurator-sunken);
     color: var(--configurator-text);
@@ -415,7 +415,7 @@
     grid-template-columns: 1fr auto;
     gap: 0 0.5rem;
     padding: 0.5rem;
-    border: 1px solid var(--configurator-edge-resting);
+    border: 1px solid var(--configurator-control-edge);
     border-radius: var(--configurator-radius-inner);
     background: var(--configurator-sunken);
     color: var(--configurator-text);

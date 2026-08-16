@@ -24,6 +24,9 @@ export type ThemeSettings = Readonly<Record<string, string | number | boolean>>;
  * @returns What its custom property reads.
  */
 function valueOf(feature: ThemeFeature, settings: ThemeSettings): string {
+  // An arrangement is written property by property by the caller, because one
+  // of them is several values and this answers with one.
+  if (feature.type === "arrangement") return "";
   const given = settings[feature.key];
   if (feature.type === "switch") {
     const on = typeof given === "boolean" ? given : feature.default;
@@ -60,7 +63,24 @@ export function themeSettingDeclarations(
     .filter(
       (feature) => !feature.declared || settings[feature.key] !== undefined,
     )
-    .map((feature) => `${feature.property}: ${valueOf(feature, settings)};`);
+    .flatMap((feature) => {
+      if (feature.type === "arrangement") {
+        const given = settings[feature.key];
+        const places = (typeof given === "string" ? given : feature.default)
+          .split(";");
+        // One property per place, in the order the theme states them. A value
+        // short of the properties leaves the rest to the theme, which is what
+        // an older configuration written against fewer of them looks like.
+        return feature.properties
+          .map((property, index) =>
+            places[index] === undefined
+              ? ""
+              : `${property}: ${places[index]};`,
+          )
+          .filter((declaration) => declaration !== "");
+      }
+      return [`${feature.property}: ${valueOf(feature, settings)};`];
+    });
 }
 
 /**

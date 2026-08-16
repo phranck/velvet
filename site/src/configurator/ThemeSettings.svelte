@@ -24,6 +24,27 @@
   const { features, settings, showing = {}, onChange }: Props = $props();
 
   /**
+   * Whether a feature means anything right now.
+   *
+   * A theme names the switch a setting depends on, and a setting whose switch
+   * is off changes nothing. It stays where it is and stops answering, rather
+   * than disappearing: a control that comes and goes makes the panel jump, and
+   * what it does is easier to understand whilst it is still visible.
+   *
+   * @param feature - The feature being drawn.
+   * @returns Whether its control takes part.
+   */
+  function enabled(feature: ThemeFeature): boolean {
+    if (!feature.enabledBy) return true;
+    const switched = features.find(
+      (candidate) => candidate.key === feature.enabledBy,
+    );
+    if (!switched || switched.type !== "switch") return true;
+    const given = settings[switched.key];
+    return typeof given === "boolean" ? given : switched.default;
+  }
+
+  /**
    * The features in the order the theme states them, under what they belong to.
    *
    * The grouping is the theme's own, because only a theme knows what its
@@ -89,6 +110,45 @@
   }
 
   /**
+   * The plastic constant, which is what the golden ratio becomes in two
+   * dimensions.
+   *
+   * The golden ratio spreads one dimension evenly because its powers never
+   * fall into step with each other. The same argument in two dimensions gives
+   * the real root of x³ = x + 1 rather than of x² = x + 1, and stepping by its
+   * reciprocals lays points down so that each new one falls in the largest gap
+   * the ones before it left.
+   */
+  const PLASTIC = 1.324_717_957_244_746;
+
+  /**
+   * A fresh scattering, as places separated by semicolons.
+   *
+   * Even rather than random. Six points drawn from chance alone clump and
+   * leave holes often enough to be the usual result, and a sky with three
+   * clouds in one corner is not a sky somebody shuffled to. Stepping by the
+   * plastic constant's reciprocals keeps them apart; one random offset per
+   * axis is what makes each press give a different sky rather than the same
+   * six places every time.
+   *
+   * Whole percentages, because a wash is soft and wide and a tenth of one
+   * moves it by nothing anybody sees.
+   *
+   * @param count - How many places are wanted.
+   * @returns The places, in the order the theme's properties stand in.
+   */
+  function shuffled(count: number): string {
+    const acrossFrom = Math.random();
+    const downFrom = Math.random();
+    return Array.from({ length: count }, (_, index) => {
+      const step = index + 1;
+      const across = (acrossFrom + step / PLASTIC) % 1;
+      const down = (downFrom + step / (PLASTIC * PLASTIC)) % 1;
+      return `${Math.round(across * 100)}% ${Math.round(down * 100)}%`;
+    }).join(";");
+  }
+
+  /**
    * The step a slider moves in, which follows from what it spans.
    *
    * A range of a hundred or less moves a unit at a time, because that is what
@@ -124,7 +184,10 @@
       <div
         class="field"
         class:field--inline={feature.type === "switch"}
-        class:field--narrow={feature.type === "colour"}
+        class:field--narrow={feature.type === "colour" ||
+          feature.type === "arrangement"}
+        class:field--wide={feature.type === "number"}
+        class:field--off={!enabled(feature)}
       >
         {#if feature.type === "switch"}
           <label class="field__label" for="feature-{feature.key}">
@@ -159,6 +222,23 @@
             />
             <span class="colour__value">{valueOf(feature)}</span>
           </span>
+        {:else if feature.type === "arrangement"}
+          <span class="field__label">{feature.label}</span>
+          <!--
+            A button rather than a control per place. Nobody arranges six
+            clouds one at a time, and twelve sliders for one scattering is
+            twelve things to read where there is one decision.
+          -->
+          <button
+            type="button"
+            class="shuffle"
+            disabled={!enabled(feature)}
+            onclick={() =>
+              onChange(feature.key, shuffled(feature.properties.length))}
+          >
+            <i class="ph-duotone ph-shuffle" aria-hidden="true"></i>
+            Shuffle
+          </button>
         {:else if feature.type === "choice"}
           <span class="field__label" id="feature-{feature.key}">
             {feature.label}
@@ -199,6 +279,7 @@
             id="feature-{feature.key}"
             type="single"
             class="slider"
+            disabled={!enabled(feature)}
             value={Number(valueOf(feature))}
             min={feature.minimum}
             max={feature.maximum}
@@ -237,11 +318,18 @@
      set. Anything
      wider takes the whole row, which is what a list of choices or a slider
      needs to be read across. */
-  /* One group under the next, each set off by its name rather than by a rule
-     or a surface: these already sit inside a section of the sidebar, and a
-     second box inside it would read as a second section. */
-  .group + :global(.group) {
+  /* One group under the next, parted by a hairline that runs the full width of
+     the section rather than stopping at the padding its content is held in.
+     A rule that stopped short would read as an underline belonging to the
+     group above it. */
+  .group + .group {
     margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    /* The colour the section itself is bounded in, because this parts what is
+       inside one section rather than bounding a control. */
+    border-top: 1px solid var(--configurator-divider);
+    margin-inline: calc(-1 * var(--configurator-inset));
+    padding-inline: var(--configurator-inset);
   }
 
   .group__name {
@@ -258,17 +346,37 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.9rem 0.75rem;
-    align-items: start;
+    align-items: stretch;
   }
 
   .field {
     display: grid;
+    grid-template-rows: auto 1fr;
     gap: 0.35rem;
     grid-column: 1 / -1;
   }
 
+  /* The control sits in the middle of what is left under the label, so two
+     controls sharing a row are centred on each other however tall each one is
+     and however many lines their names take. */
+  .field > :global(:last-child) {
+    align-self: center;
+  }
+
   .field--narrow {
     grid-column: span 1;
+  }
+
+  /* Two thirds, so a slider keeps a length worth dragging whilst what belongs
+     beside it stands in the last third rather than on a row of its own. */
+  .field--wide {
+    grid-column: span 2;
+  }
+
+  /* Still there, and plainly not answering. A control that vanished would make
+     the panel jump and leave nothing to explain why. */
+  .field--off {
+    opacity: 0.45;
   }
 
   /* A switch stands beside what it is called rather than under it: there is
@@ -320,7 +428,7 @@
     width: 2.25rem;
     height: 1.75rem;
     padding: 0;
-    border: 1px solid var(--configurator-edge-resting);
+    border: 1px solid var(--configurator-control-edge);
     border-radius: var(--configurator-radius-inner);
     background: none;
     cursor: pointer;
@@ -355,13 +463,47 @@
 
   /* Global, because bits-ui renders these elements rather than this template,
      so Svelte's scoping attribute never reaches them. */
+  /* The same shape as a segment, because it is the same kind of thing: one
+     press that settles something. */
+  .shuffle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--configurator-control-edge);
+    border-radius: var(--configurator-radius-inner);
+    background: var(--configurator-sunken);
+    color: var(--configurator-text);
+    font: inherit;
+    font-size: var(--configurator-text-small);
+    cursor: pointer;
+    transition: border-color var(--configurator-transition);
+  }
+
+  .shuffle:hover {
+    border-color: var(--configurator-accent-lit);
+  }
+
+  .shuffle:focus-visible {
+    outline: 2px solid var(--configurator-accent-lit);
+    outline-offset: 2px;
+  }
+
+  .shuffle > i {
+    color: var(--configurator-accent);
+    font-size: var(--configurator-glyph);
+    line-height: 1;
+  }
+
   :global(.segmented) {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     gap: 2px;
     padding: 2px;
-    border: 1px solid var(--configurator-edge-resting);
+    border: 1px solid var(--configurator-control-edge);
     border-radius: var(--configurator-radius-inner);
     background: var(--configurator-sunken);
   }
@@ -408,7 +550,7 @@
     width: 2.5rem;
     height: 1.5rem;
     padding: 2px;
-    border: 1px solid var(--configurator-edge-resting);
+    border: 1px solid var(--configurator-control-edge);
     border-radius: 999px;
     background: var(--configurator-sunken);
     cursor: pointer;

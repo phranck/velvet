@@ -41,7 +41,13 @@ export const THEME_STATES = ["offered", "withdrawn"] as const;
 export type ThemeState = (typeof THEME_STATES)[number];
 
 /** What a feature may be set to, which is also what draws its control. */
-export const FEATURE_TYPES = ["colour", "switch", "choice", "number"] as const;
+export const FEATURE_TYPES = [
+  "colour",
+  "switch",
+  "choice",
+  "number",
+  "arrangement",
+] as const;
 export type FeatureType = (typeof FEATURE_TYPES)[number];
 
 /** The files a theme names, each relative to the theme's own directory. */
@@ -96,6 +102,7 @@ export type ThemeFeature =
        * The default in this manifest is what a control starts at either way.
        */
       declared?: boolean;
+      enabledBy?: string;
       /** The custom property the value is written to. */
       property: string;
       /** A six-digit hex colour, which is what a colour control hands back. */
@@ -107,6 +114,7 @@ export type ThemeFeature =
       label: string;
       group?: string;
       declared?: boolean;
+      enabledBy?: string;
       property: string;
       default: boolean;
       /** What the property is set to when it is on. */
@@ -120,6 +128,7 @@ export type ThemeFeature =
       label: string;
       group?: string;
       declared?: boolean;
+      enabledBy?: string;
       property: string;
       default: string;
       /**
@@ -133,11 +142,33 @@ export type ThemeFeature =
       choices: ThemeChoice[];
     }
   | {
+      /**
+       * Several properties settled together, and shuffled together.
+       *
+       * One decision producing several values, which is what a scattering of
+       * things is: nobody places six clouds one at a time, and a slider each
+       * would be twelve sliders for one arrangement. The value is the places
+       * in order, separated by a semicolon, and each goes to the property that
+       * stands in the same position here.
+       */
+      key: string;
+      type: "arrangement";
+      label: string;
+      group?: string;
+      declared?: boolean;
+      enabledBy?: string;
+      /** The properties this settles, in order. */
+      properties: string[];
+      /** What each of them is set to before anybody shuffles. */
+      default: string;
+    }
+  | {
       key: string;
       type: "number";
       label: string;
       group?: string;
       declared?: boolean;
+      enabledBy?: string;
       property: string;
       default: number;
       minimum: number;
@@ -232,6 +263,7 @@ const COMMON_FEATURE_KEYS = [
   "label",
   "group",
   "declared",
+  "enabledBy",
   "property",
   "default",
 ];
@@ -241,6 +273,10 @@ const FEATURE_KEYS_BY_TYPE: Record<FeatureType, Set<string>> = {
   switch: new Set([...COMMON_FEATURE_KEYS, "on", "off"]),
   choice: new Set([...COMMON_FEATURE_KEYS, "choices"]),
   number: new Set([...COMMON_FEATURE_KEYS, "minimum", "maximum", "unit"]),
+  arrangement: new Set([
+    ...COMMON_FEATURE_KEYS.filter((key) => key !== "property"),
+    "properties",
+  ]),
 };
 
 /**
@@ -367,16 +403,31 @@ function readFeature(
     return undefined;
   }
   const declared = stated === undefined ? {} : { declared: stated };
+  const depends = record.enabledBy;
+  if (depends !== undefined && (typeof depends !== "string" || depends === "")) {
+    errors.push(`${label}.enabledBy must name the switch it depends on`);
+    return undefined;
+  }
+  const enabledBy = depends === undefined ? {} : { enabledBy: depends };
   if (featureLabel === "") {
     errors.push(`${label} must carry the label its control is drawn with`);
   }
   const property = record.property;
-  if (typeof property !== "string" || !CUSTOM_PROPERTY.test(property)) {
+  // An arrangement names several properties instead of one, and says so under
+  // its own key. Everything else names exactly one.
+  if (
+    type !== "arrangement" &&
+    (typeof property !== "string" || !CUSTOM_PROPERTY.test(property))
+  ) {
     errors.push(
       `${label}.property must name the custom property the value is written to, such as "--accent"`,
     );
     return undefined;
   }
+
+  // Narrowed once, because the check above is conditional on the type and
+  // every branch below this line names exactly one property.
+  const single = typeof property === "string" ? property : "";
 
   const fallback = record.default;
   if (type === "colour") {
@@ -384,7 +435,7 @@ function readFeature(
       errors.push(`${label}.default must be a colour such as "#6366f1"`);
       return undefined;
     }
-    return { key, type, label: featureLabel, property, default: fallback, ...group, ...declared };
+    return { key, type, label: featureLabel, property: single, default: fallback, ...group, ...declared, ...enabledBy };
   }
   if (type === "switch") {
     if (typeof fallback !== "boolean") {
@@ -399,7 +450,7 @@ function readFeature(
       );
       return undefined;
     }
-    return { key, type, label: featureLabel, property, default: fallback, on, off, ...group, ...declared };
+    return { key, type, label: featureLabel, property: single, default: fallback, on, off, ...group, ...declared, ...enabledBy };
   }
   if (type === "choice") {
     const choices = record.choices;
@@ -433,13 +484,49 @@ function readFeature(
       key,
       type,
       label: featureLabel,
-      property,
+      property: single,
       default: fallback,
       choices: offered,
       ...group,
       ...declared,
+      ...enabledBy,
     };
   }
+  if (type === "arrangement") {
+    const properties = record.properties;
+    if (
+      !Array.isArray(properties) ||
+      properties.length === 0 ||
+      properties.some(
+        (property) => typeof property !== "string" || !property.startsWith("--"),
+      )
+    ) {
+      errors.push(`${label}.properties must list the custom properties it sets`);
+      return undefined;
+    }
+    if (typeof fallback !== "string") {
+      errors.push(`${label}.default must be the places, separated by ";"`);
+      return undefined;
+    }
+    const places = fallback.split(";");
+    if (places.length !== properties.length) {
+      errors.push(
+        `${label}.default states ${places.length} place(s) for ${properties.length} propert(ies)`,
+      );
+      return undefined;
+    }
+    return {
+      key,
+      type,
+      label: featureLabel,
+      properties: properties as string[],
+      default: fallback,
+      ...group,
+      ...declared,
+      ...enabledBy,
+    };
+  }
+
   const minimum = record.minimum;
   const maximum = record.maximum;
   if (typeof minimum !== "number" || typeof maximum !== "number") {
@@ -469,13 +556,14 @@ function readFeature(
     key,
     type,
     label: featureLabel,
-    property,
+    property: single,
     default: fallback,
     minimum,
     maximum,
     unit,
     ...group,
     ...declared,
+    ...enabledBy,
   };
 }
 

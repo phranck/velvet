@@ -252,12 +252,21 @@
      them off costs no second value and the three keep their strengths. */
   --backdrop-gradient-start: #0e1018;
   --backdrop-gradient-end: #0a0b0f;
+  /* Where the six washes sit until somebody shuffles them. Stated here rather
+     than written into the gradients, so one setting can move them and the
+     theme still knows its own arrangement. */
+  --backdrop-bubble-1: 12% 0%;
+  --backdrop-bubble-2: 88% 4%;
+  --backdrop-bubble-3: 50% 100%;
+  --backdrop-bubble-4: 4% 62%;
+  --backdrop-bubble-5: 96% 74%;
+  --backdrop-bubble-6: 62% 34%;
   /* Six washes, of which the count decides how many are drawn. Each is
      multiplied by whether the count has reached it, so one property adds and
      removes them and each keeps its own share. */
   --backdrop-layer:
     radial-gradient(
-      52% 41% at 12% 0%,
+      52% 41% at var(--backdrop-bubble-1),
       color-mix(
         in srgb,
         var(--backdrop-bubble-colour)
@@ -270,7 +279,7 @@
       transparent 70%
     ),
     radial-gradient(
-      46% 36% at 88% 4%,
+      46% 36% at var(--backdrop-bubble-2),
       color-mix(
         in srgb,
         var(--backdrop-bubble-colour)
@@ -283,7 +292,7 @@
       transparent 70%
     ),
     radial-gradient(
-      58% 45% at 50% 100%,
+      58% 45% at var(--backdrop-bubble-3),
       color-mix(
         in srgb,
         var(--backdrop-bubble-colour)
@@ -296,7 +305,7 @@
       transparent 70%
     ),
     radial-gradient(
-      44% 34% at 4% 62%,
+      44% 34% at var(--backdrop-bubble-4),
       color-mix(
         in srgb,
         var(--backdrop-bubble-colour)
@@ -309,7 +318,7 @@
       transparent 70%
     ),
     radial-gradient(
-      40% 32% at 96% 74%,
+      40% 32% at var(--backdrop-bubble-5),
       color-mix(
         in srgb,
         var(--backdrop-bubble-colour)
@@ -322,7 +331,7 @@
       transparent 70%
     ),
     radial-gradient(
-      50% 38% at 62% 34%,
+      50% 38% at var(--backdrop-bubble-6),
       color-mix(
         in srgb,
         var(--backdrop-bubble-colour)

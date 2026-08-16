@@ -12,7 +12,12 @@
  */
 
 /** What a feature may be set to, which decides how a value is checked. */
-export type ThemeFeatureType = "colour" | "switch" | "choice" | "number";
+export type ThemeFeatureType =
+  | "colour"
+  | "switch"
+  | "choice"
+  | "number"
+  | "arrangement";
 
 /**
  * One feature as this check needs to see it.
@@ -48,6 +53,9 @@ export interface ThemeSettingProblem {
 
 /** A six-digit hex colour, which is what a colour feature takes. */
 const HEX_COLOUR = /^#[0-9a-fA-F]{6}$/;
+
+/** Places, separated by semicolons, each a pair of lengths or percentages. */
+const ARRANGEMENT = /^-?[\d.]+%? -?[\d.]+%?(;-?[\d.]+%? -?[\d.]+%?)*$/u;
 
 /**
  * Checks every set value against the theme that offers the features.
@@ -109,6 +117,16 @@ function checkOne(
     return typeof value === "string" && choices.includes(value)
       ? null
       : `must be one of ${choices.join(", ")}`;
+  }
+  if (feature.type === "arrangement") {
+    // What reaches a stylesheet is constrained rather than trusted: lengths,
+    // percentages and the spaces between them, and nothing else. The bound on
+    // the whole is what keeps a configuration from carrying a page of it.
+    return typeof value === "string" &&
+      value.length <= 240 &&
+      ARRANGEMENT.test(value)
+      ? null
+      : 'must be places such as "12% 0%;88% 4%"';
   }
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return "must be a number";
