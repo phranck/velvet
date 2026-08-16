@@ -211,6 +211,7 @@ export function enhance(root: HTMLElement, data: ThemeData): () => void {
         style: stripStyle,
         heightProperty: "--strip-surface-height",
         tooltipClassName: "uptime-tooltip",
+        overlayHost: page,
       }),
       chartFrom,
       chart: createChartView(
@@ -222,6 +223,7 @@ export function enhance(root: HTMLElement, data: ThemeData): () => void {
         {
           style: CHART_GEOMETRY,
           tooltipClassName: "uptime-tooltip chart-reading",
+        overlayHost: page,
           legend: (entries) => drawLegend(chartLegend, entries),
         },
       ),

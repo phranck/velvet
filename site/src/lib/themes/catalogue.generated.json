@@ -35,7 +35,7 @@
         "type": "colour",
         "label": "IPv4 colour",
         "property": "--protocol-ipv4",
-        "default": "#7c7ef3",
+        "default": "#b87ae1",
         "group": "Protocols",
         "declared": true
       },
@@ -44,7 +44,7 @@
         "type": "colour",
         "label": "IPv6 colour",
         "property": "--protocol-ipv6",
-        "default": "#38bdf8",
+        "default": "#7472e4",
         "group": "Protocols",
         "declared": true
       },

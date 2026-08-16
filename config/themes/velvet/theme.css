@@ -75,8 +75,8 @@
   /* Lifted from the shipping value; see the note at the head of this file. */
   --state-unknown-mark: var(--state-ghost-edge);
   --state-ghost-edge: #5b616c;
-  --protocol-ipv4: #7c7ef3;
-  --protocol-ipv6: #38bdf8;
+  --protocol-ipv4: #b87ae1;
+  --protocol-ipv6: #7472e4;
 
   /* ── Typography ───────────────────────────────────────────────────────── */
   /* Inter and Fira Code, which are what `app.css` names and what the build

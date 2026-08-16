@@ -93,6 +93,10 @@ function apply(declarations) {
       target.style.setProperty(property, value);
     }
   }
+  // Most of the page follows a changed property on its own. What does not is
+  // anything painted onto a canvas, which holds what it was given until it is
+  // asked again, and the strip of days is exactly that.
+  document.dispatchEvent(new CustomEvent("velvet:appearance"));
 }
 
 script(root, data);

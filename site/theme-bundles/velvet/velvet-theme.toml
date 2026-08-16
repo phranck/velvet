@@ -50,7 +50,7 @@ label = "IPv4 colour"
 group = "Protocols"
 declared = true
 property = "--protocol-ipv4"
-default = "#7c7ef3"
+default = "#b87ae1"
 
 [features.ipv6Colour]
 type = "colour"
@@ -58,7 +58,7 @@ label = "IPv6 colour"
 group = "Protocols"
 declared = true
 property = "--protocol-ipv6"
-default = "#38bdf8"
+default = "#7472e4"
 
 # The fall behind the page, stated as its two ends because that is what a fall
 # is. A scheme moves both, and setting either here moves it again.

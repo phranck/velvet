@@ -702,6 +702,111 @@ async function conformRestored(
   }
 }
 
+/**
+ * Whether an overlay is dressed, and whether the days follow their colours.
+ *
+ * Two things that look like design faults and are not. An overlay is appended
+ * outside the card, because a card clips; put outside the design's page as
+ * well, it inherits none of the design's colours and `var()` resolves to
+ * nothing, which is text on a transparent field. And the days are painted onto
+ * a canvas, which holds what it was given until something asks again, so a
+ * colour that changes changes nothing until the pointer happens to cross it.
+ *
+ * On a page of its own, because it changes the page it measures.
+ *
+ * @param browser - The launched browser.
+ * @param theme - The theme being checked.
+ * @param fixture - The case to draw.
+ * @param origin - Where the theme is served.
+ * @returns Anything wrong, which is empty where both hold.
+ */
+async function conformAppearance(
+  browser: Browser,
+  theme: ReadTheme,
+  fixture: Fixture,
+  origin: string,
+): Promise<Finding[]> {
+  const root = theme.manifest?.root;
+  if (!root) return [];
+  const page = await browser.newPage();
+  try {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${origin}/f/${fixture.name}/`, { waitUntil: "networkidle" });
+
+    const seen = await page.evaluate(
+      ([selector, tooltipClass]) => {
+        const surface = document.querySelector(selector);
+        if (!surface) return null;
+        // The overlay the page made for itself, not one this check puts
+        // somewhere convenient. Where it hangs is the whole question: outside
+        // the design's own page it inherits none of the design's colours.
+        // It exists from the moment the strip is built, hidden until hovered.
+        const overlay = document.querySelector(`.${tooltipClass}`);
+        const dressed = overlay
+          ? getComputedStyle(overlay).backgroundColor
+          : "missing";
+
+        const canvas = document.querySelector("canvas");
+        // Read across the strip rather than at one point. A design is free to
+        // draw nothing down the middle of its canvas, and one that does read
+        // as a strip that never changes.
+        const sample = (): string => {
+          if (!canvas) return "";
+          const context = canvas.getContext("2d");
+          if (!context) return "";
+          const readings: string[] = [];
+          for (const across of [0.05, 0.5, 0.9]) {
+            for (const down of [0.25, 0.5, 0.75]) {
+              const data = context.getImageData(
+                Math.round(canvas.width * across),
+                Math.round(canvas.height * down),
+                1,
+                1,
+              ).data;
+              // Nothing was drawn here, so it says nothing either way.
+              if (data[3] === 0) continue;
+              readings.push(`${data[0]},${data[1]},${data[2]}`);
+            }
+          }
+          return readings.join(" ");
+        };
+        const before = sample();
+        // A colour no design uses, so a repaint cannot look like no repaint.
+        (surface as HTMLElement).style.setProperty("--state-operational", "#ff00ff");
+        document.dispatchEvent(new CustomEvent("velvet:appearance"));
+        return { dressed, before, after: sample(), hasCanvas: canvas !== null };
+      },
+      [root, "uptime-tooltip"] as const,
+    );
+
+    const findings: Finding[] = [];
+    const note = (check: string, detail: string): void => {
+      findings.push({ theme: theme.directory, fixture: fixture.name, check, detail });
+    };
+    if (!seen) {
+      note("appearance", `the page has no ${root} to measure`);
+      return findings;
+    }
+    if (seen.dressed === "missing") {
+      note("overlay", "the page draws no hover overlay at all");
+    } else if (/rgba\(0, 0, 0, 0\)|transparent/u.test(seen.dressed)) {
+      note(
+        "overlay",
+        `a hover overlay has no surface of its own, so it is text on whatever is behind it: ${seen.dressed}`,
+      );
+    }
+    if (seen.hasCanvas && seen.before !== "" && seen.before === seen.after) {
+      note(
+        "appearance",
+        `the days keep their colours when the page's own change: ${seen.before} before and after`,
+      );
+    }
+    return findings;
+  } finally {
+    await page.close();
+  }
+}
+
 export interface ConformanceOptions {
   /** Only these themes, by directory name. */
   themes?: string[];
@@ -785,6 +890,7 @@ export async function runConformance(
       if (ordinary) {
         findings.push(
           ...(await conformRestored(browser, theme, ordinary, served.origin)),
+          ...(await conformAppearance(browser, theme, ordinary, served.origin)),
         );
       }
     } finally {

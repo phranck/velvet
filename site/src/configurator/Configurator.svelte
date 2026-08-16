@@ -101,6 +101,22 @@
 
   const chosenSettings = $derived(settingsOf(chosenTheme));
 
+  /**
+   * What the page currently resolves for each feature's property.
+   *
+   * Read back from the monitor rather than taken from the manifest, because a
+   * theme states many of these itself and a palette moves them. A control for
+   * something nobody has set should start at what the page shows, not at what
+   * the manifest calls the default: choosing Autumn and seeing the indigo
+   * swatch of the default palette is the control describing another page.
+   */
+  let resolved = $state<Record<string, string>>({});
+
+  /** The properties worth reading back, which is one per feature. */
+  const watched = $derived(
+    (themeById(chosenTheme)?.features ?? []).map((feature) => feature.property),
+  );
+
   /** Records one setting against the theme it belongs to. */
   function setFeature(key: string, value: string | number | boolean): void {
     drafts = {
@@ -532,6 +548,7 @@
               <ThemeSettings
                 features={themeById(chosenTheme)?.features ?? []}
                 settings={chosenSettings}
+                showing={resolved}
                 onChange={setFeature}
               />
             {/if}
@@ -574,7 +591,13 @@
     ></div>
   {/if}
 
-  <Monitor theme={chosenTheme} {declarations} />
+  <Monitor
+    theme={chosenTheme}
+    {declarations}
+    themeRoot={themeById(chosenTheme)?.root ?? ""}
+    watching={watched}
+    onResolved={(values) => (resolved = values)}
+  />
 </div>
 
 <style>

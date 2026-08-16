@@ -207,6 +207,7 @@ export function enhance(root: HTMLElement, data: ThemeData): () => void {
       // over the page, which is what a machine of this kind does.
       strip: createUptimeStrip(stripHost, {
         style: stripStyle,
+        overlayHost: page,
         report: (reading) => readOut(row, reading),
       }),
       chart: createChartView(
@@ -217,6 +218,7 @@ export function enhance(root: HTMLElement, data: ThemeData): () => void {
         data.status.monitoringStartedAt,
         {
           style: CHART_GEOMETRY,
+          overlayHost: page,
           // Nothing floats over this page: the scale is read where the pointer
           // stands on it, and the panel above already says what the service is
           // doing.

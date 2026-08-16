@@ -107,8 +107,15 @@ export interface ResponseChartOptions {
    * told about it.
    */
   style?: Partial<ResponseChartStyle> | (() => Partial<ResponseChartStyle>);
-  /** The class put on the hover reading, which lives on the document's layer. */
+  /** The class put on the hover reading, which lives outside what clips. */
   tooltipClassName?: string;
+  /**
+   * The design's own page element, which is where the reading is put.
+   *
+   * A design declares its colours there, and a reading outside them inherits
+   * none of them. Absent, it goes on the document's body.
+   */
+  overlayHost?: HTMLElement;
   /**
    * Whether the pointer's reading is shown beside it at all.
    *
@@ -351,7 +358,10 @@ export function createChartView(
   const tooltip =
     options.tooltip === false
       ? null
-      : createOverlay(options.tooltipClassName ?? "chart-reading");
+      : createOverlay(
+          options.tooltipClassName ?? "chart-reading",
+          options.overlayHost,
+        );
 
   /**
    * The box the drawing itself occupies.

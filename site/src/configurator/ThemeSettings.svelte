@@ -9,11 +9,19 @@
     features: readonly ThemeFeature[];
     /** What is set right now, which is where each control starts. */
     settings: ThemeSettings;
+    /**
+     * What the page resolves for each property, keyed by the property.
+     *
+     * Where nobody has set a feature, this is what its control shows: a theme
+     * states many of these itself and a palette moves them, so the manifest's
+     * default describes the page only whilst nothing else has spoken.
+     */
+    showing?: Record<string, string>;
     /** Called with one feature's new value. */
     onChange: (key: string, value: string | number | boolean) => void;
   }
 
-  const { features, settings, onChange }: Props = $props();
+  const { features, settings, showing = {}, onChange }: Props = $props();
 
   /**
    * The features in the order the theme states them, under what they belong to.
@@ -45,7 +53,7 @@
    * @returns Its current value, of the type the feature is.
    */
   function valueOf(feature: ThemeFeature): string | number | boolean {
-    const given = settings[feature.key];
+    const given = settings[feature.key] ?? livingValue(feature);
     if (feature.type === "switch") {
       return typeof given === "boolean" ? given : feature.default;
     }
@@ -59,6 +67,25 @@
         : feature.default;
     }
     return typeof given === "string" ? given : feature.default;
+  }
+
+  /**
+   * What the page is showing for a feature nobody has set.
+   *
+   * Only for a colour, and only for one the theme states itself. Everything
+   * else is written by the build whether it was set or not, so the page shows
+   * the default already, and a length or a keyword read back from a computed
+   * style comes back in a form a control cannot take.
+   *
+   * @param feature - The feature being drawn.
+   * @returns What to show, or undefined to fall back to the default.
+   */
+  function livingValue(feature: ThemeFeature): string | undefined {
+    if (feature.type !== "colour" || !feature.declared) return undefined;
+    const value = showing[feature.property];
+    return value !== undefined && /^#[0-9a-fA-F]{6}$/u.test(value)
+      ? value
+      : undefined;
   }
 
   /**
@@ -205,8 +232,9 @@
 
 <style>
   /* Two columns, and each setting takes what its control needs rather than a
-     row of its own. A colour is a swatch and a reading, so two of them fit
-     across, and a pair like the two protocols then stands as a pair. Anything
+     row of its own. A colour is a swatch under its name, so three of
+     them fit across and a set like the three states of a day stands as a
+     set. Anything
      wider takes the whole row, which is what a list of choices or a slider
      needs to be read across. */
   /* One group under the next, each set off by its name rather than by a rule
@@ -228,7 +256,7 @@
 
   .settings {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.9rem 0.75rem;
     align-items: start;
   }
@@ -258,6 +286,17 @@
     color: var(--configurator-text-muted);
     font-size: var(--configurator-text-small);
     line-height: 1.3;
+    /* Wraps rather than pushing its column wider, so three columns stay three
+       columns whatever a theme calls its settings. */
+    overflow-wrap: anywhere;
+  }
+
+  /* A colour stands as a column of three: what it is called, the swatch, and
+     what it is set to. Centred on each other, because a swatch is narrower
+     than either line beside it and reads as adrift against a left edge. */
+  .field--narrow .field__label {
+    justify-content: center;
+    text-align: center;
   }
 
   .field__reading {
@@ -265,10 +304,13 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* The swatch under its name and the reading under the swatch, because three
+     of these stand side by side and a row each would make every one of them as
+     wide as its longest reading. */
   .colour {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.3rem;
   }
 
   /* The well is the swatch. A colour input draws its own frame and padding,

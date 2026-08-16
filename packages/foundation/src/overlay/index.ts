@@ -45,13 +45,20 @@ const WINDOW_MARGIN = 8;
 const ANCHOR_GAP = 9;
 
 /**
- * Creates an overlay on the document's own layer.
+ * Creates an overlay outside everything that clips.
  *
  * @param className - Applied to the element, so a design styles it as it styles
  *   anything else. A design that uses both overlays states that appearance once.
+ * @param host - Where to put it. A design states its own page element here,
+ *   because that is where a design declares its colours and an overlay outside
+ *   them inherits none: `background: var(--surface-popover)` then resolves to
+ *   nothing at all and the overlay is text on a transparent field. The page
+ *   element clips nothing itself, so being inside it costs the overlay
+ *   nothing. Absent, it falls to the document's body, which is where an
+ *   overlay belonging to no page goes.
  * @returns Handles for showing, hiding and removing it.
  */
-export function createOverlay(className: string): Overlay {
+export function createOverlay(className: string, host?: HTMLElement): Overlay {
   const element = document.createElement("div");
   element.className = className;
   element.setAttribute("role", "status");
@@ -62,7 +69,7 @@ export function createOverlay(className: string): Overlay {
   element.style.zIndex = "60";
   element.style.pointerEvents = "none";
   element.style.width = "max-content";
-  document.body.append(element);
+  (host ?? document.body).append(element);
 
   let currentAnchor: (() => OverlayAnchor | null) | null = null;
 

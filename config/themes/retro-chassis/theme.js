@@ -277,7 +277,7 @@ function downsampleResponseSamples(samples, maxPoints) {
 // ../packages/foundation/src/overlay/index.ts
 var WINDOW_MARGIN = 8;
 var ANCHOR_GAP = 9;
-function createOverlay(className) {
+function createOverlay(className, host) {
   const element = document.createElement("div");
   element.className = className;
   element.setAttribute("role", "status");
@@ -286,7 +286,7 @@ function createOverlay(className) {
   element.style.zIndex = "60";
   element.style.pointerEvents = "none";
   element.style.width = "max-content";
-  document.body.append(element);
+  (host ?? document.body).append(element);
   let currentAnchor = null;
   function place() {
     if (!currentAnchor)
@@ -413,7 +413,7 @@ function createChartView(host, serviceId, serviceName, generatedAt, monitoringSt
   let frame = 0;
   let seriesColours = { ipv4: "", ipv6: "" };
   let geometry = null;
-  const tooltip = options.tooltip === false ? null : createOverlay(options.tooltipClassName ?? "chart-reading");
+  const tooltip = options.tooltip === false ? null : createOverlay(options.tooltipClassName ?? "chart-reading", options.overlayHost);
   function plotBox() {
     const drawing = host.querySelector("svg");
     return (drawing ?? host).getBoundingClientRect();
@@ -907,6 +907,9 @@ function uptimeForRange(service, range, generatedAt, monitoringStartedAt) {
   return `${percentage.toFixed(2)}%`;
 }
 
+// ../packages/foundation/src/appearance/index.ts
+var APPEARANCE_EVENT = "velvet:appearance";
+
 // ../packages/foundation/src/uptime-strip/index.ts
 var SHORT_DATE = new Intl.DateTimeFormat("en-GB", {
   month: "short",
@@ -1021,7 +1024,7 @@ function createUptimeStrip(host, options = {}) {
   host.setAttribute("role", "img");
   const canvas = document.createElement("canvas");
   canvas.setAttribute("aria-hidden", "true");
-  const tooltip = createOverlay(options.tooltipClassName ?? "uptime-tooltip");
+  const tooltip = createOverlay(options.tooltipClassName ?? "uptime-tooltip", options.overlayHost);
   const hiddenList = document.createElement("ul");
   hiddenList.className = `${className}-readings`;
   hiddenList.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap";
@@ -1177,6 +1180,8 @@ function createUptimeStrip(host, options = {}) {
     hovered = null;
     scheduleDraw();
   }
+  const onAppearance = () => drawNow();
+  document.addEventListener(APPEARANCE_EVENT, onAppearance);
   host.addEventListener("pointermove", onPointerMove);
   host.addEventListener("pointerleave", onPointerLeave);
   const observer = new ResizeObserver(([entry]) => {
@@ -1207,6 +1212,7 @@ function createUptimeStrip(host, options = {}) {
         cancelAnimationFrame(frame);
       frame = 0;
       observer.disconnect();
+      document.removeEventListener(APPEARANCE_EVENT, onAppearance);
       host.removeEventListener("pointermove", onPointerMove);
       host.removeEventListener("pointerleave", onPointerLeave);
       tooltip.destroy();
@@ -1325,10 +1331,12 @@ function enhance(root, data) {
       status: entry.status,
       strip: createUptimeStrip(stripHost, {
         style: stripStyle,
+        overlayHost: page,
         report: (reading) => readOut(row, reading)
       }),
       chart: createChartView(chartPlot, entry.id, entry.name, data.generatedAt, data.status.monitoringStartedAt, {
         style: CHART_GEOMETRY,
+        overlayHost: page,
         tooltip: false,
         report: (reading) => readOut(row, reading)
       }),
@@ -1654,6 +1662,7 @@ function apply(declarations) {
       target.style.setProperty(property, value);
     }
   }
+  document.dispatchEvent(new CustomEvent("velvet:appearance"));
 }
 script_default(root, data);
 apply(declared);
