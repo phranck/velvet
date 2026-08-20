@@ -13,31 +13,62 @@ import { parseVelvetConfiguration } from "@velvet/contracts";
  * rather than falling back to a rewrite. Refusing is visible and recoverable;
  * silently reformatting somebody's configuration is neither.
  *
- * Two preferences are written this way, and both live in a block of their own
- * holding a single boolean, so the mechanics are shared rather than copied.
- * Sharing them also means a correction to the parsing reaches both.
+ * Every setting written this way shares the mechanics rather than copying them,
+ * so a correction to the parsing reaches all of them. A setting is one scalar on
+ * one line: a boolean for the two preferences, a string for the theme a page is
+ * published in.
  */
 
 const INDENTED = /^[ \t]/u;
 const BLANK_OR_COMMENT = /^[ \t]*(?:#.*)?$/u;
 
+/** A scalar this module knows how to write onto one line. */
+type PreferenceValue = string | boolean;
+
 /** Where a preference sits in the configuration. */
 interface PreferenceLocation {
   /** The top-level block, such as `updates`. */
-  readonly block: "updates" | "gallery";
-  /** The single boolean inside it, such as `automaticSecurityUpdates`. */
+  readonly block: "updates" | "gallery" | "statusPage";
+  /** The scalar inside it, such as `automaticSecurityUpdates`. */
   readonly field: string;
+  /**
+   * Whether this field is the only one its block holds.
+   *
+   * It decides whether `<block>: { ... }` written on one line can be edited.
+   * That form is rewritten whole, which is right for a block holding this field
+   * alone and loses every sibling otherwise. Where a block holds more, the edit
+   * refuses the one-line form rather than emptying it.
+   */
+  readonly alone: boolean;
 }
 
 const AUTOMATIC_SECURITY_UPDATES: PreferenceLocation = {
   block: "updates",
   field: "automaticSecurityUpdates",
+  alone: true,
 };
 
 const GALLERY_LISTING: PreferenceLocation = {
   block: "gallery",
   field: "listed",
+  alone: true,
 };
+
+const STATUS_PAGE_THEME: PreferenceLocation = {
+  block: "statusPage",
+  field: "theme",
+  alone: false,
+};
+
+/**
+ * A theme name as the configuration contract allows it.
+ *
+ * Checked here as well as by the contract, because this value reaches a line of
+ * YAML by concatenation. A name holding a colon, a quotation mark or a newline
+ * would change the shape of the file rather than the value on the line, and the
+ * proof afterwards would then be comparing two files that both parsed.
+ */
+const THEME_NAME = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u;
 
 /**
  * Rewrites `updates.automaticSecurityUpdates` in a Velvet configuration.
@@ -51,7 +82,7 @@ export function setAutomaticSecurityUpdates(
   source: string,
   enabled: boolean,
 ): string | null {
-  return setBooleanPreference(source, AUTOMATIC_SECURITY_UPDATES, enabled);
+  return setPreference(source, AUTOMATIC_SECURITY_UPDATES, enabled);
 }
 
 /**
@@ -70,13 +101,32 @@ export function setGalleryListing(
   source: string,
   listed: boolean,
 ): string | null {
-  return setBooleanPreference(source, GALLERY_LISTING, listed);
+  return setPreference(source, GALLERY_LISTING, listed);
 }
 
-function setBooleanPreference(
+/**
+ * Rewrites `statusPage.theme`, which is the theme the page is published in.
+ *
+ * Unlike the two preferences, this field sits in a block holding a dozen others,
+ * so the proof afterwards leaves those alone rather than replacing the block.
+ *
+ * @param source - The repository's current `velvet.yml`, verbatim.
+ * @param theme - The theme's directory name.
+ * @returns The edited source, or `null` when the edit could not be made and
+ *   proven safe, in which case the caller must leave the file alone.
+ */
+export function setStatusPageTheme(
+  source: string,
+  theme: string,
+): string | null {
+  if (!THEME_NAME.test(theme)) return null;
+  return setPreference(source, STATUS_PAGE_THEME, theme);
+}
+
+function setPreference(
   source: string,
   location: PreferenceLocation,
-  value: boolean,
+  value: PreferenceValue,
 ): string | null {
   const edited = applyEdit(source, location, value);
   if (edited === null) return null;
@@ -88,7 +138,7 @@ function setBooleanPreference(
 function applyEdit(
   source: string,
   location: PreferenceLocation,
-  value: boolean,
+  value: PreferenceValue,
 ): string | null {
   const { block, field } = location;
   const blockKey = new RegExp(`^${block}:`, "u");
@@ -108,12 +158,16 @@ function applyEdit(
   const keyIndex = lines.findIndex((line) => blockKey.test(line));
 
   if (keyIndex === -1) {
+    // A block that is missing entirely can be written out, but only where this
+    // field is all it holds. `statusPage` is required by the contract, so its
+    // absence means a file this edit has no business completing.
+    if (!location.alone) return null;
     const separator = source.length === 0 || source.endsWith("\n") ? "" : "\n";
     return `${source}${separator}${block}:\n  ${field}: ${value}\n`;
   }
 
   const keyLine = lines[keyIndex]!;
-  const flow = keyLine.match(flowStyle);
+  const flow = location.alone ? keyLine.match(flowStyle) : null;
   if (flow) {
     lines[keyIndex] = `${block}: {${field}: ${value}}${
       flow[1] ? ` ${flow[1]}` : ""
@@ -148,7 +202,7 @@ function preservesEverythingElse(
   before: string,
   after: string,
   location: PreferenceLocation,
-  value: boolean,
+  value: PreferenceValue,
 ): boolean {
   const original = parseVelvetConfiguration(before);
   const updated = parseVelvetConfiguration(after);
@@ -156,10 +210,17 @@ function preservesEverythingElse(
 
   const { block, field } = location;
   const read = (data: typeof updated.data): unknown =>
-    (data[block] as Record<string, unknown>)[field];
+    (data[block] as Record<string, unknown> | undefined)?.[field];
   if (read(updated.data) !== value) return false;
 
+  // Only the one field is forced to agree, and the rest of its block is left as
+  // each side has it. Replacing the whole block would hide a sibling the edit
+  // disturbed, which matters for `statusPage`: it carries a dozen fields where
+  // the two preferences carry one each.
   const comparable = (data: typeof original.data): string =>
-    JSON.stringify({ ...data, [block]: { [field]: value } });
+    JSON.stringify({
+      ...data,
+      [block]: { ...(data[block] as Record<string, unknown>), [field]: value },
+    });
   return comparable(original.data) === comparable(updated.data);
 }

@@ -6,6 +6,7 @@ import { parseVelvetConfiguration } from "@velvet/contracts";
 import {
   setAutomaticSecurityUpdates,
   setGalleryListing,
+  setStatusPageTheme,
 } from "../src/update-preference.js";
 
 const base = `# The services this page watches.
@@ -163,4 +164,82 @@ test("refuses a gallery block it cannot edit rather than rewriting the file", ()
   const source = `${base}gallery: &anchor\n  listed: true\n`;
 
   assert.equal(setGalleryListing(source, false), null);
+});
+
+/**
+ * The theme a page is published in.
+ *
+ * It differs from the two preferences in the one way that matters to the proof
+ * afterwards: `statusPage` holds a dozen fields, whilst `updates` and `gallery`
+ * hold one each. An edit that disturbed a sibling here has to be caught.
+ */
+
+test("writes the theme a page is published in", () => {
+  const written = setStatusPageTheme(base, "twenty-forty-nine");
+  assert.ok(written);
+  assert.match(written, /^ {2}theme: twenty-forty-nine$/mu);
+});
+
+test("leaves every other field of the same block where it was", () => {
+  const written = setStatusPageTheme(base, "retro-chassis");
+  assert.ok(written);
+  const parsed = parseVelvetConfiguration(written);
+  assert.equal(parsed.success, true);
+  if (!parsed.success) throw new Error("unreachable");
+  assert.equal(parsed.data.statusPage.name, "Example Status");
+  assert.equal(parsed.data.statusPage.theme, "retro-chassis");
+  assert.match(written, /# shown in the header/u);
+});
+
+test("keeps a comment the user wrote beside the theme", () => {
+  const commented = base.replace(
+    "  theme: velvet\n",
+    "  theme: velvet # the one we started on\n",
+  );
+  const written = setStatusPageTheme(commented, "ncc-1701-d");
+  assert.ok(written);
+  assert.match(written, /^ {2}theme: ncc-1701-d # the one we started on$/mu);
+});
+
+test("refuses a name that would change the shape of the line", () => {
+  for (const name of [
+    "velvet: evil",
+    'velvet"',
+    "velvet\nservices: []",
+    "Velvet",
+    "",
+    " velvet",
+  ]) {
+    assert.equal(setStatusPageTheme(base, name), null, JSON.stringify(name));
+  }
+});
+
+test("refuses a configuration that was not valid to begin with", () => {
+  assert.equal(setStatusPageTheme("schemaVersion: 1\n", "velvet"), null);
+});
+
+test("refuses a status page written as one line rather than emptying it", () => {
+  // That form is rewritten whole, which is right for a block holding one field
+  // and would drop every sibling here. Refused on purpose rather than left to
+  // the contract to catch, which it only does whilst a required field is among
+  // the ones that would go.
+  const flow = base.replace(
+    "statusPage:\n  name: Example Status # shown in the header\n  theme: velvet\n",
+    "statusPage: {name: Example Status, theme: velvet, layout: cards}\n",
+  );
+  assert.equal(setStatusPageTheme(flow, "retro-chassis"), null);
+});
+
+test("refuses a file with no status page rather than writing one", () => {
+  // The contract requires the block, so a file without it is not one this edit
+  // should be completing.
+  const without = `schemaVersion: 1
+repository:
+  owner: example
+  name: status
+services:
+  - name: Website
+    url: https://example.com
+`;
+  assert.equal(setStatusPageTheme(without, "velvet"), null);
 });
