@@ -2,7 +2,7 @@
   import { VELVET_VERSION } from "../lib/velvet-version.generated.js";
   import RainbowScale from "./RainbowScale.svelte";
   import VelvetWordmark from "./VelvetWordmark.svelte";
-  import { SITE_SECTIONS } from "./site-sections.js";
+  import { sectionsNamed } from "./site-sections.js";
 
   /**
    * The bar across the top of every velvet.li page.
@@ -23,9 +23,9 @@
   }: {
     current?: "documentation" | "changelog" | "references" | "attributions";
     /**
-     * Whether the bar offers the four pages.
+     * Whether the bar offers the way onward.
      *
-     * Browser onboarding takes the same bar without them. It is a sequence of
+     * Browser onboarding takes the same bar without it. It is a sequence of
      * five steps, and a bar that offers a way out of one is a bar that leads
      * somebody out of it. The mark, the version and the scale are the same, so
      * the two surfaces read as one product rather than as two.
@@ -33,8 +33,16 @@
     navigation?: boolean;
   } = $props();
 
-  /** The pages the bar offers, which the foot of the page reads as well. */
-  const SECTIONS = SITE_SECTIONS;
+  /**
+   * The one page the bar offers.
+   *
+   * Documentation, the changelog and the attributions are at the foot of every
+   * page, so offering them here as well would say the same thing twice within
+   * one screen. This is what is left, and it belongs at the top rather than at
+   * the foot: it is what a page is for rather than what to read after it, and
+   * somebody arriving on the start page is being invited to look at it.
+   */
+  const SECTIONS = sectionsNamed("references");
 </script>
 
 <!--
