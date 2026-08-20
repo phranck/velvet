@@ -38,6 +38,21 @@ function valid(): Record<string, unknown> {
     },
     layouts: ["grouped"],
     readings: "panel",
+    card: {
+      backgroundStart: "#0a0b0f",
+      backgroundEnd: "#0a0b0f",
+      surface: "#141518",
+      operational: "#4ade80",
+      degraded: "#facc15",
+      outage: "#f87171",
+      noData: "#222326",
+      ipv4: "#60a5fa",
+      ipv6: "#c084fc",
+      textPrimary: "#f8fafc",
+      textSecondary: "#cbd5e1",
+      textTertiary: "#94a3b8",
+      clouds: false,
+    },
   };
 }
 
@@ -79,6 +94,21 @@ test("reports every fault at once rather than the first", () => {
       entries: { template: "template.ts", styles: "theme.css" },
       layouts: [],
       readings: "somewhere",
+      card: {
+        backgroundStart: "#0a0b0f",
+        backgroundEnd: "#0a0b0f",
+        surface: "#141518",
+        operational: "#4ade80",
+        degraded: "#facc15",
+        outage: "#f87171",
+        noData: "#222326",
+        ipv4: "#60a5fa",
+        ipv6: "#c084fc",
+        textPrimary: "#f8fafc",
+        textSecondary: "#cbd5e1",
+        textTertiary: "#94a3b8",
+        clouds: false,
+      },
     },
     "proof",
   );

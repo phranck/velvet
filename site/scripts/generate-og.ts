@@ -11,6 +11,7 @@ import {
 import { iconFor } from "../src/lib/icons";
 import { SQUIRCLE_TICK_PATH, createSquirclePath } from "../src/lib/squircle";
 import { cloudyBlobLayout, resolveTheme } from "../src/lib/theme.js";
+import { themeById } from "../src/lib/themes/catalogue.js";
 import { OG_SCALE, bar, pill, segGloss, typeScale } from "../src/lib/tokens";
 import type { DayStatus, RangeKey } from "../src/lib/types";
 
@@ -44,7 +45,51 @@ const statusDocument = statusResult.data;
 const services = statusDocument.services;
 
 const name = config.name ?? config.repo ?? "Status";
-const theme = resolveTheme(config.theme);
+
+/**
+ * The colours this page's card is drawn with.
+ *
+ * From the theme the page is published in, which states them itself. Read out
+ * of the catalogue rather than out of the theme's stylesheet, because this runs
+ * without a browser and a theme is free to mix its colours: `color-mix` would
+ * render as nothing and leave a hole where a bar should be.
+ *
+ * A theme nobody recognises falls back to Velvet's own, which is what the card
+ * did for every theme until now. It happens where a page names a theme this
+ * Velvet does not ship, and the build stops on that long before it reaches
+ * here.
+ */
+const published = typeof config.theme === "string" ? themeById(config.theme) : undefined;
+const fallback = resolveTheme();
+const card = published?.card;
+const theme = card
+  ? {
+      ...fallback,
+      grid: {
+        operational: card.operational,
+        degraded: card.degraded,
+        outage: card.outage,
+        noData: card.noData,
+      },
+      protocol: { ipv4: card.ipv4, ipv6: card.ipv6 },
+      text: {
+        primary: card.textPrimary,
+        secondary: card.textSecondary,
+        tertiary: card.textTertiary,
+      },
+      card: {
+        background: card.surface,
+        border: card.surfaceEdge ?? card.surface,
+        borderEnabled: card.surfaceEdge !== undefined,
+      },
+      background: {
+        ...fallback.background,
+        start: card.backgroundStart,
+        end: card.backgroundEnd,
+        blobs: { ...fallback.background.blobs, enabled: card.clouds },
+      },
+    }
+  : fallback;
 /** Colour for a status, matching the page's operational/degraded/outage palette. */
 const colourFor = (status: string): string =>
   status === "outage"

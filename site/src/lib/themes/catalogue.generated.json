@@ -19,6 +19,22 @@
       "cards"
     ],
     "readings": "overlay",
+    "card": {
+      "backgroundStart": "#0e1018",
+      "backgroundEnd": "#0a0b0f",
+      "surface": "#0e1015",
+      "operational": "#6366f1",
+      "degraded": "#d29922",
+      "outage": "#f85149",
+      "noData": "#1c2029",
+      "ipv4": "#b87ae1",
+      "ipv6": "#7472e4",
+      "textPrimary": "#e8eaed",
+      "textSecondary": "#8b919b",
+      "textTertiary": "#757c89",
+      "surfaceEdge": "#1c2029",
+      "clouds": true
+    },
     "features": [
       {
         "key": "chartWash",
@@ -198,6 +214,22 @@
       "cards"
     ],
     "readings": "panel",
+    "card": {
+      "backgroundStart": "#191714",
+      "backgroundEnd": "#191714",
+      "surface": "#141518",
+      "operational": "#647a3f",
+      "degraded": "#a2722b",
+      "outage": "#8c521d",
+      "noData": "#222326",
+      "ipv4": "#e8a33d",
+      "ipv6": "#8fae5a",
+      "textPrimary": "#e6dcc4",
+      "textSecondary": "#a89a7c",
+      "textTertiary": "#8a7f65",
+      "surfaceEdge": "#3b342a",
+      "clouds": false
+    },
     "features": [],
     "picture": "retro-chassis.png"
   },
@@ -221,6 +253,22 @@
       "cards"
     ],
     "readings": "overlay",
+    "card": {
+      "backgroundStart": "#05101c",
+      "backgroundEnd": "#05101c",
+      "surface": "#091726",
+      "operational": "#3f8fa3",
+      "degraded": "#b0822f",
+      "outage": "#c03a4e",
+      "noData": "#131e21",
+      "ipv4": "#5fb2e0",
+      "ipv6": "#c2913f",
+      "textPrimary": "#bdd2e0",
+      "textSecondary": "#7796ab",
+      "textTertiary": "#63839d",
+      "surfaceEdge": "#23506e",
+      "clouds": false
+    },
     "features": [
       {
         "key": "chartWash",
@@ -294,6 +342,22 @@
       "grouped"
     ],
     "readings": "overlay",
+    "card": {
+      "backgroundStart": "#000000",
+      "backgroundEnd": "#000000",
+      "surface": "#000000",
+      "operational": "#99ccff",
+      "degraded": "#ff9c00",
+      "outage": "#dc4a5f",
+      "noData": "#171310",
+      "ipv4": "#ff9c00",
+      "ipv6": "#cc99cc",
+      "textPrimary": "#ffcc99",
+      "textSecondary": "#cc99cc",
+      "textTertiary": "#9c9cff",
+      "surfaceEdge": "#33334a",
+      "clouds": false
+    },
     "features": [],
     "picture": "ncc-1701-d.png"
   }

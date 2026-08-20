@@ -212,8 +212,47 @@ export interface ThemeManifest {
   layouts: ThemeLayout[];
   /** Where the theme puts a protocol's reading. */
   readings: ThemeReadings;
+  /** The colours its social card is drawn with. */
+  card: ThemeCard;
   /** What can be set on it, in the order it declares them. */
   features: ThemeFeature[];
+}
+
+/**
+ * The colours a theme's social card is drawn with.
+ *
+ * The card is the picture somebody shares when they post the address of a
+ * status page. It is drawn at build time as SVG and rasterised without a
+ * browser, so nothing about it can be read out of the theme's stylesheet: a
+ * theme is free to mix its colours, and `color-mix` needs a browser to resolve.
+ *
+ * So a theme states them. These are not settings: an operator never sees them,
+ * and they exist because the alternative is every installation sharing a
+ * picture drawn in somebody else's colours.
+ */
+export interface ThemeCard {
+  /** The top of the backdrop's gradient. */
+  backgroundStart: string;
+  /** Its bottom. The same value as the start draws a flat field. */
+  backgroundEnd: string;
+  /** The surface a service is drawn on. */
+  surface: string;
+  /** The line around that surface, or nothing where the theme draws none. */
+  surfaceEdge?: string;
+  /** The four states of a day, in the theme's own colours. */
+  operational: string;
+  degraded: string;
+  outage: string;
+  noData: string;
+  /** The two protocols, as the page prints them. */
+  ipv4: string;
+  ipv6: string;
+  /** The three weights of text, brightest first. */
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+  /** Whether the backdrop carries the soft washes Velvet draws behind its page. */
+  clouds: boolean;
 }
 
 /** Either a parsed manifest or everything that is wrong with it. */
@@ -250,11 +289,81 @@ const MANIFEST_KEYS = new Set([
   "entries",
   "layouts",
   "readings",
+  "card",
   "features",
 ]);
 
 /** Everything `entries` may name. */
 const ENTRY_KEYS = new Set(["template", "styles", "script"]);
+
+/** Every colour the card takes, and whether it must be given. */
+const CARD_COLOURS = [
+  "backgroundStart",
+  "backgroundEnd",
+  "surface",
+  "operational",
+  "degraded",
+  "outage",
+  "noData",
+  "ipv4",
+  "ipv6",
+  "textPrimary",
+  "textSecondary",
+  "textTertiary",
+] as const;
+
+/** Everything `card` may name. */
+const CARD_KEYS = new Set([...CARD_COLOURS, "surfaceEdge", "clouds"]);
+
+/** A colour the card can be drawn with, which resvg renders without a browser. */
+const CARD_COLOUR = /^#[0-9a-f]{6}$/iu;
+
+/**
+ * Reads the colours a theme's card is drawn with.
+ *
+ * Every colour is a six-digit hex value. The card is rasterised without a
+ * browser, so a function that needs one, `color-mix` above all, would render as
+ * nothing and the card would come out with a hole in it rather than an error.
+ *
+ * @param value - Whatever the manifest carries under `card`.
+ * @param errors - Collected complaints.
+ * @returns The colours, or nothing when they could not be read.
+ */
+function readCard(value: unknown, errors: string[]): ThemeCard | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    errors.push("card must be a table naming the colours its picture is drawn with");
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  refuseUnknownKeys(record, CARD_KEYS, "card", errors);
+
+  const colours: Record<string, string> = {};
+  for (const name of CARD_COLOURS) {
+    const given = record[name];
+    if (typeof given !== "string" || !CARD_COLOUR.test(given)) {
+      errors.push(`card.${name} must be a six-digit hex colour`);
+      continue;
+    }
+    colours[name] = given;
+  }
+
+  const edge = record.surfaceEdge;
+  if (edge !== undefined && (typeof edge !== "string" || !CARD_COLOUR.test(edge))) {
+    errors.push("card.surfaceEdge, where it is given, must be a six-digit hex colour");
+  }
+
+  const clouds = record.clouds ?? false;
+  if (typeof clouds !== "boolean") {
+    errors.push("card.clouds must be true or false");
+  }
+
+  if (errors.length > 0) return null;
+  return {
+    ...(colours as unknown as Omit<ThemeCard, "surfaceEdge" | "clouds">),
+    ...(typeof edge === "string" ? { surfaceEdge: edge } : {}),
+    clouds: clouds as boolean,
+  };
+}
 
 /** Everything a feature may say, whatever its type. */
 /** What every feature may carry, whatever its type. */
@@ -661,6 +770,8 @@ export function parseThemeManifest(raw: unknown, id: string): ManifestResult {
     errors.push(`readings must be ${THEME_READINGS.join(" or ")}`);
   }
 
+  const card = readCard(record.card, errors);
+
   const featuresRaw = record.features ?? {};
   const features: ThemeFeature[] = [];
   if (
@@ -698,6 +809,7 @@ export function parseThemeManifest(raw: unknown, id: string): ManifestResult {
       entries,
       layouts,
       readings: readingsRaw as ThemeReadings,
+      card: card as ThemeCard,
       features,
     },
   };
