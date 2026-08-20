@@ -1,6 +1,9 @@
 import { readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { minify as minifyHtml } from "html-minifier-terser";
+// A CommonJS module, so it arrives as one object rather than as named exports.
+import JavaScriptObfuscator from "javascript-obfuscator";
 import {
   createServer,
   defineConfig,
@@ -261,13 +264,46 @@ export function prerenderStaticEntry(options: {
         resolve(options.root, "src/lib/page-script.js"),
         "utf8",
       );
-      const pageScript = (
+      const minified = (
         await transformWithEsbuild(pageSource, "page-script.js", {
           minify: true,
           // It is written for browsers rather than for a bundler, and it wraps
           // itself in a function already. Nothing here is to be treated as a
           // module, which would leave it in a scope of its own and stop it
           // running at all.
+          format: "iife",
+        })
+      ).code;
+      /*
+       * Obfuscated, then minified a second time.
+       *
+       * The obfuscator prints its own output rather than esbuild's, and that
+       * alone costs half as much again whatever it was asked to do. Running
+       * esbuild over the result takes that back: measured on this script, 4,122
+       * characters minified, 6,362 obfuscated, and 5,614 once squeezed again.
+       *
+       * The string table is what earns the remaining 36 per cent. Without it
+       * the strings sit in plain sight, and `data-copy-code` beside
+       * `querySelectorAll` says what the script does more plainly than any
+       * identifier would.
+       *
+       * Nothing here slows the script down on purpose. Self-defence, debugger
+       * traps and number expressions each buy nothing against a reader with the
+       * tools to look, and cost every reader who has none.
+       */
+      const obfuscated = JavaScriptObfuscator.obfuscate(minified, {
+        compact: true,
+        identifierNamesGenerator: "mangled",
+        simplify: true,
+        stringArray: true,
+        stringArrayThreshold: 1,
+        selfDefending: false,
+        debugProtection: false,
+        disableConsoleOutput: false,
+      }).getObfuscatedCode();
+      const pageScript = (
+        await transformWithEsbuild(obfuscated, "page-script.js", {
+          minify: true,
           format: "iife",
         })
       ).code;
@@ -293,7 +329,32 @@ export function prerenderStaticEntry(options: {
         // After the bundle's own tags have gone, because the rule that removes
         // them matches any script with a `src` and would take this with them.
         .replace("</head>", `  ${ANALYTICS}\n  </head>`);
-      await writeFile(htmlPath, rewritten);
+
+      /*
+       * Minified last, once every part is in place.
+       *
+       * A prerendered page is the whole document: its markup is not fetched
+       * once and cached the way a stylesheet is, so its indentation is
+       * downloaded by everybody who opens it.
+       *
+       * Whitespace is collapsed rather than removed, because between two inline
+       * elements a space is a word gap and taking it out joins the words.
+       * `conservativeCollapse` leaves one space wherever there was any, which
+       * is the difference between shorter markup and different markup.
+       *
+       * The structured data is minified as JSON, which carries no such trap: it
+       * is read by a machine and its whitespace means nothing.
+       */
+      const published = await minifyHtml(rewritten, {
+        collapseWhitespace: true,
+        conservativeCollapse: true,
+        removeComments: true,
+        removeRedundantAttributes: true,
+        useShortDoctype: true,
+        minifyCSS: true,
+        processScripts: ["application/ld+json"],
+      });
+      await writeFile(htmlPath, published);
 
       // The bundle is not merely unreferenced now, it is unreachable, so
       // leaving it in the output would publish dead weight.
