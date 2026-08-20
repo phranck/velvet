@@ -59,6 +59,8 @@ interface Harness {
   ): Promise<Response | null>;
   reconciled: ManagedUpdateRequest[];
   written: string[];
+  /** What each write said in its commit, in the order they were made. */
+  messages: string[];
   logs: AuditLogInput[];
 }
 
@@ -73,6 +75,7 @@ function harness(
 ): Harness {
   const reconciled: ManagedUpdateRequest[] = [];
   const written: string[] = [];
+  const messages: string[] = [];
   const logs: AuditLogInput[] = [];
   let configuration = overrides.configuration ?? CONFIGURATION;
 
@@ -86,9 +89,11 @@ function harness(
     async readConfiguration() {
       return { source: configuration, blobSha: "c".repeat(40) };
     },
-    async writeConfiguration(_token, _repository, source) {
+    async writeConfiguration(_token, _repository, source, _blobSha, message) {
       written.push(source);
+      messages.push(message);
       configuration = source;
+      return "d".repeat(40);
     },
     ...overrides.access,
   };
@@ -118,6 +123,7 @@ function harness(
   return {
     reconciled,
     written,
+    messages,
     logs,
     handle(method, path, body) {
       const url = new URL(`${origin}${path}`);
@@ -479,4 +485,123 @@ test("reports the reference setting when reading an installation", async () => {
 
   assert.equal(response!.status, 200);
   assert.equal((await response!.json()).listedAsReference, false);
+});
+
+/**
+ * Publishing, which is the one route that changes what the page looks like.
+ *
+ * The two preferences change how Velvet behaves and deliberately do not rebuild
+ * the page. This does the opposite, so the commit it writes has to be one the
+ * repository's own workflow reacts to.
+ */
+
+test("writes the theme and its settings in one commit", async () => {
+  const routes = harness();
+
+  const response = await routes.handle("POST", "/api/configuration/publish", {
+    installationId: 7,
+    repositoryId: 9,
+    theme: "twenty-forty-nine",
+    themeSettings: { chartWash: false, ipv4Colour: "#5fb2e0" },
+  });
+
+  assert.equal(response!.status, 200);
+  assert.deepEqual(await response!.json(), {
+    theme: "twenty-forty-nine",
+    themeSettings: { chartWash: false, ipv4Colour: "#5fb2e0" },
+    commit: "d".repeat(40),
+  });
+  assert.equal(routes.written.length, 1, "one decision, one commit");
+  assert.match(routes.written[0]!, /theme: twenty-forty-nine/u);
+  assert.match(routes.written[0]!, /chartWash: false/u);
+  assert.match(routes.written[0]!, /ipv4Colour: '#5fb2e0'/u);
+});
+
+test("says what it did in the commit, and does not hold back the build", async () => {
+  const routes = harness();
+
+  await routes.handle("POST", "/api/configuration/publish", {
+    installationId: 7,
+    repositoryId: 9,
+    theme: "retro-chassis",
+    themeSettings: {},
+  });
+
+  assert.deepEqual(routes.messages, ["Publish retro-chassis in Velvet"]);
+  // The whole point of publishing. A commit carrying this would leave the page
+  // as it was whilst the file said otherwise.
+  assert.doesNotMatch(routes.messages[0]!, /skip ci/u);
+});
+
+test("leaves the rest of the operator's file alone", async () => {
+  const routes = harness();
+
+  await routes.handle("POST", "/api/configuration/publish", {
+    installationId: 7,
+    repositoryId: 9,
+    theme: "velvet",
+    themeSettings: { chartWash: true },
+  });
+
+  const written = routes.written[0]!;
+  assert.match(written, /^ {2}name: Example Status$/mu);
+  assert.match(written, /^ {2}- name: Website$/mu);
+  assert.match(written, /^ {4}url: https:\/\/example\.com$/mu);
+});
+
+test("writes nothing when the page is already published that way", async () => {
+  const routes = harness();
+
+  const first = await routes.handle("POST", "/api/configuration/publish", {
+    installationId: 7,
+    repositoryId: 9,
+    theme: "velvet",
+    themeSettings: {},
+  });
+
+  assert.equal(first!.status, 200);
+  assert.equal((await first!.json()).commit, null);
+  assert.deepEqual(routes.written, [], "nothing changed, so nothing is written");
+});
+
+test("refuses a request that does not carry settings", async () => {
+  const routes = harness();
+
+  for (const body of [
+    { theme: 7 },
+    { theme: "velvet", themeSettings: [] },
+    { theme: "velvet", themeSettings: { chartWash: null } },
+    { theme: "velvet", themeSettings: { chartWash: { on: true } } },
+    {},
+  ]) {
+    const response = await routes.handle("POST", "/api/configuration/publish", {
+      installationId: 7,
+      repositoryId: 9,
+      ...body,
+    });
+    assert.equal(response!.status, 400, JSON.stringify(body));
+    assert.equal(
+      (await response!.json()).error.code,
+      "UPDATE_REQUEST_INVALID",
+      JSON.stringify(body),
+    );
+  }
+  assert.deepEqual(routes.written, []);
+});
+
+test("refuses a theme name that would change the shape of the file", async () => {
+  const routes = harness();
+
+  const response = await routes.handle("POST", "/api/configuration/publish", {
+    installationId: 7,
+    repositoryId: 9,
+    theme: "velvet\nservices: []",
+    themeSettings: {},
+  });
+
+  // Refused as the installation being unchangeable rather than as a bad
+  // request, because the edit is what turned it down. Either way nothing is
+  // written.
+  assert.equal(response!.status, 409);
+  assert.deepEqual(routes.written, []);
 });

@@ -111,19 +111,23 @@ export interface UpdateAccess {
    *
    * Using the user's token rather than an installation token matters here.
    * `velvet.yml` belongs to the user, the Velvet App never writes it as part of
-   * an update, and a preference change is the user's own edit, so it is
-   * recorded as such.
+   * an update, and an edit made here is the user's own, so it is recorded as
+   * such.
    *
    * @param blobSha - The blob the edit was based on. GitHub rejects the write
    *   when the file has moved on, which is what stops a concurrent edit from
    *   being silently overwritten.
+   * @param message - What the commit says, which differs by what was edited.
+   * @returns The commit's own hash, which is what identifies the workflow run
+   *   the write sets off.
    */
   writeConfiguration(
     userToken: string,
     repository: ManageableRepository,
     source: string,
     blobSha: string,
-  ): Promise<void>;
+    message: string,
+  ): Promise<string>;
 }
 
 interface UpdateAccessOptions {
@@ -317,16 +321,28 @@ export function createUpdateAccess(options: UpdateAccessOptions): UpdateAccess {
       };
     },
 
-    async writeConfiguration(userToken, repository, source, blobSha) {
-      await githubRequest<unknown>(contentsPath(repository), userToken, {
-        method: "PUT",
-        body: JSON.stringify({
-          message: "Update Velvet update preferences",
-          content: Buffer.from(source, "utf8").toString("base64"),
-          sha: blobSha,
-          branch: repository.defaultBranch,
-        }),
-      });
+    async writeConfiguration(userToken, repository, source, blobSha, message) {
+      const body = await githubRequest<unknown>(
+        contentsPath(repository),
+        userToken,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            message,
+            content: Buffer.from(source, "utf8").toString("base64"),
+            sha: blobSha,
+            branch: repository.defaultBranch,
+          }),
+        },
+      );
+      if (
+        !isRecord(body) ||
+        !isRecord(body.commit) ||
+        typeof body.commit.sha !== "string"
+      ) {
+        throw new Error("GitHub configuration write response was invalid.");
+      }
+      return body.commit.sha;
     },
   };
 }

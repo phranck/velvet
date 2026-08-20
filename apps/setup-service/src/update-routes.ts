@@ -28,7 +28,12 @@ import type {
 import {
   setAutomaticSecurityUpdates,
   setGalleryListing,
+  setStatusPageTheme,
 } from "./update-preference.js";
+import {
+  setThemeSettings,
+  type ThemeSettingValue,
+} from "./theme-settings-edit.js";
 import { isRecord, positiveInteger } from "./update-github-validation.js";
 
 const SEMANTIC_VERSION = new RegExp(SEMANTIC_VERSION_PATTERN, "u");
@@ -48,20 +53,41 @@ function missingFile(cause: unknown): boolean {
   return cause instanceof GitHubApiError && cause.status === 404;
 }
 
-const INSTALLATIONS_ROUTE = "/api/installations";
-const CONFIGURATION_ROUTE = "/api/configuration";
-const UPDATES_ROUTE = "/api/updates";
-const AUTOMATIC_ROUTE = "/api/updates/automatic";
-const GALLERY_ROUTE = "/api/updates/gallery";
+/**
+ * Every route this module answers.
+ *
+ * The list below is derived from this rather than written beside it, so a route
+ * added here cannot be left out of it. Left as two lists, a new route silently
+ * answers nothing: the handler checks membership before dispatching, so the
+ * route is dead and the only symptom is a request that returns nothing at all.
+ */
+const ROUTE = {
+  installations: "/api/installations",
+  configuration: "/api/configuration",
+  publish: "/api/configuration/publish",
+  updates: "/api/updates",
+  automatic: "/api/updates/automatic",
+  gallery: "/api/updates/gallery",
+} as const;
+
+const INSTALLATIONS_ROUTE = ROUTE.installations;
+const CONFIGURATION_ROUTE = ROUTE.configuration;
+const UPDATES_ROUTE = ROUTE.updates;
+const AUTOMATIC_ROUTE = ROUTE.automatic;
+const GALLERY_ROUTE = ROUTE.gallery;
+const PUBLISH_ROUTE = ROUTE.publish;
+
+/**
+ * How many settings one theme may carry.
+ *
+ * Velvet, the richest of them, offers thirteen. The limit is here so a request
+ * cannot grow a repository's own file without bound, and it is generous enough
+ * that a theme would have to double before it mattered.
+ */
+const MAX_THEME_SETTINGS = 64;
 
 /** Every route in this module, so the handler can tell them apart from setup. */
-export const UPDATE_ROUTES: readonly string[] = [
-  INSTALLATIONS_ROUTE,
-  CONFIGURATION_ROUTE,
-  UPDATES_ROUTE,
-  AUTOMATIC_ROUTE,
-  GALLERY_ROUTE,
-];
+export const UPDATE_ROUTES: readonly string[] = Object.values(ROUTE);
 
 /**
  * One request, already past authentication and the mutation boundary.
@@ -104,6 +130,40 @@ interface UpdateRoutesOptions {
  * own token. That keeps one place responsible for the question of who may act
  * on which repository, however many routes end up asking it.
  */
+
+/**
+ * Reads the settings out of a request body.
+ *
+ * The edit refuses anything it cannot write, but that answers "your file has a
+ * shape I cannot change". This answers "what you sent is not settings", which
+ * is a different thing to tell somebody and a different thing to log.
+ *
+ * @param value - Whatever arrived under `themeSettings`.
+ * @returns The settings, or `null` when the body did not carry any.
+ */
+function readThemeSettings(
+  value: unknown,
+): Record<string, ThemeSettingValue> | null {
+  if (value === undefined) return {};
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (entries.length > MAX_THEME_SETTINGS) return null;
+  const settings: Record<string, ThemeSettingValue> = {};
+  for (const [key, given] of entries) {
+    if (
+      typeof given !== "string" &&
+      typeof given !== "number" &&
+      typeof given !== "boolean"
+    ) {
+      return null;
+    }
+    settings[key] = given;
+  }
+  return settings;
+}
+
 export function createUpdateRoutes(
   options: UpdateRoutesOptions & { github: Parameters<typeof createUpdateAccess>[0]["github"] },
 ): UpdateRoutes {
@@ -184,6 +244,50 @@ export function createUpdateRoutes(
       input.session.githubUserToken,
       installationId,
       repositoryId,
+    );
+  };
+
+
+  /**
+   * Reads the configuration, applies one edit to it, and writes it back.
+   *
+   * Every route that changes `velvet.yml` does the same four things, and the
+   * one that matters is the third: an edit answers `null` when the file has a
+   * shape it cannot change safely, and that has to stop the write rather than
+   * fall through to one.
+   *
+   * A write that would change nothing is skipped, so operating a control twice
+   * leaves one commit rather than two.
+   *
+   * @param input - The request, for the token and the session it carries.
+   * @param repository - The repository, already authorised for this user.
+   * @param message - What the commit says.
+   * @param edit - Applies the change, or answers `null` to refuse it.
+   * @returns The commit the write produced, or `null` where nothing changed.
+   */
+  const editConfiguration = async (
+    input: UpdateRouteRequest,
+    repository: ManageableRepository,
+    message: string,
+    edit: (source: string) => string | null,
+  ): Promise<string | null> => {
+    const current = await access.readConfiguration(
+      input.session.githubUserToken,
+      repository,
+    );
+    const edited = edit(current.source);
+    if (edited === null) {
+      throw new ManagedUpdateError("UPDATE_INSTALLATION_INVALID", {
+        errorId: errorId(),
+      });
+    }
+    if (edited === current.source) return null;
+    return access.writeConfiguration(
+      input.session.githubUserToken,
+      repository,
+      edited,
+      current.blobSha,
+      message,
     );
   };
 
@@ -337,24 +441,12 @@ export function createUpdateRoutes(
             body.repositoryId,
           );
           const enabled = body.enabled;
-          const current = await access.readConfiguration(
-            input.session.githubUserToken,
+          await editConfiguration(
+            input,
             repository,
+            "Update Velvet update preferences",
+            (source) => setAutomaticSecurityUpdates(source, enabled),
           );
-          const edited = setAutomaticSecurityUpdates(current.source, enabled);
-          if (edited === null) {
-            throw new ManagedUpdateError("UPDATE_INSTALLATION_INVALID", {
-              errorId: errorId(),
-            });
-          }
-          if (edited !== current.source) {
-            await access.writeConfiguration(
-              input.session.githubUserToken,
-              repository,
-              edited,
-              current.blobSha,
-            );
-          }
           return jsonResponse({ automaticSecurityUpdates: enabled });
         }
 
@@ -371,25 +463,49 @@ export function createUpdateRoutes(
             body.repositoryId,
           );
           const listed = body.listed;
-          const current = await access.readConfiguration(
-            input.session.githubUserToken,
+          await editConfiguration(
+            input,
             repository,
+            "Update Velvet gallery listing",
+            (source) => setGalleryListing(source, listed),
           );
-          const edited = setGalleryListing(current.source, listed);
-          if (edited === null) {
-            throw new ManagedUpdateError("UPDATE_INSTALLATION_INVALID", {
+          return jsonResponse({ listedAsReference: listed });
+        }
+
+        if (input.route === PUBLISH_ROUTE && method === "POST") {
+          const body = await requestBody(input.request);
+          const theme = typeof body.theme === "string" ? body.theme : null;
+          const settings = readThemeSettings(body.themeSettings);
+          if (theme === null || settings === null) {
+            throw new ManagedUpdateError("UPDATE_REQUEST_INVALID", {
               errorId: errorId(),
             });
           }
-          if (edited !== current.source) {
-            await access.writeConfiguration(
-              input.session.githubUserToken,
-              repository,
-              edited,
-              current.blobSha,
-            );
-          }
-          return jsonResponse({ listedAsReference: listed });
+          const repository = await target(
+            input,
+            body.installationId,
+            body.repositoryId,
+          );
+          // Both edits go into one commit, because they are one decision: this
+          // page, in this theme, set this way. Two commits would build the page
+          // twice and leave it in between in a state nobody asked for.
+          //
+          // The commit carries no `[skip ci]`, which is the point of it. The
+          // two preferences change how Velvet behaves without changing what the
+          // page looks like; this changes exactly that, so it sets off the
+          // build the way any other edit to the file would.
+          const commit = await editConfiguration(
+            input,
+            repository,
+            `Publish ${theme} in Velvet`,
+            (source) => {
+              const withTheme = setStatusPageTheme(source, theme);
+              return withTheme === null
+                ? null
+                : setThemeSettings(withTheme, settings);
+            },
+          );
+          return jsonResponse({ theme, themeSettings: settings, commit });
         }
 
         return null;

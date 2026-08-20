@@ -226,7 +226,10 @@ test("writes a configuration against the blob it was read from", async () => {
       sha: "c".repeat(40),
       content: encoded(CONFIGURATION),
     },
-    "PUT /repos/example/status/contents/velvet.yml": { content: {} },
+    "PUT /repos/example/status/contents/velvet.yml": {
+      content: {},
+      commit: { sha: "d".repeat(40) },
+    },
   });
   const repository: ManageableRepository = {
     installationId: 7,
@@ -246,6 +249,7 @@ test("writes a configuration against the blob it was read from", async () => {
     repository,
     `${CONFIGURATION}updates:\n  automaticSecurityUpdates: false\n`,
     read.blobSha,
+    "Update Velvet update preferences",
   );
 
   const write = requests.find(({ method }) => method === "PUT");
