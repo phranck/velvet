@@ -1,36 +1,28 @@
-import { parseVelvetConfiguration } from "@velvet/contracts";
-
 /**
- * Changing a preference inside a user's own `velvet.yml`.
+ * Changing one scalar inside a user's own `velvet.yml`.
  *
- * The file belongs to the user. Parsing it and writing it back out would lose
- * every comment and every formatting choice they made, which is not an
- * acceptable side effect of flipping one checkbox. So the change is made as a
- * text edit that touches one line, and is then proven correct by comparing the
- * normalized configuration before and after.
+ * The change is a text edit touching a single line, so every comment and every
+ * formatting choice around it survives. `configuration-edit.ts` carries the
+ * proof that nothing else moved, and `theme-settings-edit.ts` writes the one
+ * thing here that is a block rather than a line.
  *
- * When the file is shaped in a way the edit does not handle, this refuses
- * rather than falling back to a rewrite. Refusing is visible and recoverable;
- * silently reformatting somebody's configuration is neither.
- *
- * Every setting written this way shares the mechanics rather than copying them,
- * so a correction to the parsing reaches all of them. A setting is one scalar on
- * one line: a boolean for the two preferences, a string for the theme a page is
- * published in.
+ * Three fields are written this way: the two preferences, each a boolean alone
+ * in its block, and the theme a page is published in, a string among a dozen
+ * siblings.
  */
 
-const INDENTED = /^[ \t]/u;
-const BLANK_OR_COMMENT = /^[ \t]*(?:#.*)?$/u;
+import {
+  BLANK_OR_COMMENT,
+  changedNothingBut,
+  INDENTED,
+  type FieldLocation,
+} from "./configuration-edit.js";
 
 /** A scalar this module knows how to write onto one line. */
 type PreferenceValue = string | boolean;
 
-/** Where a preference sits in the configuration. */
-interface PreferenceLocation {
-  /** The top-level block, such as `updates`. */
-  readonly block: "updates" | "gallery" | "statusPage";
-  /** The scalar inside it, such as `automaticSecurityUpdates`. */
-  readonly field: string;
+/** Where a preference sits, plus what shape of block it sits in. */
+interface PreferenceLocation extends FieldLocation {
   /**
    * Whether this field is the only one its block holds.
    *
@@ -130,7 +122,12 @@ function setPreference(
 ): string | null {
   const edited = applyEdit(source, location, value);
   if (edited === null) return null;
-  return preservesEverythingElse(source, edited, location, value)
+  return changedNothingBut(
+    source,
+    edited,
+    location,
+    (actual) => actual === value,
+  )
     ? edited
     : null;
 }
@@ -188,39 +185,4 @@ function applyEdit(
     return lines.join("\n");
   }
   return null;
-}
-
-/**
- * Proves the edit changed the preference and nothing else.
- *
- * Both versions are normalized through the configuration contract, and the
- * preference is then forced to the same value on both sides. Anything the edit
- * disturbed by accident, a truncated line or a broken block, shows up as a
- * difference here and causes the whole change to be refused.
- */
-function preservesEverythingElse(
-  before: string,
-  after: string,
-  location: PreferenceLocation,
-  value: PreferenceValue,
-): boolean {
-  const original = parseVelvetConfiguration(before);
-  const updated = parseVelvetConfiguration(after);
-  if (!original.success || !updated.success) return false;
-
-  const { block, field } = location;
-  const read = (data: typeof updated.data): unknown =>
-    (data[block] as Record<string, unknown> | undefined)?.[field];
-  if (read(updated.data) !== value) return false;
-
-  // Only the one field is forced to agree, and the rest of its block is left as
-  // each side has it. Replacing the whole block would hide a sibling the edit
-  // disturbed, which matters for `statusPage`: it carries a dozen fields where
-  // the two preferences carry one each.
-  const comparable = (data: typeof original.data): string =>
-    JSON.stringify({
-      ...data,
-      [block]: { ...(data[block] as Record<string, unknown>), [field]: value },
-    });
-  return comparable(original.data) === comparable(updated.data);
 }
