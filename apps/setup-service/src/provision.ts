@@ -444,11 +444,18 @@ export async function provisionVelvet(
             configuration,
             state.serial,
           );
+          // This one commit sets the page building, which is the whole reason
+          // for it. The number is issued after everything else is done, so the
+          // page that is already published was built without it: held back the
+          // way every other commit of this setup is, the number would reach the
+          // lock and never the page, and the page would show none until
+          // something unrelated happened to rebuild it.
           await input.github.writeManagedFiles(
             installationToken,
             state.repository.owner,
             state.repository.name,
             withSerial.filter((file) => file.path === VERSION_LOCK_PATH),
+            true,
           );
           state.serialRecorded = true;
         } catch {

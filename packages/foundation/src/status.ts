@@ -376,3 +376,48 @@ export function uptimeForRange(
   );
   return `${percentage.toFixed(2)}%`;
 }
+
+/**
+ * How long an installation has been watching, in hours.
+ *
+ * @param monitoringStartedAt - The first moment this installation measured.
+ * @param generatedAt - When the data was written.
+ * @returns The hours between them, or `null` where either moment cannot be
+ *   read. Never zero for an unreadable clock, because zero is indistinguishable
+ *   from a page that started this instant.
+ */
+function hoursWatching(
+  monitoringStartedAt: string,
+  generatedAt: string,
+): number | null {
+  const began = Date.parse(monitoringStartedAt);
+  const now = Date.parse(generatedAt);
+  if (!Number.isFinite(began) || !Number.isFinite(now)) return null;
+  return Math.max(0, (now - began) / 3_600_000);
+}
+
+/**
+ * What a page says whilst it has nothing to show yet, or nothing.
+ *
+ * A page published in its first hours is almost empty, and a reader who has
+ * just set Velvet up cannot tell that from a page that is broken. The strip
+ * carries a day or two of grey, the chart has nothing at all, and every figure
+ * reads as though the service had never answered.
+ *
+ * Said for a day, because the status runs every five minutes and the response
+ * times four times a day: a page is only fully furnished once that slower one
+ * has run a few times.
+ *
+ * @param monitoringStartedAt - The first moment this installation measured.
+ * @param generatedAt - When the data was written.
+ * @returns The sentence, or `null` once the page speaks for itself.
+ */
+export function settlingIn(
+  monitoringStartedAt: string,
+  generatedAt: string,
+): string | null {
+  const hours = hoursWatching(monitoringStartedAt, generatedAt);
+  return hours !== null && hours < 24
+    ? "Velvet started watching this page today. The days and the response times fill in as the checks run, so an empty stretch here is what a new page looks like rather than something being wrong."
+    : null;
+}

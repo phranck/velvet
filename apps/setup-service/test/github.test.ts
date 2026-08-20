@@ -674,3 +674,56 @@ test("gives up on a dispatch that answers 404 indefinitely", async () => {
   assert.equal(attempts, 10, "the ceiling holds");
   assert.equal(delays.length, 9);
 });
+
+test("holds the build back, except for the commit that records the serial", async () => {
+  // Everything written during a setup goes in before the page has ever been
+  // built, so a commit that started a build would start one that is thrown
+  // away. The serial is the one exception: it is issued once the page is
+  // already published, and a page cannot show a number that reached its
+  // repository behind a commit nothing reacts to.
+  const messages: string[] = [];
+  const client = createGitHubSetupClient({
+    appId: "12345",
+    clientId: "Iv1.client",
+    clientSecret: "client-secret-value",
+    privateKey: privateKeyPem,
+    fetch: async (request) => {
+      const url = new URL(request.url);
+      if (url.pathname.endsWith("/access_tokens")) {
+        return Response.json({ token: "installation-token" });
+      }
+      if (url.pathname.endsWith("/git/blobs")) {
+        return Response.json({ sha: "a".repeat(40) });
+      }
+      if (url.pathname.endsWith("/git/ref/heads/main")) {
+        return Response.json({ object: { sha: "b".repeat(40) } });
+      }
+      if (url.pathname.includes("/git/commits/")) {
+        return Response.json({ tree: { sha: "c".repeat(40) } });
+      }
+      if (url.pathname.endsWith("/git/trees")) {
+        return Response.json({ sha: "d".repeat(40) });
+      }
+      if (url.pathname.endsWith("/git/commits")) {
+        const body = (await request.json()) as { message: string };
+        messages.push(body.message);
+        return Response.json({ sha: "e".repeat(40) });
+      }
+      if (url.pathname.endsWith("/git/refs/heads/main")) {
+        return Response.json({ object: { sha: "e".repeat(40) } });
+      }
+      throw new Error(`Unexpected request ${url.pathname}`);
+    },
+  });
+
+  const files = [{ path: "velvet.lock.json", content: "{}\n" }];
+  await client.writeManagedFiles("installation-token", "example", "status", files);
+  await client.writeManagedFiles("installation-token", "example", "status", files, true);
+
+  assert.match(messages[0]!, /\[skip ci\]/u);
+  assert.doesNotMatch(
+    messages[1]!,
+    /skip ci/u,
+    "the serial has to reach the page, not only the repository",
+  );
+});
