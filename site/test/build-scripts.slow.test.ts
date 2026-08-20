@@ -436,57 +436,45 @@ test("invalid native configuration stops before writing runtime config", async (
   );
 });
 
-test("social card uses the semantic Velvet theme", async () => {
+test("a card is drawn in the colours of the theme its page is published in", async () => {
+  // Every installation shared a picture drawn in Velvet's indigo, whatever
+  // theme its page actually used, because the card knew the theme's name and
+  // nothing else about it. It is rasterised without a browser, so it cannot
+  // read a stylesheet: each theme states these colours itself.
   const directory = await mkdtemp(resolve(tmpdir(), "velvet-og-theme-"));
   const statusPath = resolve(directory, "status.json");
-  const defaultConfigPath = resolve(directory, "default-config.json");
-  const customConfigPath = resolve(directory, "custom-config.json");
-  const defaultOutput = resolve(directory, "default.png");
-  const customOutput = resolve(directory, "custom.png");
   await writeFile(statusPath, await fixture("status/dual-stack.json"));
-  await writeFile(
-    defaultConfigPath,
-    JSON.stringify({ owner: "example", repo: "status", name: "Example" }),
-  );
-  await writeFile(
-    customConfigPath,
-    JSON.stringify({
-      owner: "example",
-      repo: "status",
-      name: "Example",
-      theme: {
-        grid: { operational: "#00ff00" },
-        background: { start: "#ffffff", end: "#eeeeee" },
-        card: {
-          background: "#dddddd",
-          border: "#cccccc",
-          borderEnabled: false,
-        },
-        text: {
-          primary: "#111111",
-          secondary: "#222222",
-          tertiary: "#333333",
-        },
-      },
-    }),
-  );
 
-  for (const [configPath, output] of [
-    [defaultConfigPath, defaultOutput],
-    [customConfigPath, customOutput],
-  ]) {
+  const drawn = new Map<string, Buffer>();
+  for (const theme of ["velvet", "retro-chassis", "ncc-1701-d"]) {
+    const configPath = resolve(directory, `${theme}.json`);
+    const output = resolve(directory, `${theme}.png`);
+    await writeFile(
+      configPath,
+      JSON.stringify({ owner: "example", repo: "status", name: "Example", theme }),
+    );
     await bun([
       resolve(siteRoot, "scripts/generate-og.ts"),
       configPath,
       statusPath,
       output,
     ]);
+    drawn.set(theme, await readFile(output));
   }
 
-  assert.notDeepEqual(
-    await readFile(customOutput),
-    await readFile(defaultOutput),
-  );
+  // Compared against each other rather than against a stored image, because
+  // what matters is that they differ. A card checked against a copy of itself
+  // would have to be replaced every time a theme moves a colour.
+  const themes = [...drawn.keys()];
+  for (const [index, theme] of themes.entries()) {
+    for (const other of themes.slice(index + 1)) {
+      assert.notDeepEqual(
+        drawn.get(theme),
+        drawn.get(other),
+        `${theme} and ${other} share a card`,
+      );
+    }
+  }
 });
 
 test("draws a card for a page whose name holds an ampersand", async () => {

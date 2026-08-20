@@ -23,6 +23,26 @@ readings = "overlay"
 # wins over them rather than being inherited into a losing position.
 root = ".ncc-1701-d-page"
 
+# The colours the picture of this page is drawn with, which somebody sees when
+# they share its address. The card is rasterised without a browser, so it cannot
+# read this stylesheet and is told instead. This theme draws its services on the
+# black it stands on, so the surface takes no line of its own.
+[card]
+backgroundStart = "#000000"
+backgroundEnd = "#000000"
+surface = "#000000"
+surfaceEdge = "#33334a"
+operational = "#99ccff"
+degraded = "#ff9c00"
+outage = "#dc4a5f"
+noData = "#171310"
+ipv4 = "#ff9c00"
+ipv6 = "#cc99cc"
+textPrimary = "#ffcc99"
+textSecondary = "#cc99cc"
+textTertiary = "#9c9cff"
+clouds = false
+
 [entries]
 template = "template.ts"
 styles = "theme.css"

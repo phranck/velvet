@@ -496,6 +496,7 @@ function createChartView(host, serviceId, serviceName, generatedAt, monitoringSt
       empty.className = "chart-empty";
       empty.setAttribute("role", "status");
       empty.textContent = "No response history for this range.";
+      empty.style.aspectRatio = `${VIEW_WIDTH} / ${tokens.height}`;
       host.append(empty);
       host.removeAttribute("tabindex");
       geometry = null;

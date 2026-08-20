@@ -23,6 +23,25 @@ readings = "overlay"
 # wins over them rather than being inherited into a losing position.
 root = ".twenty-forty-nine-page"
 
+# The colours the picture of this page is drawn with, which somebody sees when
+# they share its address. The card is rasterised without a browser, so it cannot
+# read this stylesheet and is told instead.
+[card]
+backgroundStart = "#05101c"
+backgroundEnd = "#05101c"
+surface = "#091726"
+surfaceEdge = "#23506e"
+operational = "#3f8fa3"
+degraded = "#b0822f"
+outage = "#c03a4e"
+noData = "#131e21"
+ipv4 = "#5fb2e0"
+ipv6 = "#c2913f"
+textPrimary = "#bdd2e0"
+textSecondary = "#7796ab"
+textTertiary = "#63839d"
+clouds = false
+
 [entries]
 template = "template.ts"
 styles = "theme.css"

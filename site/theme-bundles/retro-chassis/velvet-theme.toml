@@ -23,6 +23,26 @@ readings = "panel"
 # wins over them rather than being inherited into a losing position.
 root = ".retro-chassis-page"
 
+# The colours the picture of this page is drawn with, which somebody sees when
+# they share its address. The card is rasterised without a browser, so it cannot
+# read this stylesheet and is told instead. The three state colours are what
+# this theme's own `color-mix` resolves to, since that needs a browser.
+[card]
+backgroundStart = "#191714"
+backgroundEnd = "#191714"
+surface = "#141518"
+surfaceEdge = "#3b342a"
+operational = "#647a3f"
+degraded = "#a2722b"
+outage = "#8c521d"
+noData = "#222326"
+ipv4 = "#e8a33d"
+ipv6 = "#8fae5a"
+textPrimary = "#e6dcc4"
+textSecondary = "#a89a7c"
+textTertiary = "#8a7f65"
+clouds = false
+
 [entries]
 template = "template.ts"
 styles = "theme.css"

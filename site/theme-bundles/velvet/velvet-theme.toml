@@ -23,6 +23,25 @@ readings = "overlay"
 # wins over them rather than being inherited into a losing position.
 root = ".velvet-page"
 
+# The colours the picture of this page is drawn with, which somebody sees when
+# they share its address. The card is rasterised without a browser, so it cannot
+# read this stylesheet and is told instead.
+[card]
+backgroundStart = "#0e1018"
+backgroundEnd = "#0a0b0f"
+surface = "#0e1015"
+surfaceEdge = "#1c2029"
+operational = "#6366f1"
+degraded = "#d29922"
+outage = "#f85149"
+noData = "#1c2029"
+ipv4 = "#b87ae1"
+ipv6 = "#7472e4"
+textPrimary = "#e8eaed"
+textSecondary = "#8b919b"
+textTertiary = "#757c89"
+clouds = true
+
 [entries]
 template = "template.ts"
 styles = "theme.css"
