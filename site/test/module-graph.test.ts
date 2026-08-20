@@ -181,6 +181,18 @@ const EXPECTED_REACH: Readonly<Record<string, readonly string[]>> = {
     "references",
     "website",
   ],
+  // The pages the site leads to, stated once because two surfaces lead to them:
+  // the bar at the top and the row at the foot. The onboarding is in this list
+  // through the bar, which it takes without offering those pages, so it carries
+  // the list without showing it.
+  "site-sections.ts": [
+    "attributions",
+    "changelog",
+    "documentation",
+    "onboarding",
+    "references",
+    "website",
+  ],
   // The Iconsax icons. The references page dropped out of this list when the
   // site's bar gave up its icons: that bar was the only thing reaching it
   // there, whilst the other three pages reach it through the release notes.

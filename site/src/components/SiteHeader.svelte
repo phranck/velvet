@@ -2,6 +2,7 @@
   import { VELVET_VERSION } from "../lib/velvet-version.generated.js";
   import RainbowScale from "./RainbowScale.svelte";
   import VelvetWordmark from "./VelvetWordmark.svelte";
+  import { SITE_SECTIONS } from "./site-sections.js";
 
   /**
    * The bar across the top of every velvet.li page.
@@ -32,19 +33,8 @@
     navigation?: boolean;
   } = $props();
 
-  /**
-   * The four pages the bar offers, without icons.
-   *
-   * The labels are set in the label face at a size where an icon beside them
-   * would be the larger of the two, and four uppercase words read as a row of
-   * their own without anything pointing at them.
-   */
-  const SECTIONS = [
-    { id: "documentation", label: "Documentation", href: "/documentation" },
-    { id: "changelog", label: "Changelog", href: "/changelog" },
-    { id: "references", label: "References", href: "/references" },
-    { id: "attributions", label: "Attributions", href: "/attributions" },
-  ] as const;
+  /** The pages the bar offers, which the foot of the page reads as well. */
+  const SECTIONS = SITE_SECTIONS;
 </script>
 
 <!--
