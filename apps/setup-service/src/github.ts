@@ -222,11 +222,21 @@ export interface GitHubSetupClient {
     source: string,
     sha: string | null,
   ): Promise<void>;
+  /**
+   * Commits the Velvet-owned files of a new installation.
+   *
+   * @param rebuild - Whether the commit should set the page building. Most of
+   *   what this writes is put in place before the page has ever been built, so
+   *   the commit holds the build back rather than starting one that would be
+   *   thrown away. The serial is the exception: it is issued once everything
+   *   else is done and has to reach a page that is already published.
+   */
   writeManagedFiles(
     installationToken: string,
     owner: string,
     repository: string,
     files: readonly GitHubManagedSetupFile[],
+    rebuild?: boolean,
   ): Promise<void>;
   enablePages(
     installationToken: string,
@@ -491,7 +501,7 @@ export function createGitHubSetupClient(
       );
     },
 
-    async writeManagedFiles(installationToken, owner, repository, files) {
+    async writeManagedFiles(installationToken, owner, repository, files, rebuild = false) {
       if (files.length === 0) return;
       const root = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}`;
 
@@ -570,7 +580,9 @@ export function createGitHubSetupClient(
           {
             method: "POST",
             body: JSON.stringify({
-              message: "Configure Velvet [skip ci]",
+              message: rebuild
+                ? "Record the Velvet installation serial"
+                : "Configure Velvet [skip ci]",
               tree: tree.sha,
               parents: [head],
             }),
