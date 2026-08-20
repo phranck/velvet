@@ -18,6 +18,11 @@ dataVersion = 1
 layouts = ["cards"]
 readings = "panel"
 
+# The element this theme's page is rooted at. What an operator sets is written
+# onto it, so their value stands where this theme's own declarations stand and
+# wins over them rather than being inherited into a losing position.
+root = ".retro-chassis-page"
+
 [entries]
 template = "template.ts"
 styles = "theme.css"

@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { test } from "bun:test";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { chromium } from "playwright";
@@ -11,6 +10,7 @@ import { build } from "vite";
 import { refuseOffsiteRequests } from "./offline.js";
 import { themeStatusPage } from "../vite.theme-page.js";
 import { phosphorWoff2Only } from "../vite.static-tool.js";
+import { themeById } from "../src/lib/themes/catalogue.js";
 import { uptimeForRange } from "../src/lib/data.js";
 import type { StatusDocument } from "../src/lib/types.js";
 
@@ -128,10 +128,48 @@ test(
       // the only properties written into the document are the ones its own
       // manifest declares as settings.
       assert.match(published, /<link rel="stylesheet"[^>]*href="[^"]*\.css"/);
-      const declared = [
-        ...(published.match(/--[a-z-]+(?=:)/gu) ?? []),
-      ].filter((property) => published.includes(`<style>:root { ${property}`));
-      assert.deepEqual(declared, ["--chart-area-display"]);
+      const velvet = themeById("velvet");
+      assert.ok(velvet, "the catalogue carries the theme this page is built in");
+      const settable = new Set(
+        velvet.features.flatMap((feature) =>
+          feature.type === "arrangement"
+            ? feature.properties
+            : [feature.property],
+        ),
+      );
+      const settings = [...published.matchAll(/<style>(.*?)<\/style>/gsu)]
+        .map((block) => block[1])
+        .find((block) => block.includes(":root {"));
+      assert.ok(settings, "the document carries the settings it was built with");
+      const rules = [...settings.matchAll(/([^{}]+)\{([^{}]*)\}/gu)].map(
+        (rule) => ({
+          selector: rule[1].trim(),
+          properties: [...rule[2].matchAll(/(--[a-z0-9-]+)\s*:/gu)].map(
+            (declaration) => declaration[1],
+          ),
+        }),
+      );
+
+      // Two rules carrying the same declarations, on the document's root and on
+      // the theme's own. The theme states many of these properties itself, and a
+      // value inherited from the document loses to a declaration on the element
+      // however specific it is, so what an operator set reaches the page only
+      // through the second rule. The first is there because a style query reads
+      // the nearest ancestor and never the element it is asked about.
+      assert.deepEqual(
+        rules.map((rule) => rule.selector),
+        [":root", velvet.root],
+      );
+      assert.deepEqual(rules[0].properties, rules[1].properties);
+
+      // Only what this theme offers as a setting. Anything else in here is the
+      // build writing a property the theme never asked anybody about.
+      const written = rules[0].properties;
+      assert.ok(written.length > 0, "at least one setting is written");
+      assert.deepEqual(
+        written.filter((property) => !settable.has(property)),
+        [],
+      );
 
       const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
       await refuseOffsiteRequests(page);
@@ -181,7 +219,13 @@ test(
 test(
   "publishes what was set on the theme, and what was not",
   async () => {
-    const off = await buildThemePage("velvet", { chartWash: false });
+    // A switch the theme never states itself, and a colour it does. The two
+    // arrive by different routes: the first has nothing to lose to, whilst the
+    // second stands against the theme's own declaration of the same property.
+    const off = await buildThemePage("velvet", {
+      chartWash: false,
+      ipv4Colour: "#123456",
+    });
     const browser = await chromium.launch();
     try {
       // Written whether or not anybody set it, so a theme reads one answer
@@ -189,9 +233,27 @@ test(
       const html = await readFile(join(off.outDir, "index.html"), "utf8");
       assert.match(html, /--chart-area-display: none;/);
 
+      // Served over HTTP rather than opened as a file. Chromium gives every
+      // file:// document its own opaque origin, and the theme's stylesheet then
+      // loads without taking effect, which leaves the page carrying the inline
+      // settings and none of the theme's own. What is being measured here is
+      // exactly which of those two wins, so the stylesheet has to be in force.
+      const server = Bun.serve({
+        port: 0,
+        fetch: async (request) => {
+          const path = new URL(request.url).pathname;
+          const file = Bun.file(
+            join(off.outDir, path === "/" ? "index.html" : path),
+          );
+          return (await file.exists())
+            ? new Response(file)
+            : new Response(null, { status: 404 });
+        },
+      });
       const page = await browser.newPage();
       await refuseOffsiteRequests(page);
-      await page.goto(pathToFileURL(join(off.outDir, "index.html")).href);
+      await page.goto(`http://127.0.0.1:${server.port}/`);
+      await page.locator(".velvet-page").first().waitFor();
       // In force on the page rather than merely present in the document, which
       // is what the theme's own `var()` reads.
       const inForce = await page.evaluate(() =>
@@ -200,7 +262,24 @@ test(
           .trim(),
       );
       assert.equal(inForce, "none");
+
+      // And in force on the theme's own root, which is the element its
+      // stylesheet reads the property from. Velvet states this property on that
+      // element itself, and a declaration on an element beats anything inherited
+      // into it, so a value written only onto the document reaches the page in
+      // the document and nowhere the theme looks.
+      const onTheThemesRoot = await page.evaluate(() => {
+        const root = document.querySelector(".velvet-page");
+        if (root === null) return null;
+        const style = getComputedStyle(root);
+        return {
+          wash: style.getPropertyValue("--chart-area-display").trim(),
+          ipv4: style.getPropertyValue("--protocol-ipv4").trim(),
+        };
+      });
+      assert.deepEqual(onTheThemesRoot, { wash: "none", ipv4: "#123456" });
       await page.close();
+      await server.stop(true);
     } finally {
       await browser.close();
       await off.cleanup();

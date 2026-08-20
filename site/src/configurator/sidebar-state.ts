@@ -7,6 +7,8 @@
  * falls back to the default when what was stored no longer makes sense.
  */
 
+import { remember, remembered } from "./remembered.js";
+
 /** Where the preferences live, beside whatever else this browser holds. */
 const STORAGE_KEY = "velvet:configurator:sidebar";
 
@@ -125,59 +127,31 @@ function reconcileOpen(stored: unknown): AnySectionKey[] {
   );
 }
 
-/** Where preferences are kept, or null in a browser that refuses storage. */
-function storage(): Storage | null {
-  try {
-    return globalThis.localStorage ?? null;
-  } catch {
-    // Reading localStorage throws outright when the browser is set to refuse
-    // it, so this is a refusal rather than an absence.
-    return null;
-  }
-}
-
 /**
  * Reads the preferences, falling back to the defaults for anything unusable.
  *
  * @returns A complete set, whatever was or was not stored.
  */
 export function loadPreferences(): SidebarPreferences {
-  const store = storage();
-  if (!store) return defaultPreferences();
-  let parsed: unknown;
-  try {
-    const raw = store.getItem(STORAGE_KEY);
-    if (raw === null) return defaultPreferences();
-    parsed = JSON.parse(raw);
-  } catch {
-    return defaultPreferences();
-  }
-  if (typeof parsed !== "object" || parsed === null) return defaultPreferences();
-  const record = parsed as Record<string, unknown>;
-  return {
-    width: clampWidth(
-      typeof record.width === "number" ? record.width : DEFAULT_SIDEBAR_WIDTH,
-    ),
-    collapsed: record.collapsed === true,
-    open: reconcileOpen(record.open),
-    order: reconcileOrder(record.order),
-  };
+  return remembered(STORAGE_KEY, (stored) => {
+    if (typeof stored !== "object" || stored === null) {
+      return defaultPreferences();
+    }
+    const record = stored as Record<string, unknown>;
+    return {
+      width: clampWidth(
+        typeof record.width === "number" ? record.width : DEFAULT_SIDEBAR_WIDTH,
+      ),
+      collapsed: record.collapsed === true,
+      open: reconcileOpen(record.open),
+      order: reconcileOrder(record.order),
+    };
+  });
 }
 
-/**
- * Writes the preferences back, and says nothing when it cannot.
- *
- * A browser refusing storage, or one whose quota is full, is not a reason to
- * interrupt somebody arranging a sidebar.
- */
+/** Writes the preferences back. */
 export function savePreferences(preferences: SidebarPreferences): void {
-  const store = storage();
-  if (!store) return;
-  try {
-    store.setItem(STORAGE_KEY, JSON.stringify(preferences));
-  } catch {
-    // Nothing to do and nothing worth saying.
-  }
+  remember(STORAGE_KEY, preferences);
 }
 
 /**

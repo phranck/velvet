@@ -47,7 +47,7 @@ if (!theme) {
   document.head.append(stylesheet);
   // What the build would write for an installation that has set nothing, so the
   // gallery shows a theme drawn the way a published page draws it.
-  const settings = themeSettingsStyle(theme.manifest.features);
+  const settings = themeSettingsStyle(theme.manifest.root, theme.manifest.features);
   if (settings !== "") {
     document.head.insertAdjacentHTML("beforeend", settings);
   }

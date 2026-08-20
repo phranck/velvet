@@ -625,6 +625,188 @@ async function conformOne(
 }
 
 /** What a run is narrowed to, where it is narrowed at all. */
+/**
+ * Whether a service somebody left open comes back open, and comes back still.
+ *
+ * On a page of its own, because it is the only check that reloads: everything
+ * else reads the page as it first arrived, and a reload underneath them would
+ * have them describe a page nobody visited.
+ *
+ * The animations are counted rather than looked for afterwards. One lasts less
+ * than half a second, so a page inspected once it has settled shows nothing
+ * either way, and the check would pass against the very fault it exists to
+ * catch.
+ *
+ * @param browser - The launched browser.
+ * @param theme - The theme being checked, for naming a finding.
+ * @param fixture - The case to restore a service in.
+ * @param origin - Where the theme is served.
+ * @returns Anything wrong, which is empty where a restored page stands still.
+ */
+async function conformRestored(
+  browser: Browser,
+  theme: ReadTheme,
+  fixture: Fixture,
+  origin: string,
+): Promise<Finding[]> {
+  const service = fixture.data.status.services[0];
+  if (!service) return [];
+  const page = await browser.newPage();
+  try {
+    await page.addInitScript(() => {
+      const original = Element.prototype.animate;
+      (globalThis as unknown as { heightAnimations: number }).heightAnimations = 0;
+      Element.prototype.animate = function (frames, options) {
+        const moved =
+          Array.isArray(frames) &&
+          frames.some((frame) => frame !== null && "height" in frame);
+        if (moved) {
+          (globalThis as unknown as { heightAnimations: number })
+            .heightAnimations += 1;
+        }
+        return original.call(this, frames, options);
+      };
+    });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${origin}/f/${fixture.name}/`, { waitUntil: "networkidle" });
+    await page.evaluate(
+      (id) => localStorage.setItem(`velvet:open:${id}`, "1"),
+      service.id,
+    );
+    await page.reload({ waitUntil: "networkidle" });
+
+    const restored = await page.evaluate(() => ({
+      open: document.querySelectorAll('[data-open="true"]').length,
+      animated:
+        (globalThis as unknown as { heightAnimations?: number })
+          .heightAnimations ?? 0,
+    }));
+    const findings: Finding[] = [];
+    const note = (detail: string): void => {
+      findings.push({
+        theme: theme.directory,
+        fixture: fixture.name,
+        check: "restored",
+        detail,
+      });
+    };
+    if (restored.open === 0) note("a service left open comes back closed");
+    if (restored.animated > 0) {
+      note(
+        `a service left open opens itself again on load, in ${restored.animated} height animation(s)`,
+      );
+    }
+    return findings;
+  } finally {
+    await page.close();
+  }
+}
+
+/**
+ * Whether an overlay is dressed, and whether the days follow their colours.
+ *
+ * Two things that look like design faults and are not. An overlay is appended
+ * outside the card, because a card clips; put outside the design's page as
+ * well, it inherits none of the design's colours and `var()` resolves to
+ * nothing, which is text on a transparent field. And the days are painted onto
+ * a canvas, which holds what it was given until something asks again, so a
+ * colour that changes changes nothing until the pointer happens to cross it.
+ *
+ * On a page of its own, because it changes the page it measures.
+ *
+ * @param browser - The launched browser.
+ * @param theme - The theme being checked.
+ * @param fixture - The case to draw.
+ * @param origin - Where the theme is served.
+ * @returns Anything wrong, which is empty where both hold.
+ */
+async function conformAppearance(
+  browser: Browser,
+  theme: ReadTheme,
+  fixture: Fixture,
+  origin: string,
+): Promise<Finding[]> {
+  const root = theme.manifest?.root;
+  if (!root) return [];
+  const page = await browser.newPage();
+  try {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${origin}/f/${fixture.name}/`, { waitUntil: "networkidle" });
+
+    const seen = await page.evaluate(
+      ([selector, tooltipClass]) => {
+        const surface = document.querySelector(selector);
+        if (!surface) return null;
+        // The overlay the page made for itself, not one this check puts
+        // somewhere convenient. Where it hangs is the whole question: outside
+        // the design's own page it inherits none of the design's colours.
+        // It exists from the moment the strip is built, hidden until hovered.
+        const overlay = document.querySelector(`.${tooltipClass}`);
+        const dressed = overlay
+          ? getComputedStyle(overlay).backgroundColor
+          : "missing";
+
+        const canvas = document.querySelector("canvas");
+        // Read across the strip rather than at one point. A design is free to
+        // draw nothing down the middle of its canvas, and one that does read
+        // as a strip that never changes.
+        const sample = (): string => {
+          if (!canvas) return "";
+          const context = canvas.getContext("2d");
+          if (!context) return "";
+          const readings: string[] = [];
+          for (const across of [0.05, 0.5, 0.9]) {
+            for (const down of [0.25, 0.5, 0.75]) {
+              const data = context.getImageData(
+                Math.round(canvas.width * across),
+                Math.round(canvas.height * down),
+                1,
+                1,
+              ).data;
+              // Nothing was drawn here, so it says nothing either way.
+              if (data[3] === 0) continue;
+              readings.push(`${data[0]},${data[1]},${data[2]}`);
+            }
+          }
+          return readings.join(" ");
+        };
+        const before = sample();
+        // A colour no design uses, so a repaint cannot look like no repaint.
+        (surface as HTMLElement).style.setProperty("--state-operational", "#ff00ff");
+        document.dispatchEvent(new CustomEvent("velvet:appearance"));
+        return { dressed, before, after: sample(), hasCanvas: canvas !== null };
+      },
+      [root, "uptime-tooltip"] as const,
+    );
+
+    const findings: Finding[] = [];
+    const note = (check: string, detail: string): void => {
+      findings.push({ theme: theme.directory, fixture: fixture.name, check, detail });
+    };
+    if (!seen) {
+      note("appearance", `the page has no ${root} to measure`);
+      return findings;
+    }
+    if (seen.dressed === "missing") {
+      note("overlay", "the page draws no hover overlay at all");
+    } else if (/rgba\(0, 0, 0, 0\)|transparent/u.test(seen.dressed)) {
+      note(
+        "overlay",
+        `a hover overlay has no surface of its own, so it is text on whatever is behind it: ${seen.dressed}`,
+      );
+    }
+    if (seen.hasCanvas && seen.before !== "" && seen.before === seen.after) {
+      note(
+        "appearance",
+        `the days keep their colours when the page's own change: ${seen.before} before and after`,
+      );
+    }
+    return findings;
+  } finally {
+    await page.close();
+  }
+}
+
 export interface ConformanceOptions {
   /** Only these themes, by directory name. */
   themes?: string[];
@@ -680,7 +862,7 @@ export async function runConformance(
 
     // What the build writes for an installation that has set nothing, so a
     // theme is checked drawn the way a published page draws it.
-    const settings = themeSettingsStyle(theme.manifest.features);
+    const settings = themeSettingsStyle(theme.manifest.root, theme.manifest.features);
     const served = await serveBundle(theme, (name) => {
       const fixture = fixtures.find((candidate) => candidate.name === name);
       if (!fixture) {
@@ -698,6 +880,18 @@ export async function runConformance(
     try {
       for (const fixture of fixtures) {
         findings.push(...(await conformOne(page, theme, fixture, served.origin)));
+      }
+      // Once per theme rather than once per fixture: this is about how a page
+      // comes back rather than about what is on it, and the ordinary
+      // installation is the case that has services to leave open at all.
+      const ordinary = fixtures.find(
+        (fixture) => fixture.name === "velvet-underground",
+      );
+      if (ordinary) {
+        findings.push(
+          ...(await conformRestored(browser, theme, ordinary, served.origin)),
+          ...(await conformAppearance(browser, theme, ordinary, served.origin)),
+        );
       }
     } finally {
       await page.close();

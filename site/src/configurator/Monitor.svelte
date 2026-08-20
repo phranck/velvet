@@ -1,12 +1,35 @@
 <script lang="ts">
+  import {
+    MONITOR_READY,
+    MONITOR_SETTINGS,
+  } from "../lib/themes/monitor-messages.js";
+
   interface Props {
     /** The theme being shown, as its directory name. */
     theme: string;
     /** What the operator has set, as custom properties on the root. */
     declarations?: Record<string, string>;
+    /** The element the theme's page is rooted at, as its manifest states it. */
+    themeRoot?: string;
+    /**
+     * The properties worth reading back once the page has drawn.
+     *
+     * A theme states many of these itself, and a palette moves them, so what a
+     * control should start at is what the page shows rather than what the
+     * manifest calls the default.
+     */
+    watching?: readonly string[];
+    /** Called with what those properties resolve to on the theme's own root. */
+    onResolved?: (values: Record<string, string>) => void;
   }
 
-  const { theme, declarations = {} }: Props = $props();
+  const {
+    theme,
+    declarations = {},
+    themeRoot = "",
+    watching = [],
+    onResolved,
+  }: Props = $props();
 
   let frame = $state<HTMLIFrameElement | null>(null);
 
@@ -33,7 +56,7 @@
   $effect(() => {
     const listener = (event: MessageEvent): void => {
       if (event.origin !== globalThis.location.origin) return;
-      if ((event.data as { type?: string })?.type !== "velvet:ready") return;
+      if ((event.data as { type?: string })?.type !== MONITOR_READY) return;
       readyAt = frame?.getAttribute("src") ?? null;
     };
     globalThis.addEventListener("message", listener);
@@ -45,10 +68,43 @@
     const settings = declarations;
     if (!target || readyAt !== source) return;
     target.postMessage(
-      { type: "velvet:settings", declarations: settings },
+      { type: MONITOR_SETTINGS, declarations: settings },
       globalThis.location.origin,
     );
+    read();
   });
+
+  /**
+   * Reads back what the page resolves for the properties worth watching.
+   *
+   * After the settings have been sent rather than before, so what is read is
+   * the page as it now stands. Read directly rather than asked for: the frame
+   * is same-origin, and a message back would be a second thing to keep in step
+   * with what was just sent.
+   *
+   * The read is deferred by two frames rather than one. A property written
+   * this instant has not been through style resolution, and one frame proved
+   * too early: switching a palette read back the colours of the one before it.
+   */
+  function read(): void {
+    if (!onResolved || watching.length === 0 || themeRoot === "") return;
+    const document_ = frame?.contentDocument;
+    const page = document_?.querySelector(themeRoot);
+    if (!page) return;
+    globalThis.requestAnimationFrame(() => {
+      globalThis.requestAnimationFrame(() => {
+      const style = globalThis.getComputedStyle(page);
+      onResolved(
+        Object.fromEntries(
+          watching.map((property) => [
+            property,
+            style.getPropertyValue(property).trim(),
+          ]),
+        ),
+      );
+      });
+    });
+  }
 </script>
 
 <div class="monitor">

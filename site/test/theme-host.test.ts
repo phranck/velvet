@@ -25,6 +25,7 @@ function manifest(overrides: Partial<ThemeManifest> = {}): ThemeManifest {
       order: 1,
       state: "offered",
       dataVersion: THEME_DATA_VERSION,
+      root: ".proof-page",
       entries: {
         template: "template.ts",
         styles: "theme.css",

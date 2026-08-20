@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "bun:test";
-import { chromium, type Page } from "playwright";
+import { chromium, type Frame, type Page } from "playwright";
 import { build } from "vite";
 
 import hostedConfiguratorConfig from "../vite.configurator.js";
@@ -14,6 +14,10 @@ import hostedConfiguratorConfig from "../vite.configurator.js";
  * demand and no dependency optimiser runs.
  */
 const CONFIGURATOR_TIMEOUT_MS = 120_000;
+
+/** Where the monitor asks for a theme, and where those documents really are. */
+const THEME_PATH = "/config/themes";
+const THEMES = resolve(import.meta.dirname, "../../config/themes");
 
 const SIGNED_IN = {
   authenticated: true,
@@ -59,16 +63,19 @@ const built = (async () => {
 })();
 
 /**
- * Serves the built application and answers the two routes it opens with.
+ * Serves the built application and answers the routes it opens with.
  *
  * @param listing - What `/api/installations` replies with.
  * @param visit - What to assert once the page has settled.
  * @param session - What `/api/session` replies with.
+ * @param configuration - What `/api/configuration` replies with, which decides
+ *   the theme the configurator opens on.
  */
 async function withConfigurator(
   listing: unknown,
   visit: (page: Page) => Promise<void>,
   session: unknown = SIGNED_IN,
+  configuration: unknown = { theme: null, themeSettings: {} },
 ): Promise<void> {
   const root = await built;
   const server = Bun.serve({
@@ -77,6 +84,25 @@ async function withConfigurator(
       const url = new URL(request.url);
       if (url.pathname === "/api/session") return Response.json(session);
       if (url.pathname === "/api/installations") return Response.json(listing);
+      // What the chosen installation is published in, which the configurator
+      // asks for as soon as it has one.
+      if (url.pathname === "/api/configuration") {
+        return Response.json(configuration);
+      }
+      // The monitor loads a theme from the service's own path. Those documents
+      // are written by `configurator:themes` into the repository rather than
+      // produced by the bundle this test builds, so they are served from where
+      // they actually are.
+      if (url.pathname.startsWith(`${THEME_PATH}/`)) {
+        const wanted = resolve(THEMES, url.pathname.slice(THEME_PATH.length + 1));
+        if (!wanted.startsWith(`${THEMES}/`)) {
+          return new Response(null, { status: 403 });
+        }
+        const preview = Bun.file(wanted);
+        return (await preview.exists())
+          ? new Response(preview)
+          : new Response(null, { status: 404 });
+      }
       const path = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
       const file = Bun.file(resolve(root, path));
       return (await file.exists())
@@ -150,8 +176,17 @@ test(
         });
         await page.reload();
         await installationItems(page).waitFor();
+        // The third asks what the chosen installation is published in, which
+        // it can only do once it has one.
+        await page.waitForFunction(() =>
+          document.querySelector(".current__name") !== null,
+        );
 
-        assert.deepEqual(asked, ["/api/session", "/api/installations"]);
+        assert.deepEqual(asked, [
+          "/api/session",
+          "/api/installations",
+          "/api/configuration",
+        ]);
       },
     );
   },
@@ -343,6 +378,89 @@ test(
           "hovering the chosen item must not take its surface away",
         );
       },
+    );
+  },
+  CONFIGURATOR_TIMEOUT_MS,
+);
+
+/**
+ * Reads one custom property off the page in the monitor, waiting for it to say
+ * what is expected.
+ *
+ * The configurator tells the frame about a change by posting a message, so the
+ * page has received it a moment after the control was operated rather than at
+ * the instant. Waiting for the value rather than for a delay is what keeps this
+ * from being timed by how busy the machine is.
+ *
+ * @param frame - The monitor's frame.
+ * @param property - The custom property to read.
+ * @param wanted - What it should come to say.
+ * @returns What it said, which is `wanted` unless the wait ran out.
+ */
+async function shownInMonitor(
+  frame: Frame,
+  property: string,
+  wanted: string,
+): Promise<string> {
+  const deadline = Date.now() + 5_000;
+  let reading: string;
+  do {
+    reading = await frame.evaluate((name) => {
+      const page = document.querySelector(".velvet-page");
+      return page === null
+        ? ""
+        : getComputedStyle(page).getPropertyValue(name).trim();
+    }, property);
+    if (reading === wanted) return reading;
+    await new Promise((settle) => setTimeout(settle, 50));
+  } while (Date.now() < deadline);
+  return reading;
+}
+
+test(
+  "carries a change to the page in the monitor as soon as it is made",
+  async () => {
+    await withConfigurator(
+      { repositories: [installation()], truncated: false },
+      async (page) => {
+        const frame = await page
+          .waitForSelector("iframe")
+          .then((element) => element.contentFrame());
+        assert.ok(frame, "the monitor shows a page");
+        await frame.waitForSelector(".velvet-page");
+
+        // What the page stands at before anybody touches a control, which is
+        // what the theme's own manifest states for it.
+        assert.equal(
+          await shownInMonitor(frame, "--chart-area-display", "block"),
+          "block",
+        );
+
+        // Operated by clicking the words rather than the switch, because the
+        // label is the control's name and that is what makes clicking it work.
+        await page.locator('label[for="feature-chartWash"]').click();
+        assert.equal(
+          await shownInMonitor(frame, "--chart-area-display", "none"),
+          "none",
+          "the switch reaches the page in the monitor",
+        );
+
+        // A colour the theme declares on its own root, which is the harder of
+        // the two: what an operator sets has to stand where the theme's own
+        // declaration stands rather than be inherited into a losing position.
+        await page.locator("#feature-ipv4Colour").evaluate((well) => {
+          const input = well as HTMLInputElement;
+          input.value = "#123456";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        assert.equal(
+          await shownInMonitor(frame, "--protocol-ipv4", "#123456"),
+          "#123456",
+          "the colour well reaches the page in the monitor",
+        );
+      },
+      SIGNED_IN,
+      { theme: "velvet", themeSettings: {} },
     );
   },
   CONFIGURATOR_TIMEOUT_MS,

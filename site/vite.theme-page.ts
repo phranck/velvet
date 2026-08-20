@@ -299,7 +299,7 @@ export function themeStatusPage(options: BundlePageOptions): Plugin {
       if (!mount.test(html)) {
         throw new Error("No empty #app to render the theme into.");
       }
-      const block = themeSettingsStyle(manifest.features, settings);
+      const block = themeSettingsStyle(manifest.root, manifest.features, settings);
       await writeFile(
         builtPath,
         html

@@ -8,7 +8,11 @@
 
   import RainbowScale from "../components/RainbowScale.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
-  import { OFFERED_THEMES, themeById } from "../lib/themes/catalogue.js";
+  import {
+    leavingIsFinal,
+    OFFERED_THEMES,
+    themeById,
+  } from "../lib/themes/catalogue.js";
   import { themeSettingDeclarations } from "../lib/themes/settings.js";
 
   import {
@@ -16,10 +20,12 @@
     ConfiguratorError,
     type ConfiguratorFailure,
   } from "./client.js";
+  import { readDraft, writeDraft } from "./draft.js";
   import InstallationChooser from "./InstallationChooser.svelte";
   import Monitor from "./Monitor.svelte";
   import Section from "./Section.svelte";
   import ThemeChooser from "./ThemeChooser.svelte";
+  import ThemeSettings from "./ThemeSettings.svelte";
   import {
     clampWidth,
     defaultPreferences,
@@ -68,6 +74,103 @@
    */
   let published = $state<InstallationConfiguration | null>(null);
 
+  /**
+   * What has been changed and not yet published, one set per theme.
+   *
+   * Kept per theme because the same key means something else in another theme,
+   * or nothing at all, so one set shared between them would carry values from
+   * a theme that never offered them. Returning to a theme that was already
+   * adjusted finds those values again.
+   *
+   * It survives a reload, because a draft nobody published is still work, and
+   * because reloading a page one is working in should not undo it. Publishing
+   * it is a separate act, which is #552.
+   */
+  let drafts = $state<Record<string, Record<string, string | number | boolean>>>(
+    {},
+  );
+
+  /**
+   * What one theme stands at: the draft where there is one, else what is live.
+   *
+   * The live values count only for the theme the page is actually published
+   * in. Every other theme starts from its own defaults, which is what the
+   * manifest states and what the controls show.
+   */
+  function settingsOf(theme: string): Record<string, string | number | boolean> {
+    const draft = drafts[theme];
+    if (draft) return draft;
+    return published?.theme === theme ? { ...published.themeSettings } : {};
+  }
+
+  const chosenSettings = $derived(settingsOf(chosenTheme));
+
+  /**
+   * What the page currently resolves for each feature's property.
+   *
+   * Read back from the monitor rather than taken from the manifest, because a
+   * theme states many of these itself and a palette moves them. A control for
+   * something nobody has set should start at what the page shows, not at what
+   * the manifest calls the default: choosing Autumn and seeing the indigo
+   * swatch of the default palette is the control describing another page.
+   */
+  let resolved = $state<Record<string, string>>({});
+
+  /** The properties worth reading back, which is one per feature. */
+  const watched = $derived(
+    (themeById(chosenTheme)?.features ?? []).flatMap((feature) =>
+      feature.type === "arrangement" ? feature.properties : [feature.property],
+    ),
+  );
+
+  /** Records one setting against the theme it belongs to. */
+  function setFeature(key: string, value: string | number | boolean): void {
+    drafts = {
+      ...drafts,
+      [chosenTheme]: { ...settingsOf(chosenTheme), [key]: value },
+    };
+    keep();
+  }
+
+  /**
+   * Writes the draft back for whichever installation is being configured.
+   *
+   * Nothing is written until an installation is known, because a draft belongs
+   * to one and there is nowhere to put it before that.
+   */
+  function keep(): void {
+    if (!chosenInstallation) return;
+    writeDraft(chosenInstallation, { theme: chosenTheme, settings: drafts });
+  }
+
+  /** Whether leaving the theme standing here is a decision nothing undoes. */
+  const finalDeparture = $derived(
+    leavingIsFinal(published?.theme ?? null, chosenTheme),
+  );
+
+  /**
+   * Takes a chosen theme, asking first where the choice cannot be taken back.
+   *
+   * Asked with the browser's own confirmation rather than a dialogue of our
+   * own: this is the one question in the configurator, it has two answers, and
+   * a modal built here would be a component nothing else uses.
+   *
+   * @param theme - The theme somebody chose.
+   */
+  function chooseTheme(theme: string): void {
+    if (theme === chosenTheme) return;
+    if (
+      finalDeparture &&
+      !globalThis.confirm(
+        `${themeById(chosenTheme)?.name ?? chosenTheme} has been withdrawn. Leaving it is final: it is offered to nobody new, so this page cannot be published in it again.`,
+      )
+    ) {
+      return;
+    }
+    chosenTheme = theme;
+    keep();
+  }
+
   /** What the sidebar looked like when this browser last left it. */
   let sidebar = $state<SidebarPreferences>(defaultPreferences());
 
@@ -91,13 +194,8 @@
   const declarations = $derived.by(() => {
     const theme = themeById(chosenTheme);
     if (!theme) return {};
-    // What the page carries today, but only whilst the theme being shown is
-    // the one it carries. The same key means something else in another theme,
-    // or nothing at all.
-    const settings =
-      published && published.theme === chosenTheme ? published.themeSettings : {};
     return Object.fromEntries(
-      themeSettingDeclarations(theme.features, settings).map((declaration) => {
+      themeSettingDeclarations(theme.features, chosenSettings).map((declaration) => {
         const [property, ...rest] = declaration.replace(/;$/, "").split(":");
         return [property!.trim(), rest.join(":").trim()];
       }),
@@ -242,6 +340,14 @@
    */
   async function openOn(installation: ManageableInstallation): Promise<void> {
     published = null;
+    const repository = String(installation.repositoryId);
+    // What this browser was left in the middle of, which outranks what is live:
+    // somebody who changed the theme and reloaded is still working on that
+    // change, and putting the published one back would undo it.
+    const draft = readDraft(repository);
+    drafts = draft.settings;
+    if (draft.theme && themeById(draft.theme)) chosenTheme = draft.theme;
+
     let configuration: InstallationConfiguration;
     try {
       configuration = await service.configurationOf(installation);
@@ -250,9 +356,9 @@
     }
     // Another installation may have been chosen whilst this was in flight, and
     // the answer to a question nobody is asking any more is not an answer.
-    if (String(installation.repositoryId) !== chosenInstallation) return;
+    if (repository !== chosenInstallation) return;
     published = configuration;
-    if (configuration.theme && themeById(configuration.theme)) {
+    if (!draft.theme && configuration.theme && themeById(configuration.theme)) {
       chosenTheme = configuration.theme;
     }
   }
@@ -430,14 +536,20 @@
             {:else if key === "theme"}
               <ThemeChooser
                 value={chosenTheme}
-                onChoose={(value) => (chosenTheme = value)}
+                published={published?.theme ?? null}
+                onChoose={chooseTheme}
               />
             {:else if key === "global"}
               {@render placeholder("Settings that apply to the whole page.")}
             {:else if key === "services"}
               {@render placeholder("Settings for each monitored service.")}
             {:else}
-              {@render placeholder("What the chosen theme lets you change.")}
+              <ThemeSettings
+                features={themeById(chosenTheme)?.features ?? []}
+                settings={chosenSettings}
+                showing={resolved}
+                onChange={setFeature}
+              />
             {/if}
           </Section>
         {/each}
@@ -478,7 +590,13 @@
     ></div>
   {/if}
 
-  <Monitor theme={chosenTheme} {declarations} />
+  <Monitor
+    theme={chosenTheme}
+    {declarations}
+    themeRoot={themeById(chosenTheme)?.root ?? ""}
+    watching={watched}
+    onResolved={(values) => (resolved = values)}
+  />
 </div>
 
 <style>
@@ -706,7 +824,7 @@
     gap: 0.75rem;
     width: 100%;
     padding: 0.45rem 0.7rem;
-    border: 1px solid var(--configurator-edge);
+    border: 1px solid var(--configurator-control-edge);
     border-radius: var(--configurator-radius-inner);
     background: var(--configurator-sunken);
     color: var(--configurator-text);

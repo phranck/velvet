@@ -20,6 +20,7 @@
  */
 
 import type { DayStatus, RangeKey } from "../data.js";
+import { APPEARANCE_EVENT } from "../appearance/index.js";
 import { createOverlay } from "../overlay/index.js";
 
 
@@ -168,8 +169,16 @@ export interface UptimeStripOptions {
   style?: Partial<UptimeStripStyle> | (() => Partial<UptimeStripStyle>);
   /** The class put on the host element, so a design can address it. */
   className?: string;
-  /** The class put on the tooltip, which lives on the document's own layer. */
+  /** The class put on the tooltip, which lives outside everything that clips. */
   tooltipClassName?: string;
+  /**
+   * The design's own page element, which is where the tooltip is put.
+   *
+   * A design declares its colours there, and a tooltip outside them inherits
+   * none of them. Absent, the tooltip goes on the document's body and is
+   * dressed by whatever reaches that far.
+   */
+  overlayHost?: HTMLElement;
   /**
    * The property the measured surface height is written to on the host.
    *
@@ -342,7 +351,10 @@ export function createUptimeStrip(
   canvas.setAttribute("aria-hidden", "true");
   // On the document's own layer rather than inside the strip, so no card can
   // clip it. See the overlay for the measurements that forced this.
-  const tooltip = createOverlay(options.tooltipClassName ?? "uptime-tooltip");
+  const tooltip = createOverlay(
+    options.tooltipClassName ?? "uptime-tooltip",
+    options.overlayHost,
+  );
   const hiddenList = document.createElement("ul");
   hiddenList.className = `${className}-readings`;
   // Present to a screen reader and to nothing else, without depending on a
@@ -606,6 +618,19 @@ export function createUptimeStrip(
     scheduleDraw();
   }
 
+  /*
+   * A repaint when the page's appearance moves.
+   *
+   * The segments are painted onto a canvas, and their colours are read from
+   * the design's own custom properties as each paint happens. A property that
+   * changes therefore changes nothing until something else asks for a paint,
+   * which is why a strip used to keep its old colours until the pointer
+   * crossed it. Nothing in the platform reports a custom property changing, so
+   * whoever changes one says so.
+   */
+  const onAppearance = (): void => drawNow();
+  document.addEventListener(APPEARANCE_EVENT, onAppearance);
+
   host.addEventListener("pointermove", onPointerMove);
   host.addEventListener("pointerleave", onPointerLeave);
 
@@ -641,6 +666,7 @@ export function createUptimeStrip(
       if (frame !== 0) cancelAnimationFrame(frame);
       frame = 0;
       observer.disconnect();
+      document.removeEventListener(APPEARANCE_EVENT, onAppearance);
       host.removeEventListener("pointermove", onPointerMove);
       host.removeEventListener("pointerleave", onPointerLeave);
       tooltip.destroy();

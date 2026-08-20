@@ -18,6 +18,11 @@ dataVersion = 1
 layouts = ["grouped", "cards"]
 readings = "overlay"
 
+# The element this theme's page is rooted at. What an operator sets is written
+# onto it, so their value stands where this theme's own declarations stand and
+# wins over them rather than being inherited into a losing position.
+root = ".velvet-page"
+
 [entries]
 template = "template.ts"
 styles = "theme.css"
@@ -30,7 +35,143 @@ script = "script.ts"
 [features.chartWash]
 type = "switch"
 label = "Wash under the response curve"
+group = "Response chart"
 property = "--chart-area-display"
 default = true
 on = "block"
 off = "none"
+
+# The colours the two protocols are told apart by, on the strip and on the
+# chart. Two features rather than one, because a pair that has to stay apart
+# is two decisions and not one.
+[features.ipv4Colour]
+type = "colour"
+label = "IPv4 colour"
+group = "Protocols"
+declared = true
+property = "--protocol-ipv4"
+default = "#b87ae1"
+
+[features.ipv6Colour]
+type = "colour"
+label = "IPv6 colour"
+group = "Protocols"
+declared = true
+property = "--protocol-ipv6"
+default = "#7472e4"
+
+# The fall behind the page, stated as its two ends because that is what a fall
+# is. A scheme moves both, and setting either here moves it again.
+# The three states a day is drawn in. Separate from the palette, which moves
+# the operational one with everything else: setting one here wins over what a
+# palette says, and leaving it alone lets the palette carry it.
+[features.dayOperational]
+type = "colour"
+label = "Operational"
+group = "Day bars"
+declared = true
+property = "--state-operational"
+default = "#6366f1"
+
+[features.dayDegraded]
+type = "colour"
+label = "Degraded"
+group = "Day bars"
+declared = true
+property = "--state-degraded"
+default = "#d29922"
+
+[features.dayOutage]
+type = "colour"
+label = "Outage"
+group = "Day bars"
+declared = true
+property = "--state-outage"
+default = "#f85149"
+
+[features.backdropStart]
+type = "colour"
+label = "Backdrop, top"
+group = "Backdrop"
+declared = true
+property = "--backdrop-gradient-start"
+default = "#0e1018"
+
+[features.backdropEnd]
+type = "colour"
+label = "Backdrop, bottom"
+group = "Backdrop"
+declared = true
+property = "--backdrop-gradient-end"
+default = "#0a0b0f"
+
+# The three washes over that fall. Off is zero, which multiplies each wash's
+# own share, so the three keep their different strengths when they are on.
+[features.backdropBubbles]
+type = "switch"
+label = "Clouded backdrop"
+group = "Backdrop"
+property = "--backdrop-bubble-alpha"
+default = true
+on = "1"
+off = "0"
+
+# How wide the page runs. The values are lengths, so each says what it is
+# called as well as what it sets.
+# How many of the six washes are drawn. Each is multiplied by whether the count
+# has reached it, so this one number adds and removes them.
+[features.backdropCount]
+type = "number"
+label = "Clouds"
+group = "Backdrop"
+enabledBy = "backdropBubbles"
+property = "--backdrop-bubble-count"
+default = 3
+minimum = 1
+maximum = 6
+unit = ""
+
+# Where the six washes sit. One decision producing six places, so it is one
+# feature with six properties and a button rather than twelve sliders.
+[features.backdropPlaces]
+type = "arrangement"
+label = "Cloud places"
+group = "Backdrop"
+enabledBy = "backdropBubbles"
+declared = true
+properties = [
+  "--backdrop-bubble-1",
+  "--backdrop-bubble-2",
+  "--backdrop-bubble-3",
+  "--backdrop-bubble-4",
+  "--backdrop-bubble-5",
+  "--backdrop-bubble-6",
+]
+default = "12% 0%;88% 4%;50% 100%;4% 62%;96% 74%;62% 34%"
+
+[features.contentWidth]
+type = "choice"
+label = "Content width"
+group = "Page"
+property = "--page-width"
+default = "860px"
+choices = [
+  { value = "680px", label = "Narrow" },
+  { value = "860px", label = "Ordinary" },
+  { value = "1080px", label = "Wide" },
+]
+
+# The palette the whole page is drawn from. The three sets live in the
+# stylesheet, where the rest of the appearance lives, and each answers to this
+# property through a style query.
+[features.palette]
+type = "choice"
+label = "Palette"
+group = "Page"
+property = "--velvet-scheme"
+default = "velvet"
+choices = [
+  { value = "velvet", label = "Velvet" },
+  { value = "spring", label = "Lime Green" },
+  { value = "autumn", label = "Autumn" },
+]

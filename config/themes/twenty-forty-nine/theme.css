@@ -2122,7 +2122,11 @@
   stroke-dasharray: 4 3;
 }
 
+/* The wash under the curve. The chart draws it whenever the theme asks for a
+   fill, and this is what decides whether it is shown, so turning it off costs
+   no redraw. The build writes this property from the `chartWash` feature. */
 .chart-area {
+  display: var(--chart-area-display);
   pointer-events: none;
 }
 

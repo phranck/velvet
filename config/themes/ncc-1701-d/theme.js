@@ -277,7 +277,7 @@ function downsampleResponseSamples(samples, maxPoints) {
 // ../packages/foundation/src/overlay/index.ts
 var WINDOW_MARGIN = 8;
 var ANCHOR_GAP = 9;
-function createOverlay(className) {
+function createOverlay(className, host) {
   const element = document.createElement("div");
   element.className = className;
   element.setAttribute("role", "status");
@@ -286,7 +286,7 @@ function createOverlay(className) {
   element.style.zIndex = "60";
   element.style.pointerEvents = "none";
   element.style.width = "max-content";
-  document.body.append(element);
+  (host ?? document.body).append(element);
   let currentAnchor = null;
   function place() {
     if (!currentAnchor)
@@ -413,7 +413,7 @@ function createChartView(host, serviceId, serviceName, generatedAt, monitoringSt
   let frame = 0;
   let seriesColours = { ipv4: "", ipv6: "" };
   let geometry = null;
-  const tooltip = options.tooltip === false ? null : createOverlay(options.tooltipClassName ?? "chart-reading");
+  const tooltip = options.tooltip === false ? null : createOverlay(options.tooltipClassName ?? "chart-reading", options.overlayHost);
   function plotBox() {
     const drawing = host.querySelector("svg");
     return (drawing ?? host).getBoundingClientRect();
@@ -907,6 +907,9 @@ function uptimeForRange(service, range, generatedAt, monitoringStartedAt) {
   return `${percentage.toFixed(2)}%`;
 }
 
+// ../packages/foundation/src/appearance/index.ts
+var APPEARANCE_EVENT = "velvet:appearance";
+
 // ../packages/foundation/src/uptime-strip/index.ts
 var SHORT_DATE = new Intl.DateTimeFormat("en-GB", {
   month: "short",
@@ -1021,7 +1024,7 @@ function createUptimeStrip(host, options = {}) {
   host.setAttribute("role", "img");
   const canvas = document.createElement("canvas");
   canvas.setAttribute("aria-hidden", "true");
-  const tooltip = createOverlay(options.tooltipClassName ?? "uptime-tooltip");
+  const tooltip = createOverlay(options.tooltipClassName ?? "uptime-tooltip", options.overlayHost);
   const hiddenList = document.createElement("ul");
   hiddenList.className = `${className}-readings`;
   hiddenList.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap";
@@ -1177,6 +1180,8 @@ function createUptimeStrip(host, options = {}) {
     hovered = null;
     scheduleDraw();
   }
+  const onAppearance = () => drawNow();
+  document.addEventListener(APPEARANCE_EVENT, onAppearance);
   host.addEventListener("pointermove", onPointerMove);
   host.addEventListener("pointerleave", onPointerLeave);
   const observer = new ResizeObserver(([entry]) => {
@@ -1207,6 +1212,7 @@ function createUptimeStrip(host, options = {}) {
         cancelAnimationFrame(frame);
       frame = 0;
       observer.disconnect();
+      document.removeEventListener(APPEARANCE_EVENT, onAppearance);
       host.removeEventListener("pointermove", onPointerMove);
       host.removeEventListener("pointerleave", onPointerLeave);
       tooltip.destroy();
@@ -1291,11 +1297,12 @@ function enhance(root, data) {
     if (!entry || !summary || !uptime || !axisFrom || !stripHost || !chartPlot || !chartLegend || !chartFrom || !details) {
       continue;
     }
+    const restored = readOpen(id);
     const row = {
       id,
       name: entry.name,
       spoken: entry.checks.map((check) => check.protocol === "ipv6" ? "IPv6" : "IPv4").join(" and "),
-      open: false,
+      open: restored,
       root: element,
       summary,
       uptime,
@@ -1303,12 +1310,14 @@ function enhance(root, data) {
       strip: createUptimeStrip(stripHost, {
         style: stripStyle,
         heightProperty: "--strip-surface-height",
-        tooltipClassName: "uptime-tooltip"
+        tooltipClassName: "uptime-tooltip",
+        overlayHost: page
       }),
       chartFrom,
       chart: createChartView(chartPlot, entry.id, entry.name, data.generatedAt, data.status.monitoringStartedAt, {
         style: CHART_GEOMETRY,
         tooltipClassName: "uptime-tooltip chart-reading",
+        overlayHost: page,
         legend: (entries) => drawLegend(chartLegend, entries),
         seriesColours: () => {
           const inherited = getComputedStyle(chartPlot);
@@ -1319,9 +1328,13 @@ function enhance(root, data) {
         }
       }),
       chartBuilt: false,
-      panel: disclosure(details, false)
+      panel: disclosure(details, restored)
     };
     rows.push(row);
+    element.dataset.open = String(restored);
+    summary.setAttribute("aria-expanded", String(restored));
+    if (restored)
+      buildChart(row);
     const onClick = () => {
       setOpen(row, !row.open);
       reflectToggleAll();
@@ -1353,6 +1366,12 @@ function enhance(root, data) {
     toggleAll.addEventListener("click", onClick);
     undo.push(() => toggleAll.removeEventListener("click", onClick));
   }
+  function buildChart(row) {
+    if (row.chartBuilt)
+      return;
+    row.chart.update(data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id), range);
+    row.chartBuilt = true;
+  }
   function setOpen(row, open) {
     if (row.open === open)
       return;
@@ -1360,10 +1379,8 @@ function enhance(root, data) {
     row.root.dataset.open = String(open);
     row.summary.setAttribute("aria-expanded", String(open));
     writeOpen(row.id, open);
-    if (open && !row.chartBuilt) {
-      row.chart.update(data.responseTimes.series.filter(({ serviceId }) => serviceId === row.id), range);
-      row.chartBuilt = true;
-    }
+    if (open)
+      buildChart(row);
     row.panel.update(open);
   }
   function reflectToggleAll() {
@@ -1440,8 +1457,6 @@ function enhance(root, data) {
   for (const button of buttons) {
     button.setAttribute("aria-pressed", String(button.dataset.range === range));
   }
-  for (const row of rows)
-    setOpen(row, readOpen(row.id));
   reflectToggleAll();
   refresh();
   placeMark(false);
@@ -1614,17 +1629,24 @@ function template(data) {
 var template_default = template;
 
 // ../config/themes/ncc-1701-d/entry.generated.ts
+var THEME_ROOT = ".ncc-1701-d-page";
 var root = document.querySelector("#velvet-root");
 var data = JSON.parse(document.querySelector("#velvet-data").textContent);
 var declared = JSON.parse(document.querySelector("#velvet-settings").textContent);
 root.append(document.createRange().createContextualFragment(template_default(data)));
 function apply(declarations) {
-  for (const [property, value] of Object.entries(declarations)) {
-    document.documentElement.style.setProperty(property, value);
+  const targets = [document.documentElement, document.querySelector(THEME_ROOT)];
+  for (const target of targets) {
+    if (!target)
+      continue;
+    for (const [property, value] of Object.entries(declarations)) {
+      target.style.setProperty(property, value);
+    }
   }
+  document.dispatchEvent(new CustomEvent("velvet:appearance"));
 }
-apply(declared);
 script_default(root, data);
+apply(declared);
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin)
     return;

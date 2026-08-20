@@ -18,7 +18,51 @@ dataVersion = 1
 layouts = ["grouped", "cards"]
 readings = "overlay"
 
+# The element this theme's page is rooted at. What an operator sets is written
+# onto it, so their value stands where this theme's own declarations stand and
+# wins over them rather than being inherited into a losing position.
+root = ".twenty-forty-nine-page"
+
 [entries]
 template = "template.ts"
 styles = "theme.css"
 script = "script.ts"
+
+# The wash under the response curve, which this theme draws the same way
+# Velvet does and switches off the same way.
+[features.chartWash]
+type = "switch"
+label = "Wash under the response curve"
+group = "Response chart"
+property = "--chart-area-display"
+default = true
+on = "block"
+off = "none"
+
+[features.ipv4Colour]
+type = "colour"
+label = "IPv4 colour"
+group = "Protocols"
+declared = true
+property = "--protocol-ipv4"
+default = "#5fb2e0"
+
+[features.ipv6Colour]
+type = "colour"
+label = "IPv6 colour"
+group = "Protocols"
+declared = true
+property = "--protocol-ipv6"
+default = "#c2913f"
+
+[features.contentWidth]
+type = "choice"
+label = "Content width"
+group = "Page"
+property = "--page-width"
+default = "1080px"
+choices = [
+  { value = "880px", label = "Narrow" },
+  { value = "1080px", label = "Ordinary" },
+  { value = "1320px", label = "Wide" },
+]

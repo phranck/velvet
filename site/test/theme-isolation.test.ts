@@ -179,6 +179,7 @@ test("refuses a manifest that names a file the theme does not contain", () => {
       order: 1,
       state: "offered",
       dataVersion: 1,
+      root: ".proof-page",
       entries: {
         template: "template.ts",
         styles: "theme.css",
