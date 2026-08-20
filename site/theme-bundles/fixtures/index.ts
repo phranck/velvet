@@ -17,6 +17,7 @@ import {
   everythingUnknown,
   everyDayState,
   firstDay,
+  nothingMeasured,
   ipv6Only,
   longNames,
   longSummary,
@@ -49,6 +50,11 @@ export const FIXTURES: readonly Fixture[] = [
     name: "first-day",
     what: "the first day of an installation, with no history at all",
     data: firstDay,
+  },
+  {
+    name: "nothing-measured",
+    what: "the first hours of an installation, where the status has run and the response times have not",
+    data: nothingMeasured,
   },
   {
     name: "everything-unknown",

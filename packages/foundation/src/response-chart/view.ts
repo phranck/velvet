@@ -502,6 +502,13 @@ export function createChartView(
       empty.className = "chart-empty";
       empty.setAttribute("role", "status");
       empty.textContent = "No response history for this range.";
+      // The shape the chart would have had. Without it the row collapses to a
+      // line of text, so opening a service with nothing measured yet gives a
+      // panel a fraction of the height of the one beside it, and the page moves
+      // under the reader as ranges are switched. The ratio is the drawing's
+      // own, so a design that makes its plot taller keeps its empty state in
+      // step without saying so twice.
+      empty.style.aspectRatio = `${VIEW_WIDTH} / ${tokens.height}`;
       host.append(empty);
       host.removeAttribute("tabindex");
       // Nothing drawn, so the pointer has nowhere to stand and nothing may be

@@ -2067,6 +2067,10 @@
 }
 
 .chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   margin: var(--space-tight) 0 0;
   color: var(--text-3);
   font-family: var(--font-meta);

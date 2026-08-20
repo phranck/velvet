@@ -107,6 +107,33 @@ export const firstDay: ThemeData = buildFixture(
 );
 
 /**
+ * An installation whose first status check has run and whose first response
+ * time has not.
+ *
+ * The two are checked on different schedules: the status every five minutes,
+ * the response times four times a day. So for the first few hours of every
+ * installation there are days on the strip and nothing at all in the chart, and
+ * this is the only case that reaches the chart's empty state. A design that
+ * lets that state collapse gives a service a row a fraction of the height of
+ * the one beside it, on the day somebody is looking hardest.
+ */
+export const nothingMeasured: ThemeData = (() => {
+  const built = buildFixture(
+    spec({
+      monitoringDays: 1,
+      services: [
+        { id: "website", name: "Website", status: "operational", protocols: ["ipv4", "ipv6"] },
+        { id: "api", name: "API", status: "operational", protocols: ["ipv4"] },
+      ],
+    }),
+  );
+  return {
+    ...built,
+    responseTimes: { ...built.responseTimes, series: [] },
+  };
+})();
+
+/**
  * A month carrying every state a day can be in.
  *
  * Days that answered, days that lost a little time, days that lost most of it,

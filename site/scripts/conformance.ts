@@ -675,12 +675,25 @@ async function conformRestored(
     );
     await page.reload({ waitUntil: "networkidle" });
 
-    const restored = await page.evaluate(() => ({
-      open: document.querySelectorAll('[data-open="true"]').length,
-      animated:
-        (globalThis as unknown as { heightAnimations?: number })
-          .heightAnimations ?? 0,
-    }));
+    const restored = await page.evaluate(() => {
+      // The chart of the row that was opened. Where nothing has been measured
+      // it draws no plot, and it has to keep the shape it would have had: a row
+      // that collapses to a line of text is a fraction of the height of the one
+      // beside it, and the page moves under the reader as ranges are switched.
+      const chart = document.querySelector(".response-chart");
+      const empty = chart?.querySelector(".chart-empty") ?? null;
+      const plot = chart?.querySelector("svg") ?? null;
+      const height = (element: Element | null): number =>
+        element === null ? 0 : Math.round(element.getBoundingClientRect().height);
+      return {
+        open: document.querySelectorAll('[data-open="true"]').length,
+        animated:
+          (globalThis as unknown as { heightAnimations?: number })
+            .heightAnimations ?? 0,
+        emptyHeight: height(empty),
+        plotHeight: height(plot),
+      };
+    });
     const findings: Finding[] = [];
     const note = (detail: string): void => {
       findings.push({
@@ -691,6 +704,13 @@ async function conformRestored(
       });
     };
     if (restored.open === 0) note("a service left open comes back closed");
+    // Only where the chart drew nothing, which is what the unknown fixture is
+    // for. A chart that drew a plot is the ordinary case and needs no floor.
+    if (restored.plotHeight === 0 && restored.emptyHeight < 80) {
+      note(
+        `a chart with nothing to draw collapses to ${restored.emptyHeight}px, where the plot it replaces would have been several times that`,
+      );
+    }
     if (restored.animated > 0) {
       note(
         `a service left open opens itself again on load, in ${restored.animated} height animation(s)`,
@@ -891,6 +911,18 @@ export async function runConformance(
         findings.push(
           ...(await conformRestored(browser, theme, ordinary, served.origin)),
           ...(await conformAppearance(browser, theme, ordinary, served.origin)),
+        );
+      }
+      // And once on the case where no response time has been recorded yet,
+      // which is what a page looks like for the first hours of its life. It is
+      // the only fixture that reaches the chart's empty state, so it is the
+      // only one that can say whether that state keeps the shape it replaces.
+      const unmeasured = fixtures.find(
+        (fixture) => fixture.name === "nothing-measured",
+      );
+      if (unmeasured) {
+        findings.push(
+          ...(await conformRestored(browser, theme, unmeasured, served.origin)),
         );
       }
     } finally {
