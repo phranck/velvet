@@ -5,6 +5,10 @@
  * page and the row at the foot of it. Written out in both, a page renamed or
  * moved would reach one of them and the other would go on pointing at where it
  * used to be.
+ *
+ * Neither surface offers all of them. Each names what it leads to, so no page
+ * is offered twice within one screen and neither list changes because the other
+ * one was reordered.
  */
 
 /** One page the site leads to. */
@@ -16,11 +20,11 @@ export interface SiteSection {
 }
 
 /**
- * Every page, in the order the bar offers them.
+ * Every page the site leads to, in the order they were built.
  *
  * The labels carry no icons. They are set in the label face at a size where an
- * icon beside them would be the larger of the two, and four uppercase words read
- * as a row of their own without anything pointing at them.
+ * icon beside them would be the larger of the two, and an uppercase word reads
+ * as a thing of its own without anything pointing at it.
  */
 export const SITE_SECTIONS: readonly SiteSection[] = [
   { id: "documentation", label: "Documentation", href: "/documentation" },
@@ -32,9 +36,9 @@ export const SITE_SECTIONS: readonly SiteSection[] = [
 /**
  * Picks pages by name, in the order they are named.
  *
- * The foot carries fewer than the bar and in its own order, so it says which
- * ones rather than taking a slice of the list above and depending on that order
- * staying as it is.
+ * Both surfaces carry fewer than the list holds and in their own order, so each
+ * says which ones rather than taking a slice of the list above and depending on
+ * that order staying as it is.
  *
  * @param wanted - The pages to take, by identifier.
  * @returns Those pages, in the order asked for.
