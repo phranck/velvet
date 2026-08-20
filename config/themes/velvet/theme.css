@@ -2358,3 +2358,17 @@
   }
 }
 
+/* The line a page carries in its first day. It reads as a note beside the
+   status rather than as a fault, so it takes the quiet text and the page's own
+   card surface rather than any of the state colours. */
+.settling-in {
+  margin: 0 0 var(--space-block);
+  padding: var(--space-tight) var(--space-row);
+  border: var(--rule-width) var(--rule-style) var(--surface-rule);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  color: var(--text-2);
+  font-size: var(--text-size-caption);
+  line-height: 1.5;
+  text-wrap: pretty;
+}

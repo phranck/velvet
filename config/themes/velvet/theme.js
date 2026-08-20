@@ -907,6 +907,17 @@ function uptimeForRange(service, range, generatedAt, monitoringStartedAt) {
   const percentage = Math.max(0, 100 - unavailableSeconds / monitoredSeconds * 100);
   return `${percentage.toFixed(2)}%`;
 }
+function hoursWatching(monitoringStartedAt, generatedAt) {
+  const began = Date.parse(monitoringStartedAt);
+  const now = Date.parse(generatedAt);
+  if (!Number.isFinite(began) || !Number.isFinite(now))
+    return null;
+  return Math.max(0, (now - began) / 3600000);
+}
+function settlingIn(monitoringStartedAt, generatedAt) {
+  const hours = hoursWatching(monitoringStartedAt, generatedAt);
+  return hours !== null && hours < 24 ? "Velvet started watching this page today. The days and the response times fill in as the checks run, so an empty stretch here is what a new page looks like rather than something being wrong." : null;
+}
 
 // ../packages/foundation/src/appearance/index.ts
 var APPEARANCE_EVENT = "velvet:appearance";
@@ -1512,6 +1523,10 @@ function hero(data, state) {
     </div>
   </div>`;
 }
+function settling(data) {
+  const said = settlingIn(data.status.monitoringStartedAt, data.generatedAt);
+  return said === null ? "" : `<p class="settling-in" role="status">${escape(said)}</p>`;
+}
 function notice(event) {
   const started = new Date(event.startsAt);
   const glyph = event.kind === "maintenance" ? icon("ph-wrench", "notice-glyph") : "";
@@ -1625,6 +1640,7 @@ function template(data) {
     ${hero(data, state)}
     <div class="status-band status-band--body">
       <div class="status-body">
+        ${settling(data)}
         ${notices(data)}
         ${rangeBar(data)}
         ${services(data, layout)}

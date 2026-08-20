@@ -19,7 +19,12 @@
  * says is decided here; the script only reacts to what a visitor does.
  */
 
-import { overallStatus, uptimeForRange, visibleEvents } from "@velvet/foundation/status";
+import {
+  overallStatus,
+  settlingIn,
+  uptimeForRange,
+  visibleEvents,
+} from "@velvet/foundation/status";
 
 import type { ThemeData } from "../../src/lib/themes/data.js";
 import { escape, formatEventTime, formatUpdated, RANGES, STATE_WORD } from "./format.js";
@@ -138,6 +143,18 @@ function hero(data: ThemeData, state: string): string {
       <p class="status-hero-updated">Last updated ${escape(formatUpdated(data.generatedAt))}</p>
     </div>
   </div>`;
+}
+
+/**
+ * The line a page carries whilst it has nothing to show yet.
+ *
+ * Absent once it speaks for itself, which is the ordinary case. What decides is
+ * the foundation's, so all four themes announce the same thing at the same
+ * moment rather than each judging for itself.
+ */
+function settling(data: ThemeData): string {
+  const said = settlingIn(data.status.monitoringStartedAt, data.generatedAt);
+  return said === null ? "" : `<p class="settling-in" role="status">${escape(said)}</p>`;
 }
 
 /** One maintenance window or incident, as the page announces it. */
@@ -337,6 +354,7 @@ export function template(data: ThemeData): string {
     ${hero(data, state)}
     <div class="status-band status-band--body">
       <div class="status-body">
+        ${settling(data)}
         ${notices(data)}
         ${rangeBar(data)}
         ${services(data)}

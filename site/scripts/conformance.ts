@@ -460,6 +460,23 @@ async function conformOne(
   const seen = await inspect(page);
   const expected = reference(fixture.data);
 
+  // ── The first day ─────────────────────────────────────────────────────────
+  // A page in its first hours is nearly empty, and somebody who has just set
+  // Velvet up cannot tell that apart from a page that is broken. Every theme
+  // says so, and every theme stops saying it once the page speaks for itself.
+  {
+    const began = Date.parse(fixture.data.status.monitoringStartedAt);
+    const now = Date.parse(fixture.data.generatedAt);
+    const fresh = (now - began) / 3_600_000 < 24;
+    const said = seen.text.includes("started watching this page today");
+    if (fresh && !said) {
+      note("settling in", "a page in its first hours does not say so");
+    }
+    if (!fresh && said) {
+      note("settling in", "a page with a history announces itself as new");
+    }
+  }
+
   // ── The figures ───────────────────────────────────────────────────────────
   for (const service of fixture.data.status.services) {
     const figure = expected.uptimes.get(service.name)!;
