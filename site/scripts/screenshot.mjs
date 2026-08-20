@@ -135,8 +135,8 @@ async function main() {
 
   // 3. The build itself, driven exactly as `vite.config.ts` drives it, with the
   //    demo configuration in place of the one in `public/`.
-  const design = themeNamedIn(configPath);
-  assert.ok(design, "demo/velvet.yml must name the theme its page is published in");
+  const theme = themeNamedIn(configPath);
+  assert.ok(theme, "demo/velvet.yml must name the theme its page is published in");
   await build({
     root: SITE,
     configFile: false,
@@ -145,7 +145,7 @@ async function main() {
     plugins: [
       phosphorWoff2Only,
       svelte(),
-      themeStatusPage({ root: SITE, configPath, dataPath, design }),
+      themeStatusPage({ root: SITE, configPath, dataPath, theme }),
     ],
     build: { outDir: DIST, emptyOutDir: true },
   });

@@ -117,13 +117,21 @@
 
       A filter rather than a box shadow, because a box shadow traces the
       rectangle the shape is cut from rather than the shape.
+
+      Both layers follow from how far the shadow reaches, which is stated once.
+      Six numbers kept in step by hand would drift the first time one of them
+      moved, and the two layers only read as one shadow whilst they agree about
+      where the light stands.
     */
+    --shadow-reach: 0.375rem;
     filter: drop-shadow(
-        0.5rem 0.625rem 1.25rem
+        var(--shadow-reach) calc(var(--shadow-reach) * 1.25)
+          calc(var(--shadow-reach) * 2.5)
           rgb(0 0 0 / var(--squircle-card-shadow-strength, 0.45))
       )
       drop-shadow(
-        1.25rem 1.5rem 3.5rem
+        calc(var(--shadow-reach) * 2.5) calc(var(--shadow-reach) * 3)
+          calc(var(--shadow-reach) * 7)
           rgb(0 0 0 / calc(var(--squircle-card-shadow-strength, 0.45) * 1.1))
       );
   }
