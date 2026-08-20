@@ -190,17 +190,18 @@
               </span>
               <span class="details">
                 <span class="reference-name">{installation.statusPageName}</span>
+                <!--
+                  Two rows rather than one wrapping row. What the page watches
+                  and how long it has been watched are the two figures a reader
+                  compares between cards, so they stand together on the line
+                  under the name. When it started is what that uptime is counted
+                  from, and it reads as a footnote to the row above it.
+                -->
                 <span class="facts">
                   <span class="fact">
                     {installation.services}
                     {installation.services === 1 ? "service" : "services"}
                   </span>
-                  {#if releaseDate(installation.startedAt)}
-                    <span class="fact">
-                      <span class="label">Release:</span>
-                      {releaseDate(installation.startedAt)}
-                    </span>
-                  {/if}
                   {#if uptimeDays(installation.startedAt)}
                     <!-- The exact span is a hover away rather than in the chip,
                          since the chip is compared against the one on the card
@@ -211,6 +212,14 @@
                     </span>
                   {/if}
                 </span>
+                {#if releaseDate(installation.startedAt)}
+                  <span class="facts facts--since">
+                    <span class="fact">
+                      <span class="label">Release:</span>
+                      {releaseDate(installation.startedAt)}
+                    </span>
+                  </span>
+                {/if}
               </span>
             </span>
           </a>
@@ -250,12 +259,14 @@
     margin-block: 0 3rem;
   }
   /* A grid rather than a column, so one entry occupies one cell instead of a
-     row the width of the page. The track is wide enough for the preview to be
-     legible and narrow enough that three fit the measure. */
+     row the width of the page. Three to the measure: the track is wide enough
+     that a fourth cannot fit beside them, and each card is then wide enough for
+     the picture of a page to be read rather than merely recognised. Measured on
+     the 1272px measure, that is three tracks of 416px. */
   .reference-list {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
     list-style: none;
     margin: 0 0 3rem;
     padding: 0;
@@ -447,6 +458,11 @@
     justify-content: center;
     gap: 0.375rem;
     margin-top: 0.5rem;
+  }
+  /* Closer to the row above than that row is to the name, because it belongs to
+     the uptime beside it rather than standing as a third thing. */
+  .facts--since {
+    margin-top: 0.375rem;
   }
   /* A chip sits inside the card rather than against its curve, so it carries a
      radius of its own. Taking the card's inner radius would tie it to a padding
