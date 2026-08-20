@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Dialog } from "bits-ui";
 
-  import { OFFERED_THEMES, themeById } from "../lib/themes/catalogue.js";
+  import { themeById, themesOfferedTo } from "../lib/themes/catalogue.js";
   import { pictureFor } from "../lib/themes/pictures.js";
   import * as Card from "./card/index.js";
   import { remember, remembered } from "./remembered.js";
@@ -35,18 +35,8 @@
 
   const chosen = $derived(themeById(value));
 
-  /**
-   * The themes on offer, plus the withdrawn one this installation runs.
-   *
-   * A withdrawn theme keeps every installation already published in it and is
-   * offered to nobody else, so it is in this list exactly once: for the
-   * operator who is already in it and has to be able to see which one that is.
-   */
-  const choices = $derived.by(() => {
-    const running = published ? themeById(published) : undefined;
-    if (!running || running.state === "offered") return [...OFFERED_THEMES];
-    return [running, ...OFFERED_THEMES];
-  });
+  /** The themes this installation is shown, which the catalogue decides. */
+  const choices = $derived(themesOfferedTo(published));
 
   /** Takes a choice and closes, since choosing is the whole of this window. */
   function take(theme: string): void {

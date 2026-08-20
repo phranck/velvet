@@ -28,14 +28,20 @@ export interface Theme extends ThemeManifest {
 export const THEMES: readonly Theme[] = catalogue as ReadonlyArray<Theme>;
 
 /**
- * The themes somebody choosing one is shown.
+ * The themes in a catalogue that are still offered.
  *
  * A withdrawn theme keeps every installation already published in it, so it
  * stays in the catalogue and is offered to nobody new.
+ *
+ * @param catalogue - The themes to sift.
+ * @returns Those still on offer, in the order they were given.
  */
-export const OFFERED_THEMES: readonly Theme[] = THEMES.filter(
-  (theme) => theme.state === "offered",
-);
+function offeredIn(catalogue: readonly Theme[]): readonly Theme[] {
+  return catalogue.filter((theme) => theme.state === "offered");
+}
+
+/** The themes somebody choosing one is shown. */
+export const OFFERED_THEMES: readonly Theme[] = offeredIn(THEMES);
 
 /**
  * Finds the theme a configuration names.
@@ -48,4 +54,59 @@ export const OFFERED_THEMES: readonly Theme[] = THEMES.filter(
  */
 export function themeById(id: string): Theme | undefined {
   return THEMES.find((theme) => theme.id === id);
+}
+
+/**
+ * The themes one installation is shown when it comes to choose.
+ *
+ * The offered ones, plus the withdrawn one this installation is published in.
+ * A withdrawn theme keeps every installation already in it and is offered to
+ * nobody else, so it appears here exactly once: for the operator who is already
+ * in it and has to be able to see which one that is. It stands first, because
+ * that is where the one they are in belongs.
+ *
+ * @param published - The theme this installation is published in, or nothing
+ *   where that has not been read yet.
+ * @param catalogue - The themes to choose among. Every shipped theme unless a
+ *   caller says otherwise, which is what lets this be measured against a
+ *   withdrawn theme whilst none is withdrawn.
+ * @returns The themes to offer, in the order they are offered.
+ */
+export function themesOfferedTo(
+  published: string | null,
+  catalogue: readonly Theme[] = THEMES,
+): readonly Theme[] {
+  const offered = offeredIn(catalogue);
+  const running =
+    published === null
+      ? undefined
+      : catalogue.find((theme) => theme.id === published);
+  if (running === undefined || running.state === "offered") return offered;
+  return [running, ...offered];
+}
+
+/**
+ * Whether leaving the theme a page is in cannot be undone.
+ *
+ * True only whilst the page is still published in a withdrawn theme. That is
+ * the one change nothing brings back, because a withdrawn theme is offered to
+ * nobody new, so once the page is out of it there is no way to choose it again.
+ * Having already moved away in this session, the answer is no: the decision was
+ * taken then, and asking a second time asks about a theme nothing would return
+ * to anyway.
+ *
+ * @param published - The theme the page is published in.
+ * @param chosen - The theme standing in the configurator right now.
+ * @param catalogue - The themes to look the choice up in.
+ * @returns Whether moving off `chosen` is final.
+ */
+export function leavingIsFinal(
+  published: string | null,
+  chosen: string,
+  catalogue: readonly Theme[] = THEMES,
+): boolean {
+  if (published !== chosen) return false;
+  return (
+    catalogue.find((theme) => theme.id === chosen)?.state === "withdrawn"
+  );
 }

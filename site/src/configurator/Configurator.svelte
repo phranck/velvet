@@ -8,7 +8,11 @@
 
   import RainbowScale from "../components/RainbowScale.svelte";
   import VelvetWordmark from "../components/VelvetWordmark.svelte";
-  import { OFFERED_THEMES, themeById } from "../lib/themes/catalogue.js";
+  import {
+    leavingIsFinal,
+    OFFERED_THEMES,
+    themeById,
+  } from "../lib/themes/catalogue.js";
   import { themeSettingDeclarations } from "../lib/themes/settings.js";
 
   import {
@@ -139,16 +143,9 @@
     writeDraft(chosenInstallation, { theme: chosenTheme, settings: drafts });
   }
 
-  /**
-   * Whether leaving the current theme is a decision that cannot be undone.
-   *
-   * True only when the page is published in a withdrawn theme. That is the one
-   * change nothing brings back: a withdrawn theme is offered to nobody new, so
-   * once the page is out of it there is no way to choose it again.
-   */
-  const leavingIsFinal = $derived(
-    published?.theme === chosenTheme &&
-      themeById(chosenTheme)?.state === "withdrawn",
+  /** Whether leaving the theme standing here is a decision nothing undoes. */
+  const finalDeparture = $derived(
+    leavingIsFinal(published?.theme ?? null, chosenTheme),
   );
 
   /**
@@ -163,7 +160,7 @@
   function chooseTheme(theme: string): void {
     if (theme === chosenTheme) return;
     if (
-      leavingIsFinal &&
+      finalDeparture &&
       !globalThis.confirm(
         `${themeById(chosenTheme)?.name ?? chosenTheme} has been withdrawn. Leaving it is final: it is offered to nobody new, so this page cannot be published in it again.`,
       )
