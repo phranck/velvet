@@ -94,17 +94,21 @@ test("publishes the start page as static HTML that loads no script", async () =>
   assert.match(html, /GitHub-native status monitoring/);
   assert.match(html, /What an installation gives you/);
   assert.match(html, /href="https:\/\/setup\.velvet\.li\/onboarding\/"/);
-  // No bundle. The page carries two script elements and neither is one: the
+  // No bundle, which means no script the build emitted beside this page. The
+  // analytics tag is not one: it is a single line naming a host, and a reader
+  // whose browser never fetches it is shown the same page.
+  //
+  // The page carries two script elements of its own and neither is a bundle:
   // structured-data block, which a search engine reads rather than a browser
   // runs, and the small inline script every prerendered page carries to wire
   // its copy buttons.
-  assert.doesNotMatch(html, /<script[^>]*\bsrc=/);
+  assert.doesNotMatch(html, /<script[^>]*\bsrc="[./]/u);
   assert.match(html, /data-copy-code/);
   // The references page is built alongside this one and deliberately keeps its
   // script, because it reads the list of installations when a visitor opens it.
   // JavaScript therefore exists in the output, including chunks the two pages
   // share, and what matters is that this page loads none of it.
-  assert.doesNotMatch(html, /<script[^>]+src=/);
+  assert.doesNotMatch(html, /<script[^>]+src="[./]/u);
   assert.doesNotMatch(html, /<link[^>]+rel="modulepreload"/);
 
   // Svelte scopes styles by hashing them, and the markup is rendered in a
@@ -655,7 +659,7 @@ test("publishes the changelog where GitHub Pages will find it, and without a scr
   // a file in this repository, so there is nothing to read at request time.
   // The one script it carries is the small inline one every prerendered page
   // gets, which wires the copy buttons.
-  assert.doesNotMatch(html, /<script[^>]*\bsrc=/);
+  assert.doesNotMatch(html, /<script[^>]*\bsrc="[./]/u);
   assert.doesNotMatch(html, /\/@fs\//);
   assert.doesNotMatch(html, /["'](\/src\/[^"']+)["']/);
 
@@ -694,7 +698,7 @@ test("publishes the configuration reference whole, tables and all", async () => 
   // No bundle. The one script this page publishes is written inline in
   // `documentation.html` and wires the copy buttons, which cannot be done by
   // the component that renders them because the bundle is removed.
-  assert.doesNotMatch(html, /<script[^>]*\bsrc=/);
+  assert.doesNotMatch(html, /<script[^>]*\bsrc="[./]/u);
   assert.doesNotMatch(html, /\/@fs\//);
   assert.doesNotMatch(html, /["'](\/src\/[^"']+)["']/);
 
@@ -812,7 +816,7 @@ test("publishes the attributions from the repository's own notices", async () =>
   );
 
   assert.match(html, /<title>Velvet attributions<\/title>/);
-  assert.doesNotMatch(html, /<script[^>]*\bsrc=/);
+  assert.doesNotMatch(html, /<script[^>]*\bsrc="[./]/u);
 
   // Rendered from the repository's own notices rather than a copy, so a
   // component credited there is credited here and nowhere else has to be

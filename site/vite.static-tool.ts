@@ -1,7 +1,13 @@
 import { readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { createServer, defineConfig, type Plugin, type UserConfig } from "vite";
+import {
+  createServer,
+  defineConfig,
+  transformWithEsbuild,
+  type Plugin,
+  type UserConfig,
+} from "vite";
 
 /**
  * Points the icon face at the subset built for this repository.
@@ -79,6 +85,40 @@ export function renameHtmlEntry(filename: string): Plugin {
  *   the first screenful, since preloading the rest competes with them.
  * @returns A plugin that rewrites the built HTML in place.
  */
+/**
+ * The analytics velvet.li carries.
+ *
+ * phranck's own Umami, on his own host, which is what makes the figures his
+ * rather than somebody else's product. It sets no cookie and follows nobody
+ * between sites, so there is nothing to ask a reader's consent for and no
+ * banner to put in front of the page.
+ *
+ * Only on velvet.li. The onboarding and the configurator are served from
+ * setup.velvet.li behind a policy that names what may load there, and neither
+ * is a page somebody browses.
+ */
+const ANALYTICS =
+  '<script defer src="https://umami.layered.work/script.js" data-website-id="1f90c085-5f8f-43b5-ae97-bf9d11c25eaf"></script>';
+
+/**
+ * Puts the analytics tag into a page that keeps its bundle.
+ *
+ * The prerendered pages take it in `prerenderStaticEntry`, after the step that
+ * strips their bundle's own script tags, because that step would take this one
+ * with it. A page that keeps its bundle has no such step, so the ordinary hook
+ * is enough. Both read the one tag stated above.
+ *
+ * @returns A plugin that adds the tag to the document's head.
+ */
+export function analyticsTag(): Plugin {
+  return {
+    name: "velvet-analytics-tag",
+    transformIndexHtml(html) {
+      return html.replace("</head>", `  ${ANALYTICS}\n  </head>`);
+    },
+  };
+}
+
 export function prerenderStaticEntry(options: {
   root: string;
   component: string;
@@ -211,10 +251,26 @@ export function prerenderStaticEntry(options: {
       // and inlined here. Those pages ship no bundle, so nothing a component
       // renders can be wired by the component itself, and writing the same
       // script into each page's HTML is the copy this avoids.
-      const pageScript = await readFile(
+      //
+      // Minified, because it is inlined into every page rather than fetched
+      // once and cached: its comments explain the code to whoever maintains it
+      // and are downloaded by everybody who reads any page. Through the same
+      // esbuild Vite minifies the rest of a build with, so there is one
+      // minifier here rather than two.
+      const pageSource = await readFile(
         resolve(options.root, "src/lib/page-script.js"),
         "utf8",
       );
+      const pageScript = (
+        await transformWithEsbuild(pageSource, "page-script.js", {
+          minify: true,
+          // It is written for browsers rather than for a bundler, and it wraps
+          // itself in a function already. Nothing here is to be treated as a
+          // module, which would leave it in a scope of its own and stop it
+          // running at all.
+          format: "iife",
+        })
+      ).code;
 
       const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*><\/script>/g)];
       const rewritten = html
@@ -233,7 +289,10 @@ export function prerenderStaticEntry(options: {
           /\s*<link\b[^>]*\brel="modulepreload"[^>]*>/g,
           "",
         )
-        .replace("</body>", `  <script>\n${pageScript}  </script>\n  </body>`);
+        .replace("</body>", `  <script>\n${pageScript}  </script>\n  </body>`)
+        // After the bundle's own tags have gone, because the rule that removes
+        // them matches any script with a `src` and would take this with them.
+        .replace("</head>", `  ${ANALYTICS}\n  </head>`);
       await writeFile(htmlPath, rewritten);
 
       // The bundle is not merely unreferenced now, it is unreachable, so
