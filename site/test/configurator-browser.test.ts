@@ -19,6 +19,12 @@ const CONFIGURATOR_TIMEOUT_MS = 120_000;
 const THEME_PATH = "/config/themes";
 const THEMES = resolve(import.meta.dirname, "../../config/themes");
 
+/** One request the page made to publish, as the service received it. */
+interface PublishAttempt {
+  csrf: string | null;
+  body: Record<string, unknown>;
+}
+
 const SIGNED_IN = {
   authenticated: true,
   csrfToken: "C".repeat(43),
@@ -73,11 +79,12 @@ const built = (async () => {
  */
 async function withConfigurator(
   listing: unknown,
-  visit: (page: Page) => Promise<void>,
+  visit: (page: Page, published: PublishAttempt[]) => Promise<void>,
   session: unknown = SIGNED_IN,
   configuration: unknown = { theme: null, themeSettings: {} },
 ): Promise<void> {
   const root = await built;
+  const published: PublishAttempt[] = [];
   const server = Bun.serve({
     port: 0,
     async fetch(request) {
@@ -88,6 +95,13 @@ async function withConfigurator(
       // asks for as soon as it has one.
       if (url.pathname === "/api/configuration") {
         return Response.json(configuration);
+      }
+      if (url.pathname === "/api/configuration/publish") {
+        published.push({
+          csrf: request.headers.get("X-Velvet-CSRF"),
+          body: (await request.json()) as Record<string, unknown>,
+        });
+        return Response.json({ commit: "a".repeat(40) });
       }
       // The monitor loads a theme from the service's own path. Those documents
       // are written by `configurator:themes` into the repository rather than
@@ -114,7 +128,7 @@ async function withConfigurator(
   try {
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${server.port}/`);
-    await visit(page);
+    await visit(page, published);
   } finally {
     await browser.close();
     server.stop(true);
@@ -458,6 +472,90 @@ test(
           "#123456",
           "the colour well reaches the page in the monitor",
         );
+      },
+      SIGNED_IN,
+      { theme: "velvet", themeSettings: {} },
+    );
+  },
+  CONFIGURATOR_TIMEOUT_MS,
+);
+
+
+test(
+  "publishes what was set, and says the page is being rebuilt",
+  async () => {
+    await withConfigurator(
+      { repositories: [installation()], truncated: false },
+      async (page, published) => {
+        const button = page.getByRole("button", { name: "Publish" });
+        await button.waitFor();
+
+        // Nothing has moved yet, so there is nothing to write. The button says
+        // so rather than writing a commit that changes nothing.
+        assert.equal(await button.isDisabled(), true);
+        await page.getByText("Nothing to publish.").waitFor();
+
+        await page.locator('label[for="feature-chartWash"]').click();
+        assert.equal(await button.isDisabled(), false);
+        await button.click();
+
+        await page.getByText("The page rebuilds itself").waitFor();
+        assert.equal(published.length, 1, "one press, one write");
+        assert.deepEqual(published[0]!.body, {
+          installationId: 7,
+          repositoryId: 9,
+          theme: "velvet",
+          themeSettings: { chartWash: false },
+        });
+        // Without it the service refuses the write, so a page that forgot it
+        // would look like it published and never would.
+        assert.equal(published[0]!.csrf, SIGNED_IN.csrfToken);
+
+        // The commit is offered rather than described, because watching the
+        // build is the only thing left to do and it happens on GitHub.
+        const link = page.getByRole("link", { name: "Watch it" });
+        assert.match(
+          (await link.getAttribute("href")) ?? "",
+          /^https:\/\/github\.com\/velvet-user\/status\/commit\/a{40}$/u,
+        );
+
+        // Published now, so there is nothing left to publish.
+        assert.equal(await button.isDisabled(), true);
+      },
+      SIGNED_IN,
+      { theme: "velvet", themeSettings: {} },
+    );
+  },
+  CONFIGURATOR_TIMEOUT_MS,
+);
+
+test(
+  "keeps what was set when the page is reloaded, without publishing it",
+  async () => {
+    await withConfigurator(
+      { repositories: [installation()], truncated: false },
+      async (page, published) => {
+        await page.locator('label[for="feature-chartWash"]').click();
+        await page
+          .getByRole("button", { name: "Publish" })
+          .and(page.locator(":not([disabled])"))
+          .waitFor();
+
+        await page.reload();
+        await page.locator('label[for="feature-chartWash"]').waitFor();
+
+        // The draft survived, which is what a browser keeping it means, and it
+        // reached nobody, which is what keeping it in the browser means.
+        const monitor = await page
+          .waitForSelector("iframe")
+          .then((element) => element.contentFrame());
+        assert.ok(monitor);
+        await monitor.waitForSelector(".velvet-page");
+        assert.equal(
+          await shownInMonitor(monitor, "--chart-area-display", "none"),
+          "none",
+        );
+        assert.deepEqual(published, []);
       },
       SIGNED_IN,
       { theme: "velvet", themeSettings: {} },

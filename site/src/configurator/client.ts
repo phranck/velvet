@@ -26,8 +26,12 @@ export type ConfiguratorFetch = (
  *
  * `signed-out` is not in here. Being signed out is not a failure but a step:
  * the client leaves for the authorization and never returns to its caller.
+ *
+ * `unwritable` is the operator's own file rather than anything here: it has a
+ * shape the service will not change, and only they can put that right. It is
+ * told apart from `unreadable` because the two need different words on screen.
  */
-export type ConfiguratorFailure = "unreachable" | "unreadable";
+export type ConfiguratorFailure = "unreachable" | "unreadable" | "unwritable";
 
 /** A failure the configurator can name, as opposed to one it cannot. */
 export class ConfiguratorError extends Error {
@@ -84,6 +88,24 @@ export interface ConfiguratorClient {
   configurationOf(
     installation: ManageableInstallation,
   ): Promise<InstallationConfiguration>;
+  /**
+   * Writes a theme and its settings into the installation's own configuration.
+   *
+   * One commit, which sets off the workflow that rebuilds the page. Everything
+   * else in the file is left as the operator wrote it, and a file the service
+   * cannot edit safely is refused rather than reformatted.
+   *
+   * @param installation - The installation and repository to publish to.
+   * @param configuration - The theme and what is set on it.
+   * @returns The commit the write produced, or nothing where the page was
+   *   already published exactly that way.
+   * @throws {ConfiguratorError} When the service cannot be reached, answers
+   *   something unreadable, or refuses the file it was asked to change.
+   */
+  publish(
+    installation: ManageableInstallation,
+    configuration: InstallationConfiguration,
+  ): Promise<{ commit: string | null }>;
 }
 
 /**
@@ -102,6 +124,44 @@ export function createConfiguratorClient(
   navigate: (url: string) => void = browserNavigate,
 ): ConfiguratorClient {
   const unreadable = (): Error => new ConfiguratorError("unreadable");
+
+  /**
+   * Makes a writing request, carrying the token that proves it came from here.
+   *
+   * The session is read for that token at the moment of writing rather than
+   * held from earlier, so a session that has since expired is noticed before
+   * the write instead of after it.
+   *
+   * @param path - Where to write.
+   * @param body - What to send.
+   * @returns The service's answer.
+   */
+  const send = async (path: string, body: unknown): Promise<Response> => {
+    const sessionResponse = await ask("/api/session");
+    if (!sessionResponse.ok) throw unreadable();
+    const session = validateSetupSession(
+      await readJsonResponse(sessionResponse, unreadable),
+    );
+    if (!session.success) throw unreadable();
+    if (!session.data.authenticated || !session.data.csrfToken) {
+      navigate("/api/auth/start");
+      throw new ConfiguratorError("unreadable");
+    }
+    try {
+      return await fetchImplementation(path, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-Velvet-CSRF": session.data.csrfToken,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new ConfiguratorError("unreachable");
+    }
+  };
 
   const ask = async (path: string): Promise<Response> => {
     try {
@@ -167,6 +227,29 @@ export function createConfiguratorClient(
       );
       if (!configuration.success) throw unreadable();
       return configuration.data;
+    },
+
+    async publish(installation, configuration) {
+      const answer = await send("/api/configuration/publish", {
+        installationId: installation.installationId,
+        repositoryId: installation.repositoryId,
+        theme: configuration.theme,
+        themeSettings: configuration.themeSettings,
+      });
+      if (answer.status === 401) {
+        navigate("/api/auth/start");
+        // Unreachable in a browser, which has left by now.
+        return { commit: null };
+      }
+      // The one refusal worth telling apart. It means the operator's own file
+      // has a shape the service will not change rather than anything being
+      // wrong here, and only they can put that right.
+      if (answer.status === 409) throw new ConfiguratorError("unwritable");
+      if (!answer.ok) throw unreadable();
+      const body = await readJsonResponse(answer, unreadable);
+      const commit = (body as { commit?: unknown }).commit;
+      if (commit !== null && typeof commit !== "string") throw unreadable();
+      return { commit };
     },
   };
 }

@@ -221,7 +221,62 @@
       "The setup service did not answer. It may be restarting, so this is worth trying again in a moment.",
     unreadable:
       "The setup service answered something this page cannot read. Trying again is worth it; if it keeps happening, the service and this page are of different versions.",
+    unwritable:
+      "Your velvet.yml has a shape this cannot change without rewriting the rest of it, so nothing was written. Put statusPage.theme on a line of its own and this will take over from there.",
   };
+
+
+  /**
+   * Where a publish has got to.
+   *
+   * `writing` covers the request, which is quick. `building` is what follows
+   * it and is not: the commit sets off the repository's own workflow, and the
+   * page changes a minute or so later. Saying so is the point, because a
+   * configurator that looked finished the instant it wrote would have somebody
+   * reloading their status page and finding it unchanged.
+   */
+  let publishState = $state<"idle" | "writing" | "building" | "failed">("idle");
+
+  /** The commit a publish wrote, so somebody can go and watch the build. */
+  let publishedCommit = $state<string | null>(null);
+
+  /** Why a publish did not happen, in the words the failure has here. */
+  let publishFailure = $state<ConfiguratorFailure | null>(null);
+
+  /** Whether anything is set that the page is not already published with. */
+  const hasChanges = $derived(
+    published === null ||
+      published.theme !== chosenTheme ||
+      JSON.stringify(published.themeSettings ?? {}) !==
+        JSON.stringify(chosenSettings),
+  );
+
+  /**
+   * Writes the draft into the installation's own configuration.
+   *
+   * The draft stays where it is afterwards. It is what this browser is showing,
+   * and the page catches up with it when the build finishes rather than at the
+   * moment of writing, so clearing it here would show the operator the old page
+   * as though it were the new one.
+   */
+  async function publish(): Promise<void> {
+    if (!chosen || publishState === "writing") return;
+    publishState = "writing";
+    publishFailure = null;
+    try {
+      const written = await service.publish(chosen, {
+        theme: chosenTheme,
+        themeSettings: chosenSettings,
+      });
+      publishedCommit = written.commit;
+      published = { theme: chosenTheme, themeSettings: { ...chosenSettings } };
+      publishState = "building";
+    } catch (failure) {
+      publishFailure =
+        failure instanceof ConfiguratorError ? failure.reason : "unreadable";
+      publishState = "failed";
+    }
+  }
 
   /** Writes the current preferences back, after any change to them. */
   function remember(): void {
@@ -558,7 +613,57 @@
 
     <footer class="sidebar__foot" inert={sidebar.collapsed}>
       {#if chosen}
-        Configuring {chosen.owner}/{chosen.name}
+        <!--
+          Said plainly, because it is the one thing about this page that is not
+          obvious: everything set here is in this browser and nowhere else until
+          the button below is pressed.
+        -->
+        <p class="foot__note">
+          What you set here stays in this browser. Publishing writes it into
+          {chosen.owner}/{chosen.name} and rebuilds the page.
+        </p>
+
+        <button
+          type="button"
+          class="publish"
+          disabled={publishState === "writing" || !hasChanges}
+          onclick={publish}
+        >
+          {#if publishState === "writing"}
+            <i class="ph-duotone ph-circle-notch" aria-hidden="true"></i>
+            Publishing
+          {:else}
+            <i class="ph-duotone ph-upload-simple" aria-hidden="true"></i>
+            Publish
+          {/if}
+        </button>
+
+        <!--
+          The reading below the button. `aria-live` because it appears without
+          anything moving focus, so a screen reader would otherwise never say
+          that the write happened.
+        -->
+        <p class="foot__state" aria-live="polite">
+          {#if publishState === "building"}
+            {#if publishedCommit === null}
+              This page is already published exactly this way.
+            {:else}
+              Written. The page rebuilds itself in a minute or so.
+              <a
+                class="foot__link"
+                href="https://github.com/{chosen.owner}/{chosen.name}/commit/{publishedCommit}"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Watch it
+              </a>
+            {/if}
+          {:else if publishState === "failed" && publishFailure}
+            {failureMessage[publishFailure]}
+          {:else if !hasChanges}
+            Nothing to publish.
+          {/if}
+        </p>
       {:else if opening.state === "ready"}
         Signed in as {opening.login}
       {/if}
@@ -738,9 +843,54 @@
     border-top: 1px solid var(--configurator-divider);
     color: var(--configurator-text-muted);
     font-size: var(--configurator-text-small);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .foot__note,
+  .foot__state {
+    margin: 0;
+    /* The words are the point here, so they wrap rather than being cut off. */
+    text-wrap: pretty;
+  }
+
+  .publish {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--configurator-accent);
+    border-radius: var(--configurator-radius-inner);
+    background: var(--configurator-accent);
+    color: var(--configurator-accent-ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--configurator-transition);
+  }
+
+  .publish:hover:not(:disabled) {
+    background: var(--configurator-accent-lit);
+    border-color: var(--configurator-accent-lit);
+  }
+
+  /* Nothing to publish is a resting state rather than a fault, so it reads as
+     one: the button keeps its shape and gives up its fill. */
+  .publish:disabled {
+    background: transparent;
+    border-color: var(--configurator-control-edge);
+    color: var(--configurator-text-muted);
+    cursor: default;
+  }
+
+  .publish i {
+    font-size: var(--configurator-glyph);
+  }
+
+  .foot__link {
+    color: var(--configurator-accent);
   }
 
   /* Wide enough to hit without hunting for it, drawn narrower than it is. */
