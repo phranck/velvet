@@ -1,4 +1,9 @@
 <script lang="ts">
+  import {
+    MONITOR_READY,
+    MONITOR_SETTINGS,
+  } from "../lib/themes/monitor-messages.js";
+
   interface Props {
     /** The theme being shown, as its directory name. */
     theme: string;
@@ -51,7 +56,7 @@
   $effect(() => {
     const listener = (event: MessageEvent): void => {
       if (event.origin !== globalThis.location.origin) return;
-      if ((event.data as { type?: string })?.type !== "velvet:ready") return;
+      if ((event.data as { type?: string })?.type !== MONITOR_READY) return;
       readyAt = frame?.getAttribute("src") ?? null;
     };
     globalThis.addEventListener("message", listener);
@@ -63,7 +68,7 @@
     const settings = declarations;
     if (!target || readyAt !== source) return;
     target.postMessage(
-      { type: "velvet:settings", declarations: settings },
+      { type: MONITOR_SETTINGS, declarations: settings },
       globalThis.location.origin,
     );
     read();

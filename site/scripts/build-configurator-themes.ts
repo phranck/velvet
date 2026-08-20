@@ -21,6 +21,12 @@ import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { fixtureNamed } from "../theme-bundles/fixtures/index.js";
+import { APPEARANCE_EVENT } from "@velvet/foundation/appearance";
+
+import {
+  MONITOR_READY,
+  MONITOR_SETTINGS,
+} from "../src/lib/themes/monitor-messages.js";
 import { themeSettingDeclarations } from "../src/lib/themes/settings.js";
 import { readThemes, THEMES_ROOT } from "./themes.js";
 
@@ -96,7 +102,7 @@ function apply(declarations) {
   // Most of the page follows a changed property on its own. What does not is
   // anything painted onto a canvas, which holds what it was given until it is
   // asked again, and the strip of days is exactly that.
-  document.dispatchEvent(new CustomEvent("velvet:appearance"));
+  document.dispatchEvent(new CustomEvent(${JSON.stringify(APPEARANCE_EVENT)}));
 }
 
 script(root, data);
@@ -105,13 +111,13 @@ apply(declared);
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin) return;
   const message = event.data;
-  if (!message || message.type !== "velvet:settings") return;
+  if (!message || message.type !== ${JSON.stringify(MONITOR_SETTINGS)}) return;
   apply(message.declarations);
 });
 
 // Says the frame is ready for settings, so the configurator does not have to
 // guess when a document it just pointed at has finished loading.
-window.parent.postMessage({ type: "velvet:ready" }, window.location.origin);
+window.parent.postMessage({ type: ${JSON.stringify(MONITOR_READY)} }, window.location.origin);
 `;
 }
 
