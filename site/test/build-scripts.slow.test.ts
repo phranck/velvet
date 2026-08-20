@@ -164,27 +164,27 @@ test("gives the website everything a search engine and a social platform read", 
   ]);
 
   const html = await readFile(resolve(outDir, "index.html"), "utf8");
-  assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/" \/>/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/velvet\.li\/"/u);
   // The site is named Velvet whatever a given page is titled, so this one stays
   // the bare mark.
-  assert.match(html, /<meta property="og:site_name" content="Velvet" \/>/);
+  assert.match(html, /<meta property="og:site_name" content="Velvet"/u);
   // Both titles track the document title, since a preview that disagrees with
   // the tab is a preview somebody forgot to update.
   for (const property of ['property="og:title"', 'name="twitter:title"']) {
     assert.match(
       html,
-      new RegExp(`<meta ${property} content="Velvet, GitHub-native status pages" />`),
+      new RegExp(`<meta ${property} content="Velvet, GitHub-native status pages"`, "u"),
     );
   }
   assert.match(html, /<meta property="og:locale"/);
-  assert.match(html, /<meta property="og:image" content="https:\/\/velvet\.li\/og\.png" \/>/);
-  assert.match(html, /<meta property="og:image:width" content="1200" \/>/);
-  assert.match(html, /<meta property="og:image:height" content="630" \/>/);
+  assert.match(html, /<meta property="og:image" content="https:\/\/velvet\.li\/og\.png"/u);
+  assert.match(html, /<meta property="og:image:width" content="1200"/u);
+  assert.match(html, /<meta property="og:image:height" content="630"/u);
   // Matched on the attribute rather than the whole tag, since a long content
   // value is wrapped across lines in the source and stays that way.
   assert.match(html, /property="og:image:alt"/);
-  assert.match(html, /<meta name="twitter:card" content="summary_large_image" \/>/);
-  assert.match(html, /<meta name="twitter:image" content="https:\/\/velvet\.li\/og\.png" \/>/);
+  assert.match(html, /<meta name="twitter:card" content="summary_large_image"/u);
+  assert.match(html, /<meta name="twitter:image" content="https:\/\/velvet\.li\/og\.png"/u);
 
   // A platform fetching og:image against a URL that 404s renders the link bare,
   // which is the failure this pairing exists to prevent.
