@@ -156,12 +156,15 @@ test("shows each installation as its own page, and leaves out one that has gone"
     // Each fact is its own chip, so two cards can be compared a fact at a time.
     // The exact span is on the uptime chip rather than in it.
     const chips = await page.$$eval("[data-reference-entry] .fact", readChips);
-    assert.equal(chips.length, 3, "services, release, and uptime");
+    assert.equal(chips.length, 3, "services, uptime, and release");
+    // Found by what it says rather than by where it sits, because which line a
+    // chip stands on is a layout decision and this is about the chip.
+    const uptime = chips.find((chip) => chip.text.startsWith("Uptime:"));
     const unit = String.raw`\d+ (?:years?|months?|weeks?|days?)`;
     assert.match(
-      chips[2]?.title ?? "",
+      uptime?.title ?? "",
       new RegExp(`^${unit}(?:, ${unit})*$`, "u"),
-      `the uptime chip carries no breakdown, only ${JSON.stringify(chips[2])}`,
+      `the uptime chip carries no breakdown, only ${JSON.stringify(uptime)}`,
     );
     // The point of the hover is that it says more than the chip does.
     assert.notEqual(chips[2]?.title, chips[2]?.text);

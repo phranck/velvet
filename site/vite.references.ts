@@ -2,7 +2,11 @@ import { resolve } from "node:path";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vite";
 
-import { phosphorWoff2Only, renameHtmlEntry } from "./vite.static-tool.js";
+import {
+  analyticsTag,
+  phosphorWoff2Only,
+  renameHtmlEntry,
+} from "./vite.static-tool.js";
 
 /**
  * Vite config for the references page at `velvet.li/references`.
@@ -27,7 +31,12 @@ export default defineConfig({
   // Its own assets live beside it, and the website has already published
   // whatever belongs at the root.
   publicDir: false,
-  plugins: [phosphorWoff2Only, svelte(), renameHtmlEntry("references.html")],
+  plugins: [
+    phosphorWoff2Only,
+    svelte(),
+    renameHtmlEntry("references.html"),
+    analyticsTag(),
+  ],
   /*
     The gallery is read from the setup service, which sends no CORS header for
     an unknown origin. That is right for a public endpoint and it means a

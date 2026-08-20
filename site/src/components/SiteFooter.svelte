@@ -28,22 +28,29 @@
   const ONWARD = sectionsNamed("documentation", "changelog", "attributions");
 </script>
 
-<div class="velvet-page">
-  <PageFooter.Root>
-    <PageFooter.Credit />
-    <!--
-      The way onward, where the mark used to sign the page. The bar at the top
-      carries the mark as a link somebody can actually use, so repeating it here
-      said the same thing twice and said nothing about where to go next.
-    -->
-    <nav class="onward" aria-label="Pages">
-      <ul>
-        {#each ONWARD as section (section.id)}
-          <li><a href={section.href}>{section.label}</a></li>
-        {/each}
-      </ul>
-    </nav>
-  </PageFooter.Root>
+<!--
+  Two elements, the way the bar at the top is two: the band spans the window and
+  carries the line, whilst the row inside it keeps the page measure. A line that
+  stopped at the measure would end where nothing else on the page ends.
+-->
+<div class="band">
+  <div class="velvet-page">
+    <PageFooter.Root>
+      <PageFooter.Credit />
+      <!--
+        The way onward, where the mark used to sign the page. The bar at the top
+        carries the mark as a link somebody can actually use, so repeating it
+        here said the same thing twice and said nothing about where to go next.
+      -->
+      <nav class="onward" aria-label="Pages">
+        <ul>
+          {#each ONWARD as section (section.id)}
+            <li><a href={section.href}>{section.label}</a></li>
+          {/each}
+        </ul>
+      </nav>
+    </PageFooter.Root>
+  </div>
 </div>
 
 <style>
@@ -51,18 +58,18 @@
      bottom of the window on a short page and directly under the content on a
      long one. The page states the column and its height; this states only that
      the footer belongs at the end of it. */
-  div {
+  .band {
     margin-block-start: auto;
+    border-top: 1px solid var(--velvet-rule);
   }
   /* The credit takes the first column here rather than the middle one, because
      the way onward holds the last and a page signed at one end and continued at
      the other reads better than one signed in the centre. */
-  div :global(.page-footer) {
+  .band :global(.page-footer) {
     --page-footer-credit-column: 1;
 
     align-items: center;
     padding: 1.625rem 0;
-    border-top: 1px solid var(--velvet-rule);
     color: var(--velvet-text-dim);
     /* A credit is a value rather than a sentence: who, and in which year. The
        figure face is what the rest of the site prints a value in. */
