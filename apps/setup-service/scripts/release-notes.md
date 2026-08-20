@@ -8,6 +8,8 @@ There is a configurator at `setup.velvet.li/config`. It shows your page beside t
 
 Reading the response times follows the pointer without lagging behind it, and a page starts in the colours it ends in rather than repainting once the browser has read its configuration. A service name too long for the line it stands on is shown cut rather than broken off mid-letter.
 
+Your page says so for its first day, whilst it has nothing to show yet, and the picture it publishes for sharing is drawn in the colours of your theme rather than in Velvet's own.
+
 ## What stays yours
 
 `velvet.yml`, the complete `velvet-data` branch, your incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `LICENSE` are never touched by an update. Velvet only replaces the workflow and issue-template files it owns, plus its own version lock.

@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.0.0 (2026-08-20)
+## Version 1.0.0 (2026-08-21)
 
 Velvet watches your websites and tells the people who rely on them whether everything is working.
 
@@ -31,6 +31,14 @@ You pick a theme from its picture rather than from a list of names, and undernea
 Everything you set stays in your browser until you press Publish. It survives a reload, and it is kept per theme, so trying another one and coming back finds your settings where you left them.
 
 Publishing writes the theme and its settings into your own `velvet.yml` as a single commit, and your page rebuilds itself a minute or so later. Everything else in that file is left exactly as you wrote it, comments included. If the file has a shape Velvet cannot change without rewriting the rest of it, nothing is written and it says so.
+
+### The first day
+
+A page published an hour ago is nearly empty: a grey strip, an empty chart, and figures that read as though nothing had ever answered. It now says so, for its first day, so that emptiness reads as a page that has just started rather than as one that is broken.
+
+The picture somebody sees when they share your address is drawn in the colours of the theme your page is published in. Until now every installation shared a picture in Velvet's own indigo, whatever it actually looked like.
+
+A service opened before its first response time has been recorded keeps the shape of the chart it has nothing to draw in yet, rather than collapsing to a line of text.
 
 ### How your page behaves
 
