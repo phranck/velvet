@@ -1,6 +1,6 @@
 # Velvet setup service
 
-The short-lived control plane behind browser onboarding. It authenticates a user through a Velvet GitHub App, creates one repository from the allowlisted `phranck/velvet-template`, writes `velvet.yml` and the machine-managed `velvet.lock.json`, enables GitHub Pages, and starts the template's own workflow.
+The short-lived control plane behind browser onboarding. It authenticates a user through a Velvet GitHub App and creates one repository under the chosen owner. Into that repository it writes the configuration `velvet.yml` and the Velvet-owned files it carries as a release artefact, among them the machine-managed `velvet.lock.json` and the `.github/workflows/velvet.yml` that builds the page. It then enables GitHub Pages and dispatches that workflow.
 
 The version lock records which release an installation starts on. Without it an installation would have no version to compare against and could never be updated. It is written without a blob SHA, so GitHub refuses the write if the file already exists and a retried setup cannot overwrite a newer lock.
 

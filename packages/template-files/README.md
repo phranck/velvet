@@ -25,7 +25,7 @@ const publication = validateReleasePublication({
   manifest,
   previousManifest,
   source: {
-    repository: "phranck/velvet-template",
+    repository: "phranck/velvet",
     commit: templateCommit,
     files: immutableTemplateFiles,
   },
