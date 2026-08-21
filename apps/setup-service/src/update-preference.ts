@@ -32,6 +32,24 @@ interface PreferenceLocation extends FieldLocation {
    * refuses the one-line form rather than emptying it.
    */
   readonly alone: boolean;
+  /**
+   * Whether the field may be added to a block that does not carry it.
+   *
+   * The onboarding writes the fields it knows about, so most of them are there
+   * to be replaced. A field added to Velvet after an installation was made is
+   * not, and refusing to write it would leave that installation unable to set
+   * it at all.
+   */
+  readonly insertable?: boolean;
+  /**
+   * What a file saying nothing about this field already means.
+   *
+   * A field that is absent and would be written with exactly this value needs
+   * no line: the file already says it. Without this, publishing a page that
+   * changed nothing would still commit, and every installation made before the
+   * field existed would gain a line the first time anybody pressed Publish.
+   */
+  readonly implied?: PreferenceValue;
 }
 
 const AUTOMATIC_SECURITY_UPDATES: PreferenceLocation = {
@@ -51,6 +69,25 @@ const STATUS_PAGE_THEME: PreferenceLocation = {
   field: "theme",
   alone: false,
 };
+
+const STATUS_PAGE_RESPONSE_CHART: PreferenceLocation = {
+  block: "statusPage",
+  field: "responseChart",
+  alone: false,
+  insertable: true,
+  implied: true,
+};
+
+const STATUS_PAGE_DEFAULT_RANGE: PreferenceLocation = {
+  block: "statusPage",
+  field: "defaultRange",
+  alone: false,
+  insertable: true,
+  implied: "30d",
+};
+
+/** The three windows a page may open in, as the configuration contract allows. */
+const DEFAULT_RANGE = /^(?:30d|90d|all)$/u;
 
 /**
  * A theme name as the configuration contract allows it.
@@ -115,6 +152,44 @@ export function setStatusPageTheme(
   return setPreference(source, STATUS_PAGE_THEME, theme);
 }
 
+/**
+ * Rewrites `statusPage.responseChart`, which decides whether the page shows the
+ * response-time chart under each service.
+ *
+ * A page setting rather than a theme one, so it survives a change of theme.
+ *
+ * @param source - The repository's current `velvet.yml`, verbatim.
+ * @param shown - Whether the chart should be shown.
+ * @returns The edited source, or `null` when the edit could not be made and
+ *   proven safe, in which case the caller must leave the file alone.
+ */
+export function setStatusPageResponseChart(
+  source: string,
+  shown: boolean,
+): string | null {
+  return setPreference(source, STATUS_PAGE_RESPONSE_CHART, shown);
+}
+
+/**
+ * Rewrites `statusPage.defaultRange`, the window a page opens in before a
+ * visitor picks one themselves.
+ *
+ * Checked here as well as by the contract, for the reason the theme name is:
+ * this value reaches a line of YAML by concatenation.
+ *
+ * @param source - The repository's current `velvet.yml`, verbatim.
+ * @param range - `30d`, `90d`, or `all`.
+ * @returns The edited source, or `null` when the edit could not be made and
+ *   proven safe, in which case the caller must leave the file alone.
+ */
+export function setStatusPageDefaultRange(
+  source: string,
+  range: string,
+): string | null {
+  if (!DEFAULT_RANGE.test(range)) return null;
+  return setPreference(source, STATUS_PAGE_DEFAULT_RANGE, range);
+}
+
 function setPreference(
   source: string,
   location: PreferenceLocation,
@@ -173,16 +248,33 @@ function applyEdit(
   }
   if (!blockStyle.test(keyLine)) return null;
 
+  // Where the block ends, and what its children are indented by, so a field
+  // that is not there yet can be added in the operator's own shape.
+  let after = -1;
+  let indentation = "";
   for (let index = keyIndex + 1; index < lines.length; index += 1) {
     const line = lines[index]!;
     if (BLANK_OR_COMMENT.test(line)) continue;
     if (!INDENTED.test(line)) break;
 
     const match = line.match(fieldLine);
-    if (!match) continue;
+    if (!match) {
+      after = index;
+      if (indentation === "") {
+        indentation = line.match(/^([ \t]+)/u)?.[1] ?? "";
+      }
+      continue;
+    }
     const [, indent, comment] = match;
     lines[index] = `${indent}${field}: ${value}${comment ? ` ${comment}` : ""}`;
     return lines.join("\n");
   }
-  return null;
+
+  if (!location.insertable || after === -1) return null;
+  // The file already says this by saying nothing, so it is left alone.
+  if (location.implied !== undefined && value === location.implied) return source;
+  // At the end of the block rather than the top, so it reads as an addition
+  // and nothing an operator wrote moves down a line.
+  lines.splice(after + 1, 0, `${indentation}${field}: ${value}`);
+  return lines.join("\n");
 }

@@ -164,6 +164,7 @@ statusPage:
   logoHeight: 72
   layout: grouped
   defaultRange: 30d
+  responseChart: true
   navigation:
     - title: Website
       href: https://example.com
@@ -181,6 +182,7 @@ statusPage:
 | `themeSettings` | no | what the theme states | What you have set on that theme, keyed by the setting it belongs to. Which settings a theme has is the theme's own answer, so an unknown one stops the build and says what that theme offers. |
 | `layout` | no | `grouped` | `grouped` for one shared service card or `cards` for one card per service. |
 | `defaultRange` | no | `30d` | Initial range: `30d`, `90d`, or `all`. `all` reaches back to the day your installation began measuring, so it grows with it. A visitor's saved choice wins later. |
+| `responseChart` | no | `true` | Whether each service shows its response-time chart. Set it to `false` and the readings are still measured and still published, and no theme draws them. It is a page setting rather than a theme one, so it survives changing the theme your page is published in. |
 | `navigation` | no | `[]` | Up to 16 links with `title` and `href`. **None of the four themes draws them.** A published page carries the installation's name and its readings and nothing else, so links written here reach the page's data and are shown nowhere. |
 | `icons` | no | automatic | Map of service ID to Phosphor icon class such as `ph-globe`. |
 | `seo` | no | generated | Optional title, description, and social-image overrides. |

@@ -45,6 +45,22 @@ export class ConfiguratorError extends Error {
 export interface ConfiguratorOpening {
   /** The GitHub account this browser is signed in as. */
   login: string;
+  /** That account's picture on GitHub, for showing whose session this is. */
+  avatarUrl: string;
+  /**
+   * What the account calls itself on GitHub.
+   *
+   * Absent where it has set no name, which is common enough that anything
+   * showing it falls back on the login rather than showing a gap.
+   */
+  name?: string;
+  /**
+   * The address GitHub answers with for this account.
+   *
+   * Absent where GitHub gives none, so anything showing it leaves the line out
+   * rather than showing a gap.
+   */
+  email?: string;
   /**
    * The installations this account may configure, newest information first.
    *
@@ -106,6 +122,22 @@ export interface ConfiguratorClient {
     installation: ManageableInstallation,
     configuration: InstallationConfiguration,
   ): Promise<{ commit: string | null }>;
+  /**
+   * Ends this session and revokes the token GitHub issued for it.
+   *
+   * Never returns: the browser leaves for `destination` as soon as the session
+   * is gone.
+   *
+   * The destination is the caller's, because ending a session to leave and
+   * ending one to sign in as somebody else are the same request and different
+   * journeys. Neither can ask GitHub to offer a choice of account, since GitHub
+   * alone decides which one answers an authorization.
+   *
+   * @param destination - Where to send the browser once the session is gone.
+   * @throws {ConfiguratorError} When the service cannot be reached, or refuses
+   *   to end the session.
+   */
+  endSession(destination: string): Promise<void>;
 }
 
 /**
@@ -187,7 +219,7 @@ export function createConfiguratorClient(
         navigate("/api/auth/start");
         // Unreachable in a browser, which has left by now. A test that does
         // not follow the navigation gets an answer rather than a hang.
-        return { login: "", installations: [], truncated: false };
+        return { login: "", avatarUrl: "", installations: [], truncated: false };
       }
 
       const listing = await ask("/api/installations");
@@ -195,7 +227,7 @@ export function createConfiguratorClient(
       // than a failure, and is the one status worth telling apart here.
       if (listing.status === 401) {
         navigate("/api/auth/start");
-        return { login: "", installations: [], truncated: false };
+        return { login: "", avatarUrl: "", installations: [], truncated: false };
       }
       if (!listing.ok) throw unreadable();
       const installations = validateSetupInstallations(
@@ -205,6 +237,9 @@ export function createConfiguratorClient(
 
       return {
         login: session.data.user.login,
+        avatarUrl: session.data.user.avatarUrl,
+        ...(session.data.user.name ? { name: session.data.user.name } : {}),
+        ...(session.data.user.email ? { email: session.data.user.email } : {}),
         installations: installations.data.repositories.filter(
           (repository) => repository.installedVersion !== null,
         ),
@@ -219,7 +254,12 @@ export function createConfiguratorClient(
       if (answer.status === 401) {
         navigate("/api/auth/start");
         // Unreachable in a browser, which has left by now.
-        return { theme: null, themeSettings: {} };
+        return {
+          theme: null,
+          themeSettings: {},
+          responseChart: true,
+          defaultRange: "30d",
+        };
       }
       if (!answer.ok) throw unreadable();
       const configuration = validateInstallationConfiguration(
@@ -235,6 +275,8 @@ export function createConfiguratorClient(
         repositoryId: installation.repositoryId,
         theme: configuration.theme,
         themeSettings: configuration.themeSettings,
+        responseChart: configuration.responseChart,
+        defaultRange: configuration.defaultRange,
       });
       if (answer.status === 401) {
         navigate("/api/auth/start");
@@ -250,6 +292,14 @@ export function createConfiguratorClient(
       const commit = (body as { commit?: unknown }).commit;
       if (commit !== null && typeof commit !== "string") throw unreadable();
       return { commit };
+    },
+
+    async endSession(destination) {
+      const answer = await send("/api/logout", {});
+      // A session that has already gone is the outcome this was asking for, so
+      // it counts as done rather than as a failure nobody can act on.
+      if (!answer.ok && answer.status !== 401) throw unreadable();
+      navigate(destination);
     },
   };
 }

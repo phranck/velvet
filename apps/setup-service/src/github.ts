@@ -84,6 +84,16 @@ const REPOSITORY_FEATURES = {
 export interface GitHubViewer {
   login: string;
   avatarUrl: string;
+  /** What the account calls itself, which GitHub leaves unset on many. */
+  name?: string;
+  /**
+   * The address GitHub answers with for this account.
+   *
+   * The App holds the Email addresses permission, so this is the account's
+   * primary address. It is still optional, because an account can have none
+   * that GitHub will give out.
+   */
+  email?: string;
 }
 
 export interface GitHubAccount {
@@ -331,7 +341,21 @@ export function createGitHubSetupClient(
       ) {
         throw new Error("GitHub viewer response was invalid.");
       }
-      return { login: body.login, avatarUrl: body.avatar_url };
+      // GitHub answers with null where an account has set neither, and with an
+      // empty string where it has set one and cleared it again. Neither is a
+      // value, so both are left off rather than carried as one.
+      const text = (value: unknown): string | undefined =>
+        typeof value === "string" && value.trim().length > 0
+          ? value.trim()
+          : undefined;
+      const name = text(body.name);
+      const email = text(body.email);
+      return {
+        login: body.login,
+        avatarUrl: body.avatar_url,
+        ...(name ? { name } : {}),
+        ...(email ? { email } : {}),
+      };
     },
 
     async account(userToken, login) {

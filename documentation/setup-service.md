@@ -82,7 +82,15 @@ Setup needs Workflows because it tailors the monitor workflows to the configurat
 
 Setup and managed updates mint separate installation tokens. The setup token keeps only the original setup permissions. The update token is restricted to one repository ID and requests Actions read and write, Checks read, Contents write, Pull requests write, and Workflows write. It has no Administration, Pages, Issues, Secrets, organization, or account permission.
 
-Set **No organization permissions** and **No account permissions**. Do not subscribe the app to repository, organization, or account events.
+Set one account permission:
+
+- Email addresses: Read-only
+
+The configurator names the account somebody is signed in as, and it shows the address beside the name. Without this permission GitHub answers with an address only for an account that has published one on its public profile, so most people would see the name alone. The permission is read-only and reaches nothing else: it grants the addresses of whoever authorizes Velvet, and no repository, organization, or other account.
+
+An account permission is granted when somebody authorizes Velvet rather than when they install it, so adding it asks everybody already signed in to authorize once more. Nothing else about their installation changes.
+
+Set **No organization permissions**, and do not subscribe the app to repository, organization, or account events.
 
 ## Runtime configuration
 

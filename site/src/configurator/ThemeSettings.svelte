@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from "../components/Icon.svelte";
   import { RadioGroup, Slider, Switch } from "bits-ui";
 
   import type { ThemeFeature } from "../lib/themes/manifest.js";
@@ -182,7 +183,7 @@
             onclick={() =>
               onChange(feature.key, shuffledPlaces(feature.properties.length))}
           >
-            <i class="ph-duotone ph-shuffle" aria-hidden="true"></i>
+            <Icon name="shuffle" />
             Shuffle
           </button>
         {:else if feature.type === "choice"}
@@ -437,7 +438,7 @@
     outline-offset: 2px;
   }
 
-  .shuffle > i {
+  :global(.shuffle > svg) {
     color: var(--configurator-accent);
     font-size: var(--configurator-glyph);
     line-height: 1;

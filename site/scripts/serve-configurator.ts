@@ -41,6 +41,11 @@ const SESSION = {
   user: {
     login: "velvet-user",
     avatarUrl: "https://avatars.githubusercontent.com/u/1",
+    // A name as well as a login, because the account menu shows the name and
+    // falls back on the login, and only one of those two states is worth
+    // looking at by default.
+    name: "Velvet User",
+    email: "velvet-user@example.com",
   },
 };
 
@@ -93,8 +98,18 @@ const listing =
  */
 function publishedConfiguration(repositoryId: number): unknown {
   return repositoryId % 2 === 0
-    ? { theme: "velvet", themeSettings: { chartWash: false } }
-    : { theme: "retro-chassis", themeSettings: {} };
+    ? {
+        theme: "velvet",
+        themeSettings: { chartWash: false },
+        responseChart: true,
+        defaultRange: "30d",
+      }
+    : {
+        theme: "retro-chassis",
+        themeSettings: {},
+        responseChart: true,
+        defaultRange: "90d",
+      };
 }
 
 const CONTENT_TYPES: Record<string, string> = {

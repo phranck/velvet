@@ -29,6 +29,7 @@
 @import "./assets/icons.css";
 
 .velvet-page {
+  --velvet-response-chart-display: grid;
   /* ── Identity ─────────────────────────────────────────────────────────── */
   --theme-scheme: dark;
 
@@ -2030,7 +2031,7 @@
   else, so nothing here is a value handed to it.
 */
 .response-chart {
-  display: grid;
+  display: var(--velvet-response-chart-display);
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: var(--space-tight) var(--space-row);

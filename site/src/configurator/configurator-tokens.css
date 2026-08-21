@@ -110,8 +110,12 @@
    * anywhere other than beside the values it reads comes back empty and
    * nothing warns.
    */
+  /* One rule, everywhere something is bounded or divided by a line. Named so
+     that what has to account for a rule's width reads it rather than repeating
+     the number. */
+  --configurator-hairline: 1px;
   --configurator-radius: 20px;
-  --configurator-inset: 12px;
+  --configurator-inset: 10px;
   --configurator-radius-inner: max(
     calc(var(--configurator-radius) - var(--configurator-inset)),
     0px
@@ -124,6 +128,16 @@
    * block, a table, an image, and a divider each have an edge of their own.
    */
   --configurator-text-inset: calc(var(--configurator-radius) / 2);
+  /*
+   * What a section in the sidebar is rounded by.
+   *
+   * Less than the surfaces it stands among, because a section is a short bar
+   * rather than a panel and the page's radius on that height reads as a
+   * lozenge. A section restates the three properties above from this one, so
+   * what it holds stays concentric with its own corner rather than with the
+   * root's.
+   */
+  --configurator-radius-section: 8px;
 
   /*
    * The faces, which are the tools' own rather than this surface's alone.
@@ -149,14 +163,30 @@
   --configurator-text-label-small: 0.6875rem;
   --configurator-tracking-label: 0.1em;
 
-  /* A glyph standing beside text rather than in it: the grip on a section, the
-     chevron on its heading. Sized here rather than per rule, so the two move
-     together and neither ends up the larger of the pair by accident. */
+  /* A glyph standing beside text rather than in it, such as the grip on a
+     section. Sized here rather than per rule, so they move together and none
+     ends up the larger of the set by accident. */
   --configurator-glyph: 1rem;
   --configurator-glyph-small: 0.8rem;
+  /* The mark in a section's grip. Larger than a glyph beside text, because it
+     stands alone in a column and is a thing to take hold of rather than one to
+     read. */
+  --configurator-glyph-grip: 1.25rem;
+  /* How wide that column is. Wider than the mark in it, so the target is worth
+     aiming at rather than exactly as large as what is drawn. */
+  --configurator-grip-column: 1.5rem;
+  /* The chevron on a section heading, which stands at the far edge of its row
+     with no text beside it. Larger than the glyphs that sit next to a word,
+     because at that distance it is the only mark saying whether the section is
+     open. */
+  --configurator-glyph-chevron: 1.25rem;
   /* A glyph standing on its own, with no text beside it to be sized against
      and nothing but itself to be read as a control. */
   --configurator-glyph-large: 1.5rem;
+  /* The account's picture where it is read as a face rather than as a mark,
+     which is the head of the account menu. On the rail it takes the glyph size
+     above instead, so the foot of that column matches its head. */
+  --configurator-avatar-large: 4rem;
 
   /* How long a control takes to answer. Short enough to read as the control
      responding rather than as the page animating. */

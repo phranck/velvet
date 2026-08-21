@@ -187,7 +187,33 @@ export const SetupSessionSchema = Type.Object(
     ),
     user: Type.Optional(
       Type.Object(
-        { login: Type.String({ minLength: 1, maxLength: 39 }), avatarUrl: HttpsUrlSchema },
+        {
+          login: Type.String({ minLength: 1, maxLength: 39 }),
+          avatarUrl: HttpsUrlSchema,
+          /*
+           * What the account calls itself on GitHub, which is optional there
+           * and therefore optional here. Absent whenever the account has set
+           * no name, so anything showing it needs the login to fall back on.
+           */
+          name: Type.Optional(Type.String({ minLength: 1, maxLength: 255 })),
+          /*
+           * The address GitHub answers with for the signed-in account. Still
+           * optional, because an account can have none that GitHub will give
+           * out, and anything showing it leaves the line out rather than
+           * showing a gap.
+           *
+           * Bounded and required to hold one `@` between two runs without
+           * spaces. Enough to refuse what is plainly not an address, and loose
+           * enough not to refuse an unusual one that is.
+           */
+          email: Type.Optional(
+            Type.String({
+              minLength: 3,
+              maxLength: 320,
+              pattern: "^[^@\\s]+@[^@\\s]+$",
+            }),
+          ),
+        },
         { additionalProperties: false },
       ),
     ),
@@ -306,6 +332,19 @@ export const InstallationConfigurationSchema = Type.Object(
         Type.Boolean(),
       ]),
     ),
+    /**
+     * Whether the page shows the response-time chart under each service.
+     *
+     * A page setting rather than a theme one, so it survives a change of theme
+     * and needs no theme to declare it.
+     */
+    responseChart: Type.Boolean(),
+    /** The window the page opens in before a visitor picks one themselves. */
+    defaultRange: Type.Union([
+      Type.Literal("30d"),
+      Type.Literal("90d"),
+      Type.Literal("all"),
+    ]),
   },
   { additionalProperties: false },
 );

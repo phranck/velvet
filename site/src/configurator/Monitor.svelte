@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     MONITOR_READY,
+    MONITOR_PAGE,
     MONITOR_SETTINGS,
   } from "../lib/themes/monitor-messages.js";
 
@@ -9,6 +10,13 @@
     theme: string;
     /** What the operator has set, as custom properties on the root. */
     declarations?: Record<string, string>;
+    /**
+     * The page's own settings that are data rather than appearance.
+     *
+     * Sent separately because the page is drawn again to take them, where a
+     * custom property is simply written onto what is already there.
+     */
+    site?: Record<string, string>;
     /** The element the theme's page is rooted at, as its manifest states it. */
     themeRoot?: string;
     /**
@@ -26,6 +34,7 @@
   const {
     theme,
     declarations = {},
+    site = {},
     themeRoot = "",
     watching = [],
     onResolved,
@@ -72,6 +81,18 @@
       globalThis.location.origin,
     );
     read();
+  });
+
+  // Its own effect, so writing a property does not redraw the page and a
+  // redraw does not depend on a property having changed.
+  $effect(() => {
+    const target = frame?.contentWindow;
+    const fields = site;
+    if (!target || readyAt !== source) return;
+    target.postMessage(
+      { type: MONITOR_PAGE, site: fields },
+      globalThis.location.origin,
+    );
   });
 
   /**

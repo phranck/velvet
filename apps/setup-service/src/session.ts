@@ -25,7 +25,7 @@ export interface SetupServerSession {
   };
   installState?: string;
   githubUserToken?: string;
-  user?: { login: string; avatarUrl: string };
+  user?: { login: string; avatarUrl: string; name?: string; email?: string };
   installation?: {
     id: number;
     accountLogin: string;

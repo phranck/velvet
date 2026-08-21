@@ -158,6 +158,12 @@ const StatusPageSchema = Type.Object(
         Type.Literal("all"),
       ]),
     ),
+    responseChart: Type.Optional(
+      Type.Boolean({
+        description:
+          "Whether the page shows the response-time chart under each service. On unless set otherwise. It is a page setting rather than a theme one, because it is about what the page reports rather than how a theme draws it, and every theme honours it.",
+      }),
+    ),
     navigation: Type.Optional(
       Type.Array(
         Type.Object(

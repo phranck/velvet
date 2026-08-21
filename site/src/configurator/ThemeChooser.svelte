@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from "../components/Icon.svelte";
   import { Dialog } from "bits-ui";
 
   import { themeById, themesOfferedTo } from "../lib/themes/catalogue.js";
@@ -121,7 +122,7 @@
       {chosen.era}
     {/if}
   </span>
-  <i class="current__more ph-duotone ph-caret-circle-right" aria-hidden="true"></i>
+  <Icon name="arrow-circle-right" class="current__more" />
 </button>
 
 <Dialog.Root bind:open={picking}>
@@ -158,7 +159,7 @@
           <Dialog.Title class="picker__title">Choose a theme</Dialog.Title>
           <Card.Addon>
             <Dialog.Close class="picker__close" aria-label="Close">
-              <i class="ph-duotone ph-x-circle" aria-hidden="true"></i>
+              <Icon name="close-circle" />
             </Dialog.Close>
           </Card.Addon>
         </Card.Header>
@@ -240,7 +241,7 @@
     color: var(--configurator-text-muted);
   }
 
-  .current__more {
+  :global(.current__more) {
     color: var(--configurator-accent);
     font-size: var(--configurator-glyph);
     line-height: 1;

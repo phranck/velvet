@@ -47,3 +47,16 @@ clouds = false
 template = "template.ts"
 styles = "theme.css"
 script = "script.ts"
+
+# What can be set on this theme.
+#
+# The rack's own small case, holding the range keys and the key that opens every
+# row. Switched off, a page opens in the window `statusPage.defaultRange` names
+# and stays there, which is why that is a page setting rather than one of these.
+[features.rangeControls]
+type = "switch"
+label = "Mini device"
+property = "--range-card-display"
+default = true
+on = "block"
+off = "none"

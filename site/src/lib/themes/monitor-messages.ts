@@ -23,3 +23,16 @@ export const MONITOR_READY = "velvet:ready";
  * the page writes onto its own root and onto the document's.
  */
 export const MONITOR_SETTINGS = "velvet:settings";
+
+/**
+ * Sent by the configurator whenever a page setting changes that is data rather
+ * than appearance.
+ *
+ * The window a page opens in is decided when the page is drawn: the template
+ * marks the key that is down and the script starts in that window. There is no
+ * custom property to change, so the page is drawn again from the same fixture
+ * with the new value.
+ *
+ * Carries a `site` object holding the fields that changed.
+ */
+export const MONITOR_PAGE = "velvet:page";

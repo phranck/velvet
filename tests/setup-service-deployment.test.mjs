@@ -160,7 +160,9 @@ test("documents minimum GitHub permissions, secrets, recovery, and rotation", as
     "Actions: Read and write",
     "Pages: Read and write",
     "No organization permissions",
-    "No account permissions",
+    // The one account permission Velvet asks for, so the registration keeps
+    // naming what it grants rather than leaving it to be worked out.
+    "Email addresses: Read-only",
     "/api/auth/callback",
     "/api/auth/installed",
     "GITHUB_APP_PRIVATE_KEY",

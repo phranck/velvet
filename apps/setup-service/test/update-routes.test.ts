@@ -200,6 +200,8 @@ services:
   assert.deepEqual(body, {
     theme: "velvet",
     themeSettings: { chartWash: false, accent: "#ff0000", days: 90 },
+    responseChart: true,
+    defaultRange: "30d",
   });
   assert.equal(
     validateInstallationConfiguration(body).success,
@@ -226,7 +228,12 @@ test("answers with no theme where the repository carries no configuration", asyn
   // answer rather than a failure, and the configurator starts from the first
   // theme on offer instead of from an error.
   assert.equal(response!.status, 200);
-  assert.deepEqual(await response!.json(), { theme: null, themeSettings: {} });
+  assert.deepEqual(await response!.json(), {
+    theme: null,
+    themeSettings: {},
+    responseChart: true,
+    defaultRange: "30d",
+  });
 });
 
 test("does not report GitHub being unavailable as an unconfigured installation", async () => {
@@ -503,18 +510,24 @@ test("writes the theme and its settings in one commit", async () => {
     repositoryId: 9,
     theme: "twenty-forty-nine",
     themeSettings: { chartWash: false, ipv4Colour: "#5fb2e0" },
+    responseChart: false,
+    defaultRange: "90d",
   });
 
   assert.equal(response!.status, 200);
   assert.deepEqual(await response!.json(), {
     theme: "twenty-forty-nine",
     themeSettings: { chartWash: false, ipv4Colour: "#5fb2e0" },
+    responseChart: false,
+    defaultRange: "90d",
     commit: "d".repeat(40),
   });
   assert.equal(routes.written.length, 1, "one decision, one commit");
   assert.match(routes.written[0]!, /theme: twenty-forty-nine/u);
   assert.match(routes.written[0]!, /chartWash: false/u);
   assert.match(routes.written[0]!, /ipv4Colour: '#5fb2e0'/u);
+  assert.match(routes.written[0]!, /responseChart: false/u);
+  assert.match(routes.written[0]!, /defaultRange: 90d/u);
 });
 
 test("says what it did in the commit, and does not hold back the build", async () => {
@@ -525,6 +538,8 @@ test("says what it did in the commit, and does not hold back the build", async (
     repositoryId: 9,
     theme: "retro-chassis",
     themeSettings: {},
+    responseChart: true,
+    defaultRange: "30d",
   });
 
   assert.deepEqual(routes.messages, ["Publish retro-chassis in Velvet"]);
@@ -541,6 +556,8 @@ test("leaves the rest of the operator's file alone", async () => {
     repositoryId: 9,
     theme: "velvet",
     themeSettings: { chartWash: true },
+    responseChart: true,
+    defaultRange: "30d",
   });
 
   const written = routes.written[0]!;
@@ -557,6 +574,8 @@ test("writes nothing when the page is already published that way", async () => {
     repositoryId: 9,
     theme: "velvet",
     themeSettings: {},
+    responseChart: true,
+    defaultRange: "30d",
   });
 
   assert.equal(first!.status, 200);
@@ -567,11 +586,18 @@ test("writes nothing when the page is already published that way", async () => {
 test("refuses a request that does not carry settings", async () => {
   const routes = harness();
 
+  const page = { responseChart: true, defaultRange: "30d" };
   for (const body of [
-    { theme: 7 },
-    { theme: "velvet", themeSettings: [] },
-    { theme: "velvet", themeSettings: { chartWash: null } },
-    { theme: "velvet", themeSettings: { chartWash: { on: true } } },
+    { theme: 7, themeSettings: {}, ...page },
+    { theme: "velvet", themeSettings: [], ...page },
+    { theme: "velvet", themeSettings: { chartWash: null }, ...page },
+    { theme: "velvet", themeSettings: { chartWash: { on: true } }, ...page },
+    // The page's own two are as required as the theme's, so a request carrying
+    // neither, or one of them wrongly, is refused rather than published with a
+    // value nobody chose.
+    { theme: "velvet", themeSettings: {}, ...page, responseChart: "yes" },
+    { theme: "velvet", themeSettings: {}, ...page, defaultRange: "60d" },
+    { theme: "velvet", themeSettings: {} },
     {},
   ]) {
     const response = await routes.handle("POST", "/api/configuration/publish", {
@@ -597,6 +623,8 @@ test("refuses a theme name that would change the shape of the file", async () =>
     repositoryId: 9,
     theme: "velvet\nservices: []",
     themeSettings: {},
+    responseChart: true,
+    defaultRange: "30d",
   });
 
   // Refused as the installation being unchangeable rather than as a bad

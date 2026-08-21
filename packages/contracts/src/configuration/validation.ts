@@ -561,6 +561,7 @@ function normalizeConfiguration(
         name: statusPage.name,
         layout: statusPage.layout ?? "grouped",
         defaultRange: statusPage.defaultRange ?? "30d",
+        responseChart: statusPage.responseChart ?? true,
         logoHeight: statusPage.logoHeight ?? 72,
         navigation: (statusPage.navigation ?? []).map((entry) => ({ ...entry })),
         icons: { ...(statusPage.icons ?? {}) },

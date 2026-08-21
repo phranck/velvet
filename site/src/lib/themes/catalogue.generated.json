@@ -230,7 +230,17 @@
       "surfaceEdge": "#3b342a",
       "clouds": false
     },
-    "features": [],
+    "features": [
+      {
+        "key": "rangeControls",
+        "type": "switch",
+        "label": "Mini device",
+        "property": "--range-card-display",
+        "default": true,
+        "on": "block",
+        "off": "none"
+      }
+    ],
     "picture": "retro-chassis.png"
   },
   {

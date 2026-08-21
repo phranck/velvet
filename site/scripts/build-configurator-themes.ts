@@ -25,6 +25,7 @@ import { APPEARANCE_EVENT } from "@velvet/foundation/appearance";
 
 import {
   MONITOR_READY,
+  MONITOR_PAGE,
   MONITOR_SETTINGS,
 } from "../src/lib/themes/monitor-messages.js";
 import { themeSettingDeclarations } from "../src/lib/themes/settings.js";
@@ -79,10 +80,32 @@ const root = document.querySelector("#velvet-root");
 const data = JSON.parse(document.querySelector("#velvet-data").textContent);
 const declared = JSON.parse(document.querySelector("#velvet-settings").textContent);
 
-// Parsed rather than assembled, because a theme's template returns a string.
-// Nothing untrusted is parsed: it comes from a theme in this repository, and
-// every value it takes from the data goes through that theme's own escaping.
-root.append(document.createRange().createContextualFragment(template(data)));
+/** What the page is drawn from, which a page setting may change. */
+let shown = data;
+
+/** What the running theme attached, so a redraw can take it back down first. */
+let teardown = null;
+
+/*
+ * Draws the theme, replacing whatever was there.
+ *
+ * Parsed rather than assembled, because a theme's template returns a string.
+ * Nothing untrusted is parsed: it comes from a theme in this repository, and
+ * every value it takes from the data goes through that theme's own escaping.
+ */
+function draw() {
+  if (teardown) teardown();
+  root.replaceChildren();
+  root.append(document.createRange().createContextualFragment(template(shown)));
+  teardown = script(root, shown);
+  // The settings live on elements this did not replace, so they still stand.
+  // The strip is drawn onto a canvas that has just been made again, which is
+  // what this asks for.
+  document.dispatchEvent(new CustomEvent(${JSON.stringify(APPEARANCE_EVENT)}));
+}
+
+/** The last block written, so a redraw can put it back and the next can take back what it drops. */
+let lastDeclarations = {};
 
 /*
  * Writes one block of declarations onto both elements that need them.
@@ -90,29 +113,48 @@ root.append(document.createRange().createContextualFragment(template(data)));
  * The theme's own root is what a theme reads, and its own declarations sit
  * there. The document's root is what a style query can see, because a query
  * reads the nearest ancestor container and never the element itself.
+ *
+ * What a block leaves out is removed rather than left standing. Two kinds of
+ * declaration are written only when they say something: a page setting that is
+ * switched off, and a feature the theme states itself. Left in place, either
+ * would go on applying after it stopped being asked for, so switching one back
+ * would change nothing on screen.
  */
 function apply(declarations) {
   const targets = [document.documentElement, document.querySelector(THEME_ROOT)];
   for (const target of targets) {
     if (!target) continue;
+    for (const property of Object.keys(lastDeclarations)) {
+      if (!(property in declarations)) target.style.removeProperty(property);
+    }
     for (const [property, value] of Object.entries(declarations)) {
       target.style.setProperty(property, value);
     }
   }
+  lastDeclarations = declarations;
   // Most of the page follows a changed property on its own. What does not is
   // anything painted onto a canvas, which holds what it was given until it is
   // asked again, and the strip of days is exactly that.
   document.dispatchEvent(new CustomEvent(${JSON.stringify(APPEARANCE_EVENT)}));
 }
 
-script(root, data);
+draw();
 apply(declared);
 
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin) return;
   const message = event.data;
-  if (!message || message.type !== ${JSON.stringify(MONITOR_SETTINGS)}) return;
-  apply(message.declarations);
+  if (!message) return;
+  if (message.type === ${JSON.stringify(MONITOR_SETTINGS)}) {
+    apply(message.declarations);
+    return;
+  }
+  if (message.type !== ${JSON.stringify(MONITOR_PAGE)}) return;
+  // Drawn again rather than adjusted, because which window a page opens in is
+  // decided whilst it is drawn and by more than one part of a theme.
+  shown = { ...shown, site: { ...shown.site, ...message.site } };
+  draw();
+  apply(lastDeclarations);
 });
 
 // Says the frame is ready for settings, so the configurator does not have to

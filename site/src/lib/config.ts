@@ -64,6 +64,14 @@ export interface VelvetConfig {
   layout: VelvetLayout;
   /** Range pre-selected on first visit, before the visitor picks one themselves. */
   defaultRange: RangeKey;
+  /**
+   * Whether the page shows the response-time chart under each service.
+   *
+   * A page setting rather than a theme one: it is about what the page reports
+   * rather than how a theme draws it, so every theme honours it and the build
+   * writes it as one custom property for all of them.
+   */
+  responseChart: boolean;
   /** Per-service-ID Phosphor icon class overrides (merged over the defaults). */
   icons: Record<string, string>;
   /**
@@ -91,6 +99,7 @@ const DEFAULTS: Omit<
   navbar: [{ title: "Status", href: "/" }],
   layout: "grouped",
   defaultRange: "month",
+  responseChart: true,
   logoHeight: 72,
   icons: {},
 };

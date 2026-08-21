@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Icon from "../components/Icon.svelte";
+  import type { IconName } from "../lib/iconsax.generated.js";
   import { tick } from "svelte";
 
   import type {
@@ -13,8 +15,14 @@
     OFFERED_THEMES,
     themeById,
   } from "../lib/themes/catalogue.js";
-  import { themeSettingDeclarations } from "../lib/themes/settings.js";
+  import {
+    PAGE_RANGE_KEYS,
+    pageSettingDeclarations,
+    RESPONSE_CHART_DISPLAY,
+    themeSettingDeclarations,
+  } from "../lib/themes/settings.js";
 
+  import AccountMenu from "./AccountMenu.svelte";
   import {
     createConfiguratorClient,
     ConfiguratorError,
@@ -34,7 +42,7 @@
     MIN_SIDEBAR_WIDTH,
     moveSection,
     PINNED_SECTION,
-    placeSection,
+    placeSectionAt,
     savePreferences,
     type AnySectionKey,
     type SectionKey,
@@ -56,6 +64,9 @@
     | {
         state: "ready";
         login: string;
+        avatarUrl: string;
+        name?: string;
+        email?: string;
         installations: ManageableInstallation[];
         truncated: boolean;
       };
@@ -73,6 +84,76 @@
    * configuration at all.
    */
   let published = $state<InstallationConfiguration | null>(null);
+
+  /**
+   * The two settings the page decides rather than any theme.
+   *
+   * Held apart from the theme's own, because they survive a change of theme
+   * and are written as their own fields in `velvet.yml` rather than into
+   * `statusPage.themeSettings`.
+   */
+  let chosenResponseChart = $state(true);
+  let chosenRange = $state<InstallationConfiguration["defaultRange"]>("30d");
+
+  /**
+   * The page's settings described the way a theme describes its own.
+   *
+   * They are the same two shapes a theme offers, so they are drawn by the same
+   * component rather than by a second set of controls that would have to be
+   * kept looking alike. The properties are the ones the build writes, so what
+   * is named here is what a page actually reads.
+   */
+  const PAGE_FEATURES = [
+    {
+      key: "responseChart",
+      type: "switch" as const,
+      label: "Response time chart",
+      property: RESPONSE_CHART_DISPLAY,
+      default: true,
+      on: "grid",
+      off: "none",
+    },
+    {
+      key: "defaultRange",
+      type: "choice" as const,
+      label: "Initial range",
+      // Not a custom property: which window a page opens in is decided whilst
+      // the page is drawn, so the monitor is told to draw it again instead.
+      // The name is here because a feature states one, and nothing reads it.
+      property: "",
+      default: "30d",
+      choices: [
+        { value: "30d", label: "30 days" },
+        { value: "90d", label: "90 days" },
+        { value: "all", label: "All" },
+      ],
+    },
+  ];
+
+  /** What those two stand at, in the shape the settings component reads. */
+  const pageSettings = $derived({
+    responseChart: chosenResponseChart,
+    defaultRange: chosenRange,
+  });
+
+  /**
+   * Takes a change to one of the page's own settings.
+   *
+   * @param key - Which of the two changed.
+   * @param value - What it became.
+   */
+  function setPageSetting(key: string, value: string | number | boolean): void {
+    if (key === "responseChart" && typeof value === "boolean") {
+      chosenResponseChart = value;
+      return;
+    }
+    if (
+      key === "defaultRange" &&
+      (value === "30d" || value === "90d" || value === "all")
+    ) {
+      chosenRange = value;
+    }
+  }
 
   /**
    * What has been changed and not yet published, one set per theme.
@@ -175,6 +256,16 @@
   let sidebar = $state<SidebarPreferences>(defaultPreferences());
 
   /** The titles the sections carry, which is also what their toggles say. */
+  /** The mark each section carries before its heading. */
+  const SECTION_ICONS: Record<AnySectionKey, IconName> = {
+    updates: "notification-bing",
+    installation: "folder",
+    theme: "color-swatch",
+    global: "global",
+    services: "activity",
+    "theme-settings": "slider-horizontal",
+  };
+
   const SECTION_TITLES: Record<AnySectionKey, string> = {
     updates: "Updates",
     installation: "Installation",
@@ -188,14 +279,19 @@
    * The custom properties the monitor is drawn with.
    *
    * Every feature the chosen theme offers, whether or not anything is set, so
-   * the frame never depends on a property nobody declared. What an operator
-   * sets arrives here in #551; for now this is what the manifest states.
+   * the frame never depends on a property nobody declared, and the page's own
+   * settings on top of them. The same two blocks the build writes, so what is
+   * shown here is what would be published.
    */
   const declarations = $derived.by(() => {
     const theme = themeById(chosenTheme);
     if (!theme) return {};
+    const written = [
+      ...themeSettingDeclarations(theme.features, chosenSettings),
+      ...pageSettingDeclarations({ responseChart: chosenResponseChart }),
+    ];
     return Object.fromEntries(
-      themeSettingDeclarations(theme.features, chosenSettings).map((declaration) => {
+      written.map((declaration) => {
         const [property, ...rest] = declaration.replace(/;$/, "").split(":");
         return [property!.trim(), rest.join(":").trim()];
       }),
@@ -247,6 +343,8 @@
   const hasChanges = $derived(
     published === null ||
       published.theme !== chosenTheme ||
+      published.responseChart !== chosenResponseChart ||
+      published.defaultRange !== chosenRange ||
       JSON.stringify(published.themeSettings ?? {}) !==
         JSON.stringify(chosenSettings),
   );
@@ -267,9 +365,16 @@
       const written = await service.publish(chosen, {
         theme: chosenTheme,
         themeSettings: chosenSettings,
+        responseChart: chosenResponseChart,
+        defaultRange: chosenRange,
       });
       publishedCommit = written.commit;
-      published = { theme: chosenTheme, themeSettings: { ...chosenSettings } };
+      published = {
+        theme: chosenTheme,
+        themeSettings: { ...chosenSettings },
+        responseChart: chosenResponseChart,
+        defaultRange: chosenRange,
+      };
       publishState = "building";
     } catch (failure) {
       publishFailure =
@@ -295,11 +400,142 @@
     remember();
   }
 
-  /** Puts a dragged section where the one it was dropped on stands. */
-  function drop(onto: SectionKey, carried: string): void {
-    if (!sidebar.order.includes(carried as SectionKey)) return;
-    sidebar.order = placeSection(sidebar.order, carried as SectionKey, onto);
-    remember();
+  /** The section being carried, or nothing whilst none is. */
+  let carried = $state<SectionKey | null>(null);
+
+  /**
+   * The gap the carried section would land in, counted in the current order.
+   *
+   * This is what the placeholder is drawn at, so the space held open is always
+   * the space the drop will use.
+   */
+  let dropSlot = $state<number | null>(null);
+
+  /** How tall the carried section stands, so the gap is the size it will fill. */
+  let carriedHeight = $state(0);
+
+  /** The element the sections are laid out in, which a drag is read against. */
+  let sectionList = $state<HTMLElement | null>(null);
+
+  /**
+   * The picture that follows the pointer, and how it is held.
+   *
+   * A copy of the section rather than the section itself, so what is being
+   * arranged stays in the list and the list keeps reading as a list. It hangs
+   * off the document because the configurator clips what overflows it, and a
+   * fixed element escapes that.
+   */
+  let ghost: HTMLElement | null = null;
+  let grabOffsetY = 0;
+  let grabOffsetX = 0;
+
+  /** How far the pointer travels before a press counts as a drag rather than a click. */
+  const DRAG_THRESHOLD = 4;
+
+  /**
+   * Works out which gap the pointer is over.
+   *
+   * Read from where the sections actually are rather than from the order,
+   * because the placeholder has already moved them and only their boxes say
+   * where they now stand. Each section claims the gap above it whilst the
+   * pointer is in its top half and the one below it otherwise.
+   *
+   * @param clientY - Where the pointer is, in the window's own coordinates.
+   * @returns The gap, counted in the order as it stands.
+   */
+  function slotFromPointer(clientY: number, from: number): number {
+    if (!sectionList) return from;
+    // The carried section has left the layout and the placeholder stands where
+    // it will land, so what is measured is every other section.
+    const boxes = [...sectionList.querySelectorAll("[data-movable='true']")]
+      .filter((element) => !(element as HTMLElement).dataset.carrying)
+      .map((element) => element.getBoundingClientRect());
+    let among = boxes.length;
+    for (const [index, box] of boxes.entries()) {
+      if (clientY < box.top + box.height / 2) {
+        among = index;
+        break;
+      }
+    }
+    // Counted among the others, a gap past where the section came from is one
+    // further along once the section is counted again.
+    return among > from ? among + 1 : among;
+  }
+
+  /**
+   * Follows a press on a section's grip for as long as it lasts.
+   *
+   * Pointer events rather than the browser's own drag and drop. Native drag
+   * cannot be given a live picture on every platform, and what it does with a
+   * press on a control differs between browsers, so the whole gesture is held
+   * here instead.
+   *
+   * @param key - The section whose grip was pressed.
+   * @param event - The press.
+   * @param element - That section, which the picture is copied from.
+   */
+  function grab(key: SectionKey, event: PointerEvent, element: HTMLElement): void {
+    if (event.button !== 0) return;
+    const box = element.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    grabOffsetX = startX - box.left;
+    grabOffsetY = startY - box.top;
+    let dragging = false;
+
+    const move = (moved: PointerEvent): void => {
+      if (!dragging) {
+        if (Math.hypot(moved.clientX - startX, moved.clientY - startY) < DRAG_THRESHOLD) {
+          return;
+        }
+        dragging = true;
+        carried = key;
+        carriedHeight = box.height;
+        dropSlot = sidebar.order.indexOf(key);
+        ghost = element.cloneNode(true) as HTMLElement;
+        ghost.classList.add("section-ghost");
+        ghost.style.width = `${box.width}px`;
+        document.body.append(ghost);
+      }
+      // Prevented here rather than on the press, so an ordinary click on the
+      // grip still reaches the keyboard control it also is.
+      moved.preventDefault();
+      if (ghost) {
+        ghost.style.left = `${moved.clientX - grabOffsetX}px`;
+        ghost.style.top = `${moved.clientY - grabOffsetY}px`;
+      }
+      dropSlot = slotFromPointer(moved.clientY, sidebar.order.indexOf(key));
+    };
+
+    const finish = (ended: PointerEvent): void => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", abandon);
+      ghost?.remove();
+      ghost = null;
+      const slot = dropSlot;
+      const moving = carried;
+      carried = null;
+      dropSlot = null;
+      if (!dragging || slot === null || moving === null) return;
+      ended.preventDefault();
+      sidebar.order = placeSectionAt(sidebar.order, moving, slot);
+      remember();
+    };
+
+    const abandon = (): void => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", abandon);
+      ghost?.remove();
+      ghost = null;
+      carried = null;
+      dropSlot = null;
+    };
+
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", abandon);
   }
 
   /**
@@ -413,6 +649,11 @@
     // the answer to a question nobody is asking any more is not an answer.
     if (repository !== chosenInstallation) return;
     published = configuration;
+    // The page's own two settings start where the page stands. They are not
+    // kept as a draft, because they belong to the installation rather than to
+    // a theme somebody is trying out.
+    chosenResponseChart = configuration.responseChart;
+    chosenRange = configuration.defaultRange;
     if (!draft.theme && configuration.theme && themeById(configuration.theme)) {
       chosenTheme = configuration.theme;
     }
@@ -436,6 +677,9 @@
       opening = {
         state: "ready",
         login: found.login,
+        avatarUrl: found.avatarUrl,
+        ...(found.name ? { name: found.name } : {}),
+        ...(found.email ? { email: found.email } : {}),
         installations: found.installations,
         truncated: found.truncated,
       };
@@ -448,6 +692,27 @@
         reason: cause instanceof ConfiguratorError ? cause.reason : "unreadable",
       };
     }
+  }
+
+  /**
+   * Ends the session and asks for an authorization again.
+   *
+   * Which account answers it is GitHub's to decide, so this offers the journey
+   * rather than the choice: somebody still signed in to GitHub as the same
+   * account is handed back to it, and switches there.
+   */
+  async function switchAccount(): Promise<void> {
+    await service.endSession("/api/auth/start");
+  }
+
+  /**
+   * Ends the session and leaves the tool.
+   *
+   * The service's own root, because nothing here can be shown without a
+   * session and that route already leads back to where somebody starts.
+   */
+  async function signOut(): Promise<void> {
+    await service.endSession("/");
   }
 
   sidebar = loadPreferences();
@@ -483,8 +748,21 @@
       aria-label={sidebar.collapsed ? "Show the sidebar" : "Hide the sidebar"}
       onclick={toggleCollapsed}
     >
-      <i class="ph-duotone ph-caret-circle-double-left" aria-hidden="true"></i>
+      <Icon name="arrow-circle-left" />
     </button>
+
+    {#if opening.state === "ready"}
+      <div class="rail__account">
+        <AccountMenu
+          login={opening.login}
+          avatarUrl={opening.avatarUrl}
+          name={opening.name}
+          email={opening.email}
+          onSwitchAccount={switchAccount}
+          onSignOut={signOut}
+        />
+      </div>
+    {/if}
   </div>
 
   <aside
@@ -529,7 +807,11 @@
       everybody else: off to the left it is out of sight, and without this it
       would still take focus from the keyboard and still be read aloud.
     -->
-    <div class="sidebar__sections" inert={sidebar.collapsed}>
+    <div
+      bind:this={sectionList}
+      class="sidebar__sections"
+      inert={sidebar.collapsed}
+    >
       {#if opening.state === "loading"}
         <p class="placeholder">Reading your installations…</p>
       {:else if opening.state === "failed"}
@@ -560,6 +842,7 @@
         <Section
           key={PINNED_SECTION}
           title={SECTION_TITLES[PINNED_SECTION]}
+          icon={SECTION_ICONS[PINNED_SECTION]}
           open={sidebar.open.includes(PINNED_SECTION)}
           position={0}
           count={1}
@@ -571,15 +854,29 @@
         </Section>
 
         {#each sidebar.order as key, position (key)}
+          {#if dropSlot === position && carried !== null}
+            <!--
+              The space the drop will take, held open where it will be taken.
+              It answers no pointer events, so the gap never becomes the thing
+              the drag is read against.
+            -->
+            <div
+              class="section-placeholder"
+              style="height: {carriedHeight}px"
+              aria-hidden="true"
+            ></div>
+          {/if}
           <Section
             {key}
             title={SECTION_TITLES[key]}
+            icon={SECTION_ICONS[key]}
             open={sidebar.open.includes(key)}
             {position}
             count={sidebar.order.length}
+            carrying={carried === key}
             onToggle={() => toggleSection(key)}
             onMove={(by) => move(key, by)}
-            onDrop={(carried) => drop(key, carried)}
+            onGrab={(event, element) => grab(key, event, element)}
           >
             {#if key === "installation"}
               <InstallationChooser
@@ -595,7 +892,12 @@
                 onChoose={chooseTheme}
               />
             {:else if key === "global"}
-              {@render placeholder("Settings that apply to the whole page.")}
+              <ThemeSettings
+                features={PAGE_FEATURES}
+                settings={pageSettings}
+                showing={resolved}
+                onChange={setPageSetting}
+              />
             {:else if key === "services"}
               {@render placeholder("Settings for each monitored service.")}
             {:else}
@@ -608,6 +910,13 @@
             {/if}
           </Section>
         {/each}
+        {#if dropSlot === sidebar.order.length && carried !== null}
+          <div
+            class="section-placeholder"
+            style="height: {carriedHeight}px"
+            aria-hidden="true"
+          ></div>
+        {/if}
       {/if}
     </div>
 
@@ -630,10 +939,10 @@
           onclick={publish}
         >
           {#if publishState === "writing"}
-            <i class="ph-duotone ph-circle-notch" aria-hidden="true"></i>
+            <Icon name="refresh-circle" />
             Publishing
           {:else}
-            <i class="ph-duotone ph-upload-simple" aria-hidden="true"></i>
+            <Icon name="export-arrow-01" />
             Publish
           {/if}
         </button>
@@ -698,6 +1007,7 @@
   <Monitor
     theme={chosenTheme}
     {declarations}
+    site={{ defaultRange: PAGE_RANGE_KEYS[chosenRange] ?? 'month' }}
     themeRoot={themeById(chosenTheme)?.root ?? ""}
     watching={watched}
     onResolved={(values) => (resolved = values)}
@@ -734,17 +1044,23 @@
      behind it rather than sliding past it in view. */
   .rail {
     display: flex;
-    justify-content: center;
-    /* Held at the top rather than stretched, or the button would be as tall as
-       the window and the icon would sit in the middle of a column-high
-       target. */
-    align-items: flex-start;
+    /* A column, because the rail carries the sidebar's control at its head and
+       the account at its foot. Centred across, so both stand on the same line
+       down the middle of it. */
+    flex-direction: column;
+    align-items: center;
     flex: 0 0 auto;
     width: var(--rail-width);
-    padding-top: 1.1rem;
+    padding-block: 1.1rem;
     border-right: 1px solid var(--configurator-divider);
     background: var(--configurator-base);
     z-index: 1;
+  }
+
+  /* Pushed to the foot by whatever room is left, so it stays there however
+     tall the window is and whether or not the sidebar is showing. */
+  .rail__account {
+    margin-top: auto;
   }
 
   /* The icon alone, with no border and no surface behind it, aligned with the
@@ -767,16 +1083,16 @@
 
   /* Half a circle, so one icon serves both states. The turn takes as long as
      the panel's travel, so the two read as one movement. */
-  .rail__toggle > i {
+  :global(.rail__toggle > svg) {
     transition: transform 220ms ease;
   }
 
-  .rail__toggle--collapsed > i {
+  :global(.rail__toggle--collapsed > svg) {
     transform: rotate(180deg);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .rail__toggle > i {
+    :global(.rail__toggle > svg) {
       transition: none;
     }
   }
@@ -814,7 +1130,10 @@
     display: flex;
     justify-content: space-between;
     margin-top: 0.425rem;
-    color: var(--configurator-text);
+    /* Quieter than the mark above it: it names the surface rather than being
+       the surface's own mark, and at this size the two at one weight read as
+       one two-line title. */
+    color: var(--configurator-text-muted);
     font-family: var(--configurator-font-label);
     font-size: var(--configurator-text-label-small);
     line-height: 1;
@@ -829,10 +1148,35 @@
     outline-offset: 2px;
   }
 
+  /* The gap held open where the carried section will land. Drawn as an outline
+     on the accent rather than as a filled surface, so it reads as a space
+     waiting to be filled rather than as a section already there. */
+  /* The copy that follows the pointer. It answers nothing and is only ever
+     looked at, so it is taken out of the accessibility tree by being inert. */
+  :global(.section-ghost) {
+    position: fixed;
+    z-index: 40;
+    pointer-events: none;
+    opacity: 0.9;
+    box-shadow: 0 1rem 2.5rem
+      color-mix(in srgb, var(--configurator-sunken) 70%, transparent);
+  }
+
+  .section-placeholder {
+    flex: 0 0 auto;
+    border: 1px dashed var(--configurator-accent);
+    border-radius: var(--configurator-radius-section);
+    background: var(--configurator-accent-surface);
+    pointer-events: none;
+  }
+
   .sidebar__sections {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    /* The same distance the list stands its sections off its own edges by, so
+       the gap between two sections and the gap to the panel's edge read as one
+       spacing rather than two. */
+    gap: var(--configurator-inset);
     padding: var(--configurator-inset);
     overflow-y: auto;
     flex: 1;
@@ -885,7 +1229,7 @@
     cursor: default;
   }
 
-  .publish i {
+  :global(.publish svg) {
     font-size: var(--configurator-glyph);
   }
 

@@ -116,6 +116,7 @@ const EVERY_STATUS_PAGE_FIELD: Record<string, unknown> = {
   themeSettings: { chartWash: false },
   layout: "cards",
   defaultRange: "90d",
+  responseChart: false,
   logoHeight: 96,
   logoUrl: "./logo.svg",
   navigation: [{ title: "Home", href: "https://example.com" }],

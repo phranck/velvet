@@ -6,7 +6,7 @@ import {
   MAX_SIDEBAR_WIDTH,
   MIN_SIDEBAR_WIDTH,
   moveSection,
-  placeSection,
+  placeSectionAt,
   reconcileOrder,
   SECTION_KEYS,
   type SectionKey,
@@ -105,26 +105,38 @@ test("moves a section by a step, and refuses to move it out of the list", () => 
   assert.equal(moved.length, order.length);
 });
 
-test("a drop puts the carried section where the one under it stands", () => {
+test("a drop puts the carried section into the gap it was held over", () => {
   const order = [...SECTION_KEYS];
   const carried = order[3]!;
-  const target = order[1]!;
+  const displaced = order[1]!;
 
-  const placed = placeSection(order, carried, target);
+  const placed = placeSectionAt(order, carried, 1);
 
-  assert.equal(placed.indexOf(carried), 1, "it lands on the target's position");
-  assert.equal(placed.indexOf(target), 2, "and the target moves down by one");
+  assert.equal(placed.indexOf(carried), 1, "it lands in the gap above the second");
+  assert.equal(placed.indexOf(displaced), 2, "and what stood there moves down");
   assert.equal(placed.length, order.length);
   assert.equal(new Set(placed).size, order.length);
 });
 
-test("a drop onto itself, or onto nothing, changes nothing", () => {
+test("a drop below the last section puts it at the end", () => {
+  const order = [...SECTION_KEYS];
+  const carried = order[0]!;
+
+  const placed = placeSectionAt(order, carried, order.length);
+
+  assert.equal(placed.indexOf(carried), order.length - 1);
+  assert.equal(new Set(placed).size, order.length);
+});
+
+test("a drop into either gap beside where it already stands changes nothing", () => {
   const order = [...SECTION_KEYS];
   const key = order[2]!;
 
-  assert.deepEqual(placeSection(order, key, key), order);
-  assert.deepEqual(placeSection(order, key, "gallery" as SectionKey), order);
-  assert.deepEqual(placeSection(order, "gallery" as SectionKey, key), order);
+  // Taking it out closes one gap, so the gap above it and the gap below it are
+  // both the place it already occupies.
+  assert.deepEqual(placeSectionAt(order, key, 2), order);
+  assert.deepEqual(placeSectionAt(order, key, 3), order);
+  assert.deepEqual(placeSectionAt(order, "gallery" as SectionKey, 1), order);
 });
 
 test("the pinned section is not among the ones that can be arranged", () => {

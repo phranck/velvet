@@ -70,6 +70,7 @@ services:
       theme: "velvet",
       layout: "grouped",
       defaultRange: "30d",
+      responseChart: true,
       logoHeight: 72,
       navigation: [],
       icons: {},

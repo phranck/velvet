@@ -58,6 +58,16 @@ const WANTED: Readonly<Record<string, string>> = {
   "shield-tick": "nothing leaks into the open",
   sms: "writing to us about a design",
   "warning-2": "incidents that open themselves",
+  // The configurator's own, which drew from the icon font before.
+  "arrow-circle-down": "a section in the sidebar, turned when it is closed",
+  "arrow-circle-left": "the sidebar itself, turned when it is away",
+  "arrow-circle-right": "opening the theme chooser",
+  "close-circle": "closing the theme chooser",
+  "refresh-circle": "a publication under way",
+  shuffle: "settings taken at random",
+  folder: "the installation a page is published from",
+  "notification-bing": "a version waiting to be installed",
+  "slider-horizontal": "what can be set on a theme",
 };
 
 /** One drawn layer of an icon. Bulk draws two, the lower one at reduced alpha. */

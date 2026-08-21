@@ -33,6 +33,12 @@
 @import "./assets/fonts.css";
 
 .retro-chassis-page {
+  --velvet-response-chart-display: grid;
+  /* The two keys exist to open a panel that holds the chart and nothing else,
+     so they go when it does. Stated here, beside the chart's own, because what
+     each is laid out as is this theme's answer and not the page's. */
+  --velvet-response-open-display: grid;
+  --velvet-response-toggle-display: inline-flex;
   /* ── Identity ─────────────────────────────────────────────────────────── */
   --theme-scheme: dark;
 
@@ -2023,7 +2029,7 @@
 /* Its own inline padding rather than the range buttons', so it can be brought
    into line with the chevrons in the rows below it without moving them. */
 .toggle-all {
-  display: inline-flex;
+  display: var(--velvet-response-toggle-display);
   align-items: center;
   justify-content: center;
   padding: var(--control-padding-block) var(--toggle-padding-inline);
@@ -2115,6 +2121,7 @@
   a readout, a strip and a name plate.
 */
 .range-card {
+  display: var(--range-card-display);
   width: max-content;
   max-width: 100%;
   margin-inline: auto;
@@ -2321,6 +2328,15 @@
 
 .service:last-of-type {
   --series-next: var(--service-colour-1);
+}
+
+/*
+  The key that opens a service, which goes when the chart it opens goes. Named
+  through the summary it sits in, because the range keys wear the same cap and
+  still switch the window with the chart gone.
+*/
+.service-summary .disclosure-stack {
+  display: var(--velvet-response-open-display);
 }
 
 .service-summary {
@@ -3045,7 +3061,7 @@
   that stand around the window.
 */
 .response-chart {
-  display: grid;
+  display: var(--velvet-response-chart-display);
   gap: var(--space-tight);
   /* Air above the caption, so it stands with the window it names rather than
      under the line of dates it follows. Measured: 25px over it and 9px under

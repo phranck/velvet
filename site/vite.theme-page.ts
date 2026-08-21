@@ -236,6 +236,9 @@ export function themeStatusPage(options: BundlePageOptions): Plugin {
 
       let markup: string;
       let settings: Record<string, string | number | boolean>;
+      // Declared out here for the same reason the settings are: the block that
+      // writes them stands after the server this reads through has closed.
+      let responseChart: boolean;
       let data: ThemeData;
       try {
         const { loadConfig } = (await server.ssrLoadModule(
@@ -257,6 +260,7 @@ export function themeStatusPage(options: BundlePageOptions): Plugin {
         }
 
         const config = await loadConfig(fileAt(options.configPath));
+        responseChart = config.responseChart;
         const documents =
           options.dataPath === undefined
             ? emptyDocuments(new Date().toISOString())
@@ -299,7 +303,9 @@ export function themeStatusPage(options: BundlePageOptions): Plugin {
       if (!mount.test(html)) {
         throw new Error("No empty #app to render the theme into.");
       }
-      const block = themeSettingsStyle(manifest.root, manifest.features, settings);
+      const block = themeSettingsStyle(manifest.root, manifest.features, settings, {
+        responseChart,
+      });
       await writeFile(
         builtPath,
         html

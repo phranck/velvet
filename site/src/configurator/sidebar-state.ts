@@ -178,28 +178,32 @@ export function moveSection(
 }
 
 /**
- * Puts one section where another one currently stands.
+ * Puts one section into a gap between two others.
  *
- * What a drag means: the section being carried lands at the position of the
- * one it was dropped on, and everything between them shifts by one. Expressed
- * as two keys rather than as two indices, because the caller holds keys and
- * converting twice is a place for the two to disagree.
+ * What a drag means, once the gap it will land in is shown whilst it is being
+ * carried: `slot` counts the gaps in the order as it stands, so 0 is above the
+ * first section and `order.length` is below the last. Taking the section out
+ * closes one gap, so a slot below it shifts up by one on the way in.
+ *
+ * Expressed as a slot rather than as the section landed on, because a drag can
+ * end below the last section and there is no section there to name.
  *
  * @param order - The current order.
  * @param key - The section being moved.
- * @param onto - The section it was dropped on.
+ * @param slot - The gap it lands in, counted in the order as it stands.
  * @returns The new order, or the old one when the move goes nowhere.
  */
-export function placeSection(
+export function placeSectionAt(
   order: readonly SectionKey[],
   key: SectionKey,
-  onto: SectionKey,
+  slot: number,
 ): SectionKey[] {
   const from = order.indexOf(key);
-  const to = order.indexOf(onto);
-  if (from === -1 || to === -1 || from === to) return [...order];
+  if (from === -1) return [...order];
+  const bounded = Math.min(order.length, Math.max(0, Math.trunc(slot)));
+  if (bounded === from || bounded === from + 1) return [...order];
   const moved = [...order];
   moved.splice(from, 1);
-  moved.splice(to, 0, key);
+  moved.splice(bounded > from ? bounded - 1 : bounded, 0, key);
   return moved;
 }

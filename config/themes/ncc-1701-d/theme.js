@@ -1650,26 +1650,49 @@ var THEME_ROOT = ".ncc-1701-d-page";
 var root = document.querySelector("#velvet-root");
 var data = JSON.parse(document.querySelector("#velvet-data").textContent);
 var declared = JSON.parse(document.querySelector("#velvet-settings").textContent);
-root.append(document.createRange().createContextualFragment(template_default(data)));
+var shown = data;
+var teardown = null;
+function draw() {
+  if (teardown)
+    teardown();
+  root.replaceChildren();
+  root.append(document.createRange().createContextualFragment(template_default(shown)));
+  teardown = script_default(root, shown);
+  document.dispatchEvent(new CustomEvent("velvet:appearance"));
+}
+var lastDeclarations = {};
 function apply(declarations) {
   const targets = [document.documentElement, document.querySelector(THEME_ROOT)];
   for (const target of targets) {
     if (!target)
       continue;
+    for (const property of Object.keys(lastDeclarations)) {
+      if (!(property in declarations))
+        target.style.removeProperty(property);
+    }
     for (const [property, value] of Object.entries(declarations)) {
       target.style.setProperty(property, value);
     }
   }
+  lastDeclarations = declarations;
   document.dispatchEvent(new CustomEvent("velvet:appearance"));
 }
-script_default(root, data);
+draw();
 apply(declared);
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin)
     return;
   const message = event.data;
-  if (!message || message.type !== "velvet:settings")
+  if (!message)
     return;
-  apply(message.declarations);
+  if (message.type === "velvet:settings") {
+    apply(message.declarations);
+    return;
+  }
+  if (message.type !== "velvet:page")
+    return;
+  shown = { ...shown, site: { ...shown.site, ...message.site } };
+  draw();
+  apply(lastDeclarations);
 });
 window.parent.postMessage({ type: "velvet:ready" }, window.location.origin);

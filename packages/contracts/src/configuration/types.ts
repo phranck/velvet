@@ -64,6 +64,8 @@ export interface NormalizedVelvetConfiguration {
     name: string;
     layout: "grouped" | "cards";
     defaultRange: "30d" | "90d" | "all";
+    /** Whether the response-time chart is shown. On where nothing said. */
+    responseChart: boolean;
     logoHeight: number;
     navigation: Array<{ title: string; href: string }>;
     icons: Record<string, string>;

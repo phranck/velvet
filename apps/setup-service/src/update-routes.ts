@@ -28,6 +28,8 @@ import type {
 import {
   setAutomaticSecurityUpdates,
   setGalleryListing,
+  setStatusPageDefaultRange,
+  setStatusPageResponseChart,
   setStatusPageTheme,
 } from "./update-preference.js";
 import {
@@ -307,7 +309,12 @@ export function createUpdateRoutes(
   const installationConfiguration = async (
     repository: ManageableRepository,
     input: UpdateRouteRequest,
-  ): Promise<{ theme: string | null; themeSettings: Record<string, unknown> }> => {
+  ): Promise<{
+    theme: string | null;
+    themeSettings: Record<string, unknown>;
+    responseChart: boolean;
+    defaultRange: "30d" | "90d" | "all";
+  }> => {
     let source: string;
     try {
       const configuration = await access.readConfiguration(
@@ -316,7 +323,16 @@ export function createUpdateRoutes(
       );
       source = configuration.source;
     } catch (cause) {
-      if (missingFile(cause)) return { theme: null, themeSettings: {} };
+      if (missingFile(cause)) {
+        // Nothing to read is not a failure: the configurator opens on the
+        // defaults, which is what such a repository would be published with.
+        return {
+          theme: null,
+          themeSettings: {},
+          responseChart: true,
+          defaultRange: "30d",
+        };
+      }
       throw cause;
     }
     const parsed = parseVelvetConfiguration(source);
@@ -328,6 +344,8 @@ export function createUpdateRoutes(
     return {
       theme: parsed.data.statusPage.theme,
       themeSettings: parsed.data.statusPage.themeSettings ?? {},
+      responseChart: parsed.data.statusPage.responseChart,
+      defaultRange: parsed.data.statusPage.defaultRange,
     };
   };
 
@@ -476,7 +494,20 @@ export function createUpdateRoutes(
           const body = await requestBody(input.request);
           const theme = typeof body.theme === "string" ? body.theme : null;
           const settings = readThemeSettings(body.themeSettings);
-          if (theme === null || settings === null) {
+          const responseChart =
+            typeof body.responseChart === "boolean" ? body.responseChart : null;
+          const defaultRange =
+            body.defaultRange === "30d" ||
+            body.defaultRange === "90d" ||
+            body.defaultRange === "all"
+              ? body.defaultRange
+              : null;
+          if (
+            theme === null ||
+            settings === null ||
+            responseChart === null ||
+            defaultRange === null
+          ) {
             throw new ManagedUpdateError("UPDATE_REQUEST_INVALID", {
               errorId: errorId(),
             });
@@ -499,13 +530,33 @@ export function createUpdateRoutes(
             repository,
             `Publish ${theme} in Velvet`,
             (source) => {
+              // Four edits, one commit, for the reason above: this is one
+              // decision about how the page is published. Each returns null
+              // where it could not be proven safe, and one null abandons the
+              // lot rather than leaving the file half changed.
               const withTheme = setStatusPageTheme(source, theme);
-              return withTheme === null
+              if (withTheme === null) return null;
+              const withChart = setStatusPageResponseChart(
+                withTheme,
+                responseChart,
+              );
+              if (withChart === null) return null;
+              const withRange = setStatusPageDefaultRange(
+                withChart,
+                defaultRange,
+              );
+              return withRange === null
                 ? null
-                : setThemeSettings(withTheme, settings);
+                : setThemeSettings(withRange, settings);
             },
           );
-          return jsonResponse({ theme, themeSettings: settings, commit });
+          return jsonResponse({
+            theme,
+            themeSettings: settings,
+            responseChart,
+            defaultRange,
+            commit,
+          });
         }
 
         return null;

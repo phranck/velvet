@@ -17,6 +17,59 @@ import type { ThemeFeature } from "./manifest.js";
 export type ThemeSettings = Readonly<Record<string, string | number | boolean>>;
 
 /**
+ * What the page decides for every theme rather than any theme for itself.
+ *
+ * A page setting is about what the page reports; a feature is about how one
+ * theme draws it. This is written into the same block as the features, so a
+ * theme reads it exactly as it reads its own and needs no fallback either.
+ */
+export interface PageSettings {
+  /** Whether the response-time chart is shown under each service. */
+  responseChart: boolean;
+}
+
+/**
+ * The custom property each page setting is published as.
+ *
+ * Named here rather than at each theme, so four stylesheets cannot disagree
+ * about what the property is called.
+ */
+export const RESPONSE_CHART_DISPLAY = "--velvet-response-chart-display";
+
+/**
+ * The properties a theme hides its chart and everything reaching it by.
+ *
+ * One per element rather than one for all of them, because what each is laid
+ * out as when shown differs and only the theme knows it. A theme declares the
+ * ones it has and reads them without a fallback; the page setting overrules
+ * them all to `none` and states nothing otherwise.
+ *
+ * A theme whose service panel carries more than the chart declares only the
+ * first, because its panel is still worth opening with the chart gone.
+ */
+export const RESPONSE_CHART_PROPERTIES = [
+  RESPONSE_CHART_DISPLAY,
+  "--velvet-response-open-display",
+  "--velvet-response-toggle-display",
+] as const;
+
+/**
+ * Every page setting that has something to say, as a declaration.
+ *
+ * Only what is switched off. What a shown chart is laid out as differs between
+ * themes, and only the theme knows it, so each declares this property itself
+ * and the page setting overrules it to hide the chart. Writing a value for the
+ * shown case here would mean deciding one layout for every theme.
+ *
+ * @param page - What the page decided, already resolved to its defaults.
+ * @returns One `--property: value;` per page setting that changes something.
+ */
+export function pageSettingDeclarations(page: PageSettings): string[] {
+  if (page.responseChart) return [];
+  return RESPONSE_CHART_PROPERTIES.map((property) => `${property}: none;`);
+}
+
+/**
  * The value one feature is published with.
  *
  * @param feature - The feature the theme offers.
@@ -114,8 +167,27 @@ export function themeSettingsStyle(
   root: string,
   features: readonly ThemeFeature[],
   settings: ThemeSettings = {},
+  page: PageSettings = { responseChart: true },
 ): string {
-  const declarations = themeSettingDeclarations(features, settings).join(" ");
+  const declarations = [
+    ...pageSettingDeclarations(page),
+    ...themeSettingDeclarations(features, settings),
+  ].join(" ");
   if (declarations === "") return "";
   return `<style>:root { ${declarations} } ${root} { ${declarations} }</style>`;
 }
+
+/**
+ * The window a page opens in, as a page reads it.
+ *
+ * A configuration names it `30d`, `90d`, or `all`, and a page reads `month`,
+ * `quarter`, or `all`. `scripts/generate-config.mjs` translates the same pair
+ * for a published page and carries a few older labels besides; this is here
+ * because the configurator has to hand the monitor what a page reads and
+ * cannot import that script.
+ */
+export const PAGE_RANGE_KEYS: Readonly<Record<string, string>> = {
+  "30d": "month",
+  "90d": "quarter",
+  all: "all",
+};

@@ -29,6 +29,7 @@
 @import "./assets/icons.css";
 
 .ncc-1701-d-page {
+  --velvet-response-chart-display: grid;
   /* ── Identity ─────────────────────────────────────────────────────────── */
   --theme-scheme: dark;
 
@@ -2235,7 +2236,7 @@
   else.
 */
 .response-chart {
-  display: grid;
+  display: var(--velvet-response-chart-display);
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: var(--space-tight) var(--space-row);

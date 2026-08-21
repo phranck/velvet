@@ -61,6 +61,7 @@ const velvet = {
   themeSettings: configuration.statusPage.themeSettings,
   layout: configuration.statusPage.layout,
   defaultRange: configuration.statusPage.defaultRange,
+  responseChart: configuration.statusPage.responseChart,
   logoHeight: configuration.statusPage.logoHeight,
   icons: configuration.statusPage.icons,
   seo: configuration.statusPage.seo,
@@ -85,7 +86,11 @@ const subst = (s) =>
 
 // Accept either the internal range key (`quarter`) or the user-facing label
 // (`90d`) for `velvet.defaultRange`; fall back to the 30d view on anything else.
-const RANGE_KEYS = ["day", "week", "month", "quarter", "year"];
+//
+// `all` is both: it is what the configuration offers and what the page reads,
+// so it passes through rather than being translated. It was missing from this
+// list, and an installation asking for it was published showing thirty days.
+const RANGE_KEYS = ["day", "week", "month", "quarter", "year", "all"];
 const RANGE_LABEL_TO_KEY = { "24h": "day", "7d": "week", "30d": "month", "90d": "quarter", "1yr": "year" };
 const normalizeRange = (value) => {
   if (typeof value !== "string") return "month";
@@ -134,6 +139,9 @@ const config = {
     ? { themeSettings: velvet.themeSettings }
     : {}),
   defaultRange: normalizeRange(velvet.defaultRange),
+  // Whether the page shows its response-time chart. Carried as a boolean, so a
+  // configuration saying nothing leaves the page's own default standing.
+  responseChart: velvet.responseChart !== false,
   logoHeight: typeof velvet.logoHeight === "number" ? velvet.logoHeight : 72,
   icons: velvet.icons ?? {},
   ...(Object.keys(seo).length ? { seo } : {}),

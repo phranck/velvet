@@ -168,6 +168,8 @@ test("asks how one installation is published, naming both identifiers", async ()
   const { asked, client } = configurationHarness({
     theme: "retro-chassis",
     themeSettings: { chartWash: false },
+    responseChart: false,
+    defaultRange: "90d",
   });
 
   const configuration = await client.configurationOf(INSTALLATION);
@@ -178,24 +180,48 @@ test("asks how one installation is published, naming both identifiers", async ()
   assert.deepEqual(configuration, {
     theme: "retro-chassis",
     themeSettings: { chartWash: false },
+    responseChart: false,
+    defaultRange: "90d",
   });
 });
 
 test("reads an installation with no configuration as one without a theme", async () => {
-  const { client } = configurationHarness({ theme: null, themeSettings: {} });
+  const { client } = configurationHarness({
+    theme: null,
+    themeSettings: {},
+    responseChart: true,
+    defaultRange: "30d",
+  });
 
   assert.deepEqual(await client.configurationOf(INSTALLATION), {
     theme: null,
     themeSettings: {},
+    responseChart: true,
+    defaultRange: "30d",
   });
 });
 
 test("refuses a configuration it cannot read, rather than guessing at one", async () => {
   for (const answer of [
     { theme: "velvet" },
-    { theme: "Velvet", themeSettings: {} },
-    { theme: "velvet", themeSettings: { chartWash: null } },
-    { theme: "velvet", themeSettings: {}, extra: true },
+    { theme: "Velvet", themeSettings: {}, responseChart: true, defaultRange: "30d" },
+    {
+      theme: "velvet",
+      themeSettings: { chartWash: null },
+      responseChart: true,
+      defaultRange: "30d",
+    },
+    {
+      theme: "velvet",
+      themeSettings: {},
+      responseChart: true,
+      defaultRange: "30d",
+      extra: true,
+    },
+    // The page's own two are as required in the answer as the theme's, so an
+    // answer missing one is unreadable rather than filled in here.
+    { theme: "velvet", themeSettings: {}, defaultRange: "30d" },
+    { theme: "velvet", themeSettings: {}, responseChart: true, defaultRange: "60d" },
     new Response("not json", { status: 200 }),
     new Response(null, { status: 500 }),
   ]) {
