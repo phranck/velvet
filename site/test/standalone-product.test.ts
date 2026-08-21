@@ -37,7 +37,9 @@ test("public documentation presents the standalone native product first", async 
   assert.match(readme, /GitHub Issues/iu);
   assert.match(readme, /GitHub Pages/iu);
   assert.match(readme, /365 days/iu);
-  assert.match(readme, /rerun the failed workflow/iu);
+  // The README points at the reference rather than restating it, so recovery
+  // is asserted where it is now documented.
+  assert.match(configuration, /rerun the workflow that failed/iu);
   assert.match(configuration, /JSON Pointer/iu);
   assert.match(configuration, /failureThreshold/u);
   assert.match(configuration, /recoveryThreshold/u);

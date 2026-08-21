@@ -14,112 +14,47 @@
 
 <br>
 
-Velvet monitors websites and HTTP endpoints from GitHub Actions, records incidents and planned maintenance in GitHub Issues, and publishes a status page through GitHub Pages. A public website needs only a name and URL.
+Velvet monitors websites and HTTP endpoints from GitHub Actions, records incidents and planned maintenance in GitHub Issues, and publishes a status page through GitHub Pages. A public website needs only a name and a URL.
 
-## What Velvet provides
+GitHub is part of the platform here rather than somewhere to host Velvet, which is what makes it GitHub-native. Every installation uses GitHub Actions for scheduling, GitHub Issues for incidents and maintenance, a dedicated Git branch for generated data, and GitHub Pages for the public site.
 
-- Direct IPv4 `GET` and `HEAD` checks from GitHub-hosted runners.
-- Five-minute status checks and separate six-hour response-time samples.
-- Automatic incident creation after confirmed failures and automatic recovery.
-- Planned maintenance that remains visible as a neutral history event.
-- Availability, response-time, incident, and maintenance data, kept for as far back as the installation asks for.
-- Four themes, each shipped whole with the typefaces it uses, and each saying for itself what can be set on it. Plus service icons, SEO output, custom domains, and selectable history ranges.
-- No analytics of any kind. A published status page loads no third-party script, the browser setup reports to nobody, and there is no setting that would change either.
-- A static GitHub Pages site that keeps working independently of the optional browser setup service.
+## What an installation gives you
 
-GitHub is part of the platform rather than somewhere to host Velvet, which is what makes it GitHub-native. Every installation uses GitHub Actions for scheduling, GitHub Issues for incidents and maintenance, a dedicated Git branch for generated data, and GitHub Pages for the public site.
+- Status checks every five minutes, and separate response-time samples four times a day.
+- Incidents opened automatically after confirmed failures, and closed again on recovery.
+- Planned maintenance that stays visible as a neutral history event.
+- Availability, response-time, incident, and maintenance data, kept for up to 365 days.
+- Four themes, each shipped whole with the typefaces it uses. Plus service icons, SEO output, custom domains, and selectable history ranges.
+- No analytics of any kind. A published page loads no third-party script, the browser setup reports to nobody, and there is no setting that would change either.
+- A static page that keeps monitoring and publishing on its own, whether or not the browser setup service is up.
 
-## How it works
-
-1. `velvet.yml` defines the repository, page, services, and optional advanced checks.
-2. The Velvet monitor checks every configured endpoint over IPv4. The status workflow runs every five minutes; the response workflow runs four times per day.
-3. Successful runs publish one validated snapshot to the dedicated `velvet-data` branch. The monitor never rewrites the default branch.
-4. The Pages workflow builds the site, social card, and SEO files from that snapshot. The page is rendered during that build, so what is published is readable before any script has run, which matters most on the connection somebody reaches for when something is already broken.
-5. The browser adopts that rendered page and keeps it current, validating `status.json`, `response-times.json`, and `incidents.json` before rendering them. Endpoint URLs and secrets never enter these public documents.
-
-Invalid configuration, an unavailable configured secret, unsafe request setup, invalid stored data, or a GitHub write conflict leaves the last valid public snapshot untouched.
+Checks leave GitHub's runners over IPv4. IPv6 follows once those runners offer documented IPv6 connectivity.
 
 ## Get started
 
-Open [setup.velvet.li](https://setup.velvet.li/onboarding/). The onboarding asks for the repository and page name, services, an optional custom domain, and the theme your page is published in. After GitHub approval it creates the repository, enables Pages, starts monitoring, and waits for the first deployment.
+Open [setup.velvet.li](https://setup.velvet.li/onboarding/). The onboarding asks for the repository and page name, the services, an optional custom domain, and the theme your page is published in. After GitHub approval it creates the repository, enables Pages, starts monitoring, and waits for the first deployment.
 
-This is the only supported way to install Velvet. It is also the only one that writes `velvet.lock.json`, the machine-managed record of which release an installation runs. Without that record Velvet has no version to compare against and can never update the installation, so a repository created by copying the template directly is one nobody can maintain for you.
+This is the only supported way to install Velvet. It is also the only one that writes `velvet.lock.json`, the machine-managed record of which release an installation runs. Without that record Velvet has no version to compare against and can never update the installation.
 
-The setup service is used only while installing and while updating. A generated status page keeps monitoring and publishing when the service is unavailable.
-
-## Configure monitoring
-
-This is a complete one-service `velvet.yml`:
-
-```yaml
-schemaVersion: 1
-repository:
-  owner: your-username
-  name: your-status-repo
-statusPage:
-  name: Example Status
-services:
-  - name: Website
-    url: https://example.com
-```
-
-The default check sends `GET`, follows up to five redirects, waits at most ten seconds, and considers only a final HTTP `200` healthy. Velvet ignores the response body unless an explicit JSON assertion is configured.
-
-```yaml
-services:
-  - name: API
-    checks:
-      - name: Application health
-        url: https://api.example.com/health
-        expectedStatusCodes: [200]
-        jsonAssertions:
-          - path: /status
-            equals: ok
-```
-
-JSON assertions use RFC 6901 JSON Pointers and compare the selected value with one configured string, number, boolean, or `null`. They are for dedicated health endpoints, not a requirement for normal websites.
-
-See [the configuration reference](documentation/configuration.md) for every service, page, theme, incident, retention, permission, secret, recovery, and custom-domain option.
-
-## Monitoring rules
-
-- Each check gets one initial request and at most one immediate retry.
-- Two consecutive failed measurements confirm an outage by default. Two consecutive successful measurements confirm recovery.
-- A pending failure or recovery appears as degraded. Invalid configuration or an internal error does not count as endpoint downtime.
-- Status runs update availability and incidents. Response-only runs add samples without changing the confirmed service state.
-- Planned maintenance never changes measured availability. It is displayed as a neutral event and retained in history.
-- The default retention period is 365 days, which is also the maximum. Closed GitHub Issues are never deleted.
-
-The monitor uses the repository-scoped `GITHUB_TOKEN`. Public checks need no user-managed secret. A private endpoint may reference one repository secret by environment-variable name; only that named secret is mapped into the monitor workflow, and its value never belongs in `velvet.yml`.
-
-## IPv4 and IPv6
-
-Velvet checks every configured endpoint directly from GitHub-hosted runners, over IPv4. It contacts no other service to do so. IPv6 monitoring will be added once those runners provide documented IPv6 connectivity, so a configured service is monitored over IPv4.
-
-## Data ownership and recovery
-
-The monitor owns exactly these generated files on `velvet-data`:
-
-- `.velvet/monitor-state.json`
-- `velvet-data/v1/status.json`
-- `velvet-data/v1/response-times.json`
-- `velvet-data/v1/incidents.json`
-
-Every successful run commits a complete validated snapshot. The default branch, `velvet.yml`, workflows, and all other user-controlled files remain separate. Rerun the failed workflow after correcting configuration, permissions, secrets, or a temporary GitHub failure. There is no need to assemble or repair a partial snapshot manually.
+Everything your page does afterwards is configured in one file, `velvet.yml`, in your own repository.
 
 ## Updates
 
-Velvet installs new versions for you. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. Your `velvet.yml`, the whole `velvet-data` branch, your incidents, maintenance records, repository secrets, Pages and domain settings, `README.md`, and `NOTICE` are never part of one.
-
-That promise is checked twice. The service proves it from GitHub's own view of the change before merging, and a workflow in your repository proves it again against the merge GitHub actually built. An update that touched anything else would fail its check and never reach your default branch.
-
-Security releases that need no migration can install themselves, which is on by default and can be turned off through `automaticSecurityUpdates` in `velvet.yml`. Everything else waits for you.
+Velvet installs new versions for you. An update replaces only the workflow and Issue-template files Velvet owns, plus its own version lock. Your configuration, your data branch, your incidents, your secrets, and your own files are never part of one, and both the service and a workflow in your repository check that before anything merges.
 
 ## Documentation
 
-[documentation/](documentation/) holds the reference material: every configuration option, the contracts between the layers, how the setup service is run, and how a release is cut.
+| Document | Covers |
+| --- | --- |
+| [How Velvet works](documentation/how-it-works.md) | What happens on a run, from a scheduled check to the published page. |
+| [Configuration reference](documentation/configuration.md) | Every `velvet.yml` option, and what each one does. |
+| [Theme authoring](documentation/theme-authoring.md) | Building and changing the themes a page is published in. |
+| [Contracts](documentation/contracts.md) | The contracts between Velvet's layers and the public document formats. |
+| [Setup service](documentation/setup-service.md) | Running the control plane behind browser onboarding. |
+| [Development](documentation/development.md) | The pinned toolchain, the gates, and how to work in this repository. |
+| [Releasing](documentation/releasing.md) | How a release is cut and what each step guarantees. |
 
-The same material is available offline as man pages. `velvet(7)` covers the architecture and `velvet.yml(5)` every configuration option. They install into your own home directory and need no administrator rights:
+The same reference material is available offline as man pages. `velvet(7)` covers the architecture and `velvet.yml(5)` every configuration option. They install into your own home directory and need no administrator rights:
 
 ```bash
 velvet=$(mktemp -d)
@@ -127,27 +62,8 @@ curl -sL https://velvet.li/velvet-man-pages.tar.gz | tar -xz -C "$velvet"
 "$velvet"/velvet-man-pages/install.sh && rm -rf "$velvet"
 ```
 
-## Develop
-
-Velvet pins Bun 1.3.14 as its package manager and runtime.
-
-| Environment | Supported path |
-| --- | --- |
-| Local macOS | Bun 1.3.14 on Apple Silicon or Intel |
-| Linux CI | `oven-sh/setup-bun@v2` reading the root `packageManager` pin |
-| Playwright | Chromium installed through `bunx --bun playwright` |
-| Composite Actions | `oven-sh/setup-bun@v2` with Bun 1.3.14 pinned explicitly |
-
-```bash
-bun install --frozen-lockfile
-bun run lint
-bun run typecheck
-bun run test
-bun run build
-```
-
 ## Releases and licensing
 
-See [CHANGELOG.md](CHANGELOG.md) for release notes, [documentation/releasing.md](documentation/releasing.md) for the release process, and [LICENSING.md](LICENSING.md) for source-data and third-party license boundaries.
+See [CHANGELOG.md](CHANGELOG.md) for release notes and [LICENSING.md](LICENSING.md) for source-data and third-party licence boundaries.
 
 Velvet is published under the [MIT license](https://layered.mit-license.org).
