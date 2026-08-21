@@ -1238,22 +1238,34 @@
 .retro-chassis-page::after {
   content: "";
   position: fixed;
-  inset: 0;
+  /* The overhang the creep below moves into. */
+  inset: calc(-1 * var(--backdrop-drift, 0px)) 0 0 0;
   z-index: -1;
   background: var(--backdrop-texture);
-  background-size: var(--backdrop-texture-size);
+  /*
+    The texture is drawn at the size of the window and then put back where the
+    window's own top edge is, because the layer itself starts one drift
+    distance above it. Both lines are needed: an angled gradient takes its
+    direction line from the box it is drawn in, so a taller box moves the
+    pattern even where the origin is corrected, and a gradient of whole periods
+    hides the first mistake whilst showing the second.
+  */
+  background-size: var(--backdrop-texture-size) calc(100% - var(--backdrop-drift, 0px));
+  background-position: 0 var(--backdrop-drift, 0px);
   opacity: var(--backdrop-texture-opacity);
   /*
-    Optional, and off in most themes. Only `background-position` and `opacity`
-    are animated here, both of which a compositor handles on its own, and the
-    layer is already composited once and never repainted. A theme that wants
-    stillness sets this to `none` and the rule costs nothing.
+    Optional, and off in most themes. The creep is a `transform` and the fade
+    an `opacity`, which are two of the three properties a compositor animates
+    on its own, so this layer is rasterised once and moved afterwards rather
+    than repainted every frame. The layer stands `--backdrop-drift` above the
+    window, so nothing uncovers along the top edge as it travels down. A theme
+    that wants stillness sets this to `none` and the rule costs nothing.
   */
   animation: var(--backdrop-motion);
   pointer-events: none;
 }@keyframes velvet-drift {
   to {
-    background-position: 0 var(--backdrop-drift, 4px);
+    transform: translate3d(0, var(--backdrop-drift, 0px), 0);
   }
 }@keyframes velvet-breathe {
   50% {
