@@ -4,9 +4,12 @@ Reference material that a README should point at rather than contain. Each READM
 
 | Document | Covers |
 | --- | --- |
+| [how-it-works.md](how-it-works.md) | What happens on a run, from a scheduled check to the published page, and what Velvet does when it cannot measure. |
 | [configuration.md](configuration.md) | Every `velvet.yml` option: services and checks, the status page, themes, incidents and maintenance, history, managed updates, workflows and permissions, and failure handling. |
+| [theme-authoring.md](theme-authoring.md) | Building and changing a theme: the pipeline seam, what a theme may read, and the gates it has to pass. |
 | [contracts.md](contracts.md) | The contracts between Velvet's layers, the public document formats, and how the schemas are generated and verified. |
 | [setup-service.md](setup-service.md) | Running the control plane: release source, GitHub App registration, runtime configuration, deployment, recovery, and key rotation. |
+| [development.md](development.md) | The pinned toolchain, the gates, the committed browser applications, and the theme gates. |
 | [releasing.md](releasing.md) | How a Velvet release is cut and what each step guarantees. |
 | [man/](man/) | The roff sources for `velvet(7)` and `velvet.yml(5)`, packaged by the website build into the archive velvet.li offers. |
 
